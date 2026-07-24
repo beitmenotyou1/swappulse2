@@ -8,6 +8,7 @@ import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import { toast } from "@/components/ui/use-toast";
+import { checkPasswordBreach, BREACH_WARNING } from "@/lib/hibp";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -31,6 +32,16 @@ export default function Register() {
       return;
     }
     setLoading(true);
+    try {
+      const breachCount = await checkPasswordBreach(password);
+      if (breachCount > 0) {
+        setError(BREACH_WARNING);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // non-blocking — proceed
+    }
     try {
       await base44.auth.register({ email, password });
       setShowOtp(true);
