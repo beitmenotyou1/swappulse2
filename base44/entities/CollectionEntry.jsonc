@@ -65,6 +65,16 @@
       "type": "string",
       "maxLength": 500
     },
+    "showcased": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the card is pinned to the public digital binder"
+    },
+    "binder_index": {
+      "type": "integer",
+      "default": 0,
+      "description": "Display order within the digital binder"
+    },
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the owner (simulated)"
