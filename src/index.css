@@ -1,50 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 @layer base {
   :root {
-    /* SwapPulse dark theme (default, primary) — §5.2 */
-    --background: 225 21% 8%;        /* Midnight Vault  #0F1117 */
-    --foreground: 228 33% 97%;       /* Clean White     #F5F6FA */
-    --card: 227 21% 13%;             /* Display Case    #1A1D28 */
-    --card-foreground: 228 33% 97%;
-    --popover: 229 19% 22%;          /* Spotlight       #2D3142 */
-    --popover-foreground: 228 33% 97%;
-    --primary: 217 91% 60%;          /* Pulse Blue      #3B82F6 */
+    /* SwapPulse design system — §5.1 (Proton-inspired light theme) */
+    --background: 0 0% 100%;            /* Surface Light   #ffffff */
+    --foreground: 217 33% 17%;          /* Text Primary    #1e293b */
+    --card: 0 0% 100%;                  /* Surface Light   #ffffff */
+    --card-foreground: 217 33% 17%;
+    --popover: 0 0% 100%;               /* Surface Light   #ffffff */
+    --popover-foreground: 217 33% 17%;
+    --primary: 252 100% 64%;            /* Primary Purple  #6d4aff */
     --primary-foreground: 0 0% 100%;
-    --secondary: 226 19% 18%;        /* Binder Sleeve   #252936 */
-    --secondary-foreground: 228 33% 97%;
-    --muted: 226 19% 18%;            /* Binder Sleeve   #252936 */
-    --muted-foreground: 225 15% 68%; /* Collector Grey  #A0A6B8 */
-    --accent: 45 100% 48%;           /* Shiny Gold      #F5B700 */
-    --accent-foreground: 225 21% 8%;
-    --success: 160 55% 39%;          /* Trade Green     #10B981 */
+    --secondary: 210 40% 96%;           /* Slate 100 — chips / hover containers */
+    --secondary-foreground: 217 33% 17%;
+    --muted: 210 40% 98%;               /* Surface Gray   #f8fafc */
+    --muted-foreground: 215 16% 47%;    /* Text Secondary #64748b */
+    --accent: 45 96% 53%;               /* Accent Gold    #fbbf24 */
+    --accent-foreground: 217 33% 17%;
+    --success: 160 84% 39%;             /* Success Green  #10b981 */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;           /* Caution Amber   #F59E0B */
-    --warning-foreground: 225 21% 8%;
-    --destructive: 0 84% 60%;        /* Reverse Holo Red#EF4444 */
-    --destructive-foreground: 0 0% 98%;
-    --border: 226 22% 15%;           /* Edge Wear       #1F2330 */
-    --border-strong: 228 17% 27%;    /* Card Edge       #3A3F52 */
-    --input: 228 17% 27%;            /* Card Edge       #3A3F52 */
-    --ring: 217 91% 60%;             /* Pulse Blue      #3B82F6 */
-    --primary-hover: 217 100% 66%;   /* Pulse Bright    #4F94FF */
-    --primary-muted: 220 83% 53%;    /* Pulse Deep      #2563EB */
-    --radius: 0.75rem;
+    --warning: 38 92% 50%;              /* Warning Amber  #f59e0b */
+    --warning-foreground: 217 33% 17%;
+    --destructive: 0 84% 60%;            /* Error Red      #ef4444 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;              /* Slate 200      #e2e8f0 */
+    --border-strong: 215 25% 78%;       /* Slate 300      #cbd5e1 */
+    --input: 215 25% 78%;
+    --ring: 252 100% 64%;               /* Primary Purple */
+    --primary-hover: 258 90% 66%;       /* Secondary Indigo #8b5cf6 (hover) */
+    --primary-muted: 252 60% 52%;       /* Deep purple for emphasis */
+    --radius: 0.75rem;                  /* Cards 12px */
     --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    /* Rarity colour overlay system — §5.2 */
-    --rarity-common: 220 9% 64%;
-    --rarity-uncommon: 0 0% 75%;     /* silver #C0C0C0 */
-    --rarity-rare: 217 91% 60%;      /* Pulse Blue */
-    --rarity-holo: 45 100% 48%;      /* Shiny Gold */
-    --rarity-ex: 258 90% 66%;        /* purple #8B5CF6 */
-    --rarity-secret: 45 100% 48%;    /* rainbow via utility */
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    /* Shadow tokens — §5.1 */
+    --shadow-base: 0 1px 2px rgb(0 0 0 / 0.05);
+    --shadow-raised: 0 4px 6px rgb(0 0 0 / 0.07);
+    --shadow-elevated: 0 10px 15px rgb(0 0 0 / 0.1);
+    /* Rarity colour overlay system — §5.1 */
+    --rarity-common: 215 16% 47%;
+    --rarity-uncommon: 0 0% 75%;
+    --rarity-rare: 217 91% 60%;          /* Accent Blue   #3b82f6 */
+    --rarity-holo: 45 96% 53%;           /* Accent Gold   #fbbf24 */
+    --rarity-ex: 252 100% 64%;           /* Primary Purple */
+    --rarity-secret: 45 96% 53%;
+  }
+
+  .dark {
+    --background: 252 30% 8%;
+    --foreground: 228 33% 97%;
+    --card: 252 28% 12%;
+    --card-foreground: 228 33% 97%;
+    --popover: 252 26% 18%;
+    --popover-foreground: 228 33% 97%;
+    --primary: 252 100% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 252 24% 18%;
+    --secondary-foreground: 228 33% 97%;
+    --muted: 252 24% 16%;
+    --muted-foreground: 228 16% 70%;
+    --accent: 45 96% 55%;
+    --accent-foreground: 252 30% 10%;
+    --success: 160 84% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 252 30% 10%;
+    --destructive: 0 84% 64%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 252 24% 16%;
+    --border-strong: 252 20% 28%;
+    --input: 252 20% 28%;
+    --ring: 252 100% 68%;
   }
 }
 
@@ -63,43 +94,43 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(222 14% 22%);
+    background: hsl(214 32% 85%);
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(222 14% 30%);
+    background: hsl(214 32% 78%);
   }
 }
 
 @layer utilities {
   .glass {
-    background: hsl(222 22% 9% / 0.7);
+    background: hsl(0 0% 100% / 0.7);
     backdrop-filter: blur(12px);
   }
   .text-gradient-pulse {
-    background: linear-gradient(120deg, hsl(217 91% 60%), hsl(258 90% 66%));
+    background: linear-gradient(120deg, hsl(252 100% 64%), hsl(258 90% 66%));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  /* Rarity glow overlays (dark mode) — §5.2 Rarity Colour Overlay System */
-  .rarity-glow-uncommon { box-shadow: 0 0 12px hsl(0 0% 75% / 0.2); }
-  .rarity-glow-rare { box-shadow: 0 0 14px hsl(217 91% 60% / 0.15); }
-  .rarity-glow-holo { box-shadow: 0 0 16px hsl(45 100% 48% / 0.2); }
-  .rarity-glow-ex { box-shadow: 0 0 18px hsl(258 90% 66% / 0.25); }
+  /* Rarity glow overlays — §5.2 Rarity Colour Overlay System */
+  .rarity-glow-uncommon { box-shadow: 0 0 12px hsl(0 0% 75% / 0.25); }
+  .rarity-glow-rare { box-shadow: 0 0 14px hsl(217 91% 60% / 0.2); }
+  .rarity-glow-holo { box-shadow: 0 0 16px hsl(45 96% 53% / 0.3); }
+  .rarity-glow-ex { box-shadow: 0 0 18px hsl(252 100% 64% / 0.3); }
   .rarity-glow-secret {
     box-shadow:
       0 0 18px hsl(0 84% 60% / 0.3),
-      0 0 18px hsl(45 100% 48% / 0.3),
-      0 0 18px hsl(160 55% 39% / 0.3),
-      0 0 20px hsl(258 90% 66% / 0.3);
+      0 0 18px hsl(45 96% 53% / 0.3),
+      0 0 18px hsl(160 84% 39% / 0.3),
+      0 0 20px hsl(252 100% 64% / 0.3);
   }
-  /* Rarity left-border accents (light mode / cards) — §5.2 */
+  /* Rarity left-border accents — §5.2 */
   .rarity-border-uncommon { border-left: 3px solid hsl(0 0% 75%); }
   .rarity-border-rare { border-left: 3px solid hsl(217 91% 60%); }
-  .rarity-border-holo { border-left: 3px solid hsl(45 100% 48%); }
-  .rarity-border-ex { border-left: 3px solid hsl(258 90% 66%); }
+  .rarity-border-holo { border-left: 3px solid hsl(45 96% 53%); }
+  .rarity-border-ex { border-left: 3px solid hsl(252 100% 64%); }
   .rarity-border-secret {
-    border-image: linear-gradient(135deg, hsl(0 84% 60%), hsl(45 100% 48%), hsl(160 55% 39%), hsl(258 90% 66%)) 1;
+    border-image: linear-gradient(135deg, hsl(0 84% 60%), hsl(45 96% 53%), hsl(160 84% 39%), hsl(252 100% 64%)) 1;
   }
 }

@@ -84,6 +84,11 @@ module.exports = {
   			display: ['var(--font-display)'],
   			mono: ['var(--font-mono)']
   		},
+  		boxShadow: {
+  			base: 'var(--shadow-base)',
+  			raised: 'var(--shadow-raised)',
+  			elevated: 'var(--shadow-elevated)',
+  		},
   		keyframes: {
   			'accordion-down': {
   				from: { height: '0' },
