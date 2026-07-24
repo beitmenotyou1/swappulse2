@@ -1,0 +1,109 @@
+{
+  "name": "Journal",
+  "type": "object",
+  "title": "Journal",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "subtitle": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "body": {
+      "type": "string",
+      "maxLength": 50000,
+      "description": "Markdown-formatted journal content"
+    },
+    "cover_image_uri": {
+      "type": "string",
+      "description": "Cover image blob URI"
+    },
+    "embedded_card_uris": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "description": "at:// URI of a card referenced in the journal"
+      }
+    },
+    "embedded_stats": {
+      "type": "object",
+      "description": "Frozen collection stats snapshot at publication time",
+      "properties": {
+        "total_collection_value": {
+          "type": "number"
+        },
+        "set_completion_percent": {
+          "type": "number"
+        },
+        "total_cards": {
+          "type": "integer"
+        },
+        "rarest_card_uri": {
+          "type": "string"
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 30
+      }
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "followers",
+        "private"
+      ],
+      "default": "public"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "like_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the journal author (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the journal to the author's signing key (simulated)"
+    }
+  },
+  "required": [
+    "title",
+    "body",
+    "visibility"
+  ]
+}

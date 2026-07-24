@@ -22,7 +22,11 @@
         "scam",
         "misgraded",
         "off_topic",
-        "harassment"
+        "harassment",
+        "verified_binder",
+        "circle_curator",
+        "journal_featured",
+        "meetup_organiser"
       ]
     },
     "note": {

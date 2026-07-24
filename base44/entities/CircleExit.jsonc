@@ -1,0 +1,44 @@
+{
+  "name": "CircleExit",
+  "type": "object",
+  "title": "CircleExit",
+  "properties": {
+    "circle_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the circle being exited"
+    },
+    "circle_id": {
+      "type": "string",
+      "description": "Local id of the Circle for fast lookup"
+    },
+    "exited_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user opting out (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the exit to the user's signing key (simulated)"
+    }
+  },
+  "required": [
+    "circle_ref",
+    "circle_id",
+    "exited_at"
+  ]
+}

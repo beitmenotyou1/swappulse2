@@ -1,0 +1,64 @@
+{
+  "name": "Reaction",
+  "type": "object",
+  "title": "Reaction",
+  "properties": {
+    "subject": {
+      "type": "string",
+      "description": "strongRef at:// URI of the post being reacted to"
+    },
+    "post_id": {
+      "type": "string",
+      "description": "Local id of the reacted Post for fast lookup"
+    },
+    "reaction_type": {
+      "type": "string",
+      "enum": [
+        "insane_pull",
+        "jealous",
+        "congrats",
+        "trade_interest",
+        "gratz_set",
+        "better_luck",
+        "wow"
+      ]
+    },
+    "target_card_uri": {
+      "type": "string",
+      "description": "If trade_interest, the specific card URI the reactor wants"
+    },
+    "reactor_name": {
+      "type": "string"
+    },
+    "reactor_handle": {
+      "type": "string"
+    },
+    "reactor_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the reactor (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the reaction to the reactor's signing key (simulated)"
+    }
+  },
+  "required": [
+    "subject",
+    "reaction_type"
+  ]
+}

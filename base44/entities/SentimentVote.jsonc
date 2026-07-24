@@ -1,0 +1,54 @@
+{
+  "name": "SentimentVote",
+  "type": "object",
+  "title": "SentimentVote",
+  "properties": {
+    "poll_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the poll"
+    },
+    "poll_id": {
+      "type": "string",
+      "description": "Local id of the SentimentPoll for fast lookup"
+    },
+    "vote": {
+      "type": "string",
+      "enum": [
+        "bullish",
+        "bearish",
+        "neutral"
+      ]
+    },
+    "voter_name": {
+      "type": "string"
+    },
+    "voter_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the voter (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the vote to the voter's signing key (simulated)"
+    }
+  },
+  "required": [
+    "poll_ref",
+    "poll_id",
+    "vote"
+  ]
+}

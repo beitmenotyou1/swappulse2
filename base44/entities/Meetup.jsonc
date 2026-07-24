@@ -1,0 +1,102 @@
+{
+  "name": "Meetup",
+  "type": "object",
+  "title": "Meetup",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "estimated_duration": {
+      "type": "integer",
+      "description": "Minutes"
+    },
+    "location_name": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Human-readable venue name, not precise address"
+    },
+    "region": {
+      "type": "string",
+      "description": "Broader region for discovery, e.g. 'London'"
+    },
+    "lat": {
+      "type": "number",
+      "description": "Geocoded latitude (region centroid)"
+    },
+    "lng": {
+      "type": "number",
+      "description": "Geocoded longitude (region centroid)"
+    },
+    "capacity": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 50
+    },
+    "required_vouches": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Minimum incoming vouches needed to see the attendee list"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "ongoing",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled"
+    },
+    "creator_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the meetup organiser"
+    },
+    "rsvp_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the organiser (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the meetup to the organiser's signing key (simulated)"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "scheduled_at",
+    "location_name",
+    "status"
+  ]
+}

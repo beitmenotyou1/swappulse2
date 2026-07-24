@@ -1,0 +1,78 @@
+{
+  "name": "Vouch",
+  "type": "object",
+  "title": "Vouch",
+  "properties": {
+    "vouched_did": {
+      "type": "string",
+      "description": "DID of the endorsed user"
+    },
+    "vouched_name": {
+      "type": "string"
+    },
+    "vouched_handle": {
+      "type": "string"
+    },
+    "voucher_name": {
+      "type": "string"
+    },
+    "voucher_handle": {
+      "type": "string"
+    },
+    "relationship": {
+      "type": "string",
+      "enum": [
+        "trade_partner",
+        "community_member",
+        "personal_acquaintance",
+        "repeat_trader"
+      ]
+    },
+    "context": {
+      "type": "string",
+      "maxLength": 280,
+      "description": "Brief explanation of why this vouch is given"
+    },
+    "trade_refs": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "description": "strongRef at:// URI of a completed trade record supporting this vouch"
+      }
+    },
+    "revocable": {
+      "type": "boolean",
+      "default": true
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the voucher (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the vouch to the voucher's signing key (simulated)"
+    }
+  },
+  "required": [
+    "vouched_did",
+    "relationship",
+    "context"
+  ]
+}

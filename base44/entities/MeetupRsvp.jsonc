@@ -1,0 +1,71 @@
+{
+  "name": "MeetupRsvp",
+  "type": "object",
+  "title": "MeetupRsvp",
+  "properties": {
+    "meetup_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the meetup"
+    },
+    "meetup_id": {
+      "type": "string",
+      "description": "Local id of the Meetup for fast lookup"
+    },
+    "attending": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "maybe",
+        "no"
+      ],
+      "default": "yes"
+    },
+    "bringing_trade_binder": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the attendee will bring their physical binder"
+    },
+    "looking_for_cards": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "description": "Card names the attendee is hunting for at the meetup"
+      }
+    },
+    "attendee_name": {
+      "type": "string"
+    },
+    "attendee_handle": {
+      "type": "string"
+    },
+    "attendee_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the attendee (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the RSVP to the attendee's signing key (simulated)"
+    }
+  },
+  "required": [
+    "meetup_ref",
+    "meetup_id",
+    "attending"
+  ]
+}

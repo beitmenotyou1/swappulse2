@@ -48,9 +48,14 @@
       "type": "string",
       "enum": [
         "public",
-        "wishlist_only"
+        "wishlist_only",
+        "circle_scoped"
       ],
       "default": "public"
+    },
+    "circle_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the circle that can see this listing (when visibility is circle_scoped)"
     },
     "shipping_regions": {
       "type": "array",

@@ -1,0 +1,115 @@
+{
+  "name": "SentimentPoll",
+  "type": "object",
+  "title": "SentimentPoll",
+  "properties": {
+    "card_uri": {
+      "type": "string",
+      "description": "at:// URI or TCGDex card id the poll concerns"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id for fast lookup"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "e.g. 'Will Umbreon VMAX rise above \u00a380 in the next 30 days?'"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "bullish",
+        "bearish",
+        "neutral"
+      ],
+      "description": "The poll creator's own prediction"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the poll closes for voting"
+    },
+    "resolution_source": {
+      "type": "string",
+      "enum": [
+        "tcgplayer",
+        "cardmarket"
+      ],
+      "description": "Which price source determines the outcome"
+    },
+    "price_at_creation": {
+      "type": "number",
+      "description": "Card price (pence) captured at poll creation for resolution"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "incorrect",
+        "inconclusive"
+      ],
+      "description": "Populated after expiry by the resolution service"
+    },
+    "vote_counts": {
+      "type": "object",
+      "description": "Live tally { bullish, bearish, neutral }",
+      "properties": {
+        "bullish": {
+          "type": "integer",
+          "default": 0
+        },
+        "bearish": {
+          "type": "integer",
+          "default": 0
+        },
+        "neutral": {
+          "type": "integer",
+          "default": 0
+        }
+      }
+    },
+    "total_votes": {
+      "type": "integer",
+      "default": 0
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the poll creator (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the poll to the creator's signing key (simulated)"
+    }
+  },
+  "required": [
+    "card_uri",
+    "question",
+    "direction",
+    "expires_at"
+  ]
+}

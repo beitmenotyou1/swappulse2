@@ -1,0 +1,84 @@
+{
+  "name": "Circle",
+  "type": "object",
+  "title": "Circle",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "member_dids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "description": "AT Protocol DID of a member"
+      }
+    },
+    "member_count": {
+      "type": "integer",
+      "default": 1
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "private",
+        "members_visible",
+        "public"
+      ],
+      "default": "public"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "vintage",
+        "competitive",
+        "shiny",
+        "investment",
+        "local_region",
+        "artist",
+        "general"
+      ],
+      "default": "general"
+    },
+    "region": {
+      "type": "string",
+      "description": "Geographic region for local circles, e.g. 'UK-South-East'"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the circle curator (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the circle to the curator's signing key (simulated)"
+    }
+  },
+  "required": [
+    "name",
+    "visibility"
+  ]
+}
