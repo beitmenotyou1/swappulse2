@@ -10,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
+  const migration = searchParams.get("migration") === "1";
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -26,7 +27,7 @@ export default function ResetPassword() {
     setLoading(true);
     try {
       await base44.auth.resetPassword({ resetToken, newPassword });
-      window.location.href = "/login";
+      window.location.href = migration ? "/login?migration_success=1" : "/login";
     } catch (err) {
       setError(err.message || "Failed to reset password");
     } finally {
@@ -56,8 +57,8 @@ export default function ResetPassword() {
   return (
     <AuthLayout
       icon={Lock}
-      title="New password"
-      subtitle="Enter your new password below"
+      title={migration ? "Set your new password" : "New password"}
+      subtitle={migration ? "Complete your migration from Google" : "Enter your new password below"}
     >
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -74,14 +75,18 @@ export default function ResetPassword() {
               type="password"
               autoComplete="new-password"
               autoFocus
-              placeholder="••••••••"
+              minLength={12}
+              placeholder="At least 12 characters"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="pl-10 h-12"
               required
             />
-          </div>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Minimum 12 characters — use a mix of upper and lower case, numbers and symbols.
+            </p>
+            </div>
+            </div>
         <div className="space-y-2">
           <Label htmlFor="confirm">Confirm Password</Label>
           <div className="relative">

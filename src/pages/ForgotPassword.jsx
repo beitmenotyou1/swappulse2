@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function ForgotPassword() {
+  const [searchParams] = useSearchParams();
+  const migration = searchParams.get("migration") === "1";
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -28,8 +30,8 @@ export default function ForgotPassword() {
   return (
     <AuthLayout
       icon={Mail}
-      title="Reset password"
-      subtitle="We'll send you a link to reset it"
+      title={migration ? "Migrate your account" : "Reset password"}
+      subtitle={migration ? "Set a password to move off Google sign-in" : "We'll send you a link to reset it"}
       footer={
         <Link to="/login" className="text-primary font-medium hover:underline">
           <ArrowLeft className="w-3 h-3 inline mr-1" />Back to log in
@@ -38,7 +40,9 @@ export default function ForgotPassword() {
     >
       {sent ? (
         <p className="text-sm text-foreground text-center">
-          If an account exists with that email, you'll receive a password reset link shortly.
+          {migration
+            ? "If an account exists with that email, you'll receive a link to set your new password and complete migration."
+            : "If an account exists with that email, you'll receive a password reset link shortly."}
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
