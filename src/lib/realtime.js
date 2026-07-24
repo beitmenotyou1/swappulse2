@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 
 const HEARTBEAT_MS = 30000;
 const BACKOFF = [1000, 2000, 4000, 8000, 16000, 30000];
-const TRACKED = ['Post', 'TradeListing', 'CardPricing', 'Reputation', 'Wishlist'];
+const TRACKED = ['Post', 'TradeListing', 'CardPricing', 'Reputation', 'TradeMessage', 'Wishlist'];
 
 class RealTimeManager {
   constructor() {
@@ -125,6 +125,9 @@ class RealTimeManager {
     sub('Reputation', (e) => {
       if (e.type === 'create' || e.type === 'update') this.emit('profile.reputation_update', e.data);
     });
+    sub('TradeMessage', (e) => {
+      if (e.type === 'create') this.emit('trade.message', e.data);
+    });
     sub('Wishlist', () => { this.loadWishlist(); });
   }
 
@@ -152,6 +155,7 @@ class RealTimeManager {
     await diff('TradeListing', (it) => { this.emit('trade.new_listing', it); this.checkMatch(it); });
     await diff('CardPricing', (it) => { this.emit('market.price_update', it); this.checkPriceAlert(it); });
     await diff('Reputation', (it) => this.emit('profile.reputation_update', it));
+    await diff('TradeMessage', (it) => this.emit('trade.message', it));
   }
 
   checkMatch(listing) {

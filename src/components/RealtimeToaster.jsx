@@ -27,5 +27,12 @@ export default function RealtimeToaster() {
     });
   });
 
+  useRealtimeEvent('trade.message', (msg) => {
+    toast({
+      title: 'New trade message',
+      description: msg.body ? msg.body.slice(0, 80) : 'You have a new negotiation message.',
+    });
+  });
+
   return null;
 }

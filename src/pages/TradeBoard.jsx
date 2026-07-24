@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
+import { Link } from 'react-router-dom';
 
 export default function TradeBoard() {
   const [listings, setListings] = useState([]);
@@ -89,7 +90,7 @@ export default function TradeBoard() {
                   ))}
                   <span className="rounded bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{t.preferred_currency || 'GBP'}</span>
                 </div>
-                <button className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90">Negotiate</button>
+                <Link to={`/trade/${t.id}`} className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90">Negotiate</Link>
               </div>
             </div>
           ))}
