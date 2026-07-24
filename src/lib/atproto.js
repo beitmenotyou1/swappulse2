@@ -1,26 +1,45 @@
 // SwapPulse AT Protocol-style data layer (SIMULATED)
 //
-// This module mirrors the shape of the AT Protocol so records are ready to
-// migrate to a real PDS later. It is NOT a federated implementation:
+// Mirrors the shape of the AT Protocol so records are ready to migrate to a
+// real PDS at swappulse.org. NOT a federated implementation:
 //   - DIDs are generated locally (not registered with a PLC directory)
 //   - Signatures are HMAC-SHA256 with a per-user secret (not key-pair crypto)
 //   - CIDs are SHA-256 digests (not IPLD multihash)
-// Each record carries: did, at_uri, cid, record_type, sig — the same fields
-// a real AT Protocol record would expose. Swap to a real PDS/@atproto/api
-// SDK and these fields become authoritative instead of simulated.
+// Lexicon NSIDs follow the SwapPulse convention: org.swappulse.<recordName>.
+// Each record carries: did, at_uri, cid, record_type, sig — the same fields a
+// real AT Protocol record exposes. Swap to a real PDS + @atproto/api SDK and
+// these become authoritative instead of simulated.
 
 import { base44 } from '@/api/base44Client';
 
-// Lexicon NSIDs (SwapPulse namespace). Future TCGs reuse the same shapes
-// under a different namespace — only the NSID prefix changes.
+// Lexicon NSIDs per the SwapPulse lexicon spec (org.swappulse.*).
+// Standard AT Protocol records are reused as-is so feed content interops
+// with the wider network (a SwapPulse post is a standard bsky feed post).
 export const NSID = {
-  POST: 'swappulse.post',
-  PACK_OPENING: 'swappulse.pack.opening',
-  COLLECTION_ENTRY: 'swappulse.collection.entry',
-  TRADE_LISTING: 'swappulse.trade.listing',
-  WISHLIST: 'swappulse.wishlist',
-  REPUTATION: 'swappulse.reputation',
-  MODERATION_LABEL: 'swappulse.moderation.label',
+  // Standard AT Protocol record we reuse for feed posts
+  POST: 'app.bsky.feed.post',
+  // Custom SwapPulse record lexicons
+  COLLECTION_ENTRY: 'org.swappulse.collectionEntry',
+  TRADE_LISTING: 'org.swappulse.tradeListing',
+  TRADE_NEGOTIATION: 'org.swappulse.tradeNegotiation',
+  PACK_OPENING: 'org.swappulse.packOpening',
+  REPUTATION: 'org.swappulse.reputation',
+  MODERATION_LABEL: 'org.swappulse.moderationLabel',
+  // Custom feed generators (independent XRPC services users subscribe to)
+  FEED: {
+    FRESH_PULLS: 'org.swappulse.fresh-pulls',
+    TRADE_FLOOR: 'org.swappulse.trade-floor',
+    MARKET_WATCH: 'org.swappulse.market-watch',
+    SHINY_HUNTERS: 'org.swappulse.shiny-hunters',
+    BUDGET_BUILDS: 'org.swappulse.budget-builds',
+  },
+  // Custom XRPC endpoints
+  XRPC: {
+    CATALOG_SEARCH: 'org.swappulse.catalog.search',
+    PRICE_HISTORIC: 'org.swappulse.price.historic',
+    TRADE_MATCH: 'org.swappulse.trade.match',
+    REP_UPDATE: 'org.swappulse.rep.update',
+  },
 };
 
 const BASE32 = 'abcdefghijklmnopqrstuvwxyz234567';
