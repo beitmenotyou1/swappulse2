@@ -1,0 +1,88 @@
+{
+  "name": "TradeListing",
+  "type": "object",
+  "title": "TradeListing",
+  "properties": {
+    "offer_card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "offer_card_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "offer_card_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "wanted_card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "wanted_card_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "negotiating",
+        "pending_ship",
+        "completed",
+        "cancelled"
+      ],
+      "default": "open"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "wishlist_only"
+      ],
+      "default": "public"
+    },
+    "shipping_regions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preferred_currency": {
+      "type": "string",
+      "enum": [
+        "GBP",
+        "EUR",
+        "USD"
+      ],
+      "default": "GBP"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "offer_card_names",
+    "wanted_card_names"
+  ]
+}

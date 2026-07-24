@@ -1,0 +1,22 @@
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import LeftNav from '@/components/LeftNav';
+import RightSidebar from '@/components/RightSidebar';
+import MobileNav from '@/components/MobileNav';
+
+export default function Layout() {
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-[1400px]">
+      <div className="hidden w-[72px] shrink-0 md:block xl:w-[240px]">
+        <LeftNav />
+      </div>
+      <main className="min-w-0 flex-1 border-x border-border pb-20 md:pb-0">
+        <Outlet />
+      </main>
+      <div className="hidden w-80 shrink-0 lg:block">
+        <RightSidebar />
+      </div>
+      <MobileNav />
+    </div>
+  );
+}

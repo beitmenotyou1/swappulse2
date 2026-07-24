@@ -1,0 +1,33 @@
+{
+  "name": "Wishlist",
+  "type": "object",
+  "title": "Wishlist",
+  "properties": {
+    "card_id": {
+      "type": "string"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "max_price": {
+      "type": "number",
+      "description": "Max willing to pay in pence"
+    }
+  },
+  "required": [
+    "card_id",
+    "card_name"
+  ]
+}

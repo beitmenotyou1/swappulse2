@@ -1,0 +1,66 @@
+{
+  "name": "Post",
+  "type": "object",
+  "title": "Post",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "The text body of the post",
+      "maxLength": 500
+    },
+    "post_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "pack_opening",
+        "trade",
+        "showcase"
+      ],
+      "default": "text"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id when a card is attached"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "card_rarity": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "likes": {
+      "type": "integer",
+      "default": 0
+    },
+    "reposts": {
+      "type": "integer",
+      "default": 0
+    },
+    "replies": {
+      "type": "integer",
+      "default": 0
+    },
+    "reply_to": {
+      "type": "string",
+      "description": "Post id this is a reply to"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}

@@ -1,11 +1,26 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Layout from '@/components/Layout';
+import Home from '@/pages/Home';
+import Explore from '@/pages/Explore';
+import CardDetail from '@/pages/CardDetail';
+import Collection from '@/pages/Collection';
+import TradeBoard from '@/pages/TradeBoard';
+import Profile from '@/pages/Profile';
+import PackOpenings from '@/pages/PackOpenings';
+import MarketWatch from '@/pages/MarketWatch';
+import Compose from '@/pages/Compose';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -34,7 +49,28 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/compose" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<Layout />}>
+          <Route index element={<Compose />} />
+        </Route>
+      </Route>
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/card/:cardId" element={<CardDetail />} />
+          <Route path="/set/:setId" element={<Explore />} />
+          <Route path="/collection" element={<Collection />} />
+          <Route path="/trades" element={<TradeBoard />} />
+          <Route path="/packs" element={<PackOpenings />} />
+          <Route path="/market" element={<MarketWatch />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

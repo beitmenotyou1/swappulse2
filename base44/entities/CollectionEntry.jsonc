@@ -1,0 +1,73 @@
+{
+  "name": "CollectionEntry",
+  "type": "object",
+  "title": "CollectionEntry",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "local_id": {
+      "type": "string",
+      "description": "Card number within set"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "mint",
+        "near_mint",
+        "excellent",
+        "good",
+        "damaged"
+      ],
+      "default": "near_mint"
+    },
+    "variant": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "holo",
+        "reverse_holo"
+      ],
+      "default": "normal"
+    },
+    "acquisition_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "purchase_price": {
+      "type": "number",
+      "description": "Purchase price in pence"
+    },
+    "market_value": {
+      "type": "number",
+      "description": "Current estimated market value in pence"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "card_id",
+    "card_name"
+  ]
+}
