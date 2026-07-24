@@ -1,21 +1,17 @@
 import React from 'react';
+import { Image } from '@/components/ui/image';
+
+const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/fc2637b08_screen.png';
 
 export default function Logo({ size = 32, withText = false }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div
-        className="relative grid place-items-center rounded-xl font-extrabold text-white shadow-lg shadow-primary/30"
-        style={{
-          width: size,
-          height: size,
-          background: 'linear-gradient(135deg, hsl(215 90% 58%), hsl(276 75% 62%))',
-          fontSize: size * 0.42,
-        }}
-      >
-        SP
-        <span
-          className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent"
-          style={{ boxShadow: '0 0 8px hsl(45 96% 54%)' }}
+      <div className="relative shrink-0 overflow-hidden rounded-xl" style={{ width: size, height: size }}>
+        <Image
+          src={LOGO_URL}
+          alt="SwapPulse logo"
+          fittingType="fit"
+          className="h-full w-full object-contain"
         />
       </div>
       {withText && (
