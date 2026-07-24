@@ -1,0 +1,74 @@
+{
+  "name": "CardPricing",
+  "type": "object",
+  "title": "CardPricing",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "tcgplayer",
+        "cardmarket"
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "description": "Currency code from TCGDex (e.g. USD, EUR)"
+    },
+    "avg": {
+      "type": "number",
+      "description": "Average selling price"
+    },
+    "low": {
+      "type": "number",
+      "description": "Lowest market price"
+    },
+    "trend": {
+      "type": "number",
+      "description": "Trend price"
+    },
+    "avg1": {
+      "type": "number",
+      "description": "Average last 24h"
+    },
+    "avg7": {
+      "type": "number",
+      "description": "Average last 7 days"
+    },
+    "avg30": {
+      "type": "number",
+      "description": "Average last 30 days"
+    },
+    "normal_market": {
+      "type": "number"
+    },
+    "normal_low": {
+      "type": "number"
+    },
+    "normal_avg": {
+      "type": "number"
+    },
+    "holofoil_market": {
+      "type": "number"
+    },
+    "holofoil_low": {
+      "type": "number"
+    },
+    "holofoil_avg": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "card_id",
+    "source"
+  ]
+}

@@ -47,6 +47,31 @@ export async function getSeries() {
   return res.data?.data ?? [];
 }
 
+export async function getCategories() {
+  const res = await base44.functions.invoke('tcgdex', { action: 'getCategories' });
+  return res.data?.data ?? [];
+}
+
+export async function getRarities() {
+  const res = await base44.functions.invoke('tcgdex', { action: 'getRarities' });
+  return res.data?.data ?? [];
+}
+
+export async function getIllustrators() {
+  const res = await base44.functions.invoke('tcgdex', { action: 'getIllustrators' });
+  return res.data?.data ?? [];
+}
+
+export async function getVariants() {
+  const res = await base44.functions.invoke('tcgdex', { action: 'getVariants' });
+  return res.data?.data ?? [];
+}
+
+export async function getTypes() {
+  const res = await base44.functions.invoke('tcgdex', { action: 'getTypes' });
+  return res.data?.data ?? [];
+}
+
 export function rarityKey(rarityStr) {
   if (!rarityStr) return 'common';
   const r = rarityStr.toLowerCase();

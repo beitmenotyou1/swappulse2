@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/30 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Refreshes TCGDex market prices for tracked (owned / wishlisted / open-trade) cards every 30 minutes",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "pricing_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncPricing"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sync card prices",
+            "description": "TCGDex pricing refresh"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Pricing Sync"
+}
