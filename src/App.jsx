@@ -16,6 +16,7 @@ import TradeBoard from '@/pages/TradeBoard';
 import Profile from '@/pages/Profile';
 import PackOpenings from '@/pages/PackOpenings';
 import MarketWatch from '@/pages/MarketWatch';
+import Share from '@/pages/Share';
 import Compose from '@/pages/Compose';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
           <Route path="/trades" element={<TradeBoard />} />
           <Route path="/packs" element={<PackOpenings />} />
           <Route path="/market" element={<MarketWatch />} />
+          <Route path="/share" element={<Share />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>

@@ -7,6 +7,10 @@
         "admin",
         "user"
       ]
+    },
+    "push_subscription": {
+      "type": "string",
+      "description": "Serialized PushSubscription JSON for Web Push notifications"
     }
   },
   "required": [

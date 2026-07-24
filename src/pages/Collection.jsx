@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Loader2, Plus, Trash2, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { deleteEntry, updateEntry, bulkUpdateEntries } from '@/lib/offlineSync';
 import PageHeader from '@/components/PageHeader';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
@@ -54,7 +55,7 @@ export default function Collection() {
   }, []);
 
   const remove = async (id) => {
-    await base44.entities.CollectionEntry.delete(id);
+    await deleteEntry(id);
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
@@ -65,7 +66,7 @@ export default function Collection() {
       alert(`Your ${gridSize} binder is full. Switch to 9×9 or remove a card.`);
       return;
     }
-    await base44.entities.CollectionEntry.update(item.id, {
+    await updateEntry(item.id, {
       showcased,
       binder_index: showcased ? binderCount : 0,
     });
@@ -80,7 +81,7 @@ export default function Collection() {
       return [...reordered, ...others];
     });
     try {
-      await base44.entities.CollectionEntry.bulkUpdate(
+      await bulkUpdateEntries(
         newOrder.map((i, idx) => ({ id: i.id, binder_index: idx }))
       );
     } catch (e) {

@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { createEntry } from '@/lib/offlineSync';
 
 export default function AddToCollectionModal({ open, onClose, card }) {
   const [condition, setCondition] = useState('near_mint');
@@ -33,7 +34,7 @@ export default function AddToCollectionModal({ open, onClose, card }) {
         purchase_price: price ? Math.round(parseFloat(price) * 100) : null,
         notes,
       }, NSID.COLLECTION_ENTRY, did, signingKey);
-      await base44.entities.CollectionEntry.create(stamped);
+      await createEntry(stamped);
       onClose();
       setPrice('');
       setNotes('');

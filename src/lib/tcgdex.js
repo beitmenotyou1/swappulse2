@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { idbGet, idbPut } from '@/lib/offlineDB';
 
 const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 
@@ -9,67 +10,89 @@ export function cardImageUrl(imageField, quality = 'high', extension = 'webp') {
   return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
 }
 
+// Write-through catalog cache + offline fallback (§8 Layer 2).
+async function cached(key, fetcher) {
+  try {
+    const data = await fetcher();
+    await idbPut('catalog', key, data).catch(() => {});
+    return data;
+  } catch (e) {
+    const hit = await idbGet('catalog', key).catch(() => undefined);
+    if (hit) return hit;
+    throw e;
+  }
+}
+
 export async function searchCards(query, { page = 1, perPage = 24, setName, rarity } = {}) {
-  const res = await base44.functions.invoke('tcgdex', {
-    action: 'search',
-    query,
-    page,
-    perPage,
-    setName,
-    rarity,
+  return cached(`search:${query}:${page}:${perPage}:${setName || ''}:${rarity || ''}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', {
+      action: 'search', query, page, perPage, setName, rarity,
+    });
+    return res.data?.data ?? [];
   });
-  return res.data?.data ?? [];
 }
 
 export async function getCard(cardId) {
-  const res = await base44.functions.invoke('tcgdex', {
-    action: 'getCard',
-    cardId,
+  return cached(`card:${cardId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getCard', cardId });
+    return res.data?.data ?? null;
   });
-  return res.data?.data ?? null;
 }
 
 export async function getSets() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getSets' });
-  return res.data?.data ?? [];
+  return cached('sets', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSets' });
+    return res.data?.data ?? [];
+  });
 }
 
 export async function getSet(setId) {
-  const res = await base44.functions.invoke('tcgdex', {
-    action: 'getSet',
-    setId,
+  return cached(`set:${setId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSet', setId });
+    return res.data?.data ?? null;
   });
-  return res.data?.data ?? null;
 }
 
 export async function getSeries() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getSeries' });
-  return res.data?.data ?? [];
+  return cached('series', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSeries' });
+    return res.data?.data ?? [];
+  });
 }
 
 export async function getCategories() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getCategories' });
-  return res.data?.data ?? [];
+  return cached('categories', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getCategories' });
+    return res.data?.data ?? [];
+  });
 }
 
 export async function getRarities() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getRarities' });
-  return res.data?.data ?? [];
+  return cached('rarities', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getRarities' });
+    return res.data?.data ?? [];
+  });
 }
 
 export async function getIllustrators() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getIllustrators' });
-  return res.data?.data ?? [];
+  return cached('illustrators', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getIllustrators' });
+    return res.data?.data ?? [];
+  });
 }
 
 export async function getVariants() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getVariants' });
-  return res.data?.data ?? [];
+  return cached('variants', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getVariants' });
+    return res.data?.data ?? [];
+  });
 }
 
 export async function getTypes() {
-  const res = await base44.functions.invoke('tcgdex', { action: 'getTypes' });
-  return res.data?.data ?? [];
+  return cached('types', async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getTypes' });
+    return res.data?.data ?? [];
+  });
 }
 
 export function rarityKey(rarityStr) {

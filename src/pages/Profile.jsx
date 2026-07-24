@@ -8,6 +8,7 @@ import PostCard from '@/components/feed/PostCard';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
 import { ensureUserDid } from '@/lib/atproto';
+import NotificationToggle from '@/components/pwa/NotificationToggle';
 
 const TABS = ['Posts', 'Binder', 'Collection', 'Trades'];
 
@@ -100,6 +101,7 @@ export default function Profile() {
             </div>
           )}
 
+          <div className="mt-3"><NotificationToggle /></div>
           <div className="mt-3 flex gap-4 text-sm">
             <span><b>{myPosts.length}</b> <span className="text-muted-foreground">Posts</span></span>
             <span><b>{myCollection.length}</b> <span className="text-muted-foreground">Cards</span></span>
