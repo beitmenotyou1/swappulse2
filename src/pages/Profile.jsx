@@ -11,8 +11,9 @@ import { ensureUserDid } from '@/lib/atproto';
 import NotificationToggle from '@/components/pwa/NotificationToggle';
 import DataPrivacy from '@/components/profile/DataPrivacy';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
+import JournalsTab from '@/components/profile/JournalsTab';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Privacy'];
+const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -22,29 +23,33 @@ export default function Profile() {
   const [trades, setTrades] = useState([]);
   const [did, setDid] = useState('');
   const [reputation, setReputation] = useState([]);
+  const [journals, setJournals] = useState([]);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { did: myDid } = await ensureUserDid();
-        setDid(myDid);
-        const [p, c, t, r] = await Promise.all([
-          base44.entities.Post.filter({}, '-created_date', 50),
-          base44.entities.CollectionEntry.list('-updated_date', 100),
-          base44.entities.TradeListing.filter({}, '-created_date', 20),
-          base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
-        ]);
-        setPosts(p);
-        setCollection(c);
-        setTrades(t);
-        setReputation(r);
-      } catch {} finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { did: myDid } = await ensureUserDid();
+      setDid(myDid);
+      const [p, c, t, r, j] = await Promise.all([
+        base44.entities.Post.filter({}, '-created_date', 50),
+        base44.entities.CollectionEntry.list('-updated_date', 100),
+        base44.entities.TradeListing.filter({}, '-created_date', 20),
+        base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
+        base44.entities.Journal.filter({}, '-created_date', 50),
+      ]);
+      setPosts(p);
+      setCollection(c);
+      setTrades(t);
+      setReputation(r);
+      setJournals(j);
+    } catch {} finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
 
   const repAvg = reputation.length
     ? (reputation.reduce((s, r) => s + (r.rating || 0), 0) / reputation.length).toFixed(1)
@@ -59,6 +64,7 @@ export default function Profile() {
   const myPosts = posts.filter((p) => p.author_name === user?.full_name);
   const myCollection = collection;
   const myTrades = trades.filter((t) => t.author_name === user?.full_name || t.author_name === '');
+  const myJournals = journals.filter((j) => j.did === did || j.author_name === user?.full_name);
   const portfolioValue = myCollection.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const binderCards = myCollection.slice(0, 9);
 
@@ -168,6 +174,8 @@ export default function Profile() {
               </Link>
             ))}
           </div>
+        ) : tab === 'Journals' ? (
+          <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
         ) : (
           <div className="p-4 space-y-4">
             <WeeklyDigestToggle />
