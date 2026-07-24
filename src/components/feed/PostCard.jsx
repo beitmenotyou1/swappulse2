@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import ReactionBar from '@/components/feed/ReactionBar';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { timeAgo, formatNumber } from '@/lib/format';
 
@@ -10,7 +11,7 @@ const TYPE_META = {
   showcase: { icon: ImageIcon, label: 'Showcase', color: 'text-rarity-holo' },
 };
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, reactions }) {
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -88,6 +89,7 @@ export default function PostCard({ post }) {
               <Share2 className="h-4 w-4" />
             </button>
           </div>
+          <ReactionBar post={post} initial={reactions} />
         </div>
       </div>
     </article>

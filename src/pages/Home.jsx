@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ComposeBox from '@/components/feed/ComposeBox';
 import PostCard from '@/components/feed/PostCard';
+import TradeInterestBanner from '@/components/feed/TradeInterestBanner';
 import CardOfTheDay from '@/components/home/CardOfTheDay';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
@@ -17,6 +18,7 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
+  const [reactionsMap, setReactionsMap] = useState({});
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -40,6 +42,22 @@ export default function Home() {
   }, []);
   useRealtimeEvent('feed.new_post', prepend);
   useRealtimeEvent('feed.new_pull', prepend);
+
+  // §2.5 fetch aggregated reactions for the loaded posts.
+  useEffect(() => {
+    if (!posts.length) {
+      setReactionsMap({});
+      return;
+    }
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('getReactions', { postIds: posts.map((p) => p.id) });
+        setReactionsMap(res.data?.reactions || {});
+      } catch {
+        setReactionsMap({});
+      }
+    })();
+  }, [posts]);
 
   const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
 
@@ -68,6 +86,8 @@ export default function Home() {
 
       <ComposeBox onPosted={loadPosts} />
 
+      <TradeInterestBanner />
+
       {loading ? (
         <div className="flex justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -80,7 +100,7 @@ export default function Home() {
       ) : (
         <div className="animate-fade-in">
           {filtered.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} />
           ))}
         </div>
       )}
