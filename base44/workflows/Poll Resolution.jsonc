@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Resolves expired market sentiment polls every hour by comparing each card's current price to its creation price",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "poll_resolution",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "resolve": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "resolveSentimentPolls"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Resolve expired polls",
+            "description": "Mark creator predictions correct / incorrect"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Poll Resolution"
+}
