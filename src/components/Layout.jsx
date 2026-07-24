@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import LeftNav from '@/components/LeftNav';
 import RightSidebar from '@/components/RightSidebar';
 import MobileNav from '@/components/MobileNav';
+import RealtimeToaster from '@/components/RealtimeToaster';
 
 export default function Layout() {
   return (
@@ -17,6 +18,7 @@ export default function Layout() {
         <RightSidebar />
       </div>
       <MobileNav />
+      <RealtimeToaster />
     </div>
   );
 }

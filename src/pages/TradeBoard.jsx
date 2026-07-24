@@ -6,6 +6,7 @@ import CardSearchModal from '@/components/cards/CardSearchModal';
 import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
+import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
 export default function TradeBoard() {
   const [listings, setListings] = useState([]);
@@ -24,6 +25,19 @@ export default function TradeBoard() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // §9.1 live board: append new open listings, update/remove on status change.
+  useRealtimeEvent('trade.new_listing', (t) => {
+    if (t.status !== 'open') return;
+    setListings((prev) => (prev.some((x) => x.id === t.id) ? prev : [t, ...prev]));
+  });
+  useRealtimeEvent('trade.status_update', (t) => {
+    setListings((prev) => {
+      if (!prev.some((x) => x.id === t.id)) return prev;
+      if (t.status === 'open') return prev.map((x) => (x.id === t.id ? t : x));
+      return prev.filter((x) => x.id !== t.id);
+    });
+  });
 
   return (
     <div>

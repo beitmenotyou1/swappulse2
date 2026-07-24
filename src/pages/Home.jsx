@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ComposeBox from '@/components/feed/ComposeBox';
 import PostCard from '@/components/feed/PostCard';
+import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
 const TABS = [
   { key: 'all', label: 'For You' },
@@ -31,6 +32,13 @@ export default function Home() {
   useEffect(() => {
     loadPosts();
   }, [loadPosts]);
+
+  // §9.1 live feed: prepend new posts / fresh pulls as they arrive.
+  const prepend = useCallback((post) => {
+    setPosts((prev) => (prev.some((p) => p.id === post.id) ? prev : [post, ...prev]));
+  }, []);
+  useRealtimeEvent('feed.new_post', prepend);
+  useRealtimeEvent('feed.new_pull', prepend);
 
   const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
 

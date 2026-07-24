@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
 import { replayOutbox } from '@/lib/offlineSync'
+import { initRealtime } from '@/lib/realtime'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
@@ -23,3 +24,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 window.addEventListener('online', () => { replayOutbox(); });
+
+// §9 Real-time: connect on load, manage lifecycle.
+initRealtime();
