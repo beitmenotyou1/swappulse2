@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Compass, Layers, ArrowLeftRight, BarChart3, Award, Plus } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const items = [
   { to: '/', icon: Home, label: 'Home' },
@@ -38,6 +39,7 @@ export default function MobileNav() {
             </Link>
           );
         })}
+        <ThemeToggle className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] font-medium text-muted-foreground h-auto w-auto rounded-lg hover:bg-transparent" />
       </nav>
     </>
   );

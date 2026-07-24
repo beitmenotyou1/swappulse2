@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, User as UserIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/lib/AuthContext';
 
 const navItems = [
@@ -46,6 +47,9 @@ export default function LeftNav() {
         ))}
       </div>
       <div className="mt-auto flex flex-col items-center gap-2 pt-4 xl:items-stretch">
+        <div className="flex justify-center xl:justify-start xl:px-3">
+          <ThemeToggle />
+        </div>
         <NavLink
           to="/profile"
           className="flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-secondary xl:pr-4"

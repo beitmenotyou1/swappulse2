@@ -52,29 +52,30 @@
   }
 
   .dark {
-    --background: 252 30% 8%;
-    --foreground: 228 33% 97%;
-    --card: 252 28% 12%;
-    --card-foreground: 228 33% 97%;
-    --popover: 252 26% 18%;
-    --popover-foreground: 228 33% 97%;
+    /* Midnight Vault — restored previous dark theme */
+    --background: 226 47% 9%;
+    --foreground: 210 40% 96%;
+    --card: 226 42% 12%;
+    --card-foreground: 210 40% 96%;
+    --popover: 226 42% 14%;
+    --popover-foreground: 210 40% 96%;
     --primary: 252 100% 68%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 252 24% 18%;
-    --secondary-foreground: 228 33% 97%;
-    --muted: 252 24% 16%;
-    --muted-foreground: 228 16% 70%;
-    --accent: 45 96% 55%;
-    --accent-foreground: 252 30% 10%;
+    --secondary: 226 30% 18%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 226 30% 14%;
+    --muted-foreground: 215 25% 65%;
+    --accent: 45 96% 56%;
+    --accent-foreground: 226 47% 9%;
     --success: 160 84% 45%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 55%;
-    --warning-foreground: 252 30% 10%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 226 47% 9%;
     --destructive: 0 84% 64%;
     --destructive-foreground: 0 0% 100%;
-    --border: 252 24% 16%;
-    --border-strong: 252 20% 28%;
-    --input: 252 20% 28%;
+    --border: 226 25% 20%;
+    --border-strong: 226 25% 28%;
+    --input: 226 25% 24%;
     --ring: 252 100% 68%;
   }
 }

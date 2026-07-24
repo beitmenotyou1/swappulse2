@@ -5,6 +5,12 @@ import '@/index.css'
 import { replayOutbox } from '@/lib/offlineSync'
 import { initRealtime } from '@/lib/realtime'
 
+try {
+  if (localStorage.getItem('swappulse-theme') !== 'light') {
+    document.documentElement.classList.add('dark');
+  }
+} catch (e) { /* ignore */ }
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )
