@@ -32,6 +32,8 @@ import Trust from '@/pages/Trust';
 import Predictions from '@/pages/Predictions';
 import Circles from '@/pages/Circles';
 import CircleDetail from '@/pages/CircleDetail';
+import Meetups from '@/pages/Meetups';
+import MeetupDetail from '@/pages/MeetupDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -89,6 +91,8 @@ const AuthenticatedApp = () => {
           <Route path="/trust" element={<Trust />} />
           <Route path="/circles" element={<Circles />} />
           <Route path="/circles/:circleId" element={<CircleDetail />} />
+          <Route path="/meetups" element={<Meetups />} />
+          <Route path="/meetups/:meetupId" element={<MeetupDetail />} />
           <Route path="/predictions" element={<Predictions />} />
         </Route>
       </Route>
