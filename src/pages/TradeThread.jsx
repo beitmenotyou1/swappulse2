@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
+import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
 
 // Live negotiation thread for a trade listing — §9.1 trade.message consumer.
 export default function TradeThread() {
@@ -93,6 +94,9 @@ export default function TradeThread() {
               <Avatar name={trade.author_name} src={trade.author_avatar} size={32} />
               <span className="text-sm font-semibold">{trade.author_name || 'Collector'}</span>
               <span className="text-xs text-muted-foreground">· {TRADE_STATUS_LABELS[trade.status] || trade.status}</span>
+            </div>
+            <div className="mt-3">
+              <TradeFairnessCalculator trade={trade} />
             </div>
           </div>
 
