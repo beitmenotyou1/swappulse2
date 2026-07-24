@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/format';
 import { ensureUserDid } from '@/lib/atproto';
 import NotificationToggle from '@/components/pwa/NotificationToggle';
 import DataPrivacy from '@/components/profile/DataPrivacy';
+import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 
 const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Privacy'];
 
@@ -168,7 +169,10 @@ export default function Profile() {
             ))}
           </div>
         ) : (
-          <div className="p-4"><DataPrivacy /></div>
+          <div className="p-4 space-y-4">
+            <WeeklyDigestToggle />
+            <DataPrivacy />
+          </div>
         )}
       </div>
     </div>
