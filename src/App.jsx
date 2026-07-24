@@ -30,6 +30,8 @@ import BinderEdit from '@/pages/BinderEdit';
 import BinderDetail from '@/pages/BinderDetail';
 import Trust from '@/pages/Trust';
 import Predictions from '@/pages/Predictions';
+import Circles from '@/pages/Circles';
+import CircleDetail from '@/pages/CircleDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -85,6 +87,8 @@ const AuthenticatedApp = () => {
           <Route path="/binder/:binderId" element={<BinderDetail />} />
           <Route path="/binder/:binderId/edit" element={<BinderEdit />} />
           <Route path="/trust" element={<Trust />} />
+          <Route path="/circles" element={<Circles />} />
+          <Route path="/circles/:circleId" element={<CircleDetail />} />
           <Route path="/predictions" element={<Predictions />} />
         </Route>
       </Route>

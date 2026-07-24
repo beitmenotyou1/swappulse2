@@ -13,6 +13,7 @@ export default function TradeBoard() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [myCircleUris, setMyCircleUris] = useState(new Set());
 
   const load = async () => {
     setLoading(true);
@@ -27,6 +28,18 @@ export default function TradeBoard() {
 
   useEffect(() => { load(); }, []);
 
+  // §2.7 circle-scoped trades are only visible to members of the referenced circle.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('getMyCircles', {});
+        setMyCircleUris(new Set((res.data?.circles || []).map((c) => c.at_uri).filter(Boolean)));
+      } catch {
+        setMyCircleUris(new Set());
+      }
+    })();
+  }, []);
+
   // §9.1 live board: append new open listings, update/remove on status change.
   useRealtimeEvent('trade.new_listing', (t) => {
     if (t.status !== 'open') return;
@@ -40,6 +53,8 @@ export default function TradeBoard() {
     });
   });
 
+  const visibleListings = listings.filter((t) => t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref));
+
   return (
     <div>
       <PageHeader title="Trade Board" subtitle="Open trade listings">
@@ -50,7 +65,7 @@ export default function TradeBoard() {
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-      ) : listings.length === 0 ? (
+      ) : visibleListings.length === 0 ? (
         <div className="px-4 py-20 text-center">
           <ArrowLeftRight className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
           <p className="text-lg font-bold">No active trades</p>
@@ -58,7 +73,7 @@ export default function TradeBoard() {
         </div>
       ) : (
         <div className="p-4 space-y-3">
-          {listings.map((t) => (
+          {visibleListings.map((t) => (
             <div key={t.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-center gap-2">
                 <Avatar name={t.author_name} src={t.author_avatar} size={32} />
