@@ -17,12 +17,17 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    if (!ageConfirmed) {
+      setError("Please confirm you are 13 or older to create an account.");
       return;
     }
     setLoading(true);
@@ -186,10 +191,20 @@ export default function Register() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
               required
-            />
-          </div>
-        </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+              />
+              </div>
+              </div>
+              <label className="flex items-start gap-2 text-sm text-muted-foreground">
+              <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-border"
+              required
+              />
+              <span>I confirm I am 13 or older and agree to SwapPulse's terms (under-16s need a parent or guardian's consent).</span>
+              </label>
+              <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

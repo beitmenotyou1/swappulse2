@@ -9,8 +9,9 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
 import { ensureUserDid } from '@/lib/atproto';
 import NotificationToggle from '@/components/pwa/NotificationToggle';
+import DataPrivacy from '@/components/profile/DataPrivacy';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades'];
+const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -155,7 +156,7 @@ export default function Profile() {
               ))}
             </div>
           </div>
-        ) : (
+        ) : tab === 'Trades' ? (
           <div className="p-4 space-y-2">
             {myTrades.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">No trade listings yet.</p>
@@ -166,6 +167,8 @@ export default function Profile() {
               </Link>
             ))}
           </div>
+        ) : (
+          <div className="p-4"><DataPrivacy /></div>
         )}
       </div>
     </div>
