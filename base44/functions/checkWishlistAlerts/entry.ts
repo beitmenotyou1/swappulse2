@@ -15,8 +15,13 @@ Deno.serve(async (req) => {
 
     const publicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const privateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-    const pushReady = !!(publicKey && privateKey);
-    if (pushReady) webPush.setVapidDetails('mailto:support@swappulse.org', publicKey, privateKey);
+    let pushReady = false;
+    try {
+      if (publicKey && privateKey) {
+        webPush.setVapidDetails('mailto:support@swappulse.org', publicKey, privateKey);
+        pushReady = true;
+      }
+    } catch { /* VAPID keys not yet valid — email alerts still work */ }
 
     const searches = await svc.entities.SavedSearch.list('-updated_date', 500);
     const pricing = await svc.entities.CardPricing.list('-updated_date', 500);
