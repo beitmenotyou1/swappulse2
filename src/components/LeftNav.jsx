@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, User as UserIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, User as UserIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/explore', icon: Compass, label: 'Explore' },
   { to: '/collection', icon: Layers, label: 'Collection' },
   { to: '/binders', icon: BookOpen, label: 'Binders' },
+  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
   { to: '/packs', icon: Package, label: 'Pack Openings' },
   { to: '/market', icon: BarChart3, label: 'Market Watch' },
