@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Plus, Trash2, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3 } from 'lucide-react';
+import { Loader2, Plus, Trash2, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { deleteEntry, updateEntry, bulkUpdateEntries } from '@/lib/offlineSync';
@@ -9,9 +9,11 @@ import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
 import BinderGrid from '@/components/binder/BinderGrid';
 import CollectionAnalytics from '@/components/collection/CollectionAnalytics';
 import BulkImportExport from '@/components/collection/BulkImportExport';
+import DuplicatesTab from '@/components/collection/DuplicatesTab';
 
 const TABS = [
   { id: 'cards', label: 'All Cards', icon: LayoutGrid },
+  { id: 'duplicates', label: 'Duplicates', icon: Layers },
   { id: 'binder', label: 'Binder', icon: Star },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'import', label: 'Import / Export', icon: ArrowUpDown },
@@ -203,6 +205,12 @@ export default function Collection() {
             onTogglePublic={() => setBinderSetting('binder_public', !binderPublic)}
           />
         </div>
+      )}
+
+      {tab === 'duplicates' && (
+        loading ? (
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        ) : <DuplicatesTab items={items} />
       )}
 
       {tab === 'analytics' && (
