@@ -25,6 +25,18 @@ export const NSID = {
   PACK_OPENING: 'org.swappulse.packOpening',
   REPUTATION: 'org.swappulse.reputation',
   MODERATION_LABEL: 'org.swappulse.moderationLabel',
+  // Alpha 1.1 record lexicons
+  ACHIEVEMENT: 'org.swappulse.achievement',
+  TRADING_FEEDBACK: 'org.swappulse.tradingFeedback',
+  GRADING_SUBMISSION: 'org.swappulse.gradingSubmission',
+  DOCUMENT: 'org.swappulse.document',
+  TRADE_CHAIN: 'org.swappulse.tradeChain',
+  SAVED_SEARCH: 'org.swappulse.savedSearch',
+  NOMINATION: 'org.swappulse.nomination',
+  CARD_REVIEW: 'org.swappulse.cardReview',
+  CHALLENGE: 'org.swappulse.challenge',
+  CHALLENGE_ENTRY: 'org.swappulse.challengeEntry',
+  SCANNER_CORRECTION: 'org.swappulse.scannerCorrection',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.fresh-pulls',
@@ -32,6 +44,17 @@ export const NSID = {
     MARKET_WATCH: 'org.swappulse.market-watch',
     SHINY_HUNTERS: 'org.swappulse.shiny-hunters',
     BUDGET_BUILDS: 'org.swappulse.budget-builds',
+    SMART_BUNDLES: 'org.swappulse.smart-bundles',
+    CARD_OF_DAY: 'org.swappulse.card-of-day',
+    SPOILERS: 'org.swappulse.spoilers',
+    LEADERBOARD: 'org.swappulse.leaderboard',
+  },
+  // Custom labeler (simulated Ozone)
+  LABELER_DID: 'did:web:labeler.swappulse.org',
+  LABELS: {
+    PERSONA: ['shiny-hunter', 'set-completer', 'competitive-player', 'investment-collector', 'vintage-specialist', 'artist-collector', 'sealed-collector'],
+    PRIVACY: ['collection-public', 'collection-showcase', 'value-hidden', 'collection-private'],
+    CONTENT: ['grading-reference', 'spoiler', 'verified-pull'],
   },
   // Custom XRPC endpoints
   XRPC: {

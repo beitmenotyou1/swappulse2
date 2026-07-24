@@ -1,0 +1,61 @@
+{
+  "name": "Achievement",
+  "type": "object",
+  "title": "Achievement",
+  "properties": {
+    "achievement_type": {
+      "type": "string",
+      "enum": [
+        "set_completion_25",
+        "set_completion_50",
+        "set_completion_75",
+        "set_completion_100",
+        "first_trade",
+        "ten_trades",
+        "fifty_trades",
+        "hundred_trades",
+        "first_shiny",
+        "ten_shinies",
+        "fifty_shinies",
+        "scanner_contributor",
+        "challenge_winner"
+      ]
+    },
+    "related_uri": {
+      "type": "string",
+      "description": "at:// URI of the linked record (set, trade, card)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Achievement-specific data"
+    },
+    "unlocked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who unlocked it (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the record to the user's signing key (simulated)"
+    }
+  },
+  "required": [
+    "achievement_type",
+    "unlocked_at"
+  ]
+}

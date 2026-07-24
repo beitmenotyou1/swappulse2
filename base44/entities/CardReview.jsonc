@@ -1,0 +1,83 @@
+{
+  "name": "CardReview",
+  "type": "object",
+  "title": "CardReview",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id / cardUri"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "artwork": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "playability": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "collectibility": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "investment": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "review_text": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "variant": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "holo",
+        "reverse_holo"
+      ],
+      "default": "normal"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the reviewer (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the review to the reviewer's signing key (simulated)"
+    }
+  },
+  "required": [
+    "card_id",
+    "artwork",
+    "playability",
+    "collectibility",
+    "investment"
+  ]
+}

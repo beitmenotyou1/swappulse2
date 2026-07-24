@@ -1,0 +1,66 @@
+{
+  "name": "TradingFeedback",
+  "type": "object",
+  "title": "TradingFeedback",
+  "properties": {
+    "trade_uri": {
+      "type": "string",
+      "description": "at:// URI of the completed trade listing"
+    },
+    "trade_id": {
+      "type": "string",
+      "description": "TradeListing id this feedback covers"
+    },
+    "rated_user_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the trader being rated"
+    },
+    "rater_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the rater"
+    },
+    "rater_name": {
+      "type": "string"
+    },
+    "rater_handle": {
+      "type": "string"
+    },
+    "rater_avatar": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "comment": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the rater (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the feedback to the rater's signing key (simulated)"
+    }
+  },
+  "required": [
+    "trade_uri",
+    "rated_user_did",
+    "rating"
+  ]
+}

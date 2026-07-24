@@ -1,0 +1,84 @@
+{
+  "name": "ChallengeEntry",
+  "type": "object",
+  "title": "ChallengeEntry",
+  "properties": {
+    "challenge_id": {
+      "type": "string",
+      "description": "Challenge id this entry belongs to"
+    },
+    "challenge_ref": {
+      "type": "string",
+      "description": "at:// strongRef of the challenge"
+    },
+    "participant_did": {
+      "type": "string"
+    },
+    "participant_name": {
+      "type": "string"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "set_progress",
+        "deck_list",
+        "card_pull",
+        "collection_value"
+      ]
+    },
+    "set_completion_percent": {
+      "type": "number"
+    },
+    "pull_post_uri": {
+      "type": "string"
+    },
+    "collection_total_value": {
+      "type": "number"
+    },
+    "deck_list": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          }
+        }
+      }
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the participant (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the entry to the participant's signing key (simulated)"
+    }
+  },
+  "required": [
+    "challenge_id",
+    "entry_type",
+    "submitted_at"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "name": "ScannerCorrection",
+  "type": "object",
+  "title": "ScannerCorrection",
+  "properties": {
+    "original_scan_uri": {
+      "type": "string",
+      "description": "URI of the original scanned image blob"
+    },
+    "original_prediction": {
+      "type": "object",
+      "description": "What the AI predicted"
+    },
+    "corrected_card_id": {
+      "type": "string",
+      "description": "TCGDex card id of the correct card"
+    },
+    "corrected_card_name": {
+      "type": "string"
+    },
+    "correction_type": {
+      "type": "string",
+      "enum": [
+        "wrong_card",
+        "wrong_variant",
+        "wrong_rarity",
+        "wrong_set"
+      ]
+    },
+    "corrected_by": {
+      "type": "string",
+      "description": "DID of the correcting user"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the corrector (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the correction to the corrector's signing key (simulated)"
+    }
+  },
+  "required": [
+    "original_scan_uri",
+    "corrected_card_id",
+    "correction_type"
+  ]
+}

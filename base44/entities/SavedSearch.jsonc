@@ -1,0 +1,74 @@
+{
+  "name": "SavedSearch",
+  "type": "object",
+  "title": "SavedSearch",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "set_code": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string"
+    },
+    "variant": {
+      "type": "string"
+    },
+    "shipping_regions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_price": {
+      "type": "number",
+      "description": "Max price in pence"
+    },
+    "notify": {
+      "type": "string",
+      "enum": [
+        "push",
+        "in_app",
+        "both",
+        "none"
+      ],
+      "default": "in_app"
+    },
+    "last_triggered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the search to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "name",
+    "notify"
+  ]
+}

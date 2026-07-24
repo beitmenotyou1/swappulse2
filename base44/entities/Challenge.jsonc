@@ -1,0 +1,96 @@
+{
+  "name": "Challenge",
+  "type": "object",
+  "title": "Challenge",
+  "properties": {
+    "challenge_type": {
+      "type": "string",
+      "enum": [
+        "set_sprint",
+        "budget_deck",
+        "pull_of_week",
+        "community_goal"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "rules": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "target_set_code": {
+      "type": "string"
+    },
+    "budget_limit": {
+      "type": "number",
+      "description": "Budget limit in pence"
+    },
+    "reward_badge": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "starts_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ends_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "voting_ends_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "active",
+        "voting",
+        "completed",
+        "cancelled"
+      ],
+      "default": "upcoming"
+    },
+    "winner_dids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the challenge publisher (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the challenge to the publisher's signing key (simulated)"
+    }
+  },
+  "required": [
+    "challenge_type",
+    "title",
+    "status"
+  ]
+}

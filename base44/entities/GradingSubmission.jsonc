@@ -1,0 +1,84 @@
+{
+  "name": "GradingSubmission",
+  "type": "object",
+  "title": "GradingSubmission",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id / cardUri"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "service": {
+      "type": "string",
+      "enum": [
+        "psa",
+        "bgs",
+        "cgc",
+        "ace"
+      ]
+    },
+    "tracking_number": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "in_progress",
+        "graded",
+        "returned",
+        "rejected"
+      ],
+      "default": "submitted"
+    },
+    "declared_value": {
+      "type": "number",
+      "description": "Declared value in pence"
+    },
+    "received_grade": {
+      "type": "string",
+      "maxLength": 20,
+      "description": "e.g. 'PSA 10'"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expected_return": {
+      "type": "string",
+      "format": "date"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the submission to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "card_id",
+    "service",
+    "status"
+  ]
+}

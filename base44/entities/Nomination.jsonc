@@ -1,0 +1,51 @@
+{
+  "name": "Nomination",
+  "type": "object",
+  "title": "Nomination",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id / cardUri"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 280
+    },
+    "nominator_name": {
+      "type": "string"
+    },
+    "nominator_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the nominator (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the nomination to the nominator's signing key (simulated)"
+    }
+  },
+  "required": [
+    "card_id",
+    "reason"
+  ]
+}

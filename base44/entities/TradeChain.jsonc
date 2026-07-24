@@ -1,0 +1,101 @@
+{
+  "name": "TradeChain",
+  "type": "object",
+  "title": "TradeChain",
+  "properties": {
+    "participant_dids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DIDs of the 3-5 participants, in chain order"
+    },
+    "participant_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "shipsto_dids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Next participant each ships to"
+    },
+    "trade_listing_uris": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "shipping_confirmed": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "receipt_confirmed": {
+      "type": "array",
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "chain_order": {
+      "type": "string",
+      "enum": [
+        "clockwise",
+        "anticlockwise"
+      ],
+      "default": "clockwise"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "accepted",
+        "in_transit",
+        "completed",
+        "cancelled"
+      ],
+      "default": "proposed"
+    },
+    "total_value": {
+      "type": "number",
+      "description": "Combined value in pence"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the chain organiser (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the chain to the organiser's signing key (simulated)"
+    }
+  },
+  "required": [
+    "participant_dids",
+    "chain_order",
+    "status",
+    "total_value"
+  ]
+}
