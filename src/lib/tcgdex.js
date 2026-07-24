@@ -68,5 +68,13 @@ export function rarityClasses(rarityStr) {
     ex: 'text-rarity-ex',
     secret: 'text-rarity-secret',
   };
-  return { key, text: map[key] };
+  const glowMap = {
+    common: '',
+    uncommon: 'rarity-glow-uncommon',
+    rare: 'rarity-glow-rare',
+    holo: 'rarity-glow-holo',
+    ex: 'rarity-glow-ex',
+    secret: 'rarity-glow-secret',
+  };
+  return { key, text: map[key], glow: glowMap[key] };
 }

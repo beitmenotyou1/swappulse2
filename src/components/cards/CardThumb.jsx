@@ -4,7 +4,7 @@ import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 
 export default function CardThumb({ card, size = 'md' }) {
   const img = cardImageUrl(card.image);
-  const { text } = rarityClasses(card.rarity);
+  const { text, glow } = rarityClasses(card.rarity);
   const sizes = {
     sm: 'w-24',
     md: 'w-32',
@@ -13,7 +13,7 @@ export default function CardThumb({ card, size = 'md' }) {
   return (
     <Link
       to={`/card/${card.id}`}
-      className={`group block ${sizes[size]} shrink-0 overflow-hidden rounded-xl border border-border bg-secondary transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10`}
+      className={`group block ${sizes[size]} shrink-0 overflow-hidden rounded-xl border border-border bg-secondary transition-all hover:border-primary/50 ${glow}`}
     >
       <div className="aspect-[3/4] overflow-hidden bg-muted">
         {img ? (

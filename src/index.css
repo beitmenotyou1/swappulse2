@@ -6,37 +6,45 @@
 
 @layer base {
   :root {
-    /* SwapPulse dark theme (default) */
-    --background: 222 22% 7%;
-    --foreground: 215 25% 95%;
-    --card: 222 20% 9%;
-    --card-foreground: 215 25% 95%;
-    --popover: 222 22% 9%;
-    --popover-foreground: 215 25% 95%;
-    --primary: 215 90% 58%;
+    /* SwapPulse dark theme (default, primary) — §5.2 */
+    --background: 225 21% 8%;        /* Midnight Vault  #0F1117 */
+    --foreground: 228 33% 97%;       /* Clean White     #F5F6FA */
+    --card: 227 21% 13%;             /* Display Case    #1A1D28 */
+    --card-foreground: 228 33% 97%;
+    --popover: 229 19% 22%;          /* Spotlight       #2D3142 */
+    --popover-foreground: 228 33% 97%;
+    --primary: 217 91% 60%;          /* Pulse Blue      #3B82F6 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 16% 13%;
-    --secondary-foreground: 215 25% 95%;
-    --muted: 222 16% 13%;
-    --muted-foreground: 218 14% 56%;
-    --accent: 45 96% 54%;
-    --accent-foreground: 222 22% 7%;
-    --destructive: 0 72% 51%;
+    --secondary: 226 19% 18%;        /* Binder Sleeve   #252936 */
+    --secondary-foreground: 228 33% 97%;
+    --muted: 226 19% 18%;            /* Binder Sleeve   #252936 */
+    --muted-foreground: 225 15% 68%; /* Collector Grey  #A0A6B8 */
+    --accent: 45 100% 48%;           /* Shiny Gold      #F5B700 */
+    --accent-foreground: 225 21% 8%;
+    --success: 160 55% 39%;          /* Trade Green     #10B981 */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;           /* Caution Amber   #F59E0B */
+    --warning-foreground: 225 21% 8%;
+    --destructive: 0 84% 60%;        /* Reverse Holo Red#EF4444 */
     --destructive-foreground: 0 0% 98%;
-    --border: 222 14% 16%;
-    --input: 222 14% 16%;
-    --ring: 215 90% 58%;
+    --border: 226 22% 15%;           /* Edge Wear       #1F2330 */
+    --border-strong: 228 17% 27%;    /* Card Edge       #3A3F52 */
+    --input: 228 17% 27%;            /* Card Edge       #3A3F52 */
+    --ring: 217 91% 60%;             /* Pulse Blue      #3B82F6 */
+    --primary-hover: 217 100% 66%;   /* Pulse Bright    #4F94FF */
+    --primary-muted: 220 83% 53%;    /* Pulse Deep      #2563EB */
     --radius: 0.75rem;
     --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    /* Rarity colour overlay system — §5.2 */
     --rarity-common: 220 9% 64%;
-    --rarity-uncommon: 152 65% 48%;
-    --rarity-rare: 215 90% 58%;
-    --rarity-holo: 276 75% 62%;
-    --rarity-ex: 348 83% 60%;
-    --rarity-secret: 45 96% 54%;
+    --rarity-uncommon: 0 0% 75%;     /* silver #C0C0C0 */
+    --rarity-rare: 217 91% 60%;      /* Pulse Blue */
+    --rarity-holo: 45 100% 48%;      /* Shiny Gold */
+    --rarity-ex: 258 90% 66%;        /* purple #8B5CF6 */
+    --rarity-secret: 45 100% 48%;    /* rainbow via utility */
   }
 }
 
@@ -69,9 +77,29 @@
     backdrop-filter: blur(12px);
   }
   .text-gradient-pulse {
-    background: linear-gradient(120deg, hsl(215 90% 58%), hsl(276 75% 62%));
+    background: linear-gradient(120deg, hsl(217 91% 60%), hsl(258 90% 66%));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+  /* Rarity glow overlays (dark mode) — §5.2 Rarity Colour Overlay System */
+  .rarity-glow-uncommon { box-shadow: 0 0 12px hsl(0 0% 75% / 0.2); }
+  .rarity-glow-rare { box-shadow: 0 0 14px hsl(217 91% 60% / 0.15); }
+  .rarity-glow-holo { box-shadow: 0 0 16px hsl(45 100% 48% / 0.2); }
+  .rarity-glow-ex { box-shadow: 0 0 18px hsl(258 90% 66% / 0.25); }
+  .rarity-glow-secret {
+    box-shadow:
+      0 0 18px hsl(0 84% 60% / 0.3),
+      0 0 18px hsl(45 100% 48% / 0.3),
+      0 0 18px hsl(160 55% 39% / 0.3),
+      0 0 20px hsl(258 90% 66% / 0.3);
+  }
+  /* Rarity left-border accents (light mode / cards) — §5.2 */
+  .rarity-border-uncommon { border-left: 3px solid hsl(0 0% 75%); }
+  .rarity-border-rare { border-left: 3px solid hsl(217 91% 60%); }
+  .rarity-border-holo { border-left: 3px solid hsl(45 100% 48%); }
+  .rarity-border-ex { border-left: 3px solid hsl(258 90% 66%); }
+  .rarity-border-secret {
+    border-image: linear-gradient(135deg, hsl(0 84% 60%), hsl(45 100% 48%), hsl(160 55% 39%), hsl(258 90% 66%)) 1;
   }
 }

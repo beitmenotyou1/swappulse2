@@ -100,12 +100,12 @@ export default function Explore() {
           <p className="mb-3 text-sm text-muted-foreground">{results.length} results</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {results.map((card) => {
-              const { text } = rarityClasses(card.rarity);
+              const { text, glow } = rarityClasses(card.rarity);
               return (
                 <Link
                   key={card.id}
                   to={`/card/${card.id}`}
-                  className="group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
+                  className={`group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 ${glow}`}
                 >
                   <div className="aspect-[3/4] overflow-hidden bg-secondary">
                     {cardImageUrl(card.image) ? (
