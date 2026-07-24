@@ -37,6 +37,17 @@ export const NSID = {
   CHALLENGE: 'org.swappulse.challenge',
   CHALLENGE_ENTRY: 'org.swappulse.challengeEntry',
   SCANNER_CORRECTION: 'org.swappulse.scannerCorrection',
+  // Alpha 1.2 record lexicons
+  BINDER: 'org.swappulse.binder',
+  VOUCH: 'org.swappulse.vouch',
+  REACTION: 'org.swappulse.reaction',
+  SENTIMENT_POLL: 'org.swappulse.sentimentPoll',
+  SENTIMENT_VOTE: 'org.swappulse.sentimentVote',
+  CIRCLE: 'org.swappulse.circle',
+  CIRCLE_EXIT: 'org.swappulse.circleExit',
+  JOURNAL: 'org.swappulse.journal',
+  MEETUP: 'org.swappulse.meetup',
+  MEETUP_RSVP: 'org.swappulse.meetupRsvp',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.fresh-pulls',

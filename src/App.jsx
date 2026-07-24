@@ -25,6 +25,9 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 // Add page imports here
 import Grading from '@/pages/Grading';
+import Binders from '@/pages/Binders';
+import BinderEdit from '@/pages/BinderEdit';
+import BinderDetail from '@/pages/BinderDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -75,6 +78,10 @@ const AuthenticatedApp = () => {
           <Route path="/share" element={<Share />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/grading" element={<Grading />} />
+          <Route path="/binders" element={<Binders />} />
+          <Route path="/binders/new" element={<BinderEdit />} />
+          <Route path="/binder/:binderId" element={<BinderDetail />} />
+          <Route path="/binder/:binderId/edit" element={<BinderEdit />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
