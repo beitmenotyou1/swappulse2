@@ -64,6 +64,26 @@
     "notes": {
       "type": "string",
       "maxLength": 500
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the record to the owner's signing key (simulated)"
     }
   },
   "required": [

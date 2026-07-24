@@ -58,6 +58,26 @@
     "reply_to": {
       "type": "string",
       "description": "Post id this is a reply to"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the author (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the record to the author's signing key (simulated)"
     }
   },
   "required": [

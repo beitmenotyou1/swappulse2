@@ -1,0 +1,126 @@
+// SwapPulse AT Protocol-style data layer (SIMULATED)
+//
+// This module mirrors the shape of the AT Protocol so records are ready to
+// migrate to a real PDS later. It is NOT a federated implementation:
+//   - DIDs are generated locally (not registered with a PLC directory)
+//   - Signatures are HMAC-SHA256 with a per-user secret (not key-pair crypto)
+//   - CIDs are SHA-256 digests (not IPLD multihash)
+// Each record carries: did, at_uri, cid, record_type, sig — the same fields
+// a real AT Protocol record would expose. Swap to a real PDS/@atproto/api
+// SDK and these fields become authoritative instead of simulated.
+
+import { base44 } from '@/api/base44Client';
+
+// Lexicon NSIDs (SwapPulse namespace). Future TCGs reuse the same shapes
+// under a different namespace — only the NSID prefix changes.
+export const NSID = {
+  POST: 'swappulse.post',
+  PACK_OPENING: 'swappulse.pack.opening',
+  COLLECTION_ENTRY: 'swappulse.collection.entry',
+  TRADE_LISTING: 'swappulse.trade.listing',
+  WISHLIST: 'swappulse.wishlist',
+  REPUTATION: 'swappulse.reputation',
+  MODERATION_LABEL: 'swappulse.moderation.label',
+};
+
+const BASE32 = 'abcdefghijklmnopqrstuvwxyz234567';
+const PLC_PREFIX = 'did:plc:';
+
+function randomBase32(len) {
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  let out = '';
+  for (let i = 0; i < len; i++) out += BASE32[bytes[i] % 32];
+  return out;
+}
+
+export function generateDid() {
+  return PLC_PREFIX + randomBase32(24);
+}
+
+export function generateSigningKey() {
+  return 'sk_' + randomBase32(32);
+}
+
+// TID-style record key: time-sortable + unique.
+export function generateRkey() {
+  return (Date.now() * 1000).toString(36) + randomBase32(4);
+}
+
+export function buildAtUri(did, nsid, rkey) {
+  return `at://${did}/${nsid}/${rkey}`;
+}
+
+function canonicalize(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(canonicalize);
+  return Object.keys(obj).sort().reduce((acc, k) => {
+    acc[k] = canonicalize(obj[k]);
+    return acc;
+  }, {});
+}
+
+export function stableStringify(obj) {
+  return JSON.stringify(canonicalize(obj));
+}
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Simulated CID — a real CID is an IPLD multihash; this is a SHA-256 digest
+// formatted to read like one so records carry a content identifier.
+export async function computeCid(record) {
+  return 'bafy' + (await sha256Hex(stableStringify(record))).slice(0, 44);
+}
+
+async function hmacKey(secret) {
+  return crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+}
+
+// Simulated signature: HMAC-SHA256 with the user's signing key. Production
+// would use a key-pair signature (secp256k1) bound to the DID. The keyed
+// hash demonstrates non-repudiation intent and is verifiable.
+export async function signRecord(record, signingKey) {
+  const key = await hmacKey(signingKey);
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(stableStringify(record)));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function verifySignature(record, signature, signingKey) {
+  return (await signRecord(record, signingKey)) === signature;
+}
+
+// Ensures the current user has a persistent DID + signing key on their
+// account. Generates and persists on first call.
+export async function ensureUserDid() {
+  const me = await base44.auth.me();
+  if (me?.did && me?.signing_key) return { did: me.did, signingKey: me.signing_key };
+  const did = generateDid();
+  const signingKey = generateSigningKey();
+  await base44.auth.updateMe({ did, signing_key: signingKey });
+  return { did, signingKey };
+}
+
+// Stamps a record with AT Protocol metadata before persistence.
+// Adds: did, at_uri, cid, record_type, sig — ready for a real PDS.
+export async function stampRecord(record, nsid, did, signingKey) {
+  const base = { ...record };
+  const rkey = generateRkey();
+  const atUri = buildAtUri(did, nsid, rkey);
+  const payload = { ...base, $type: nsid };
+  const cid = await computeCid(payload);
+  const sig = await signRecord({ ...payload, cid }, signingKey);
+  return { ...base, did, at_uri: atUri, cid, record_type: nsid, sig };
+}

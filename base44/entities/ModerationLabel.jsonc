@@ -1,0 +1,44 @@
+{
+  "name": "ModerationLabel",
+  "type": "object",
+  "title": "ModerationLabel",
+  "properties": {
+    "labeler_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user applying the label"
+    },
+    "labeler_name": {
+      "type": "string"
+    },
+    "subject_uri": {
+      "type": "string",
+      "description": "at:// URI of the record being labeled"
+    },
+    "label_type": {
+      "type": "string",
+      "enum": [
+        "spam",
+        "nsfw",
+        "scam",
+        "misgraded",
+        "off_topic",
+        "harassment"
+      ]
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 280
+    },
+    "at_uri": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "labeler_did",
+    "subject_uri",
+    "label_type"
+  ]
+}

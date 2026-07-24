@@ -1,0 +1,49 @@
+{
+  "name": "Reputation",
+  "type": "object",
+  "title": "Reputation",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the trader being rated"
+    },
+    "rater_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the rater"
+    },
+    "rater_name": {
+      "type": "string"
+    },
+    "rater_handle": {
+      "type": "string"
+    },
+    "trade_uri": {
+      "type": "string",
+      "description": "at:// URI of the completed trade listing this rating covers"
+    },
+    "rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "comment": {
+      "type": "string",
+      "maxLength": 280
+    },
+    "sig": {
+      "type": "string",
+      "description": "Signature binding the rating to the rater's signing key (simulated)"
+    },
+    "at_uri": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "did",
+    "rater_did",
+    "rating"
+  ]
+}

@@ -5,6 +5,7 @@ import Avatar from '@/components/Avatar';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useAuth } from '@/lib/AuthContext';
+import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
 export default function ComposeBox({ onPosted }) {
   const { user } = useAuth();
@@ -24,7 +25,8 @@ export default function ComposeBox({ onPosted }) {
     if (!content.trim() && !attachedCard) return;
     setPosting(true);
     try {
-      await base44.entities.Post.create({
+      const { did, signingKey } = await ensureUserDid();
+      const stamped = await stampRecord({
         content: content.trim(),
         post_type: attachedCard ? postType : 'text',
         card_id: attachedCard?.id,
@@ -37,7 +39,8 @@ export default function ComposeBox({ onPosted }) {
         likes: 0,
         reposts: 0,
         replies: 0,
-      });
+      }, NSID.POST, did, signingKey);
+      await base44.entities.Post.create(stamped);
       setContent('');
       setAttachedCard(null);
       setPostType('text');

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, MapPin } from 'lucide-react';
+import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import Avatar from '@/components/Avatar';
 import PostCard from '@/components/feed/PostCard';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
+import { ensureUserDid } from '@/lib/atproto';
 
 const TABS = ['Posts', 'Binder', 'Collection', 'Trades'];
 
@@ -16,24 +17,41 @@ export default function Profile() {
   const [posts, setPosts] = useState([]);
   const [collection, setCollection] = useState([]);
   const [trades, setTrades] = useState([]);
+  const [did, setDid] = useState('');
+  const [reputation, setReputation] = useState([]);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [p, c, t] = await Promise.all([
+        const { did: myDid } = await ensureUserDid();
+        setDid(myDid);
+        const [p, c, t, r] = await Promise.all([
           base44.entities.Post.filter({}, '-created_date', 50),
           base44.entities.CollectionEntry.list('-updated_date', 100),
           base44.entities.TradeListing.filter({}, '-created_date', 20),
+          base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
         ]);
         setPosts(p);
         setCollection(c);
         setTrades(t);
+        setReputation(r);
       } catch {} finally {
         setLoading(false);
       }
     })();
   }, []);
+
+  const repAvg = reputation.length
+    ? (reputation.reduce((s, r) => s + (r.rating || 0), 0) / reputation.length).toFixed(1)
+    : null;
+
+  const copyDid = () => {
+    navigator.clipboard?.writeText(did);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   const myPosts = posts.filter((p) => p.author_name === user?.full_name);
   const myCollection = collection;
@@ -54,8 +72,34 @@ export default function Profile() {
           <p className="mt-2 text-sm">Pokémon TCG collector and the soul behind SwapPulse.</p>
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Sutton, Surrey</span>
-            <span className="flex items-center gap-1 text-accent"><Star className="h-3.5 w-3.5 fill-current" /> Trusted Trader</span>
+            <span className="flex items-center gap-1 text-accent">
+              <Star className="h-3.5 w-3.5 fill-current" />
+              {repAvg ? `Trusted Trader · ${repAvg}★ (${reputation.length})` : 'Trusted Trader'}
+            </span>
           </div>
+
+          {did && (
+            <div className="mt-3 rounded-xl border border-border bg-card p-3">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                  <Fingerprint className="h-3.5 w-3.5" /> DIGITAL IDENTITY (AT PROTOCOL · SIMULATED)
+                </span>
+                <button
+                  onClick={copyDid}
+                  className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-secondary"
+                >
+                  {copied ? <Check className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <code className="block break-all font-mono text-xs text-primary/90">{did}</code>
+              <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <ShieldCheck className="h-3 w-3 text-primary" />
+                Records you create are signed to this DID and portable to a real PDS.
+              </p>
+            </div>
+          )}
+
           <div className="mt-3 flex gap-4 text-sm">
             <span><b>{myPosts.length}</b> <span className="text-muted-foreground">Posts</span></span>
             <span><b>{myCollection.length}</b> <span className="text-muted-foreground">Cards</span></span>

@@ -3,6 +3,7 @@ import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { conditionLabel, variantLabel } from '@/lib/format';
+import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
 export default function AddToCollectionModal({ open, onClose, card }) {
   const [condition, setCondition] = useState('near_mint');
@@ -16,7 +17,8 @@ export default function AddToCollectionModal({ open, onClose, card }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await base44.entities.CollectionEntry.create({
+      const { did, signingKey } = await ensureUserDid();
+      const stamped = await stampRecord({
         card_id: card.id,
         card_name: card.name,
         card_image: card.image,
@@ -30,7 +32,8 @@ export default function AddToCollectionModal({ open, onClose, card }) {
         acquisition_date: new Date().toISOString().slice(0, 10),
         purchase_price: price ? Math.round(parseFloat(price) * 100) : null,
         notes,
-      });
+      }, NSID.COLLECTION_ENTRY, did, signingKey);
+      await base44.entities.CollectionEntry.create(stamped);
       onClose();
       setPrice('');
       setNotes('');
