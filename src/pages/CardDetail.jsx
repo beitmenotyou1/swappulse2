@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus } from 'lucide-react';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import AddToCollectionModal from '@/components/cards/AddToCollectionModal';
+import CardReviews from '@/components/cards/CardReviews';
 import { formatPrice } from '@/lib/format';
 
 export default function CardDetail() {
@@ -194,6 +195,8 @@ export default function CardDetail() {
           </div>
         </div>
       </div>
+
+      <CardReviews card={card} />
 
       <AddToCollectionModal open={showAdd} onClose={() => setShowAdd(false)} card={card} />
     </div>
