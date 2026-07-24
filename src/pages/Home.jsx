@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ComposeBox from '@/components/feed/ComposeBox';
 import PostCard from '@/components/feed/PostCard';
+import CardOfTheDay from '@/components/home/CardOfTheDay';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
 const TABS = [
@@ -62,6 +63,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      <CardOfTheDay />
 
       <ComposeBox onPosted={loadPosts} />
 

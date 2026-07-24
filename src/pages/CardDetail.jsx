@@ -4,6 +4,7 @@ import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus } from 
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import AddToCollectionModal from '@/components/cards/AddToCollectionModal';
 import CardReviews from '@/components/cards/CardReviews';
+import WishlistAlertModal from '@/components/wishlist/WishlistAlertModal';
 import { formatPrice } from '@/lib/format';
 
 export default function CardDetail() {
@@ -11,6 +12,7 @@ export default function CardDetail() {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -152,7 +154,7 @@ export default function CardDetail() {
           >
             <ArrowLeftRight className="h-4 w-4" /> List for Trade
           </Link>
-          <button className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
+          <button onClick={() => setShowAlert(true)} className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
             <Bell className="h-4 w-4" /> Price Alert
           </button>
         </div>
@@ -199,6 +201,7 @@ export default function CardDetail() {
       <CardReviews card={card} />
 
       <AddToCollectionModal open={showAdd} onClose={() => setShowAdd(false)} card={card} />
+      {showAlert && <WishlistAlertModal card={card} onClose={() => setShowAlert(false)} />}
     </div>
   );
 }

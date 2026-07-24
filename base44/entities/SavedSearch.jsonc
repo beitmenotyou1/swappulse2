@@ -36,11 +36,11 @@
       "type": "string",
       "enum": [
         "push",
-        "in_app",
+        "email",
         "both",
         "none"
       ],
-      "default": "in_app"
+      "default": "email"
     },
     "last_triggered_at": {
       "type": "string",

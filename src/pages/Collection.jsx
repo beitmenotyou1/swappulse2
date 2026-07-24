@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Plus, Trash2, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3, Layers, Target } from 'lucide-react';
+import { Loader2, Plus, Trash2, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3, Layers, Target, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { deleteEntry, updateEntry, bulkUpdateEntries } from '@/lib/offlineSync';
@@ -11,6 +11,7 @@ import CollectionAnalytics from '@/components/collection/CollectionAnalytics';
 import BulkImportExport from '@/components/collection/BulkImportExport';
 import DuplicatesTab from '@/components/collection/DuplicatesTab';
 import SetCompletionDashboard from '@/components/collection/SetCompletionDashboard';
+import InsuranceExport from '@/components/collection/InsuranceExport';
 
 const TABS = [
   { id: 'cards', label: 'All Cards', icon: LayoutGrid },
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'binder', label: 'Binder', icon: Star },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'import', label: 'Import / Export', icon: ArrowUpDown },
+  { id: 'insurance', label: 'Insurance', icon: Shield },
 ];
 
 export default function Collection() {
@@ -228,6 +230,14 @@ export default function Collection() {
       )}
 
       {tab === 'import' && <BulkImportExport items={items} onImported={load} />}
+
+      {tab === 'insurance' && (
+        loading ? (
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        ) : (
+          <div className="p-4"><InsuranceExport items={items} /></div>
+        )
+      )}
 
       {tab === 'cards' && (
         loading ? (

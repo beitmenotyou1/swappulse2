@@ -24,6 +24,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 // Add page imports here
+import Grading from '@/pages/Grading';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -73,6 +74,7 @@ const AuthenticatedApp = () => {
           <Route path="/market" element={<MarketWatch />} />
           <Route path="/share" element={<Share />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/grading" element={<Grading />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

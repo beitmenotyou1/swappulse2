@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, User as UserIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, User as UserIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import { useAuth } from '@/lib/AuthContext';
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
   { to: '/packs', icon: Package, label: 'Pack Openings' },
   { to: '/market', icon: BarChart3, label: 'Market Watch' },
+  { to: '/grading', icon: Award, label: 'Grading' },
   { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
 
