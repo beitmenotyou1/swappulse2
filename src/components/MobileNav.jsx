@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -10,7 +10,6 @@ const primary = [
   { to: '/explore', icon: Compass, label: 'Explore' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades' },
   { to: '/collection', icon: Layers, label: 'Collection' },
-  { to: '/marketplace', icon: Store, label: 'Shop' },
 ];
 
 const moreItems = [

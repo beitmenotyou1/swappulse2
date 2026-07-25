@@ -36,9 +36,6 @@ import Circles from '@/pages/Circles';
 import CircleDetail from '@/pages/CircleDetail';
 import Meetups from '@/pages/Meetups';
 import MeetupDetail from '@/pages/MeetupDetail';
-import Marketplace from '@/pages/Marketplace';
-import ListingDetail from '@/pages/ListingDetail';
-import OrderComplete from '@/pages/OrderComplete';
 import UserProfile from '@/pages/UserProfile';
 import VoiceSpaces from '@/pages/VoiceSpaces';
 import SpaceRoom from '@/pages/SpaceRoom';
@@ -103,9 +100,6 @@ const AuthenticatedApp = () => {
           <Route path="/circles/:circleId" element={<CircleDetail />} />
           <Route path="/meetups" element={<Meetups />} />
           <Route path="/meetups/:meetupId" element={<MeetupDetail />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/marketplace/:listingId" element={<ListingDetail />} />
-          <Route path="/order-complete" element={<OrderComplete />} />
           <Route path="/profile/:did" element={<UserProfile />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/spaces" element={<VoiceSpaces />} />

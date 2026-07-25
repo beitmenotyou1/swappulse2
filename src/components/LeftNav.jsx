@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, Store, ChevronDown, Radio, Bell, Settings as SettingsIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -14,7 +14,6 @@ const primary = [
   { to: '/collection', icon: Layers, label: 'Collection' },
   { to: '/binders', icon: BookOpen, label: 'Binders' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
-  { to: '/marketplace', icon: Store, label: 'Marketplace' },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
   { to: '/spaces', icon: Radio, label: 'Live Now' },
