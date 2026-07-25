@@ -4,7 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { ensureUserDid } from '@/lib/atproto';
 
-// In-app bell toaster — subscribes to the realtime feed and surfaces an in-app
+// In-app bell toaster - subscribes to the realtime feed and surfaces an in-app
 // toast for new posts by bell-followed authors. Re-syncs the watched-author
 // set whenever a followPreference record changes. Push (offline) delivery is
 // handled server-side by dispatchBellNotifications.

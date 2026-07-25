@@ -153,7 +153,7 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
                 <>
                   <UploadCloud className="h-6 w-6 text-muted-foreground" />
                   <p className="text-sm font-semibold">Drag & drop your recording</p>
-                  <p className="text-xs text-muted-foreground">MP3, M4A or WebM — processed audio</p>
+                  <p className="text-xs text-muted-foreground">MP3, M4A or WebM - processed audio</p>
                 </>
               )}
             </div>

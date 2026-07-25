@@ -84,7 +84,7 @@ export default function DuplicatesTab({ items }) {
           </p>
         </div>
         {duplicates.length === 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">No duplicates yet — extras you add will appear here.</p>
+          <p className="mt-1 text-xs text-muted-foreground">No duplicates yet - extras you add will appear here.</p>
         )}
       </div>
 

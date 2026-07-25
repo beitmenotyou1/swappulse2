@@ -388,7 +388,7 @@ export default function SpaceRoom() {
             </button>
           )}
         </div>
-        {micError && isHost && <p className="pb-2 text-center text-xs text-muted-foreground">Mic access denied — you can still host; listeners won't hear you.</p>}
+        {micError && isHost && <p className="pb-2 text-center text-xs text-muted-foreground">Mic access denied - you can still host; listeners won't hear you.</p>}
         {space.recording_enabled && isHost && recorderRef.current && <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-muted-foreground"><Disc3 className="h-3 w-3" /> Recording in progress</p>}
       </div>
     </div>

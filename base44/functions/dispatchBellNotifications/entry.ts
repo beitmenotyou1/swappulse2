@@ -1,4 +1,4 @@
-// §Alpha 1.3 Notification Dispatcher — finds bell-enabled followers of an
+// §Alpha 1.3 Notification Dispatcher - finds bell-enabled followers of an
 // author and delivers a Web Push notification for the new record. Mirrors the
 // spec's Notification Dispatcher module: query follow_preferences where
 // subject_did = author AND bell_enabled = true, check notifyOn, enqueue push.
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       try {
         webPush.setVapidDetails('mailto:support@swappulse.org', publicKey, privateKey);
       } catch (e) {
-        // Malformed VAPID key — degrade to no-push instead of failing the call.
+        // Malformed VAPID key - degrade to no-push instead of failing the call.
         console.error('VAPID setup failed', e?.message || e);
         pushConfigured = false;
       }
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
         );
         dispatched++;
       } catch (e) {
-        // 410/404 = expired subscription — silently drop, no retry.
+        // 410/404 = expired subscription - silently drop, no retry.
         skipped++;
       }
     }

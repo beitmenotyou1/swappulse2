@@ -15,7 +15,7 @@ async function buildDigestText(svc, user) {
   const totalValue = collection.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const openTrades = trades.filter((t) => t.status === "open").length;
   const recentCards = collection.slice(0, 5).map(
-    (c) => `  • ${c.card_name || "Unnamed"} — ${c.set_name || ""} · ${fmt(c.market_value || c.purchase_price)}`
+    (c) => `  • ${c.card_name || "Unnamed"} - ${c.set_name || ""} · ${fmt(c.market_value || c.purchase_price)}`
   ).join("\n");
   const wishRows = wishlist.slice(0, 5).map(
     (w) => `  • ${w.card_name || "Unnamed"}${w.max_price ? " (max " + fmt(w.max_price) + ")" : ""}`
@@ -24,7 +24,7 @@ async function buildDigestText(svc, user) {
   return [
     "Your SwapPulse Weekly Digest",
     "",
-    `Hi ${user.full_name || "collector"} — here's your week in cards.`,
+    `Hi ${user.full_name || "collector"} - here's your week in cards.`,
     "",
     `Cards: ${collection.length}`,
     `Portfolio: ${fmt(totalValue)}`,

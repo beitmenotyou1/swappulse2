@@ -106,7 +106,7 @@ export default function RightSidebar({ online = [] }) {
       </section>
 
       <p className="px-2 text-xs text-muted-foreground">
-        © SwapPulse — Built on the AT Protocol · Powered by TCGdex
+        © SwapPulse - Built on the AT Protocol · Powered by TCGdex
       </p>
     </aside>
   );

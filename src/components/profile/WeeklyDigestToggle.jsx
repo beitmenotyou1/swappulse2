@@ -3,7 +3,7 @@ import { Mail, Loader2, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
-// Weekly email digest toggle — stored on the user record via auth.updateMe.
+// Weekly email digest toggle - stored on the user record via auth.updateMe.
 export default function WeeklyDigestToggle() {
   const { user } = useAuth();
   const [on, setOn] = useState(!!user?.weekly_digest);
@@ -17,7 +17,7 @@ export default function WeeklyDigestToggle() {
     try {
       await base44.auth.updateMe({ weekly_digest: next });
       setOn(next);
-      setMsg(next ? 'Digest enabled — you’ll get a summary every week.' : 'Digest turned off.');
+      setMsg(next ? 'Digest enabled - you’ll get a summary every week.' : 'Digest turned off.');
     } catch (e) {
       setMsg('Could not update preference: ' + (e.message || 'unknown error'));
     } finally {

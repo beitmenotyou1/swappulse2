@@ -46,7 +46,7 @@ export default function Login() {
     >
       {migrationSuccess && (
         <div className="mb-4 p-3 rounded-lg bg-success/10 text-success text-sm">
-          Migration complete — log in with your new password.
+          Migration complete - log in with your new password.
         </div>
       )}
 

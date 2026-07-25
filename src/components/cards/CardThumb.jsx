@@ -33,7 +33,7 @@ export default function CardThumb({ card, size = 'md' }) {
       </div>
       <div className="p-2">
         <p className="truncate text-xs font-semibold">{card.name}</p>
-        <p className={`truncate text-[10px] ${text}`}>{card.rarity || card.set?.name || '—'}</p>
+        <p className={`truncate text-[10px] ${text}`}>{card.rarity || card.set?.name || '-'}</p>
       </div>
     </Link>
   );

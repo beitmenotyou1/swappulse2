@@ -34,7 +34,7 @@ export default function DomainHandleModal({ onClose }) {
     .replace(/\/.*$/, '');
   const txtName = `_atproto.${cleanDomain}`;
   const txtValue = `did=${did}`;
-  const defaultHandle = `${user?.email?.split('@')[0] || 'collector'}.swappulse.org`;
+  const defaultHandle = user?.email?.split('@')[0] || 'collector';
 
   const copy = (text) => {
     navigator.clipboard?.writeText(text);
@@ -63,7 +63,7 @@ export default function DomainHandleModal({ onClose }) {
         status: 'verified',
         verified_at: now,
         claimed_at: now,
-        legacy_handle: defaultHandle,
+        legacy_handle: `${user?.email?.split('@')[0] || 'collector'}.swappulse.org`,
       };
       const stamped = await stampRecord(payload, HANDLE_CLAIM_NSID, did, signingKey);
       await base44.entities.HandleClaim.create(stamped);

@@ -10,7 +10,7 @@ function fmt(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-// §Alpha 1.4 — sticky bottom player bar. Persists across navigation (rendered
+// §Alpha 1.4 - sticky bottom player bar. Persists across navigation (rendered
 // inside Layout so it never unmounts on route change). Scrubber, skip 15/30s,
 // chapter dropdown, speed control via long-press on play/pause.
 export default function StickyPlayerBar() {

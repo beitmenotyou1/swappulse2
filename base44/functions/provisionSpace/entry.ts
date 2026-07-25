@@ -1,4 +1,4 @@
-// §Alpha 1.4 Voice Spaces — provisions a (simulated) LiveKit room for a voice
+// §Alpha 1.4 Voice Spaces - provisions a (simulated) LiveKit room for a voice
 // space and flips its status to live, then dispatches `goes_live` push
 // notifications to bell-enabled followers via the existing notification
 // dispatcher. The real-time audio transport (LiveKit SFU) is external infra;

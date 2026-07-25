@@ -5,7 +5,7 @@ import { ensureUserDid } from '@/lib/atproto';
 import CrossPostRow from './CrossPostRow';
 import CrossPostModal from './CrossPostModal';
 
-// §7 — Cross-Posting settings tab. Lists the user's crossPostConfig records
+// §7 - Cross-Posting settings tab. Lists the user's crossPostConfig records
 // as row cards, with an Add Platform button that opens the authorisation
 // flow modal.
 export default function CrossPostTab() {

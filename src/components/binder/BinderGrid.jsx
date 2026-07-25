@@ -89,7 +89,7 @@ export default function BinderGrid({ items, gridSize, onReorder, binderPublic, o
                               transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
                             }}
                           >
-                            {/* Front — card art */}
+                            {/* Front - card art */}
                             <Link
                               to={`/card/${item.card_id}`}
                               onClick={(e) => e.stopPropagation()}
@@ -113,7 +113,7 @@ export default function BinderGrid({ items, gridSize, onReorder, binderPublic, o
                               </div>
                             </Link>
 
-                            {/* Back — stats */}
+                            {/* Back - stats */}
                             <div
                               className="absolute inset-0 flex flex-col justify-between rounded-lg border border-border bg-card p-2 text-[10px]"
                               style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}

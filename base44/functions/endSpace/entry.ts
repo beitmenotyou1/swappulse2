@@ -1,4 +1,4 @@
-// §Alpha 1.4 Voice Spaces — ends a live space: sets status to ended, records
+// §Alpha 1.4 Voice Spaces - ends a live space: sets status to ended, records
 // the recording blob + duration + podcast link, and computes peak listener
 // count from participant records. Only the host may end a space.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

@@ -6,7 +6,7 @@
 //   - Signatures are HMAC-SHA256 with a per-user secret (not key-pair crypto)
 //   - CIDs are SHA-256 digests (not IPLD multihash)
 // Lexicon NSIDs follow the SwapPulse convention: org.swappulse.<recordName>.
-// Each record carries: did, at_uri, cid, record_type, sig — the same fields a
+// Each record carries: did, at_uri, cid, record_type, sig - the same fields a
 // real AT Protocol record exposes. Swap to a real PDS + @atproto/api SDK and
 // these become authoritative instead of simulated.
 
@@ -54,7 +54,7 @@ export const NSID = {
   FRIENDSHIP: 'org.swappulse.friendship',
   STORY: 'org.swappulse.story',
   STORY_VIEW: 'org.swappulse.storyView',
-  // Alpha 1.4 record lexicons — voice spaces & podcasts
+  // Alpha 1.4 record lexicons - voice spaces & podcasts
   VOICE_SPACE: 'org.swappulse.voiceSpace',
   SPACE_PARTICIPANT: 'org.swappulse.spaceParticipant',
   PODCAST_EPISODE: 'org.swappulse.podcastEpisode',
@@ -138,7 +138,7 @@ async function sha256Hex(text) {
     .join('');
 }
 
-// Simulated CID — a real CID is an IPLD multihash; this is a SHA-256 digest
+// Simulated CID - a real CID is an IPLD multihash; this is a SHA-256 digest
 // formatted to read like one so records carry a content identifier.
 export async function computeCid(record) {
   return 'bafy' + (await sha256Hex(stableStringify(record))).slice(0, 44);
@@ -181,7 +181,7 @@ export async function ensureUserDid() {
 }
 
 // Stamps a record with AT Protocol metadata before persistence.
-// Adds: did, at_uri, cid, record_type, sig — ready for a real PDS.
+// Adds: did, at_uri, cid, record_type, sig - ready for a real PDS.
 export async function stampRecord(record, nsid, did, signingKey) {
   const base = { ...record };
   const rkey = generateRkey();

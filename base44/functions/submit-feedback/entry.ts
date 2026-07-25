@@ -1,4 +1,4 @@
-// submit-feedback — stores collector feedback (page snapshot + comment) and
+// submit-feedback - stores collector feedback (page snapshot + comment) and
 // best-effort emails it to the team. The Feedback record is the reliable
 // capture; the email is secondary and may be rejected if the recipient is not
 // a registered app user.
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: TEAM_INBOX,
-        subject: `SwapPulse feedback — ${page || 'page'}`,
+        subject: `SwapPulse feedback - ${page || 'page'}`,
         body: [
           `New feedback from ${user.full_name || user.email || 'a collector'}.`,
           '',

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { base44 } from '@/api/base44Client';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
-// §Alpha 1.4 Live Presence — holds the current set of live users (voice
+// §Alpha 1.4 Live Presence - holds the current set of live users (voice
 // spaces + external streams) indexed by DID, refreshed on realtime events.
 // Components read it via useLivePresence(); LiveAvatar renders the red ring.
 const LivePresenceContext = createContext({ liveByDid: new Map(), refresh: () => {} });
@@ -20,7 +20,7 @@ export function LivePresenceProvider({ children }) {
       }
       setLiveByDid(map);
     } catch {
-      /* non-fatal — degrade to no live indicators */
+      /* non-fatal - degrade to no live indicators */
     }
   }, []);
 

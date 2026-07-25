@@ -44,6 +44,7 @@ import Settings from '@/pages/Settings';
 import Help from '@/pages/Help';
 import Donate from '@/pages/Donate';
 import DonateThanks from '@/pages/DonateThanks';
+import HandleProfile from '@/pages/HandleProfile';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -77,6 +78,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
+      <Route path="/u/:handle" element={<HandleProfile />} />
       <Route path="/compose" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
           <Route index element={<Compose />} />

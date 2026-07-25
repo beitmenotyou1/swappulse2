@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { base44 } from '@/api/base44Client';
 import { platformMeta, contentTypeMeta, testCrossPost } from '@/lib/crosspost';
 
-// §7 — one cross-post config row: platform badge, handle, enable toggle,
+// §7 - one cross-post config row: platform badge, handle, enable toggle,
 // content-type chips, Test Post + Edit actions.
 export default function CrossPostRow({ config, onEdit, onChanged }) {
   const meta = platformMeta(config.platform) || { label: config.platform, color: '#94a3b8', letter: '?' };

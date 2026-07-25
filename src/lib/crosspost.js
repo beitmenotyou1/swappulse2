@@ -1,6 +1,6 @@
 import { base44 } from '@/api/base44Client';
 
-// §7 Automated Cross-Posting — platform metadata + dispatch helpers.
+// §7 Automated Cross-Posting - platform metadata + dispatch helpers.
 // Discord webhook + Telegram bot post for real; Bluesky/Mastodon/Nostr/
 // Twitter are simulated until OAuth/connector wiring is added.
 

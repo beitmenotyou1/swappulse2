@@ -1,4 +1,4 @@
-// §2.5 getReactions — aggregates reaction counts per post type for a batch of
+// §2.5 getReactions - aggregates reaction counts per post type for a batch of
 // posts, plus the current user's own reaction (type + id) for each. Mirrors the
 // Social Service reactions.service.ts aggregation.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

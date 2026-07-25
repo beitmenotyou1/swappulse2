@@ -1,4 +1,4 @@
-// IndexedDB offline cache — §8 Layer 2 catalog data cache + outbox for sync.
+// IndexedDB offline cache - §8 Layer 2 catalog data cache + outbox for sync.
 const DB_NAME = 'swappulse';
 const DB_VERSION = 1;
 const STORES = ['catalog', 'outbox', 'shares'];

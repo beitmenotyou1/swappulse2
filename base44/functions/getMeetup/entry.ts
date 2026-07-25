@@ -1,4 +1,4 @@
-// §2.8 getMeetup — resolves a meetup for the viewer: their existing RSVP, the
+// §2.8 getMeetup - resolves a meetup for the viewer: their existing RSVP, the
 // attendee list (vouch-gated by required_vouches), and live yes/maybe counts.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 

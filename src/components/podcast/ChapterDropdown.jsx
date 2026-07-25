@@ -7,7 +7,7 @@ function fmt(s) {
   return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 }
 
-// §Alpha 1.4 — chapter marks dropdown for the sticky player. Lists chapter
+// §Alpha 1.4 - chapter marks dropdown for the sticky player. Lists chapter
 // timestamps + titles (with an optional card thumbnail placeholder) and
 // seeks the audio to the chapter on click.
 export default function ChapterDropdown({ chapters, onSeek }) {

@@ -1,4 +1,4 @@
-// §2.1 binder theme system — drives the binder backdrop + spine styling.
+// §2.1 binder theme system - drives the binder backdrop + spine styling.
 // Classes are literal strings so Tailwind keeps them.
 export const BINDER_THEMES = {
   classic_purple: {

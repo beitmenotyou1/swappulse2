@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* SwapPulse design system — §5.1 (Proton-inspired light theme) */
+    /* SwapPulse design system - §5.1 (Proton-inspired light theme) */
     --background: 0 0% 100%;            /* Surface Light   #ffffff */
     --foreground: 217 33% 17%;          /* Text Primary    #1e293b */
     --card: 0 0% 100%;                  /* Surface Light   #ffffff */
@@ -15,7 +15,7 @@
     --popover-foreground: 217 33% 17%;
     --primary: 252 100% 64%;            /* Primary Purple  #6d4aff */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;           /* Slate 100 — chips / hover containers */
+    --secondary: 210 40% 96%;           /* Slate 100 - chips / hover containers */
     --secondary-foreground: 217 33% 17%;
     --muted: 210 40% 98%;               /* Surface Gray   #f8fafc */
     --muted-foreground: 215 16% 47%;    /* Text Secondary #64748b */
@@ -38,11 +38,11 @@
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    /* Shadow tokens — §5.1 */
+    /* Shadow tokens - §5.1 */
     --shadow-base: 0 1px 2px rgb(0 0 0 / 0.05);
     --shadow-raised: 0 4px 6px rgb(0 0 0 / 0.07);
     --shadow-elevated: 0 10px 15px rgb(0 0 0 / 0.1);
-    /* Rarity colour overlay system — §5.1 */
+    /* Rarity colour overlay system - §5.1 */
     --rarity-common: 215 16% 47%;
     --rarity-uncommon: 0 0% 75%;
     --rarity-rare: 217 91% 60%;          /* Accent Blue   #3b82f6 */
@@ -52,7 +52,7 @@
   }
 
   .dark {
-    /* Midnight Vault — restored previous dark theme */
+    /* Midnight Vault - restored previous dark theme */
     --background: 226 47% 9%;
     --foreground: 210 40% 96%;
     --card: 226 42% 12%;
@@ -128,7 +128,7 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  /* Rarity glow overlays — §5.2 Rarity Colour Overlay System */
+  /* Rarity glow overlays - §5.2 Rarity Colour Overlay System */
   .rarity-glow-uncommon { box-shadow: 0 0 12px hsl(0 0% 75% / 0.25); }
   .rarity-glow-rare { box-shadow: 0 0 14px hsl(217 91% 60% / 0.2); }
   .rarity-glow-holo { box-shadow: 0 0 16px hsl(45 96% 53% / 0.3); }
@@ -140,7 +140,7 @@
       0 0 18px hsl(160 84% 39% / 0.3),
       0 0 20px hsl(252 100% 64% / 0.3);
   }
-  /* Rarity left-border accents — §5.2 */
+  /* Rarity left-border accents - §5.2 */
   .rarity-border-uncommon { border-left: 3px solid hsl(0 0% 75%); }
   .rarity-border-rare { border-left: 3px solid hsl(217 91% 60%); }
   .rarity-border-holo { border-left: 3px solid hsl(45 96% 53%); }
@@ -148,7 +148,7 @@
   .rarity-border-secret {
     border-image: linear-gradient(135deg, hsl(0 84% 60%), hsl(45 96% 53%), hsl(160 84% 39%), hsl(252 100% 64%)) 1;
   }
-  /* Accessibility — applied to <html> by useApplyAccessibility */
+  /* Accessibility - applied to <html> by useApplyAccessibility */
   .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

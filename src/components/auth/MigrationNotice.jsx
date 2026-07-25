@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, Mail } from 'lucide-react';
 
-// §11.2/11.3 — informs legacy Google users that login is now password-only,
+// §11.2/11.3 - informs legacy Google users that login is now password-only,
 // and routes them into the email-reset migration flow (Option B).
 export default function MigrationNotice() {
   return (
@@ -13,7 +13,7 @@ export default function MigrationNotice() {
       </div>
       <p className="mb-3 text-xs text-muted-foreground">
         SwapPulse now uses password-only login for self-sovereign identity. If you signed
-        in with Google before, set a password to keep full access — your collection,
+        in with Google before, set a password to keep full access - your collection,
         trades and reputation are preserved.
       </p>
       <Link

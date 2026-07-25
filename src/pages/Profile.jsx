@@ -129,28 +129,6 @@ export default function Profile() {
             </span>
           </div>
 
-          {did && (
-            <div className="mt-3 rounded-xl border border-border bg-card p-3">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                  <Fingerprint className="h-3.5 w-3.5" /> DIGITAL IDENTITY (AT PROTOCOL · SIMULATED)
-                </span>
-                <button
-                  onClick={copyDid}
-                  className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-secondary"
-                >
-                  {copied ? <Check className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-              <code className="block break-all font-mono text-xs text-primary/90">{did}</code>
-              <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-                <ShieldCheck className="h-3 w-3 text-primary" />
-                Records you create are signed to this DID and portable to a real PDS.
-              </p>
-            </div>
-          )}
-
           <div className="mt-3"><NotificationToggle /></div>
           <div className="mt-3 flex gap-4 text-sm">
             <span><b>{myPosts.length}</b> <span className="text-muted-foreground">Posts</span></span>

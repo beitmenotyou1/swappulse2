@@ -54,7 +54,7 @@ export default function Donate() {
           </div>
 
           <p className="mb-5 text-sm text-muted-foreground">
-            SwapPulse is built by collectors, for collectors. Every feature stays free and open-source — your donation
+            SwapPulse is built by collectors, for collectors. Every feature stays free and open-source - your donation
             helps cover hosting, the TCGdex catalog, and the AT Protocol infrastructure that keeps your collection
             self-sovereign. Give whatever feels right.
           </p>
@@ -102,7 +102,7 @@ export default function Donate() {
 
         <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
-          SwapPulse is in alpha — your support means the world.
+          SwapPulse is in alpha - your support means the world.
         </p>
       </main>
     </div>

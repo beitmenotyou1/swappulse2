@@ -42,7 +42,7 @@ export default function ComposeBox({ onPosted }) {
         replies: 0,
       }, NSID.POST, did, signingKey);
       const created = await base44.entities.Post.create(stamped);
-      // Bell notification dispatch — Web Push to bell-enabled followers.
+      // Bell notification dispatch - Web Push to bell-enabled followers.
       const cat = stamped.post_type === 'pack_opening' ? 'pack_opening'
         : stamped.post_type === 'trade' ? 'trade_listing'
         : stamped.post_type === 'showcase' ? 'binder' : null;

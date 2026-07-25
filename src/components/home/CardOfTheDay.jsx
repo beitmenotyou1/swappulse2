@@ -4,7 +4,7 @@ import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 
-// §4 Card of the Day — surfaces the biggest pricing mover from the feeds service.
+// §4 Card of the Day - surfaces the biggest pricing mover from the feeds service.
 export default function CardOfTheDay() {
   const [featured, setFeatured] = useState(null);
   const [card, setCard] = useState(null);

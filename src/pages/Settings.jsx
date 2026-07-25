@@ -25,7 +25,7 @@ export default function Settings() {
 
   return (
     <div>
-      <PageHeader title="Settings" subtitle="Your self-sovereign control centre — saved to your repository" />
+      <PageHeader title="Settings" subtitle="Your self-sovereign control centre - saved to your repository" />
       <div className="flex overflow-x-auto border-b border-border">
         {TABS.map(({ key, label, Icon }) => (
           <button

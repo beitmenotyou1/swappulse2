@@ -1,4 +1,4 @@
-// §7 Automated Cross-Posting — Cross-Post Dispatcher
+// §7 Automated Cross-Posting - Cross-Post Dispatcher
 // org.swappulse.crossPostConfig + org.swappulse.externalActivity
 // When SwapPulse content is created, the dispatcher checks the author's
 // crossPostConfig records for matching contentTypes, formats a cross-post
@@ -9,7 +9,7 @@
 // Discord webhook + Telegram bot post for real (user-supplied webhook URL /
 // bot token). Bluesky, Mastodon, Nostr, and Twitter require OAuth/connector
 // wiring not yet available, so those are simulated (delivery logged but not
-// actually sent) — wire real credentials/connectors to enable them.
+// actually sent) - wire real credentials/connectors to enable them.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const TEMPLATES = {
@@ -55,7 +55,7 @@ async function postToPlatform(platform, credential, extra, message) {
       return { ok: !!j.ok, simulated: false, error: j.description || undefined };
     } catch (e) { return { ok: false, simulated: false, error: e.message }; }
   }
-  // bluesky, mastodon, nostr, twitter — OAuth/connector wiring not yet available → simulated
+  // bluesky, mastodon, nostr, twitter - OAuth/connector wiring not yet available → simulated
   return { ok: true, simulated: true };
 }
 

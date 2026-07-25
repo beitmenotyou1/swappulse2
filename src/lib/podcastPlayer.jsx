@@ -2,7 +2,7 @@ import React, { createContext, useContext, useRef, useState, useEffect, useCallb
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
-// §Alpha 1.4 — global podcast player context. Owns a single <audio> element
+// §Alpha 1.4 - global podcast player context. Owns a single <audio> element
 // at the app root so playback persists across navigation. Tracks listen
 // progress in org.swappulse.podcastPlay records and resumes from the last
 // position when an episode is replayed.

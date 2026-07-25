@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { PLATFORMS, CONTENT_TYPES, TEMPLATES } from '@/lib/crosspost';
 
-// §7 — add/edit cross-post platform configuration modal.
+// §7 - add/edit cross-post platform configuration modal.
 export default function CrossPostModal({ open, editing, onClose, onSaved }) {
   const [platform, setPlatform] = useState('discord_webhook');
   const [handle, setHandle] = useState('');

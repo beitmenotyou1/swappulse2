@@ -3,7 +3,7 @@ import { FileText, Loader2, Download, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
 
-// §4 Insurance PDF export — builds a dated, per-item valuation PDF with jsPDF,
+// §4 Insurance PDF export - builds a dated, per-item valuation PDF with jsPDF,
 // uploads it via the platform file store, and records a Document (insurance_report).
 export default function InsuranceExport({ items }) {
   const [busy, setBusy] = useState(false);
@@ -99,7 +99,7 @@ export default function InsuranceExport({ items }) {
         <div className="flex-1">
           <h2 className="text-sm font-bold">Insurance valuation report</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Generate a dated PDF of your collection — card, set, condition, variant and value per item — for insurance claims and valuations.
+            Generate a dated PDF of your collection - card, set, condition, variant and value per item - for insurance claims and valuations.
           </p>
           <p className="mt-2 text-xs">
             <span className="text-muted-foreground">Items with a value:</span>{' '}

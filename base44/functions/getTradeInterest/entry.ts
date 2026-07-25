@@ -1,4 +1,4 @@
-// §2.5 getTradeInterest — the trade-interest matcher. Returns trade_interest
+// §2.5 getTradeInterest - the trade-interest matcher. Returns trade_interest
 // reactions on the current user's own posts so card owners can see who wants
 // their cards. Mirrors reactions/trade-interest.matcher.ts.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

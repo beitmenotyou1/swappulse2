@@ -6,7 +6,7 @@ import { variantLabel } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
-// §4.3 Community Card Reviews — four-dimension rating (artwork, playability,
+// §4.3 Community Card Reviews - four-dimension rating (artwork, playability,
 // collectibility, investment) 1-5 each, plus optional review text + variant.
 // Aggregate averages shown at top; individual reviews listed below.
 
@@ -130,7 +130,7 @@ export default function CardReviews({ card }) {
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
       ) : reviews.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">No reviews yet — be the first to rate this card.</p>
+        <p className="py-4 text-center text-sm text-muted-foreground">No reviews yet - be the first to rate this card.</p>
       ) : (
         <div className="mb-4 rounded-xl border border-border bg-secondary p-3">
           {overallAvg != null && (
@@ -148,7 +148,7 @@ export default function CardReviews({ card }) {
             {DIMENSIONS.map((d) => (
               <div key={d.key} className="flex items-center justify-between gap-1.5">
                 <span className="text-[11px] text-muted-foreground">{d.label}</span>
-                <span className="text-xs font-bold">{aggregates[d.key] != null ? aggregates[d.key].toFixed(1) : '—'}</span>
+                <span className="text-xs font-bold">{aggregates[d.key] != null ? aggregates[d.key].toFixed(1) : '-'}</span>
               </div>
             ))}
           </div>
@@ -210,7 +210,7 @@ export default function CardReviews({ card }) {
             </div>
             <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
               {DIMENSIONS.map((d) => (
-                <span key={d.key} className="text-[10px] text-muted-foreground">{d.label}: <span className="font-bold text-foreground">{r[d.key] ?? '—'}</span></span>
+                <span key={d.key} className="text-[10px] text-muted-foreground">{d.label}: <span className="font-bold text-foreground">{r[d.key] ?? '-'}</span></span>
               ))}
             </div>
             {r.review_text && <p className="mt-1.5 text-sm text-foreground/90">{r.review_text}</p>}

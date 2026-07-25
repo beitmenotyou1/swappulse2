@@ -1,4 +1,4 @@
-// §2.2 Feed Generators — SwapPulse custom AT Protocol feed generator service.
+// §2.2 Feed Generators - SwapPulse custom AT Protocol feed generator service.
 // Computes sorted lists of record URIs via XRPC-style dispatch on `feed`.
 // Simulated: queries the Base44 entity store instead of a firehose index, but
 // returns the standard AT Protocol feedResponse shape so a real feed generator

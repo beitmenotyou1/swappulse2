@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import { useLivePresence } from '@/lib/livePresence';
 
-// §Alpha 1.4 — wraps an avatar with a pulsing red ring when the user is live
+// §Alpha 1.4 - wraps an avatar with a pulsing red ring when the user is live
 // (hosting a voice space or streaming externally). Clicking opens the live
 // content: voice spaces open in-app; external streams open in a new tab.
 // Desktop hover shows a tooltip with title, duration, and a Join button.

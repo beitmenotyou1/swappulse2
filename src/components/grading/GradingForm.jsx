@@ -10,7 +10,7 @@ const SERVICES = [
   { id: 'ace', label: 'ACE' },
 ];
 
-// §4 Grading submission form — creates a GradingSubmission from a collection card.
+// §4 Grading submission form - creates a GradingSubmission from a collection card.
 export default function GradingForm({ collection, onClose, onSaved }) {
   const [selId, setSelId] = useState('');
   const [service, setService] = useState('psa');
@@ -64,7 +64,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
         >
           <option value="">Select a card…</option>
           {collection.map((c) => (
-            <option key={c.id} value={c.id}>{c.card_name} · {c.set_name || '—'}</option>
+            <option key={c.id} value={c.id}>{c.card_name} · {c.set_name || '-'}</option>
           ))}
         </select>
 

@@ -34,7 +34,7 @@ export default function ResetPassword() {
         return;
       }
     } catch {
-      // non-blocking — proceed
+      // non-blocking - proceed
     }
     try {
       await base44.auth.resetPassword({ resetToken, newPassword });
@@ -94,7 +94,7 @@ export default function ResetPassword() {
               required
             />
             <p className="text-xs text-muted-foreground">
-              Minimum 12 characters — use a mix of upper and lower case, numbers and symbols.
+              Minimum 12 characters - use a mix of upper and lower case, numbers and symbols.
             </p>
             </div>
             </div>

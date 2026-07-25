@@ -9,7 +9,7 @@ const NOTIFY_OPTIONS = [
   { id: 'none', label: 'Silent' },
 ];
 
-// §4 Wishlist alerts — creates a SavedSearch for a card and lists existing alerts.
+// §4 Wishlist alerts - creates a SavedSearch for a card and lists existing alerts.
 export default function WishlistAlertModal({ card, onClose }) {
   const [name, setName] = useState(card?.name ? `${card.name} alert` : '');
   const [maxPrice, setMaxPrice] = useState('');
@@ -84,7 +84,7 @@ export default function WishlistAlertModal({ card, onClose }) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Max price (£) — optional</label>
+            <label className="text-xs font-semibold text-muted-foreground">Max price (£) - optional</label>
             <input
               type="number"
               step="0.01"

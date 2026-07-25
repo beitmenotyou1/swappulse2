@@ -3,7 +3,7 @@ import { Download, Trash2, Loader2, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 
-// §12.4 — GDPR/CCPA data export & deletion rights, user-facing.
+// §12.4 - GDPR/CCPA data export & deletion rights, user-facing.
 // The user account itself is owned by the platform auth backend and cannot be
 // deleted from app code; this exports and wipes all SwapPulse data records.
 const ENTITIES = [
@@ -51,7 +51,7 @@ export default function DataPrivacy() {
   const deleteData = async () => {
     if (
       !window.confirm(
-        'This permanently deletes ALL your SwapPulse data — collection, posts, trades, messages, ratings and labels. Your login account remains. This cannot be undone. Continue?'
+        'This permanently deletes ALL your SwapPulse data - collection, posts, trades, messages, ratings and labels. Your login account remains. This cannot be undone. Continue?'
       )
     )
       return;

@@ -3,7 +3,7 @@ import { Clock, UserPlus, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
-// Add-friend link — only renders for users you already follow. Sends a pending
+// Add-friend link - only renders for users you already follow. Sends a pending
 // org.swappulse.friendship record. If the other party sent us a pending request,
 // shows an Accept control instead. Friendship is active only when both parties
 // have accepted records.

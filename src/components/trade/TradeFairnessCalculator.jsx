@@ -3,7 +3,7 @@ import { Scale, Loader2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide
 import { base44 } from '@/api/base44Client';
 import { formatPrice } from '@/lib/format';
 
-// §4.2 Trade Fairness Calculator — client-side using cached CardPricing.
+// §4.2 Trade Fairness Calculator - client-side using cached CardPricing.
 // differential = abs(offerValue - wantValue); percentDiff = differential / max * 100
 // Fairness bands: green <5%, amber 5-15%, red >15%. Non-blocking.
 
@@ -78,7 +78,7 @@ export default function TradeFairnessCalculator({ trade }) {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
         <AlertCircle className="h-4 w-4 shrink-0" />
-        Fairness check needs pricing data for both sides — add cards with known market prices to see a balance estimate.
+        Fairness check needs pricing data for both sides - add cards with known market prices to see a balance estimate.
       </div>
     );
   }
@@ -126,13 +126,13 @@ export default function TradeFairnessCalculator({ trade }) {
           <AlertTriangle className="mr-1 inline h-3 w-3 text-warning" />
           {heavier === 'offer'
             ? `You're offering ~${formatPrice(calc.differential)} more. Consider asking for a small added card or cash to balance.`
-            : `They're offering ~${formatPrice(calc.differential)} more than your wants — you could add a card from your duplicates to even it out.`}
+            : `They're offering ~${formatPrice(calc.differential)} more than your wants - you could add a card from your duplicates to even it out.`}
         </p>
       )}
       {tier.key === 'red' && (
         <p className="mt-2.5 text-xs text-muted-foreground">
           <AlertCircle className="mr-1 inline h-3 w-3 text-destructive" />
-          This deal is significantly unbalanced. Double-check the values — you can still complete it if the cards are emotionally valuable to you.
+          This deal is significantly unbalanced. Double-check the values - you can still complete it if the cards are emotionally valuable to you.
         </p>
       )}
     </div>

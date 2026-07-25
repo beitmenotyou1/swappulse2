@@ -40,7 +40,7 @@ export default function Register() {
         return;
       }
     } catch {
-      // non-blocking — proceed
+      // non-blocking - proceed
     }
     try {
       await base44.auth.register({ email, password });

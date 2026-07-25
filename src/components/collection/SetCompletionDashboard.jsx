@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getSets, getSet, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 
-// §4.1 Set Completion dashboard — per-set progress with milestone badges
+// §4.1 Set Completion dashboard - per-set progress with milestone badges
 // (25 / 50 / 75 / 100, matching Achievement set_completion_* types) and a
 // missing-cards breakdown fetched from TCGDex.
 
@@ -146,7 +146,7 @@ export default function SetCompletionDashboard({ items }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium">{c.name}</p>
-                  <p className={`text-[10px] ${text}`}>{c.rarity || '—'} · #{c.localId}</p>
+                  <p className={`text-[10px] ${text}`}>{c.rarity || '-'} · #{c.localId}</p>
                 </div>
               </Link>
             );
@@ -185,7 +185,7 @@ export default function SetCompletionDashboard({ items }) {
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
           <p className="text-xs text-muted-foreground">Nearest Milestone</p>
-          <p className="truncate text-sm font-extrabold">{summary.nearest ? `${summary.nearest.name} · ${summary.nearest.pct}%` : '—'}</p>
+          <p className="truncate text-sm font-extrabold">{summary.nearest ? `${summary.nearest.name} · ${summary.nearest.pct}%` : '-'}</p>
         </div>
       </div>
 

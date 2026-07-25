@@ -1,4 +1,4 @@
-// §2.5 resolveUser — resolves a collector handle (email local-part or name) to
+// §2.5 resolveUser - resolves a collector handle (email local-part or name) to
 // their AT Protocol DID + display info, for vouch/journal/meetup targeting.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 

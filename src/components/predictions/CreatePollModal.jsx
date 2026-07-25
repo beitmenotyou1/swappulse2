@@ -128,9 +128,9 @@ export default function CreatePollModal({ open, onClose, onCreated }) {
                   {card.image && <img src={card.image} alt={card.name} className="h-14 w-10 rounded object-cover" />}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{card.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{card.rarity || '—'}</p>
+                    <p className="truncate text-xs text-muted-foreground">{card.rarity || '-'}</p>
                     {price != null && <p className="text-xs text-success">Current {source} avg: {price}</p>}
-                    {price == null && <p className="text-xs text-muted-foreground">Price not tracked — outcome will be inconclusive</p>}
+                    {price == null && <p className="text-xs text-muted-foreground">Price not tracked - outcome will be inconclusive</p>}
                   </div>
                   <button onClick={() => setCard(null)} className="text-xs text-primary hover:underline">Change</button>
                 </div>

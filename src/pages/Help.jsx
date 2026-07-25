@@ -10,16 +10,16 @@ import PageHeader from '@/components/PageHeader';
 const FEATURES = [
   { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalog via TCGdex, by set, rarity, or illustrator.' },
   { to: '/collection', icon: Layers, label: 'Collection', desc: 'Track every card you own, with portfolio value, set completion, duplicates, and insurance exports.' },
-  { to: '/binders', icon: BookOpen, label: 'Binders', desc: 'Curate and share showcase binders — 3×3 or 9×9 grids, drag-to-reorder.' },
+  { to: '/binders', icon: BookOpen, label: 'Binders', desc: 'Curate and share showcase binders - 3×3 or 9×9 grids, drag-to-reorder.' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', desc: 'List cards you have and want, negotiate in threaded trade chats with fairness scoring.' },
-  { to: '/circles', icon: Users, label: 'Circles', desc: 'Join themed collector circles — vintage, competitive, shiny, regional, and more.' },
+  { to: '/circles', icon: Users, label: 'Circles', desc: 'Join themed collector circles - vintage, competitive, shiny, regional, and more.' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups', desc: 'Organise or attend in-person meetups, swaps, and live pulls near you.' },
   { to: '/spaces', icon: Radio, label: 'Live Voice Spaces', desc: 'Go live from any platform (Twitch, YouTube, Kick) and broadcast to your followers.' },
   { to: '/packs', icon: Package, label: 'Pack Openings', desc: 'Share your pulls and follow collectors to see fresh pack openings in your feed.' },
   { to: '/market', icon: BarChart3, label: 'Market Watch', desc: 'Track card prices, set price alerts, and watch market trends over time.' },
   { to: '/predictions', icon: Vote, label: 'Predictions', desc: 'Create and vote on community sentiment polls about cards and the meta.' },
   { to: '/grading', icon: Award, label: 'Grading', desc: 'Prepare grading submissions and review condition reports for your cards.' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust', desc: 'Build reputation through vouches and trading feedback — your trusted-trader score.' },
+  { to: '/trust', icon: ShieldCheck, label: 'Trust', desc: 'Build reputation through vouches and trading feedback - your trusted-trader score.' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings', desc: 'Language, privacy, notifications, accessibility, and account preferences.' },
 ];
 
@@ -34,7 +34,7 @@ const FAQ = [
   },
   {
     q: 'Who owns my collection data?',
-    a: 'You do. SwapPulse is built on self-sovereign principles — records are signed to your AT Protocol DID and designed to be portable to your own data server in future.',
+    a: 'You do. SwapPulse is built on self-sovereign principles - records are signed to your AT Protocol DID and designed to be portable to your own data server in future.',
   },
   {
     q: 'How does trading work?',
@@ -46,7 +46,7 @@ const FAQ = [
   },
   {
     q: 'How do I get help if something is broken?',
-    a: 'Tap the Feedback button on the right edge of the screen — it captures a snapshot of the page and sends your comment straight to the team. You can also email feedback@swappulse.org.',
+    a: 'Tap the Feedback button on the right edge of the screen - it captures a snapshot of the page and sends your comment straight to the team. You can also email feedback@swappulse.org.',
   },
 ];
 
@@ -72,7 +72,7 @@ export default function Help() {
         <section>
           <h2 className="mb-2 text-lg font-extrabold">About SwapPulse</h2>
           <p className="text-sm text-muted-foreground">
-            SwapPulse is a social platform for Pokémon TCG collectors — track your collection, share pulls, trade with
+            SwapPulse is a social platform for Pokémon TCG collectors - track your collection, share pulls, trade with
             trusted collectors, join circles, go live, and follow the market. Built on the AT Protocol for self-sovereign
             identity, powered by the TCGdex open catalog, and kept free and open-source by community support.
           </p>
@@ -124,7 +124,7 @@ export default function Help() {
               <h3 className="font-bold">Support SwapPulse</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
-              Keep every feature free and open-source. Donate any amount — it all goes back into the platform.
+              Keep every feature free and open-source. Donate any amount - it all goes back into the platform.
             </p>
             <Link to="/donate" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
               <Heart className="h-4 w-4 fill-current" /> Donate
@@ -137,7 +137,7 @@ export default function Help() {
               <h3 className="font-bold">Send feedback</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
-              Use the <b>Feedback</b> button on the right edge of any page — it captures a snapshot and sends your note to
+              Use the <b>Feedback</b> button on the right edge of any page - it captures a snapshot and sends your note to
               the team. Or email <a href="mailto:feedback@swappulse.org" className="text-primary underline">feedback@swappulse.org</a>.
             </p>
           </div>

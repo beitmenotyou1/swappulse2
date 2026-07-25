@@ -16,7 +16,7 @@ const STATUS = {
 };
 const STATUS_ORDER = ['submitted', 'in_progress', 'graded', 'returned'];
 
-// §4 Grading submission tracker — monitor PSA/BGS/CGC/ACE submissions,
+// §4 Grading submission tracker - monitor PSA/BGS/CGC/ACE submissions,
 // advance status, record the received grade.
 export default function Grading() {
   const [items, setItems] = useState([]);
@@ -74,7 +74,7 @@ export default function Grading() {
           <div className="py-20 text-center">
             <Award className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-lg font-bold">No grading submissions yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Track cards you've sent to PSA, BGS, CGC or ACE — status, tracking and grades.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Track cards you've sent to PSA, BGS, CGC or ACE - status, tracking and grades.</p>
             <button onClick={() => setShowForm(true)} className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white">Add submission</button>
           </div>
         ) : (

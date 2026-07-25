@@ -13,7 +13,7 @@ async function sha1Hex(text) {
 }
 
 // Returns the breach count for the password, or null if the check could not
-// complete (treated as "not found" — never blocks the caller).
+// complete (treated as "not found" - never blocks the caller).
 export async function checkPasswordBreach(password) {
   if (!password) return null;
   try {

@@ -2,7 +2,7 @@ import React from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
-// Renders nothing — surfaces §9 real-time events as toasts.
+// Renders nothing - surfaces §9 real-time events as toasts.
 export default function RealtimeToaster() {
   const { toast } = useToast();
 

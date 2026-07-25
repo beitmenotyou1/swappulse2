@@ -1,4 +1,4 @@
-// §2.5 getBinder — resolves a binder's slots to card details from the owner's
+// §2.5 getBinder - resolves a binder's slots to card details from the owner's
 // collection. Simulated XRPC procedure (org.swappulse.social.getBinder).
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 

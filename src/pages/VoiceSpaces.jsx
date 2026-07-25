@@ -80,7 +80,7 @@ export default function VoiceSpaces() {
 
   return (
     <div>
-      <PageHeader title="Live Streams" subtitle="Collectors streaming now — tap a live ring to join">
+      <PageHeader title="Live Streams" subtitle="Collectors streaming now - tap a live ring to join">
         <button
           onClick={() => setShowGoLive(true)}
           className="live-go-pulse flex items-center gap-1.5 rounded-full bg-destructive px-4 py-2 text-sm font-bold text-white"

@@ -1,4 +1,4 @@
-// §9 Real-Time Update System — central event bus over the platform's entity
+// §9 Real-Time Update System - central event bus over the platform's entity
 // realtime subscriptions, with heartbeat, exponential-backoff reconnect,
 // REST catch-up on reconnect, and visibility-driven connect/disconnect.
 import { base44 } from '@/api/base44Client';
@@ -250,7 +250,7 @@ export function initRealtime() {
   window.addEventListener('offline', () => rt.disconnect());
 }
 
-// §9.2 Optimistic update helper — apply instantly, rollback on rejection.
+// §9.2 Optimistic update helper - apply instantly, rollback on rejection.
 export async function optimisticUpdate({ apply, commit, rollback }) {
   apply();
   try {

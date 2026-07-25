@@ -38,7 +38,7 @@ export default function CreateSpaceModal({ onClose, onCreated }) {
       if (mode === 'live') {
         try { await base44.functions.invoke('provisionSpace', { space_id: space.id }); } catch (e) { /* non-fatal */ }
       }
-      toast({ title: 'Voice Space created', description: mode === 'live' ? 'You are now live' : 'Scheduled — followers notified when you go live' });
+      toast({ title: 'Voice Space created', description: mode === 'live' ? 'You are now live' : 'Scheduled - followers notified when you go live' });
       onCreated?.(space);
       onClose?.();
     } catch (e) {

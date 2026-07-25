@@ -1,7 +1,7 @@
-// §2.5 getTrustProfile — computes a collector's trust score from incoming
+// §2.5 getTrustProfile - computes a collector's trust score from incoming
 // vouches and returns incoming + outgoing vouch lists. Mirrors the Social
 // Service trust.service.ts computation (no Redis adjacency list; scans Vouch
-// records per call — fine at this scale).
+// records per call - fine at this scale).
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const RELATIONSHIP_WEIGHT = {

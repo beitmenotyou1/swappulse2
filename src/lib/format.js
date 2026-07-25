@@ -1,7 +1,7 @@
 import moment from 'moment';
 
 export function formatPrice(pence) {
-  if (pence == null || isNaN(pence)) return '—';
+  if (pence == null || isNaN(pence)) return '-';
   const pounds = pence / 100;
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',

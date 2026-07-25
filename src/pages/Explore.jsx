@@ -124,7 +124,7 @@ export default function Explore() {
                   </div>
                   <div className="p-2">
                     <p className="truncate text-xs font-semibold">{card.name}</p>
-                    <p className={`truncate text-[10px] ${text}`}>{card.rarity || '—'}</p>
+                    <p className={`truncate text-[10px] ${text}`}>{card.rarity || '-'}</p>
                   </div>
                 </Link>
               );

@@ -1,4 +1,4 @@
-// §13 Appendix — canonical record interfaces (documentation only).
+// §13 Appendix - canonical record interfaces (documentation only).
 // These mirror the AT-Protocol lexicons and Base44 entity schemas already in use.
 // Entity persistence is handled by the Base44 SDK; these types describe the shapes.
 
@@ -12,7 +12,7 @@ export type CollectionEntryRecord = {
   pokemonName: string;
   rarity: string;
   acquisitionDate: string; // ISO 8601 date
-  purchasePrice: number; // pence (GBP) — see CardPricing for source
+  purchasePrice: number; // pence (GBP) - see CardPricing for source
   marketValue: number; // pence
   notes?: string; // max 500 chars
   imageUrl?: string;

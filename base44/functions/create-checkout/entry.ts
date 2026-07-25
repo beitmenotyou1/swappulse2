@@ -1,4 +1,4 @@
-// §2.9 create-checkout — initiates a Wix Payments checkout session for a
+// §2.9 create-checkout - initiates a Wix Payments checkout session for a
 // marketplace listing. Validates the minimum charge (0.50), marks the listing
 // pending, and returns the hosted checkout redirect URL.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

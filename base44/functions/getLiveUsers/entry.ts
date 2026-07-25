@@ -1,4 +1,4 @@
-// §Manual Go Live — aggregates the set of currently-live collectors from live
+// §Manual Go Live - aggregates the set of currently-live collectors from live
 // VoiceSpace records (manual stream declarations). Each record carries a
 // stream_url + platform + auto_end_at; the client renders the universal red
 // "live" ring and opens the stream URL on click. Expired records (auto_end_at

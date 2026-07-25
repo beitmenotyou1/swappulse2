@@ -15,7 +15,7 @@ const GRADIENT = {
   other: 'from-muted-foreground to-secondary',
 };
 
-// Profile "Past Streams" — ended voiceSpace records for the profile owner,
+// Profile "Past Streams" - ended voiceSpace records for the profile owner,
 // each convertible into a podcast episode. Rendered under the Podcasts tab.
 export default function PastStreamsSection({ did, onEpisodePublished }) {
   const { toast } = useToast();

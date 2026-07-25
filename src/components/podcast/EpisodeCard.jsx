@@ -8,7 +8,7 @@ function fmtDur(s) {
   return `${Math.max(1, Math.round(s / 60))} min`;
 }
 
-// §Alpha 1.4 — episode list card for the profile Podcasts tab and the
+// §Alpha 1.4 - episode list card for the profile Podcasts tab and the
 // Voice Spaces Recordings tab. Shows cover (or gradient + episode number),
 // title, duration + date, a partial-listen progress bar, and a play button
 // bound to the global podcast player.

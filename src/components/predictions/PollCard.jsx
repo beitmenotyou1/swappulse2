@@ -183,7 +183,7 @@ export default function PollCard({ poll, myVote, myVoteId, user }) {
             ? 'Prediction confirmed by the market.'
             : poll.outcome === 'incorrect'
             ? 'Market moved against the prediction.'
-            : 'Inconclusive — price data was unavailable.'}
+            : 'Inconclusive - price data was unavailable.'}
         </p>
       )}
     </article>

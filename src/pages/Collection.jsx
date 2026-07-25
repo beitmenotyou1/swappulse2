@@ -286,7 +286,7 @@ export default function Collection() {
                       {item.purchase_price ? (
                         <p className="text-sm font-bold">{formatPrice(item.purchase_price)}</p>
                       ) : (
-                        <p className="text-sm text-muted-foreground">—</p>
+                        <p className="text-sm text-muted-foreground">-</p>
                       )}
                       <button onClick={() => remove(item.id)} className="mt-1 text-muted-foreground hover:text-red-400">
                         <Trash2 className="h-4 w-4" />

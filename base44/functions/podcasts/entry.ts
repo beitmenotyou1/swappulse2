@@ -1,4 +1,4 @@
-// §Alpha 1.4 Podcast Feed Generator — org.swappulse.podcasts
+// §Alpha 1.4 Podcast Feed Generator - org.swappulse.podcasts
 // Returns podcast episodes across the platform, sortable by recency,
 // most played (play_count), or most liked (no like records yet → falls back
 // to play_count). A real feed generator would be an independent XRPC service

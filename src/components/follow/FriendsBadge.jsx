@@ -1,7 +1,7 @@
 import React from 'react';
 import { Heart } from 'lucide-react';
 
-// Friends badge — shown on profiles where a mutual accepted friendship exists.
+// Friends badge - shown on profiles where a mutual accepted friendship exists.
 // Pill: auto width, 24px height, 12px radius, primary bg, white text, heart icon.
 export default function FriendsBadge({ isFriend }) {
   if (!isFriend) return null;

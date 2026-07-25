@@ -36,7 +36,7 @@ function validUrl(v) {
   }
 }
 
-// Manual Go Live modal — the collector declares themselves live by pasting an
+// Manual Go Live modal - the collector declares themselves live by pasting an
 // external stream URL and choosing a planned duration. No OAuth, no platform
 // webhooks: SwapPulse just records the declaration and notifies bell-enabled
 // followers. The red live ring is driven by the resulting VoiceSpace record.
@@ -106,11 +106,11 @@ export default function GoLiveModal({ onClose, onLive }) {
           url: streamUrl.trim(),
         });
       } catch {
-        /* non-fatal — push may be unconfigured */
+        /* non-fatal - push may be unconfigured */
       }
       toast({
         title: 'You are live!',
-        description: `Streaming for ${effectiveDuration} min — your profile ring is now red.`,
+        description: `Streaming for ${effectiveDuration} min - your profile ring is now red.`,
       });
       onLive?.(space);
       onClose?.();
@@ -202,7 +202,7 @@ export default function GoLiveModal({ onClose, onLive }) {
           </div>
           <p className="rounded-xl bg-secondary px-3 py-2 text-xs text-muted-foreground">
             Stream will auto-end in <b className="text-foreground">{effectiveDuration}</b> minutes
-            (around {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) —
+            (around {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) -
             or tap End Stream to stop early.
           </p>
           <button

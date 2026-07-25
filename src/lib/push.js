@@ -1,4 +1,4 @@
-// Web Push subscription client — §8.1 Push Notifications (VAPID).
+// Web Push subscription client - §8.1 Push Notifications (VAPID).
 import { base44 } from '@/api/base44Client';
 
 function urlB64ToUint8(b64) {
@@ -45,7 +45,7 @@ export async function subscribePush() {
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') throw new Error('Notification permission denied');
   const publicKey = await getVapidPublicKey();
-  if (!publicKey) throw new Error('Push not configured yet — ask your admin to add VAPID keys');
+  if (!publicKey) throw new Error('Push not configured yet - ask your admin to add VAPID keys');
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,

@@ -1,4 +1,4 @@
-// Offline outbox for collection writes — §8 Background Sync.
+// Offline outbox for collection writes - §8 Background Sync.
 // Queues create/update/delete/bulkUpdate when offline and replays them when
 // connectivity returns (window 'online' event + service-worker 'sync').
 import { base44 } from '@/api/base44Client';
@@ -14,7 +14,7 @@ async function registerSync() {
     const reg = await navigator.serviceWorker.ready;
     if (reg.sync && 'sync' in reg) await reg.sync.register('collection-sync');
   } catch {
-    /* Background Sync not supported — window 'online' listener still replays */
+    /* Background Sync not supported - window 'online' listener still replays */
   }
 }
 

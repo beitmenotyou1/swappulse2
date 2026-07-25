@@ -1,4 +1,4 @@
-// §2.6 Sentiment Poll resolution service — runs on an hourly schedule (see
+// §2.6 Sentiment Poll resolution service - runs on an hourly schedule (see
 // base44/workflows/Poll Resolution.jsonc). For every expired, unresolved poll
 // it compares the card's current market average (CardPricing) against the
 // price captured at creation and marks the creator's prediction

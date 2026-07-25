@@ -54,7 +54,7 @@ export default function FeedbackButton() {
         userAgent: navigator.userAgent,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
       });
-      toast({ title: 'Feedback sent', description: 'Thanks — our team will review it.' });
+      toast({ title: 'Feedback sent', description: 'Thanks - our team will review it.' });
       setOpen(false);
     } catch (e) {
       toast({ title: 'Could not send feedback', description: e?.message || 'Please try again later.', variant: 'destructive' });
@@ -111,7 +111,7 @@ export default function FeedbackButton() {
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
                   <Camera className="h-6 w-6" />
-                  Snapshot unavailable — your comments still help.
+                  Snapshot unavailable - your comments still help.
                 </div>
               )}
             </div>

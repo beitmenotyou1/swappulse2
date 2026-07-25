@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import webPush from 'npm:web-push@3.6.7';
 
-// §4 Wishlist alerts — scans SavedSearch records, matches each against current
+// §4 Wishlist alerts - scans SavedSearch records, matches each against current
 // CardPricing (price at/under target) and open TradeListings (card offered),
 // then notifies the owner via push and/or email. Admin-gated; runs on schedule.
 Deno.serve(async (req) => {
@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
         webPush.setVapidDetails('mailto:support@swappulse.org', publicKey, privateKey);
         pushReady = true;
       }
-    } catch { /* VAPID keys not yet valid — email alerts still work */ }
+    } catch { /* VAPID keys not yet valid - email alerts still work */ }
 
     const searches = await svc.entities.SavedSearch.list('-updated_date', 500);
     const pricing = await svc.entities.CardPricing.list('-updated_date', 500);

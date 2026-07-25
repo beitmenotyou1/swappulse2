@@ -9,7 +9,7 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
 
-// Live negotiation thread for a trade listing — §9.1 trade.message consumer.
+// Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
   const { tradeId } = useParams();
   const [trade, setTrade] = useState(null);
@@ -100,7 +100,7 @@ export default function TradeThread() {
     <div>
       <PageHeader
         title="Negotiation"
-        subtitle={trade ? `${trade.offer_card_names?.join(', ') || '—'} → ${trade.wanted_card_names?.join(', ') || '—'}` : ''}
+        subtitle={trade ? `${trade.offer_card_names?.join(', ') || '-'} → ${trade.wanted_card_names?.join(', ') || '-'}` : ''}
       >
         <Link to="/trades" className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Board
@@ -146,7 +146,7 @@ export default function TradeThread() {
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                Start the conversation — ask about condition, shipping, or terms.
+                Start the conversation - ask about condition, shipping, or terms.
               </p>
             ) : messages.map((m) => {
               const mine = me && (m.did === me.did || m.author_name === me.full_name);

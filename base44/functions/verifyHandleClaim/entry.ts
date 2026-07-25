@@ -1,4 +1,4 @@
-// org.swappulse.handleClaim verification — confirms a user owns a custom domain
+// org.swappulse.handleClaim verification - confirms a user owns a custom domain
 // by looking up the AT Protocol handle TXT record (_atproto.<domain>) via
 // DNS-over-HTTPS, with an HTML well-known fallback. Returns the verification
 // result; the caller persists the HandleClaim record and updates the user.

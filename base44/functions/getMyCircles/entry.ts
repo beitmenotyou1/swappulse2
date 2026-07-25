@@ -1,4 +1,4 @@
-// §2.7 getMyCircles — returns the circles the current user curates or belongs
+// §2.7 getMyCircles - returns the circles the current user curates or belongs
 // to. Used by the Circles page ("Your circles") and the Trade Board to scope
 // circle-scoped trade visibility.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

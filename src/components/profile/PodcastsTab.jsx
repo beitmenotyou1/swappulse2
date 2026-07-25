@@ -5,7 +5,7 @@ import { ensureUserDid } from '@/lib/atproto';
 import EpisodeCard from '@/components/podcast/EpisodeCard';
 import PastStreamsSection from '@/components/profile/PastStreamsSection';
 
-// §Alpha 1.4 — profile Podcasts tab. Lists org.swappulse.podcastEpisode
+// §Alpha 1.4 - profile Podcasts tab. Lists org.swappulse.podcastEpisode
 // records authored by the profile owner (passed `did`), sorted by
 // publishedAt descending, using the global podcast player. Below the
 // episode list, a "Past Streams" section surfaces ended streams that can

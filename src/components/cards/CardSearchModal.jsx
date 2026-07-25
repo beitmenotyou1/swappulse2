@@ -98,7 +98,7 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
                       </div>
                       <div className="p-1.5">
                         <p className="truncate text-[11px] font-semibold">{card.name}</p>
-                        <p className={`truncate text-[10px] ${text}`}>{card.rarity || '—'}</p>
+                        <p className={`truncate text-[10px] ${text}`}>{card.rarity || '-'}</p>
                       </div>
                     </button>
                   );

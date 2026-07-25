@@ -1,4 +1,4 @@
-// §2.9 wix-payments-webhook — receives Wix Payments order events. On order
+// §2.9 wix-payments-webhook - receives Wix Payments order events. On order
 // approved, matches the checkout session to a pending MarketListing and marks
 // it sold. JWT is verified against the WIX_PAYMENTS_WEBHOOK_PUBLIC_KEY.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

@@ -1,4 +1,4 @@
-// §2.7 getCircle — resolves a circle for the viewer: membership status,
+// §2.7 getCircle - resolves a circle for the viewer: membership status,
 // whether the viewer may see the member list, and (for members only) the
 // circle-scoped trade listings. Private circles are hidden from non-members.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

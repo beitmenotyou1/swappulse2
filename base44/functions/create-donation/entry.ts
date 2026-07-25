@@ -1,6 +1,6 @@
-// create-donation — initiates a Wix (Base44) Payments checkout session for an
+// create-donation - initiates a Wix (Base44) Payments checkout session for an
 // open amount donation. Validates the minimum charge (0.50) and returns the
-// hosted checkout redirect URL. No auth required — visitors can donate.
+// hosted checkout redirect URL. No auth required - visitors can donate.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 Deno.serve(async (req) => {

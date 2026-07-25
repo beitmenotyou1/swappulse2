@@ -4,6 +4,9 @@ import App from '@/App.jsx'
 import '@/index.css'
 import { replayOutbox } from '@/lib/offlineSync'
 import { initRealtime } from '@/lib/realtime'
+import { handleSubdomainRedirect } from '@/lib/subdomainRedirect'
+
+handleSubdomainRedirect();
 
 try {
   if (localStorage.getItem('swappulse-theme') !== 'light') {

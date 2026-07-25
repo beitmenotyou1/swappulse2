@@ -26,7 +26,7 @@ function MeetupCard({ m }) {
       </div>
       {m.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{m.description}</p>}
       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {m.rsvp_count || 0} / {m.capacity || '—'}</span>
+        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {m.rsvp_count || 0} / {m.capacity || '-'}</span>
         {m.required_vouches > 0 && (
           <span className="flex items-center gap-1 text-accent"><ShieldCheck className="h-3.5 w-3.5" /> {m.required_vouches} vouches</span>
         )}

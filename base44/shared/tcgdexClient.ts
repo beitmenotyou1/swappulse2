@@ -1,4 +1,4 @@
-// Shared TCGDex client + rate limiter — §7.1 / §7.5
+// Shared TCGDex client + rate limiter - §7.1 / §7.5
 // Community-funded free API: throttle to 10 requests/second.
 export const TCGDEX_BASE = 'https://api.tcgdex.net/v2/en';
 
