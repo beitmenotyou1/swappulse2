@@ -1,0 +1,68 @@
+{
+  "name": "HandleClaim",
+  "type": "object",
+  "title": "HandleClaim",
+  "description": "org.swappulse.handleClaim \u2014 a verified custom-domain handle ownership claim. A user proves they own a domain by publishing a DNS TXT record (or HTML file) containing their DID; once verified their handle becomes @their-domain.com with an elevated trust badge.",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Custom domain the user claims, e.g. yourbrand.com"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the claiming user"
+    },
+    "verification_method": {
+      "type": "string",
+      "enum": [
+        "txt_record",
+        "html_file",
+        "dns_cname"
+      ],
+      "default": "txt_record",
+      "description": "Method used to prove domain ownership"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "revoked"
+      ],
+      "default": "pending"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "legacy_handle": {
+      "type": "string",
+      "description": "Original @username.swappulse.org handle kept for redirect during transition"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.handleClaim)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the claim to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "domain",
+    "did",
+    "status"
+  ]
+}

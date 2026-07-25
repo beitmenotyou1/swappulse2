@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2 } from 'lucide-react';
+import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2, BadgeCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -17,6 +17,7 @@ import CrossPostTab from '@/components/crosspost/CrossPostTab';
 import GoLiveModal from '@/components/spaces/GoLiveModal';
 import GoLiveControl from '@/components/profile/GoLiveControl';
 import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
+import DomainHandleCard from '@/components/profile/DomainHandleCard';
 
 const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
@@ -115,7 +116,10 @@ export default function Profile() {
         </div>
         <div className="mt-3">
           <h1 className="text-xl font-extrabold">{user?.full_name || 'Collector'}</h1>
-          <p className="text-sm text-muted-foreground">@{user?.email?.split('@')[0] || 'collector'}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm text-muted-foreground">@{user?.custom_handle || (user?.email?.split('@')[0] || 'collector')}</p>
+            {user?.handle_verified && <BadgeCheck className="h-4 w-4 text-success" />}
+          </div>
           <p className="mt-2 text-sm">Pokémon TCG collector and the soul behind SwapPulse.</p>
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Sutton, Surrey</span>
@@ -222,6 +226,7 @@ export default function Profile() {
           <CrossPostTab />
         ) : (
           <div className="p-4 space-y-4">
+            <DomainHandleCard />
             <WeeklyDigestToggle />
             <DataPrivacy />
           </div>
