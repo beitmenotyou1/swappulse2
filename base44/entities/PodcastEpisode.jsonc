@@ -1,0 +1,112 @@
+{
+  "name": "PodcastEpisode",
+  "type": "object",
+  "title": "PodcastEpisode",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "Processed MP3/M4A/WebM audio file URL"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "episode_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "season_number": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    },
+    "cover_image_url": {
+      "type": "string"
+    },
+    "source_space_id": {
+      "type": "string",
+      "description": "Original voice space record if derived from a recording"
+    },
+    "chapter_marks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp_seconds": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "card_uri": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "show_notes": {
+      "type": "string",
+      "maxLength": 5000
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 30
+      }
+    },
+    "play_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "host_name": {
+      "type": "string"
+    },
+    "host_handle": {
+      "type": "string"
+    },
+    "host_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the host (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.podcastEpisode)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the episode to the host's signing key (simulated)"
+    }
+  },
+  "required": [
+    "title",
+    "audio_url",
+    "duration_seconds",
+    "published_at"
+  ]
+}

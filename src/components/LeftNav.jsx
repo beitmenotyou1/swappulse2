@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, Store, ChevronDown } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, Store, ChevronDown, Radio } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -15,6 +15,7 @@ const primary = [
   { to: '/marketplace', icon: Store, label: 'Marketplace' },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
+  { to: '/spaces', icon: Radio, label: 'Voice Spaces' },
 ];
 
 const more = [

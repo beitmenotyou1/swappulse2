@@ -12,8 +12,9 @@ import NotificationToggle from '@/components/pwa/NotificationToggle';
 import DataPrivacy from '@/components/profile/DataPrivacy';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import JournalsTab from '@/components/profile/JournalsTab';
+import PodcastsTab from '@/components/profile/PodcastsTab';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Privacy'];
+const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -176,6 +177,8 @@ export default function Profile() {
           </div>
         ) : tab === 'Journals' ? (
           <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
+        ) : tab === 'Podcasts' ? (
+          <PodcastsTab />
         ) : (
           <div className="p-4 space-y-4">
             <WeeklyDigestToggle />

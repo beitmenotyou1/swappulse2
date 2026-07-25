@@ -1,0 +1,117 @@
+{
+  "name": "VoiceSpace",
+  "type": "object",
+  "title": "VoiceSpace",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "live",
+        "ended",
+        "cancelled"
+      ],
+      "default": "scheduled",
+      "description": "Lifecycle state of the space"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When a scheduled space is planned to start"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "livekit_room_name": {
+      "type": "string",
+      "description": "Internal LiveKit room identifier (simulated provisioning)"
+    },
+    "livekit_server_url": {
+      "type": "string",
+      "description": "LiveKit server WebSocket URL"
+    },
+    "max_listeners": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 1000,
+      "default": 100
+    },
+    "topic_tags": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "maxLength": 30
+      }
+    },
+    "recording_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "recording_blob_url": {
+      "type": "string",
+      "description": "Processed audio file URL after the space ends"
+    },
+    "recording_duration_seconds": {
+      "type": "integer"
+    },
+    "podcast_episode_id": {
+      "type": "string",
+      "description": "Local id of the podcast episode if converted from the recording"
+    },
+    "listener_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "peak_listener_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "host_name": {
+      "type": "string"
+    },
+    "host_handle": {
+      "type": "string"
+    },
+    "host_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the host (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.voiceSpace)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the space to the host's signing key (simulated)"
+    }
+  },
+  "required": [
+    "title",
+    "status"
+  ]
+}

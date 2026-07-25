@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 
 const HEARTBEAT_MS = 30000;
 const BACKOFF = [1000, 2000, 4000, 8000, 16000, 30000];
-const TRACKED = ['Post', 'TradeListing', 'CardPricing', 'Reputation', 'TradeMessage', 'Wishlist'];
+const TRACKED = ['Post', 'TradeListing', 'CardPricing', 'Reputation', 'TradeMessage', 'Wishlist', 'VoiceSpace', 'SpaceParticipant', 'PodcastEpisode'];
 
 class RealTimeManager {
   constructor() {
@@ -129,6 +129,19 @@ class RealTimeManager {
       if (e.type === 'create') this.emit('trade.message', e.data);
     });
     sub('Wishlist', () => { this.loadWishlist(); });
+    sub('VoiceSpace', (e) => {
+      if (e.type === 'create') this.emit('space.new', e.data);
+      if (e.type === 'update') {
+        if (e.data.status === 'live') this.emit('space.started', e.data);
+        if (e.data.status === 'ended' || e.data.status === 'cancelled') this.emit('space.ended', e.data);
+      }
+    });
+    sub('SpaceParticipant', (e) => {
+      if (e.type === 'create' || e.type === 'update') this.emit('space.participant_update', e.data);
+    });
+    sub('PodcastEpisode', (e) => {
+      if (e.type === 'create') this.emit('podcast.new', e.data);
+    });
   }
 
   async seedKnownIds() {
@@ -156,6 +169,9 @@ class RealTimeManager {
     await diff('CardPricing', (it) => { this.emit('market.price_update', it); this.checkPriceAlert(it); });
     await diff('Reputation', (it) => this.emit('profile.reputation_update', it));
     await diff('TradeMessage', (it) => this.emit('trade.message', it));
+    await diff('VoiceSpace', (it) => { if (it.status === 'live') this.emit('space.started', it); if (it.status === 'ended' || it.status === 'cancelled') this.emit('space.ended', it); });
+    await diff('SpaceParticipant', (it) => this.emit('space.participant_update', it));
+    await diff('PodcastEpisode', (it) => this.emit('podcast.new', it));
   }
 
   checkMatch(listing) {

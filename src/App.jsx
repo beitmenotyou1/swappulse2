@@ -38,6 +38,8 @@ import Marketplace from '@/pages/Marketplace';
 import ListingDetail from '@/pages/ListingDetail';
 import OrderComplete from '@/pages/OrderComplete';
 import UserProfile from '@/pages/UserProfile';
+import VoiceSpaces from '@/pages/VoiceSpaces';
+import SpaceRoom from '@/pages/SpaceRoom';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -102,6 +104,8 @@ const AuthenticatedApp = () => {
           <Route path="/order-complete" element={<OrderComplete />} />
           <Route path="/profile/:did" element={<UserProfile />} />
           <Route path="/predictions" element={<Predictions />} />
+          <Route path="/spaces" element={<VoiceSpaces />} />
+          <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

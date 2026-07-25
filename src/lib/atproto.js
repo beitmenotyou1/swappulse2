@@ -54,6 +54,10 @@ export const NSID = {
   FRIENDSHIP: 'org.swappulse.friendship',
   STORY: 'org.swappulse.story',
   STORY_VIEW: 'org.swappulse.storyView',
+  // Alpha 1.4 record lexicons — voice spaces & podcasts
+  VOICE_SPACE: 'org.swappulse.voiceSpace',
+  SPACE_PARTICIPANT: 'org.swappulse.spaceParticipant',
+  PODCAST_EPISODE: 'org.swappulse.podcastEpisode',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.fresh-pulls',
@@ -65,6 +69,7 @@ export const NSID = {
     CARD_OF_DAY: 'org.swappulse.card-of-day',
     SPOILERS: 'org.swappulse.spoilers',
     LEADERBOARD: 'org.swappulse.leaderboard',
+    SPACES: 'org.swappulse.spaces',
   },
   // Custom labeler (simulated Ozone)
   LABELER_DID: 'did:web:labeler.swappulse.org',

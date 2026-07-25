@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus, Radio } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const primary = [
@@ -20,6 +20,7 @@ const moreItems = [
   { to: '/market', icon: BarChart3, label: 'Market' },
   { to: '/predictions', icon: Vote, label: 'Polls' },
   { to: '/grading', icon: Award, label: 'Grading' },
+  { to: '/spaces', icon: Radio, label: 'Spaces' },
   { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
 

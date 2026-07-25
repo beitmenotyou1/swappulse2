@@ -1,0 +1,77 @@
+{
+  "name": "SpaceParticipant",
+  "type": "object",
+  "title": "SpaceParticipant",
+  "properties": {
+    "space_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the voice space"
+    },
+    "space_id": {
+      "type": "string",
+      "description": "Local id of the VoiceSpace for fast lookup"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "host",
+        "co_host",
+        "speaker",
+        "listener"
+      ],
+      "default": "listener"
+    },
+    "hand_raised": {
+      "type": "boolean",
+      "default": false,
+      "description": "Listener requesting to speak"
+    },
+    "muted": {
+      "type": "boolean",
+      "default": true
+    },
+    "joined_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "left_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "participant_name": {
+      "type": "string"
+    },
+    "participant_handle": {
+      "type": "string"
+    },
+    "participant_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the participant (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.spaceParticipant)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the record to the participant's signing key (simulated)"
+    }
+  },
+  "required": [
+    "space_ref",
+    "space_id",
+    "role",
+    "joined_at"
+  ]
+}
