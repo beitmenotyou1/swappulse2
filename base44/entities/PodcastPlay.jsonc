@@ -1,0 +1,59 @@
+{
+  "name": "PodcastPlay",
+  "type": "object",
+  "title": "PodcastPlay",
+  "description": "org.swappulse.podcastPlay \u2014 records that a user listened to a podcast episode, enabling listen tracking and progress resumption.",
+  "properties": {
+    "episode_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the podcast episode"
+    },
+    "episode_id": {
+      "type": "string",
+      "description": "Local id of the PodcastEpisode for fast lookup"
+    },
+    "listen_duration_seconds": {
+      "type": "integer",
+      "default": 0,
+      "description": "Last listened position in seconds"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user listened to the end"
+    },
+    "chapter_reached": {
+      "type": "integer",
+      "description": "Highest chapter index reached"
+    },
+    "listened_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the listen was last recorded"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the listener (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.podcastPlay)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the play to the listener's signing key (simulated)"
+    }
+  },
+  "required": [
+    "episode_ref",
+    "listened_at"
+  ]
+}

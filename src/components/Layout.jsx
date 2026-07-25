@@ -5,6 +5,7 @@ import RightSidebar from '@/components/RightSidebar';
 import MobileNav from '@/components/MobileNav';
 import RealtimeToaster from '@/components/RealtimeToaster';
 import BellToaster from '@/components/follow/BellToaster';
+import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import { usePresence } from '@/hooks/usePresence';
 
 export default function Layout() {
@@ -16,6 +17,7 @@ export default function Layout() {
       </div>
       <main className="min-w-0 flex-1 border-x border-border pb-20 md:pb-0">
         <Outlet />
+        <StickyPlayerBar />
       </main>
       <div className="hidden w-80 shrink-0 lg:block">
         <RightSidebar online={online} />

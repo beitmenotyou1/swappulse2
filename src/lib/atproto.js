@@ -58,6 +58,7 @@ export const NSID = {
   VOICE_SPACE: 'org.swappulse.voiceSpace',
   SPACE_PARTICIPANT: 'org.swappulse.spaceParticipant',
   PODCAST_EPISODE: 'org.swappulse.podcastEpisode',
+  PODCAST_PLAY: 'org.swappulse.podcastPlay',
   EXTERNAL_ACTIVITY: 'org.swappulse.externalActivity',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {

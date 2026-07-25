@@ -8,6 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { LivePresenceProvider } from '@/lib/livePresence';
+import { PodcastPlayerProvider } from '@/lib/podcastPlayer';
 import Layout from '@/components/Layout';
 import Home from '@/pages/Home';
 import Explore from '@/pages/Explore';
@@ -123,7 +124,9 @@ function App() {
         <Router>
           <ScrollToTop />
           <LivePresenceProvider>
-            <AuthenticatedApp />
+            <PodcastPlayerProvider>
+              <AuthenticatedApp />
+            </PodcastPlayerProvider>
           </LivePresenceProvider>
         </Router>
         <Toaster />

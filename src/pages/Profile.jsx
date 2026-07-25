@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check } from 'lucide-react';
+import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check, Mic } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -125,6 +125,7 @@ export default function Profile() {
               onClick={() => setTab(t)}
               className={`relative flex-1 py-3 text-sm font-semibold transition-colors ${tab === t ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
             >
+              {t === 'Podcasts' && <Mic className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
               {t}
               {tab === t && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
             </button>
@@ -178,7 +179,7 @@ export default function Profile() {
         ) : tab === 'Journals' ? (
           <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
         ) : tab === 'Podcasts' ? (
-          <PodcastsTab />
+          <PodcastsTab did={did} />
         ) : (
           <div className="p-4 space-y-4">
             <WeeklyDigestToggle />

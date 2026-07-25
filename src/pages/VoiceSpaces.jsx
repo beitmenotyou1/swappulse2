@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import SpaceCard from '@/components/spaces/SpaceCard';
 import CreateSpaceModal from '@/components/spaces/CreateSpaceModal';
-import PodcastPlayer from '@/components/spaces/PodcastPlayer';
+import EpisodeCard from '@/components/podcast/EpisodeCard';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
 const TABS = [
@@ -79,7 +79,7 @@ export default function VoiceSpaces() {
       ) : podcasts.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">No recordings yet. Record a live space to publish a podcast.</p>
       ) : (
-        <div className="space-y-3 p-4">{podcasts.map((ep) => <PodcastPlayer key={ep.id} episode={ep} />)}</div>
+        <div className="space-y-2 p-4">{podcasts.map((ep) => <EpisodeCard key={ep.id} episode={ep} />)}</div>
       )}
 
       {showCreate && <CreateSpaceModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
