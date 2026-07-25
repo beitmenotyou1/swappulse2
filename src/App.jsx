@@ -43,6 +43,7 @@ import UserProfile from '@/pages/UserProfile';
 import VoiceSpaces from '@/pages/VoiceSpaces';
 import SpaceRoom from '@/pages/SpaceRoom';
 import Notifications from '@/pages/Notifications';
+import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -110,6 +111,7 @@ const AuthenticatedApp = () => {
           <Route path="/spaces" element={<VoiceSpaces />} />
           <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

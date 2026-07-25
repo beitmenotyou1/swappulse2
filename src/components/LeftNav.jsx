@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, Store, ChevronDown, Radio, Bell } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, Store, ChevronDown, Radio, Bell, Settings as SettingsIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -27,6 +27,7 @@ const more = [
   { to: '/market', icon: BarChart3, label: 'Market Watch' },
   { to: '/predictions', icon: Vote, label: 'Predictions' },
   { to: '/grading', icon: Award, label: 'Grading' },
+  { to: '/settings', icon: SettingsIcon, label: 'Settings' },
 ];
 
 export default function LeftNav() {

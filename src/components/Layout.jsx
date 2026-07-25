@@ -7,9 +7,11 @@ import RealtimeToaster from '@/components/RealtimeToaster';
 import BellToaster from '@/components/follow/BellToaster';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import { usePresence } from '@/hooks/usePresence';
+import { useApplyAccessibility } from '@/hooks/useSettings';
 
 export default function Layout() {
   const online = usePresence();
+  useApplyAccessibility();
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1400px]">
       <div className="hidden w-[72px] shrink-0 md:block xl:w-[240px]">

@@ -148,4 +148,12 @@
   .rarity-border-secret {
     border-image: linear-gradient(135deg, hsl(0 84% 60%), hsl(45 96% 53%), hsl(160 84% 39%), hsl(252 100% 64%)) 1;
   }
+  /* Accessibility — applied to <html> by useApplyAccessibility */
+  .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hc { filter: contrast(1.18) saturate(1.05); }
 }

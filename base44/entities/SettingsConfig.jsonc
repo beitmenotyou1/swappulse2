@@ -1,0 +1,42 @@
+{
+  "name": "SettingsConfig",
+  "type": "object",
+  "title": "SettingsConfig",
+  "description": "org.swappulse.settingsConfig \u2014 the user's declarative configuration blob (locale, language/translation, security, privacy, notifications, accessibility), stored in their repository so it travels with their identity.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner"
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "The full settings blob (locale, language, security, privacy, notifications, accessibility)"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.settingsConfig)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the config to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "did",
+    "config",
+    "updated_at"
+  ]
+}
