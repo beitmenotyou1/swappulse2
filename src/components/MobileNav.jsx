@@ -1,24 +1,33 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Plus } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
-const items = [
+const primary = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/explore', icon: Compass, label: 'Explore' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades' },
   { to: '/collection', icon: Layers, label: 'Collection' },
+  { to: '/marketplace', icon: Store, label: 'Shop' },
+];
+
+const moreItems = [
   { to: '/binders', icon: BookOpen, label: 'Binders' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
+  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
+  { to: '/packs', icon: Package, label: 'Packs' },
   { to: '/market', icon: BarChart3, label: 'Market' },
   { to: '/predictions', icon: Vote, label: 'Polls' },
   { to: '/grading', icon: Award, label: 'Grading' },
+  { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
 
 export default function MobileNav() {
   const { pathname } = useLocation();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
+
   return (
     <>
       <Link
@@ -29,7 +38,7 @@ export default function MobileNav() {
         <Plus className="h-7 w-7" />
       </Link>
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 backdrop-blur md:hidden">
-        {items.map((item) => {
+        {primary.map((item) => {
           const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
           return (
             <Link
@@ -44,8 +53,49 @@ export default function MobileNav() {
             </Link>
           );
         })}
+        <button
+          onClick={() => setMoreOpen(true)}
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
+            activeInMore ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          More
+        </button>
         <ThemeToggle className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] font-medium text-muted-foreground h-auto w-auto rounded-lg hover:bg-transparent" />
       </nav>
+
+      {moreOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setMoreOpen(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl border-t border-border bg-card p-3" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between px-1">
+              <p className="text-sm font-bold">More</p>
+              <button onClick={() => setMoreOpen(false)} className="rounded-full p-1 hover:bg-secondary">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {moreItems.map((item) => {
+                const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium transition-colors hover:bg-secondary ${
+                      active ? 'text-primary' : 'text-foreground'
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

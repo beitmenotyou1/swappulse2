@@ -20,12 +20,15 @@ export default function VouchForm({ onCreated }) {
   const [relationship, setRelationship] = useState('trade_partner');
   const [context, setContext] = useState('');
   const [saving, setSaving] = useState(false);
+  const [outgoing, setOutgoing] = useState([]);
 
   useEffect(() => {
     (async () => {
       try {
         const { did } = await ensureUserDid();
         setMyDid(did);
+        const out = await base44.entities.Vouch.filter({ did }, '-created_date', 200);
+        setOutgoing(out);
       } catch {
         /* ignore */
       }
@@ -33,6 +36,7 @@ export default function VouchForm({ onCreated }) {
   }, []);
 
   const isSelf = resolved && myDid && resolved.did === myDid;
+  const alreadyVouched = resolved && outgoing.some((v) => v.vouched_did === resolved.did && !v.revoked_at);
 
   const resolve = async () => {
     if (!handle.trim()) return;
@@ -124,9 +128,10 @@ export default function VouchForm({ onCreated }) {
             </button>
           </div>
           {isSelf && <p className="mt-2 text-xs text-destructive">You can't vouch for yourself.</p>}
+          {!isSelf && alreadyVouched && <p className="mt-2 text-xs text-destructive">You've already vouched for this collector. Revoke your existing vouch first.</p>}
         </div>
       )}
-      {resolved && !isSelf && (
+      {resolved && !isSelf && !alreadyVouched && (
         <div className="mt-3 space-y-2">
           <select
             value={relationship}

@@ -26,10 +26,17 @@ Deno.serve(async (req) => {
     const outgoing = await svc.entities.Vouch.filter({ did: targetDid }, '-created_date', 200);
 
     const activeIncoming = incoming.filter((v) => !v.revoked_at);
-    const outgoingDids = new Set(outgoing.map((v) => v.vouched_did));
-    const mutualVouches = activeIncoming.filter((v) => outgoingDids.has(v.did)).length;
+    // Hardening: count each voucher at most once (latest active vouch wins) to
+    // prevent score inflation from duplicate vouches.
+    const seen = new Map();
+    for (const v of activeIncoming) {
+      if (!seen.has(v.did)) seen.set(v.did, v);
+    }
+    const dedupedIncoming = [...seen.values()];
+    const outgoingDids = new Set(outgoing.filter((v) => !v.revoked_at).map((v) => v.vouched_did));
+    const mutualVouches = dedupedIncoming.filter((v) => outgoingDids.has(v.did)).length;
 
-    const rawScore = activeIncoming.reduce(
+    const rawScore = dedupedIncoming.reduce(
       (s, v) => s + (RELATIONSHIP_WEIGHT[v.relationship] || 1),
       0,
     );

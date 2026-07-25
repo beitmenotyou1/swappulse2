@@ -1,29 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, Store, ChevronDown } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/lib/AuthContext';
 
-const navItems = [
+const primary = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/explore', icon: Compass, label: 'Explore' },
   { to: '/collection', icon: Layers, label: 'Collection' },
   { to: '/binders', icon: BookOpen, label: 'Binders' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
+  { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
+  { to: '/marketplace', icon: Store, label: 'Marketplace' },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
-  { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
+];
+
+const more = [
+  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
   { to: '/packs', icon: Package, label: 'Pack Openings' },
   { to: '/market', icon: BarChart3, label: 'Market Watch' },
   { to: '/predictions', icon: Vote, label: 'Predictions' },
   { to: '/grading', icon: Award, label: 'Grading' },
-  { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
 
 export default function LeftNav() {
   const { user } = useAuth();
+  const [showMore, setShowMore] = useState(false);
+
+  const linkClass = ({ isActive }) =>
+    `group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold transition-colors xl:pr-6 ${
+      isActive ? 'text-primary' : 'text-foreground hover:bg-secondary'
+    }`;
 
   return (
     <nav className="sticky top-0 hidden h-screen flex-col px-2 py-4 md:flex xl:px-3">
@@ -33,23 +42,31 @@ export default function LeftNav() {
         </NavLink>
       </div>
       <div className="flex flex-col items-center gap-1 xl:items-stretch">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) =>
-              `group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold transition-colors xl:pr-6 ${
-                isActive
-                  ? 'text-primary'
-                  : 'text-foreground hover:bg-secondary'
-              }`
-            }
-          >
+        {primary.map((item) => (
+          <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
             <item.icon className="h-6 w-6 shrink-0" />
             <span className="hidden xl:inline">{item.label}</span>
           </NavLink>
         ))}
+
+        <button
+          onClick={() => setShowMore((v) => !v)}
+          className="group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold text-foreground transition-colors hover:bg-secondary xl:pr-6"
+        >
+          <ChevronDown className={`h-6 w-6 shrink-0 transition-transform ${showMore ? 'rotate-180' : ''}`} />
+          <span className="hidden xl:inline">More</span>
+        </button>
+
+        {showMore && (
+          <div className="flex flex-col items-center gap-1 border-l border-border pl-2 xl:items-stretch xl:pl-3">
+            {more.map((item) => (
+              <NavLink key={item.to} to={item.to} className={linkClass}>
+                <item.icon className="h-6 w-6 shrink-0" />
+                <span className="hidden xl:inline">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        )}
       </div>
       <div className="mt-auto flex flex-col items-center gap-2 pt-4 xl:items-stretch">
         <div className="flex justify-center xl:justify-start xl:px-3">

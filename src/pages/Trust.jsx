@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Loader2, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { Loader2, ArrowDownLeft, ArrowUpRight, Undo2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import PageHeader from '@/components/PageHeader';
@@ -46,7 +46,22 @@ export default function Trust() {
     if (myDid) load();
   }, [myDid, load]);
 
+  const [revoking, setRevoking] = useState(null);
+
   const score = profile?.normalised_score ?? 0;
+
+  const revoke = async (v) => {
+    if (!confirm('Revoke this vouch? It will no longer count towards their trust score.')) return;
+    setRevoking(v.id);
+    try {
+      await base44.entities.Vouch.update(v.id, { revoked_at: new Date().toISOString() });
+      await load();
+    } catch {
+      /* ignore */
+    } finally {
+      setRevoking(null);
+    }
+  };
 
   return (
     <div>
@@ -141,7 +156,17 @@ export default function Trust() {
                       </p>
                       <p className="text-xs text-muted-foreground">{REL_LABEL[v.relationship] || v.relationship}</p>
                       {v.context && <p className="mt-1 text-xs">{v.context}</p>}
+                      {v.revoked_at && <p className="mt-1 text-xs font-semibold text-destructive">Revoked</p>}
                     </div>
+                    {!v.revoked_at && (
+                      <button
+                        onClick={() => revoke(v)}
+                        disabled={revoking === v.id}
+                        className="flex items-center gap-1 rounded-full border border-border px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-destructive disabled:opacity-50"
+                      >
+                        <Undo2 className="h-3 w-3" /> Revoke
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
