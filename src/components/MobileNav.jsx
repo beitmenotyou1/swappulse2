@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus, Radio } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useLivePresence } from '@/lib/livePresence';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -20,13 +21,15 @@ const moreItems = [
   { to: '/market', icon: BarChart3, label: 'Market' },
   { to: '/predictions', icon: Vote, label: 'Polls' },
   { to: '/grading', icon: Award, label: 'Grading' },
-  { to: '/spaces', icon: Radio, label: 'Spaces' },
+  { to: '/spaces', icon: Radio, label: 'Live' },
   { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
 
 export default function MobileNav() {
   const { pathname } = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { liveByDid } = useLivePresence();
+  const liveCount = liveByDid.size;
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
   return (
@@ -84,12 +87,15 @@ export default function MobileNav() {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMoreOpen(false)}
-                    className={`flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium transition-colors hover:bg-secondary ${
+                    className={`relative flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium transition-colors hover:bg-secondary ${
                       active ? 'text-primary' : 'text-foreground'
                     }`}
                   >
                     <item.icon className="h-5 w-5" />
                     {item.label}
+                    {item.to === '/spaces' && liveCount > 0 && (
+                      <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{liveCount}</span>
+                    )}
                   </Link>
                 );
               })}

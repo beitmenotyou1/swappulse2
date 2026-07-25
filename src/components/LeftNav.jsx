@@ -5,6 +5,7 @@ import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/lib/AuthContext';
+import { useLivePresence } from '@/lib/livePresence';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -15,7 +16,7 @@ const primary = [
   { to: '/marketplace', icon: Store, label: 'Marketplace' },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
-  { to: '/spaces', icon: Radio, label: 'Voice Spaces' },
+  { to: '/spaces', icon: Radio, label: 'Live Now' },
 ];
 
 const more = [
@@ -28,6 +29,8 @@ const more = [
 
 export default function LeftNav() {
   const { user } = useAuth();
+  const { liveByDid } = useLivePresence();
+  const liveCount = liveByDid.size;
   const [showMore, setShowMore] = useState(false);
 
   const linkClass = ({ isActive }) =>
@@ -47,6 +50,9 @@ export default function LeftNav() {
           <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
             <item.icon className="h-6 w-6 shrink-0" />
             <span className="hidden xl:inline">{item.label}</span>
+            {item.to === '/spaces' && liveCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white">{liveCount}</span>
+            )}
           </NavLink>
         ))}
 
