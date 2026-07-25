@@ -1,0 +1,60 @@
+{
+  "name": "FollowPreference",
+  "type": "object",
+  "title": "FollowPreference",
+  "properties": {
+    "subject_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the followed user"
+    },
+    "bell_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Master switch for push notifications on this subject"
+    },
+    "notify_on": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "pack_opening",
+        "trade_listing"
+      ],
+      "description": "Event types that trigger notifications: pack_opening, journal, binder, trade_listing, story, voice_space, podcast_episode, goes_live, vouch_received, review_posted"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "high"
+      ],
+      "default": "standard",
+      "description": "High priority bypasses quiet hours"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the follower (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.followPreference)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the preference to the follower's signing key (simulated)"
+    }
+  },
+  "required": [
+    "subject_did",
+    "bell_enabled"
+  ]
+}

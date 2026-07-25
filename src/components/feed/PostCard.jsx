@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import ReactionBar from '@/components/feed/ReactionBar';
@@ -26,7 +27,11 @@ export default function PostCard({ post, reactions }) {
         <Avatar name={post.author_name} src={post.author_avatar} size={44} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-bold truncate">{post.author_name || 'Collector'}</span>
+            {post.did ? (
+              <Link to={`/profile/${post.did}`} className="font-bold truncate hover:underline">{post.author_name || 'Collector'}</Link>
+            ) : (
+              <span className="font-bold truncate">{post.author_name || 'Collector'}</span>
+            )}
             <span className="text-muted-foreground truncate">@{post.author_handle || 'user'}</span>
             <span className="text-muted-foreground">·</span>
             <span className="text-muted-foreground">{timeAgo(post.created_date)}</span>

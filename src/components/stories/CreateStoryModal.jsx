@@ -37,6 +37,10 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
         author_avatar: '',
         did,
       });
+      base44.functions.invoke('dispatchBellNotifications', {
+        author_did: did, author_name: me?.full_name || '', category: 'story',
+        preview: mode === 'text' ? text.trim() : 'Shared a story', url: '/',
+      }).catch(() => {});
       setText(''); setImage(''); setGradient('purple'); setMode('text');
       onCreated?.();
       onClose();

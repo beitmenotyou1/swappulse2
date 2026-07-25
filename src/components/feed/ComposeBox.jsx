@@ -41,6 +41,16 @@ export default function ComposeBox({ onPosted }) {
         replies: 0,
       }, NSID.POST, did, signingKey);
       await base44.entities.Post.create(stamped);
+      // Bell notification dispatch — Web Push to bell-enabled followers.
+      const cat = stamped.post_type === 'pack_opening' ? 'pack_opening'
+        : stamped.post_type === 'trade' ? 'trade_listing'
+        : stamped.post_type === 'showcase' ? 'binder' : null;
+      if (cat) {
+        base44.functions.invoke('dispatchBellNotifications', {
+          author_did: did, author_name: user?.full_name, category: cat,
+          preview: content.trim() || stamped.card_name || 'New post', url: '/',
+        }).catch(() => {});
+      }
       setContent('');
       setAttachedCard(null);
       setPostType('text');

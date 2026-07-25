@@ -37,6 +37,7 @@ import MeetupDetail from '@/pages/MeetupDetail';
 import Marketplace from '@/pages/Marketplace';
 import ListingDetail from '@/pages/ListingDetail';
 import OrderComplete from '@/pages/OrderComplete';
+import UserProfile from '@/pages/UserProfile';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -99,6 +100,7 @@ const AuthenticatedApp = () => {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/marketplace/:listingId" element={<ListingDetail />} />
           <Route path="/order-complete" element={<OrderComplete />} />
+          <Route path="/profile/:did" element={<UserProfile />} />
           <Route path="/predictions" element={<Predictions />} />
         </Route>
       </Route>

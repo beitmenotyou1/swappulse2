@@ -48,6 +48,10 @@ export const NSID = {
   JOURNAL: 'org.swappulse.journal',
   MEETUP: 'org.swappulse.meetup',
   MEETUP_RSVP: 'org.swappulse.meetupRsvp',
+  // Alpha 1.3 record lexicons
+  FOLLOW: 'app.bsky.graph.follow',
+  FOLLOW_PREFERENCE: 'org.swappulse.followPreference',
+  FRIENDSHIP: 'org.swappulse.friendship',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.fresh-pulls',

@@ -1,0 +1,62 @@
+{
+  "name": "Friendship",
+  "type": "object",
+  "title": "Friendship",
+  "properties": {
+    "friend_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the other party"
+    },
+    "friend_name": {
+      "type": "string"
+    },
+    "friend_handle": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "declined",
+        "removed"
+      ],
+      "default": "pending",
+      "description": "Friendship request status"
+    },
+    "initiated_by": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who sent the friend request"
+    },
+    "acknowledged_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the friend accepted (null if pending)"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the record owner (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.friendship)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the friendship to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "friend_did",
+    "status",
+    "initiated_by"
+  ]
+}

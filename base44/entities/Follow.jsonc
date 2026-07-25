@@ -1,0 +1,43 @@
+{
+  "name": "Follow",
+  "type": "object",
+  "title": "Follow",
+  "properties": {
+    "subject_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the followed user"
+    },
+    "subject_name": {
+      "type": "string"
+    },
+    "subject_handle": {
+      "type": "string"
+    },
+    "subject_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the follower (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this app.bsky.graph.follow record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "Standard AT Protocol record type (app.bsky.graph.follow)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the follow to the follower's signing key (simulated)"
+    }
+  },
+  "required": [
+    "subject_did"
+  ]
+}
