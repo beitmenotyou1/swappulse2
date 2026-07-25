@@ -1,0 +1,51 @@
+{
+  "name": "Activation",
+  "type": "object",
+  "title": "Activation",
+  "description": "org.swappulse.activation - account activation lifecycle for unverified accounts: a 48-hour activation link token, 7-day warning tracking, and 90-day deletion scheduling.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Platform user id this activation record belongs to"
+    },
+    "email": {
+      "type": "string",
+      "description": "Account email as registered"
+    },
+    "link_token": {
+      "type": "string",
+      "description": "Opaque random activation link token"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "warned",
+        "deleted"
+      ],
+      "default": "pending",
+      "description": "Lifecycle state of the unverified account"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the activation link expires (created/refreshed + 48h)"
+    },
+    "last_reminded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the 7-day warning email was last sent"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the account was activated (mirrors user.is_verified)"
+    }
+  },
+  "required": [
+    "user_id",
+    "email",
+    "link_token",
+    "expires_at"
+  ]
+}

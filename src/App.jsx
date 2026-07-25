@@ -25,6 +25,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import Activate from '@/pages/Activate';
 // Add page imports here
 import Grading from '@/pages/Grading';
 import Binders from '@/pages/Binders';
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/activate" element={<Activate />} />
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
       <Route path="/u/:handle" element={<HandleProfile />} />

@@ -44,6 +44,9 @@ export default function Register() {
     }
     try {
       await base44.auth.register({ email, password });
+      // Send the activation link email (the platform's verification email with
+      // the code is sent automatically by register()).
+      try { await base44.functions.invoke("send-activation", { email }); } catch {}
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Registration failed");

@@ -6,6 +6,7 @@ import MobileNav from '@/components/MobileNav';
 import RealtimeToaster from '@/components/RealtimeToaster';
 import BellToaster from '@/components/follow/BellToaster';
 import AlphaNotice from '@/components/AlphaNotice';
+import ActivationBanner from '@/components/ActivationBanner';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import { usePresence } from '@/hooks/usePresence';
@@ -21,6 +22,7 @@ export default function Layout() {
       </div>
       <main className="min-w-0 flex-1 border-x border-border pb-20 md:pb-0">
         <AlphaNotice />
+        <ActivationBanner />
         <Outlet />
         <StickyPlayerBar />
       </main>

@@ -1,0 +1,44 @@
+{
+  "description": "Daily: warns unverified accounts 7 days after sign-up, permanently deletes them after 90 days.",
+  "name": "Activation Lifecycle",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "activation_lifecycle",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_lifecycle": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "activation-lifecycle"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Activation lifecycle",
+            "description": "Warn at 7 days, delete at 90"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}
