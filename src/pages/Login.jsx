@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import MigrationNotice from "@/components/auth/MigrationNotice";
+import PasswordlessLogin from "@/components/auth/PasswordlessLogin";
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -15,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("password"); // "password" | "codeless"
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +60,9 @@ export default function Login() {
         </div>
       )}
 
+      {mode === "codeless" ? (
+        <PasswordlessLogin />
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -108,6 +113,14 @@ export default function Login() {
           )}
         </Button>
       </form>
+      )}
+      <button
+        type="button"
+        onClick={() => setMode(mode === "password" ? "codeless" : "password")}
+        className="w-full text-sm text-primary font-medium hover:underline"
+      >
+        {mode === "password" ? "Sign in with email code instead" : "Use password instead"}
+      </button>
     </AuthLayout>
   );
 }
