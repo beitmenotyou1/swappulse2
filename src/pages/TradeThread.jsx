@@ -19,6 +19,7 @@ export default function TradeThread() {
   const [sending, setSending] = useState(false);
   const [me, setMe] = useState(null);
   const endRef = useRef(null);
+  const [statusBusy, setStatusBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -41,9 +42,11 @@ export default function TradeThread() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length]);
 
   // §9.1 live: append incoming messages for this thread only.
+  const hasMsg = (prev, m) => prev.some((x) => (m.id && x.id === m.id) || (x.body === m.body && x.did === m.did));
+
   useRealtimeEvent('trade.message', (m) => {
     if (m.trade_id !== tradeId) return;
-    setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+    setMessages((prev) => (hasMsg(prev, m) ? prev : [...prev, m]));
   });
 
   const send = async () => {
@@ -60,12 +63,36 @@ export default function TradeThread() {
         author_avatar: '',
       }, NSID.TRADE_NEGOTIATION, did, signingKey);
       const created = await base44.entities.TradeMessage.create(stamped);
-      setMessages((prev) => (prev.some((x) => x.id === created.id) ? prev : [...prev, created]));
+      setMessages((prev) => (hasMsg(prev, created) ? prev : [...prev, created]));
       setBody('');
     } catch (e) {
       alert('Could not send: ' + e.message);
     } finally {
       setSending(false);
+    }
+  };
+
+  const isOwner = !!me && !!trade && trade.created_by_id === me.id;
+  const advanceMap = { open: 'pending_ship', negotiating: 'pending_ship', pending_ship: 'completed' };
+  const nextStatus = advanceMap[trade?.status];
+  const advanceLabel = { pending_ship: 'Mark Pending Ship', completed: 'Mark Completed' }[nextStatus];
+  const statusBadgeClass = {
+    open: 'bg-secondary text-foreground',
+    negotiating: 'bg-accent/20 text-accent',
+    pending_ship: 'bg-primary/15 text-primary',
+    completed: 'bg-success/15 text-success',
+    cancelled: 'bg-destructive/15 text-destructive',
+  }[trade?.status] || 'bg-secondary text-foreground';
+
+  const updateStatus = async (status) => {
+    setStatusBusy(true);
+    try {
+      const updated = await base44.entities.TradeListing.update(trade.id, { status });
+      setTrade(updated);
+    } catch (e) {
+      alert('Could not update status: ' + e.message);
+    } finally {
+      setStatusBusy(false);
     }
   };
 
@@ -98,6 +125,22 @@ export default function TradeThread() {
             <div className="mt-3">
               <TradeFairnessCalculator trade={trade} />
             </div>
+            {isOwner && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                <span className="text-xs font-semibold uppercase text-muted-foreground">Status</span>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusBadgeClass}`}>{TRADE_STATUS_LABELS[trade.status] || trade.status}</span>
+                {nextStatus && (
+                  <button onClick={() => updateStatus(nextStatus)} disabled={statusBusy} className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-50">
+                    {advanceLabel}
+                  </button>
+                )}
+                {!['completed', 'cancelled'].includes(trade.status) && (
+                  <button onClick={() => updateStatus('cancelled')} disabled={statusBusy} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50">
+                    Cancel trade
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
