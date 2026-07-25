@@ -1,0 +1,101 @@
+{
+  "name": "CrossPostConfig",
+  "type": "object",
+  "title": "CrossPostConfig",
+  "description": "org.swappulse.crossPostConfig \u2014 configuration for cross-posting SwapPulse content to external platforms.",
+  "properties": {
+    "platform": {
+      "type": "string",
+      "enum": [
+        "bluesky",
+        "mastodon",
+        "nostr",
+        "twitter",
+        "discord_webhook",
+        "telegram_bot"
+      ],
+      "description": "Destination external platform"
+    },
+    "handle": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Display handle or label for the linked external account"
+    },
+    "contentTypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "pack_opening",
+          "journal",
+          "binder",
+          "podcast_episode",
+          "voice_space_live",
+          "trade_listing",
+          "card_review"
+        ]
+      },
+      "description": "Which SwapPulse content types trigger cross-posts"
+    },
+    "template": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Optional custom template for cross-post text"
+    },
+    "includeCard": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to include a card image reference in the cross-post"
+    },
+    "includeLink": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to include a link back to SwapPulse"
+    },
+    "credential": {
+      "type": "string",
+      "description": "Opaque credential: webhook URL, bot token, OAuth token, nsec, etc."
+    },
+    "extra_credential": {
+      "type": "string",
+      "description": "Secondary credential (e.g. Telegram chat_id, Mastodon instance URL)"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the config owner (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.crossPostConfig)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the config to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "platform",
+    "contentTypes",
+    "enabled"
+  ]
+}

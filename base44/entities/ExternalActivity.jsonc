@@ -9,9 +9,15 @@
         "twitch",
         "youtube",
         "tiktok",
+        "bluesky",
+        "mastodon",
+        "nostr",
+        "twitter",
+        "discord",
+        "telegram",
         "other"
       ],
-      "description": "External platform the activity originates from"
+      "description": "External platform the activity originates from or is cross-posted to"
     },
     "activity_type": {
       "type": "string",
@@ -29,7 +35,7 @@
     },
     "source_url": {
       "type": "string",
-      "description": "Canonical URL of the external content"
+      "description": "Canonical URL of the external content or the SwapPulse content cross-posted"
     },
     "source_id": {
       "type": "string",

@@ -60,6 +60,7 @@ export const NSID = {
   PODCAST_EPISODE: 'org.swappulse.podcastEpisode',
   PODCAST_PLAY: 'org.swappulse.podcastPlay',
   EXTERNAL_ACTIVITY: 'org.swappulse.externalActivity',
+  CROSS_POST_CONFIG: 'org.swappulse.crossPostConfig',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.fresh-pulls',

@@ -6,6 +6,7 @@ import CardSearchModal from '@/components/cards/CardSearchModal';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { dispatchCrossPost } from '@/lib/crosspost';
 
 export default function ComposeBox({ onPosted }) {
   const { user } = useAuth();
@@ -40,7 +41,7 @@ export default function ComposeBox({ onPosted }) {
         reposts: 0,
         replies: 0,
       }, NSID.POST, did, signingKey);
-      await base44.entities.Post.create(stamped);
+      const created = await base44.entities.Post.create(stamped);
       // Bell notification dispatch — Web Push to bell-enabled followers.
       const cat = stamped.post_type === 'pack_opening' ? 'pack_opening'
         : stamped.post_type === 'trade' ? 'trade_listing'
@@ -50,6 +51,13 @@ export default function ComposeBox({ onPosted }) {
           author_did: did, author_name: user?.full_name, category: cat,
           preview: content.trim() || stamped.card_name || 'New post', url: '/',
         }).catch(() => {});
+      }
+      if (cat && created?.id) {
+        dispatchCrossPost(cat, created.id, {
+          url: window.location.origin + '/',
+          authorName: user?.full_name,
+          authorHandle: user?.email?.split('@')[0],
+        });
       }
       setContent('');
       setAttachedCard(null);

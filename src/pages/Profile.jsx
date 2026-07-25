@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check, Mic } from 'lucide-react';
+import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -13,8 +13,9 @@ import DataPrivacy from '@/components/profile/DataPrivacy';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import JournalsTab from '@/components/profile/JournalsTab';
 import PodcastsTab from '@/components/profile/PodcastsTab';
+import CrossPostTab from '@/components/crosspost/CrossPostTab';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Privacy'];
+const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -118,14 +119,15 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="mt-4 flex border-b border-border">
+        <div className="mt-4 flex overflow-x-auto border-b border-border">
           {TABS.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`relative flex-1 py-3 text-sm font-semibold transition-colors ${tab === t ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === t ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
             >
               {t === 'Podcasts' && <Mic className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
+              {t === 'Cross-Posting' && <Share2 className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
               {t}
               {tab === t && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
             </button>
@@ -180,6 +182,8 @@ export default function Profile() {
           <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
         ) : tab === 'Podcasts' ? (
           <PodcastsTab did={did} />
+        ) : tab === 'Cross-Posting' ? (
+          <CrossPostTab />
         ) : (
           <div className="p-4 space-y-4">
             <WeeklyDigestToggle />
