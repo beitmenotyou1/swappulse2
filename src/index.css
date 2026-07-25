@@ -111,9 +111,16 @@
   .live-ring {
     animation: live-pulse 2s ease-in-out infinite;
   }
+  .live-go-pulse {
+    animation: go-live-pulse 2s ease-in-out infinite;
+  }
   @keyframes live-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+  }
+  @keyframes go-live-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
   }
   .text-gradient-pulse {
     background: linear-gradient(120deg, hsl(252 100% 64%), hsl(258 90% 66%));

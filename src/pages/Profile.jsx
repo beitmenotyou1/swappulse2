@@ -14,6 +14,9 @@ import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import JournalsTab from '@/components/profile/JournalsTab';
 import PodcastsTab from '@/components/profile/PodcastsTab';
 import CrossPostTab from '@/components/crosspost/CrossPostTab';
+import GoLiveModal from '@/components/spaces/GoLiveModal';
+import GoLiveControl from '@/components/profile/GoLiveControl';
+import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 
 const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
@@ -28,30 +31,59 @@ export default function Profile() {
   const [journals, setJournals] = useState([]);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [liveSpace, setLiveSpace] = useState(null);
+  const [showGoLive, setShowGoLive] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
       const { did: myDid } = await ensureUserDid();
       setDid(myDid);
-      const [p, c, t, r, j] = await Promise.all([
+      const [p, c, t, r, j, vs] = await Promise.all([
         base44.entities.Post.filter({}, '-created_date', 50),
         base44.entities.CollectionEntry.list('-updated_date', 100),
         base44.entities.TradeListing.filter({}, '-created_date', 20),
         base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
         base44.entities.Journal.filter({}, '-created_date', 50),
+        base44.entities.VoiceSpace.filter({ did: myDid, status: 'live' }, '-created_date', 1).catch(() => []),
       ]);
       setPosts(p);
       setCollection(c);
       setTrades(t);
       setReputation(r);
       setJournals(j);
+      setLiveSpace(vs[0] || null);
     } catch {} finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { load(); }, []);
+
+  // Keep the live-stream state fresh when any VoiceSpace record changes.
+  useEffect(() => {
+    if (!did) return;
+    const unsub = base44.entities.VoiceSpace.subscribe(() => {
+      base44.entities.VoiceSpace.filter({ did, status: 'live' }, '-created_date', 1)
+        .then((r) => setLiveSpace(r[0] || null))
+        .catch(() => {});
+    });
+    return unsub;
+  }, [did]);
+
+  const endStream = async () => {
+    if (!liveSpace || ending) return;
+    setEnding(true);
+    try {
+      await base44.entities.VoiceSpace.update(liveSpace.id, { status: 'ended', ended_at: new Date().toISOString() });
+      setLiveSpace(null);
+    } catch {
+      /* keep liveSpace so the user can retry */
+    } finally {
+      setEnding(false);
+    }
+  };
 
   const repAvg = reputation.length
     ? (reputation.reduce((s, r) => s + (r.rating || 0), 0) / reputation.length).toFixed(1)
@@ -75,7 +107,11 @@ export default function Profile() {
       <div className="h-40 w-full bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30" />
       <div className="px-4">
         <div className="-mt-12 flex items-end justify-between">
-          <LiveAvatar did={did} name={user?.full_name} size={96} className="ring-4 ring-background" />
+          <span className="relative inline-block">
+            <LiveAvatar did={did} name={user?.full_name} size={96} className="ring-4 ring-background" />
+            {liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
+          </span>
+          <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
         </div>
         <div className="mt-3">
           <h1 className="text-xl font-extrabold">{user?.full_name || 'Collector'}</h1>
@@ -191,6 +227,9 @@ export default function Profile() {
           </div>
         )}
       </div>
+      {showGoLive && (
+        <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />
+      )}
     </div>
   );
 }

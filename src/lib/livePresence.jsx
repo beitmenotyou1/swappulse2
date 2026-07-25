@@ -24,12 +24,13 @@ export function LivePresenceProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
-  useRealtimeEvent('space.new', refresh);
+  useEffect(() => {
+    refresh();
+    const unsub = base44.entities.VoiceSpace.subscribe(refresh);
+    return unsub;
+  }, [refresh]);
   useRealtimeEvent('space.started', refresh);
   useRealtimeEvent('space.ended', refresh);
-  useRealtimeEvent('presence.external_live', refresh);
-  useRealtimeEvent('presence.external_offline', refresh);
 
   return (
     <LivePresenceContext.Provider value={{ liveByDid, refresh }}>

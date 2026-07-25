@@ -2,10 +2,12 @@
   "name": "VoiceSpace",
   "type": "object",
   "title": "VoiceSpace",
+  "description": "org.swappulse.voiceSpace \u2014 manual live stream declaration. A collector goes live by pasting an external stream URL (Twitch, YouTube, Kick, etc.); their profile shows a red live ring until the planned duration elapses or they end the stream. No OAuth, no webhooks, platform-agnostic.",
   "properties": {
     "title": {
       "type": "string",
-      "maxLength": 120
+      "maxLength": 120,
+      "description": "Stream title (5\u2013120 chars)"
     },
     "description": {
       "type": "string",
@@ -19,35 +21,58 @@
         "ended",
         "cancelled"
       ],
-      "default": "scheduled",
-      "description": "Lifecycle state of the space"
+      "default": "live",
+      "description": "Lifecycle state. Manual Go Live creates records with status 'live'; auto-end sets 'ended'."
     },
-    "scheduled_at": {
+    "stream_url": {
+      "type": "string",
+      "description": "External stream URL on any platform (Twitch, YouTube, Kick, Facebook Gaming, Rumble, custom RTMP, etc.)"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "twitch",
+        "youtube",
+        "kick",
+        "facebook_gaming",
+        "rumble",
+        "custom",
+        "other"
+      ],
+      "description": "Streaming platform \u2014 auto-detected from stream_url or manually selected"
+    },
+    "planned_duration_minutes": {
+      "type": "integer",
+      "minimum": 15,
+      "maximum": 480,
+      "description": "Planned stream duration in minutes (user-selected, 15\u2013480)"
+    },
+    "auto_end_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When a scheduled space is planned to start"
+      "description": "Calculated end time = started_at + planned_duration_minutes. The live ring disappears after this instant."
     },
     "started_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "When the stream went live"
     },
     "ended_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "When the stream ended or was cancelled"
     },
-    "livekit_room_name": {
-      "type": "string",
-      "description": "Internal LiveKit room identifier (simulated provisioning)"
-    },
-    "livekit_server_url": {
-      "type": "string",
-      "description": "LiveKit server WebSocket URL"
-    },
-    "max_listeners": {
+    "viewer_count_estimate": {
       "type": "integer",
-      "minimum": 10,
-      "maximum": 1000,
-      "default": 100
+      "description": "Optional manual entry for approximate viewer count (not auto-fetched)"
+    },
+    "co_host_dids": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string"
+      },
+      "description": "AT Protocol DIDs of co-hosts"
     },
     "topic_tags": {
       "type": "array",
@@ -57,28 +82,22 @@
         "maxLength": 30
       }
     },
-    "recording_enabled": {
+    "card_uris_discussed": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string"
+      },
+      "description": "Cards referenced during the stream for catalog cross-linking"
+    },
+    "recording_available": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Whether a recording is available post-stream"
     },
-    "recording_blob_url": {
+    "podcast_episode_uri": {
       "type": "string",
-      "description": "Processed audio file URL after the space ends"
-    },
-    "recording_duration_seconds": {
-      "type": "integer"
-    },
-    "podcast_episode_id": {
-      "type": "string",
-      "description": "Local id of the podcast episode if converted from the recording"
-    },
-    "listener_count": {
-      "type": "integer",
-      "default": 0
-    },
-    "peak_listener_count": {
-      "type": "integer",
-      "default": 0
+      "description": "at:// URI of podcast episode if converted from a recording"
     },
     "host_name": {
       "type": "string"
@@ -107,7 +126,7 @@
     },
     "sig": {
       "type": "string",
-      "description": "HMAC signature binding the space to the host's signing key (simulated)"
+      "description": "HMAC signature binding the stream to the host's signing key (simulated)"
     }
   },
   "required": [
