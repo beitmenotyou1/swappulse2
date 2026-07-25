@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus, Layers } from 'lucide-react';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { base44 } from '@/api/base44Client';
+import { useToast } from '@/components/ui/use-toast';
 import AddToCollectionModal from '@/components/cards/AddToCollectionModal';
 import CardReviews from '@/components/cards/CardReviews';
 import WishlistAlertModal from '@/components/wishlist/WishlistAlertModal';
@@ -13,6 +15,9 @@ export default function CardDetail() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -26,6 +31,16 @@ export default function CardDetail() {
       }
     })();
   }, [cardId]);
+
+  useEffect(() => {
+    (async () => {
+      if (!card) return;
+      try {
+        const existing = await base44.entities.Wishlist.filter({ card_id: card.id }, '-created_date', 1);
+        setWishlisted(existing.length > 0);
+      } catch {}
+    })();
+  }, [card]);
 
   if (loading) {
     return (
@@ -42,6 +57,34 @@ export default function CardDetail() {
   const { key, text } = rarityClasses(card.rarity);
   const pricing = card.pricing?.tcgplayer || card.pricing?.cardmarket || {};
   const avg = pricing.avg ?? pricing.avg30;
+
+  const toggleWishlist = async () => {
+    if (!card) return;
+    setWishlistBusy(true);
+    try {
+      if (wishlisted) {
+        const existing = await base44.entities.Wishlist.filter({ card_id: card.id }, '-created_date', 10);
+        for (const w of existing) await base44.entities.Wishlist.delete(w.id);
+        setWishlisted(false);
+        toast({ title: 'Removed from wishlist' });
+      } else {
+        await base44.entities.Wishlist.create({
+          card_id: card.id,
+          card_name: card.name,
+          card_image: card.image || '',
+          set_id: card.set?.id || '',
+          set_name: card.set?.name || '',
+          rarity: card.rarity || '',
+        });
+        setWishlisted(true);
+        toast({ title: 'Added to wishlist', description: card.name });
+      }
+    } catch {
+      toast({ title: 'Could not update wishlist', variant: 'destructive' });
+    } finally {
+      setWishlistBusy(false);
+    }
+  };
 
   return (
     <div>
@@ -65,8 +108,10 @@ export default function CardDetail() {
                 className="w-56 rounded-2xl border border-border shadow-xl"
               />
             ) : (
-              <div className="grid h-80 w-56 place-items-center rounded-2xl border border-border bg-secondary text-sm text-muted-foreground">
-                No image
+              <div className="flex h-80 w-56 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-gradient-to-br from-secondary to-muted p-4 text-center">
+                <Layers className="h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm font-medium text-muted-foreground/70">{card.name}</p>
+                <p className="text-xs text-muted-foreground/50">{card.set?.name || card.localId}</p>
               </div>
             )}
           </div>
@@ -145,8 +190,14 @@ export default function CardDetail() {
           >
             <Plus className="h-4 w-4" /> Add to Collection
           </button>
-          <button className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
-            <Heart className="h-4 w-4" /> Wishlist
+          <button
+            onClick={toggleWishlist}
+            disabled={wishlistBusy}
+            className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
+              wishlisted ? 'border border-primary/40 bg-primary/15 text-primary' : 'border border-border hover:bg-secondary'
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${wishlisted ? 'fill-primary' : ''}`} /> Wishlist
           </button>
           <Link
             to="/trades"

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Search, Loader2, Flame } from 'lucide-react';
+import { Search, Loader2, Flame, Layers } from 'lucide-react';
 import { searchCards, cardImageUrl, rarityClasses, getSets } from '@/lib/tcgdex';
 import PageHeader from '@/components/PageHeader';
 import { Link } from 'react-router-dom';
@@ -116,7 +116,10 @@ export default function Explore() {
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="grid h-full place-items-center text-xs text-muted-foreground">No image</div>
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-secondary to-muted p-2 text-center">
+                        <Layers className="h-5 w-5 text-muted-foreground/40" />
+                        <p className="line-clamp-2 text-[10px] font-medium text-muted-foreground/60">{card.name}</p>
+                      </div>
                     )}
                   </div>
                   <div className="p-2">

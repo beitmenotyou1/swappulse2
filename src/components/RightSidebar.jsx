@@ -17,19 +17,22 @@ export default function RightSidebar({ online = [] }) {
   const [recentTrades, setRecentTrades] = useState([]);
 
   useEffect(() => {
-    (async () => {
+    const load = async () => {
       try {
         const [items, trades] = await Promise.all([
           base44.entities.CollectionEntry.list('-updated_date', 200),
           base44.entities.TradeListing.filter({ status: 'open' }, '-created_date', 3),
         ]);
-        const total = items.reduce((sum, c) => sum + (c.market_value || 0), 0);
+        const total = items.reduce((sum, c) => sum + (c.market_value || c.purchase_price || 0), 0);
         setPortfolio({ total, count: items.length });
         setRecentTrades(trades);
       } catch {
         setPortfolio({ total: 0, count: 0 });
       }
-    })();
+    };
+    load();
+    const unsub = base44.entities.CollectionEntry.subscribe(() => load());
+    return unsub;
   }, []);
 
   return (

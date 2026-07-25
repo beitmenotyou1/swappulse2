@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { Layers } from 'lucide-react';
 
 export default function CardThumb({ card, size = 'md' }) {
   const img = cardImageUrl(card.image);
@@ -24,7 +25,10 @@ export default function CardThumb({ card, size = 'md' }) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="grid h-full w-full place-items-center text-xs text-muted-foreground">No image</div>
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-secondary to-muted p-2 text-center">
+            <Layers className="h-5 w-5 text-muted-foreground/40" />
+            <p className="line-clamp-2 text-[10px] font-medium text-muted-foreground/60">{card.name}</p>
+          </div>
         )}
       </div>
       <div className="p-2">
