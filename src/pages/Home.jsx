@@ -5,6 +5,7 @@ import ComposeBox from '@/components/feed/ComposeBox';
 import PostCard from '@/components/feed/PostCard';
 import TradeInterestBanner from '@/components/feed/TradeInterestBanner';
 import CardOfTheDay from '@/components/home/CardOfTheDay';
+import StoriesBar from '@/components/stories/StoriesBar';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 
 const TABS = [
@@ -81,6 +82,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      <StoriesBar />
 
       <CardOfTheDay />
 

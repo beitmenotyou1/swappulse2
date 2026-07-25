@@ -1,0 +1,33 @@
+{
+  "name": "Presence",
+  "type": "object",
+  "title": "Presence",
+  "properties": {
+    "handle": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "avatar": {
+      "type": "string"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp of the most recent heartbeat"
+    },
+    "status_text": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Optional activity status, e.g. 'Ripping a booster box'"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector (simulated)"
+    }
+  },
+  "required": [
+    "last_seen"
+  ]
+}

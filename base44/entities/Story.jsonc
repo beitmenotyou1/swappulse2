@@ -1,0 +1,70 @@
+{
+  "name": "Story",
+  "type": "object",
+  "title": "Story",
+  "properties": {
+    "content": {
+      "type": "string",
+      "maxLength": 280,
+      "description": "Text body for text stories"
+    },
+    "image_uri": {
+      "type": "string",
+      "description": "Uploaded image URL for image stories"
+    },
+    "bg_gradient": {
+      "type": "string",
+      "enum": [
+        "purple",
+        "sunset",
+        "ocean"
+      ],
+      "default": "purple",
+      "description": "Gradient key for text-story backgrounds"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the story auto-expires (creation + 24h)"
+    },
+    "viewed_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DIDs of collectors who have viewed this story"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the author (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the story to the author's signing key (simulated)"
+    }
+  },
+  "required": [
+    "expires_at"
+  ]
+}

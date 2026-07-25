@@ -3,6 +3,7 @@ import { TrendingUp, ArrowLeftRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
+import OnlineNow from '@/components/OnlineNow';
 import { formatPrice } from '@/lib/format';
 
 const trendingMock = [
@@ -11,7 +12,7 @@ const trendingMock = [
   { name: 'Umbreon VMAX', set: 'EVS', change: -3, mentions: 28 },
 ];
 
-export default function RightSidebar() {
+export default function RightSidebar({ online = [] }) {
   const [portfolio, setPortfolio] = useState(null);
   const [recentTrades, setRecentTrades] = useState([]);
 
@@ -33,6 +34,7 @@ export default function RightSidebar() {
 
   return (
     <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-4 overflow-y-auto py-4 pl-2 lg:flex">
+      <OnlineNow users={online} />
       <section className="rounded-2xl border border-border bg-card p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
           <TrendingUp className="h-4 w-4 text-primary" /> Trending Cards

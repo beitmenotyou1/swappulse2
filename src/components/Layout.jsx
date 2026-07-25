@@ -4,8 +4,10 @@ import LeftNav from '@/components/LeftNav';
 import RightSidebar from '@/components/RightSidebar';
 import MobileNav from '@/components/MobileNav';
 import RealtimeToaster from '@/components/RealtimeToaster';
+import { usePresence } from '@/hooks/usePresence';
 
 export default function Layout() {
+  const online = usePresence();
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1400px]">
       <div className="hidden w-[72px] shrink-0 md:block xl:w-[240px]">
@@ -15,7 +17,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <div className="hidden w-80 shrink-0 lg:block">
-        <RightSidebar />
+        <RightSidebar online={online} />
       </div>
       <MobileNav />
       <RealtimeToaster />
