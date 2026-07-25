@@ -1,0 +1,50 @@
+{
+  "name": "NotificationState",
+  "type": "object",
+  "title": "NotificationState",
+  "description": "org.swappulse.notificationState \u2014 the user's notification read checkpoint, persisted to their repository for cross-device unread tracking.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner"
+    },
+    "last_read_uri": {
+      "type": "string",
+      "description": "URI of the most recently read notification record"
+    },
+    "last_read_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp when the last read state was saved"
+    },
+    "dismissed_all": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag set by a 'Mark All as Read' action"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.notificationState)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the state to the owner's signing key (simulated)"
+    }
+  },
+  "required": [
+    "did",
+    "updated_at"
+  ]
+}

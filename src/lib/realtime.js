@@ -187,6 +187,14 @@ class RealTimeManager {
     if (hits.length) {
       this.matchedListings.add(listing.id);
       this.emit('trade.match', { listing, matchedCardIds: hits });
+      this.notifyForMe('trade_match', listing, () => ({
+        actor_name: listing.author_name || 'A collector',
+        actor_handle: listing.author_handle,
+        actor_avatar: listing.author_avatar,
+        target_type: 'trade',
+        target_path: '/trades',
+        target_label: (listing.offer_card_names && listing.offer_card_names[0]) || 'a trade listing',
+      }));
     }
   }
 
@@ -199,8 +207,33 @@ class RealTimeManager {
     if (low <= max && !this.alertedCards.has(id)) {
       this.alertedCards.add(id);
       this.emit('market.price_alert', { card_id: id, price: low, max });
+      this.notifyForMe('price_alert', { card_id: id }, () => ({
+        actor_name: 'SwapPulse',
+        target_type: 'card',
+        target_path: `/card/${id}`,
+        target_label: 'A wishlist card',
+        group_key: `price_${id}`,
+      }));
     } else if (low > max && this.alertedCards.has(id)) {
       this.alertedCards.delete(id);
+    }
+  }
+
+  async notifyForMe(action_type, source, build) {
+    try {
+      const me = await base44.auth.me();
+      if (!me?.did) return;
+      const rec = {
+        did: me.did,
+        action_type,
+        is_read: false,
+        source_uri: source?.at_uri || source?.uri || '',
+        ...(build ? build(me) : {}),
+      };
+      await base44.entities.Notification.create(rec);
+      this.emit('notification.new', rec);
+    } catch (e) {
+      console.error('notifyForMe failed', e?.message || e);
     }
   }
 }

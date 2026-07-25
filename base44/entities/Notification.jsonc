@@ -1,0 +1,105 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "title": "Notification",
+  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, mention, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the notification recipient"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "like",
+        "follow",
+        "mention",
+        "trade_match",
+        "pack_pull",
+        "reaction",
+        "price_alert",
+        "voice_live",
+        "podcast",
+        "message",
+        "reputation"
+      ],
+      "default": "reaction"
+    },
+    "source_uri": {
+      "type": "string",
+      "description": "AT Protocol URI of the triggering record"
+    },
+    "actor_did": {
+      "type": "string"
+    },
+    "actor_name": {
+      "type": "string"
+    },
+    "actor_handle": {
+      "type": "string"
+    },
+    "actor_avatar": {
+      "type": "string"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "card",
+        "post",
+        "profile",
+        "trade",
+        "listing",
+        "space",
+        "podcast"
+      ]
+    },
+    "target_path": {
+      "type": "string",
+      "description": "In-app route to open when the notification is tapped"
+    },
+    "target_label": {
+      "type": "string",
+      "description": "Human label of the target, e.g. a card name"
+    },
+    "target_image": {
+      "type": "string"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "read_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "group_key": {
+      "type": "string",
+      "description": "Aggregation key for grouped notifications"
+    },
+    "group_count": {
+      "type": "integer",
+      "default": 1
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.notification)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the notification to the recipient's signing key (simulated)"
+    }
+  },
+  "required": [
+    "did",
+    "action_type",
+    "is_read"
+  ]
+}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus, Radio } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, Store, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
+import { useUnreadCount } from '@/hooks/useNotifications';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -22,6 +23,7 @@ const moreItems = [
   { to: '/predictions', icon: Vote, label: 'Polls' },
   { to: '/grading', icon: Award, label: 'Grading' },
   { to: '/spaces', icon: Radio, label: 'Live' },
+  { to: '/notifications', icon: Bell, label: 'Alerts' },
   { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
 
@@ -30,6 +32,7 @@ export default function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
+  const unread = useUnreadCount();
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
   return (
@@ -95,6 +98,9 @@ export default function MobileNav() {
                     {item.label}
                     {item.to === '/spaces' && liveCount > 0 && (
                       <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{liveCount}</span>
+                    )}
+                    {item.to === '/notifications' && unread > 0 && (
+                      <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
                     )}
                   </Link>
                 );

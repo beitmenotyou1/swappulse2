@@ -42,6 +42,7 @@ import OrderComplete from '@/pages/OrderComplete';
 import UserProfile from '@/pages/UserProfile';
 import VoiceSpaces from '@/pages/VoiceSpaces';
 import SpaceRoom from '@/pages/SpaceRoom';
+import Notifications from '@/pages/Notifications';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -108,6 +109,7 @@ const AuthenticatedApp = () => {
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/spaces" element={<VoiceSpaces />} />
           <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
