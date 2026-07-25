@@ -1,0 +1,59 @@
+{
+  "name": "StoryView",
+  "type": "object",
+  "title": "StoryView",
+  "properties": {
+    "story_id": {
+      "type": "string",
+      "description": "Local id of the viewed Story for fast lookup"
+    },
+    "story_ref": {
+      "type": "string",
+      "description": "strongRef at:// URI of the viewed story"
+    },
+    "viewer_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the viewer"
+    },
+    "viewer_name": {
+      "type": "string"
+    },
+    "viewer_handle": {
+      "type": "string"
+    },
+    "viewer_avatar": {
+      "type": "string"
+    },
+    "viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the viewer saw the story"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the viewer (simulated, record owner)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this storyView record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.storyView)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the view to the viewer's signing key (simulated)"
+    }
+  },
+  "required": [
+    "story_id",
+    "story_ref",
+    "viewer_did",
+    "viewed_at"
+  ]
+}

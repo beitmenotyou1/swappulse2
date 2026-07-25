@@ -3,14 +3,90 @@
   "type": "object",
   "title": "Story",
   "properties": {
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "description": "Ordered media segments composing the story (org.swappulse.story lexicon). Falls back to legacy single content/image_uri when empty.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "media_blob": {
+            "type": "string",
+            "description": "Uploaded image or video URL"
+          },
+          "media_type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video",
+              "text",
+              "card"
+            ]
+          },
+          "text_overlay": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Text rendered over the media"
+          },
+          "text_position": {
+            "type": "string",
+            "enum": [
+              "top",
+              "center",
+              "bottom"
+            ],
+            "default": "center"
+          },
+          "background_color": {
+            "type": "string",
+            "description": "Hex colour behind text overlay, or legacy gradient key"
+          },
+          "card_embed_uri": {
+            "type": "string",
+            "description": "TCGDex card id of an embedded card segment"
+          },
+          "card_name": {
+            "type": "string"
+          },
+          "card_image": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 15,
+            "default": 5,
+            "description": "Display duration in seconds for non-video segments"
+          }
+        }
+      }
+    },
+    "audience": {
+      "type": "string",
+      "enum": [
+        "friends",
+        "public"
+      ],
+      "default": "friends",
+      "description": "Who can view this story. 'friends' restricts to accepted mutual friendships."
+    },
+    "story_group": {
+      "type": "string",
+      "description": "Identifier grouping segments into one story (record rkey)"
+    },
     "content": {
       "type": "string",
       "maxLength": 280,
-      "description": "Text body for text stories"
+      "description": "Legacy: text body for single text stories"
     },
     "image_uri": {
       "type": "string",
-      "description": "Uploaded image URL for image stories"
+      "description": "Legacy: uploaded image URL for single image stories"
     },
     "bg_gradient": {
       "type": "string",
@@ -20,19 +96,19 @@
         "ocean"
       ],
       "default": "purple",
-      "description": "Gradient key for text-story backgrounds"
+      "description": "Legacy: gradient key for text-story backgrounds"
     },
     "expires_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the story auto-expires (creation + 24h)"
+      "description": "When the story becomes invisible (createdAt + 24h)"
     },
     "viewed_by": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "DIDs of collectors who have viewed this story"
+      "description": "Legacy denormalized seen DIDs (view tracking now uses StoryView records)"
     },
     "author_name": {
       "type": "string"
@@ -57,7 +133,7 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.story)"
     },
     "sig": {
       "type": "string",
@@ -65,6 +141,7 @@
     }
   },
   "required": [
-    "expires_at"
+    "expires_at",
+    "audience"
   ]
 }

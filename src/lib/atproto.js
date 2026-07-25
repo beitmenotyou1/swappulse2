@@ -52,6 +52,8 @@ export const NSID = {
   FOLLOW: 'app.bsky.graph.follow',
   FOLLOW_PREFERENCE: 'org.swappulse.followPreference',
   FRIENDSHIP: 'org.swappulse.friendship',
+  STORY: 'org.swappulse.story',
+  STORY_VIEW: 'org.swappulse.storyView',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.fresh-pulls',
