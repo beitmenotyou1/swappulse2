@@ -3,7 +3,9 @@ import { Plus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import Avatar from '@/components/Avatar';
+import LiveAvatar from '@/components/LiveAvatar';
 import StoryViewer from './StoryViewer';
+import { useLivePresence } from '@/lib/livePresence';
 import CreateStoryModal from './CreateStoryModal';
 
 // Returns the set of DIDs with whom the current user shares an accepted,
@@ -23,6 +25,7 @@ export default function StoriesBar() {
   const [seenIds, setSeenIds] = useState(new Set());
   const [startDid, setStartDid] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const { liveByDid } = useLivePresence();
 
   const load = async (did) => {
     const cutoff = new Date().toISOString();
@@ -103,9 +106,12 @@ export default function StoriesBar() {
 
       {others.map((u) => {
         const seenAll = ringFor(u);
+        const liveInfo = u.did ? liveByDid.get(u.did) : null;
         return (
           <button key={u.did} onClick={() => setStartDid(u.did)} className="flex shrink-0 flex-col items-center gap-1">
-            {seenAll ? (
+            {liveInfo ? (
+              <LiveAvatar did={u.did} name={u.author_name} src={u.author_avatar} size={72} />
+            ) : seenAll ? (
               <div className="rounded-full p-[3px] bg-[#cbd5e1]">
                 <div className="rounded-full ring-2 ring-card"><Avatar name={u.author_name} src={u.author_avatar} size={72} /></div>
               </div>

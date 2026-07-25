@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import Avatar from '@/components/Avatar';
+import LiveAvatar from '@/components/LiveAvatar';
 import PostCard from '@/components/feed/PostCard';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
@@ -74,7 +74,7 @@ export default function Profile() {
       <div className="h-40 w-full bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30" />
       <div className="px-4">
         <div className="-mt-12 flex items-end justify-between">
-          <Avatar name={user?.full_name} size={96} className="ring-4 ring-background" />
+          <LiveAvatar did={did} name={user?.full_name} size={96} className="ring-4 ring-background" />
         </div>
         <div className="mt-3">
           <h1 className="text-xl font-extrabold">{user?.full_name || 'Collector'}</h1>

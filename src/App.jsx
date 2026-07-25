@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { LivePresenceProvider } from '@/lib/livePresence';
 import Layout from '@/components/Layout';
 import Home from '@/pages/Home';
 import Explore from '@/pages/Explore';
@@ -121,7 +122,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <LivePresenceProvider>
+            <AuthenticatedApp />
+          </LivePresenceProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>

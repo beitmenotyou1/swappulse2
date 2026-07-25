@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Mic, MicOff, Hand, LogOut, Radio, Crown, Disc3, Users, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, generateDid, generateSigningKey, NSID } from '@/lib/atproto';
-import Avatar from '@/components/Avatar';
+import LiveAvatar from '@/components/LiveAvatar';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 import { rt } from '@/lib/realtime';
@@ -325,7 +325,7 @@ export default function SpaceRoom() {
               <div key={p.id} className="flex flex-col items-center gap-1">
                 <span className="relative inline-block">
                   <span className={`absolute -inset-1 rounded-full ${speakingNow ? 'animate-pulse bg-primary/50' : 'bg-transparent'}`} />
-                  <Avatar name={p.participant_name} src={p.participant_avatar} size={56} className="relative" />
+                  <LiveAvatar did={p.did} name={p.participant_name} src={p.participant_avatar} size={56} className="relative" />
                   {p.role === 'host' && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-primary p-0.5 text-white"><Crown className="h-3 w-3" /></span>}
                 </span>
                 <p className="max-w-[72px] truncate text-xs font-semibold">{p.participant_name || 'Collector'}{isMe ? ' (you)' : ''}</p>
@@ -343,7 +343,7 @@ export default function SpaceRoom() {
                 <div key={p.id} className="flex flex-col items-center gap-1">
                   <span className="relative inline-block">
                     <Hand className="absolute -right-1 -top-1 h-4 w-4 text-accent" />
-                    <Avatar name={p.participant_name} size={48} />
+                    <LiveAvatar did={p.did} name={p.participant_name} size={48} />
                   </span>
                   <p className="max-w-[72px] truncate text-xs">{p.participant_name}</p>
                   {isHost && <button onClick={() => promote(p, 'speaker')} className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">Promote</button>}
@@ -358,7 +358,7 @@ export default function SpaceRoom() {
           {listenersList.length === 0 ? (
             <p className="text-xs text-muted-foreground">No listeners yet.</p>
           ) : (
-            listenersList.map((p) => <Avatar key={p.id} name={p.participant_name} src={p.participant_avatar} size={32} />)
+            listenersList.map((p) => <LiveAvatar key={p.id} did={p.did} name={p.participant_name} src={p.participant_avatar} size={32} />)
           )}
         </div>
       </div>

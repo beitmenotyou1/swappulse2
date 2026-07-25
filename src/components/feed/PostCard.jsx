@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
-import Avatar from '@/components/Avatar';
+import LiveAvatar from '@/components/LiveAvatar';
+import LiveBadge from '@/components/LiveBadge';
+import { useLivePresence } from '@/lib/livePresence';
 import ReactionBar from '@/components/feed/ReactionBar';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { timeAgo, formatNumber } from '@/lib/format';
@@ -17,14 +19,17 @@ export default function PostCard({ post, reactions }) {
   const [reposted, setReposted] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const { liveByDid } = useLivePresence();
+  const liveInfo = post.did ? liveByDid.get(post.did) : null;
   const meta = TYPE_META[post.post_type];
   const likeCount = post.likes + (liked ? 1 : 0);
   const repostCount = post.reposts + (reposted ? 1 : 0);
 
   return (
-    <article className="border-b border-border p-4 transition-colors hover:bg-card/50">
+    <article className="relative border-b border-border p-4 transition-colors hover:bg-card/50">
+      {liveInfo && <span className="absolute right-3 top-3 z-10"><LiveBadge title={liveInfo.title} /></span>}
       <div className="flex gap-3">
-        <Avatar name={post.author_name} src={post.author_avatar} size={44} />
+        <LiveAvatar did={post.did} name={post.author_name} src={post.author_avatar} size={44} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-sm">
             {post.did ? (

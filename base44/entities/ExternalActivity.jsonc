@@ -1,0 +1,96 @@
+{
+  "name": "ExternalActivity",
+  "type": "object",
+  "title": "ExternalActivity",
+  "properties": {
+    "platform": {
+      "type": "string",
+      "enum": [
+        "twitch",
+        "youtube",
+        "tiktok",
+        "other"
+      ],
+      "description": "External platform the activity originates from"
+    },
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "stream",
+        "video",
+        "post",
+        "clip"
+      ],
+      "default": "stream"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Canonical URL of the external content"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "External content id (video id, stream id) for dedupe"
+    },
+    "is_live": {
+      "type": "boolean",
+      "default": false,
+      "description": "True while a stream is currently live (drives the presence ring)"
+    },
+    "viewer_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "Related TCGDex card if the content is about a specific card"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the activity author (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.externalActivity)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the activity to the author's signing key (simulated)"
+    }
+  },
+  "required": [
+    "platform",
+    "source_url"
+  ]
+}
