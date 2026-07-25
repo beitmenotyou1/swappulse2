@@ -5,6 +5,8 @@ import RightSidebar from '@/components/RightSidebar';
 import MobileNav from '@/components/MobileNav';
 import RealtimeToaster from '@/components/RealtimeToaster';
 import BellToaster from '@/components/follow/BellToaster';
+import AlphaNotice from '@/components/AlphaNotice';
+import FeedbackButton from '@/components/feedback/FeedbackButton';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import { usePresence } from '@/hooks/usePresence';
 import { useApplyAccessibility } from '@/hooks/useSettings';
@@ -18,6 +20,7 @@ export default function Layout() {
         <LeftNav />
       </div>
       <main className="min-w-0 flex-1 border-x border-border pb-20 md:pb-0">
+        <AlphaNotice />
         <Outlet />
         <StickyPlayerBar />
       </main>
@@ -27,6 +30,7 @@ export default function Layout() {
       <MobileNav />
       <RealtimeToaster />
       <BellToaster />
+      <FeedbackButton />
     </div>
   );
 }

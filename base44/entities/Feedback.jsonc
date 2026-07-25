@@ -1,0 +1,41 @@
+{
+  "name": "Feedback",
+  "type": "object",
+  "title": "Feedback",
+  "description": "org.swappulse.feedback \u2014 collector feedback submitted via the in-app feedback button (page snapshot + comment), routed to the team for review.",
+  "properties": {
+    "comment": {
+      "type": "string",
+      "maxLength": 5000,
+      "description": "The collector's written feedback"
+    },
+    "page": {
+      "type": "string",
+      "description": "Route path the collector was viewing when they submitted feedback"
+    },
+    "screenshot_url": {
+      "type": "string",
+      "description": "Uploaded screenshot of the current page (image URL)"
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "viewport": {
+      "type": "string",
+      "description": "Viewport size, e.g. 1440x900"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "reviewed",
+        "resolved"
+      ],
+      "default": "new"
+    }
+  },
+  "required": [
+    "comment",
+    "page"
+  ]
+}

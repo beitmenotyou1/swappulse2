@@ -41,6 +41,9 @@ import VoiceSpaces from '@/pages/VoiceSpaces';
 import SpaceRoom from '@/pages/SpaceRoom';
 import Notifications from '@/pages/Notifications';
 import Settings from '@/pages/Settings';
+import Help from '@/pages/Help';
+import Donate from '@/pages/Donate';
+import DonateThanks from '@/pages/DonateThanks';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -72,6 +75,8 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/donate" element={<Donate />} />
+      <Route path="/donate/thanks" element={<DonateThanks />} />
       <Route path="/compose" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
           <Route index element={<Compose />} />
@@ -106,6 +111,7 @@ const AuthenticatedApp = () => {
           <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/help" element={<Help />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

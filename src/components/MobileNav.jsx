@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -23,6 +23,8 @@ const moreItems = [
   { to: '/grading', icon: Award, label: 'Grading' },
   { to: '/spaces', icon: Radio, label: 'Live' },
   { to: '/notifications', icon: Bell, label: 'Alerts' },
+  { to: '/help', icon: HelpCircle, label: 'Help' },
+  { to: '/donate', icon: Heart, label: 'Donate' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings' },
   { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
