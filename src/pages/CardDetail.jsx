@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import AddToCollectionModal from '@/components/cards/AddToCollectionModal';
 import CardReviews from '@/components/cards/CardReviews';
 import WishlistAlertModal from '@/components/wishlist/WishlistAlertModal';
+import DiscussionTab from '@/components/comments/DiscussionTab';
 import { formatPrice } from '@/lib/format';
 
 export default function CardDetail() {
@@ -17,6 +18,7 @@ export default function CardDetail() {
   const [showAlert, setShowAlert] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
+  const [tab, setTab] = useState('overview');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -98,7 +100,26 @@ export default function CardDetail() {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="flex gap-1 border-b border-border px-4">
+        <button
+          onClick={() => setTab('overview')}
+          className={`rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === 'overview' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setTab('discussion')}
+          className={`rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === 'discussion' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Discussion
+        </button>
+      </div>
+
+      <div className={`p-4 ${tab !== 'overview' ? 'hidden' : ''}`}>
         <div className="flex flex-col gap-5 sm:flex-row">
           <div className="mx-auto sm:mx-0">
             {cardImageUrl(card.image) ? (
@@ -249,7 +270,11 @@ export default function CardDetail() {
         </div>
       </div>
 
-      <CardReviews card={card} />
+      <div className={tab !== 'overview' ? 'hidden' : ''}>
+        <CardReviews card={card} />
+      </div>
+
+      {tab === 'discussion' && <DiscussionTab card={card} />}
 
       <AddToCollectionModal open={showAdd} onClose={() => setShowAdd(false)} card={card} />
       {showAlert && <WishlistAlertModal card={card} onClose={() => setShowAlert(false)} />}

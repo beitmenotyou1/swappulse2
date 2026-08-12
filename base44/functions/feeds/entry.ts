@@ -7,6 +7,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
+// Exclude posts that are escalated or carry a hide-severity moderation label.
+function isModerationClean(post) {
+  if (post.moderation_status === 'escalated') return false;
+  if (Array.isArray(post.moderation_labels)) {
+    return !post.moderation_labels.some((l) => l?.severity === 'hide');
+  }
+  return true;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -22,7 +31,8 @@ Deno.serve(async (req) => {
     switch (feed) {
       case 'fresh-pulls': {
         const posts = await svc.entities.Post.filter({ post_type: 'pack_opening' }, '-created_date', limit + cursor + 1);
-        const slice = posts.slice(cursor, cursor + limit);
+        const clean = posts.filter(isModerationClean);
+        const slice = clean.slice(cursor, cursor + limit);
         return Response.json({
           feed: slice.map((p) => ({ post: p.at_uri || `at://swappulse/post/${p.id}`, reason: 'recent' })),
           cursor: slice.length === limit ? String(cursor + limit) : undefined,
@@ -53,6 +63,7 @@ Deno.serve(async (req) => {
             const r = (p.card_rarity || '').toLowerCase();
             return r.includes('holo') || r.includes('secret') || r.includes('rainbow');
           })
+          .filter(isModerationClean)
           .slice(cursor, cursor + limit);
         return Response.json({
           feed: slice.map((p) => ({ post: p.at_uri || `at://swappulse/post/${p.id}`, reason: 'shiny' })),
