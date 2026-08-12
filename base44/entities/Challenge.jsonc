@@ -2,6 +2,7 @@
   "name": "Challenge",
   "type": "object",
   "title": "Challenge",
+  "description": "org.swappulse.challenge \u2014 a community challenge definition. Participation model is set by `mode`: collective (shared global goal, no ranking), competitive (multi-axis opt-in leaderboard), or guild (circle-scoped, Alpha 1.2). `goal` defines the metric, target and quality filters; `reward` defines what contributors receive (shared=true grants to all on collective completion). `leaderboard_config` is ignored for collective challenges.",
   "properties": {
     "challenge_type": {
       "type": "string",
@@ -12,17 +13,178 @@
         "community_goal"
       ]
     },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "collective",
+        "guild",
+        "competitive"
+      ],
+      "default": "collective",
+      "description": "Participation model"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "helpful-trader",
+        "accuracy-champion",
+        "community-builder",
+        "set-completer",
+        "shiny-hunter",
+        "journal-writer",
+        "meetup-organiser"
+      ],
+      "description": "Leaderboard axis this challenge scores on (competitive only)"
+    },
     "title": {
       "type": "string",
       "maxLength": 100
     },
     "description": {
       "type": "string",
-      "maxLength": 500
+      "maxLength": 2000
     },
     "rules": {
       "type": "string",
       "maxLength": 2000
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "global",
+        "circle"
+      ],
+      "default": "global"
+    },
+    "circle_ref": {
+      "type": "string",
+      "description": "at:// URI of the scoping Circle (required when scope is circle)"
+    },
+    "goal": {
+      "type": "object",
+      "description": "What participants must accomplish",
+      "properties": {
+        "metric": {
+          "type": "string",
+          "enum": [
+            "cards_logged",
+            "shiny_pulls_logged",
+            "trades_completed",
+            "scanner_corrections",
+            "vouches_given",
+            "journals_published",
+            "meetups_attended",
+            "sets_completed",
+            "grading_submissions"
+          ]
+        },
+        "target": {
+          "type": "integer",
+          "description": "Total for collective, or qualifying threshold for competitive"
+        },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "min_rarity": {
+              "type": "string",
+              "enum": [
+                "common",
+                "uncommon",
+                "rare",
+                "holo",
+                "secret_rare",
+                "ex",
+                "v",
+                "vmax",
+                "rainbow"
+              ]
+            },
+            "element_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "condition_min": {
+              "type": "string",
+              "enum": [
+                "mint",
+                "near_mint",
+                "excellent",
+                "good",
+                "fair",
+                "poor"
+              ]
+            },
+            "min_value_usd": {
+              "type": "integer",
+              "description": "Minimum card value in USD cents"
+            },
+            "exclude_duplicates": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "reward": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "badge",
+            "theme",
+            "feature_unlock",
+            "achievement",
+            "recognition"
+          ]
+        },
+        "badge_id": {
+          "type": "string"
+        },
+        "theme_id": {
+          "type": "string"
+        },
+        "shared": {
+          "type": "boolean",
+          "default": false,
+          "description": "true: all contributors rewarded on collective completion; false: top rankers only"
+        }
+      }
+    },
+    "leaderboard_config": {
+      "type": "object",
+      "description": "Leaderboard settings. Ignored for collective challenges.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "helpful-trader",
+              "accuracy-champion",
+              "community-builder",
+              "set-completer",
+              "shiny-hunter",
+              "journal-writer",
+              "meetup-organiser"
+            ]
+          }
+        },
+        "rank_limit": {
+          "type": "integer",
+          "default": 100
+        },
+        "visibility_window_days": {
+          "type": "integer",
+          "default": 30
+        }
+      }
     },
     "target_set_code": {
       "type": "string"
@@ -62,14 +224,34 @@
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Competitive only; populated on completion"
+    },
+    "creator_did": {
+      "type": "string",
+      "description": "DID of the challenge creator (official SwapPulse or Guild)"
+    },
+    "guild_approved": {
+      "type": "boolean",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Challenge banner/thumbnail URL"
     },
     "author_name": {
       "type": "string"
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the challenge publisher (simulated)"
+      "description": "AT Protocol DID of the publisher (simulated)"
     },
     "at_uri": {
       "type": "string",

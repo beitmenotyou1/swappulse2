@@ -2,6 +2,7 @@
   "name": "ChallengeEntry",
   "type": "object",
   "title": "ChallengeEntry",
+  "description": "org.swappulse.challengeEntry \u2014 a user's contribution to a challenge. The leaderboard feed generator reads the author's profile settings (SettingsConfig.config.challenges.leaderboardOptIn) to decide visibility; override_profile_visibility allows a per-entry override. status and moderator_labels gate quality (rejected / spam_suspected entries are excluded from ranking).",
   "properties": {
     "challenge_id": {
       "type": "string",
@@ -25,6 +26,81 @@
         "card_pull",
         "collection_value"
       ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "helpful-trader",
+        "accuracy-champion",
+        "community-builder",
+        "set-completer",
+        "shiny-hunter",
+        "journal-writer",
+        "meetup-organiser"
+      ],
+      "description": "Axis this contribution counts toward (must match challenge leaderboard_config.categories)"
+    },
+    "contribution_count": {
+      "type": "integer",
+      "default": 1,
+      "description": "Number of items contributed toward the goal metric"
+    },
+    "contribution_uris": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "description": "Supporting at:// URIs for verification / audit trail"
+    },
+    "verification_hash": {
+      "type": "string",
+      "description": "Cryptographic hash of contribution data for integrity verification"
+    },
+    "moderator_labels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "under_review",
+          "flagged_for_review",
+          "spam_suspected"
+        ]
+      }
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "override_profile_visibility": {
+      "type": "object",
+      "description": "Temporary visibility override for this entry only. Requires explicit confirmation UI.",
+      "properties": {
+        "allow_on_leaderboard": {
+          "type": "boolean"
+        },
+        "allowed_categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "expired"
+      ],
+      "default": "pending"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "maxLength": 200
     },
     "set_completion_percent": {
       "type": "number"

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -21,6 +21,7 @@ const moreItems = [
   { to: '/trust', icon: ShieldCheck, label: 'Trust' },
   { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow' },
   { to: '/achievements', icon: Trophy, label: 'Achievements' },
+  { to: '/challenges', icon: Target, label: 'Challenges' },
   { to: '/packs', icon: Package, label: 'Packs' },
   { to: '/market', icon: BarChart3, label: 'Market' },
   { to: '/predictions', icon: Vote, label: 'Polls' },

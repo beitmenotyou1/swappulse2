@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2 } from 'lucide-react';
+import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { useSettings } from '@/hooks/useSettings';
 import AccountSection from '@/components/settings/AccountSection';
@@ -8,6 +8,7 @@ import PrivacySection from '@/components/settings/PrivacySection';
 import NotificationsSection from '@/components/settings/NotificationsSection';
 import AccessibilitySection from '@/components/settings/AccessibilitySection';
 import AdvancedSection from '@/components/settings/AdvancedSection';
+import ChallengesSection from '@/components/settings/ChallengesSection';
 
 const TABS = [
   { key: 'account', label: 'Account', Icon: Shield, Comp: AccountSection },
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'notifications', label: 'Notifications', Icon: Bell, Comp: NotificationsSection },
   { key: 'accessibility', label: 'Accessibility', Icon: AccessIcon, Comp: AccessibilitySection },
   { key: 'advanced', label: 'Advanced', Icon: Wrench, Comp: AdvancedSection },
+  { key: 'challenges', label: 'Challenges', Icon: Target, Comp: ChallengesSection },
 ];
 
 export default function Settings() {
