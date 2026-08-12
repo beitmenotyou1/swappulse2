@@ -49,6 +49,7 @@ import DonateThanks from '@/pages/DonateThanks';
 import HandleProfile from '@/pages/HandleProfile';
 import Admin from '@/pages/Admin';
 import Moderation from '@/pages/Moderation';
+import WhoToFollow from '@/pages/WhoToFollow';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -121,6 +122,7 @@ const AuthenticatedApp = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
+          <Route path="/who-to-follow" element={<WhoToFollow />} />
           <Route path="/help" element={<Help />} />
         </Route>
       </Route>

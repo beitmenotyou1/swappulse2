@@ -1,0 +1,29 @@
+{
+  "name": "RecommendationCache",
+  "type": "object",
+  "title": "RecommendationCache",
+  "description": "org.swappulse.recommendationCache \u2014 precomputed Who to Follow results per user, refreshed on demand and by the nightly workflow. Replaces the Redis cache layer from the standalone spec.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user these recommendations belong to"
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Ranked ScoredCandidate objects (did, scores, reasons, sourceMethod)",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the cache was last computed"
+    }
+  },
+  "required": [
+    "did",
+    "recommendations"
+  ]
+}
