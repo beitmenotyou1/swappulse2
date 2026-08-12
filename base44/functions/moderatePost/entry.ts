@@ -48,7 +48,9 @@ Deno.serve(async (req) => {
       confidence: l.confidence,
     }));
 
-    await base44.entities.Post.update(postId, { moderation_labels });
+    const update = { moderation_labels };
+    if (moderation_labels.length > 0) update.moderation_status = 'pending';
+    await base44.entities.Post.update(postId, update);
 
     return Response.json({ labels: moderation_labels, reasons });
   } catch (error) {

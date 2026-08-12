@@ -1,0 +1,76 @@
+{
+  "name": "ModerationLog",
+  "type": "object",
+  "title": "ModerationLog",
+  "description": "org.swappulse.moderationLog \u2014 audit trail of moderator decisions on flagged posts.",
+  "properties": {
+    "moderator_id": {
+      "type": "string",
+      "description": "Platform user id of the moderator"
+    },
+    "moderator_name": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "approve",
+        "dismiss",
+        "escalate",
+        "auto-resolve",
+        "auto-escalate"
+      ],
+      "description": "Moderation action taken"
+    },
+    "target_post_id": {
+      "type": "string",
+      "description": "Id of the post that was reviewed"
+    },
+    "target_author": {
+      "type": "string",
+      "description": "Handle or id of the flagged post's author"
+    },
+    "labels_affected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Label identifiers involved in the decision"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional moderator notes"
+    },
+    "auto_generated": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "moderator_id",
+    "action",
+    "target_post_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

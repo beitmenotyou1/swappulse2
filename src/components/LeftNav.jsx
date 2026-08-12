@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -30,6 +30,7 @@ const more = [
   { to: '/help', icon: HelpCircle, label: 'Help & Info' },
   { to: '/donate', icon: Heart, label: 'Donate' },
   { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
+  { to: '/moderation', icon: ShieldAlert, label: 'Moderation', adminOnly: true },
   { to: '/settings', icon: SettingsIcon, label: 'Settings' },
 ];
 

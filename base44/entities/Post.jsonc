@@ -61,6 +61,29 @@
         }
       }
     },
+    "moderation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "reviewed",
+        "dismissed",
+        "escalated"
+      ],
+      "description": "Moderator review state; set to 'pending' when labels are first applied"
+    },
+    "moderation_notes": {
+      "type": "string",
+      "description": "Optional moderator notes from the review decision"
+    },
+    "moderated_by": {
+      "type": "string",
+      "description": "User id of the moderator who resolved the flag"
+    },
+    "moderated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the moderator decision was recorded"
+    },
     "card_id": {
       "type": "string",
       "description": "TCGDex card id when a card is attached"
