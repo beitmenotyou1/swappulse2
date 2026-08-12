@@ -47,6 +47,7 @@ import Help from '@/pages/Help';
 import Donate from '@/pages/Donate';
 import DonateThanks from '@/pages/DonateThanks';
 import HandleProfile from '@/pages/HandleProfile';
+import Admin from '@/pages/Admin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -117,6 +118,7 @@ const AuthenticatedApp = () => {
           <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/help" element={<Help />} />
         </Route>
       </Route>

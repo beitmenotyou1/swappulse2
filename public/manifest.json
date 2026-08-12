@@ -1,35 +1,19 @@
 {
   "name": "SwapPulse",
   "short_name": "SwapPulse",
-  "description": "The decentralised social network for Pokémon TCG collectors",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "description": "A decentralised social network for Pokémon TCG collectors.",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#0F1117",
   "theme_color": "#0F1117",
-  "categories": ["social", "entertainment", "lifestyle"],
+  "start_url": "/",
   "icons": [
-    { "src": "https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/73e8e64e1_generated_image.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/73e8e64e1_generated_image.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/fc2637b08_screen.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/fc2637b08_screen.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "View Trade Board", "url": "/trades?source=shortcut" },
-    { "name": "My Collection", "url": "/collection?source=shortcut" },
-    { "name": "Market Watch", "url": "/market?source=shortcut" },
-    { "name": "Scan a Card", "url": "/scan?source=shortcut" }
-  ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        { "name": "card_image", "accept": ["image/*"] }
-      ]
-    }
-  }
+    { "name": "Trade Board", "url": "/trades" },
+    { "name": "My Collection", "url": "/collection" },
+    { "name": "Market Watch", "url": "/market" },
+    { "name": "Scan a Card", "url": "/scan" }
+  ]
 }

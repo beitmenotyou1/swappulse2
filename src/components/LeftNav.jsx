@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -29,6 +29,7 @@ const more = [
   { to: '/grading', icon: Award, label: 'Grading' },
   { to: '/help', icon: HelpCircle, label: 'Help & Info' },
   { to: '/donate', icon: Heart, label: 'Donate' },
+  { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { to: '/settings', icon: SettingsIcon, label: 'Settings' },
 ];
 
@@ -77,7 +78,7 @@ export default function LeftNav() {
 
         {showMore && (
           <div className="flex flex-col items-center gap-1 border-l border-border pl-2 xl:items-stretch xl:pl-3">
-            {more.map((item) => (
+            {more.filter((i) => !i.adminOnly || user?.role === 'admin').map((item) => (
               <NavLink key={item.to} to={item.to} aria-label={item.label} className={linkClass}>
                 <item.icon className="h-6 w-6 shrink-0" />
                 <span className="hidden xl:inline">{item.label}</span>

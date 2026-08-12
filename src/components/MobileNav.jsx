@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
+import { useAuth } from '@/lib/AuthContext';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -26,6 +27,7 @@ const moreItems = [
   { to: '/notifications', icon: Bell, label: 'Alerts' },
   { to: '/help', icon: HelpCircle, label: 'Help' },
   { to: '/donate', icon: Heart, label: 'Donate' },
+  { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { to: '/settings', icon: SettingsIcon, label: 'Settings' },
   { to: '/profile', icon: UserIcon, label: 'Profile' },
 ];
@@ -36,6 +38,7 @@ export default function MobileNav() {
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
   const unread = useUnreadCount();
+  const { user } = useAuth();
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
   return (
@@ -86,7 +89,7 @@ export default function MobileNav() {
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {moreItems.map((item) => {
+              {moreItems.filter((i) => !i.adminOnly || user?.role === 'admin').map((item) => {
                 const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
                 return (
                   <Link

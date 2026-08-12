@@ -1,0 +1,63 @@
+{
+  "name": "InviteCode",
+  "type": "object",
+  "title": "InviteCode",
+  "description": "org.swappulse.inviteCode \u2014 alpha onboarding invite codes (limited to 10,000). Admin-generated; redeemed once at registration.",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Unique invite code"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "used",
+        "disabled"
+      ],
+      "default": "active"
+    },
+    "used_by_did": {
+      "type": "string",
+      "description": "Email or id of the user who redeemed the code"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "batch": {
+      "type": "string",
+      "description": "Generation batch label"
+    }
+  },
+  "required": [
+    "code",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

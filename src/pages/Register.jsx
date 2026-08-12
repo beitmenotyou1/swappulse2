@@ -19,6 +19,7 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +44,12 @@ export default function Register() {
       // non-blocking - proceed
     }
     try {
+      const inviteRes = await base44.functions.invoke("validate-invite", { code: inviteCode.trim() });
+      if (!inviteRes.data?.valid) {
+        setError("That invite code isn't valid or has already been used.");
+        setLoading(false);
+        return;
+      }
       await base44.auth.register({ email, password });
       // Send the activation link email (the platform's verification email with
       // the code is sent automatically by register()).
@@ -62,6 +69,7 @@ export default function Register() {
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
+        try { await base44.functions.invoke("validate-invite", { code: inviteCode.trim(), redeem: true }); } catch {}
       }
       window.location.href = "/";
     } catch (err) {
@@ -208,6 +216,17 @@ export default function Register() {
               />
               </div>
               </div>
+        <div className="space-y-2">
+          <Label htmlFor="invite">Invite code</Label>
+          <Input
+            id="invite"
+            placeholder="Enter your alpha invite code"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            className="h-12"
+            required
+          />
+        </div>
               <label className="flex items-start gap-2 text-sm text-muted-foreground">
               <input
               type="checkbox"
