@@ -8,6 +8,22 @@ import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { dispatchCrossPost } from '@/lib/crosspost';
 
+function extractHashtags(text) {
+  const matches = text.match(/#([\p{L}\p{N}_]+)/gu) || [];
+  return matches.map((m) => m.slice(1));
+}
+function canonicalise(tags) {
+  const seen = new Set();
+  const out = [];
+  for (const t of tags) {
+    const c = t.trim().toLowerCase();
+    if (!c || seen.has(c)) continue;
+    seen.add(c);
+    out.push(c);
+  }
+  return out;
+}
+
 export default function ComposeBox({ onPosted }) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
@@ -27,9 +43,13 @@ export default function ComposeBox({ onPosted }) {
     setPosting(true);
     try {
       const { did, signingKey } = await ensureUserDid();
+      const hashtags = extractHashtags(content).slice(0, 10);
+      const canonical_tags = canonicalise(hashtags);
       const stamped = await stampRecord({
         content: content.trim(),
         post_type: attachedCard ? postType : 'text',
+        hashtags,
+        canonical_tags,
         card_id: attachedCard?.id,
         card_name: attachedCard?.name,
         card_image: attachedCard?.image,
