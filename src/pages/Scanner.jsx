@@ -2,10 +2,12 @@ import React, { useRef, useState } from 'react';
 import { ScanLine, Camera, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import { queueScannerCorrection, createEntry } from '@/lib/offlineSync';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import ScanResultCard from '@/components/scanner/ScanResultCard';
+import ScanTips from '@/components/scanner/ScanTips';
 
 export default function Scanner() {
   const { toast } = useToast();
@@ -27,7 +29,7 @@ export default function Scanner() {
   const submitAndAdd = async (scan, card, correctionType, notes, viaManual = false) => {
     const top = scan.candidates?.[0];
     try {
-      await base44.functions.invoke('submitScannerCorrection', {
+      await queueScannerCorrection({
         image_hash: scan.imageHash || '',
         image_url: scan.imageUrl || '',
         predicted_card_id: top?.card_id || '',
@@ -42,7 +44,7 @@ export default function Scanner() {
         notes: notes || '',
       });
 
-      await base44.entities.CollectionEntry.create({
+      await createEntry({
         card_id: card.card_id,
         card_name: card.card_name,
         card_image: card.image,
@@ -158,16 +160,19 @@ export default function Scanner() {
         />
 
         {scans.length === 0 ? (
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="grid w-full place-items-center gap-3 rounded-2xl border-2 border-dashed border-border py-16 text-center transition-colors hover:border-primary/60 hover:bg-secondary"
-          >
-            <ScanLine className="h-10 w-10 text-primary" />
-            <div>
-              <p className="font-semibold">Tap to scan a card</p>
-              <p className="text-sm text-muted-foreground">Take a photo or upload an image — we'll identify it for you</p>
-            </div>
-          </button>
+          <div>
+            <button
+              onClick={() => inputRef.current?.click()}
+              className="grid w-full place-items-center gap-3 rounded-2xl border-2 border-dashed border-border py-16 text-center transition-colors hover:border-primary/60 hover:bg-secondary"
+            >
+              <ScanLine className="h-10 w-10 text-primary" />
+              <div>
+                <p className="font-semibold">Tap to scan a card</p>
+                <p className="text-sm text-muted-foreground">Take a photo or upload an image — we'll identify it for you</p>
+              </div>
+            </button>
+            <ScanTips />
+          </div>
         ) : (
           <div className="space-y-3">
             {scans.map((scan) => (

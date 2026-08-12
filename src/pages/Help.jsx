@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   Compass, Layers, BookOpen, ArrowLeftRight, Users, CalendarDays, Radio, Package,
   BarChart3, Vote, Award, ShieldCheck, Settings as SettingsIcon, Heart, MessageSquare,
-  ChevronDown, FlaskConical,
+  ChevronDown, FlaskConical, ScanLine,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 
 const FEATURES = [
   { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalog via TCGdex, by set, rarity, or illustrator.' },
+  { to: '/scan', icon: ScanLine, label: 'Scan Cards', desc: 'Photograph a card and the AI scanner identifies it — confirm or correct the match to help the model learn.' },
   { to: '/collection', icon: Layers, label: 'Collection', desc: 'Track every card you own, with portfolio value, set completion, duplicates, and insurance exports.' },
   { to: '/binders', icon: BookOpen, label: 'Binders', desc: 'Curate and share showcase binders - 3×3 or 9×9 grids, drag-to-reorder.' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', desc: 'List cards you have and want, negotiate in threaded trade chats with fairness scoring.' },
@@ -43,6 +44,10 @@ const FAQ = [
   {
     q: 'How do voice spaces work?',
     a: 'Paste an external stream URL (Twitch, YouTube, Kick, etc.) to go live. Your profile shows a red live ring and your followers get notified. Recordings can be published as podcast episodes.',
+  },
+  {
+    q: 'How does the card scanner work?',
+    a: 'Take a photo of a card and the AI scanner identifies it from the TCGdex catalog, showing the top 5 matches with confidence scores. If the top result is wrong, tap the correct card or search manually — your correction is recorded and used to improve future scans. Corrections work offline too: they queue locally and sync when you reconnect.',
   },
   {
     q: 'How do I get help if something is broken?',
