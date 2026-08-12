@@ -34,6 +34,33 @@
       },
       "description": "Normalised hashtags (lowercased, trimmed, deduped) for discovery"
     },
+    "moderation_labels": {
+      "type": "array",
+      "description": "Hashtag abuse / moderation labels applied by the labeler at creation time",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Label identifier, e.g. hashtag-spam"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "inform",
+              "warn",
+              "escalate"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          }
+        }
+      }
+    },
     "card_id": {
       "type": "string",
       "description": "TCGDex card id when a card is attached"

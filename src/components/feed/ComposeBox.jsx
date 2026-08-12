@@ -62,6 +62,10 @@ export default function ComposeBox({ onPosted }) {
         replies: 0,
       }, NSID.POST, did, signingKey);
       const created = await base44.entities.Post.create(stamped);
+      // Hashtag abuse labeler - evaluates the new post and attaches moderation labels.
+      if (created?.id) {
+        base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
+      }
       // Bell notification dispatch - Web Push to bell-enabled followers.
       const cat = stamped.post_type === 'pack_opening' ? 'pack_opening'
         : stamped.post_type === 'trade' ? 'trade_listing'
