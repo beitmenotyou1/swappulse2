@@ -1,11 +1,13 @@
-// §2.4 Achievement runner — shared evaluation + reconciliation logic used by
-// both the on-demand (auth, per-user) and the nightly (service-role, bulk)
-// functions. Fetches proof data, runs the engine, and reconciles stored
-// Achievement records (grant / refresh / revoke), optionally emitting a
-// reasoning notification on revocation.
+// §2.4 Achievement runner — shared fetch + reconciliation used by the on-demand
+// (auth, per-user) and nightly (service-role, bulk) functions. Fetches proof
+// data, runs the engine, and reconciles stored Achievement records with a
+// revocation grace period (global_settings.revocation_grace_period_hours):
+// when a proof stops holding, the credential enters a pending-revocation
+// state and is only revoked (with a reasoning notification) once the grace
+// period elapses, so transient dips don't yank badges.
 
-import { evaluateAchievements } from './achievementEngine.ts';
-import { ACHIEVEMENT_CONFIG, ACHIEVEMENT_KEYS } from './achievementConfig.ts';
+import { evaluateAchievements, EngineInput } from './achievementEngine.ts';
+import { ACHIEVEMENT_CONFIG, ACHIEVEMENT_KEYS, GLOBAL_SETTINGS } from './achievementConfig.ts';
 import { fetchTcgdex } from './tcgdexClient.ts';
 
 export function toDid(user: any): string {
@@ -27,32 +29,54 @@ async function fetchSetSizes(setIds: string[]): Promise<Record<string, number>> 
   return sizes;
 }
 
-export interface ProofData {
-  collectionEntries: any[];
-  vouches: any[];
-  feedback: any[];
-  tradeChains: any[];
-  corrections: any[];
-  binders: any[];
-  voiceSpaces: any[];
-  setSizes: Record<string, number>;
+function buildParticipantMaps(
+  spaceParticipants: any[],
+  meetupRsvps: any[],
+  userSpaceIds: Set<string>,
+  userMeetupIds: Set<string>,
+): { participantsBySpaceId: Record<string, number>; rsvpsByMeetupId: Record<string, number> } {
+  const partMap = new Map<string, Set<string>>();
+  for (const p of spaceParticipants) {
+    if (!userSpaceIds.has(p.space_id)) continue;
+    if (!partMap.has(p.space_id)) partMap.set(p.space_id, new Set());
+    partMap.get(p.space_id)!.add(p.did);
+  }
+  const participantsBySpaceId: Record<string, number> = {};
+  for (const [k, v] of partMap) participantsBySpaceId[k] = v.size;
+
+  const rsvpMap = new Map<string, number>();
+  for (const r of meetupRsvps) {
+    if (!userMeetupIds.has(r.meetup_id) || r.attending !== 'yes') continue;
+    rsvpMap.set(r.meetup_id, (rsvpMap.get(r.meetup_id) || 0) + 1);
+  }
+  const rsvpsByMeetupId: Record<string, number> = {};
+  for (const [k, v] of rsvpMap) rsvpsByMeetupId[k] = v;
+  return { participantsBySpaceId, rsvpsByMeetupId };
 }
+
+export interface ProofData extends EngineInput {}
 
 export async function fetchProofDataForUser(
   svc: any,
   did: string,
   opts: { includeSetCompletion: boolean },
 ): Promise<ProofData> {
-  const [collectionEntries, vouches, feedback, tradeChainsAll, corrections, binders, voiceSpaces] =
-    await Promise.all([
-      svc.entities.CollectionEntry.filter({ did }, '-updated_date', 1000),
-      svc.entities.Vouch.filter({ vouched_did: did }, '-created_date', 1000),
-      svc.entities.TradingFeedback.filter({ rated_user_did: did }, '-created_date', 200),
-      svc.entities.TradeChain.list('-created_date', 200),
-      svc.entities.ScannerCorrection.filter({ did }, '-created_date', 500),
-      svc.entities.Binder.filter({ did }, '-updated_date', 100),
-      svc.entities.VoiceSpace.filter({ did }, '-created_date', 100),
-    ]);
+  const [
+    collectionEntries, vouches, feedback, tradeChainsAll, corrections, binders,
+    voiceSpaces, cardReviews, meetups, spaceParticipants, meetupRsvps,
+  ] = await Promise.all([
+    svc.entities.CollectionEntry.filter({ did }, '-updated_date', 1000),
+    svc.entities.Vouch.filter({ vouched_did: did }, '-created_date', 1000),
+    svc.entities.TradingFeedback.filter({ rated_user_did: did }, '-created_date', 200),
+    svc.entities.TradeChain.list('-created_date', 200),
+    svc.entities.ScannerCorrection.filter({ did }, '-created_date', 500),
+    svc.entities.Binder.filter({ did }, '-updated_date', 100),
+    svc.entities.VoiceSpace.filter({ did }, '-created_date', 100),
+    svc.entities.CardReview.filter({ did }, '-created_date', 500),
+    svc.entities.Meetup.filter({ did }, '-created_date', 100),
+    svc.entities.SpaceParticipant.list('-created_date', 1000),
+    svc.entities.MeetupRsvp.list('-created_date', 1000),
+  ]);
   const tradeChains = tradeChainsAll.filter((c: any) => (c.participant_dids || []).includes(did));
 
   let setSizes: Record<string, number> = {};
@@ -65,32 +89,21 @@ export async function fetchProofDataForUser(
     setSizes = await fetchSetSizes(topSets);
   }
 
-  return { collectionEntries, vouches, feedback, tradeChains, corrections, binders, voiceSpaces, setSizes };
+  const userSpaceIds = new Set(voiceSpaces.map((s: any) => s.id));
+  const userMeetupIds = new Set(meetups.map((m: any) => m.id));
+  const { participantsBySpaceId, rsvpsByMeetupId } = buildParticipantMaps(
+    spaceParticipants, meetupRsvps, userSpaceIds, userMeetupIds,
+  );
+
+  return {
+    userDid: did, collectionEntries, vouches, feedback, tradeChains, corrections, binders,
+    voiceSpaces, cardReviews, meetups, setSizes, participantsBySpaceId, rsvpsByMeetupId,
+  };
 }
 
-export function buildRevocationReason(key: string, result: any): string {
-  const label = ACHIEVEMENT_CONFIG[key]?.label || key;
-  const m = result.metricValue;
-  switch (key) {
-    case 'trusted_trader':
-      return `Your ${label} badge was revoked — distinct vouches dropped to ${m} (minimum 50), trust fell below 40, or a vouch was revoked in the last 6 months.`;
-    case 'first_trade':
-      return `Your ${label} badge was revoked — no completed trade feedback was found.`;
-    case 'chain_weaver':
-      return `Your ${label} badge was revoked — no completed multi-party trade chains.`;
-    case 'scanner_sage':
-      return `Your ${label} badge was revoked — scanner corrections dropped to ${m} (minimum 100).`;
-    case 'binder_curator':
-      return `Your ${label} badge was revoked — no 5-page binder with 10+ likes.`;
-    case 'community_voice':
-      return `Your ${label} badge was revoked — no completed voice spaces.`;
-    case 'shiny_hunter':
-      return `Your ${label} badge was revoked — high-tier cards dropped below 50.`;
-    default:
-      if (key.startsWith('set_completion_'))
-        return `Your ${label} badge was revoked — set completion dropped below the tier threshold.`;
-      return `Your ${label} badge was revoked because the proof no longer holds.`;
-  }
+export function buildRevocationReason(key: string): string {
+  const name = ACHIEVEMENT_CONFIG[key]?.name || key;
+  return `Your ${name} achievement was revoked — the eligibility proof no longer holds. (Revocation finalized after the ${GLOBAL_SETTINGS.revocation_grace_period_hours}h grace period.)`;
 }
 
 export interface ReconcileOptions {
@@ -103,12 +116,14 @@ export async function reconcileAchievements(
   did: string,
   results: Record<string, any>,
   opts: ReconcileOptions = {},
-): Promise<{ revokedCount: number }> {
+): Promise<{ revokedCount: number; pendingCount: number }> {
   const { notifyOnRevoke = false, keysToReconcile = ACHIEVEMENT_KEYS } = opts;
+  const graceHours = GLOBAL_SETTINGS.revocation_grace_period_hours || 0;
   const existing = await svc.entities.Achievement.filter({ did }, '-unlocked_at', 100);
   const byKey = new Map(existing.map((a: any) => [a.achievement_type, a]));
   const now = new Date().toISOString();
   let revokedCount = 0;
+  let pendingCount = 0;
 
   for (const key of keysToReconcile) {
     const r = results[key];
@@ -117,7 +132,7 @@ export async function reconcileAchievements(
     const proofMeta = {
       metricValue: r.metricValue,
       proofSummary: r.proofSummary,
-      proofUris: r.proofUris,
+      proofRecords: r.proofRecords,
       lastEvaluatedAt: now,
     };
 
@@ -129,48 +144,79 @@ export async function reconcileAchievements(
         });
       } else if (ex.status === 'revoked' || ex.revoked_at) {
         await svc.entities.Achievement.update(ex.id, {
-          status: 'granted', revoked_at: null, unlocked_at: now,
+          status: 'granted', revoked_at: null, pending_revocation_at: null, unlocked_at: now,
           metadata: { ...(ex.metadata || {}), ...proofMeta },
         });
       } else {
-        await svc.entities.Achievement.update(ex.id, {
-          metadata: { ...(ex.metadata || {}), ...proofMeta },
-        });
+        const update: any = { metadata: { ...(ex.metadata || {}), ...proofMeta } };
+        if (ex.pending_revocation_at) update.pending_revocation_at = null;
+        await svc.entities.Achievement.update(ex.id, update);
       }
     } else if (ex && (!ex.status || ex.status === 'granted') && !ex.revoked_at) {
-      await svc.entities.Achievement.update(ex.id, {
-        status: 'revoked', revoked_at: now,
-        metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
-      });
-      revokedCount++;
-      if (notifyOnRevoke) {
-        try {
-          await svc.entities.Notification.create({
-            did, action_type: 'reputation', actor_name: 'SwapPulse', actor_handle: 'swappulse',
-            target_type: 'profile', target_path: '/achievements',
-            target_label: buildRevocationReason(key, r), is_read: false,
+      if (graceHours > 0 && !ex.pending_revocation_at) {
+        await svc.entities.Achievement.update(ex.id, {
+          pending_revocation_at: now, metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
+        });
+        pendingCount++;
+      } else if (graceHours > 0 && ex.pending_revocation_at) {
+        const elapsedHours = (Date.now() - new Date(ex.pending_revocation_at).getTime()) / 3600000;
+        if (elapsedHours >= graceHours) {
+          await svc.entities.Achievement.update(ex.id, {
+            status: 'revoked', revoked_at: now, pending_revocation_at: null,
+            metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
           });
-        } catch (e) {
-          console.error('[reconcileAchievements] notify failed', e);
+          revokedCount++;
+          if (notifyOnRevoke) {
+            try {
+              await svc.entities.Notification.create({
+                did, action_type: 'reputation', actor_name: 'SwapPulse', actor_handle: 'swappulse',
+                target_type: 'profile', target_path: '/achievements',
+                target_label: buildRevocationReason(key), is_read: false,
+              });
+            } catch (e) {
+              console.error('[reconcileAchievements] notify failed', e);
+            }
+          }
+        } else {
+          await svc.entities.Achievement.update(ex.id, {
+            metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
+          });
+        }
+      } else {
+        await svc.entities.Achievement.update(ex.id, {
+          status: 'revoked', revoked_at: now,
+          metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
+        });
+        revokedCount++;
+        if (notifyOnRevoke) {
+          try {
+            await svc.entities.Notification.create({
+              did, action_type: 'reputation', actor_name: 'SwapPulse', actor_handle: 'swappulse',
+              target_type: 'profile', target_path: '/achievements',
+              target_label: buildRevocationReason(key), is_read: false,
+            });
+          } catch (e) {
+            console.error('[reconcileAchievements] notify failed', e);
+          }
         }
       }
     }
   }
-  return { revokedCount };
+  return { revokedCount, pendingCount };
 }
 
 export async function runEvaluationForUser(
   svc: any,
   did: string,
   opts: { includeSetCompletion?: boolean; notifyOnRevoke?: boolean; keysToReconcile?: string[] } = {},
-): Promise<{ achievements: any[]; revokedCount: number }> {
+): Promise<{ achievements: any[]; revokedCount: number; pendingCount: number }> {
   const { includeSetCompletion = true, notifyOnRevoke = false, keysToReconcile } = opts;
   const data = await fetchProofDataForUser(svc, did, { includeSetCompletion });
-  const results = evaluateAchievements({ userDid: did, ...data });
-  const { revokedCount } = await reconcileAchievements(svc, did, results, {
+  const results = evaluateAchievements(data);
+  const { revokedCount, pendingCount } = await reconcileAchievements(svc, did, results, {
     notifyOnRevoke,
     keysToReconcile: keysToReconcile || ACHIEVEMENT_KEYS,
   });
   const all = await svc.entities.Achievement.filter({ did }, '-unlocked_at', 100);
-  return { achievements: all, revokedCount };
+  return { achievements: all, revokedCount, pendingCount };
 }

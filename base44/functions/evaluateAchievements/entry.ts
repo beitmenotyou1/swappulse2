@@ -1,8 +1,9 @@
 // §2.4 On-demand achievement evaluation for the authenticated user.
 // Re-evaluates all credentials (including TCGDex-backed set completion) and
-// returns the full credential set for the /achievements UI.
+// returns the full credential set + the versioned config for the UI.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { runEvaluationForUser, toDid } from '../../shared/achievementRunner.ts';
+import { ACHIEVEMENT_CONFIG_RAW } from '../../shared/achievementConfig.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -15,7 +16,12 @@ export default async function (req: Request): Promise<Response> {
       includeSetCompletion: true,
       notifyOnRevoke: false,
     });
-    return Response.json({ actorDid: did, achievements, evaluatedAt: new Date().toISOString() });
+    return Response.json({
+      actorDid: did,
+      achievements,
+      config: ACHIEVEMENT_CONFIG_RAW,
+      evaluatedAt: new Date().toISOString(),
+    });
   } catch (error) {
     console.error('[evaluateAchievements] error', error);
     return Response.json({ error: error.message }, { status: 500 });

@@ -2,24 +2,25 @@
   "name": "Achievement",
   "type": "object",
   "title": "Achievement",
-  "description": "org.swappulse.achievement \u2014 a state-dependent, network-verified credential. Granted only when a cryptographic-style proof holds over the user's on-chain activity, and revoked when the underlying proof no longer holds (e.g. trust score drops). metadata carries the proof URIs and summary for the Proof Viewer.",
+  "description": "org.swappulse.achievement \u2014 a state-dependent, network-verified credential. Granted only when the proof_type defined in the versioned config holds over the user's on-chain activity. metadata carries the proofRecords bundle for the Proof Viewer. Revocation respects the global grace period (pending_revocation_at) before a credential is fully revoked.",
   "properties": {
     "achievement_type": {
       "type": "string",
       "enum": [
-        "set_completion_25",
-        "set_completion_50",
-        "set_completion_75",
-        "set_completion_100",
+        "set_completer_bronze",
+        "set_completer_silver",
+        "set_completer_gold",
+        "set_completer_diamond",
         "shiny_hunter",
         "first_trade",
         "trusted_trader",
         "chain_weaver",
         "scanner_sage",
         "binder_curator",
-        "community_voice"
+        "community_voice",
+        "card_reviewer"
       ],
-      "description": "The scarce achievement key. Set-completion tiers are mutually exclusive (only the highest reached tier is held)."
+      "description": "Achievement id from the versioned config (achievements/v1/config.json)."
     },
     "status": {
       "type": "string",
@@ -28,7 +29,12 @@
         "revoked"
       ],
       "default": "granted",
-      "description": "granted while the proof holds; revoked when the evaluator detects the proof no longer holds"
+      "description": "granted while the proof holds; revoked after the grace period elapses if the proof no longer holds"
+    },
+    "pending_revocation_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the proof first stopped holding; the credential is revoked only after revocation_grace_period_hours from this timestamp"
     },
     "related_uri": {
       "type": "string",
@@ -36,7 +42,7 @@
     },
     "metadata": {
       "type": "object",
-      "description": "Proof bundle: { metricValue, proofSummary, proofUris: string[], lastEvaluatedAt }",
+      "description": "Proof bundle: { metricValue, proofSummary, proofRecords: [{uri, cid, recordType, verifiedAt}], lastEvaluatedAt }",
       "additionalProperties": true
     },
     "unlocked_at": {
@@ -46,7 +52,7 @@
     "revoked_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the credential was last revoked (proof stopped holding)"
+      "description": "When the credential was fully revoked (after the grace period)"
     },
     "did": {
       "type": "string",

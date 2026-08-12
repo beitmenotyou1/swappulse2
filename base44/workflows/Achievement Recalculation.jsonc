@@ -1,13 +1,13 @@
 {
   "name": "Achievement Recalculation",
-  "description": "Nightly trust-graph recalculation at 3am UTC \u2014 re-evaluates trust/community credentials that can change due to other users' actions (vouches revoked, feedback, chains) and revokes/downgrades badges whose proof no longer holds, emitting a reasoning notification to the holder. Set completion + shiny hunter are re-evaluated on-demand.",
+  "description": "Nightly trust-graph recalculation at 2am UTC \u2014 re-evaluates trust/community credentials that can change due to other users' actions (vouches revoked, feedback, chains) and revokes/downgrades badges whose proof no longer holds (after the 24h grace period), emitting a reasoning notification to the holder. Set completion + shiny hunter are re-evaluated on-demand.",
   "trigger": {
     "condition": null,
     "config": {
       "trigger_type": "scheduled",
       "events": [],
       "schedule_mode": "recurring",
-      "cron_expression": "0 3 * * *",
+      "cron_expression": "0 2 * * *",
       "one_time_date": null,
       "timezone": "UTC",
       "interval_value": null,
@@ -35,7 +35,7 @@
           "then": "end",
           "x-base44": {
             "title": "Recalculate achievement credentials",
-            "description": "Re-evaluate trust/community credentials and revoke stale badges"
+            "description": "Re-evaluate trust/community credentials and revoke stale badges (grace-period aware)"
           }
         }
       }

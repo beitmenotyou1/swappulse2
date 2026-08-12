@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/PageHeader';
 import AchievementMedallion from '@/components/achievements/AchievementMedallion';
 import ProofViewerModal from '@/components/achievements/ProofViewerModal';
-import { ACHIEVEMENT_SPECS, PILLARS } from '@/lib/achievementSpecs';
+import { ACHIEVEMENT_ICONS, categoryToPillar, PILLARS } from '@/lib/achievementSpecs';
 
 export default function Achievements() {
   const { toast } = useToast();
   const [records, setRecords] = useState([]);
+  const [specs, setSpecs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -20,12 +21,18 @@ export default function Achievements() {
     try {
       const res = await base44.functions.invoke('evaluateAchievements', {});
       setRecords(res.data.achievements || []);
+      const config = res.data.config;
+      if (config?.achievements) {
+        setSpecs(
+          config.achievements.map((a) => ({
+            ...a,
+            icon: ACHIEVEMENT_ICONS[a.id],
+            pillar: categoryToPillar(a.category),
+          })),
+        );
+      }
     } catch (err) {
-      toast({
-        title: 'Could not evaluate achievements',
-        description: err.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Could not evaluate achievements', description: err.message, variant: 'destructive' });
     } finally {
       setLoading(false);
       setEvaluating(false);
@@ -38,6 +45,7 @@ export default function Achievements() {
 
   const byKey = new Map(records.map((a) => [a.achievement_type, a]));
   const unlockedCount = records.filter((a) => a.status !== 'revoked').length;
+  const total = specs.length;
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -55,33 +63,36 @@ export default function Achievements() {
         <div className="rounded-xl border border-border bg-card p-4 text-sm">
           <span className="font-semibold text-accent">{unlockedCount}</span>{' '}
           <span className="text-muted-foreground">
-            of {ACHIEVEMENT_SPECS.length} credentials unlocked. Each is a state-dependent proof
-            verified against your on-chain activity — and revoked if the underlying proof no longer
-            holds.
+            of {total} credentials unlocked. Each is a state-dependent proof verified against your
+            on-chain activity — revoked if the underlying proof no longer holds (after a 24h grace period).
           </span>
         </div>
 
-        {PILLARS.map((pillar) => (
-          <section key={pillar.id}>
-            <div className="mb-3">
-              <h2 className="font-heading text-lg font-bold">{pillar.label}</h2>
-              <p className="text-sm text-muted-foreground">{pillar.desc}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {ACHIEVEMENT_SPECS.filter((s) => s.pillar === pillar.id).map((spec) => {
-                const rec = byKey.get(spec.key);
-                return (
-                  <AchievementMedallion
-                    key={spec.key}
-                    spec={spec}
-                    achievement={rec}
-                    onClick={() => setSelected({ spec, rec })}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        ))}
+        {PILLARS.map((pillar) => {
+          const pillarSpecs = specs.filter((s) => s.pillar === pillar.id);
+          if (pillarSpecs.length === 0) return null;
+          return (
+            <section key={pillar.id}>
+              <div className="mb-3">
+                <h2 className="font-heading text-lg font-bold">{pillar.label}</h2>
+                <p className="text-sm text-muted-foreground">{pillar.desc}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {pillarSpecs.map((spec) => {
+                  const rec = byKey.get(spec.id);
+                  return (
+                    <AchievementMedallion
+                      key={spec.id}
+                      spec={spec}
+                      achievement={rec}
+                      onClick={() => setSelected({ spec, rec })}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       {selected && (
