@@ -2,6 +2,7 @@
   "name": "Achievement",
   "type": "object",
   "title": "Achievement",
+  "description": "org.swappulse.achievement \u2014 a state-dependent, network-verified credential. Granted only when a cryptographic-style proof holds over the user's on-chain activity, and revoked when the underlying proof no longer holds (e.g. trust score drops). metadata carries the proof URIs and summary for the Proof Viewer.",
   "properties": {
     "achievement_type": {
       "type": "string",
@@ -10,32 +11,46 @@
         "set_completion_50",
         "set_completion_75",
         "set_completion_100",
+        "shiny_hunter",
         "first_trade",
-        "ten_trades",
-        "fifty_trades",
-        "hundred_trades",
-        "first_shiny",
-        "ten_shinies",
-        "fifty_shinies",
-        "scanner_contributor",
-        "challenge_winner"
-      ]
+        "trusted_trader",
+        "chain_weaver",
+        "scanner_sage",
+        "binder_curator",
+        "community_voice"
+      ],
+      "description": "The scarce achievement key. Set-completion tiers are mutually exclusive (only the highest reached tier is held)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "granted",
+        "revoked"
+      ],
+      "default": "granted",
+      "description": "granted while the proof holds; revoked when the evaluator detects the proof no longer holds"
     },
     "related_uri": {
       "type": "string",
-      "description": "at:// URI of the linked record (set, trade, card)"
+      "description": "at:// URI or id of the primary linked record (e.g. the completed set id, trade chain, binder)"
     },
     "metadata": {
       "type": "object",
-      "description": "Achievement-specific data"
+      "description": "Proof bundle: { metricValue, proofSummary, proofUris: string[], lastEvaluatedAt }",
+      "additionalProperties": true
     },
     "unlocked_at": {
       "type": "string",
       "format": "date-time"
     },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the credential was last revoked (proof stopped holding)"
+    },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the user who unlocked it (simulated)"
+      "description": "AT Protocol DID of the user who holds the credential (simulated)"
     },
     "at_uri": {
       "type": "string",
@@ -51,7 +66,7 @@
     },
     "sig": {
       "type": "string",
-      "description": "HMAC signature binding the record to the user's signing key (simulated)"
+      "description": "HMAC signature binding the credential to the holder's signing key (simulated)"
     }
   },
   "required": [

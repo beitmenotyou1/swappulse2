@@ -50,6 +50,7 @@ import HandleProfile from '@/pages/HandleProfile';
 import Admin from '@/pages/Admin';
 import Moderation from '@/pages/Moderation';
 import WhoToFollow from '@/pages/WhoToFollow';
+import Achievements from '@/pages/Achievements';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -123,6 +124,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
           <Route path="/who-to-follow" element={<WhoToFollow />} />
+          <Route path="/achievements" element={<Achievements />} />
           <Route path="/help" element={<Help />} />
         </Route>
       </Route>
