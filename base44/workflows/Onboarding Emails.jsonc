@@ -1,0 +1,44 @@
+{
+  "name": "Onboarding Emails",
+  "description": "Sends the SwapPulse onboarding email sequence (Day 1, Day 3, Day 7) to collectors after they sign up, running hourly via the dispatcher function.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "onboarding_emails",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "dispatch": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "dispatchOnboardingEmails"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send onboarding emails",
+            "description": "Day 1, 3, 7 sequence"
+          }
+        }
+      }
+    ]
+  }
+}

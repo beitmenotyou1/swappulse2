@@ -1,0 +1,53 @@
+{
+  "name": "OnboardingEmail",
+  "type": "object",
+  "title": "OnboardingEmail",
+  "description": "org.swappulse.onboardingEmail \u2014 tracks which onboarding emails (day1, day3, day7) have been sent to a user, so the dispatcher is idempotent.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Platform user id the onboarding email was sent to"
+    },
+    "email_type": {
+      "type": "string",
+      "enum": [
+        "day1",
+        "day3",
+        "day7"
+      ],
+      "description": "Onboarding email stage"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the onboarding email was sent"
+    }
+  },
+  "required": [
+    "user_id",
+    "email_type",
+    "sent_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
