@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Search, Loader2, Flame, Layers } from 'lucide-react';
-import { searchCards, cardImageUrl, rarityClasses, getSets } from '@/lib/tcgdex';
+import { searchCards, cardImageUrl, rarityClasses, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
+import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
 import { Link } from 'react-router-dom';
 
 export default function Explore() {
+  const { settings } = useSettings();
+  const lang = localeToTcgdexLang(settings?.language?.preferredContent?.[0] || settings?.language?.targetLanguage);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,23 +23,23 @@ export default function Explore() {
     setLoading(true);
     setSearched(true);
     try {
-      const cards = await searchCards(q.trim(), { page: 1, perPage: 36 });
+      const cards = await searchCards(q.trim(), { page: 1, perPage: 36, lang });
       setResults(cards);
     } catch {
       setResults([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     (async () => {
       try {
-        const s = await getSets();
+        const s = await getSets(lang);
         setSets(s.slice(-12).reverse());
       } catch {}
     })();
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     const t = setTimeout(() => runSearch(query), 400);

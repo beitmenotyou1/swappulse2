@@ -4,6 +4,7 @@ import { RateLimiter, fetchTcgdex, num } from '../../shared/tcgdexClient.ts';
 // §7.5 Pricing Sync Service - refreshes TCGDex market prices for every card
 // that is owned, wishlisted, or listed in an open trade. Runs on a 30-minute
 // schedule (see base44/workflows/Pricing Sync.jsonc).
+// Pricing is language-independent, so we fetch from the English catalog.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -49,23 +50,43 @@ Deno.serve(async (req) => {
         if (card.pricing?.cardmarket) sources.push(['cardmarket', card.pricing.cardmarket]);
 
         for (const [source, p] of sources) {
-          const payload = {
+          let payload: any = {
             card_name: card.name || meta.name,
             set_id: card.set?.id || meta.setId,
             unit: p.unit || '',
-            avg: num(p.avg),
-            low: num(p.low),
-            trend: num(p.trend),
-            avg1: num(p.avg1),
-            avg7: num(p.avg7),
-            avg30: num(p.avg30),
-            normal_market: num(p.normal?.market),
-            normal_low: num(p.normal?.low),
-            normal_avg: num(p.normal?.average),
-            holofoil_market: num(p.holofoil?.market),
-            holofoil_low: num(p.holofoil?.low),
-            holofoil_avg: num(p.holofoil?.average),
           };
+
+          if (source === 'cardmarket') {
+            // Cardmarket (EUR): flat non-foil fields + *-holo foil fields (per TCGDex reference).
+            payload = {
+              ...payload,
+              avg: num(p.avg),
+              low: num(p.low),
+              trend: num(p.trend),
+              avg1: num(p.avg1),
+              avg7: num(p.avg7),
+              avg30: num(p.avg30),
+              normal_market: num(p.trend),
+              normal_low: num(p.low),
+              normal_avg: num(p.avg),
+              holofoil_market: num(p['trend-holo']),
+              holofoil_low: num(p['low-holo']),
+              holofoil_avg: num(p['avg-holo']),
+            };
+          } else {
+            // TCGPlayer (USD): per-variant objects with lowPrice/midPrice/marketPrice.
+            const n = p.normal || {};
+            const h = p.holofoil || {};
+            payload = {
+              ...payload,
+              normal_market: num(n.marketPrice),
+              normal_low: num(n.lowPrice),
+              normal_avg: num(n.midPrice),
+              holofoil_market: num(h.marketPrice),
+              holofoil_low: num(h.lowPrice),
+              holofoil_avg: num(h.midPrice),
+            };
+          }
 
           const existing = await svc.entities.CardPricing.filter({ card_id: cardId, source });
           if (existing.length) {

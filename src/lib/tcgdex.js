@@ -3,6 +3,21 @@ import { idbGet, idbPut } from '@/lib/offlineDB';
 
 const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 
+// TCGDex serves per-language catalogs at /v2/{lang}/... (en, fr, de, it, es, pt, jp, zh, ko).
+const TCGDEX_LANGS = ['en', 'fr', 'de', 'it', 'es', 'pt', 'jp', 'zh', 'ko'];
+const LOCALE_TO_TCGDEX = {
+  'en-GB': 'en', 'en-US': 'en', 'es-ES': 'es', 'fr-FR': 'fr', 'de-DE': 'de',
+  'it-IT': 'it', 'pt-BR': 'pt', 'ja-JP': 'jp', 'zh-CN': 'zh', 'ko-KR': 'ko',
+};
+
+/** Map a user locale (e.g. fr-FR) to a TCGDex language code; unknown -> en. */
+export function localeToTcgdexLang(locale) {
+  if (!locale) return 'en';
+  if (LOCALE_TO_TCGDEX[locale]) return LOCALE_TO_TCGDEX[locale];
+  const two = String(locale).slice(0, 2).toLowerCase();
+  return TCGDEX_LANGS.includes(two) ? two : 'en';
+}
+
 export function cardImageUrl(imageField, quality = 'high', extension = 'webp') {
   if (!imageField) return null;
   const suffix = `/${quality}.${extension}`;
@@ -23,77 +38,78 @@ async function cached(key, fetcher) {
   }
 }
 
-export async function searchCards(query, { page = 1, perPage = 24, setName, rarity } = {}) {
-  return cached(`search:${query}:${page}:${perPage}:${setName || ''}:${rarity || ''}`, async () => {
+export async function searchCards(query, { page = 1, perPage = 24, setName, rarity, lang = 'en' } = {}) {
+  return cached(`search:${lang}:${query}:${page}:${perPage}:${setName || ''}:${rarity || ''}`, async () => {
     const res = await base44.functions.invoke('tcgdex', {
-      action: 'search', query, page, perPage, setName, rarity,
+      action: 'search', query, page, perPage, setName, rarity, lang,
     });
     return res.data?.data ?? [];
   });
 }
 
-export async function getCard(cardId) {
-  return cached(`card:${cardId}`, async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getCard', cardId });
+export async function getCard(cardId, lang = 'en') {
+  return cached(`card:${lang}:${cardId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getCard', cardId, lang });
     return res.data?.data ?? null;
   });
 }
 
-export async function getSets() {
-  return cached('sets', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getSets' });
-    return res.data?.data ?? [];
-  });
-}
-
-export async function getSet(setId) {
-  return cached(`set:${setId}`, async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getSet', setId });
+/** Fetch a card by its set id + local id (TCGDex /sets/{setId}/{localId}). */
+export async function getCardBySet(setId, localId, lang = 'en') {
+  return cached(`card:${lang}:${setId}:${localId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getCardBySet', setId, localId, lang });
     return res.data?.data ?? null;
   });
 }
 
-export async function getSeries() {
-  return cached('series', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getSeries' });
+export async function getSets(lang = 'en') {
+  return cached(`sets:${lang}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSets', lang });
     return res.data?.data ?? [];
   });
 }
 
-export async function getCategories() {
-  return cached('categories', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getCategories' });
+export async function getSet(setId, lang = 'en') {
+  return cached(`set:${lang}:${setId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSet', setId, lang });
+    return res.data?.data ?? null;
+  });
+}
+
+export async function getSeries(lang = 'en') {
+  return cached(`series:${lang}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSeries', lang });
     return res.data?.data ?? [];
   });
 }
 
-export async function getRarities() {
-  return cached('rarities', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getRarities' });
+export async function getSerie(serieId, lang = 'en') {
+  return cached(`serie:${lang}:${serieId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSerie', serieId, lang });
+    return res.data?.data ?? null;
+  });
+}
+
+function listEndpoint(action, cacheKey, lang = 'en') {
+  return cached(`${cacheKey}:${lang}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action, lang });
     return res.data?.data ?? [];
   });
 }
 
-export async function getIllustrators() {
-  return cached('illustrators', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getIllustrators' });
-    return res.data?.data ?? [];
-  });
-}
-
-export async function getVariants() {
-  return cached('variants', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getVariants' });
-    return res.data?.data ?? [];
-  });
-}
-
-export async function getTypes() {
-  return cached('types', async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getTypes' });
-    return res.data?.data ?? [];
-  });
-}
+export const getCategories = (lang) => listEndpoint('getCategories', 'categories', lang);
+export const getRarities = (lang) => listEndpoint('getRarities', 'rarities', lang);
+export const getIllustrators = (lang) => listEndpoint('getIllustrators', 'illustrators', lang);
+export const getVariants = (lang) => listEndpoint('getVariants', 'variants', lang);
+export const getTypes = (lang) => listEndpoint('getTypes', 'types', lang);
+export const getHps = (lang) => listEndpoint('getHps', 'hps', lang);
+export const getRetreats = (lang) => listEndpoint('getRetreats', 'retreats', lang);
+export const getStages = (lang) => listEndpoint('getStages', 'stages', lang);
+export const getDexIds = (lang) => listEndpoint('getDexIds', 'dexids', lang);
+export const getEnergyTypes = (lang) => listEndpoint('getEnergyTypes', 'energytypes', lang);
+export const getRegulationMarks = (lang) => listEndpoint('getRegulationMarks', 'regulationmarks', lang);
+export const getSuffixes = (lang) => listEndpoint('getSuffixes', 'suffixes', lang);
+export const getTrainerTypes = (lang) => listEndpoint('getTrainerTypes', 'trainertypes', lang);
 
 export function rarityKey(rarityStr) {
   if (!rarityStr) return 'common';
