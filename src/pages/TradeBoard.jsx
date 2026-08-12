@@ -53,7 +53,11 @@ export default function TradeBoard() {
     });
   });
 
-  const visibleListings = listings.filter((t) => t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref));
+  const now = Date.now();
+  const visibleListings = listings.filter((t) => {
+    if (t.expires_at && new Date(t.expires_at).getTime() < now) return false;
+    return t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref);
+  });
 
   return (
     <div>
@@ -86,7 +90,7 @@ export default function TradeBoard() {
                   <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Offering</p>
                   <div className="flex flex-wrap gap-2">
                     {t.offer_card_images?.slice(0, 4).map((img, i) => (
-                      <img key={i} src={cardImageUrl(img)} alt="" className="h-16 w-12 rounded object-cover" />
+                      <img key={i} src={cardImageUrl(img)} alt={t.offer_card_names?.[i] || 'card'} loading="lazy" className="h-16 w-12 rounded object-cover" />
                     ))}
                     <div className="flex items-center">
                       <p className="text-sm font-medium">{t.offer_card_names?.join(', ')}</p>
@@ -123,9 +127,25 @@ function CreateTradeModal({ open, onClose, onCreated }) {
   const [regions, setRegions] = useState(['UK']);
   const [currency, setCurrency] = useState('GBP');
   const [notes, setNotes] = useState('');
+  const [expiresIn, setExpiresIn] = useState('30');
+  const [visibility, setVisibility] = useState('public');
+  const [circles, setCircles] = useState([]);
+  const [circleRef, setCircleRef] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState('offers');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('getMyCircles', {});
+        setCircles((res.data?.circles || []).filter((c) => c.at_uri));
+      } catch {
+        setCircles([]);
+      }
+    })();
+  }, [open]);
 
   if (!open) return null;
 
@@ -134,6 +154,16 @@ function CreateTradeModal({ open, onClose, onCreated }) {
       alert('Add at least one offered and one wanted card.');
       return;
     }
+    if (offers.length > 20 || wants.length > 20) {
+      alert('Maximum 20 cards per side.');
+      return;
+    }
+    if (visibility === 'circle_scoped' && !circleRef) {
+      alert('Select a circle for this circle-scoped listing.');
+      return;
+    }
+    const days = parseInt(expiresIn, 10);
+    const expires_at = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : undefined;
     setSaving(true);
     try {
       await base44.entities.TradeListing.create({
@@ -143,14 +173,16 @@ function CreateTradeModal({ open, onClose, onCreated }) {
         wanted_card_ids: wants.map((c) => c.id),
         wanted_card_names: wants.map((c) => c.name),
         status: 'open',
-        visibility: 'public',
+        visibility,
+        circle_ref: visibility === 'circle_scoped' ? circleRef : undefined,
         shipping_regions: regions,
         preferred_currency: currency,
         notes,
+        expires_at,
         author_name: '',
         author_handle: '',
       });
-      setOffers([]); setWants([]); setNotes('');
+      setOffers([]); setWants([]); setNotes(''); setCircleRef('');
       onClose();
       onCreated();
     } catch (e) {
@@ -165,20 +197,21 @@ function CreateTradeModal({ open, onClose, onCreated }) {
       <div className="mt-6 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">New Trade Listing</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-semibold">Offering</p>
-              <button onClick={() => { setSearchTarget('offers'); setSearchOpen(true); }} className="text-xs font-bold text-primary">+ Add card</button>
+              <button onClick={() => { setSearchTarget('offers'); setSearchOpen(true); }} disabled={offers.length >= 20} className="text-xs font-bold text-primary disabled:opacity-50">+ Add card</button>
+              <span className="text-xs text-muted-foreground">{offers.length}/20</span>
             </div>
             <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-secondary p-2 min-h-[60px]">
               {offers.map((c) => (
                 <div key={c.id} className="relative">
                   <img src={cardImageUrl(c.image)} alt={c.name} className="h-16 w-12 rounded object-cover" />
-                  <button onClick={() => setOffers(offers.filter((x) => x.id !== c.id))} className="absolute -right-1 -top-1 rounded-full bg-background p-0.5">
+                  <button onClick={() => setOffers(offers.filter((x) => x.id !== c.id))} aria-label={`Remove ${c.name}`} className="absolute -right-1 -top-1 rounded-full bg-background p-0.5">
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -190,13 +223,14 @@ function CreateTradeModal({ open, onClose, onCreated }) {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-semibold">Wants</p>
-              <button onClick={() => { setSearchTarget('wants'); setSearchOpen(true); }} className="text-xs font-bold text-primary">+ Add card</button>
+              <button onClick={() => { setSearchTarget('wants'); setSearchOpen(true); }} disabled={wants.length >= 20} className="text-xs font-bold text-primary disabled:opacity-50">+ Add card</button>
+              <span className="text-xs text-muted-foreground">{wants.length}/20</span>
             </div>
             <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-secondary p-2 min-h-[60px]">
               {wants.map((c) => (
                 <div key={c.id} className="relative">
                   <img src={cardImageUrl(c.image)} alt={c.name} className="h-16 w-12 rounded object-cover" />
-                  <button onClick={() => setWants(wants.filter((x) => x.id !== c.id))} className="absolute -right-1 -top-1 rounded-full bg-background p-0.5">
+                  <button onClick={() => setWants(wants.filter((x) => x.id !== c.id))} aria-label={`Remove ${c.name}`} className="absolute -right-1 -top-1 rounded-full bg-background p-0.5">
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -221,6 +255,41 @@ function CreateTradeModal({ open, onClose, onCreated }) {
               </select>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Listing expires</label>
+              <select value={expiresIn} onChange={(e) => setExpiresIn(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
+                <option value="7">In 7 days</option>
+                <option value="30">In 30 days</option>
+                <option value="90">In 90 days</option>
+                <option value="0">No expiry</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Visibility</label>
+              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
+                <option value="public">Public</option>
+                <option value="wishlist_only">Wishlist matches only</option>
+                <option value="circle_scoped">Circle only</option>
+              </select>
+            </div>
+          </div>
+          {visibility === 'circle_scoped' && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Visible to circle</label>
+              {circles.length === 0 ? (
+                <p className="text-xs text-muted-foreground">You have no circles to scope this listing to. Create a circle first.</p>
+              ) : (
+                <select value={circleRef} onChange={(e) => setCircleRef(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
+                  <option value="">Select a circle…</option>
+                  {circles.map((c) => (
+                    <option key={c.at_uri} value={c.at_uri}>{c.name || 'Circle'}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
 
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder="Notes (optional)…" className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
         </div>

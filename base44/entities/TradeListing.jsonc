@@ -76,6 +76,11 @@
       "type": "string",
       "maxLength": 500
     },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional listing expiry (max 90 days from creation). When present and past, the listing is no longer visible."
+    },
     "author_name": {
       "type": "string"
     },
