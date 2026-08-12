@@ -27,6 +27,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Activate from '@/pages/Activate';
 // Add page imports here
+import Scanner from '@/pages/Scanner';
 import Grading from '@/pages/Grading';
 import Binders from '@/pages/Binders';
 import BinderEdit from '@/pages/BinderEdit';
@@ -93,6 +94,7 @@ const AuthenticatedApp = () => {
           <Route path="/card/:cardId" element={<CardDetail />} />
           <Route path="/set/:setId" element={<Explore />} />
           <Route path="/collection" element={<Collection />} />
+          <Route path="/scan" element={<Scanner />} />
           <Route path="/trades" element={<TradeBoard />} />
           <Route path="/trade/:tradeId" element={<TradeThread />} />
           <Route path="/packs" element={<PackOpenings />} />
