@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,14 +7,41 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, ShieldAlert, FileText, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { ShieldCheck, ShieldAlert, FileText, Clock, ExternalLink, Copy, Download } from 'lucide-react';
+import { buildAttestation, downloadAttestation } from '@/lib/achievementAttestation';
 
 export default function ProofViewerModal({ spec, achievement, onClose }) {
+  const { toast } = useToast();
+  const [exporting, setExporting] = useState(false);
   const open = !!spec;
   const revoked = achievement?.status === 'revoked';
   const meta = achievement?.metadata || {};
   const proofUris = meta.proofUris || [];
   const lastEval = meta.lastEvaluatedAt;
+
+  const copyUri = async (u) => {
+    try {
+      await navigator.clipboard.writeText(u);
+      toast({ title: 'AT URI copied', description: u });
+    } catch {
+      toast({ title: 'Could not copy', variant: 'destructive' });
+    }
+  };
+
+  const exportProof = async () => {
+    setExporting(true);
+    try {
+      const credential = await buildAttestation(spec, achievement, achievement?.did);
+      downloadAttestation(credential, `swappulse-${spec.key}.jsonld`);
+      toast({ title: 'Proof exported', description: 'Signed JSON-LD attestation downloaded.' });
+    } catch (e) {
+      toast({ title: 'Export failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -28,7 +55,7 @@ export default function ProofViewerModal({ spec, achievement, onClose }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {revoked ? (
               <Badge variant="outline" className="gap-1 border-destructive/40 text-destructive">
                 <ShieldAlert className="h-3 w-3" /> Revoked
@@ -56,12 +83,19 @@ export default function ProofViewerModal({ spec, achievement, onClose }) {
               </p>
               <ul className="space-y-1.5">
                 {proofUris.map((u, i) => (
-                  <li
-                    key={i}
-                    className="truncate rounded-md border border-border bg-muted/40 px-2.5 py-1.5 font-mono text-xs text-muted-foreground"
-                    title={u}
-                  >
-                    {u}
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => copyUri(u)}
+                      title="Copy AT URI"
+                      className="group flex w-full items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+                    >
+                      <span className="truncate font-mono text-xs text-muted-foreground group-hover:text-foreground" title={u}>
+                        {u}
+                      </span>
+                      <Copy className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    </button>
                   </li>
                 ))}
                 {proofUris.length < (meta.metricValue || proofUris.length) && (
@@ -90,6 +124,11 @@ export default function ProofViewerModal({ spec, achievement, onClose }) {
               </span>
             )}
           </div>
+
+          <Button variant="outline" className="w-full gap-2" onClick={exportProof} disabled={exporting}>
+            <Download className="h-4 w-4" />
+            {exporting ? 'Generating…' : 'Export proof (JSON-LD)'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

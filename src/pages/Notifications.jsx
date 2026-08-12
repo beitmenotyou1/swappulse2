@@ -32,7 +32,7 @@ function describe(n) {
     case 'mention': return `${actor} mentioned you`;
     case 'voice_live': return `${actor} went live`;
     case 'podcast': return `${actor} published a new podcast`;
-    case 'reputation': return 'Your reputation was updated';
+    case 'reputation': return n.target_label || 'Your reputation was updated';
     case 'message': return `${actor} sent you a trade message`;
     case 'pack_pull': return `${actor} pulled a card on your wishlist`;
     default: return `${actor} notified you`;
