@@ -1,12 +1,14 @@
 import React from 'react';
 import { Image } from '@/components/ui/image';
-import { Loader2, Check, Search, AlertCircle, X } from 'lucide-react';
+import { Loader2, Check, Search, AlertCircle, X, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { rarityClasses } from '@/lib/tcgdex';
+import CandidateCard from '@/components/scanner/CandidateCard';
+import CorrectionPanel from '@/components/scanner/CorrectionPanel';
 
-export default function ScanResultCard({ scan, onChoose, onManual, onDismiss }) {
+export default function ScanResultCard({ scan, onSelectCandidate, onManual, onDismiss, pendingCorrection, onSubmitCorrection, onCancelCorrection }) {
   const status = scan.status;
   const top = scan.candidates?.[0];
+  const isPending = pendingCorrection?.scanId === scan.id;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-3 shadow-base">
@@ -20,9 +22,7 @@ export default function ScanResultCard({ scan, onChoose, onManual, onDismiss }) 
         </div>
 
         <div className="min-w-0 flex-1">
-          {status === 'uploading' && (
-            <p className="text-sm text-muted-foreground">Uploading…</p>
-          )}
+          {status === 'uploading' && <p className="text-sm text-muted-foreground">Uploading…</p>}
           {status === 'scanning' && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Identifying card…
@@ -49,11 +49,24 @@ export default function ScanResultCard({ scan, onChoose, onManual, onDismiss }) 
               <p className="text-xs text-muted-foreground">
                 Confidence: {Math.round((scan.prediction?.confidence || 0) * 100)}%
               </p>
+              {scan.modelVersion && (
+                <p className="text-[10px] text-muted-foreground/60">Scanner v{scan.modelVersion}</p>
+              )}
             </div>
           )}
           {status === 'added' && (
-            <div className="flex items-center gap-1.5 text-sm font-medium text-success">
-              <Check className="h-4 w-4" /> Added: {scan.addedCard?.card_name}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-success">
+                <Check className="h-4 w-4" /> Added: {scan.addedCard?.card_name}
+              </div>
+              {scan.correctionType && scan.correctionType !== 'confirm_correct' && (
+                <p className="flex items-center gap-1 text-xs text-primary">
+                  <GraduationCap className="h-3 w-3" /> Correction recorded — thanks for helping improve the scanner!
+                </p>
+              )}
+              {scan.correctionType === 'confirm_correct' && (
+                <p className="text-xs text-muted-foreground">Scanner confirmed correct — positive signal recorded.</p>
+              )}
             </div>
           )}
         </div>
@@ -63,41 +76,43 @@ export default function ScanResultCard({ scan, onChoose, onManual, onDismiss }) 
         </button>
       </div>
 
-      {status === 'done' && scan.candidates?.length > 0 && (
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {scan.candidates.map((c, i) => {
-            const { text } = rarityClasses(c.rarity);
-            return (
-              <button
+      {status === 'done' && scan.candidates?.length > 0 && !isPending && (
+        <>
+          <p className="mt-3 text-xs font-semibold text-muted-foreground">
+            {top?.confidence >= 0.85 ? 'Match found — tap to confirm' : 'Possible matches — tap the correct card'}
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {scan.candidates.map((c) => (
+              <CandidateCard
                 key={c.card_id}
-                onClick={() => onChoose(scan, c)}
-                className={`overflow-hidden rounded-lg border text-left transition-all hover:border-primary/60 hover:shadow-md ${
-                  i === 0 ? 'border-primary/60' : 'border-border'
-                }`}
-              >
-                <div className="aspect-[3/4] overflow-hidden bg-muted">
-                  {c.image ? (
-                    <img src={c.image} alt={c.card_name} loading="lazy" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="grid h-full place-items-center text-[10px] text-muted-foreground">No image</div>
-                  )}
-                </div>
-                <div className="p-1">
-                  <p className="truncate text-[10px] font-semibold">{c.card_name}</p>
-                  <p className={`truncate text-[9px] ${text}`}>{c.rarity || '-'}</p>
-                </div>
-              </button>
-            );
-          })}
+                candidate={c}
+                onSelect={(candidate) => onSelectCandidate(scan, candidate)}
+              />
+            ))}
+          </div>
+          <div className="mt-2">
+            <Button size="sm" variant="ghost" onClick={() => onManual(scan.id)}>
+              <Search className="mr-1.5 h-4 w-4" /> Not right? Search manually
+            </Button>
+          </div>
+        </>
+      )}
+
+      {status === 'fallback' && (
+        <div className="mt-2">
+          <Button size="sm" variant="ghost" onClick={() => onManual(scan.id)}>
+            <Search className="mr-1.5 h-4 w-4" /> Search for your card
+          </Button>
         </div>
       )}
 
-      {status === 'done' && (
-        <div className="mt-2">
-          <Button size="sm" variant="ghost" onClick={() => onManual(scan.id)}>
-            <Search className="mr-1.5 h-4 w-4" /> Not right? Search manually
-          </Button>
-        </div>
+      {isPending && (
+        <CorrectionPanel
+          scan={scan}
+          selectedCard={pendingCorrection.card}
+          onSubmit={(notes) => onSubmitCorrection(scan, pendingCorrection.card, pendingCorrection.correctionType, notes, pendingCorrection.viaManual)}
+          onCancel={onCancelCorrection}
+        />
       )}
     </div>
   );

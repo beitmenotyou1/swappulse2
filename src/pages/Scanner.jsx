@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ScanLine, Camera, Search, Loader2 } from 'lucide-react';
+import { ScanLine, Camera, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/PageHeader';
@@ -13,48 +13,62 @@ export default function Scanner() {
   const [scans, setScans] = useState([]);
   const [busy, setBusy] = useState(false);
   const [manualFor, setManualFor] = useState(null);
+  const [pendingCorrection, setPendingCorrection] = useState(null);
 
-  const logCorrection = async (scan, card, correctionType) => {
+  const detectCorrectionType = (scan, card, viaManual = false) => {
+    const top = scan.candidates?.[0];
+    if (viaManual && (!top || !scan.prediction?.card_name)) return 'no_match_found';
+    if (!top || !top.card_id) return 'no_match_found';
+    if (top.card_id === card.card_id) return 'confirm_correct';
+    if (top.set_id && card.set_id && top.set_id !== card.set_id) return 'wrong_set';
+    return 'wrong_card';
+  };
+
+  const submitAndAdd = async (scan, card, correctionType, notes, viaManual = false) => {
+    const top = scan.candidates?.[0];
     try {
-      await base44.entities.ScannerCorrection.create({
-        original_scan_uri: scan.imageUrl,
-        original_prediction: scan.prediction,
+      await base44.functions.invoke('submitScannerCorrection', {
+        image_hash: scan.imageHash || '',
+        image_url: scan.imageUrl || '',
+        predicted_card_id: top?.card_id || '',
+        predicted_set_id: top?.set_id || '',
+        predicted_card_name: scan.prediction?.card_name || top?.card_name || '',
         corrected_card_id: card.card_id,
+        corrected_set_id: card.set_id || '',
         corrected_card_name: card.card_name,
+        confidence: scan.prediction?.confidence || 0,
         correction_type: correctionType,
+        scanner_version: scan.modelVersion || '',
+        notes: notes || '',
       });
+
+      await base44.entities.CollectionEntry.create({
+        card_id: card.card_id,
+        card_name: card.card_name,
+        card_image: card.image,
+        set_id: card.set_id,
+        set_name: card.set_name,
+        local_id: card.local_id,
+        rarity: card.rarity,
+        variant: scan.prediction?.variant || 'normal',
+        condition: 'near_mint',
+        acquisition_date: new Date().toISOString().slice(0, 10),
+      });
+
+      toast({ title: 'Added to collection', description: card.card_name });
+      setScans((prev) => prev.map((s) => (s.id === scan.id ? { ...s, status: 'added', addedCard: card, correctionType } : s)));
+      setPendingCorrection(null);
     } catch (e) {
-      console.error('correction log failed', e?.message || e);
+      toast({ title: 'Could not add', description: e.message, variant: 'destructive' });
     }
   };
 
-  const addToCollection = async (scan, card) => {
-    await base44.entities.CollectionEntry.create({
-      card_id: card.card_id,
-      card_name: card.card_name,
-      card_image: card.image,
-      set_id: card.set_id,
-      set_name: card.set_name,
-      local_id: card.local_id,
-      rarity: card.rarity,
-      variant: scan.prediction?.variant || 'normal',
-      condition: 'near_mint',
-      acquisition_date: new Date().toISOString().slice(0, 10),
-    });
-    toast({ title: 'Added to collection', description: card.card_name });
-    setScans((prev) => prev.map((s) => (s.id === scan.id ? { ...s, status: 'added', addedCard: card } : s)));
-  };
-
-  const chooseCard = async (scan, card, viaManual = false) => {
-    const top = scan.candidates?.[0];
-    const isCorrection = (top && top.card_id !== card.card_id) || viaManual;
-    try {
-      if (isCorrection && scan.prediction?.card_name) {
-        await logCorrection(scan, card, 'wrong_card');
-      }
-      await addToCollection(scan, card);
-    } catch (e) {
-      toast({ title: 'Could not add', description: e.message, variant: 'destructive' });
+  const handleSelectCandidate = (scan, candidate) => {
+    const correctionType = detectCorrectionType(scan, candidate, false);
+    if (correctionType === 'confirm_correct') {
+      submitAndAdd(scan, candidate, correctionType, '');
+    } else {
+      setPendingCorrection({ scanId: scan.id, card: candidate, correctionType, viaManual: false });
     }
   };
 
@@ -65,7 +79,7 @@ export default function Scanner() {
     try {
       const up = await base44.integrations.Core.UploadFile({ file });
       imageUrl = up.file_url;
-    } catch (e) {
+    } catch {
       setScans((prev) => prev.map((s) => (s.id === scanId ? { ...s, status: 'fallback', error: 'Upload failed' } : s)));
       return;
     }
@@ -76,7 +90,17 @@ export default function Scanner() {
       setScans((prev) =>
         prev.map((s) =>
           s.id === scanId
-            ? { ...s, status: data.fallback ? 'fallback' : 'done', prediction: data.prediction, candidates: data.candidates || [], error: data.error }
+            ? {
+                ...s,
+                status: data.fallback ? 'fallback' : 'done',
+                scanId: data.scan_id,
+                modelVersion: data.model_version,
+                imageHash: data.image_hash,
+                timestamp: data.timestamp,
+                prediction: data.prediction,
+                candidates: data.candidates || [],
+                error: data.error,
+              }
             : s,
         ),
       );
@@ -94,11 +118,21 @@ export default function Scanner() {
 
   const onManualSelect = (card) => {
     const scan = scans.find((s) => s.id === manualFor);
-    if (scan) chooseCard(scan, card, true);
+    if (scan) {
+      const correctionType = detectCorrectionType(scan, card, true);
+      if (correctionType === 'confirm_correct') {
+        submitAndAdd(scan, card, correctionType, '', true);
+      } else {
+        setPendingCorrection({ scanId: scan.id, card, correctionType, viaManual: true });
+      }
+    }
     setManualFor(null);
   };
 
-  const dismiss = (id) => setScans((prev) => prev.filter((s) => s.id !== id));
+  const dismiss = (id) => {
+    setScans((prev) => prev.filter((s) => s.id !== id));
+    if (pendingCorrection?.scanId === id) setPendingCorrection(null);
+  };
 
   return (
     <>
@@ -140,9 +174,12 @@ export default function Scanner() {
               <ScanResultCard
                 key={scan.id}
                 scan={scan}
-                onChoose={(s, c) => chooseCard(s, c)}
+                onSelectCandidate={handleSelectCandidate}
                 onManual={(id) => setManualFor(id)}
                 onDismiss={dismiss}
+                pendingCorrection={pendingCorrection}
+                onSubmitCorrection={submitAndAdd}
+                onCancelCorrection={() => setPendingCorrection(null)}
               />
             ))}
           </div>

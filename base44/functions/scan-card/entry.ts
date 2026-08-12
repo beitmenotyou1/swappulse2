@@ -1,6 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
 
+const MODEL_VERSION = 'llm-vision-v1';
+
 const SCAN_PROMPT = `You are a Pokémon TCG card identification expert. Analyze the attached card photo carefully and identify the card.
 Return JSON with:
 - card_name: the Pokémon or trainer name exactly as printed (e.g. "Pikachu", "Charizard ex"). Empty string if the image is not a Pokémon card.
@@ -43,6 +45,12 @@ function buildImage(imageField) {
   return `https://assets.tcgdex.net/${imageField}${suffix}`;
 }
 
+async function sha256(text) {
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -53,6 +61,10 @@ export default async function (req) {
     const imageUrl = body.image_url;
     const lang = body.lang || 'en';
     if (!imageUrl) return Response.json({ error: 'image_url required' }, { status: 400 });
+
+    const scanId = crypto.randomUUID();
+    const imageHash = await sha256(imageUrl);
+    const timestamp = new Date().toISOString();
 
     let prediction = {};
     try {
@@ -76,11 +88,30 @@ export default async function (req) {
       prediction = llmRes || {};
     } catch (e) {
       console.error('scan-card LLM failed', e?.message || e);
-      return Response.json({ error: 'Scan failed — try manual search', fallback: true, image_url: imageUrl });
+      return Response.json({
+        scan_id: scanId,
+        model_version: MODEL_VERSION,
+        image_hash: imageHash,
+        timestamp,
+        prediction: {},
+        candidates: [],
+        image_url: imageUrl,
+        fallback: true,
+        error: 'Scan failed — try manual search',
+      });
     }
 
     if (!prediction.card_name) {
-      return Response.json({ prediction, candidates: [], image_url: imageUrl, fallback: true });
+      return Response.json({
+        scan_id: scanId,
+        model_version: MODEL_VERSION,
+        image_hash: imageHash,
+        timestamp,
+        prediction,
+        candidates: [],
+        image_url: imageUrl,
+        fallback: true,
+      });
     }
 
     let cards = [];
@@ -94,7 +125,7 @@ export default async function (req) {
       console.error('scan-card catalog lookup failed', e?.message || e);
     }
 
-    const candidates = cards
+    const scored = cards
       .map((c) => ({
         card_id: c.id,
         card_name: c.name,
@@ -106,9 +137,28 @@ export default async function (req) {
         score: scoreCandidate(c, prediction),
       }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, 6);
+      .slice(0, 5);
 
-    return Response.json({ prediction, candidates, image_url: imageUrl });
+    const maxScore = scored[0]?.score || 1;
+    const llmConfidence = prediction.confidence || 0;
+
+    const candidates = scored.map((c, i) => ({
+      ...c,
+      confidence: i === 0 ? llmConfidence : Math.max(0, Math.min(1, (c.score / maxScore) * llmConfidence)),
+      rank: i + 1,
+    }));
+
+    return Response.json({
+      scan_id: scanId,
+      model_version: MODEL_VERSION,
+      image_hash: imageHash,
+      timestamp,
+      prediction,
+      candidates,
+      predicted_card_id: candidates[0]?.card_id || '',
+      predicted_set_id: candidates[0]?.set_id || '',
+      image_url: imageUrl,
+    });
   } catch (error) {
     console.error('scan-card error', error?.message || error);
     return Response.json({ error: error.message, fallback: true }, { status: 500 });
