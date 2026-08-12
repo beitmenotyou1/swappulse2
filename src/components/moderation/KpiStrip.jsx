@@ -13,7 +13,7 @@ const items = [
 
 export default function KpiStrip({ stats }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
       {items.map((it) => {
         const Icon = it.icon;
         const val = stats[it.key] ?? 0;

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, RefreshCw } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Filter } from 'lucide-react';
 import KpiStrip from '@/components/moderation/KpiStrip';
 import FilterSidebar from '@/components/moderation/FilterSidebar';
 import FlaggedPostsTable from '@/components/moderation/FlaggedPostsTable';
@@ -33,6 +33,7 @@ export default function Moderation() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [resolving, setResolving] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -144,20 +145,37 @@ export default function Moderation() {
       <div className="mx-auto max-w-7xl space-y-4 p-4">
         <KpiStrip stats={stats} />
         <BulkActions selectedCount={selectedIds.length} onBulk={handleBulk} onClear={clearSelection} />
-        <div className="grid gap-4 xl:grid-cols-[240px_1fr_300px]">
-          <FilterSidebar filters={filters} onChange={onFiltersChange} />
-          <FlaggedPostsTable
-            rows={posts}
-            loading={loading}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
-            onSelect={(row) => setSelectedPost(row)}
-            page={page}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            onPage={setPage}
-          />
-          <ActivityFeed logs={logs} onRefresh={fetchActivity} />
+
+        <Button
+          variant="outline"
+          className="w-full lg:hidden"
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+        >
+          <Filter className="h-4 w-4" />
+          {showFilters ? 'Hide Filters' : 'Show Filters'}
+        </Button>
+
+        <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-4">
+          <div className={`${showFilters ? 'block' : 'hidden'} lg:block`}>
+            <div className="lg:sticky lg:top-20">
+              <FilterSidebar filters={filters} onChange={onFiltersChange} />
+            </div>
+          </div>
+          <div className="mt-4 space-y-4 lg:mt-0">
+            <FlaggedPostsTable
+              rows={posts}
+              loading={loading}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              onSelect={(row) => setSelectedPost(row)}
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPage={setPage}
+            />
+            <ActivityFeed logs={logs} onRefresh={fetchActivity} />
+          </div>
         </div>
       </div>
 
