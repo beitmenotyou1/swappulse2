@@ -1,0 +1,84 @@
+{
+  "name": "PushToken",
+  "type": "object",
+  "title": "PushToken",
+  "description": "org.swappulse.pushToken \u2014 a web push subscription endpoint for a user. Supports multiple devices per user. The subscription field stores the serialized PushSubscription JSON; endpoint is extracted for quick deactivation on 410/404.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner"
+    },
+    "subscription": {
+      "type": "string",
+      "description": "Serialized PushSubscription JSON (endpoint + keys p256dh + auth)"
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "Push endpoint URL extracted from the subscription for quick lookup and deactivation"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "web",
+        "ios",
+        "android"
+      ],
+      "default": "web"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Set to false when the endpoint returns 410/404 (expired subscription)"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time a push was successfully sent to this token"
+    }
+  },
+  "required": [
+    "did",
+    "subscription"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

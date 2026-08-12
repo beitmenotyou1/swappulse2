@@ -1,4 +1,6 @@
-// Web Push subscription client - §8.1 Push Notifications (VAPID).
+// Web Push subscription client — §8.1 Push Notifications (VAPID).
+// Extended with multi-device PushToken registration via register-push-token.
+// Keeps backward-compatible exports used by NotificationToggle.
 import { base44 } from '@/api/base44Client';
 
 function urlB64ToUint8(b64) {
@@ -45,13 +47,25 @@ export async function subscribePush() {
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') throw new Error('Notification permission denied');
   const publicKey = await getVapidPublicKey();
-  if (!publicKey) throw new Error('Push not configured yet - ask your admin to add VAPID keys');
+  if (!publicKey) throw new Error('Push not configured yet — ask your admin to add VAPID keys');
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlB64ToUint8(publicKey),
   });
-  await base44.auth.updateMe({ push_subscription: JSON.stringify(sub) });
+  const subStr = JSON.stringify(sub);
+  // Register with backend (multi-device PushToken + legacy User.push_subscription)
+  try {
+    await base44.functions.invoke('register-push-token', {
+      action: 'register',
+      subscription: subStr,
+      platform: 'web',
+    });
+  } catch (e) {
+    console.error('register-push-token failed', e?.message || e);
+  }
+  // Keep legacy updateMe for backward compat with sendPush/dispatchBellNotifications
+  await base44.auth.updateMe({ push_subscription: subStr });
   return sub;
 }
 
@@ -59,6 +73,20 @@ export async function unsubscribePush() {
   if (!(await isPushSupported())) return;
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
-  if (sub) await sub.unsubscribe();
+  let endpoint = '';
+  if (sub) {
+    endpoint = sub.endpoint || '';
+    await sub.unsubscribe();
+  }
+  // Unregister from backend (deactivate PushToken by endpoint)
+  try {
+    await base44.functions.invoke('register-push-token', {
+      action: 'unregister',
+      endpoint,
+    });
+  } catch (e) {
+    console.error('unregister-push-token failed', e?.message || e);
+  }
+  // Clear legacy
   await base44.auth.updateMe({ push_subscription: '' });
 }

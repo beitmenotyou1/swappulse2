@@ -1,0 +1,76 @@
+{
+  "name": "NotificationLog",
+  "type": "object",
+  "title": "NotificationLog",
+  "description": "org.swappulse.notificationLog \u2014 push delivery audit trail. Tracks the status of each push notification attempt (pending, delivered, failed, opened). Admin-only read; created by the send-notification dispatcher (service role).",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the recipient"
+    },
+    "notification_type": {
+      "type": "string",
+      "description": "Notification type (trade_match, price_alert, comment_reply, etc.)"
+    },
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Structured payload (params, subjectUri, imageUrl, etc.)"
+    },
+    "deep_link": {
+      "type": "string",
+      "description": "In-app route for deep linking (e.g. /trades, /card/abc123)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed",
+        "opened"
+      ],
+      "default": "pending"
+    },
+    "delivered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "failure_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "did",
+    "notification_type",
+    "title",
+    "deep_link"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

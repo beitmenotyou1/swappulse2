@@ -8,6 +8,8 @@ import BellToaster from '@/components/follow/BellToaster';
 import AlphaNotice from '@/components/AlphaNotice';
 import ActivationBanner from '@/components/ActivationBanner';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
+import BannerProvider from '@/components/notifications/BannerProvider';
+import NotificationHandler from '@/components/notifications/NotificationHandler';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import { usePresence } from '@/hooks/usePresence';
 import { useApplyAccessibility } from '@/hooks/useSettings';
@@ -16,7 +18,7 @@ export default function Layout() {
   const online = usePresence();
   useApplyAccessibility();
   return (
-    <>
+    <BannerProvider>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
@@ -41,6 +43,7 @@ export default function Layout() {
       <BellToaster />
       <FeedbackButton />
       </div>
-    </>
+      <NotificationHandler />
+    </BannerProvider>
   );
 }

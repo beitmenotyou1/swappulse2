@@ -9,11 +9,18 @@ const CHANNELS = [
 ];
 
 const EVENTS = [
-  { key: 'trade_match', label: 'Trade matches' },
-  { key: 'price_alert', label: 'Price alerts' },
-  { key: 'mention', label: 'Mentions' },
-  { key: 'reaction', label: 'Reactions on your posts' },
-  { key: 'voice_live', label: 'Friends go live' },
+  { key: 'trade_match', label: 'Trade matches', desc: 'Someone lists a card on your wishlist' },
+  { key: 'trade_listing', label: 'New trade listings', desc: 'New trades in your circles' },
+  { key: 'price_alert', label: 'Price alerts', desc: 'Wishlist cards hitting your max price' },
+  { key: 'mention', label: 'Mentions', desc: 'When someone mentions you' },
+  { key: 'reaction', label: 'Reactions', desc: 'Reactions on your posts' },
+  { key: 'comment_reply', label: 'Comment replies', desc: 'Replies to your comments' },
+  { key: 'voice_live', label: 'Friends go live', desc: 'Live stream announcements' },
+  { key: 'podcast', label: 'New podcasts', desc: 'New podcast episodes' },
+  { key: 'vouch_received', label: 'Vouches', desc: 'When someone vouches for you' },
+  { key: 'meetup_announcement', label: 'Meetups', desc: 'Local meetup announcements' },
+  { key: 'challenge_update', label: 'Challenges', desc: 'Challenge milestones' },
+  { key: 'weekly_digest', label: 'Weekly digest', desc: 'Portfolio summary every week' },
 ];
 
 export default function NotificationsSection({ settings, update }) {

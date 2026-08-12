@@ -232,8 +232,62 @@ class RealTimeManager {
       };
       await base44.entities.Notification.create(rec);
       this.emit('notification.new', rec);
+      // Dispatch push notification (fire and forget — in-app record already created)
+      this.dispatchPush(action_type, rec, source);
     } catch (e) {
       console.error('notifyForMe failed', e?.message || e);
+    }
+  }
+
+  dispatchPush(action_type, rec, source) {
+    const title = this.titleForType(action_type, rec);
+    const body = rec.target_label || 'You have a new notification';
+    const params = this.paramsForType(action_type, source, rec);
+    const priority = (action_type === 'trade_match' || action_type === 'price_alert') ? 'high' : 'standard';
+    base44.functions.invoke('send-notification', {
+      recipientDid: rec.did,
+      type: action_type,
+      title,
+      body,
+      params,
+      subjectUri: rec.source_uri,
+      priority,
+    }).catch((e) => console.error('dispatchPush failed', e?.message || e));
+  }
+
+  titleForType(action_type, rec) {
+    const name = rec.actor_name || 'SwapPulse';
+    switch (action_type) {
+      case 'trade_match': return 'New Trade Match!';
+      case 'price_alert': return 'Price Drop Alert';
+      case 'pack_pull': return `${name} pulled a new card`;
+      case 'reaction': return `${name} reacted to your post`;
+      case 'mention': return `${name} mentioned you`;
+      case 'follow': return `${name} started following you`;
+      case 'voice_live': return `${name} is going live`;
+      case 'podcast': return 'New podcast episode';
+      case 'message': return 'New trade message';
+      case 'reputation': return 'Your reputation updated';
+      default: return 'SwapPulse';
+    }
+  }
+
+  paramsForType(action_type, source, rec) {
+    switch (action_type) {
+      case 'trade_match':
+        return { listingId: source?.id || '' };
+      case 'price_alert':
+        return { cardId: source?.card_id || rec?.card_id || '' };
+      case 'pack_pull':
+        return { authorDid: rec?.did || source?.did || '' };
+      case 'follow':
+        return { followerDid: source?.did || rec?.actor_did || '' };
+      case 'voice_live':
+        return { userDid: source?.did || rec?.actor_did || '' };
+      case 'message':
+        return { tradeId: source?.trade_id || source?.id || '' };
+      default:
+        return {};
     }
   }
 }
