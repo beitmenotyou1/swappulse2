@@ -46,13 +46,13 @@ export default function LeftNav() {
   return (
     <nav className="sticky top-0 hidden h-screen flex-col px-2 py-4 md:flex xl:px-3">
       <div className="mb-6 flex justify-center px-2 xl:justify-start">
-        <NavLink to="/">
+        <NavLink to="/" aria-label="SwapPulse home">
           <Logo size={40} withText={false} />
         </NavLink>
       </div>
       <div className="flex flex-col items-center gap-1 xl:items-stretch">
         {primary.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
+          <NavLink key={item.to} to={item.to} end={item.to === '/'} aria-label={item.label} className={linkClass}>
             <item.icon className="h-6 w-6 shrink-0" />
             <span className="hidden xl:inline">{item.label}</span>
             {item.to === '/spaces' && liveCount > 0 && (
@@ -66,6 +66,8 @@ export default function LeftNav() {
 
         <button
           onClick={() => setShowMore((v) => !v)}
+          aria-label="More navigation"
+          aria-expanded={showMore}
           className="group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold text-foreground transition-colors hover:bg-secondary xl:pr-6"
         >
           <ChevronDown className={`h-6 w-6 shrink-0 transition-transform ${showMore ? 'rotate-180' : ''}`} />
@@ -75,7 +77,7 @@ export default function LeftNav() {
         {showMore && (
           <div className="flex flex-col items-center gap-1 border-l border-border pl-2 xl:items-stretch xl:pl-3">
             {more.map((item) => (
-              <NavLink key={item.to} to={item.to} className={linkClass}>
+              <NavLink key={item.to} to={item.to} aria-label={item.label} className={linkClass}>
                 <item.icon className="h-6 w-6 shrink-0" />
                 <span className="hidden xl:inline">{item.label}</span>
               </NavLink>
@@ -89,6 +91,7 @@ export default function LeftNav() {
         </div>
         <NavLink
           to="/profile"
+          aria-label="View profile"
           className="flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-secondary xl:pr-4"
         >
           <Avatar name={user?.full_name} src={user?.avatar_url} size={36} />

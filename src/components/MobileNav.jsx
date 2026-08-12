@@ -80,7 +80,7 @@ export default function MobileNav() {
           <div className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl border-t border-border bg-card p-3" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between px-1">
               <p className="text-sm font-bold">More</p>
-              <button onClick={() => setMoreOpen(false)} className="rounded-full p-1 hover:bg-secondary">
+              <button onClick={() => setMoreOpen(false)} aria-label="Close" className="rounded-full p-1 hover:bg-secondary">
                 <X className="h-5 w-5" />
               </button>
             </div>
