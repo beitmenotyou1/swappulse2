@@ -5,6 +5,8 @@
 // own verification email; this function delivers the activation LINK.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { randomToken, HOURS_48, THROTTLE_MS } from '../../shared/activation.ts';
+import { buildActivationEmail } from '../../shared/emailContent.ts';
+import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -52,11 +54,8 @@ Deno.serve(async (req) => {
     const origin = req.headers.get('origin') || req.headers.get('Origin') || '';
     const link = `${origin}/activate?token=${record.link_token}`;
     try {
-      await svc.integrations.Core.SendEmail({
-        to: u.email,
-        subject: 'Activate your SwapPulse account',
-        body: `Welcome to SwapPulse! Activate your account to join the collector community.\n\nOpen this link (valid for 48 hours):\n${link}\n\nThen enter the 6-digit code from your verification email on the activation page.\n\nIf you did not create an account, you can ignore this email.\n\nSwapPulse`,
-      });
+      const email = buildActivationEmail(u.full_name, link);
+      await sendBrandedEmail({ to: u.email, ...email });
     } catch (e) {
       console.error('send-activation email failed', e?.message || e);
     }

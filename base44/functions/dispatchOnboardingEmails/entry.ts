@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { buildDay1Email, buildDay3Email, buildDay7Email } from '../../shared/emailContent.ts';
+import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -94,14 +96,9 @@ Deno.serve(async (req) => {
     const sent = new Set(sentRecords.map((r) => r.user_id + ":" + r.email_type));
 
     let day1 = 0, day3 = 0, day7 = 0, failed = 0;
-    const send = async (u, type, subject, body) => {
+    const send = async (u, type, emailObj) => {
       try {
-        await svc.integrations.Core.SendEmail({
-          to: u.email,
-          subject,
-          body,
-          from_name: "SwapPulse",
-        });
+        await sendBrandedEmail({ to: u.email, ...emailObj });
         await svc.entities.OnboardingEmail.create({
           user_id: u.id,
           email_type: type,
@@ -119,13 +116,13 @@ Deno.serve(async (req) => {
       const ageDays = (now - new Date(u.created_date).getTime()) / DAY_MS;
 
       if (ageDays >= 1 && !sent.has(u.id + ":day1")) {
-        if (await send(u, "day1", "Your first 3 steps on SwapPulse", day1Body(u.full_name))) { day1++; sent.add(u.id + ":day1"); }
+        if (await send(u, "day1", buildDay1Email(u.full_name))) { day1++; sent.add(u.id + ":day1"); }
       }
       if (ageDays >= 3 && !sent.has(u.id + ":day3")) {
-        if (await send(u, "day3", "Ready to trade? Explore the Trade Floor", day3Body(u.full_name, 0))) { day3++; sent.add(u.id + ":day3"); }
+        if (await send(u, "day3", buildDay3Email(u.full_name, 0))) { day3++; sent.add(u.id + ":day3"); }
       }
       if (ageDays >= 7 && !sent.has(u.id + ":day7")) {
-        if (await send(u, "day7", "Level up your SwapPulse experience", day7Body(u.full_name))) { day7++; sent.add(u.id + ":day7"); }
+        if (await send(u, "day7", buildDay7Email(u.full_name))) { day7++; sent.add(u.id + ":day7"); }
       }
     }
 

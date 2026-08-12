@@ -5,6 +5,8 @@
 // so "suspension" is enforced as a warning + the persistent in-app banner.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { randomToken, HOURS_48, DAY, WARN_AFTER_DAYS, DELETE_AFTER_DAYS, REWARN_INTERVAL_DAYS } from '../../shared/activation.ts';
+import { buildActivationWarningEmail } from '../../shared/emailContent.ts';
+import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -58,11 +60,8 @@ Deno.serve(async (req) => {
         const token = randomToken();
         const link = `${origin}/activate?token=${token}`;
         try {
-          await svc.integrations.Core.SendEmail({
-            to: u.email,
-            subject: 'Activate your SwapPulse account - action required',
-            body: `Hi ${u.full_name || 'there'},\n\nYour SwapPulse account is still not activated. Accounts that remain unactivated are permanently deleted 90 days after sign-up.\n\nActivate now: ${link}\n\nThen enter the 6-digit code from your verification email on the activation page.\n\nIf you did not create this account, ignore this email.\n\nSwapPulse`,
-          });
+          const email = buildActivationWarningEmail(u.full_name, link);
+          await sendBrandedEmail({ to: u.email, ...email });
           if (record) {
             await svc.entities.Activation.update(record.id, {
               last_reminded_at: new Date(now).toISOString(),
