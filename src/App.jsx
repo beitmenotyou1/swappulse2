@@ -52,6 +52,8 @@ import Moderation from '@/pages/Moderation';
 import WhoToFollow from '@/pages/WhoToFollow';
 import Achievements from '@/pages/Achievements';
 import Challenges from '@/pages/Challenges';
+import ChallengeDetail from '@/pages/ChallengeDetail';
+import Leaderboard from '@/pages/Leaderboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -127,6 +129,8 @@ const AuthenticatedApp = () => {
           <Route path="/who-to-follow" element={<WhoToFollow />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/challenges" element={<Challenges />} />
+          <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
+          <Route path="/challenges/:challengeId/leaderboard" element={<Leaderboard />} />
           <Route path="/help" element={<Help />} />
         </Route>
       </Route>

@@ -120,7 +120,7 @@ export default async function (req: Request): Promise<Response> {
       feed: ranked,
       meta: {
         totalParticipants: new Set(entries.map((e: any) => e.participant_did || e.did)).size,
-        optInParticipants: ranked.length,
+        optInParticipants: byDid.size,
         challengeComplete: target > 0 && ranked.some((r: any) => r.score >= target),
       },
     });
