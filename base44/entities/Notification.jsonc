@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "title": "Notification",
-  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, mention, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record.",
+  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, mention, achievement earned/revoked, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details).",
   "properties": {
     "did": {
       "type": "string",
@@ -79,6 +79,11 @@
     "group_count": {
       "type": "integer",
       "default": 1
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath })"
     },
     "at_uri": {
       "type": "string",

@@ -6,6 +6,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import Avatar from '@/components/Avatar';
 import PageHeader from '@/components/PageHeader';
 import { Image } from '@/components/ui/image';
+import AchievementNotificationCard from '@/components/notifications/AchievementNotificationCard';
 
 const ACTION_META = {
   trade_match: { Icon: ArrowLeftRight, tint: 'text-primary' },
@@ -39,6 +40,8 @@ function describe(n) {
   }
 }
 
+const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
+
 export default function Notifications() {
   const navigate = useNavigate();
   const { items, loading, unreadCount, markRead, markAllRead } = useNotifications();
@@ -47,9 +50,12 @@ export default function Notifications() {
   const visible = filterUnread ? items.filter((n) => !n.is_read) : items;
 
   const open = async (n) => {
+    if (isAchievement(n)) return; // card handles its own actions
     if (!n.is_read) await markRead(n.id);
     if (n.target_path) navigate(n.target_path);
   };
+
+  const dismiss = async (id) => { await markRead(id); };
 
   return (
     <div>
@@ -90,6 +96,13 @@ export default function Notifications() {
       ) : (
         <div className="divide-y divide-border">
           {visible.map((n) => {
+            if (isAchievement(n)) {
+              return (
+                <div key={n.id} className={!n.is_read ? 'bg-primary/5' : ''}>
+                  <AchievementNotificationCard n={n} onDismiss={dismiss} />
+                </div>
+              );
+            }
             const meta = ACTION_META[n.action_type] || { Icon: Bell, tint: 'text-muted-foreground' };
             const unread = !n.is_read;
             return (

@@ -1,0 +1,62 @@
+{
+  "name": "AchievementProofSnapshot",
+  "type": "object",
+  "title": "AchievementProofSnapshot",
+  "description": "org.swappulse.achievementProofSnapshot \u2014 an immutable capture of the proof records that qualified an achievement at grant time, with a SHA-256 integrity hash. Protects verifiability if the underlying AT Protocol records are later deleted or modified. snapshot_data carries { version, userDid, achievementId, capturedAt, proofRequirementHash, records:[{uri,cid,recordType,verifiedAt,recordDigest}], integrityHash }.",
+  "properties": {
+    "achievement_record_id": {
+      "type": "string",
+      "description": "id of the Achievement record this snapshot was captured for"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the holder"
+    },
+    "achievement_id": {
+      "type": "string",
+      "description": "Achievement id from the versioned config"
+    },
+    "snapshot_data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "The full proof snapshot bundle (records + integrity hash)"
+    },
+    "snapshot_hash": {
+      "type": "string",
+      "description": "SHA-256 integrity hash of snapshot_data (top-level copy for fast lookup)"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "did",
+    "achievement_id",
+    "snapshot_data",
+    "snapshot_hash",
+    "captured_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

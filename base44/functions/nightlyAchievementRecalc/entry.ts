@@ -1,16 +1,17 @@
 // §2.4 Nightly achievement recalculation (trust graph service).
 // Bulk-fetches proof data once, partitions by holder DID, and re-evaluates the
 // credentials that can change due to other users' actions or the user's own
-// non-collection activity (vouches, feedback, chains, corrections, binders,
-// voice spaces, meetups, card reviews). Set completion + shiny hunter are
-// intentionally left untouched (re-evaluated on-demand with TCGDex). Revocation
-// respects the global grace period and emits a reasoning notification.
+// non-collection activity. Set completion + shiny hunter are intentionally
+// left untouched (re-evaluated on-demand with TCGDex). Revocation respects the
+// global grace period and emits an in-app + email notification to the holder.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { evaluateAchievements } from '../../shared/achievementEngine.ts';
 import { reconcileAchievements, toDid } from '../../shared/achievementRunner.ts';
 import { NIGHTLY_KEYS } from '../../shared/achievementConfig.ts';
+import { buildAchievementEmailHtml, buildAchievementEmailSubject } from '../../shared/achievementNotifications.ts';
 
 const MAX_USERS = 200;
+const APP_URL = 'https://swappulse.org';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -51,6 +52,10 @@ export default async function (req: Request): Promise<Response> {
     const rsvpsByMeetupId: Record<string, number> = {};
     for (const [k, v] of rsvpMap) rsvpsByMeetupId[k] = v;
 
+    // did → email (for revocation emails to registered users).
+    const emailByDid = new Map<string, string>();
+    for (const u of users) emailByDid.set(toDid(u), u.email);
+
     const dids = new Set<string>();
     for (const u of users) dids.add(toDid(u));
     for (const v of vouches) if (v.vouched_did) dids.add(v.vouched_did);
@@ -63,7 +68,7 @@ export default async function (req: Request): Promise<Response> {
     for (const m of meetups) if (m.did) dids.add(m.did);
 
     const didList = [...dids].slice(0, MAX_USERS);
-    let processed = 0, revoked = 0, pending = 0;
+    let processed = 0, revoked = 0, pending = 0, emailsSent = 0;
     const errors: string[] = [];
 
     for (const did of didList) {
@@ -91,6 +96,28 @@ export default async function (req: Request): Promise<Response> {
         processed++;
         revoked += r.revokedCount;
         pending += r.pendingCount;
+
+        // Email revoked achievements to the registered holder.
+        const revokedEvents = r.events.filter((e: any) => e.kind === 'revoked');
+        const email = emailByDid.get(did);
+        if (revokedEvents.length > 0 && email) {
+          for (const e of revokedEvents) {
+            try {
+              await base44.integrations.Core.SendEmail({
+                to: email,
+                subject: buildAchievementEmailSubject('revoked', e.name),
+                body: buildAchievementEmailHtml('revoked', {
+                  achievementName: e.name, timestamp: new Date().toISOString(),
+                  reason: e.reason, restorationPath: e.restorationPath,
+                  restoreUrl: `${APP_URL}/achievements`,
+                }),
+              });
+              emailsSent++;
+            } catch (err) {
+              console.error('[nightlyAchievementRecalc] revoke email failed', e.key, err);
+            }
+          }
+        }
       } catch (e: any) {
         errors.push(`${did}: ${e.message}`);
         console.error('[nightlyAchievementRecalc] did', did, e);
@@ -98,7 +125,7 @@ export default async function (req: Request): Promise<Response> {
     }
 
     return Response.json({
-      processed, revoked, pending,
+      processed, revoked, pending, emailsSent,
       candidates: didList.length,
       skippedSetCompletion: true,
       errors: errors.slice(0, 10),

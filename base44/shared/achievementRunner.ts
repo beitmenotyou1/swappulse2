@@ -1,17 +1,26 @@
 // §2.4 Achievement runner — shared fetch + reconciliation used by the on-demand
 // (auth, per-user) and nightly (service-role, bulk) functions. Fetches proof
-// data, runs the engine, and reconciles stored Achievement records with a
-// revocation grace period (global_settings.revocation_grace_period_hours):
-// when a proof stops holding, the credential enters a pending-revocation
-// state and is only revoked (with a reasoning notification) once the grace
-// period elapses, so transient dips don't yank badges.
+// data, runs the engine, and reconciles stored Achievement records with:
+//  - Proof-capture snapshots: on every grant an immutable AchievementProofSnapshot
+//    is stored with a SHA-256 integrity hash, so the credential stays verifiable
+//    even if the underlying AT Protocol records are later deleted/modified.
+//  - Revocation grace period (global_settings.revocation_grace_period_hours): a
+//    failing proof enters pending-revocation first; full revocation + reasoning
+//    notification only fires once the grace elapses (and clears if it recovers).
+//  - Earned/revoked event stream returned to the caller for email dispatch.
 
 import { evaluateAchievements, EngineInput } from './achievementEngine.ts';
 import { ACHIEVEMENT_CONFIG, ACHIEVEMENT_KEYS, GLOBAL_SETTINGS } from './achievementConfig.ts';
+import { buildRestorationPath } from './achievementNotifications.ts';
 import { fetchTcgdex } from './tcgdexClient.ts';
 
 export function toDid(user: any): string {
   return user.did || 'did:plc:' + String(user.id).replace(/-/g, '').slice(0, 24);
+}
+
+async function sha256Hex(str: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function fetchSetSizes(setIds: string[]): Promise<Record<string, number>> {
@@ -106,8 +115,73 @@ export function buildRevocationReason(key: string): string {
   return `Your ${name} achievement was revoked — the eligibility proof no longer holds. (Revocation finalized after the ${GLOBAL_SETTINGS.revocation_grace_period_hours}h grace period.)`;
 }
 
+// Captures an immutable proof snapshot for a freshly granted achievement and
+// returns the integrity hash (also stored on the achievement metadata).
+async function captureProofSnapshot(
+  svc: any,
+  did: string,
+  key: string,
+  result: any,
+  achievementRecordId: string,
+): Promise<string> {
+  const cfg = ACHIEVEMENT_CONFIG[key];
+  const proofRequirementHash = await sha256Hex(JSON.stringify(cfg?.proof_requirements || {}));
+  const records = await Promise.all((result.proofRecords || []).map(async (r: any) => ({
+    uri: r.uri,
+    cid: r.cid,
+    recordType: r.recordType,
+    verifiedAt: r.verifiedAt,
+    recordDigest: await sha256Hex(`${r.uri}|${r.cid}|${r.recordType}|${r.verifiedAt}`),
+  })));
+  const capturedAt = new Date().toISOString();
+  const snapshot: any = { version: '1.0', userDid: did, achievementId: key, capturedAt, proofRequirementHash, records };
+  const integrityHash = await sha256Hex(JSON.stringify(snapshot)); // hash over snapshot WITHOUT integrityHash
+  snapshot.integrityHash = integrityHash;
+  try {
+    await svc.entities.AchievementProofSnapshot.create({
+      achievement_record_id: achievementRecordId, did, achievement_id: key,
+      snapshot_data: snapshot, snapshot_hash: integrityHash, captured_at: capturedAt,
+    });
+  } catch (e) {
+    console.error('[captureProofSnapshot] failed', key, e);
+  }
+  return integrityHash;
+}
+
+async function createAchievementNotification(
+  svc: any,
+  did: string,
+  kind: 'earned' | 'revoked',
+  key: string,
+  reason?: string,
+  restorationPath?: string,
+): Promise<void> {
+  const cfg = ACHIEVEMENT_CONFIG[key];
+  try {
+    await svc.entities.Notification.create({
+      did, action_type: 'reputation', actor_name: 'SwapPulse', actor_handle: 'swappulse',
+      target_type: 'profile', target_path: '/achievements',
+      target_label: kind === 'earned' ? `${cfg?.name || key} unlocked` : buildRevocationReason(key),
+      is_read: false,
+      metadata: { kind, achievementId: key, achievementName: cfg?.name, tier: cfg?.tier, reason, restorationPath },
+    });
+  } catch (e) {
+    console.error('[createAchievementNotification] failed', key, e);
+  }
+}
+
+export interface AchievementEvent {
+  key: string;
+  kind: 'earned' | 'revoked';
+  name: string;
+  tier?: string;
+  reason?: string;
+  restorationPath?: string;
+}
+
 export interface ReconcileOptions {
   notifyOnRevoke?: boolean;
+  notifyOnEarn?: boolean;
   keysToReconcile?: string[];
 }
 
@@ -116,20 +190,21 @@ export async function reconcileAchievements(
   did: string,
   results: Record<string, any>,
   opts: ReconcileOptions = {},
-): Promise<{ revokedCount: number; pendingCount: number }> {
-  const { notifyOnRevoke = false, keysToReconcile = ACHIEVEMENT_KEYS } = opts;
+): Promise<{ revokedCount: number; pendingCount: number; earnedCount: number; events: AchievementEvent[] }> {
+  const { notifyOnRevoke = false, notifyOnEarn = false, keysToReconcile = ACHIEVEMENT_KEYS } = opts;
   const graceHours = GLOBAL_SETTINGS.revocation_grace_period_hours || 0;
   const existing = await svc.entities.Achievement.filter({ did }, '-unlocked_at', 100);
   const byKey = new Map(existing.map((a: any) => [a.achievement_type, a]));
   const now = new Date().toISOString();
-  let revokedCount = 0;
-  let pendingCount = 0;
+  let revokedCount = 0, pendingCount = 0, earnedCount = 0;
+  const events: AchievementEvent[] = [];
 
   for (const key of keysToReconcile) {
     const r = results[key];
     if (!r) continue;
+    const cfg = ACHIEVEMENT_CONFIG[key];
     const ex: any = byKey.get(key);
-    const proofMeta = {
+    const proofMeta: any = {
       metricValue: r.metricValue,
       proofSummary: r.proofSummary,
       proofRecords: r.proofRecords,
@@ -138,15 +213,24 @@ export async function reconcileAchievements(
 
     if (r.qualified) {
       if (!ex) {
-        await svc.entities.Achievement.create({
+        const created = await svc.entities.Achievement.create({
           achievement_type: key, did, status: 'granted', unlocked_at: now,
           related_uri: r.relatedUri || undefined, metadata: proofMeta,
         });
+        const integrityHash = await captureProofSnapshot(svc, did, key, r, created.id);
+        await svc.entities.Achievement.update(created.id, { metadata: { ...proofMeta, integrityHash } });
+        earnedCount++;
+        events.push({ key, kind: 'earned', name: cfg?.name || key, tier: cfg?.tier });
+        if (notifyOnEarn) await createAchievementNotification(svc, did, 'earned', key);
       } else if (ex.status === 'revoked' || ex.revoked_at) {
+        const integrityHash = await captureProofSnapshot(svc, did, key, r, ex.id);
         await svc.entities.Achievement.update(ex.id, {
           status: 'granted', revoked_at: null, pending_revocation_at: null, unlocked_at: now,
-          metadata: { ...(ex.metadata || {}), ...proofMeta },
+          metadata: { ...(ex.metadata || {}), ...proofMeta, integrityHash },
         });
+        earnedCount++;
+        events.push({ key, kind: 'earned', name: cfg?.name || key, tier: cfg?.tier });
+        if (notifyOnEarn) await createAchievementNotification(svc, did, 'earned', key);
       } else {
         const update: any = { metadata: { ...(ex.metadata || {}), ...proofMeta } };
         if (ex.pending_revocation_at) update.pending_revocation_at = null;
@@ -161,62 +245,49 @@ export async function reconcileAchievements(
       } else if (graceHours > 0 && ex.pending_revocation_at) {
         const elapsedHours = (Date.now() - new Date(ex.pending_revocation_at).getTime()) / 3600000;
         if (elapsedHours >= graceHours) {
+          const reason = buildRevocationReason(key);
+          const restorationPath = buildRestorationPath(cfg);
           await svc.entities.Achievement.update(ex.id, {
             status: 'revoked', revoked_at: now, pending_revocation_at: null,
             metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
           });
           revokedCount++;
-          if (notifyOnRevoke) {
-            try {
-              await svc.entities.Notification.create({
-                did, action_type: 'reputation', actor_name: 'SwapPulse', actor_handle: 'swappulse',
-                target_type: 'profile', target_path: '/achievements',
-                target_label: buildRevocationReason(key), is_read: false,
-              });
-            } catch (e) {
-              console.error('[reconcileAchievements] notify failed', e);
-            }
-          }
+          events.push({ key, kind: 'revoked', name: cfg?.name || key, tier: cfg?.tier, reason, restorationPath });
+          if (notifyOnRevoke) await createAchievementNotification(svc, did, 'revoked', key, reason, restorationPath);
         } else {
           await svc.entities.Achievement.update(ex.id, {
             metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
           });
         }
       } else {
+        const reason = buildRevocationReason(key);
+        const restorationPath = buildRestorationPath(cfg);
         await svc.entities.Achievement.update(ex.id, {
           status: 'revoked', revoked_at: now,
           metadata: { ...(ex.metadata || {}), lastEvaluatedAt: now },
         });
         revokedCount++;
-        if (notifyOnRevoke) {
-          try {
-            await svc.entities.Notification.create({
-              did, action_type: 'reputation', actor_name: 'SwapPulse', actor_handle: 'swappulse',
-              target_type: 'profile', target_path: '/achievements',
-              target_label: buildRevocationReason(key), is_read: false,
-            });
-          } catch (e) {
-            console.error('[reconcileAchievements] notify failed', e);
-          }
-        }
+        events.push({ key, kind: 'revoked', name: cfg?.name || key, tier: cfg?.tier, reason, restorationPath });
+        if (notifyOnRevoke) await createAchievementNotification(svc, did, 'revoked', key, reason, restorationPath);
       }
     }
   }
-  return { revokedCount, pendingCount };
+  return { revokedCount, pendingCount, earnedCount, events };
 }
 
 export async function runEvaluationForUser(
   svc: any,
   did: string,
-  opts: { includeSetCompletion?: boolean; notifyOnRevoke?: boolean; keysToReconcile?: string[] } = {},
-): Promise<{ achievements: any[]; revokedCount: number; pendingCount: number }> {
-  const { includeSetCompletion = true, notifyOnRevoke = false, keysToReconcile } = opts;
+  opts: { includeSetCompletion?: boolean; notifyOnRevoke?: boolean; notifyOnEarn?: boolean; keysToReconcile?: string[] } = {},
+): Promise<{ achievements: any[]; revokedCount: number; pendingCount: number; earnedCount: number; events: AchievementEvent[] }> {
+  const { includeSetCompletion = true, notifyOnRevoke = false, notifyOnEarn = false, keysToReconcile } = opts;
   const data = await fetchProofDataForUser(svc, did, { includeSetCompletion });
   const results = evaluateAchievements(data);
-  const { revokedCount, pendingCount } = await reconcileAchievements(svc, did, results, {
+  const { revokedCount, pendingCount, earnedCount, events } = await reconcileAchievements(svc, did, results, {
     notifyOnRevoke,
+    notifyOnEarn,
     keysToReconcile: keysToReconcile || ACHIEVEMENT_KEYS,
   });
   const all = await svc.entities.Achievement.filter({ did }, '-unlocked_at', 100);
-  return { achievements: all, revokedCount, pendingCount };
+  return { achievements: all, revokedCount, pendingCount, earnedCount, events };
 }
