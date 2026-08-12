@@ -44,6 +44,7 @@ import SpaceRoom from '@/pages/SpaceRoom';
 import Notifications from '@/pages/Notifications';
 import Settings from '@/pages/Settings';
 import Help from '@/pages/Help';
+import Status from '@/pages/Status';
 import Donate from '@/pages/Donate';
 import DonateThanks from '@/pages/DonateThanks';
 import HandleProfile from '@/pages/HandleProfile';
@@ -88,6 +89,7 @@ const AuthenticatedApp = () => {
       <Route path="/activate" element={<Activate />} />
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
+      <Route path="/status" element={<Status />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
       <Route path="/compose" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
