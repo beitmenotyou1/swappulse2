@@ -1,0 +1,64 @@
+{
+  "name": "StatusSubscriber",
+  "type": "object",
+  "title": "StatusSubscriber",
+  "description": "org.swappulse.statusSubscriber \u2014 a status page subscriber who receives email notifications when incidents occur or resolve. Uses double-opt-in confirmation.",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Subscriber email address (lowercased)"
+    },
+    "confirm_token": {
+      "type": "string",
+      "description": "One-time token for double-opt-in confirmation"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the subscriber confirmed their email (null = pending)"
+    },
+    "unsubscribe_token": {
+      "type": "string",
+      "description": "Token for one-click unsubscribe from status emails"
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "incidents": {
+          "type": "boolean",
+          "default": true
+        },
+        "resolutions": {
+          "type": "boolean",
+          "default": true
+        },
+        "maintenance": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+  "required": [
+    "email",
+    "confirm_token"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

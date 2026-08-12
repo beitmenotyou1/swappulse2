@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, AlertCircle, RefreshCw, ArrowLeft, Bell, Activity, Clock } from 'lucide-react';
+import {
+  CheckCircle2, XCircle, AlertCircle, RefreshCw, ArrowLeft, Bell, Activity, Clock,
+  Mail, ChevronDown, AlertTriangle, Loader2,
+} from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const SERVICES = [
@@ -11,12 +14,34 @@ const SERVICES = [
   { key: 'vapid', name: 'Push Notifications', desc: 'Web push delivery (VAPID)', criticality: 'Medium' },
 ];
 
+const STATUS_COLORS = {
+  operational: 'text-success',
+  degraded: 'text-warning',
+  outage: 'text-destructive',
+  investigating: 'text-warning',
+  identified: 'text-warning',
+  monitoring: 'text-primary',
+  resolved: 'text-success',
+};
+
+const SEVERITY_BADGE = {
+  critical: 'bg-destructive/15 text-destructive',
+  major: 'bg-warning/15 text-warning',
+  minor: 'bg-primary/15 text-primary',
+};
+
 export default function Status() {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState(null);
+  const [incidents, setIncidents] = useState([]);
+  const [incidentsLoading, setIncidentsLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [subState, setSubState] = useState(null); // null | 'sending' | 'sent' | 'error'
+  const [subMsg, setSubMsg] = useState('');
+  const [confirmMsg, setConfirmMsg] = useState(null);
 
-  const refresh = useCallback(async () => {
+  const refreshHealth = useCallback(async () => {
     setLoading(true);
     try {
       const res = await base44.functions.invoke('health-check', {});
@@ -29,13 +54,86 @@ export default function Status() {
     }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  const loadIncidents = useCallback(async () => {
+    setIncidentsLoading(true);
+    try {
+      const res = await base44.entities.StatusIncident.list('-started_at', 20);
+      setIncidents(res || []);
+    } catch (e) {
+      setIncidents([]);
+    } finally {
+      setIncidentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshHealth();
+    loadIncidents();
+
+    // Handle ?confirm=TOKEN and ?unsubscribe=TOKEN URL params
+    const params = new URLSearchParams(window.location.search);
+    const confirmToken = params.get('confirm');
+    const unsubscribeToken = params.get('unsubscribe');
+
+    if (confirmToken) {
+      base44.functions.invoke('confirm-subscription', { token: confirmToken })
+        .then((res) => {
+          if (res.data?.confirmed || res.data?.alreadyConfirmed) {
+            setConfirmMsg({ type: 'success', text: 'Email confirmed! You\'ll now receive status updates.' });
+          } else {
+            setConfirmMsg({ type: 'error', text: res.data?.error || 'Confirmation failed.' });
+          }
+        })
+        .catch(() => setConfirmMsg({ type: 'error', text: 'Confirmation failed.' }));
+      // Clean URL
+      window.history.replaceState({}, '', '/status');
+    }
+
+    if (unsubscribeToken) {
+      base44.functions.invoke('confirm-subscription', { token: unsubscribeToken, action: 'unsubscribe' })
+        .then((res) => {
+          if (res.data?.unsubscribed) {
+            setConfirmMsg({ type: 'success', text: 'You\'ve been unsubscribed from status updates.' });
+          } else {
+            setConfirmMsg({ type: 'error', text: res.data?.error || 'Unsubscribe failed.' });
+          }
+        })
+        .catch(() => setConfirmMsg({ type: 'error', text: 'Unsubscribe failed.' }));
+      window.history.replaceState({}, '', '/status');
+    }
+  }, [refreshHealth, loadIncidents]);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubState('sending');
+    setSubMsg('');
+    try {
+      const res = await base44.functions.invoke('subscribe-status', { email: email.trim() });
+      if (res.data?.alreadySubscribed) {
+        setSubState('sent');
+        setSubMsg('You\'re already subscribed!');
+      } else if (res.data?.ok) {
+        setSubState('sent');
+        setSubMsg('Check your email to confirm your subscription.');
+      } else {
+        setSubState('error');
+        setSubMsg(res.data?.error || 'Subscription failed.');
+      }
+    } catch (err) {
+      setSubState('error');
+      setSubMsg(err.response?.data?.error || err.message || 'Subscription failed.');
+    }
+  };
 
   const services = health?.services || {};
   const serviceValues = Object.values(services);
   const allUp = serviceValues.length > 0 && serviceValues.every((s) => s?.status === 'up');
   const anyDown = serviceValues.some((s) => s?.status === 'down');
   const OverallIcon = allUp ? CheckCircle2 : AlertCircle;
+
+  const activeIncidents = incidents.filter((i) => i.status !== 'resolved');
+  const pastIncidents = incidents.filter((i) => i.status === 'resolved');
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +152,7 @@ export default function Status() {
             </div>
           </div>
           <button
-            onClick={refresh}
+            onClick={refreshHealth}
             disabled={loading}
             className="rounded-full p-2 hover:bg-secondary disabled:opacity-50"
             aria-label="Refresh status"
@@ -79,10 +177,19 @@ export default function Status() {
             {allUp
               ? 'Every SwapPulse service is running normally.'
               : anyDown
-                ? 'Some services are experiencing issues. We’re aware and working on it.'
+                ? 'Some services are experiencing issues. We\'re aware and working on it.'
                 : 'Hang tight while we check each service.'}
           </p>
         </div>
+
+        {/* Confirmation / unsubscribe messages */}
+        {confirmMsg && (
+          <div className={`rounded-xl border p-3 text-sm ${
+            confirmMsg.type === 'success' ? 'border-success/30 bg-success/10 text-success' : 'border-destructive/30 bg-destructive/10 text-destructive'
+          }`}>
+            {confirmMsg.text}
+          </div>
+        )}
 
         {/* Service grid */}
         <section>
@@ -121,18 +228,80 @@ export default function Status() {
           </div>
         </section>
 
+        {/* Active incidents */}
+        {activeIncidents.length > 0 && (
+          <section>
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              <h3 className="text-lg font-extrabold">Active Incidents</h3>
+            </div>
+            <div className="space-y-3">
+              {activeIncidents.map((inc) => (
+                <IncidentCard key={inc.id} incident={inc} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Past incidents */}
+        <section>
+          <h3 className="mb-3 text-lg font-extrabold">Incident History</h3>
+          {incidentsLoading ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : pastIncidents.length === 0 ? (
+            <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+              No incidents recorded yet. All systems have been operational.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {pastIncidents.map((inc) => (
+                <IncidentCard key={inc.id} incident={inc} />
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Subscribe */}
         <section className="rounded-2xl border border-border bg-card p-4">
           <div className="flex items-start gap-3">
             <Bell className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <div className="flex-1">
               <h3 className="font-bold">Subscribe to status updates</h3>
-              <p className="text-sm text-muted-foreground">
-                Get push notifications when a service goes down or recovers. Configure in Settings → Notifications.
+              <p className="mb-3 text-sm text-muted-foreground">
+                Get an email when a service goes down or recovers. Double-opt-in — check your inbox to confirm.
               </p>
-              <Link to="/settings" className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-                <Bell className="h-4 w-4" /> Notification settings
-              </Link>
+              {subState === 'sent' ? (
+                <div className="rounded-lg bg-success/10 p-3 text-sm text-success">
+                  {subMsg}
+                </div>
+              ) : (
+                <form onSubmit={handleSubscribe} className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      disabled={subState === 'sending'}
+                      className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary disabled:opacity-50"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={subState === 'sending'}
+                    className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {subState === 'sending' ? 'Sending…' : 'Subscribe'}
+                  </button>
+                </form>
+              )}
+              {subState === 'error' && (
+                <p className="mt-2 text-sm text-destructive">{subMsg}</p>
+              )}
             </div>
           </div>
         </section>
@@ -153,6 +322,66 @@ export default function Status() {
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+function IncidentCard({ incident }) {
+  const [expanded, setExpanded] = useState(false);
+  const updates = incident.updates || [];
+  const statusClass = STATUS_COLORS[incident.status] || 'text-muted-foreground';
+  const sevClass = SEVERITY_BADGE[incident.severity] || 'bg-muted text-muted-foreground';
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-start justify-between gap-3 text-left"
+      >
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-bold">{incident.title}</p>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${sevClass}`}>
+              {incident.severity}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {new Date(incident.started_at).toLocaleString()}
+            {incident.resolved_at && ` → Resolved ${new Date(incident.resolved_at).toLocaleString()}`}
+          </p>
+          {(incident.affected_services || []).length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Affected: {incident.affected_services.join(', ')}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold ${statusClass}`}>{incident.status}</span>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {expanded && updates.length > 0 && (
+        <div className="mt-4 space-y-3 border-l-2 border-primary/30 pl-4">
+          {updates.map((upd, i) => (
+            <div key={i} className="relative">
+              <div className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-primary" />
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {new Date(upd.created_at).toLocaleString()}
+                </span>
+                <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                  upd.status === 'resolved' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary'
+                }`}>
+                  {upd.status}
+                </span>
+                <span className="text-xs text-muted-foreground">by {upd.authored_by}</span>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{upd.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

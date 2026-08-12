@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Automated health check every 5 minutes \u2014 creates incidents when services go down, resolves them when they recover, and notifies subscribers.",
+  "name": "Status Monitoring",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "status_monitoring",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_monitor": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "status-monitor",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run status monitor",
+            "description": "Health checks + incident management"
+          }
+        }
+      }
+    ]
+  }
+}

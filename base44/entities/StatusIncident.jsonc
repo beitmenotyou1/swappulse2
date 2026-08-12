@@ -1,0 +1,100 @@
+{
+  "name": "StatusIncident",
+  "type": "object",
+  "title": "StatusIncident",
+  "description": "org.swappulse.statusIncident \u2014 a platform incident record tracking outages or degradations, with developer commentary updates and auto-creation from the monitoring worker.",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe unique identifier"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "investigating",
+        "identified",
+        "monitoring",
+        "resolved"
+      ],
+      "default": "investigating"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "major",
+        "critical"
+      ],
+      "default": "minor"
+    },
+    "affected_services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Service names affected by this incident"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "authored_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "auto_created": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if created by the automated monitoring worker"
+    }
+  },
+  "required": [
+    "title",
+    "status",
+    "severity",
+    "started_at"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
