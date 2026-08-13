@@ -24,6 +24,7 @@ export const NSID = {
   COLLECTION_ENTRY: 'org.swappulse.collectionEntry',
   TRADE_LISTING: 'org.swappulse.tradeListing',
   TRADE_NEGOTIATION: 'org.swappulse.tradeNegotiation',
+  TRADE_DISPUTE: 'org.swappulse.tradeDispute',
   PACK_OPENING: 'org.swappulse.packOpening',
   REPUTATION: 'org.swappulse.reputation',
   MODERATION_LABEL: 'org.swappulse.moderationLabel',

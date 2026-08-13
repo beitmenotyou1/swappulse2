@@ -10,6 +10,7 @@ import FlaggedPostsTable from '@/components/moderation/FlaggedPostsTable';
 import ReviewPanel from '@/components/moderation/ReviewPanel';
 import ActivityFeed from '@/components/moderation/ActivityFeed';
 import BulkActions from '@/components/moderation/BulkActions';
+import TradeDisputesSection from '@/components/moderation/TradeDisputesSection';
 
 const DEFAULT_FILTERS = {
   severity: [],
@@ -34,6 +35,7 @@ export default function Moderation() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [resolving, setResolving] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [tab, setTab] = useState('posts');
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -143,6 +145,26 @@ export default function Moderation() {
       </PageHeader>
 
       <div className="mx-auto max-w-7xl space-y-4 p-4">
+        <div className="flex gap-2 border-b border-border">
+          {[
+            ['posts', 'Flagged Posts'],
+            ['disputes', 'Trade Disputes'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`relative px-3 py-2.5 text-sm font-semibold transition-colors ${tab === key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+            >
+              {label}
+              {tab === key && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'disputes' ? (
+          <TradeDisputesSection />
+        ) : (
+          <>
         <KpiStrip stats={stats} />
         <BulkActions selectedCount={selectedIds.length} onBulk={handleBulk} onClear={clearSelection} />
 
@@ -177,6 +199,8 @@ export default function Moderation() {
             <ActivityFeed logs={logs} onRefresh={fetchActivity} />
           </div>
         </div>
+          </>
+        )}
       </div>
 
       <ReviewPanel post={selectedPost} open={!!selectedPost} onClose={() => setSelectedPost(null)} onResolve={handleResolve} resolving={resolving} />

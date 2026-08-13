@@ -1,0 +1,124 @@
+{
+  "name": "TradeDispute",
+  "type": "object",
+  "title": "TradeDispute",
+  "description": "org.swappulse.tradeDispute \u2014 a user-submitted dispute flag against a trade listing, filed when a collector has an issue with cards received (misgraded, wrong card, damaged, not received, scam). Includes a reason, free-text description, and photos of the cards received as evidence. Moderators review and resolve.",
+  "properties": {
+    "trade_id": {
+      "type": "string",
+      "description": "TradeListing id being disputed"
+    },
+    "trade_ref": {
+      "type": "string",
+      "description": "at:// URI of the disputed trade listing"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "misgraded",
+        "wrong_card",
+        "damaged",
+        "not_received",
+        "scam",
+        "other"
+      ],
+      "description": "The category of dispute"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Free-text explanation of the dispute"
+    },
+    "photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Uploaded photos of the cards received, as evidence"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "reviewed",
+        "resolved",
+        "dismissed"
+      ],
+      "default": "pending"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Moderator notes on the resolution decision"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "User id of the moderator who resolved the dispute"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "filed_by_name": {
+      "type": "string"
+    },
+    "filed_by_handle": {
+      "type": "string"
+    },
+    "filed_by_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the filer (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (simulated)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.tradeDispute)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the dispute to the filer's signing key (simulated)"
+    }
+  },
+  "required": [
+    "trade_id",
+    "reason",
+    "description"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

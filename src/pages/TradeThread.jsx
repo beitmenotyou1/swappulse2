@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, ArrowLeft, Send, Bell, BellRing } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Bell, BellRing, Flag } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
@@ -10,6 +10,7 @@ import { unbridgeRecord } from '@/lib/atprotoRecords';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
 import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
+import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
@@ -24,6 +25,8 @@ export default function TradeThread() {
   const [statusBusy, setStatusBusy] = useState(false);
   const [watching, setWatching] = useState(false);
   const [watchBusy, setWatchBusy] = useState(false);
+  const [showDispute, setShowDispute] = useState(false);
+  const [alreadyDisputed, setAlreadyDisputed] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -39,6 +42,10 @@ export default function TradeThread() {
         setMessages(m);
         setMe(u);
         setWatching(watches.length > 0);
+        if (u) {
+          const myDisputes = await base44.entities.TradeDispute.filter({ trade_id: tradeId }).catch(() => []);
+          setAlreadyDisputed(myDisputes.some((d) => d.created_by_id === u.id));
+        }
       } finally {
         setLoading(false);
       }
@@ -162,6 +169,20 @@ export default function TradeThread() {
                 <span className="text-xs text-muted-foreground">Get notified on updates and completion.</span>
               </div>
             )}
+            {me && ['pending_ship', 'completed'].includes(trade.status) && (
+              <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+                {alreadyDisputed ? (
+                  <span className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive">
+                    <Flag className="h-3.5 w-3.5" /> Dispute filed
+                  </span>
+                ) : (
+                  <button onClick={() => setShowDispute(true)} className="flex items-center gap-1.5 rounded-full border border-destructive/30 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10">
+                    <Flag className="h-3.5 w-3.5" /> Report a Dispute
+                  </button>
+                )}
+                <span className="text-xs text-muted-foreground">Flag for moderation if something went wrong with the cards.</span>
+              </div>
+            )}
             {isOwner && (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">Status</span>
@@ -221,6 +242,16 @@ export default function TradeThread() {
             </div>
           </div>
         </div>
+      )}
+
+      {showDispute && (
+        <TradeDisputeForm
+          trade={trade}
+          me={me}
+          open={showDispute}
+          onClose={() => setShowDispute(false)}
+          onFiled={() => setAlreadyDisputed(true)}
+        />
       )}
     </div>
   );
