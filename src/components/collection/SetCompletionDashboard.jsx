@@ -3,6 +3,7 @@ import { Loader2, Target, ChevronDown, ChevronRight, CheckCircle2, Search } from
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getSets, getSet, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import ChecklistDownloads from '@/components/collection/ChecklistDownloads';
 
 // §4.1 Set Completion dashboard - per-set progress with milestone badges
 // (25 / 50 / 75 / 100, matching Achievement set_completion_* types) and a
@@ -248,6 +249,15 @@ export default function SetCompletionDashboard({ items }) {
               {open && (
                 <div className="border-t border-border p-3">
                   {renderMissing(s.id)}
+                  {setCards[s.id] && setCards[s.id].length > 0 && (
+                    <ChecklistDownloads
+                      setName={s.name}
+                      setId={s.id}
+                      totalCards={s.total}
+                      allCards={setCards[s.id]}
+                      ownedLocalIds={Array.from(bySet[s.id]?.owned?.keys() || [])}
+                    />
+                  )}
                 </div>
               )}
             </div>
