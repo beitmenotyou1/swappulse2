@@ -15,7 +15,7 @@ import { NSID, ensureUserDid, stampRecord } from '@/lib/atproto';
 
 // --- CollectionEntry: entity row → AT Protocol record ---
 
-export function buildCollectionEntryRecord(entry) {
+export function buildCollectionEntryRecord(entry, authorDid = '', authorName = '', authorHandle = '', authorAvatar = '') {
   return {
     $type: NSID.COLLECTION_ENTRY,
     cardUri: entry.card_id || '',
@@ -34,13 +34,17 @@ export function buildCollectionEntryRecord(entry) {
     notes: entry.notes || '',
     showcased: entry.showcased ?? false,
     binderIndex: entry.binder_index ?? 0,
+    authorDid: authorDid || '',
+    authorName: authorName || '',
+    authorHandle: authorHandle || '',
+    authorAvatar: authorAvatar || '',
     createdAt: entry.created_date || new Date().toISOString(),
   };
 }
 
 // --- TradeListing: entity row → AT Protocol record ---
 
-export function buildTradeListingRecord(listing) {
+export function buildTradeListingRecord(listing, authorDid = '', authorName = '', authorHandle = '', authorAvatar = '') {
   return {
     $type: NSID.TRADE_LISTING,
     offerCardUris: listing.offer_card_ids || [],
@@ -55,6 +59,10 @@ export function buildTradeListingRecord(listing) {
     preferredCurrency: listing.preferred_currency || 'GBP',
     notes: listing.notes || '',
     expiresAt: listing.expires_at || '',
+    authorDid: authorDid || '',
+    authorName: authorName || '',
+    authorHandle: authorHandle || '',
+    authorAvatar: authorAvatar || '',
     createdAt: listing.created_date || new Date().toISOString(),
   };
 }
@@ -87,7 +95,15 @@ async function bridgeRecord(entityName, record, nsid, entityId) {
 }
 
 export async function bridgeCollectionEntry(entry) {
-  const record = buildCollectionEntryRecord(entry);
+  const { did } = await ensureUserDid();
+  let authorName = '', authorHandle = '', authorAvatar = '';
+  try {
+    const me = await base44.auth.me();
+    authorName = me?.full_name || '';
+    authorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    authorAvatar = me?.avatar || '';
+  } catch {}
+  const record = buildCollectionEntryRecord(entry, did, authorName, authorHandle, authorAvatar);
   const stamped = await bridgeRecord('CollectionEntry', record, NSID.COLLECTION_ENTRY, entry.id);
   return {
     did: stamped.did,
@@ -100,7 +116,15 @@ export async function bridgeCollectionEntry(entry) {
 }
 
 export async function bridgeTradeListing(listing) {
-  const record = buildTradeListingRecord(listing);
+  const { did } = await ensureUserDid();
+  let authorName = '', authorHandle = '', authorAvatar = '';
+  try {
+    const me = await base44.auth.me();
+    authorName = me?.full_name || '';
+    authorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    authorAvatar = me?.avatar || '';
+  } catch {}
+  const record = buildTradeListingRecord(listing, did, authorName, authorHandle, authorAvatar);
   const stamped = await bridgeRecord('TradeListing', record, NSID.TRADE_LISTING, listing.id);
   return {
     did: stamped.did,
@@ -117,7 +141,8 @@ export async function bridgeTradeListing(listing) {
 // The at_uri stays the same (putRecord replaces in place); only the cid changes.
 export async function updateBridgedTradeListing(listing) {
   if (!listing?.at_uri || !listing?.bridged) return null;
-  const record = buildTradeListingRecord(listing);
+  const { did } = await ensureUserDid().catch(() => ({ did: '' }));
+  const record = buildTradeListingRecord(listing, did, listing.author_name || '', listing.author_handle || '', listing.author_avatar || '');
   try {
     const res = await base44.functions.invoke('atproto-bridge', {
       action: 'update',

@@ -59,7 +59,15 @@
           "createdAt": {
             "type": "string",
             "format": "datetime"
-          }
+          },
+          "authorDid": {
+            "type": "string",
+            "format": "did",
+            "description": "AT Protocol DID of the collection owner (embedded so the record is self-describing on the network)"
+          },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "authorAvatar": { "type": "string", "format": "uri" }
         }
       }
     }

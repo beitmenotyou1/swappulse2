@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ExploreCardTile from '@/components/cards/ExploreCardTile';
+import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 
 export default function Explore() {
   const { settings } = useSettings();
@@ -110,6 +111,9 @@ export default function Explore() {
 
       {!searched && (
         <div className="p-4">
+          <div className="mb-6">
+            <NetworkFeedSection limit={12} title="From the Network" />
+          </div>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
             <Flame className="h-4 w-4 text-accent" /> Recent Sets
           </h2>

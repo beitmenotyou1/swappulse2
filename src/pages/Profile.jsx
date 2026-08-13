@@ -18,6 +18,7 @@ import GoLiveModal from '@/components/spaces/GoLiveModal';
 import GoLiveControl from '@/components/profile/GoLiveControl';
 import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
+import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 
 const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
@@ -174,28 +175,12 @@ export default function Profile() {
           </div>
         ) : tab === 'Collection' ? (
           <div className="p-4">
-            <p className="mb-2 text-sm text-muted-foreground">Portfolio value: <b className="text-foreground">{formatPrice(portfolioValue)}</b></p>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {myCollection.map((c) => (
-                <Link key={c.id} to={`/card/${c.card_id}`} className="overflow-hidden rounded-lg border border-border bg-card">
-                  {cardImageUrl(c.card_image) ? (
-                    <img src={cardImageUrl(c.card_image)} alt={c.card_name} className="aspect-[3/4] w-full object-cover" />
-                  ) : <div className="aspect-[3/4] bg-secondary" />}
-                  <p className="truncate p-1 text-[10px] font-semibold">{c.card_name}</p>
-                </Link>
-              ))}
-            </div>
+            <p className="mb-3 text-sm text-muted-foreground">Portfolio value: <b className="text-foreground">{formatPrice(portfolioValue)}</b></p>
+            <NetworkFeedSection type="collections" did={did} limit={24} title="My Collection on the Network" />
           </div>
         ) : tab === 'Trades' ? (
-          <div className="p-4 space-y-2">
-            {myTrades.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">No trade listings yet.</p>
-            ) : myTrades.map((t) => (
-              <Link to="/trades" key={t.id} className="block rounded-xl border border-border bg-card p-3">
-                <p className="text-sm font-semibold">Offering {t.offer_card_names?.join(', ')}</p>
-                <p className="text-xs text-muted-foreground">Wants {t.wanted_card_names?.join(', ')}</p>
-              </Link>
-            ))}
+          <div className="p-4">
+            <NetworkFeedSection type="trades" did={did} limit={20} title="My Trades on the Network" />
           </div>
         ) : tab === 'Journals' ? (
           <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
