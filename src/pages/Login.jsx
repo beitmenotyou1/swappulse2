@@ -51,6 +51,10 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("send-login-code", { email });
+      if (res.data?.not_found) {
+        setError("not_found");
+        return;
+      }
       if (res.data?.needs_setup) {
         // Existing user without passwordless login — trigger one-time setup
         try {
@@ -144,8 +148,21 @@ export default function Login() {
         </>
       }
     >
-      {error && (
+      {error && error !== "not_found" && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+      )}
+      {error === "not_found" && (
+        <div className="mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-3">
+          <p className="text-sm text-destructive font-medium">
+            No account found with this email address.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            You'll need to create an account to join SwapPulse and start collecting, trading, and connecting.
+          </p>
+          <Link to={`/register?email=${encodeURIComponent(email)}`} className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+            Create an account <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       )}
       {info && (step === "code" || step === "setup") && (
         <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm">{info}</div>

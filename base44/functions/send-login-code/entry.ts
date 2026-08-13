@@ -10,11 +10,11 @@ export default async function(req) {
     const email = (body.email || '').trim().toLowerCase();
     if (!email) return Response.json({ error: 'Email is required' }, { status: 400 });
 
-    // Find user by email
+    // Find user by email — return not_found so the UI can guide to registration
     const users = await svc.entities.User.filter({ email }, '-created_date', 1);
     if (!users || users.length === 0) {
-      // Don't reveal whether the email exists — return success
-      return Response.json({ code_sent: true });
+      // Let the user know they need to create an account first
+      return Response.json({ not_found: true });
     }
     const user = users[0];
 
