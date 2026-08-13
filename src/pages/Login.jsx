@@ -24,6 +24,7 @@ export default function Login() {
   const [info, setInfo] = useState("");
   const [pendingLoginKey, setPendingLoginKey] = useState(null);
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -107,6 +108,7 @@ export default function Login() {
       // Log in with the stored login_key
       setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
       await base44.auth.loginViaEmailPassword(email, loginKey);
+      applySessionPersistence();
       // SDK sets the token but does NOT hard-redirect — redirect explicitly
       const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
       window.location.href = returnTo;
@@ -121,6 +123,7 @@ export default function Login() {
     setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
     try {
       await base44.auth.loginViaEmailPassword(email, pendingLoginKey);
+      applySessionPersistence();
       // SDK sets the token but does NOT hard-redirect — redirect explicitly
       const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
       window.location.href = returnTo;
@@ -130,6 +133,19 @@ export default function Login() {
       setOtp("");
       setPendingLoginKey(null);
     }
+  };
+
+  // When "Stay Logged In" is unchecked, move the auth token from localStorage
+  // (where the SDK stores it) to sessionStorage so it's cleared when the browser closes
+  const applySessionPersistence = () => {
+    if (stayLoggedIn) return;
+    try {
+      const token = localStorage.getItem("base44_access_token");
+      if (token) {
+        sessionStorage.setItem("base44_access_token", token);
+        localStorage.removeItem("base44_access_token");
+      }
+    } catch {}
   };
 
   const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -187,6 +203,15 @@ export default function Login() {
               />
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={stayLoggedIn}
+              onChange={(e) => setStayLoggedIn(e.target.checked)}
+              className="h-4 w-4 rounded border-border"
+            />
+            <span>Stay logged in on this device</span>
+          </label>
           <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
             {loading ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending code...</>

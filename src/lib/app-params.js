@@ -1,6 +1,7 @@
 const isNode = typeof window === 'undefined';
-const windowObj = isNode ? { localStorage: new Map() } : window;
+const windowObj = isNode ? { localStorage: new Map(), sessionStorage: new Map() } : window;
 const storage = windowObj.localStorage;
+const sessionStorage = windowObj.sessionStorage;
 
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -30,6 +31,11 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 	const storedValue = storage.getItem(storageKey);
 	if (storedValue) {
 		return storedValue;
+	}
+	// Fallback to sessionStorage (used when "Stay logged in" is unchecked)
+	const sessionValue = sessionStorage?.getItem(storageKey);
+	if (sessionValue) {
+		return sessionValue;
 	}
 	return null;
 }
