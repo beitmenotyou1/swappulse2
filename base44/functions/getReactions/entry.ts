@@ -16,13 +16,16 @@ Deno.serve(async (req) => {
     for (const id of postIds) result[id] = { counts: {}, mine: null, mineId: null };
     if (!postIds.length) return Response.json({ reactions: result });
 
-    const set = new Set(postIds);
-    const all = await svc.entities.Reaction.list('-created_date', 1000);
+    const all = await svc.entities.Reaction.filter(
+      { post_id: { $in: postIds } },
+      '-created_date',
+      1000
+    );
     for (const r of all) {
-      if (!set.has(r.post_id)) continue;
       const entry = result[r.post_id];
+      if (!entry) continue;
       entry.counts[r.reaction_type] = (entry.counts[r.reaction_type] || 0) + 1;
-      if (r.did === user.did) {
+      if (r.created_by_id === user.id) {
         entry.mine = r.reaction_type;
         entry.mineId = r.id;
       }
