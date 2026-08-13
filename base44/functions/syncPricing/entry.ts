@@ -41,6 +41,17 @@ Deno.serve(async (req) => {
     let updated = 0;
     const errors: any[] = [];
 
+    // Batch-fetch all existing CardPricing records for the tracked card IDs
+    // in one call, then look them up from the map inside the loop (avoids a
+    // per-card, per-source filter query — up to 160 filter calls → 1).
+    const existingPricing: any[] = ids.length
+      ? await svc.entities.CardPricing.filter({ card_id: { $in: ids } }, '-updated_date', 500).catch(() => [])
+      : [];
+    const pricingMap = new Map<string, any>();
+    for (const p of existingPricing) {
+      pricingMap.set(`${p.card_id}|${p.source}`, p);
+    }
+
     for (const cardId of ids) {
       try {
         const card: any = await limiter.enqueue(() => fetchTcgdex(`/cards/${encodeURIComponent(cardId)}`));
@@ -88,9 +99,9 @@ Deno.serve(async (req) => {
             };
           }
 
-          const existing = await svc.entities.CardPricing.filter({ card_id: cardId, source });
-          if (existing.length) {
-            await svc.entities.CardPricing.update(existing[0].id, payload);
+          const existing = pricingMap.get(`${cardId}|${source}`);
+          if (existing) {
+            await svc.entities.CardPricing.update(existing.id, payload);
           } else {
             await svc.entities.CardPricing.create({ card_id: cardId, source, ...payload });
           }

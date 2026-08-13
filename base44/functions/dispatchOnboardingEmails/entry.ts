@@ -96,10 +96,11 @@ Deno.serve(async (req) => {
     const sent = new Set(sentRecords.map((r) => r.user_id + ":" + r.email_type));
 
     let day1 = 0, day3 = 0, day7 = 0, failed = 0;
+    const pendingCreates: any[] = [];
     const send = async (u, type, emailObj) => {
       try {
         await sendBrandedEmail({ to: u.email, ...emailObj });
-        await svc.entities.OnboardingEmail.create({
+        pendingCreates.push({
           user_id: u.id,
           email_type: type,
           sent_at: new Date().toISOString(),
@@ -123,6 +124,13 @@ Deno.serve(async (req) => {
       }
       if (ageDays >= 7 && !sent.has(u.id + ":day7")) {
         if (await send(u, "day7", buildDay7Email(u.full_name))) { day7++; sent.add(u.id + ":day7"); }
+      }
+    }
+
+    // Batch-create all onboarding email logs in one call.
+    if (pendingCreates.length) {
+      try { await svc.entities.OnboardingEmail.bulkCreate(pendingCreates); } catch (e) {
+        console.error('dispatchOnboardingEmails bulkCreate failed', e?.message || e);
       }
     }
 

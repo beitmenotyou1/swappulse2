@@ -29,6 +29,7 @@ Deno.serve(async (req) => {
     const users = await svc.entities.User.list();
     const userById = new Map(users.map((u) => [u.id, u]));
 
+    const triggeredIds: string[] = [];
     let triggered = 0;
     let notified = 0;
     for (const s of searches) {
@@ -86,8 +87,16 @@ Deno.serve(async (req) => {
         } catch { /* email delivery failed */ }
       }
 
-      await svc.entities.SavedSearch.update(s.id, { last_triggered_at: new Date().toISOString() });
+      triggeredIds.push(s.id);
       triggered++;
+    }
+
+    // Batch-update last_triggered_at for all triggered searches in one call.
+    if (triggeredIds.length) {
+      await svc.entities.SavedSearch.updateMany(
+        { id: { $in: triggeredIds } },
+        { $set: { last_triggered_at: new Date().toISOString() } },
+      ).catch(() => {});
     }
 
     return Response.json({ triggered, notified, searches: searches.length });

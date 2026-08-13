@@ -7,12 +7,20 @@ function fmt(pence) {
   return "£" + (pence / 100).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-async function buildDigestStats(svc, user) {
-  const [collection, trades, wishlist] = await Promise.all([
-    svc.entities.CollectionEntry.filter({ created_by_id: user.id }, "-updated_date", 500).catch(() => []),
-    svc.entities.TradeListing.filter({ created_by_id: user.id }, "-created_date", 20).catch(() => []),
-    svc.entities.Wishlist.filter({ created_by_id: user.id }, "-updated_date", 50).catch(() => []),
-  ]);
+function partitionByOwner(records) {
+  const map = new Map();
+  for (const r of records) {
+    const key = r.created_by_id;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  }
+  return map;
+}
+
+async function buildDigestStats(svc, user, collectionByOwner, tradesByOwner, wishlistByOwner) {
+  const collection = collectionByOwner.get(user.id) || [];
+  const trades = tradesByOwner.get(user.id) || [];
+  const wishlist = wishlistByOwner.get(user.id) || [];
 
   const totalValue = collection.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const openTrades = trades.filter((t) => t.status === "open").length;
@@ -42,14 +50,22 @@ Deno.serve(async (req) => {
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const svc = base44.asServiceRole;
-    const all = await svc.entities.User.list();
+    const [all, collection, trades, wishlist] = await Promise.all([
+      svc.entities.User.list(),
+      svc.entities.CollectionEntry.list("-updated_date", 500).catch(() => []),
+      svc.entities.TradeListing.list("-created_date", 200).catch(() => []),
+      svc.entities.Wishlist.list("-updated_date", 500).catch(() => []),
+    ]);
     const opted = all.filter((u) => u.weekly_digest === true);
+    const collectionByOwner = partitionByOwner(collection);
+    const tradesByOwner = partitionByOwner(trades);
+    const wishlistByOwner = partitionByOwner(wishlist);
     let sent = 0;
     let failed = 0;
     for (const u of opted) {
       if (!u.email) continue;
       try {
-        const stats = await buildDigestStats(svc, u);
+        const stats = buildDigestStats(svc, u, collectionByOwner, tradesByOwner, wishlistByOwner);
         const email = buildWeeklyDigestEmail(u.full_name, stats);
         await sendBrandedEmail({ to: u.email, ...email });
         sent++;
