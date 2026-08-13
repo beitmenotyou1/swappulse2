@@ -1,0 +1,60 @@
+{
+  "name": "StatusUpdate",
+  "type": "object",
+  "title": "StatusUpdate",
+  "description": "org.swappulse.statusUpdate \u2014 an individual automated or manual status change record for a service. Powers the status bar history.",
+  "properties": {
+    "service_slug": {
+      "type": "string",
+      "description": "Slug of the StatusService this update belongs to"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "operational",
+        "degraded",
+        "outage",
+        "maintenance"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "automated",
+        "manual"
+      ],
+      "description": "automated = monitoring worker, manual = admin update"
+    },
+    "authored_by": {
+      "type": "string",
+      "description": "Developer name or 'system-monitor' for automated"
+    }
+  },
+  "required": [
+    "service_slug",
+    "status",
+    "message",
+    "type"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

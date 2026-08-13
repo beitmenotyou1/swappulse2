@@ -1,0 +1,56 @@
+{
+  "name": "StatusMaintenanceWindow",
+  "type": "object",
+  "title": "StatusMaintenanceWindow",
+  "description": "org.swappulse.statusMaintenanceWindow \u2014 a scheduled maintenance announcement shown on the status page so users are not surprised when a service briefly goes down.",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string"
+    },
+    "starts_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ends_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "affected_services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Service slugs affected by this maintenance window"
+    },
+    "created_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "starts_at",
+    "ends_at"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

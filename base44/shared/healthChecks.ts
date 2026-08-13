@@ -41,3 +41,16 @@ export function checkVapid() {
 export function checkBase44() {
   return { status: 'up', latencyMs: 0 };
 }
+
+export async function checkAtProtoRelay() {
+  try {
+    const start = Date.now();
+    const res = await fetch('https://bsky.network/xrpc/_health', {
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { status: 'up', latencyMs: Date.now() - start };
+  } catch (e) {
+    return { status: 'down', error: e?.message || String(e) };
+  }
+}

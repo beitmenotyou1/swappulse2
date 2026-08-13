@@ -1,16 +1,24 @@
 // status-monitor — automated monitoring worker called by the Status Monitoring
-// workflow every 5 minutes. Runs health checks, creates incidents when services
-// go down, resolves them when they recover, and notifies subscribers.
+// workflow every 5 minutes. Runs health checks, updates StatusService records,
+// creates StatusUpdate records on status changes, creates/resolves incidents,
+// and notifies subscribers.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { checkTcgdex, checkDatabase, checkSmtp, checkVapid, checkBase44 } from '../../shared/healthChecks.ts';
+import { checkTcgdex, checkDatabase, checkSmtp, checkVapid, checkBase44, checkAtProtoRelay } from '../../shared/healthChecks.ts';
 import { notifyStatusSubscribers } from '../../shared/statusNotifications.ts';
 
-const SERVICE_MAP = {
-  base44: { name: 'SwapPulse Platform', criticality: 'critical' },
-  database: { name: 'Database', criticality: 'critical' },
-  tcgdex: { name: 'TCGDex Catalog', criticality: 'high' },
-  smtp: { name: 'Email Service', criticality: 'medium' },
-  vapid: { name: 'Push Notifications', criticality: 'medium' },
+// Maps health-check keys to StatusService slugs
+const SLUG_MAP = {
+  base44: 'web-app',
+  database: 'postgresql',
+  tcgdex: 'tcgdex-api',
+  'atproto-relay': 'atproto-relay',
+};
+
+const SERVICE_NAMES = {
+  'web-app': 'SwapPulse Web App',
+  'postgresql': 'PostgreSQL Database',
+  'tcgdex-api': 'TCGDex API',
+  'atproto-relay': 'AT Protocol Relay (Firehose)',
 };
 
 function slugify(text) {
@@ -23,17 +31,23 @@ export default async function(req) {
     const svc = base44.asServiceRole;
 
     // Run all health checks
-    const [tcgdex, database] = await Promise.all([
+    const [tcgdex, database, relay] = await Promise.all([
       checkTcgdex(),
       checkDatabase(base44).catch((e) => ({ status: 'down', error: e?.message || String(e) })),
+      checkAtProtoRelay(),
     ]);
     const services = {
       base44: checkBase44(),
       database,
       tcgdex,
+      'atproto-relay': relay,
       smtp: checkSmtp(),
       vapid: checkVapid(),
     };
+
+    // Fetch StatusService records for mappable services
+    const allServiceRecords = await svc.entities.StatusService.list('-created_date', 100);
+    const serviceBySlug = new Map(allServiceRecords.map((s) => [s.slug, s]));
 
     // Fetch open incidents
     const allIncidents = await svc.entities.StatusIncident.list('-started_at', 100);
@@ -41,26 +55,53 @@ export default async function(req) {
 
     const created = [];
     const resolved = [];
+    let updatesCreated = 0;
 
     for (const [key, result] of Object.entries(services)) {
-      const svcInfo = SERVICE_MAP[key];
-      if (!svcInfo) continue;
-      const serviceName = svcInfo.name;
-      const isDown = result.status === 'down';
+      const slug = SLUG_MAP[key];
+      if (!slug) continue; // Skip smtp/vapid — no StatusService mapping
 
-      // Find open incident affecting this service
+      const serviceName = SERVICE_NAMES[slug] || slug;
+      const isDown = result.status === 'down';
+      const newStatus = isDown ? 'outage' : 'operational';
+      const now = new Date().toISOString();
+
+      const serviceRecord = serviceBySlug.get(slug);
+      const oldStatus = serviceRecord?.current_status || 'operational';
+
+      // Update StatusService + create StatusUpdate if status changed
+      if (serviceRecord) {
+        if (newStatus !== oldStatus) {
+          await svc.entities.StatusService.update(serviceRecord.id, {
+            current_status: newStatus,
+            last_checked_at: now,
+          });
+          await svc.entities.StatusUpdate.create({
+            service_slug: slug,
+            status: newStatus,
+            message: isDown
+              ? `Automated monitoring detected ${serviceName} is down${result.error ? ': ' + result.error : ''}.`
+              : `${serviceName} has recovered. Automated monitoring confirms the service is operational.`,
+            type: 'automated',
+            authored_by: 'system-monitor',
+          });
+          updatesCreated++;
+        } else {
+          await svc.entities.StatusService.update(serviceRecord.id, { last_checked_at: now });
+        }
+      }
+
+      // Incident management
       const openForService = openIncidents.find((inc) =>
         (inc.affected_services || []).includes(serviceName)
       );
 
       if (isDown && !openForService) {
-        // Create new incident
-        const now = new Date().toISOString();
         const incident = await svc.entities.StatusIncident.create({
           title: `${serviceName} Experiencing Issues`,
           slug: slugify(serviceName) + '-' + Date.now().toString(36),
           status: 'investigating',
-          severity: svcInfo.criticality === 'critical' ? 'critical' : svcInfo.criticality === 'high' ? 'major' : 'minor',
+          severity: serviceRecord?.criticality === 'critical' ? 'critical' : serviceRecord?.criticality === 'high' ? 'major' : 'minor',
           affected_services: [serviceName],
           started_at: now,
           updates: [{
@@ -76,9 +117,7 @@ export default async function(req) {
       }
 
       if (!isDown && openForService) {
-        // Resolve the incident
-        const now = new Date().toISOString();
-        const updates = [...(openForService.updates || []), {
+        const updatesArr = [...(openForService.updates || []), {
           text: `${serviceName} has recovered. Automated monitoring confirms the service is operational.`,
           status: 'resolved',
           authored_by: 'system-monitor',
@@ -87,7 +126,7 @@ export default async function(req) {
         const updated = await svc.entities.StatusIncident.update(openForService.id, {
           status: 'resolved',
           resolved_at: now,
-          updates,
+          updates: updatesArr,
         });
         resolved.push(updated);
         await notifyStatusSubscribers(base44, updated, 'incident_resolved');
@@ -99,6 +138,7 @@ export default async function(req) {
       services,
       created: created.length,
       resolved: resolved.length,
+      updates: updatesCreated,
     });
   } catch (error) {
     console.error('status-monitor error', error?.message || error);

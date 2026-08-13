@@ -1,0 +1,85 @@
+{
+  "name": "StatusService",
+  "type": "object",
+  "title": "StatusService",
+  "description": "org.swappulse.statusService \u2014 a SwapPulse service being monitored on the status page. Seeded with 14 services across Alpha 1.0\u20131.3.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe unique identifier"
+    },
+    "description": {
+      "type": "string"
+    },
+    "endpoint_url": {
+      "type": "string",
+      "description": "Health check endpoint URL (null for internal services checked via TCP)"
+    },
+    "check_interval_seconds": {
+      "type": "integer",
+      "default": 60
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "default": 10
+    },
+    "criticality": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "current_status": {
+      "type": "string",
+      "enum": [
+        "operational",
+        "degraded",
+        "outage",
+        "maintenance"
+      ],
+      "default": "operational"
+    },
+    "last_checked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "name",
+    "slug",
+    "criticality"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
