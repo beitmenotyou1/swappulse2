@@ -134,6 +134,7 @@ const AuthenticatedApp = () => {
           <Route path="/moderation" element={<Moderation />} />
           <Route path="/who-to-follow" element={<WhoToFollow />} />
           <Route path="/achievements" element={<Achievements />} />
+          <Route path="/trade-assistant" element={<TradeAssistant />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
