@@ -28,6 +28,7 @@ export const ROUTE_MAP: Record<string, (params: Record<string, unknown>) => stri
   follow: (p) => `/profile/${p.followerDid}`,
   message: (p) => `/trades/${p.tradeId}`,
   reputation: (p) => '/trust',
+  trade_update: (p) => `/trade/${p.tradeId}`,
   pack_pull: (p) => '/pack-openings',
   // Aliases for Notification entity action_type values
   voice_live: (p) => '/spaces',

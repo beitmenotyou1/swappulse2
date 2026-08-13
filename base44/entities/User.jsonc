@@ -52,6 +52,10 @@
     "login_key": {
       "type": "string",
       "description": "Random password used for passwordless email-code login (stored during registration or setup flow)"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user"
     }
   },
   "required": [
