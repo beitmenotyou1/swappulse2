@@ -15,7 +15,7 @@ export default function Logo({ size = 32, withText = false }) {
         />
       </div>
       {withText && (
-        <span className="text-xl font-extrabold tracking-tight">
+        <span className="hidden text-xl font-extrabold tracking-tight xl:inline">
           Swap<span className="text-gradient-pulse">Pulse</span>
         </span>
       )}
