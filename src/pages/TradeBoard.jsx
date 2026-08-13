@@ -9,6 +9,7 @@ import { TRADE_STATUS_LABELS } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link, useLocation } from 'react-router-dom';
 import { bridgeTradeListing } from '@/lib/atprotoRecords';
+import { useToast } from "@/components/ui/use-toast";
 
 export default function TradeBoard() {
   const [listings, setListings] = useState([]);
@@ -150,6 +151,8 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState('offers');
   const [saving, setSaving] = useState(false);
+  const [bridgeStatus, setBridgeStatus] = useState('idle');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!open) return;
@@ -205,15 +208,37 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
         author_handle: '',
       });
       // Mirror to AT Protocol PDS and persist the real at_uri/cid back to the entity
+      let bridgedUri = null;
+      let bridgeOk = false;
       if (created?.id) {
+        setBridgeStatus('syncing');
         try {
           const bridged = await bridgeTradeListing(created);
           await base44.entities.TradeListing.update(created.id, bridged);
+          bridgedUri = bridged.at_uri || null;
+          bridgeOk = !!bridged.bridged;
+          setBridgeStatus(bridgeOk ? 'synced' : 'failed');
         } catch (e) {
           console.error('atprotoRecords: bridge trade listing failed', e);
+          setBridgeStatus('failed');
         }
       }
+      if (bridgeOk && bridgedUri) {
+        toast({
+          title: '✅ Listing published & synced to AT Protocol',
+          description: `PDS record: ${bridgedUri}`,
+          duration: 6000,
+        });
+      } else {
+        toast({
+          title: '⚠️ Listing published locally',
+          description: 'PDS sync failed — your listing is live but not yet federated.',
+          variant: 'destructive',
+          duration: 6000,
+        });
+      }
       setOffers([]); setWants([]); setNotes(''); setCircleRef('');
+      setBridgeStatus('idle');
       onClose();
       onCreated();
     } catch (e) {
@@ -328,7 +353,12 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
         <div className="mt-5 flex gap-2">
           <button onClick={onClose} className="flex-1 rounded-full border border-border py-2.5 text-sm font-semibold hover:bg-secondary">Cancel</button>
           <button onClick={handleSave} disabled={saving} className="flex-1 rounded-full bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
-            {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : 'Publish Listing'}
+            {saving ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {bridgeStatus === 'syncing' ? 'Syncing to PDS…' : 'Publishing…'}
+              </span>
+            ) : 'Publish Listing'}
           </button>
         </div>
       </div>
