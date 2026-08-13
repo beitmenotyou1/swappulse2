@@ -12,30 +12,29 @@ Deno.serve(async (req) => {
     }
 
     const txtName = `_atproto.${domain}`;
+    // Parallelize the two independent verification fetches (DNS-over-HTTPS + well-known HTML).
     let txtRecords = [];
     let txtMatch = false;
-    try {
-      const doh = await fetch(
-        `https://dns.google/resolve?name=${encodeURIComponent(txtName)}&type=TXT`,
-      ).then((r) => r.json());
-      txtRecords = (doh?.Answer || [])
+    let htmlMatch = false;
+    const [dohResult, htmlResult] = await Promise.allSettled([
+      fetch(`https://dns.google/resolve?name=${encodeURIComponent(txtName)}&type=TXT`).then((r) => r.json()),
+      fetch(`https://${domain}/.well-known/atproto-did`, { redirect: 'follow' }).then(async (r) => {
+        if (r.ok) return (await r.text()).trim();
+        return '';
+      }),
+    ]);
+    if (dohResult.status === 'fulfilled') {
+      txtRecords = (dohResult.value?.Answer || [])
         .filter((a) => a.type === 16)
         .map((a) => String(a.data || '').replace(/"/g, ''));
       txtMatch = txtRecords.some((t) => t.includes(`did=${did}`));
-    } catch (e) {
-      console.error('handleClaim DNS lookup failed', e?.message || e);
+    } else {
+      console.error('handleClaim DNS lookup failed', dohResult.reason?.message || dohResult.reason);
     }
-
-    let htmlMatch = false;
-    try {
-      const r = await fetch(`https://${domain}/.well-known/atproto-did`, {
-        redirect: 'follow',
-      });
-      if (r.ok) {
-        htmlMatch = (await r.text()).trim() === did;
-      }
-    } catch (e) {
-      console.error('handleClaim well-known fetch failed', e?.message || e);
+    if (htmlResult.status === 'fulfilled') {
+      htmlMatch = htmlResult.value === did;
+    } else {
+      console.error('handleClaim well-known fetch failed', htmlResult.reason?.message || htmlResult.reason);
     }
 
     const verified = txtMatch || htmlMatch;

@@ -22,8 +22,11 @@ Deno.serve(async (req) => {
     const targetDid = String(body.did || '');
     if (!targetDid) return Response.json({ error: 'did required' }, { status: 400 });
 
-    const incoming = await svc.entities.Vouch.filter({ vouched_did: targetDid }, '-created_date', 200);
-    const outgoing = await svc.entities.Vouch.filter({ did: targetDid }, '-created_date', 200);
+    // Parallelize the two independent vouch fetches.
+    const [incoming, outgoing] = await Promise.all([
+      svc.entities.Vouch.filter({ vouched_did: targetDid }, '-created_date', 200),
+      svc.entities.Vouch.filter({ did: targetDid }, '-created_date', 200),
+    ]);
 
     const activeIncoming = incoming.filter((v) => !v.revoked_at);
     // Hardening: count each voucher at most once (latest active vouch wins) to

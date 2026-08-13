@@ -19,20 +19,20 @@ Deno.serve(async (req) => {
 
     const isCurator = circle.did === user.did;
     const isMember = (circle.member_dids || []).includes(user.did);
-
-    const exits = await svc.entities.CircleExit.filter({ circle_id: circleId, did: user.did });
-    const hasExited = exits.length > 0;
-
     const canSeeMembers = isCurator || isMember || circle.visibility === 'public';
 
-    let scopedTrades: any[] = [];
-    if (isMember || isCurator) {
-      scopedTrades = await svc.entities.TradeListing.filter(
-        { status: 'open', visibility: 'circle_scoped', circle_ref: circle.at_uri },
-        '-created_date',
-        50,
-      );
-    }
+    // Parallelize the two independent fetches (exit check + scoped trades).
+    const [exits, scopedTrades] = await Promise.all([
+      svc.entities.CircleExit.filter({ circle_id: circleId, did: user.did }).catch(() => []),
+      (isMember || isCurator)
+        ? svc.entities.TradeListing.filter(
+            { status: 'open', visibility: 'circle_scoped', circle_ref: circle.at_uri },
+            '-created_date',
+            50,
+          ).catch(() => [])
+        : Promise.resolve([]),
+    ]);
+    const hasExited = exits.length > 0;
 
     const denied = circle.visibility === 'private' && !isMember && !isCurator;
     const safeCircle = denied

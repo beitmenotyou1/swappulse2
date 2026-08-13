@@ -26,20 +26,23 @@ export default async function (req: Request): Promise<Response> {
     // registered app users). Best-effort — never blocks the response.
     const earned = events.filter((e: any) => e.kind === 'earned');
     if (earned.length > 0 && user.email) {
-      for (const e of earned) {
-        try {
-          await base44.integrations.Core.SendEmail({
-            to: user.email,
-            subject: buildAchievementEmailSubject('earned', e.name),
-            body: buildAchievementEmailHtml('earned', {
-              achievementName: e.name, tier: e.tier, timestamp: new Date().toISOString(),
-              viewUrl: `${APP_URL}/achievements`,
-            }),
-          });
-        } catch (err) {
-          console.error('[evaluateAchievements] earned email failed', e.key, err);
-        }
-      }
+      // Parallelize email sends for all newly-earned achievements.
+      await Promise.allSettled(earned.map((e: any) =>
+        base44.integrations.Core.SendEmail({
+          to: user.email,
+          subject: buildAchievementEmailSubject('earned', e.name),
+          body: buildAchievementEmailHtml('earned', {
+            achievementName: e.name, tier: e.tier, timestamp: new Date().toISOString(),
+            viewUrl: `${APP_URL}/achievements`,
+          }),
+        })
+      )).then((results) => {
+        results.forEach((r, i) => {
+          if (r.status === 'rejected') {
+            console.error('[evaluateAchievements] earned email failed', earned[i].key, r.reason);
+          }
+        });
+      });
     }
 
     return Response.json({

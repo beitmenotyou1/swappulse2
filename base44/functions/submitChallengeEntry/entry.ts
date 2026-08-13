@@ -21,11 +21,11 @@ export default async function (req: Request): Promise<Response> {
     if (!challenge) return Response.json({ error: 'Challenge not found' }, { status: 404 });
 
     const authorDid = (user as any).did || user.id;
-    const records: any[] = [];
-    for (const id of uris.slice(0, 100)) {
-      const r = await svc.entities.CollectionEntry.get(id).catch(() => null);
-      if (r) records.push(r);
-    }
+    // Batch-fetch all referenced CollectionEntry records in one call (replaces per-URI get N+1).
+    const ids = uris.slice(0, 100);
+    const records: any[] = ids.length > 0
+      ? await svc.entities.CollectionEntry.filter({ id: { $in: ids } }).catch(() => [])
+      : [];
 
     const result = await validateEntry({ challenge, contributionRecords: records, authorDid });
 
