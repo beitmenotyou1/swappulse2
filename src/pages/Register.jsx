@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export default function Register() {
   const [inviteCode, setInviteCode] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
+  const generatedPasswordRef = useRef("");
 
   const handleContinue = (e) => {
     e.preventDefault();
@@ -54,7 +55,9 @@ export default function Register() {
         return;
       }
       // Register with a random password (user never sees it; login is passwordless)
-      await base44.auth.register({ email, password: randomPassword() });
+      const pwd = randomPassword();
+      generatedPasswordRef.current = pwd;
+      await base44.auth.register({ email, password: pwd });
       try { await base44.functions.invoke("send-activation", { email }); } catch {}
       setStep("code");
     } catch (err) {
@@ -74,6 +77,7 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+        try { await base44.auth.updateMe({ login_key: generatedPasswordRef.current }); } catch {}
         try { await base44.functions.invoke("validate-invite", { code: inviteCode.trim(), redeem: true }); } catch {}
       }
       setStep("profile");

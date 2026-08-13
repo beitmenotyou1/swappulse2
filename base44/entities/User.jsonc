@@ -48,6 +48,10 @@
       "type": "boolean",
       "default": false,
       "description": "Whether the user's account access has been restricted due to repeated moderation violations"
+    },
+    "login_key": {
+      "type": "string",
+      "description": "Random password used for passwordless email-code login (stored during registration or setup flow)"
     }
   },
   "required": [

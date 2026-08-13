@@ -18,11 +18,11 @@ export default function Login() {
 
   const [email, setEmail] = useState(initialEmail);
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState(initialEmail ? "code" : "email"); // email | code | twofactor
+  const [step, setStep] = useState(initialEmail ? "code" : "email"); // email | code | twofactor | setup
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [token, setToken] = useState(null);
+  const [pendingLoginKey, setPendingLoginKey] = useState(null);
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
   const timerRef = useRef(null);
 
@@ -50,7 +50,17 @@ export default function Login() {
     if (!email) { setError("Enter your email."); return; }
     setLoading(true);
     try {
-      await base44.auth.resendOtp(email);
+      const res = await base44.functions.invoke("send-login-code", { email });
+      if (res.data?.needs_setup) {
+        // Existing user without passwordless login — trigger setup via reset email
+        try {
+          await base44.auth.resetPasswordRequest(email);
+          localStorage.setItem("swappulse_setup_email", email);
+        } catch {}
+        setStep("setup");
+        setInfo("We've sent a link to your email to set up passwordless login. Click the link to continue.");
+        return;
+      }
       setStep("code");
       setInfo(`We sent a 6-digit code to ${email}. It expires in 5 minutes.`);
     } catch (err) {
@@ -65,24 +75,27 @@ export default function Login() {
     if (otp.length < 6) { setError("Enter the 6-digit code."); return; }
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode: otp });
-      if (!result?.access_token) {
+      const res = await base44.functions.invoke("verify-login-code", { email, code: otp });
+      const loginKey = res.data?.login_key;
+      if (!loginKey) {
         setError("Verification failed. Please try again.");
         return;
       }
+      // Check 2FA before logging in
       try {
-        const res = await base44.functions.invoke("verify-2fa", { mode: "check", email });
-        if (res.data?.requires_2fa) {
-          setToken(result.access_token);
+        const twofaRes = await base44.functions.invoke("verify-2fa", { mode: "check", email });
+        if (twofaRes.data?.requires_2fa) {
+          setPendingLoginKey(loginKey);
           setStep("twofactor");
           return;
         }
       } catch {
         // If check fails, proceed without 2FA
       }
-      base44.auth.setToken(result.access_token);
+      // Log in with the stored login_key
       setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
-      window.location.href = "/";
+      await base44.auth.loginViaEmailPassword(email, loginKey);
+      // loginViaEmailPassword sets token and hard-redirects
     } catch (err) {
       setError(err.message || "Invalid or expired code");
     } finally {
@@ -90,10 +103,16 @@ export default function Login() {
     }
   };
 
-  const handleTwoFactorSuccess = () => {
-    base44.auth.setToken(token);
+  const handleTwoFactorSuccess = async () => {
     setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
-    window.location.href = "/";
+    try {
+      await base44.auth.loginViaEmailPassword(email, pendingLoginKey);
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+      setStep("code");
+      setOtp("");
+      setPendingLoginKey(null);
+    }
   };
 
   const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -115,7 +134,7 @@ export default function Login() {
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
-      {info && step === "code" && (
+      {info && (step === "code" || step === "setup") && (
         <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm">{info}</div>
       )}
 
@@ -146,6 +165,17 @@ export default function Login() {
             )}
           </Button>
         </form>
+      )}
+
+      {step === "setup" && (
+        <div className="space-y-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            We've sent a setup link to <strong>{email}</strong>. Click the link in the email to enable passwordless login, then come back here to sign in.
+          </p>
+          <button type="button" onClick={() => { setStep("email"); setInfo(""); setError(""); }} className="text-primary hover:underline text-sm">
+            Back to login
+          </button>
+        </div>
       )}
 
       {step === "code" && (
@@ -188,7 +218,7 @@ export default function Login() {
         <TwoFactorChallenge
           email={email}
           onSuccess={handleTwoFactorSuccess}
-          onCancel={() => { setStep("code"); setOtp(""); setToken(null); }}
+          onCancel={() => { setStep("code"); setOtp(""); setPendingLoginKey(null); }}
         />
       )}
     </AuthLayout>

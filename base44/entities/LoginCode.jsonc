@@ -1,0 +1,53 @@
+{
+  "name": "LoginCode",
+  "type": "object",
+  "title": "LoginCode",
+  "description": "Temporary 6-digit login code for passwordless email-code authentication. Created by the send-login-code backend function; verified by verify-login-code. Access is restricted to admins (service role bypasses RLS).",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email address the login code was sent to"
+    },
+    "code": {
+      "type": "string",
+      "description": "6-digit login code"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the code expires (15 minutes after creation)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the code has been used"
+    }
+  },
+  "required": [
+    "email",
+    "code",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
