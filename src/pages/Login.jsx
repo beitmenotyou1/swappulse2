@@ -51,6 +51,15 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("send-login-code", { email });
+      if (res.data?.needs_setup) {
+        // Existing user without passwordless login — trigger one-time setup
+        try {
+          await base44.auth.resetPasswordRequest(email);
+          localStorage.setItem("swappulse_setup_email", email);
+        } catch {}
+        setStep("setup");
+        return;
+      }
       setStep("code");
       setInfo(`We sent a 6-digit code to ${email}. It expires in 5 minutes.`);
     } catch (err) {
@@ -66,6 +75,15 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("verify-login-code", { email, code: otp });
+      if (res.data?.needs_setup) {
+        // User lost their login_key between send and verify — fall back to setup
+        try {
+          await base44.auth.resetPasswordRequest(email);
+          localStorage.setItem("swappulse_setup_email", email);
+        } catch {}
+        setStep("setup");
+        return;
+      }
       const loginKey = res.data?.login_key;
       if (!loginKey) {
         setError("Verification failed. Please try again.");
@@ -124,7 +142,7 @@ export default function Login() {
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
-      {info && step === "code" && (
+      {info && (step === "code" || step === "setup") && (
         <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm">{info}</div>
       )}
 
@@ -190,6 +208,17 @@ export default function Login() {
               Resend code
             </button>
           </div>
+        </div>
+      )}
+
+      {step === "setup" && (
+        <div className="space-y-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            We've sent a one-time login link to <strong>{email}</strong>. Click the link in the email to enable passwordless login — after this, you'll sign in with just a 6-digit code.
+          </p>
+          <button type="button" onClick={() => { setStep("email"); setInfo(""); setError(""); }} className="text-primary hover:underline text-sm">
+            Back to login
+          </button>
         </div>
       )}
 

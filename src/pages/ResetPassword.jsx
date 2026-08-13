@@ -17,13 +17,15 @@ export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
   const migration = searchParams.get("migration") === "1";
-  const setupEmail = localStorage.getItem("swappulse_setup_email");
+  const storedSetupEmail = localStorage.getItem("swappulse_setup_email");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [setupEmail, setSetupEmail] = useState(storedSetupEmail || "");
+  const [emailInput, setEmailInput] = useState("");
 
   // Auto-setup passwordless login when the user arrives via the setup flow
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function ResetPassword() {
   }, [resetToken, setupEmail]);
 
   // Setup mode: automatic passwordless setup (no user interaction needed)
-  if (resetToken && setupEmail) {
+  if (resetToken && setupEmail && !migration) {
     return (
       <AuthLayout
         icon={Mail}
@@ -75,6 +77,42 @@ export default function ResetPassword() {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
+      </AuthLayout>
+    );
+  }
+
+  // Setup mode but email not stored (e.g. opened on a different device) — ask for email
+  if (resetToken && !setupEmail && !migration) {
+    const handleEmailSubmit = (e) => {
+      e.preventDefault();
+      setError("");
+      const trimmed = emailInput.trim().toLowerCase();
+      if (!trimmed) { setError("Enter your email to continue."); return; }
+      setSetupEmail(trimmed);
+    };
+    return (
+      <AuthLayout
+        icon={Mail}
+        title="Set up passwordless login"
+        subtitle="Enter your email to complete the one-time setup"
+      >
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="setupEmail">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <Input id="setupEmail" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="pl-10 h-12" required />
+            </div>
+          </div>
+          <Button type="submit" className="w-full h-12 font-medium">
+            Continue
+          </Button>
+        </form>
       </AuthLayout>
     );
   }
