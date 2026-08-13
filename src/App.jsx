@@ -21,6 +21,7 @@ import PackOpenings from '@/pages/PackOpenings';
 import MarketWatch from '@/pages/MarketWatch';
 import Share from '@/pages/Share';
 import TradeThread from '@/pages/TradeThread';
+import TradeDashboard from '@/pages/TradeDashboard';
 import Compose from '@/pages/Compose';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -134,6 +135,7 @@ const AuthenticatedApp = () => {
           <Route path="/binders/new" element={<BinderEdit />} />
           <Route path="/binder/:binderId/edit" element={<BinderEdit />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/trade-dashboard" element={<TradeDashboard />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
