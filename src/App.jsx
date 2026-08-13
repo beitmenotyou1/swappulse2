@@ -45,6 +45,7 @@ import Notifications from '@/pages/Notifications';
 import Settings from '@/pages/Settings';
 import Help from '@/pages/Help';
 import Status from '@/pages/Status';
+import IncidentDetail from '@/pages/IncidentDetail';
 import Donate from '@/pages/Donate';
 import DonateThanks from '@/pages/DonateThanks';
 import HandleProfile from '@/pages/HandleProfile';
@@ -90,6 +91,7 @@ const AuthenticatedApp = () => {
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
       <Route path="/status" element={<Status />} />
+      <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
       <Route path="/compose" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>

@@ -5,6 +5,7 @@ import {
   Mail, ChevronDown, AlertTriangle, Loader2, Wrench,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import ServiceRow from '@/components/status/ServiceRow';
 
 // Maps health-check service keys to StatusService slugs
 const HEALTH_TO_SLUG = {
@@ -108,6 +109,16 @@ export default function Status() {
         .catch(() => setConfirmMsg({ type: 'error', text: 'Unsubscribe failed.' }));
       window.history.replaceState({}, '', '/status');
     }
+  }, [refreshHealth, loadData]);
+
+  // Auto-refresh: health every 30s, data every 60s
+  useEffect(() => {
+    const healthInterval = setInterval(refreshHealth, 30000);
+    const dataInterval = setInterval(loadData, 60000);
+    return () => {
+      clearInterval(healthInterval);
+      clearInterval(dataInterval);
+    };
   }, [refreshHealth, loadData]);
 
   const handleSubscribe = async (e) => {
@@ -277,25 +288,16 @@ export default function Status() {
                     <div className="space-y-2">
                       {group.map((svc) => {
                         const status = getLiveStatus(svc);
-                        const style = STATUS_STYLES[status] || STATUS_STYLES.operational;
-                        const Icon = style.icon;
                         const healthKey = Object.entries(HEALTH_TO_SLUG).find(([, slug]) => slug === svc.slug)?.[0];
                         const latency = healthKey ? health?.services?.[healthKey]?.latencyMs : null;
                         return (
-                          <div key={svc.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
-                            <div className="flex items-center gap-3">
-                              <Icon className={`h-5 w-5 shrink-0 ${style.color}`} />
-                              <div>
-                                <p className="text-sm font-bold">{svc.name}</p>
-                                <p className="text-xs text-muted-foreground">{svc.description}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className={`text-sm font-semibold ${style.color}`}>{style.label}</p>
-                              {latency != null && <p className="text-xs text-muted-foreground">{latency}ms</p>}
-                              <span className="text-xs text-muted-foreground">{CRITICALITY_LABELS[crit]}</span>
-                            </div>
-                          </div>
+                          <ServiceRow
+                            key={svc.id}
+                            service={svc}
+                            liveStatus={status}
+                            latency={latency}
+                            criticalityLabel={CRITICALITY_LABELS[crit]}
+                          />
                         );
                       })}
                     </div>
@@ -431,6 +433,13 @@ function IncidentCard({ incident }) {
               <p className="mt-1 text-sm text-muted-foreground">{upd.text}</p>
             </div>
           ))}
+        </div>
+      )}
+      {expanded && (
+        <div className="mt-3 border-t border-border pt-3">
+          <Link to={`/incidents/${incident.id}`} className="text-xs font-semibold text-primary hover:underline">
+            View full details →
+          </Link>
         </div>
       )}
     </div>
