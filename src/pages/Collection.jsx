@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Plus, Trash2, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3, Layers, Target, Shield } from 'lucide-react';
+import { Loader2, Plus, CheckSquare, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3, Layers, Target, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { deleteEntry, updateEntry, bulkUpdateEntries } from '@/lib/offlineSync';
 import PageHeader from '@/components/PageHeader';
-import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
-import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
+import { formatPrice, conditionLabel } from '@/lib/format';
 import BinderGrid from '@/components/binder/BinderGrid';
 import CollectionAnalytics from '@/components/collection/CollectionAnalytics';
 import BulkImportExport from '@/components/collection/BulkImportExport';
 import DuplicatesTab from '@/components/collection/DuplicatesTab';
 import SetCompletionDashboard from '@/components/collection/SetCompletionDashboard';
 import InsuranceExport from '@/components/collection/InsuranceExport';
+import BulkActionsBar from '@/components/collection/BulkActionsBar';
+import CollectionCardRow from '@/components/collection/CollectionCardRow';
+import { useToast } from "@/components/ui/use-toast";
 
 const TABS = [
   { id: 'cards', label: 'All Cards', icon: LayoutGrid },
@@ -32,6 +34,10 @@ export default function Collection() {
   const [gridSize, setGridSize] = useState('3x3');
   const [binderPublic, setBinderPublic] = useState(false);
   const [savingBinder, setSavingBinder] = useState(false);
+  const { toast } = useToast();
+  const [selected, setSelected] = useState(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -117,6 +123,61 @@ export default function Collection() {
     .filter((i) => i.showcased)
     .sort((a, b) => (a.binder_index ?? 0) - (b.binder_index ?? 0));
 
+  const toggleSelect = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const clearSelection = () => {
+    setSelected(new Set());
+    setSelectMode(false);
+  };
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.id));
+
+  const selectAll = () => setSelected(new Set(filtered.map((i) => i.id)));
+
+  const moveToTradeList = async () => {
+    const picked = items.filter((i) => selected.has(i.id));
+    if (!picked.length) return;
+    setBulkBusy(true);
+    try {
+      await base44.entities.TradeListing.create({
+        offer_card_ids: picked.map((i) => i.card_id).filter(Boolean),
+        offer_card_names: picked.map((i) => i.card_name),
+        offer_card_images: picked.map((i) => i.card_image).filter(Boolean),
+        wanted_card_names: ['Open to offers'],
+        status: 'open',
+        visibility: 'public',
+      });
+      toast({ title: 'Moved to trade list', description: `${picked.length} card${picked.length > 1 ? 's' : ''} listed on the Trade Board.` });
+      clearSelection();
+    } catch (e) {
+      toast({ title: 'Could not create trade listing', description: e.message, variant: 'destructive' });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const bulkUpdateCondition = async (condition) => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    setBulkBusy(true);
+    try {
+      await bulkUpdateEntries(ids.map((id) => ({ id, condition })));
+      setItems((prev) => prev.map((i) => (selected.has(i.id) ? { ...i, condition } : i)));
+      toast({ title: 'Condition updated', description: `${ids.length} card${ids.length > 1 ? 's' : ''} marked as ${conditionLabel(condition)}.` });
+      clearSelection();
+    } catch (e) {
+      toast({ title: 'Update failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader title="My Collection" subtitle={`${items.length} cards tracked`}>
@@ -179,6 +240,32 @@ export default function Collection() {
             </button>
           ))}
         </div>
+      )}
+
+      {tab === 'cards' && items.length > 0 && (
+        <div className="flex items-center px-4 pb-2">
+          <button
+            onClick={() => {
+              setSelectMode((s) => !s);
+              if (selectMode) setSelected(new Set());
+            }}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${selectMode ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
+          >
+            <CheckSquare className="h-3.5 w-3.5" /> {selectMode ? 'Done selecting' : 'Select cards'}
+          </button>
+        </div>
+      )}
+
+      {tab === 'cards' && selected.size > 0 && (
+        <BulkActionsBar
+          selectedCount={selected.size}
+          allSelected={allFilteredSelected}
+          onSelectAll={selectAll}
+          onClear={clearSelection}
+          onMoveToTrade={moveToTradeList}
+          onUpdateCondition={bulkUpdateCondition}
+          busy={bulkBusy}
+        />
       )}
 
       {tab === 'binder' && (
@@ -263,46 +350,17 @@ export default function Collection() {
         ) : (
           <div className="p-4">
             <div className="space-y-2">
-              {filtered.map((item) => {
-                const { text } = rarityClasses(item.rarity);
-                return (
-                  <div key={item.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-                    <button
-                      onClick={() => toggleShowcase(item)}
-                      className={`shrink-0 ${item.showcased ? 'text-accent' : 'text-muted-foreground hover:text-accent'}`}
-                      title={item.showcased ? 'Remove from binder' : 'Pin to binder'}
-                    >
-                      <Star className={`h-5 w-5 ${item.showcased ? 'fill-accent' : ''}`} />
-                    </button>
-                    <Link to={`/card/${item.card_id}`}>
-                      {cardImageUrl(item.card_image) ? (
-                        <img src={cardImageUrl(item.card_image)} alt={item.card_name} className="h-20 w-14 rounded-lg object-cover" />
-                      ) : (
-                        <div className="h-20 w-14 rounded-lg bg-secondary" />
-                      )}
-                    </Link>
-                    <div className="min-w-0 flex-1">
-                      <Link to={`/card/${item.card_id}`} className="block truncate font-semibold hover:text-primary">{item.card_name}</Link>
-                      <p className="truncate text-xs text-muted-foreground">{item.set_name} · #{item.local_id}</p>
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        {item.rarity && <span className={`text-xs font-semibold ${text}`}>{item.rarity}</span>}
-                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px]">{conditionLabel(item.condition)}</span>
-                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px]">{variantLabel(item.variant)}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {item.purchase_price ? (
-                        <p className="text-sm font-bold">{formatPrice(item.purchase_price)}</p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">-</p>
-                      )}
-                      <button onClick={() => remove(item.id)} className="mt-1 text-muted-foreground hover:text-red-400">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {filtered.map((item) => (
+                <CollectionCardRow
+                  key={item.id}
+                  item={item}
+                  selected={selected.has(item.id)}
+                  selectMode={selectMode}
+                  onToggleSelect={toggleSelect}
+                  onToggleShowcase={toggleShowcase}
+                  onRemove={remove}
+                />
+              ))}
             </div>
           </div>
         )
