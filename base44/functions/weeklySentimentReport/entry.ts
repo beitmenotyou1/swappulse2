@@ -49,7 +49,7 @@ export default async function(req) {
       '2. What the bullish/bearish split suggests for collectors\n' +
       '3. Pricing observations and market direction\n' +
       '4. Recommendations for the coming week\n' +
-      'Use markdown formatting with bullet points where appropriate. Keep it friendly and community-focused.';
+      'IMPORTANT: Write in plain text only. Do NOT use any markdown formatting — no asterisks, no bold markers, no bullet point dashes, no hash headers. Use simple paragraph breaks and numbered lists written as plain text (e.g. "1. " on its own line). Keep it friendly and community-focused.';
 
     const summary = await svc.integrations.Core.InvokeLLM({
       prompt: summaryPrompt,
