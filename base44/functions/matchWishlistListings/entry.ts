@@ -87,6 +87,7 @@ Deno.serve(async (req) => {
 
     let notified = 0;
     const results: any[] = [];
+    const pendingNotifications: any[] = [];
 
     for (const listing of listings) {
       const ws = byCardId.get(listing.card_id);
@@ -124,25 +125,30 @@ Deno.serve(async (req) => {
           console.error('matchWishlistListings: dispatch failed', e?.message || e);
         }
 
-        // Create in-app Notification record
-        try {
-          await svc.entities.Notification.create({
-            did,
-            action_type: 'price_alert',
-            actor_name: listing.seller_name || '',
-            target_type: 'listing',
-            target_path: '/market',
-            target_label: `${listing.card_name} — ${priceStr}`,
-            target_image: listing.card_image,
-            is_read: false,
-            metadata: { listing_id: listing.id, price: listing.price, currency: listing.currency },
-          });
-        } catch (e) {
-          console.error('matchWishlistListings: notification create failed', e?.message || e);
-        }
+        // Collect in-app Notification payload for batch creation
+        pendingNotifications.push({
+          did,
+          action_type: 'price_alert',
+          actor_name: listing.seller_name || '',
+          target_type: 'listing',
+          target_path: '/market',
+          target_label: `${listing.card_name} — ${priceStr}`,
+          target_image: listing.card_image,
+          is_read: false,
+          metadata: { listing_id: listing.id, price: listing.price, currency: listing.currency },
+        });
 
         notified++;
         results.push({ listing_id: listing.id, card_name: listing.card_name, user: owner.email });
+      }
+    }
+
+    // Batch-create all in-app Notification records in one call.
+    if (pendingNotifications.length) {
+      try {
+        await svc.entities.Notification.bulkCreate(pendingNotifications);
+      } catch (e) {
+        console.error('matchWishlistListings: bulk notification create failed', e?.message || e);
       }
     }
 

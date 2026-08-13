@@ -134,34 +134,45 @@ Deno.serve(async (req) => {
       const statusMap = { approve_all: 'reviewed', dismiss_all: 'dismissed', escalate_all: 'escalated' };
       const newStatus = statusMap[action];
       if (!newStatus) return Response.json({ error: 'Invalid action' }, { status: 400 });
-      let processed = 0;
-      const errors = [];
-      for (const pid of post_ids) {
-        try {
-          const post = await base44.entities.Post.get(pid);
-          if (!post) { errors.push(`${pid}: not found`); continue; }
-          await base44.entities.Post.update(pid, {
+
+      // Batch-fetch all posts in one call (avoids per-post Post.get).
+      const posts = await base44.entities.Post.filter({ id: { $in: post_ids } }, '-created_date', 500).catch(() => []);
+      const foundIds = new Set(posts.map((p) => p.id));
+      const missing = post_ids.filter((pid) => !foundIds.has(pid));
+      const errors = missing.map((pid) => `${pid}: not found`);
+
+      // Batch-update all found posts in one call (avoids per-post Post.update).
+      const now = new Date().toISOString();
+      if (foundIds.size > 0) {
+        await base44.entities.Post.updateMany(
+          { id: { $in: [...foundIds] } },
+          { $set: {
             moderation_status: newStatus,
             moderation_notes: notes || '',
             moderated_by: user.id,
-            moderated_at: new Date().toISOString(),
-          });
-          await base44.entities.ModerationLog.create({
-            moderator_id: user.id,
-            moderator_name: user.full_name || user.email || 'Moderator',
-            action: action.replace('_all', ''),
-            target_post_id: pid,
-            target_author: post.author_handle || post.created_by_id || '',
-            labels_affected: (post.moderation_labels || []).map((l) => l.label),
-            notes: notes || '',
-            auto_generated: false,
-          });
-          processed++;
-        } catch (e) {
-          errors.push(`${pid}: ${e.message}`);
-        }
+            moderated_at: now,
+          } },
+        ).catch((e) => { errors.push(`updateMany failed: ${e?.message || e}`); });
       }
-      return Response.json({ processed, errors });
+
+      // Batch-create all ModerationLog records in one call.
+      const logRecords = posts.map((p) => ({
+        moderator_id: user.id,
+        moderator_name: user.full_name || user.email || 'Moderator',
+        action: action.replace('_all', ''),
+        target_post_id: p.id,
+        target_author: p.author_handle || p.created_by_id || '',
+        labels_affected: (p.moderation_labels || []).map((l) => l.label),
+        notes: notes || '',
+        auto_generated: false,
+      }));
+      if (logRecords.length > 0) {
+        await base44.entities.ModerationLog.bulkCreate(logRecords).catch((e) => {
+          errors.push(`bulkCreate logs failed: ${e?.message || e}`);
+        });
+      }
+
+      return Response.json({ processed: posts.length, errors });
     }
 
     if (op === 'activity') {

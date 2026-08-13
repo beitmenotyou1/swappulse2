@@ -99,21 +99,23 @@ export default function SpaceRoom() {
   const seedDemoListeners = async (sid) => {
     const existing = await base44.entities.SpaceParticipant.filter({ space_id: sid }).catch(() => []);
     if (existing.length > 1) return;
-    for (let i = 0; i < 4; i++) {
-      const did = generateDid();
-      const signingKey = generateSigningKey();
-      const name = DEMO_NAMES[i % DEMO_NAMES.length];
-      const stamped = await stampRecord({
-        space_ref: `at://did:web:swappulse.org/${NSID.VOICE_SPACE}/${sid}`,
-        space_id: sid,
-        role: 'listener',
-        joined_at: new Date().toISOString(),
-        participant_name: name,
-        participant_handle: name.toLowerCase(),
-        participant_avatar: '',
-      }, NSID.SPACE_PARTICIPANT, did, signingKey);
-      await base44.entities.SpaceParticipant.create(stamped);
-    }
+    const stamped = await Promise.all(
+      Array.from({ length: 4 }, (_, i) => {
+        const did = generateDid();
+        const signingKey = generateSigningKey();
+        const name = DEMO_NAMES[i % DEMO_NAMES.length];
+        return stampRecord({
+          space_ref: `at://did:web:swappulse.org/${NSID.VOICE_SPACE}/${sid}`,
+          space_id: sid,
+          role: 'listener',
+          joined_at: new Date().toISOString(),
+          participant_name: name,
+          participant_handle: name.toLowerCase(),
+          participant_avatar: '',
+        }, NSID.SPACE_PARTICIPANT, did, signingKey);
+      }),
+    );
+    await base44.entities.SpaceParticipant.bulkCreate(stamped);
     loadParticipants();
   };
 
