@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import PostCard from '@/components/feed/PostCard';
 import FollowBellButton from '@/components/follow/FollowBellButton';
 import FriendsBadge from '@/components/follow/FriendsBadge';
+import FollowsYouBadge from '@/components/follow/FollowsYouBadge';
 import AddFriendLink from '@/components/follow/AddFriendLink';
 import ReputationSummary from '@/components/profile/ReputationSummary';
 
@@ -68,6 +69,7 @@ export default function UserProfile() {
         <div className="mt-3">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold">{profile?.name || 'Collector'}</h1>
+            <FollowsYouBadge subjectDid={subjectDid} />
             <FriendsBadge isFriend={isFriend} />
           </div>
           <p className="text-sm text-muted-foreground">@{profile?.handle || 'collector'}</p>
