@@ -16,14 +16,15 @@ Deno.serve(async (req) => {
     if (!spaceId) return Response.json({ error: 'space_id required' }, { status: 400 });
 
     const svc = base44.asServiceRole;
-    const space = await svc.entities.VoiceSpace.get(spaceId);
+    // Parallelize the space fetch + participant fetch (independent reads).
+    const [space, participants] = await Promise.all([
+      svc.entities.VoiceSpace.get(spaceId),
+      svc.entities.SpaceParticipant.filter({ space_id: spaceId }, '-joined_at', 500),
+    ]);
     if (!space) return Response.json({ error: 'Space not found' }, { status: 404 });
     if (space.did && user.did && space.did !== user.did) {
       return Response.json({ error: 'Only the host can end this space' }, { status: 403 });
     }
-
-    // Peak listener count = distinct non-host participants who ever joined.
-    const participants = await svc.entities.SpaceParticipant.filter({ space_id: spaceId }, '-joined_at', 500);
     const listenerCount = participants.filter((p) => p.role !== 'host' && !p.left_at).length;
     const peak = Math.max(space.peak_listener_count || 0, listenerCount);
 

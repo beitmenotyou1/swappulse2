@@ -23,10 +23,13 @@ Deno.serve(async (req) => {
       }
     } catch { /* VAPID keys not yet valid - email alerts still work */ }
 
-    const searches = await svc.entities.SavedSearch.list('-updated_date', 500);
-    const pricing = await svc.entities.CardPricing.list('-updated_date', 500);
-    const trades = await svc.entities.TradeListing.filter({ status: 'open' }, '-created_date', 200).catch(() => []);
-    const users = await svc.entities.User.list();
+    // Parallelize the four independent initial fetches.
+    const [searches, pricing, trades, users] = await Promise.all([
+      svc.entities.SavedSearch.list('-updated_date', 500),
+      svc.entities.CardPricing.list('-updated_date', 500),
+      svc.entities.TradeListing.filter({ status: 'open' }, '-created_date', 200).catch(() => []),
+      svc.entities.User.list(),
+    ]);
     const userById = new Map(users.map((u) => [u.id, u]));
 
     const triggeredIds: string[] = [];

@@ -20,71 +20,93 @@ Deno.serve(async (req) => {
     let deleted = 0;
     let errors = 0;
 
+    // Categorize users in a single pass.
+    const deleteCandidates: any[] = [];
+    const warnCandidates: any[] = [];
     for (const u of users) {
-      // Skip verified accounts; treat unknown verification as verified (safe).
       if (u.is_verified) continue;
-
       const created = u.created_date ? new Date(u.created_date).getTime() : now;
       const ageDays = Math.floor((now - created) / DAY);
+      if (ageDays >= DELETE_AFTER_DAYS) deleteCandidates.push(u);
+      else if (ageDays >= WARN_AFTER_DAYS) warnCandidates.push(u);
+    }
 
-      // 90-day permanent deletion
-      if (ageDays >= DELETE_AFTER_DAYS) {
-        try {
-          await svc.entities.Activation.deleteMany({ user_id: u.id });
-        } catch (e) {
-          console.error('activation-lifecycle: delete activation failed', u.id, e?.message || e);
-          errors++;
-        }
-        try {
-          await svc.entities.User.delete(u.id);
-          deleted++;
-        } catch (e) {
-          console.error('activation-lifecycle: delete user failed', u.id, e?.message || e);
-          errors++;
-        }
-        continue;
+    // Batch-fetch Activation records for all warn candidates (replaces per-user Activation.filter N+1).
+    const warnIds = warnCandidates.map((u) => u.id);
+    const activationRecords = warnIds.length > 0
+      ? await svc.entities.Activation.filter({ user_id: { $in: warnIds } }).catch(() => [])
+      : [];
+    const activationByUserId = new Map();
+    for (const a of activationRecords) {
+      if (!activationByUserId.has(a.user_id)) activationByUserId.set(a.user_id, a);
+    }
+
+    // Process 90-day deletions.
+    for (const u of deleteCandidates) {
+      try {
+        await svc.entities.Activation.deleteMany({ user_id: u.id });
+      } catch (e) {
+        console.error('activation-lifecycle: delete activation failed', u.id, e?.message || e);
+        errors++;
       }
-
-      // 7-day warning (throttled to once per week)
-      if (ageDays >= WARN_AFTER_DAYS) {
-        let record;
-        try {
-          const recs = await svc.entities.Activation.filter({ user_id: u.id });
-          record = recs[0];
-        } catch (e) {
-          console.error('activation-lifecycle: lookup activation failed', u.id, e?.message || e);
-        }
-        const lastReminded = record?.last_reminded_at ? new Date(record.last_reminded_at).getTime() : 0;
-        if (now - lastReminded < REWARN_INTERVAL_DAYS * DAY) continue;
-
-        const token = randomToken();
-        const link = `${appUrl}/activate?token=${token}`;
-        try {
-          const email = buildActivationWarningEmail(u.full_name, link);
-          await sendBrandedEmail({ to: u.email, ...email });
-          if (record) {
-            await svc.entities.Activation.update(record.id, {
-              last_reminded_at: new Date(now).toISOString(),
-              status: 'warned',
-              link_token: token,
-              expires_at: new Date(now + HOURS_48).toISOString(),
-            });
-          } else {
-            await svc.entities.Activation.create({
-              user_id: u.id,
-              email: u.email,
-              link_token: token,
-              expires_at: new Date(now + HOURS_48).toISOString(),
-              status: 'warned',
-              last_reminded_at: new Date(now).toISOString(),
-            });
-          }
-          warned++;
-        } catch (e) {
-          console.error('activation-lifecycle: warn email failed', u.id, e?.message || e);
-          errors++;
-        }
+      try {
+        await svc.entities.User.delete(u.id);
+        deleted++;
+      } catch (e) {
+        console.error('activation-lifecycle: delete user failed', u.id, e?.message || e);
+        errors++;
       }
+    }
+
+    // Process 7-day warnings — collect activation updates/creates for batch operations.
+    const activationUpdates: any[] = [];
+    const activationCreates: any[] = [];
+    for (const u of warnCandidates) {
+      const record = activationByUserId.get(u.id);
+      const lastReminded = record?.last_reminded_at ? new Date(record.last_reminded_at).getTime() : 0;
+      if (now - lastReminded < REWARN_INTERVAL_DAYS * DAY) continue;
+
+      const token = randomToken();
+      const link = `${appUrl}/activate?token=${token}`;
+      try {
+        const email = buildActivationWarningEmail(u.full_name, link);
+        await sendBrandedEmail({ to: u.email, ...email });
+        const ts = new Date(now).toISOString();
+        if (record) {
+          activationUpdates.push({
+            id: record.id,
+            last_reminded_at: ts,
+            status: 'warned',
+            link_token: token,
+            expires_at: new Date(now + HOURS_48).toISOString(),
+          });
+        } else {
+          activationCreates.push({
+            user_id: u.id,
+            email: u.email,
+            link_token: token,
+            expires_at: new Date(now + HOURS_48).toISOString(),
+            status: 'warned',
+            last_reminded_at: ts,
+          });
+        }
+        warned++;
+      } catch (e) {
+        console.error('activation-lifecycle: warn email failed', u.id, e?.message || e);
+        errors++;
+      }
+    }
+
+    // Batch-update and batch-create activation records (replaces per-user update/create N+1).
+    if (activationUpdates.length > 0) {
+      await svc.entities.Activation.bulkUpdate(activationUpdates).catch((e) =>
+        console.error('activation-lifecycle: bulk update failed', e?.message || e),
+      );
+    }
+    if (activationCreates.length > 0) {
+      await svc.entities.Activation.bulkCreate(activationCreates).catch((e) =>
+        console.error('activation-lifecycle: bulk create failed', e?.message || e),
+      );
     }
 
     return Response.json({ ok: true, warned, deleted, errors });
