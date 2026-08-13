@@ -75,8 +75,8 @@ export default function PostCard({ post, reactions }) {
         );
         const created = await base44.entities.Repost.create(stamped);
         setRepostId(created.id);
-        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.repost (only if the post has a real at_uri).
-        if (post.at_uri?.startsWith('at://did:') && post.cid) {
+        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.repost (only for genuinely bridged posts).
+        if (post.bridged && post.at_uri && post.cid) {
           base44.functions.invoke('atproto-bridge', {
             collection: 'app.bsky.feed.repost',
             record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },

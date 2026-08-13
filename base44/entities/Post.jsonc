@@ -143,6 +143,11 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the record to the author's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the post has been mirrored to the AT Protocol PDS as a real app.bsky.feed.post. Interactions (likes/reposts) only bridge when this is true, so they reference a real record instead of creating orphaned PDS entries."
     }
   },
   "required": [

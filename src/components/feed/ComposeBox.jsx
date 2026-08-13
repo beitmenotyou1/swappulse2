@@ -74,7 +74,7 @@ export default function ComposeBox({ onPosted }) {
             langs: ['en'],
           },
         }).then((res) => {
-          if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
+          if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
         }).catch(() => {});
       }
       // Bell notification dispatch - Web Push to bell-enabled followers.
