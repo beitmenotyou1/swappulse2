@@ -8,6 +8,7 @@ import Avatar from '@/components/Avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
+import { createBridgedFollow } from '@/lib/followBridge';
 
 const SOURCE_LABELS = {
   trust_proximity: { label: 'Trust proximity', icon: ShieldCheck, tone: 'text-success' },
@@ -66,13 +67,7 @@ export default function WhoToFollow() {
   const follow = async (rec) => {
     setBusyId(rec.did);
     try {
-      await base44.entities.Follow.create({
-        subject_did: rec.did,
-        subject_name: rec.displayName,
-        subject_handle: rec.handle,
-        subject_avatar: rec.avatarUrl,
-        did: actorDid,
-      });
+      await createBridgedFollow(rec.did, rec.displayName, rec.handle, rec.avatarUrl);
       // bump acceptance counter
       try {
         const prefs = await base44.entities.RecommendationPreference.filter({ did: actorDid }, '-updated_date', 1);

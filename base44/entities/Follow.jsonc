@@ -22,7 +22,7 @@
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this app.bsky.graph.follow record (simulated)"
+      "description": "at:// URI of this app.bsky.graph.follow record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -35,6 +35,11 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the follow to the follower's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the follow has been mirrored to the AT Protocol PDS as a real app.bsky.graph.follow record"
     }
   },
   "required": [

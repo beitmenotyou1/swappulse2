@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Search, Loader2, UserPlus, UserCheck, ExternalLink, Globe } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { ensureUserDid, stampRecord, NSID } from "@/lib/atproto";
+import { createBridgedFollow } from "@/lib/followBridge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,14 +53,7 @@ export default function ExternalActorSearch() {
     if (!result) return;
     setFollowing(true);
     try {
-      const { did, signingKey } = await ensureUserDid();
-      const stamped = await stampRecord({
-        subject_did: result.did,
-        subject_name: result.displayName,
-        subject_handle: result.handle,
-        subject_avatar: result.avatar,
-      }, NSID.FOLLOW, did, signingKey);
-      await base44.entities.Follow.create(stamped);
+      await createBridgedFollow(result.did, result.displayName, result.handle, result.avatar);
       setIsFollowing(true);
     } catch (err) {
       console.error("follow error", err);

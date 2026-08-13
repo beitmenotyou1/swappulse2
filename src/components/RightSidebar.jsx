@@ -6,6 +6,7 @@ import Avatar from '@/components/Avatar';
 import OnlineNow from '@/components/OnlineNow';
 import { formatPrice } from '@/lib/format';
 import { useToast } from '@/components/ui/use-toast';
+import { createBridgedFollow } from '@/lib/followBridge';
 
 // Compute real trending cards from live CardPricing movers (public read).
 // Returns [] when there is no meaningful price movement — the section hides.
@@ -72,13 +73,7 @@ export default function RightSidebar({ online = [] }) {
   const follow = async (rec) => {
     setBusyId(rec.did);
     try {
-      await base44.entities.Follow.create({
-        subject_did: rec.did,
-        subject_name: rec.displayName,
-        subject_handle: rec.handle,
-        subject_avatar: rec.avatarUrl,
-        did: actorDid,
-      });
+      await createBridgedFollow(rec.did, rec.displayName, rec.handle, rec.avatarUrl);
       setRecs((rs) => rs.filter((r) => r.did !== rec.did));
       toast({ title: 'Following', description: rec.displayName || rec.handle });
     } catch (err) {

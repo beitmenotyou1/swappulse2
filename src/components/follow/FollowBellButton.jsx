@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Bell, Loader2, UserPlus, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { createBridgedFollow, deleteBridgedFollow } from '@/lib/followBridge';
 
 // Two-part follow + bell control. Following creates an app.bsky.graph.follow
 // record plus a default (bell-off) followPreference. The bell toggles the
@@ -51,20 +52,9 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
     setBusy(true);
     try {
       if (!following) {
-        const { did, signingKey } = await ensureUserDid();
-        const stamped = await stampRecord({
-          subject_did: subjectDid, subject_name: subjectName,
-          subject_handle: subjectHandle, subject_avatar: subjectAvatar,
-        }, NSID.FOLLOW, did, signingKey);
-        const f = await base44.entities.Follow.create(stamped);
+        const f = await createBridgedFollow(subjectDid, subjectName, subjectHandle, subjectAvatar);
         setFollowing(true); setFollowId(f.id);
-        // AT Protocol PDS bridge — mirror as a real app.bsky.graph.follow record.
-        base44.functions.invoke('atproto-bridge', {
-          collection: 'app.bsky.graph.follow',
-          record: { subject: subjectDid, createdAt: new Date().toISOString() },
-        }).then((res) => {
-          if (res?.uri) base44.entities.Follow.update(f.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
-        }).catch(() => {});
+        const { did, signingKey } = await ensureUserDid();
         const ps = await stampRecord({
           subject_did: subjectDid, bell_enabled: false,
           notify_on: ['pack_opening', 'trade_listing'], priority: 'standard',
@@ -72,13 +62,7 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
         const p = await base44.entities.FollowPreference.create(ps);
         setPrefId(p.id);
       } else {
-        if (followId) {
-          const f = await base44.entities.Follow.get(followId).catch(() => null);
-          await base44.entities.Follow.delete(followId);
-          if (f?.at_uri?.startsWith('at://did:')) {
-            base44.functions.invoke('atproto-bridge', { action: 'delete', uri: f.at_uri }).catch(() => {});
-          }
-        }
+        if (followId) await deleteBridgedFollow(followId);
         if (prefId) await base44.entities.FollowPreference.delete(prefId);
         setFollowing(false); setFollowId(null); setBell(false); setPrefId(null);
       }
