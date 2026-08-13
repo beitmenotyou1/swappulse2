@@ -99,13 +99,13 @@
     "total_value"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
           "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.participant_dids": "{{user.data.did}}"
         },
         {
           "user_condition": {
@@ -113,9 +113,6 @@
           }
         }
       ]
-    },
-    "create": {
-      "created_by_id": "{{user.id}}"
     },
     "update": {
       "$or": [
