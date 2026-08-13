@@ -39,7 +39,13 @@ export default function ReactionBar({ post, initial }) {
       setMine(null);
       setMineId(null);
       try {
-        if (mineId) await base44.entities.Reaction.delete(mineId);
+        if (mineId) {
+          const r = await base44.entities.Reaction.get(mineId).catch(() => null);
+          await base44.entities.Reaction.delete(mineId);
+          if (r?.at_uri?.startsWith('at://did:')) {
+            base44.functions.invoke('atproto-bridge', { action: 'delete', uri: r.at_uri }).catch(() => {});
+          }
+        }
       } catch {
         setCounts(prevCounts);
         setMine(prevMine);
@@ -54,7 +60,11 @@ export default function ReactionBar({ post, initial }) {
           [type]: (c[type] || 0) + 1,
         }));
         try {
+          const r = await base44.entities.Reaction.get(mineId).catch(() => null);
           await base44.entities.Reaction.delete(mineId);
+          if (r?.at_uri?.startsWith('at://did:')) {
+            base44.functions.invoke('atproto-bridge', { action: 'delete', uri: r.at_uri }).catch(() => {});
+          }
         } catch {
           /* best-effort */
         }
@@ -81,6 +91,15 @@ export default function ReactionBar({ post, initial }) {
         );
         const created = await base44.entities.Reaction.create(stamped);
         setMineId(created.id);
+        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.like (only if the post has a real at_uri).
+        if (post.at_uri?.startsWith('at://did:') && post.cid) {
+          base44.functions.invoke('atproto-bridge', {
+            collection: 'app.bsky.feed.like',
+            record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
+          }).then((res) => {
+            if (res?.uri) base44.entities.Reaction.update(created.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
+          }).catch(() => {});
+        }
       } catch {
         setCounts(prevCounts);
         setMine(prevMine);

@@ -72,7 +72,13 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
         const p = await base44.entities.FollowPreference.create(ps);
         setPrefId(p.id);
       } else {
-        if (followId) await base44.entities.Follow.delete(followId);
+        if (followId) {
+          const f = await base44.entities.Follow.get(followId).catch(() => null);
+          await base44.entities.Follow.delete(followId);
+          if (f?.at_uri?.startsWith('at://did:')) {
+            base44.functions.invoke('atproto-bridge', { action: 'delete', uri: f.at_uri }).catch(() => {});
+          }
+        }
         if (prefId) await base44.entities.FollowPreference.delete(prefId);
         setFollowing(false); setFollowId(null); setBell(false); setPrefId(null);
       }

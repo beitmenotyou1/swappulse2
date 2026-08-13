@@ -1,13 +1,16 @@
-// atproto-bridge — writes records to a real AT Protocol PDS via XRPC.
+// atproto-bridge — writes and deletes records on a real AT Protocol PDS via XRPC.
 //
 // Uses a shared bridge PDS account (PDS_URL, PDS_IDENTIFIER, PDS_APP_PASSWORD
-// secrets) so SwapPulse posts/follows are mirrored onto the federated network
-// as real app.bsky.feed.post / app.bsky.graph.follow records.
+// secrets) so SwapPulse posts/follows/likes are mirrored onto the federated
+// network as real app.bsky.* records, and deletions propagate too.
 //
-// Returns { uri, cid, did } — the authoritative at:// URI, content ID, and the
-// bridge account's DID. Callers update the local entity's at_uri + cid with
-// these real values. If the PDS is not configured or unreachable, the call
-// errors (non-fatal — the local record still persists with simulated values).
+// Actions:
+//   create (default): { collection, record } → { uri, cid, did }
+//   delete:          { action: 'delete', uri } → { ok, deleted }
+//
+// Callers update the local entity's at_uri + cid with the real values on
+// create, and delete the local record on delete. If the PDS is unreachable
+// the call errors (non-fatal — the local record still persists).
 
 let cachedSession: { accessJwt: string; did: string; handle: string; expiresAt: number } | null = null;
 
@@ -41,45 +44,83 @@ async function getSession() {
   return { pdsUrl, session: cachedSession };
 }
 
-async function createRecord(pdsUrl: string, accessJwt: string, repo: string, collection: string, record: object) {
-  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.createRecord`, {
+async function pdsRequest(pdsUrl: string, accessJwt: string, endpoint: string, payload: object) {
+  const res = await fetch(`${pdsUrl}/xrpc/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${accessJwt}`,
     },
-    body: JSON.stringify({ repo, collection, record }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const body = await res.text();
     return { error: true, status: res.status, body };
   }
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
 }
 
 Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
-    const { collection, record } = body;
+    const { action, collection, record, uri } = body;
+
+    // --- delete action ---
+    if (action === 'delete') {
+      if (!uri || typeof uri !== 'string') {
+        return Response.json({ error: 'uri is required for delete' }, { status: 400 });
+      }
+      // at://did:plc:abc/app.bsky.graph.follow/rkey → strip prefix, then [did, collection, rkey]
+      const segs = uri.replace(/^at:\/\//, '').split('/');
+      const collectionFromUri = segs[1];
+      const rkey = segs[2];
+      if (!rkey || !collectionFromUri) {
+        return Response.json({ error: 'could not parse rkey/collection from uri' }, { status: 400 });
+      }
+      const { pdsUrl, session } = await getSession();
+      let result: any = await pdsRequest(
+        pdsUrl, session.accessJwt, 'com.atproto.repo.deleteRecord',
+        { repo: session.did, collection: collectionFromUri, rkey },
+      );
+      if (result?.error && result.status === 401) {
+        cachedSession = null;
+        const fresh = await getSession();
+        result = await pdsRequest(
+          fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.deleteRecord',
+          { repo: fresh.session.did, collection: collectionFromUri, rkey },
+        );
+      }
+      if (result?.error) {
+        // 404 = already gone; treat as success
+        if (result.status === 404) return Response.json({ ok: true, deleted: true });
+        console.error('atproto-bridge: deleteRecord failed', result.status, result.body);
+        return Response.json({ error: `deleteRecord failed (${result.status})` }, { status: 502 });
+      }
+      return Response.json({ ok: true, deleted: true });
+    }
+
+    // --- create action (default) ---
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });
     }
-
     const { pdsUrl, session } = await getSession();
-    let result: any = await createRecord(pdsUrl, session.accessJwt, session.did, collection, record);
-
-    // Token expired — refresh session and retry once.
+    let result: any = await pdsRequest(
+      pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord',
+      { repo: session.did, collection, record },
+    );
     if (result?.error && result.status === 401) {
       cachedSession = null;
       const fresh = await getSession();
-      result = await createRecord(fresh.pdsUrl, fresh.session.accessJwt, fresh.session.did, collection, record);
+      result = await pdsRequest(
+        fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.createRecord',
+        { repo: fresh.session.did, collection, record },
+      );
     }
-
     if (result?.error) {
       console.error('atproto-bridge: createRecord failed', result.status, result.body);
       return Response.json({ error: `createRecord failed (${result.status})` }, { status: 502 });
     }
-
     return Response.json({ uri: result.uri, cid: result.cid, did: session.did });
   } catch (error) {
     console.error('atproto-bridge error:', error?.message || error);
