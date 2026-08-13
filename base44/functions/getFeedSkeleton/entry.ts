@@ -43,7 +43,7 @@ export default async function (req: Request): Promise<Response> {
         actorDid,
         fromCache: true,
         cursor: cursor + limit < recs.length ? String(cursor + limit) : undefined,
-        feed: slice.map((r: any) => ({ post: r.did, reason: 'recommendation' })),
+        feed: slice.map((r: any) => ({ post: `at://${r.did}/app.bsky.actor.profile/self`, reason: { $type: 'org.swappulse.feedReason', kind: 'recommendation' } })),
         recommendations: slice,
       });
     }
@@ -99,7 +99,7 @@ export default async function (req: Request): Promise<Response> {
       actorDid,
       fromCache: false,
       cursor: cursor + limit < recommendations.length ? String(cursor + limit) : undefined,
-      feed: slice.map((r: any) => ({ post: r.did, reason: 'recommendation' })),
+      feed: slice.map((r: any) => ({ post: `at://${r.did}/app.bsky.actor.profile/self`, reason: { $type: 'org.swappulse.feedReason', kind: 'recommendation' } })),
       recommendations: slice,
     });
   } catch (error) {

@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
         const clean = posts.filter(isModerationClean);
         const slice = clean.slice(cursor, cursor + limit);
         return Response.json({
-          feed: slice.map((p) => ({ post: p.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${p.id}`, reason: 'recent' })),
+          feed: slice.map((p) => ({ post: p.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${p.id}`, reason: { $type: 'org.swappulse.feedReason', kind: 'recent' } })),
           cursor: slice.length === limit ? String(cursor + limit) : undefined,
         });
       }
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
           .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
           .slice(cursor, cursor + limit);
         return Response.json({
-          feed: movers.map((m) => ({ post: m.p.at_uri || `at://did:web:swappulse.org/org.swappulse.cardPricing/${m.p.id}`, reason: `mover_${m.pct > 0 ? 'up' : 'down'}`, feedContext: String(m.pct.toFixed(1)) })),
+          feed: movers.map((m) => ({ post: m.p.at_uri || `at://did:web:swappulse.org/org.swappulse.cardPricing/${m.p.id}`, reason: { $type: 'org.swappulse.feedReason', kind: `mover_${m.pct > 0 ? 'up' : 'down'}` }, feedContext: String(m.pct.toFixed(1)) })),
           cursor: movers.length === limit ? String(cursor + limit) : undefined,
         });
       }
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
           .filter(isModerationClean)
           .slice(cursor, cursor + limit);
         return Response.json({
-          feed: slice.map((p) => ({ post: p.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${p.id}`, reason: 'shiny' })),
+          feed: slice.map((p) => ({ post: p.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${p.id}`, reason: { $type: 'org.swappulse.feedReason', kind: 'shiny' } })),
           cursor: slice.length === limit ? String(cursor + limit) : undefined,
         });
       }
