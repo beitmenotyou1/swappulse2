@@ -1,4 +1,4 @@
-// Public TCGDex catalog gateway — no auth required (catalog data is public).
+// Public TCGDex catalog gateway — catalog data is public, no auth required.
 import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
 
 Deno.serve(async (req) => {
