@@ -1,0 +1,102 @@
+{
+  "name": "AgentFeedback",
+  "type": "object",
+  "title": "AgentFeedback",
+  "description": "org.swappulse.agentFeedback \u2014 user feedback on AI agent responses (thumbs up/down, corrections, accepted/rejected suggestions), used by the learning loop to improve agent performance over time.",
+  "properties": {
+    "agent_name": {
+      "type": "string",
+      "description": "Name of the agent that received the feedback"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID of the conversation the feedback belongs to"
+    },
+    "message_id": {
+      "type": "string",
+      "description": "ID of the specific message (if available)"
+    },
+    "feedback_type": {
+      "type": "string",
+      "enum": [
+        "thumbs_up",
+        "thumbs_down",
+        "correction",
+        "suggestion_accepted",
+        "suggestion_rejected"
+      ],
+      "description": "Type of feedback provided by the collector"
+    },
+    "rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Optional 1-5 star rating"
+    },
+    "user_comment": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional user comment explaining the feedback"
+    },
+    "original_content": {
+      "type": "string",
+      "description": "The assistant message content that was rated"
+    },
+    "corrected_content": {
+      "type": "string",
+      "description": "For corrections \u2014 the user's suggested better response"
+    },
+    "context_summary": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Brief summary of the conversation context"
+    },
+    "processed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this feedback has been analyzed by the learning loop"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "agent_name",
+    "feedback_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

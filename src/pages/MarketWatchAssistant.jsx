@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
+import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
 
 const AGENT_NAME = 'market_watch';
 
@@ -64,7 +65,7 @@ function FunctionDisplay({ toolCall }) {
   );
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, agentName, conversationId }) {
   const isUser = message.role === 'user';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -74,6 +75,9 @@ function MessageBubble({ message }) {
           : <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0"><ReactMarkdown>{message.content}</ReactMarkdown></div>
         )}
         {message.tool_calls?.map((tc, i) => <FunctionDisplay key={i} toolCall={tc} />)}
+        {!isUser && message.content && (
+          <AgentFeedbackBar agentName={agentName} conversationId={conversationId} message={message} />
+        )}
       </div>
     </div>
   );
@@ -199,7 +203,7 @@ export default function MarketWatchAssistant() {
                 {loadingChat && messages.length === 0 ? (
                   <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
                 ) : (
-                  messages.map((m, i) => <MessageBubble key={i} message={m} />)
+                  messages.map((m, i) => <MessageBubble key={i} message={m} agentName={AGENT_NAME} conversationId={activeId} />)
                 )}
                 {sending && (
                   <div className="flex justify-start">

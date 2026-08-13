@@ -1,0 +1,44 @@
+{
+  "name": "Agent Learning Loop",
+  "description": "Processes agent feedback daily and generates improvement insights so every AI agent gets smarter the more collectors use it",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "agent_learning_loop",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "process_feedback": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processAgentFeedback"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Process agent feedback",
+            "description": "Analyze feedback and generate improvement insights"
+          }
+        }
+      }
+    ]
+  }
+}

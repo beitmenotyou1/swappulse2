@@ -1,0 +1,85 @@
+{
+  "name": "AgentInsight",
+  "type": "object",
+  "title": "AgentInsight",
+  "description": "org.swappulse.agentInsight \u2014 LLM-generated insights from agent feedback patterns. Agents read their active insights before responding to continuously improve. Created by the learning loop workflow; readable by all authenticated users so agents can access them.",
+  "properties": {
+    "agent_name": {
+      "type": "string",
+      "description": "Name of the agent this insight applies to"
+    },
+    "insight_type": {
+      "type": "string",
+      "enum": [
+        "improvement_note",
+        "common_correction",
+        "strength",
+        "weakness",
+        "pattern"
+      ],
+      "description": "Category of insight"
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "The insight text \u2014 actionable guidance for the agent"
+    },
+    "evidence_count": {
+      "type": "integer",
+      "default": 1,
+      "description": "Number of feedback items supporting this insight"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.5,
+      "description": "Confidence score 0-1 based on evidence strength"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this insight expires (null = never)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this insight is currently active"
+    },
+    "source_feedback_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of feedback items that generated or reinforced this insight"
+    }
+  },
+  "required": [
+    "agent_name",
+    "insight_type",
+    "content",
+    "generated_at"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
