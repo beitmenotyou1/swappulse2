@@ -112,10 +112,7 @@ export function useToggleCardOwnership(setId) {
     mutationFn: async ({ card, isOwned, setName }) => {
       if (isOwned) {
         // Remove: find and delete the matching CollectionEntry
-        const entries = await base44.entities.CollectionEntry.filter({ card_id: card.tcgdex_id });
-        for (const entry of entries) {
-          await base44.entities.CollectionEntry.delete(entry.id);
-        }
+        await base44.entities.CollectionEntry.deleteMany({ card_id: card.tcgdex_id });
       } else {
         // Add: create a new CollectionEntry
         await base44.entities.CollectionEntry.create({

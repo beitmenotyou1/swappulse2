@@ -65,8 +65,7 @@ export default function CardDetail() {
     setWishlistBusy(true);
     try {
       if (wishlisted) {
-        const existing = await base44.entities.Wishlist.filter({ card_id: card.id }, '-created_date', 10);
-        for (const w of existing) await base44.entities.Wishlist.delete(w.id);
+        await base44.entities.Wishlist.deleteMany({ card_id: card.id });
         setWishlisted(false);
         toast({ title: 'Removed from wishlist' });
       } else {

@@ -71,7 +71,11 @@ export default function Home() {
     if (!user?.id || !posts.length) { setRepostMap({}); return; }
     (async () => {
       try {
-        const rows = await base44.entities.Repost.filter({ created_by_id: user.id }, '-created_date', 200);
+        const rows = await base44.entities.Repost.filter(
+          { created_by_id: user.id, post_id: { $in: posts.map((p) => p.id) } },
+          '-created_date',
+          50
+        );
         const map = {};
         for (const r of rows) { map[r.post_id] = r; }
         setRepostMap(map);
