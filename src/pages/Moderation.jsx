@@ -126,12 +126,12 @@ export default function Moderation() {
     setResolving(false);
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'moderator') {
     return (
       <div className="mx-auto max-w-md p-8 text-center">
         <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-        <h1 className="text-xl font-bold">Admins only</h1>
-        <p className="text-sm text-muted-foreground">The moderator dashboard is restricted to administrators.</p>
+        <h1 className="text-xl font-bold">Staff only</h1>
+        <p className="text-sm text-muted-foreground">The moderator dashboard is restricted to staff and administrators.</p>
       </div>
     );
   }
