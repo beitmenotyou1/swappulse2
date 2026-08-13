@@ -61,6 +61,7 @@ import TradeAssistant from '@/pages/TradeAssistant';
 import MarketWatchAssistant from '@/pages/MarketWatchAssistant';
 import CollectionAdvisor from '@/pages/CollectionAdvisor';
 import SentimentConversationalist from '@/pages/SentimentConversationalist';
+import AchievementGoalTracker from '@/pages/AchievementGoalTracker';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -141,6 +142,7 @@ const AuthenticatedApp = () => {
           <Route path="/market-watch-assistant" element={<MarketWatchAssistant />} />
           <Route path="/collection-advisor" element={<CollectionAdvisor />} />
           <Route path="/sentiment-conversationalist" element={<SentimentConversationalist />} />
+          <Route path="/achievement-goal-tracker" element={<AchievementGoalTracker />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
