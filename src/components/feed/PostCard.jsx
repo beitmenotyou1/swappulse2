@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
+import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag } from 'lucide-react';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
 import { useLivePresence } from '@/lib/livePresence';
@@ -10,6 +10,7 @@ import { timeAgo, formatNumber } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import ReportDialog from '@/components/moderation/ReportDialog';
 
 const TYPE_META = {
   pack_opening: { icon: Sparkles, label: 'Pack Pull', color: 'text-accent' },
@@ -23,6 +24,7 @@ export default function PostCard({ post, reactions, myRepost }) {
   const [repostId, setRepostId] = useState(null);
   const [pendingRepost, setPendingRepost] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
@@ -175,10 +177,25 @@ export default function PostCard({ post, reactions, myRepost }) {
             <button aria-label="Share" className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
               <Share2 className="h-4 w-4" />
             </button>
+            <button
+              onClick={() => setReportOpen(true)}
+              aria-label="Report"
+              className="rounded-full px-2 py-1 transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Flag className="h-4 w-4" />
+            </button>
           </div>
           <ReactionBar post={post} initial={reactions} />
         </div>
       </div>
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        contentType="post"
+        contentId={post.id}
+        contentPreview={post.content}
+        authorHandle={post.author_handle}
+      />
     </article>
   );
 }

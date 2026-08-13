@@ -127,6 +127,8 @@ export default function ModerationAgent() {
   const [sending, setSending] = useState(false);
   const [flagged, setFlagged] = useState([]);
   const [loadingFlagged, setLoadingFlagged] = useState(true);
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(true);
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -146,6 +148,16 @@ export default function ModerationAgent() {
         setFlagged(res.data?.posts || []);
       } catch { /* ignore */ }
       finally { setLoadingFlagged(false); }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await base44.entities.ContentReport.filter({ status: 'pending' }, '-created_date', 10);
+        setReports(list || []);
+      } catch { /* ignore */ }
+      finally { setLoadingReports(false); }
     })();
   }, []);
 
@@ -199,6 +211,15 @@ export default function ModerationAgent() {
     send(msg);
   };
 
+  const selectReport = (report) => {
+    if (!activeId) {
+      alert('Start a conversation first, then select a report.');
+      return;
+    }
+    const msg = `A user reported a ${report.content_type} (id: ${report.content_id}) by @${report.author_handle || 'unknown'} for "${report.reason.replace('_', ' ')}". ${report.details ? `User details: "${report.details.slice(0, 300)}".` : ''} Content preview: "${(report.content_preview || '').slice(0, 300)}". Please analyze whether this violates our guidelines and recommend a moderation action.`;
+    send(msg);
+  };
+
   if (user?.role !== 'admin' && user?.role !== 'moderator') {
     return (
       <div className="mx-auto max-w-md p-8 text-center">
@@ -239,6 +260,34 @@ export default function ModerationAgent() {
               <div className="space-y-2">
                 {flagged.map((item) => (
                   <FlaggedItem key={item.id} item={item} onSelect={selectFlagged} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* User reports */}
+          <div className="mb-4 border-t border-border pt-3">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">
+              <Flag className="h-3.5 w-3.5" /> User Reports
+            </div>
+            {loadingReports ? (
+              <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+            ) : reports.length === 0 ? (
+              <p className="px-2 text-xs text-muted-foreground">No pending reports.</p>
+            ) : (
+              <div className="space-y-2">
+                {reports.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => selectReport(r)}
+                    className="w-full rounded-lg border border-border p-2.5 text-left transition-colors hover:bg-secondary"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold capitalize">{r.reason.replace('_', ' ')}</span>
+                      <span className="text-[10px] text-muted-foreground">{r.content_type}</span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.content_preview || r.details || 'No preview'}</p>
+                  </button>
                 ))}
               </div>
             )}

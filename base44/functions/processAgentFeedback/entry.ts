@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     // If a specific agent is requested, process just that one; otherwise process all known agents
     const agentNames = agentName
       ? [agentName]
-      : ['trade_assistant', 'market_watch', 'collection_advisor'];
+      : ['moderation_agent', 'trade_assistant', 'market_watch', 'collection_advisor'];
 
     // Process all agents in parallel (independent LLM + entity work per agent).
     const entries = await Promise.all(
