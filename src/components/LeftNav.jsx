@@ -53,7 +53,7 @@ export default function LeftNav() {
     <nav className="sticky top-0 hidden h-screen flex-col px-2 py-4 md:flex xl:px-3">
       <div className="mb-6 flex justify-center px-2 xl:justify-start">
         <NavLink to="/" aria-label="SwapPulse home">
-          <Logo size={56} withText={true} />
+          <Logo size={64} withText={true} />
         </NavLink>
       </div>
       <div className="flex flex-col items-center gap-1 xl:items-stretch">
