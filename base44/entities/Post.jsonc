@@ -124,6 +124,22 @@
       "type": "string",
       "description": "Post id this is a reply to"
     },
+    "parent_uri": {
+      "type": "string",
+      "description": "at:// URI of the parent post (for federated reply threading)"
+    },
+    "parent_cid": {
+      "type": "string",
+      "description": "CID of the parent post (for federated reply threading)"
+    },
+    "root_uri": {
+      "type": "string",
+      "description": "at:// URI of the root post in the reply thread (for federated reply threading)"
+    },
+    "root_cid": {
+      "type": "string",
+      "description": "CID of the root post in the reply thread (for federated reply threading)"
+    },
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the author (simulated)"

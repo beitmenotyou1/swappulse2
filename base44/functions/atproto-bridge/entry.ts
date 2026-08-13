@@ -12,7 +12,7 @@
 // create, and delete the local record on delete. If the PDS is unreachable
 // the call errors (non-fatal — the local record still persists).
 
-let cachedSession: { accessJwt: string; did: string; handle: string; expiresAt: number } | null = null;
+let cachedSession: { accessJwt: string; refreshJwt: string; did: string; handle: string; expiresAt: number } | null = null;
 
 async function getSession() {
   const pdsUrl = Deno.env.get('PDS_URL');
@@ -21,9 +21,42 @@ async function getSession() {
   if (!pdsUrl || !identifier || !password) {
     throw new Error('PDS not configured. Set PDS_URL, PDS_IDENTIFIER, PDS_APP_PASSWORD secrets.');
   }
+
+  // If we have a cached session that's still valid, reuse it
   if (cachedSession && Date.now() < cachedSession.expiresAt) {
     return { pdsUrl, session: cachedSession };
   }
+
+  // If we have a refresh token, try refreshing the session first (avoids
+  // re-authenticating with the app password on every call after long idle)
+  if (cachedSession?.refreshJwt) {
+    try {
+      const refreshRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cachedSession.refreshJwt}`,
+        },
+      });
+      if (refreshRes.ok) {
+        const data = await refreshRes.json();
+        cachedSession = {
+          accessJwt: data.accessJwt,
+          refreshJwt: data.refreshJwt || cachedSession.refreshJwt,
+          did: data.did || cachedSession.did,
+          handle: data.handle || cachedSession.handle,
+          expiresAt: Date.now() + 25 * 60 * 1000,
+        };
+        return { pdsUrl, session: cachedSession };
+      }
+      // Refresh failed (expired/revoked) — fall through to createSession
+      console.log('atproto-bridge: refreshSession failed, falling back to createSession');
+    } catch (e) {
+      console.error('atproto-bridge: refreshSession error', e?.message);
+    }
+  }
+
+  // Fresh createSession with app password
   const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -36,9 +69,9 @@ async function getSession() {
   const data = await res.json();
   cachedSession = {
     accessJwt: data.accessJwt,
+    refreshJwt: data.refreshJwt,
     did: data.did,
     handle: data.handle,
-    // accessJwt lasts ~30 min; refresh well before expiry
     expiresAt: Date.now() + 25 * 60 * 1000,
   };
   return { pdsUrl, session: cachedSession };
@@ -128,6 +161,32 @@ Deno.serve(async (req) => {
         return Response.json({ error: `putRecord failed (${result.status})` }, { status: 502 });
       }
       return Response.json({ uri: result.uri, cid: result.cid, did: session.did });
+    }
+
+    // --- emitLabels action (labeler: emit moderation labels to the network) ---
+    if (action === 'emitLabels') {
+      const { labels } = body;
+      if (!Array.isArray(labels) || labels.length === 0) {
+        return Response.json({ error: 'labels array is required for emitLabels' }, { status: 400 });
+      }
+      const { pdsUrl, session } = await getSession();
+      let result: any = await pdsRequest(
+        pdsUrl, session.accessJwt, 'com.atproto.label.emitLabels',
+        { labels },
+      );
+      if (result?.error && result.status === 401) {
+        cachedSession = null;
+        const fresh = await getSession();
+        result = await pdsRequest(
+          fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.label.emitLabels',
+          { labels },
+        );
+      }
+      if (result?.error) {
+        console.error('atproto-bridge: emitLabels failed', result.status, result.body);
+        return Response.json({ error: `emitLabels failed (${result.status})` }, { status: 502 });
+      }
+      return Response.json({ ok: true, emitted: true });
     }
 
     // --- create action (default) ---

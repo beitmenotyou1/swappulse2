@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "pds_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sync-from-pds",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sync from PDS",
+            "description": "Poll PDS for deletions and updates"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Scheduled polling sync from the AT Protocol PDS \u2014 detects inbound deletions and updates, keeping local entities in sync with PDS-side changes every 5 minutes.",
+  "name": "PDS Sync"
+}

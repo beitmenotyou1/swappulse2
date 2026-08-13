@@ -52,6 +52,23 @@ Deno.serve(async (req) => {
     if (moderation_labels.length > 0) update.moderation_status = 'pending';
     await base44.entities.Post.update(postId, update);
 
+    // Emit labels to the AT Protocol network via the labeler bridge.
+    // Fire-and-forget — local labels are the source of truth; network emission
+    // is best-effort (the PDS may not support com.atproto.label.emitLabels).
+    if (moderation_labels.length > 0 && post.at_uri) {
+      const labelerDid = 'did:web:labeler.swappulse.org';
+      const labels = moderation_labels.map((l) => ({
+        src: labelerDid,
+        uri: post.at_uri,
+        cid: post.cid || undefined,
+        val: l.label,
+        neg: false,
+      }));
+      base44.functions.invoke('atproto-bridge', { action: 'emitLabels', labels }).catch((e) => {
+        console.error('moderatePost: label emission failed', e?.message);
+      });
+    }
+
     return Response.json({ labels: moderation_labels, reasons });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

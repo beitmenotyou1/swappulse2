@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
@@ -26,6 +26,7 @@ export default function PostCard({ post, reactions, myRepost }) {
 
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
+  const navigate = useNavigate();
 
   // Sync existing repost state from the batched map (avoids a per-card API call).
   useEffect(() => {
@@ -136,7 +137,11 @@ export default function PostCard({ post, reactions, myRepost }) {
           )}
 
           <div className="mt-3 flex items-center justify-between max-w-md text-muted-foreground">
-            <button aria-label="Reply" className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary">
+            <button
+              onClick={() => navigate('/compose', { state: { replyTo: post } })}
+              aria-label="Reply"
+              className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary"
+            >
               <MessageCircle className="h-4 w-4" />
               <span>{formatNumber(post.replies)}</span>
             </button>

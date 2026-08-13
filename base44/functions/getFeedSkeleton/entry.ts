@@ -1,8 +1,15 @@
-// §2.2 getFeedSkeleton — Who to Follow feed generator endpoint.
-// Runs the trust-based recommendation pipeline over the app's own entities
-// (Vouch, Follow, CollectionEntry, User), caches results in the
-// RecommendationCache entity (1h TTL), and returns an AT Protocol feed
-// skeleton plus an enriched `recommendations` array for the SwapPulse UI.
+// getFeedSkeleton — AT Protocol feed generator endpoint (public).
+//
+// Serves multiple SwapPulse feeds so external Bluesky clients can discover
+// and subscribe to them from within the Bluesky app:
+//   - trade-listings: active public trade listings
+//   - collection-posts: pack openings and showcases
+//   - whoto-follow: trust-based collector recommendations (auth required)
+//
+// Query params: feed=<feed_uri>, limit=<int>, cursor=<str>
+// Public feeds (trade-listings, collection-posts) require no auth.
+// The whoto-follow feed requires authentication for personalization.
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import {
   runRecommendationPipeline,
@@ -10,21 +17,75 @@ import {
   defaultPreferences,
 } from '../../shared/recommendationEngine.ts';
 
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const FEED_DID = 'did:web:feed.swappulse.org';
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+function parseFeedParam(feedUri: string | null): string {
+  if (!feedUri) return 'trade-listings';
+  // Accept full at:// URIs or bare feed names
+  const parts = feedUri.split('/');
+  const last = parts[parts.length - 1];
+  if (['trade-listings', 'collection-posts', 'whoto-follow'].includes(last)) return last;
+  return 'trade-listings';
+}
 
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const svc = base44.asServiceRole;
-    const actorDid = toDid(user.id, (user as any).did);
 
-    const body = await req.json().catch(() => ({}));
-    const limit = Math.min(Math.max(Number(body.limit) || 10, 1), 25);
-    const cursor = body.cursor ? Number(body.cursor) : 0;
+    const url = new URL(req.url);
+    const feedParam = parseFeedParam(url.searchParams.get('feed'));
+    const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 20, 1), 100);
+    const cursor = url.searchParams.get('cursor') ? Number(url.searchParams.get('cursor')) : 0;
 
-    // 1. Serve from cache if fresh
+    // Try to get user (optional — public feeds don't require auth)
+    let user: any = null;
+    try {
+      user = await base44.auth.me();
+    } catch {}
+    const actorDid = user ? toDid(user.id, (user as any).did) : null;
+
+    // --- trade-listings feed (public) ---
+    if (feedParam === 'trade-listings') {
+      const listings = await svc.entities.TradeListing.filter(
+        { status: 'open', visibility: 'public' },
+        '-created_date',
+        200,
+      );
+      const slice = listings.slice(cursor, cursor + limit);
+      return Response.json({
+        cursor: cursor + limit < listings.length ? String(cursor + limit) : undefined,
+        feed: slice.map((l: any) => ({
+          post: l.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${l.id}`,
+          reason: { $type: 'org.swappulse.feedReason', kind: 'trade_listing' },
+        })),
+      });
+    }
+
+    // --- collection-posts feed (public) ---
+    if (feedParam === 'collection-posts') {
+      const posts = await svc.entities.Post.filter(
+        { post_type: { $in: ['pack_opening', 'showcase'] } },
+        '-created_date',
+        200,
+      );
+      const slice = posts.slice(cursor, cursor + limit);
+      return Response.json({
+        cursor: cursor + limit < posts.length ? String(cursor + limit) : undefined,
+        feed: slice.map((p: any) => ({
+          post: p.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${p.id}`,
+          reason: { $type: 'org.swappulse.feedReason', kind: 'collection_post' },
+        })),
+      });
+    }
+
+    // --- whoto-follow feed (requires auth for personalization) ---
+    if (!user || !actorDid) {
+      return Response.json({ error: 'Authentication required for Who to Follow feed' }, { status: 401 });
+    }
+
+    // Check cache
     const cachedRows = await svc.entities.RecommendationCache.filter(
       { did: actorDid },
       '-updated_date',
@@ -40,15 +101,15 @@ export default async function (req: Request): Promise<Response> {
       const recs = cached.recommendations;
       const slice = recs.slice(cursor, cursor + limit);
       return Response.json({
-        actorDid,
-        fromCache: true,
         cursor: cursor + limit < recs.length ? String(cursor + limit) : undefined,
-        feed: slice.map((r: any) => ({ post: `at://${r.did}/app.bsky.actor.profile/self`, reason: { $type: 'org.swappulse.feedReason', kind: 'recommendation' } })),
-        recommendations: slice,
+        feed: slice.map((r: any) => ({
+          post: `at://${r.did}/app.bsky.actor.profile/self`,
+          reason: { $type: 'org.swappulse.feedReason', kind: 'recommendation' },
+        })),
       });
     }
 
-    // 2. Fetch the materialised view (entity rows)
+    // Run recommendation pipeline
     const [users, vouches, follows, collectionEntries, prefRows] = await Promise.all([
       svc.entities.User.list('-created_date', 2000),
       svc.entities.Vouch.list('-created_date', 2000),
@@ -80,7 +141,7 @@ export default async function (req: Request): Promise<Response> {
       prefs,
     });
 
-    // 3. Persist cache (upsert)
+    // Persist cache
     if (cached) {
       await svc.entities.RecommendationCache.update(cached.id, {
         recommendations,
@@ -96,11 +157,11 @@ export default async function (req: Request): Promise<Response> {
 
     const slice = recommendations.slice(cursor, cursor + limit);
     return Response.json({
-      actorDid,
-      fromCache: false,
       cursor: cursor + limit < recommendations.length ? String(cursor + limit) : undefined,
-      feed: slice.map((r: any) => ({ post: `at://${r.did}/app.bsky.actor.profile/self`, reason: { $type: 'org.swappulse.feedReason', kind: 'recommendation' } })),
-      recommendations: slice,
+      feed: slice.map((r: any) => ({
+        post: `at://${r.did}/app.bsky.actor.profile/self`,
+        reason: { $type: 'org.swappulse.feedReason', kind: 'recommendation' },
+      })),
     });
   } catch (error) {
     console.error('[getFeedSkeleton] error', error);

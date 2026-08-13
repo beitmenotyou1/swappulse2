@@ -24,7 +24,7 @@ function canonicalise(tags) {
   return out;
 }
 
-export default function ComposeBox({ onPosted }) {
+export default function ComposeBox({ onPosted, replyTo }) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState('text');
@@ -45,6 +45,12 @@ export default function ComposeBox({ onPosted }) {
       const { did, signingKey } = await ensureUserDid();
       const hashtags = extractHashtags(content).slice(0, 10);
       const canonical_tags = canonicalise(hashtags);
+      // Federated reply threading — resolve parent/root refs for the bridge
+      const parentUri = replyTo?.at_uri || null;
+      const parentCid = replyTo?.cid || null;
+      const rootUri = replyTo?.root_uri || replyTo?.at_uri || null;
+      const rootCid = replyTo?.root_cid || replyTo?.cid || null;
+
       const stamped = await stampRecord({
         content: content.trim(),
         post_type: attachedCard ? postType : 'text',
@@ -60,18 +66,27 @@ export default function ComposeBox({ onPosted }) {
         likes: 0,
         reposts: 0,
         replies: 0,
+        reply_to: replyTo?.id || null,
+        parent_uri: parentUri,
+        parent_cid: parentCid,
+        root_uri: rootUri,
+        root_cid: rootCid,
       }, NSID.POST, did, signingKey);
       const created = await base44.entities.Post.create(stamped);
       // Hashtag abuse labeler - evaluates the new post and attaches moderation labels.
       if (created?.id) {
         base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
         // AT Protocol PDS bridge — mirror as a real app.bsky.feed.post on the federated network.
+        const replyRef = parentUri && parentCid && rootUri && rootCid
+          ? { root: { uri: rootUri, cid: rootCid }, parent: { uri: parentUri, cid: parentCid } }
+          : undefined;
         base44.functions.invoke('atproto-bridge', {
           collection: 'app.bsky.feed.post',
           record: {
             text: (content.trim() || stamped.card_name || 'New SwapPulse post').slice(0, 3000),
             createdAt: new Date().toISOString(),
             langs: ['en'],
+            ...(replyRef ? { reply: replyRef } : {}),
           },
         }).then((res) => {
           if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
@@ -107,6 +122,12 @@ export default function ComposeBox({ onPosted }) {
 
   return (
     <div className="border-b border-border p-4">
+      {replyTo && (
+        <div className="mb-3 rounded-lg border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground">
+          Replying to <span className="font-semibold text-foreground">{replyTo.author_name || 'collector'}</span>
+          {replyTo.content ? `: ${replyTo.content.slice(0, 80)}${replyTo.content.length > 80 ? '...' : ''}` : ''}
+        </div>
+      )}
       <div className="flex gap-3">
         <Avatar name={user?.full_name} size={44} />
         <div className="flex-1">
@@ -115,7 +136,7 @@ export default function ComposeBox({ onPosted }) {
             onChange={(e) => setContent(e.target.value)}
             rows={2}
             maxLength={500}
-            placeholder="What did you pull today?"
+            placeholder={replyTo ? 'Write your reply...' : 'What did you pull today?'}
             className="w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           />
 

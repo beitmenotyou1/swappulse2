@@ -124,6 +124,24 @@ Deno.serve(async (req) => {
         notes: notes || '',
         auto_generated: false,
       });
+
+      // Emit label negation to the network when a moderator dismisses labels.
+      // The neg retraction lifecycle propagates label removals to all PDSs
+      // that hydrate from SwapPulse as a labeler.
+      if (decision === 'dismiss' && post.at_uri && Array.isArray(post.moderation_labels)) {
+        const labelerDid = 'did:web:labeler.swappulse.org';
+        const negLabels = post.moderation_labels.map((l) => ({
+          src: labelerDid,
+          uri: post.at_uri,
+          cid: post.cid || undefined,
+          val: l.label,
+          neg: true,
+        }));
+        base44.functions.invoke('atproto-bridge', { action: 'emitLabels', labels: negLabels }).catch((e) => {
+          console.error('moderation: label negation emission failed', e?.message);
+        });
+      }
+
       return Response.json({ success: true });
     }
 
