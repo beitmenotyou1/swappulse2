@@ -161,11 +161,11 @@ export default function ComposeBox({ onPosted, replyTo }) {
             </div>
           )}
 
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-center gap-1">
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-1">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-primary transition-colors hover:bg-primary/10"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
               >
                 <Image className="h-4 w-4" /> Card
               </button>
@@ -176,7 +176,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
                     setPostType(t.key);
                     setSearchOpen(true);
                   }}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs transition-colors sm:px-3 sm:text-sm ${
                     postType === t.key ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
@@ -187,7 +187,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
             <button
               onClick={handlePost}
               disabled={posting || (!content.trim() && !attachedCard)}
-              className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-40"
+              className="flex items-center justify-center gap-1.5 self-end rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-40 sm:self-auto"
             >
               {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Post
