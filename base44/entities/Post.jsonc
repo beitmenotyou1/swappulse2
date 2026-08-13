@@ -56,6 +56,21 @@
           },
           "confidence": {
             "type": "number"
+          },
+          "ai_generated": {
+            "type": "boolean",
+            "default": false,
+            "description": "True if this label was applied by the AI moderation agent"
+          },
+          "recommended_action": {
+            "type": "string",
+            "enum": [
+              "hide",
+              "warn",
+              "surface_for_review",
+              "allow"
+            ],
+            "description": "AI-recommended moderation action"
           }
         }
       }
