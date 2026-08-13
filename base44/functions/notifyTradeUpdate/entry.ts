@@ -9,6 +9,12 @@ function toDid(user: any): string {
   return user.did || 'did:plc:' + String(user.id).replace(/-/g, '').slice(0, 24);
 }
 
+// MongoDB ObjectId: 24-char hex string. Service accounts use "service_..." prefixes
+// which aren't valid ObjectIds and would cause User.filter to throw.
+function isValidObjectId(id: string): boolean {
+  return typeof id === 'string' && /^[a-f0-9]{24}$/.test(id);
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -43,11 +49,12 @@ Deno.serve(async (req) => {
       return Response.json({ notified: 0, reason: 'no_participants' });
     }
 
-    // Fetch User records to get DIDs (batch via $in)
-    const userIds = [...participantIds];
-    const users = await svc.entities.User.filter(
-      { id: { $in: userIds } }, '-created_date', 100,
-    ).catch(() => []);
+    // Fetch User records to get DIDs (batch via $in).
+    // Filter out non-ObjectId IDs (service accounts) to avoid query errors.
+    const userIds = [...participantIds].filter(isValidObjectId);
+    const users = userIds.length > 0
+      ? await svc.entities.User.filter({ id: { $in: userIds } }, '-created_date', 100).catch(() => [])
+      : [];
     const userById = new Map(users.map((u: any) => [u.id, u]));
 
     // Build notification content

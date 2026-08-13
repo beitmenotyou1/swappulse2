@@ -1,0 +1,42 @@
+{
+  "name": "Trade Status Notifications",
+  "description": "Notifies all interested users (listing owner + trade thread participants) when a TradeListing's status changes, via in-app notifications and web push.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "TradeListing",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.changed_fields | index(\"status\") != null }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "trade_status_notifications",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "notify": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "notifyTradeUpdate",
+            "args": {
+              "trade_id": "${ .trigger.entity_id }",
+              "old_status": "${ .trigger.old_data.status // \"\" }",
+              "new_status": "${ .trigger.data.status // \"\" }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Notify trade participants",
+            "description": "In-app + push notification"
+          }
+        }
+      }
+    ]
+  }
+}
