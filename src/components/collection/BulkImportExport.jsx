@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, Upload, Loader2, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Download, Upload, Loader2, FileJson, FileSpreadsheet, FileCode } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
@@ -30,6 +30,27 @@ function download(filename, content, mime) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function toXml(rows) {
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const items = rows.map((r) =>
+    `    <card>\n${COLLECTION_FIELDS.map((f) => `      <${f}>${esc(r[f])}</${f}>`).join('\n')}\n    </card>`
+  ).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<collection>\n  <cards>\n${items}\n  </cards>\n</collection>`;
+}
+
+function parseXml(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Invalid XML file');
+  return Array.from(doc.querySelectorAll('card')).map((card) => {
+    const row = {};
+    COLLECTION_FIELDS.forEach((f) => {
+      const el = card.querySelector(f);
+      if (el && el.textContent) row[f] = el.textContent;
+    });
+    return row;
+  });
 }
 
 export default function BulkImportExport({ items, onImported }) {
@@ -63,27 +84,51 @@ export default function BulkImportExport({ items, onImported }) {
     }
   };
 
+  const exportXml = async () => {
+    setBusy(true);
+    try {
+      const all = items.length ? items : await base44.entities.CollectionEntry.list('-updated_date', 1000);
+      download('swappulse-collection.xml', toXml(all), 'application/xml');
+      setMsg({ type: 'ok', text: `Exported ${all.length} cards to XML.` });
+    } catch (e) {
+      setMsg({ type: 'err', text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setBusy(true);
     setMsg(null);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const jsonSchema = {
-        type: 'object',
-        properties: Object.fromEntries(
-          COLLECTION_FIELDS.map((f) => {
-            const numeric = ['purchase_price', 'market_value'].includes(f);
-            return [f, { type: numeric ? 'number' : 'string' }];
-          })
-        ),
-      };
-      const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: { type: 'array', items: jsonSchema },
-      });
-      const rows = Array.isArray(extracted.output) ? extracted.output : extracted.output ? [extracted.output] : [];
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      let rows = [];
+
+      if (ext === 'xml') {
+        rows = parseXml(await file.text());
+      } else if (ext === 'json') {
+        const parsed = JSON.parse(await file.text());
+        rows = Array.isArray(parsed) ? parsed : [parsed];
+      } else {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const jsonSchema = {
+          type: 'object',
+          properties: Object.fromEntries(
+            COLLECTION_FIELDS.map((f) => {
+              const numeric = ['purchase_price', 'market_value'].includes(f);
+              return [f, { type: numeric ? 'number' : 'string' }];
+            })
+          ),
+        };
+        const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
+          file_url,
+          json_schema: { type: 'array', items: jsonSchema },
+        });
+        rows = Array.isArray(extracted.output) ? extracted.output : extracted.output ? [extracted.output] : [];
+      }
+
       if (!rows.length) {
         setMsg({ type: 'err', text: 'No rows detected in the uploaded file.' });
         setBusy(false);
@@ -144,18 +189,25 @@ export default function BulkImportExport({ items, onImported }) {
           >
             <FileSpreadsheet className="h-4 w-4" /> Export CSV
           </button>
+          <button
+            onClick={exportXml}
+            disabled={busy}
+            className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-sm font-bold hover:bg-secondary/80 disabled:opacity-50"
+          >
+            <FileCode className="h-4 w-4" /> Export XML
+          </button>
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-1 font-bold">Import (CSV)</h3>
+        <h3 className="mb-1 font-bold">Import</h3>
         <p className="mb-4 text-sm text-muted-foreground">
-          Upload a CSV with columns: {COLLECTION_FIELDS.join(', ')}. Prices in pence.
+          Upload a CSV, JSON, or XML file. Required fields: card_name (minimum). Prices in pence.
         </p>
         <input
           ref={fileRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.json,.xml,text/csv,application/json,application/xml,text/xml"
           onChange={handleFile}
           className="hidden"
         />
@@ -165,7 +217,7 @@ export default function BulkImportExport({ items, onImported }) {
           className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-bold hover:bg-secondary/80 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {busy ? 'Processing…' : 'Choose CSV file'}
+          {busy ? 'Processing…' : 'Choose file (CSV, JSON, XML)'}
         </button>
       </div>
 
