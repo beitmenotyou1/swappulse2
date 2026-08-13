@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Plus, X, ArrowLeftRight } from 'lucide-react';
+import { Loader2, Plus, X, ArrowLeftRight, Bookmark, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -191,6 +191,10 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
   const [searchTarget, setSearchTarget] = useState('offers');
   const [saving, setSaving] = useState(false);
   const [bridgeStatus, setBridgeStatus] = useState('idle');
+  const [templates, setTemplates] = useState([]);
+  const [templateName, setTemplateName] = useState('');
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [loadedTemplateId, setLoadedTemplateId] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -202,6 +206,11 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       } catch {
         setCircles([]);
       }
+      try {
+        setTemplates(await base44.entities.TradeTemplate.list('-created_date', 50));
+      } catch {
+        setTemplates([]);
+      }
     })();
   }, [open]);
 
@@ -210,6 +219,52 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
     setOffers(initialOffers?.length ? initialOffers : []);
     setWants([]);
   }, [open, initialOffers]);
+
+  const loadTemplate = (tpl) => {
+    if (!tpl) return;
+    setLoadedTemplateId(tpl.id);
+    setOffers((tpl.offer_card_ids || []).map((id, i) => ({ id, name: tpl.offer_card_names?.[i] || id, image: tpl.offer_card_images?.[i] || '' })));
+    setWants((tpl.wanted_card_ids || []).map((id, i) => ({ id, name: tpl.wanted_card_names?.[i] || id })));
+    setRegions(tpl.shipping_regions?.length ? tpl.shipping_regions : ['UK']);
+    setCurrency(tpl.preferred_currency || 'GBP');
+    setVisibility(tpl.visibility || 'public');
+    setNotes(tpl.notes || '');
+  };
+
+  const saveTemplate = async () => {
+    if (!templateName.trim()) { alert('Enter a template name.'); return; }
+    if (offers.length === 0 && wants.length === 0) { alert('Add at least one card before saving.'); return; }
+    try {
+      await base44.entities.TradeTemplate.create({
+        name: templateName.trim(),
+        offer_card_ids: offers.map((c) => c.id),
+        offer_card_names: offers.map((c) => c.name),
+        offer_card_images: offers.map((c) => c.image),
+        wanted_card_ids: wants.map((c) => c.id),
+        wanted_card_names: wants.map((c) => c.name),
+        shipping_regions: regions,
+        preferred_currency: currency,
+        visibility,
+        notes,
+      });
+      setTemplateName('');
+      setShowSaveTemplate(false);
+      setTemplates(await base44.entities.TradeTemplate.list('-created_date', 50));
+      toast({ title: 'Template saved', duration: 3000 });
+    } catch (e) {
+      alert('Could not save template: ' + e.message);
+    }
+  };
+
+  const deleteTemplate = async (id) => {
+    try {
+      await base44.entities.TradeTemplate.delete(id);
+      setTemplates(templates.filter((t) => t.id !== id));
+      if (loadedTemplateId === id) setLoadedTemplateId('');
+    } catch (e) {
+      alert('Could not delete template: ' + e.message);
+    }
+  };
 
   if (!open) return null;
 
@@ -294,6 +349,27 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
           <h2 className="text-lg font-bold">New Trade Listing</h2>
           <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
+
+        {templates.length > 0 && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-secondary p-2">
+            <Bookmark className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <select
+              onChange={(e) => { const tpl = templates.find((t) => t.id === e.target.value); if (tpl) loadTemplate(tpl); e.target.value = ''; }}
+              className="flex-1 rounded border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+              defaultValue=""
+            >
+              <option value="">Load a template…</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            {loadedTemplateId && (
+              <button onClick={() => deleteTemplate(loadedTemplateId)} aria-label="Delete loaded template" className="shrink-0 rounded p-1.5 text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
@@ -388,6 +464,24 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
 
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder="Notes (optional)…" className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
         </div>
+
+        {showSaveTemplate ? (
+          <div className="mt-4 flex items-center gap-2">
+            <input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Template name…"
+              maxLength={100}
+              className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <button onClick={saveTemplate} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">Save</button>
+            <button onClick={() => { setShowSaveTemplate(false); setTemplateName(''); }} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">Cancel</button>
+          </div>
+        ) : (
+          <button onClick={() => setShowSaveTemplate(true)} className="mt-4 flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
+            <Bookmark className="h-3.5 w-3.5" /> Save current details as template
+          </button>
+        )}
 
         <div className="mt-5 flex gap-2">
           <button onClick={onClose} className="flex-1 rounded-full border border-border py-2.5 text-sm font-semibold hover:bg-secondary">Cancel</button>

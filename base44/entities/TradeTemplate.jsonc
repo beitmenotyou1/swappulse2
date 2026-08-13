@@ -1,0 +1,88 @@
+{
+  "name": "TradeTemplate",
+  "type": "object",
+  "title": "TradeTemplate",
+  "description": "org.swappulse.tradeTemplate \u2014 a saved trade listing template (offer cards, wanted cards, shipping regions, currency, visibility, notes) that a collector can reuse to quickly publish similar listings.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "User-facing label for the template"
+    },
+    "offer_card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "offer_card_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "offer_card_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "wanted_card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "wanted_card_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "shipping_regions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preferred_currency": {
+      "type": "string",
+      "enum": [
+        "GBP",
+        "EUR",
+        "USD"
+      ],
+      "default": "GBP"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "wishlist_only",
+        "circle_scoped"
+      ],
+      "default": "public"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
