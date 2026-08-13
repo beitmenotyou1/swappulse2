@@ -14,13 +14,14 @@ import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import JournalsTab from '@/components/profile/JournalsTab';
 import PodcastsTab from '@/components/profile/PodcastsTab';
 import CrossPostTab from '@/components/crosspost/CrossPostTab';
+import TradeActivityTab from '@/components/profile/TradeActivityTab';
 import GoLiveModal from '@/components/spaces/GoLiveModal';
 import GoLiveControl from '@/components/profile/GoLiveControl';
 import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
+const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -182,6 +183,8 @@ export default function Profile() {
           <div className="p-4">
             <NetworkFeedSection type="trades" did={did} limit={20} title="My Trades on the Network" />
           </div>
+        ) : tab === 'Trade Activity' ? (
+          <TradeActivityTab />
         ) : tab === 'Journals' ? (
           <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
         ) : tab === 'Podcasts' ? (
