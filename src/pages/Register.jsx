@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { UserPlus, Mail, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Loader2, CheckCircle2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import AtProtoForm from "@/components/auth/AtProtoForm";
 import ProfileSetup from "@/components/auth/ProfileSetup";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
@@ -27,6 +28,9 @@ export default function Register() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const generatedPasswordRef = useRef("");
+  const [authMethod, setAuthMethod] = useState("email");
+  const [portedDid, setPortedDid] = useState(null);
+  const [atProtoProfile, setAtProtoProfile] = useState(null);
 
   const handleContinue = (e) => {
     e.preventDefault();
@@ -37,6 +41,13 @@ export default function Register() {
     }
     setConfirmEmail("");
     setStep("confirm-email");
+  };
+
+  const handleAtProtoVerify = (data) => {
+    setPortedDid(data.did);
+    setAtProtoProfile(data);
+    if (data.email) setEmail(data.email);
+    setError("");
   };
 
   const handleRegister = async () => {
@@ -94,7 +105,15 @@ export default function Register() {
   }
 
   if (step === "profile") {
-    return <ProfileSetup onDone={() => setStep("tour")} />;
+    return (
+      <ProfileSetup
+        onDone={() => setStep("tour")}
+        portedDid={portedDid}
+        initialFullName={atProtoProfile?.displayName || ""}
+        initialAvatar={atProtoProfile?.avatar || ""}
+        initialDescription={atProtoProfile?.description || ""}
+      />
+    );
   }
 
   if (step === "confirm-email") {
@@ -158,7 +177,7 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Create your account"
-      subtitle="Sign up — no password needed, just your email"
+      subtitle={authMethod === "atproto" && !portedDid ? "Port your existing AT Protocol identity" : "Sign up — no password needed, just your email"}
       footer={
         <>
           Already have an account?{" "}
@@ -166,23 +185,46 @@ export default function Register() {
         </>
       }
     >
+      <div className="flex gap-1 p-1 bg-secondary rounded-lg mb-6">
+        <button type="button" className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${authMethod === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} onClick={() => { setAuthMethod("email"); setError(""); }}>Email</button>
+        <button type="button" className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${authMethod === "atproto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} onClick={() => { setAuthMethod("atproto"); setError(""); setPortedDid(null); setAtProtoProfile(null); }}>AT Protocol</button>
+      </div>
+
       {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
-      <form onSubmit={handleContinue} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input id="email" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12" required />
-          </div>
-        </div>
-        <label className="flex items-start gap-2 text-sm text-muted-foreground">
-          <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" required />
-          <span>I confirm I am 13 or older and agree to SwapPulse's terms (under-16s need a parent or guardian's consent).</span>
-        </label>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
-          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</> : "Continue"}
-        </Button>
-      </form>
+
+      {authMethod === "atproto" && !portedDid && (
+        <AtProtoForm mode="verify" submitLabel="Verify & continue" onSuccess={handleAtProtoVerify} />
+      )}
+
+      {(authMethod === "email" || portedDid) && (
+        <>
+          {portedDid && (
+            <div className="mb-4 p-3 rounded-lg bg-success/10 text-success text-sm flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">AT Protocol identity verified</p>
+                <p className="text-xs opacity-80 break-all">DID: {portedDid}</p>
+              </div>
+            </div>
+          )}
+          <form onSubmit={handleContinue} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                <Input id="email" type="email" autoComplete="email" autoFocus={authMethod === "email"} placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12" required />
+              </div>
+            </div>
+            <label className="flex items-start gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" required />
+              <span>I confirm I am 13 or older and agree to SwapPulse's terms (under-16s need a parent or guardian's consent).</span>
+            </label>
+            <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</> : "Continue"}
+            </Button>
+          </form>
+        </>
+      )}
     </AuthLayout>
   );
 }

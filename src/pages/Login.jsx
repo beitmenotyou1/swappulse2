@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Mail, Loader2, ArrowRight } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import AtProtoForm from "@/components/auth/AtProtoForm";
 import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 
@@ -25,6 +26,7 @@ export default function Login() {
   const [pendingLoginKey, setPendingLoginKey] = useState(null);
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  const [authMethod, setAuthMethod] = useState("email");
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -43,6 +45,14 @@ export default function Login() {
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, [step]);
+
+  const handleAtProtoLogin = (data) => {
+    if (data.code_sent) {
+      setEmail(data.email);
+      setInfo(`We sent a 6-digit code to ${data.emailMasked}. It expires in 5 minutes.`);
+      setStep("code");
+    }
+  };
 
   const sendCode = async (e) => {
     if (e) e.preventDefault();
@@ -182,6 +192,15 @@ export default function Login() {
       )}
 
       {step === "email" && (
+        <>
+        <div className="flex gap-1 p-1 bg-secondary rounded-lg mb-6">
+          <button type="button" className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${authMethod === "email" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} onClick={() => { setAuthMethod("email"); setError(""); }}>Email</button>
+          <button type="button" className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${authMethod === "atproto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} onClick={() => { setAuthMethod("atproto"); setError(""); }}>AT Protocol</button>
+        </div>
+        {authMethod === "atproto" && (
+          <AtProtoForm mode="login" submitLabel="Send login code" onSuccess={handleAtProtoLogin} />
+        )}
+        {authMethod === "email" && (
         <form onSubmit={sendCode} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -214,10 +233,12 @@ export default function Login() {
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending code...</>
             ) : (
               <>Send login code <ArrowRight className="w-4 h-4 ml-2" /></>
-            )}
-          </Button>
-        </form>
-      )}
+              )}
+              </Button>
+              </form>
+              )}
+              </>
+              )}
 
       {step === "code" && (
         <div className="space-y-4">

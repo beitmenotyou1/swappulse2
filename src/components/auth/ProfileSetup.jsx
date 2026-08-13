@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import UsernameField from "@/components/auth/UsernameField";
 
-export default function ProfileSetup({ onDone }) {
+export default function ProfileSetup({ onDone, portedDid, initialFullName, initialAvatar, initialDescription }) {
   const [username, setUsername] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [description, setDescription] = useState("");
-  const [avatar, setAvatar] = useState("");
+  const [fullName, setFullName] = useState(initialFullName || "");
+  const [description, setDescription] = useState(initialDescription || "");
+  const [avatar, setAvatar] = useState(initialAvatar || "");
   const [header, setHeader] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,13 +57,17 @@ export default function ProfileSetup({ onDone }) {
         setLoading(false);
         return;
       }
-      await base44.auth.updateMe({
+      const updateData = {
         username,
         full_name: fullName || username,
         description,
         avatar,
         header,
-      });
+      };
+      if (portedDid) {
+        updateData.did = portedDid;
+      }
+      await base44.auth.updateMe(updateData);
       onDone?.();
     } catch (err) {
       setError(err.message || "Failed to save profile");
