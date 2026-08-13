@@ -209,7 +209,9 @@ export async function verifySignature(record, signature, signingKey) {
 export async function ensureUserDid() {
   const me = await base44.auth.me();
   if (me?.did && me?.signing_key) return { did: me.did, signingKey: me.signing_key };
-  const did = generateDid();
+  // Preserve an existing DID — only generate one if the user has none.
+  // Generating a new DID here would orphan all their existing PDS records.
+  const did = me?.did || generateDid();
   const signingKey = generateSigningKey();
   await base44.auth.updateMe({ did, signing_key: signingKey });
   return { did, signingKey };
