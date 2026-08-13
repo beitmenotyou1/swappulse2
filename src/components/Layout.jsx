@@ -8,6 +8,7 @@ import BellToaster from '@/components/follow/BellToaster';
 import AlphaNotice from '@/components/AlphaNotice';
 import ActivationBanner from '@/components/ActivationBanner';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
+import SignInBanner from '@/components/SignInBanner';
 import BannerProvider from '@/components/notifications/BannerProvider';
 import NotificationHandler from '@/components/notifications/NotificationHandler';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
@@ -32,6 +33,7 @@ export default function Layout() {
         <main id="main-content" className="min-w-0 flex-1 border-x border-border pb-20 md:pb-0">
         <AlphaNotice />
         <ActivationBanner />
+        <SignInBanner />
         <Outlet />
         <StickyPlayerBar />
       </main>

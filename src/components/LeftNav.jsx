@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogIn } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -11,34 +11,34 @@ import { useUnreadCount } from '@/hooks/useNotifications';
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/explore', icon: Compass, label: 'Explore' },
-  { to: '/collection', icon: Layers, label: 'Collection' },
-  { to: '/scan', icon: ScanLine, label: 'Scan Cards' },
+  { to: '/collection', icon: Layers, label: 'Collection', authOnly: true },
+  { to: '/scan', icon: ScanLine, label: 'Scan Cards', authOnly: true },
   { to: '/binders', icon: BookOpen, label: 'Binders' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
   { to: '/spaces', icon: Radio, label: 'Live Now' },
-  { to: '/notifications', icon: Bell, label: 'Notifications' },
+  { to: '/notifications', icon: Bell, label: 'Notifications', authOnly: true },
 ];
 
 const more = [
   { to: '/trust', icon: ShieldCheck, label: 'Trust' },
-  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow' },
-  { to: '/achievements', icon: Trophy, label: 'Achievements' },
+  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', authOnly: true },
+  { to: '/achievements', icon: Trophy, label: 'Achievements', authOnly: true },
   { to: '/challenges', icon: Target, label: 'Challenges' },
   { to: '/packs', icon: Package, label: 'Pack Openings' },
   { to: '/market', icon: BarChart3, label: 'Market Watch' },
   { to: '/predictions', icon: Vote, label: 'Predictions' },
-  { to: '/grading', icon: Award, label: 'Grading' },
+  { to: '/grading', icon: Award, label: 'Grading', authOnly: true },
   { to: '/help', icon: HelpCircle, label: 'Help & Info' },
   { to: '/donate', icon: Heart, label: 'Donate' },
   { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { to: '/moderation', icon: ShieldAlert, label: 'Moderation', adminOnly: true },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings' },
+  { to: '/settings', icon: SettingsIcon, label: 'Settings', authOnly: true },
 ];
 
 export default function LeftNav() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
   const unread = useUnreadCount();
@@ -57,7 +57,7 @@ export default function LeftNav() {
         </NavLink>
       </div>
       <div className="flex flex-col items-center gap-1 xl:items-stretch">
-        {primary.map((item) => (
+        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => (
           <NavLink key={item.to} to={item.to} end={item.to === '/'} aria-label={item.label} className={linkClass}>
             <item.icon className="h-6 w-6 shrink-0" />
             <span className="hidden xl:inline">{item.label}</span>
@@ -82,7 +82,7 @@ export default function LeftNav() {
 
         {showMore && (
           <div className="flex flex-col items-center gap-1 border-l border-border pl-2 xl:items-stretch xl:pl-3">
-            {more.filter((i) => !i.adminOnly || user?.role === 'admin').map((item) => (
+            {more.filter((i) => (!i.authOnly || isAuthenticated) && (!i.adminOnly || user?.role === 'admin')).map((item) => (
               <NavLink key={item.to} to={item.to} aria-label={item.label} className={linkClass}>
                 <item.icon className="h-6 w-6 shrink-0" />
                 <span className="hidden xl:inline">{item.label}</span>
@@ -95,17 +95,28 @@ export default function LeftNav() {
         <div className="flex justify-center xl:justify-start xl:px-3">
           <ThemeToggle />
         </div>
-        <NavLink
-          to="/profile"
-          aria-label="View profile"
-          className="flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-secondary xl:pr-4"
-        >
-          <Avatar name={user?.full_name} src={user?.avatar_url} size={36} />
-          <div className="hidden xl:block min-w-0">
-            <p className="truncate text-sm font-semibold">{user?.full_name || 'Collector'}</p>
-            <p className="truncate text-xs text-muted-foreground">View profile</p>
-          </div>
-        </NavLink>
+        {isAuthenticated ? (
+          <NavLink
+            to="/profile"
+            aria-label="View profile"
+            className="flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-secondary xl:pr-4"
+          >
+            <Avatar name={user?.full_name} src={user?.avatar_url} size={36} />
+            <div className="hidden xl:block min-w-0">
+              <p className="truncate text-sm font-semibold">{user?.full_name || 'Collector'}</p>
+              <p className="truncate text-xs text-muted-foreground">View profile</p>
+            </div>
+          </NavLink>
+        ) : (
+          <NavLink
+            to="/login"
+            aria-label="Log in"
+            className="flex items-center gap-3 rounded-full bg-primary p-2 text-primary-foreground transition-colors hover:bg-primary/90 xl:px-4 xl:pr-6"
+          >
+            <LogIn className="h-5 w-5 shrink-0" />
+            <span className="hidden xl:inline text-sm font-semibold">Log in</span>
+          </NavLink>
+        )}
       </div>
     </nav>
   );

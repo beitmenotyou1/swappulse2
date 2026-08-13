@@ -70,15 +70,10 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
+  // Handle authentication errors — only block for unregistered users;
+  // expired/missing tokens just render the app as a guest (browsable content)
+  if (authError && authError.type === 'user_not_registered') {
+    return <UserNotRegisteredError />;
   }
 
   // Render the main app
@@ -94,50 +89,50 @@ const AuthenticatedApp = () => {
       <Route path="/status" element={<Status />} />
       <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
-      <Route path="/compose" element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<Layout />}>
-          <Route index element={<Compose />} />
-        </Route>
+      {/* Public browsable content — no login required */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/card/:cardId" element={<CardDetail />} />
+        <Route path="/set/:setId" element={<Explore />} />
+        <Route path="/sets" element={<Sets />} />
+        <Route path="/trades" element={<TradeBoard />} />
+        <Route path="/trade/:tradeId" element={<TradeThread />} />
+        <Route path="/packs" element={<PackOpenings />} />
+        <Route path="/market" element={<MarketWatch />} />
+        <Route path="/share" element={<Share />} />
+        <Route path="/binders" element={<Binders />} />
+        <Route path="/binder/:binderId" element={<BinderDetail />} />
+        <Route path="/trust" element={<Trust />} />
+        <Route path="/circles" element={<Circles />} />
+        <Route path="/circles/:circleId" element={<CircleDetail />} />
+        <Route path="/meetups" element={<Meetups />} />
+        <Route path="/meetups/:meetupId" element={<MeetupDetail />} />
+        <Route path="/profile/:did" element={<UserProfile />} />
+        <Route path="/predictions" element={<Predictions />} />
+        <Route path="/spaces" element={<VoiceSpaces />} />
+        <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
+        <Route path="/challenges" element={<Challenges />} />
+        <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
+        <Route path="/challenges/:challengeId/leaderboard" element={<Leaderboard />} />
+        <Route path="/help" element={<Help />} />
       </Route>
+      {/* Auth required — login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/card/:cardId" element={<CardDetail />} />
-          <Route path="/set/:setId" element={<Explore />} />
+          <Route path="/compose" element={<Compose />} />
           <Route path="/collection" element={<Collection />} />
-          <Route path="/sets" element={<Sets />} />
           <Route path="/scan" element={<Scanner />} />
-          <Route path="/trades" element={<TradeBoard />} />
-          <Route path="/trade/:tradeId" element={<TradeThread />} />
-          <Route path="/packs" element={<PackOpenings />} />
-          <Route path="/market" element={<MarketWatch />} />
-          <Route path="/share" element={<Share />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/grading" element={<Grading />} />
-          <Route path="/binders" element={<Binders />} />
           <Route path="/binders/new" element={<BinderEdit />} />
-          <Route path="/binder/:binderId" element={<BinderDetail />} />
           <Route path="/binder/:binderId/edit" element={<BinderEdit />} />
-          <Route path="/trust" element={<Trust />} />
-          <Route path="/circles" element={<Circles />} />
-          <Route path="/circles/:circleId" element={<CircleDetail />} />
-          <Route path="/meetups" element={<Meetups />} />
-          <Route path="/meetups/:meetupId" element={<MeetupDetail />} />
-          <Route path="/profile/:did" element={<UserProfile />} />
-          <Route path="/predictions" element={<Predictions />} />
-          <Route path="/spaces" element={<VoiceSpaces />} />
-          <Route path="/spaces/:spaceId" element={<SpaceRoom />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
           <Route path="/who-to-follow" element={<WhoToFollow />} />
           <Route path="/achievements" element={<Achievements />} />
-          <Route path="/challenges" element={<Challenges />} />
-          <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
-          <Route path="/challenges/:challengeId/leaderboard" element={<Leaderboard />} />
-          <Route path="/help" element={<Help />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

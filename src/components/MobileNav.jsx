@@ -10,30 +10,30 @@ const primary = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/explore', icon: Compass, label: 'Explore' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades' },
-  { to: '/collection', icon: Layers, label: 'Collection' },
+  { to: '/collection', icon: Layers, label: 'Collection', authOnly: true },
 ];
 
 const moreItems = [
   { to: '/binders', icon: BookOpen, label: 'Binders' },
-  { to: '/scan', icon: ScanLine, label: 'Scan' },
+  { to: '/scan', icon: ScanLine, label: 'Scan', authOnly: true },
   { to: '/circles', icon: Users, label: 'Circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
   { to: '/trust', icon: ShieldCheck, label: 'Trust' },
-  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow' },
-  { to: '/achievements', icon: Trophy, label: 'Achievements' },
+  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', authOnly: true },
+  { to: '/achievements', icon: Trophy, label: 'Achievements', authOnly: true },
   { to: '/challenges', icon: Target, label: 'Challenges' },
   { to: '/packs', icon: Package, label: 'Packs' },
   { to: '/market', icon: BarChart3, label: 'Market' },
   { to: '/predictions', icon: Vote, label: 'Polls' },
-  { to: '/grading', icon: Award, label: 'Grading' },
+  { to: '/grading', icon: Award, label: 'Grading', authOnly: true },
   { to: '/spaces', icon: Radio, label: 'Live' },
-  { to: '/notifications', icon: Bell, label: 'Alerts' },
+  { to: '/notifications', icon: Bell, label: 'Alerts', authOnly: true },
   { to: '/help', icon: HelpCircle, label: 'Help' },
   { to: '/donate', icon: Heart, label: 'Donate' },
   { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { to: '/moderation', icon: ShieldAlert, label: 'Moderation', adminOnly: true },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings' },
-  { to: '/profile', icon: UserIcon, label: 'Profile' },
+  { to: '/settings', icon: SettingsIcon, label: 'Settings', authOnly: true },
+  { to: '/profile', icon: UserIcon, label: 'Profile', authOnly: true },
 ];
 
 export default function MobileNav() {
@@ -42,20 +42,22 @@ export default function MobileNav() {
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
   const unread = useUnreadCount();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
   return (
     <>
-      <Link
-        to="/compose"
-        className="fixed bottom-20 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 transition-transform active:scale-95 md:hidden"
-        aria-label="Compose"
-      >
-        <Plus className="h-7 w-7" />
-      </Link>
+      {isAuthenticated && (
+        <Link
+          to="/compose"
+          className="fixed bottom-20 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 transition-transform active:scale-95 md:hidden"
+          aria-label="Compose"
+        >
+          <Plus className="h-7 w-7" />
+        </Link>
+      )}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 backdrop-blur md:hidden">
-        {primary.map((item) => {
+        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
           const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
           return (
             <Link
@@ -93,7 +95,7 @@ export default function MobileNav() {
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {moreItems.filter((i) => !i.adminOnly || user?.role === 'admin').map((item) => {
+              {moreItems.filter((i) => (!i.authOnly || isAuthenticated) && (!i.adminOnly || user?.role === 'admin')).map((item) => {
                 const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
                 return (
                   <Link
