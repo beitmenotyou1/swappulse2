@@ -57,6 +57,7 @@ import Achievements from '@/pages/Achievements';
 import Challenges from '@/pages/Challenges';
 import ChallengeDetail from '@/pages/ChallengeDetail';
 import Leaderboard from '@/pages/Leaderboard';
+import TradeAssistant from '@/pages/TradeAssistant';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
