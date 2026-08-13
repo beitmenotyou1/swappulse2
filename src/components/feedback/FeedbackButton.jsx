@@ -85,7 +85,7 @@ export default function FeedbackButton() {
       <button
         onClick={start}
         aria-label="Send feedback"
-        className="fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl bg-primary px-3 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary/90 [writing-mode:vertical-rl] md:flex"
+        className="fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 bg-primary px-3 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary/90 [writing-mode:vertical-rl] md:flex"
       >
         <MessageSquare className="h-4 w-4" /> <span className="[transform:rotate(180deg)]">Feedback</span>
       </button>
