@@ -1,0 +1,40 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "weekly_sentiment_report",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "generate_report": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "weeklySentimentReport"
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "description": "Every Sunday at 9am: fetches weekly SentimentVote data, calls syncPricing to refresh card valuations, compiles a market_watch agent summary, and emails the report to all active community members",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 9 * * 0",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Weekly Sentiment Report"
+}
