@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     // If a specific agent is requested, process just that one; otherwise process all known agents
     const agentNames = agentName
       ? [agentName]
-      : ['trade_assistant', 'market_watch'];
+      : ['trade_assistant', 'market_watch', 'collection_advisor'];
 
     const results: Record<string, any> = {};
     for (const name of agentNames) {
