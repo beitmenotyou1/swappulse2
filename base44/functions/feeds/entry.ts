@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       case 'smart-bundles': {
         // Find the authenticated user's duplicate cards, then match against
         // every other user's wishlist to surface multi-card bundle trades.
-        const mine = await svc.entities.CollectionEntry.list('-updated_date', 500);
+        const mine = await svc.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 500);
         const dupes = new Map();
         for (const c of mine) {
           if (!c.card_id) continue;

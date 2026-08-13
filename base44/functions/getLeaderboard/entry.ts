@@ -22,10 +22,13 @@ export default async function (req: Request): Promise<Response> {
     const challenge = await svc.entities.Challenge.get(challengeId).catch(() => null);
     if (!challenge) return Response.json({ error: 'Challenge not found' }, { status: 404 });
 
-    const [entries, settingsRows] = await Promise.all([
-      svc.entities.ChallengeEntry.filter({ challenge_id: challengeId }, '-submitted_at', 1000),
-      svc.entities.SettingsConfig.list('-updated_date', 2000),
-    ]);
+    const entries = await svc.entities.ChallengeEntry.filter({ challenge_id: challengeId }, '-submitted_at', 1000);
+
+    // Only fetch settings for users who actually submitted entries (avoids scanning all 2000 SettingsConfig rows).
+    const participantDids = [...new Set(entries.map((e: any) => e.participant_did || e.did).filter(Boolean))];
+    const settingsRows = participantDids.length > 0
+      ? await svc.entities.SettingsConfig.filter({ did: { $in: participantDids } }, '-updated_date', participantDids.length)
+      : [];
 
     // did -> { optIn, categories }
     const prefsByDid = new Map();
