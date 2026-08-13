@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Search, Loader2, Flame, Layers } from 'lucide-react';
-import { searchCards, cardImageUrl, rarityClasses, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
+import { Search, Loader2, Flame, CheckSquare, Square, Heart, X } from 'lucide-react';
+import { searchCards, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
 import { Link } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
+import { useToast } from '@/components/ui/use-toast';
+import ExploreCardTile from '@/components/cards/ExploreCardTile';
 
 export default function Explore() {
   const { settings } = useSettings();
@@ -13,6 +16,10 @@ export default function Explore() {
   const [loading, setLoading] = useState(false);
   const [sets, setSets] = useState([]);
   const [searched, setSearched] = useState(false);
+  const { toast } = useToast();
+  const [selected, setSelected] = useState(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const runSearch = useCallback(async (q) => {
     if (q.trim().length < 2) {
@@ -45,6 +52,46 @@ export default function Explore() {
     const t = setTimeout(() => runSearch(query), 400);
     return () => clearTimeout(t);
   }, [query, runSearch]);
+
+  const toggleSelect = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const clearSelection = () => {
+    setSelected(new Set());
+    setSelectMode(false);
+  };
+
+  const allSelected = results.length > 0 && results.every((c) => selected.has(c.id));
+  const selectAll = () => setSelected(new Set(results.map((c) => c.id)));
+
+  const addAllToWishlist = async () => {
+    const picked = results.filter((c) => selected.has(c.id));
+    if (!picked.length) return;
+    setAdding(true);
+    try {
+      await base44.entities.Wishlist.bulkCreate(
+        picked.map((c) => ({
+          card_id: c.id,
+          card_name: c.name,
+          card_image: c.image || '',
+          set_id: c.set?.id || '',
+          set_name: c.set?.name || '',
+          rarity: c.rarity || '',
+        }))
+      );
+      toast({ title: 'Added to wishlist', description: `${picked.length} card${picked.length > 1 ? 's' : ''} saved to your wishlist.` });
+      clearSelection();
+    } catch (e) {
+      toast({ title: 'Could not add to wishlist', description: e.message, variant: 'destructive' });
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <div>
@@ -100,38 +147,44 @@ export default function Explore() {
 
       {!loading && results.length > 0 && (
         <div className="p-4">
-          <p className="mb-3 text-sm text-muted-foreground">{results.length} results</p>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">{results.length} results</p>
+            <button
+              onClick={() => {
+                setSelectMode((s) => !s);
+                if (selectMode) setSelected(new Set());
+              }}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${selectMode ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
+            >
+              <CheckSquare className="h-3.5 w-3.5" /> {selectMode ? 'Done' : 'Select'}
+            </button>
+          </div>
+          {selected.size > 0 && (
+            <div className="sticky top-0 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary bg-card p-3 shadow-elevated">
+              <span className="text-sm font-bold">{selected.size} selected</span>
+              <button onClick={selectAll} className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80">
+                {allSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                {allSelected ? 'All selected' : 'Select all'}
+              </button>
+              <button onClick={addAllToWishlist} disabled={adding} className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-50">
+                {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className="h-3.5 w-3.5" />}
+                Add to wishlist
+              </button>
+              <button onClick={clearSelection} className="ml-auto text-muted-foreground hover:text-foreground" aria-label="Clear selection">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {results.map((card) => {
-              const { text, glow } = rarityClasses(card.rarity);
-              return (
-                <Link
-                  key={card.id}
-                  to={`/card/${card.id}`}
-                  className={`group overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 ${glow}`}
-                >
-                  <div className="aspect-[3/4] overflow-hidden bg-secondary">
-                    {cardImageUrl(card.image) ? (
-                      <img
-                        src={cardImageUrl(card.image)}
-                        alt={card.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-secondary to-muted p-2 text-center">
-                        <Layers className="h-5 w-5 text-muted-foreground/40" />
-                        <p className="line-clamp-2 text-[10px] font-medium text-muted-foreground/60">{card.name}</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="truncate text-xs font-semibold">{card.name}</p>
-                    <p className={`truncate text-[10px] ${text}`}>{card.rarity || '-'}</p>
-                  </div>
-                </Link>
-              );
-            })}
+            {results.map((card) => (
+              <ExploreCardTile
+                key={card.id}
+                card={card}
+                selected={selected.has(card.id)}
+                selectMode={selectMode}
+                onToggleSelect={toggleSelect}
+              />
+            ))}
           </div>
         </div>
       )}
