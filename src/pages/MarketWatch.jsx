@@ -22,15 +22,16 @@ export default function MarketWatch() {
   };
 
   useEffect(() => {
+    // Parallelize portfolio calc and price loading (independent fetches).
     (async () => {
-      try {
-        const items = await base44.entities.CollectionEntry.list('-updated_date', 200);
-        const total = items.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
-        setPortfolio({ total, count: items.length });
-      } catch {
-        setPortfolio({ total: 0, count: 0 });
-      }
-      await loadPrices();
+      const [entries, prices] = await Promise.all([
+        base44.entities.CollectionEntry.list('-updated_date', 200).catch(() => []),
+        base44.entities.CardPricing.list('-updated_date', 60).catch(() => []),
+      ]);
+      const total = entries.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
+      setPortfolio({ total, count: entries.length });
+      setPrices(prices);
+      setLoading(false);
     })();
 
     // Real-time price updates (§7.5 emitPriceUpdate → entity subscription)

@@ -13,11 +13,14 @@ export default function Binders() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Parallelize DID resolution and binder fetch (independent).
     (async () => {
       try {
-        const { did } = await ensureUserDid();
+        const [{ did }, all] = await Promise.all([
+          ensureUserDid(),
+          base44.entities.Binder.list('-created_date', 200),
+        ]);
         setMyDid(did);
-        const all = await base44.entities.Binder.list('-created_date', 200);
         setBinders(all);
       } catch {
         /* ignore */
