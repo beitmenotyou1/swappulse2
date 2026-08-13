@@ -16,12 +16,13 @@ Deno.serve(async (req) => {
     const myPostMap = new Map(myPosts.map((p) => [p.id, p]));
     const myPostIds = new Set(myPosts.map((p) => p.id));
 
-    const reactions = await svc.entities.Reaction.filter(
-      { reaction_type: 'trade_interest' },
-      '-created_date',
-      500,
-    );
-    const mine = reactions.filter((r) => myPostIds.has(r.post_id));
+    const mine = myPostIds.size > 0
+      ? await svc.entities.Reaction.filter(
+          { reaction_type: 'trade_interest', post_id: { $in: [...myPostIds] } },
+          '-created_date',
+          500,
+        )
+      : [];
 
     return Response.json({
       count: mine.length,

@@ -10,8 +10,8 @@ export default function SpaceBar() {
   useEffect(() => {
     (async () => {
       try {
-        const all = await base44.entities.VoiceSpace.list('-created_date', 30);
-        setSpaces(all.filter((s) => s.status === 'live' && s.stream_url).slice(0, 10));
+        const all = await base44.entities.VoiceSpace.filter({ status: 'live' }, '-created_date', 30);
+        setSpaces(all.filter((s) => s.stream_url).slice(0, 10));
       } catch {
         setSpaces([]);
       }

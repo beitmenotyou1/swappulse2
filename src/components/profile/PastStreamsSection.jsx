@@ -26,8 +26,8 @@ export default function PastStreamsSection({ did, onEpisodePublished }) {
   const load = async () => {
     setLoading(true);
     try {
-      const all = await base44.entities.VoiceSpace.filter({ status: 'ended' }, '-created_date', 100);
-      setStreams(did ? all.filter((s) => s.did === did) : all);
+      const all = await base44.entities.VoiceSpace.filter(did ? { status: 'ended', did } : { status: 'ended' }, '-created_date', 100);
+      setStreams(all);
     } catch {
       setStreams([]);
     } finally {

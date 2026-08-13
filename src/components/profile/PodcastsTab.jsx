@@ -17,8 +17,8 @@ export default function PodcastsTab({ did: ownerDid }) {
 
   const loadEps = async (d) => {
     try {
-      const all = await base44.entities.PodcastEpisode.list('-published_at', 100);
-      setEps(all.filter((e) => e.did === d));
+      const all = await base44.entities.PodcastEpisode.filter({ did: d }, '-published_at', 100);
+      setEps(all);
     } catch {
       setEps([]);
     }
