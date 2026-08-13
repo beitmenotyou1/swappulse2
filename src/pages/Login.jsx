@@ -51,16 +51,6 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("send-login-code", { email });
-      if (res.data?.needs_setup) {
-        // Existing user without passwordless login — trigger setup via reset email
-        try {
-          await base44.auth.resetPasswordRequest(email);
-          localStorage.setItem("swappulse_setup_email", email);
-        } catch {}
-        setStep("setup");
-        setInfo("We've sent a link to your email to set up passwordless login. Click the link to continue.");
-        return;
-      }
       setStep("code");
       setInfo(`We sent a 6-digit code to ${email}. It expires in 5 minutes.`);
     } catch (err) {
@@ -134,7 +124,7 @@ export default function Login() {
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
-      {info && (step === "code" || step === "setup") && (
+      {info && step === "code" && (
         <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm">{info}</div>
       )}
 
@@ -165,17 +155,6 @@ export default function Login() {
             )}
           </Button>
         </form>
-      )}
-
-      {step === "setup" && (
-        <div className="space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            We've sent a setup link to <strong>{email}</strong>. Click the link in the email to enable passwordless login, then come back here to sign in.
-          </p>
-          <button type="button" onClick={() => { setStep("email"); setInfo(""); setError(""); }} className="text-primary hover:underline text-sm">
-            Back to login
-          </button>
-        </div>
       )}
 
       {step === "code" && (

@@ -18,11 +18,6 @@ export default async function(req) {
     }
     const user = users[0];
 
-    // If user has no login_key, they need to set up passwordless login
-    if (!user.login_key) {
-      return Response.json({ needs_setup: true });
-    }
-
     // Generate 6-digit code
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();

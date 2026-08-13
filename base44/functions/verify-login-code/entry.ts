@@ -37,8 +37,19 @@ export default async function(req) {
     }
     const user = users[0];
 
+    // If user has no login_key yet, auto-generate one so they can log in
+    // passwordlessly without ever seeing a password or setup link.
     if (!user.login_key) {
-      return Response.json({ error: 'Passwordless login not set up. Please request a setup link.' }, { status: 400 });
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      const generatedKey = Array.from(bytes).map((b) => b.toString(36).padStart(2, '0')).join('') + '!A1';
+      try {
+        await svc.entities.User.update(user.id, { login_key: generatedKey });
+        return Response.json({ login_key: generatedKey });
+      } catch (e) {
+        console.error('verify-login-code: failed to store login_key:', e?.message || e);
+        return Response.json({ error: 'Could not complete login. Please try again.' }, { status: 500 });
+      }
     }
 
     return Response.json({ login_key: user.login_key });
