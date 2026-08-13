@@ -38,6 +38,16 @@
     "two_factor_secret": {
       "type": "string",
       "description": "Base32-encoded TOTP secret"
+    },
+    "moderation_strikes": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of toxic-content moderation strikes accumulated by this user"
+    },
+    "restricted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user's account access has been restricted due to repeated moderation violations"
     }
   },
   "required": [

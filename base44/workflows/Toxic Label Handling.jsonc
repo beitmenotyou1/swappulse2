@@ -1,0 +1,39 @@
+{
+  "name": "Toxic Label Handling",
+  "description": "When a 'toxic' ModerationLabel is applied to a post, triggers a trade assistant review, adds a strike to the author's trust profile, and restricts their account if they exceed 3 strikes",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "ModerationLabel",
+      "events": [
+        "create"
+      ]
+    },
+    "condition": "${ .trigger.data.label_type == \"toxic\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "toxic_label_handling",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "handle_toxic": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "handle-toxic-label",
+            "args": {
+              "subject_uri": "${ .trigger.data.subject_uri }",
+              "labeler_did": "${ .trigger.data.labeler_did }",
+              "note": "${ .trigger.data.note }",
+              "label_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
