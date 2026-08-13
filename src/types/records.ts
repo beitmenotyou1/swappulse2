@@ -4,32 +4,40 @@
 
 export type CollectionEntryRecord = {
   $type: 'org.swappulse.collectionEntry';
-  cardUri: string; // AT Protocol URI / TCGDex card id
+  cardUri: string; // TCGDex card id (canonical catalog reference)
+  cardName: string;
+  setName: string;
+  setCode: string; // canonical TCGDex set id (e.g. sv04.5)
+  cardNumber: string; // card number within set
+  rarity: string;
+  category: string;
+  imageUrl?: string; // format: uri
   condition: 'mint' | 'near_mint' | 'excellent' | 'good' | 'damaged';
   variant: 'normal' | 'holo' | 'reverse_holo';
-  setCode: string;
-  cardNumber: string;
-  pokemonName: string;
-  rarity: string;
   acquisitionDate: string; // ISO 8601 date
-  purchasePrice: number; // pence (GBP) - see CardPricing for source
+  purchasePrice: number; // pence (GBP)
   marketValue: number; // pence
   notes?: string; // max 500 chars
-  imageUrl?: string;
   showcased?: boolean;
   binderIndex?: number;
+  createdAt: string; // ISO 8601 datetime
 };
 
 export type TradeListingRecord = {
   $type: 'org.swappulse.tradeListing';
-  offerCardUris: string[]; // min 1, max 50
-  wantedCardUris: string[]; // min 1, max 50
+  offerCardUris: string[]; // min 1, max 50 — TCGDex card ids offered
+  offerCardNames: string[];
+  offerCardImages: string[]; // format: uri
+  wantedCardUris: string[]; // min 1, max 50 — TCGDex card ids wanted
+  wantedCardNames: string[];
   status: 'open' | 'negotiating' | 'pending_ship' | 'completed' | 'cancelled';
-  visibility: 'public' | 'wishlist_only';
-  negotiationBlobRef?: string; // CID of encrypted negotiation
+  visibility: 'public' | 'wishlist_only' | 'circle_scoped';
+  circleRef?: string; // format: at-uri — scoping Circle (required when circle_scoped)
   shippingRegions: string[]; // e.g. ['UK', 'EU', 'NA']
   preferredCurrency?: 'GBP' | 'EUR' | 'USD';
   notes?: string; // max 500 chars
+  expiresAt?: string; // ISO 8601 datetime, max 90 days from creation
+  createdAt: string; // ISO 8601 datetime
 };
 
 export type TradeNegotiationRecord = {

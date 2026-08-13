@@ -22,7 +22,7 @@
           "cardNumber": { "type": "string", "description": "Card number within the set" },
           "rarity": { "type": "string" },
           "category": { "type": "string" },
-          "imageUrl": { "type": "string" },
+          "imageUrl": { "type": "string", "format": "uri" },
           "condition": {
             "type": "string",
             "knownValues": ["mint", "near_mint", "excellent", "good", "damaged"]
