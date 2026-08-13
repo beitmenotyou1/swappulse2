@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2, Flag, X, Upload, ImagePlus } from 'lucide-react';
+import { Loader2, Flag, X, Upload, ImagePlus, AlertTriangle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
@@ -100,6 +100,13 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
             Flag this trade for moderation if something went wrong with the cards you received. Include photos as evidence.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="mb-4 flex gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs text-foreground">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+          <p>
+            <span className="font-bold">Please note:</span> SwapPulse is a community platform and cannot recover money or cards exchanged outside the app. We can only help with on-site matters — moderating the listing, warning or banning bad actors, and mediating through in-app messages.
+          </p>
+        </div>
 
         <div className="space-y-4">
           <div>
