@@ -17,7 +17,7 @@ const TYPE_META = {
   showcase: { icon: ImageIcon, label: 'Showcase', color: 'text-rarity-holo' },
 };
 
-export default function PostCard({ post, reactions }) {
+export default function PostCard({ post, reactions, myRepost }) {
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [repostId, setRepostId] = useState(null);
@@ -27,18 +27,13 @@ export default function PostCard({ post, reactions }) {
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
 
-  // Check if the current user has already reposted this post (auth only).
+  // Sync existing repost state from the batched map (avoids a per-card API call).
   useEffect(() => {
-    if (!user?.id) return;
-    base44.entities.Repost.filter({ post_id: post.id, created_by_id: user.id }, '-created_date', 1)
-      .then((rows) => {
-        if (rows.length > 0) {
-          setReposted(true);
-          setRepostId(rows[0].id);
-        }
-      })
-      .catch(() => {});
-  }, [post.id, user?.id]);
+    if (myRepost) {
+      setReposted(true);
+      setRepostId(myRepost.id);
+    }
+  }, [myRepost?.id]);
 
   const toggleRepost = async () => {
     if (pendingRepost) return;
@@ -141,13 +136,15 @@ export default function PostCard({ post, reactions }) {
           )}
 
           <div className="mt-3 flex items-center justify-between max-w-md text-muted-foreground">
-            <button className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary">
+            <button aria-label="Reply" className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary">
               <MessageCircle className="h-4 w-4" />
               <span>{formatNumber(post.replies)}</span>
             </button>
             <button
               onClick={toggleRepost}
               disabled={pendingRepost}
+              aria-label="Repost"
+              aria-pressed={reposted}
               className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 disabled:opacity-50 ${reposted ? 'text-emerald-400' : ''}`}
             >
               <Repeat2 className={`h-4 w-4 ${reposted ? 'fill-current' : ''}`} />
@@ -155,6 +152,8 @@ export default function PostCard({ post, reactions }) {
             </button>
             <button
               onClick={() => setLiked(!liked)}
+              aria-label="Like"
+              aria-pressed={liked}
               className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400 ${liked ? 'text-red-500' : ''}`}
             >
               <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
@@ -162,11 +161,13 @@ export default function PostCard({ post, reactions }) {
             </button>
             <button
               onClick={() => setSaved(!saved)}
+              aria-label="Save"
+              aria-pressed={saved}
               className={`rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary ${saved ? 'text-primary' : ''}`}
             >
               <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
             </button>
-            <button className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
+            <button aria-label="Share" className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
               <Share2 className="h-4 w-4" />
             </button>
           </div>

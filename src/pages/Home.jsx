@@ -8,6 +8,7 @@ import CardOfTheDay from '@/components/home/CardOfTheDay';
 import StoriesBar from '@/components/stories/StoriesBar';
 import SpaceBar from '@/components/spaces/SpaceBar';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
+import { useAuth } from '@/lib/AuthContext';
 
 const TABS = [
   { key: 'all', label: 'For You' },
@@ -21,6 +22,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
+  const [repostMap, setRepostMap] = useState({});
+  const { user } = useAuth();
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -63,15 +66,32 @@ export default function Home() {
     })();
   }, [posts]);
 
+  // Batch-fetch the current user's reposts for loaded posts (avoids an N+1 call per card).
+  useEffect(() => {
+    if (!user?.id || !posts.length) { setRepostMap({}); return; }
+    (async () => {
+      try {
+        const rows = await base44.entities.Repost.filter({ created_by_id: user.id }, '-created_date', 200);
+        const map = {};
+        for (const r of rows) { map[r.post_id] = r; }
+        setRepostMap(map);
+      } catch {
+        setRepostMap({});
+      }
+    })();
+  }, [posts, user?.id]);
+
   const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
 
   return (
     <div>
       <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
-        <div className="flex items-center px-2">
+        <div className="flex items-center px-2" role="tablist" aria-label="Feed filters">
           {TABS.map((t) => (
             <button
               key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
               onClick={() => setTab(t.key)}
               className={`relative flex-1 px-4 py-3.5 text-sm font-semibold transition-colors ${
                 tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'
@@ -108,7 +128,7 @@ export default function Home() {
       ) : (
         <div className="animate-fade-in">
           {filtered.map((post) => (
-            <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} />
+            <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} myRepost={repostMap[post.id]} />
           ))}
         </div>
       )}
