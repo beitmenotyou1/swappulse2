@@ -55,9 +55,9 @@ function paginate(arr, size) {
 
 /* ── CHECKLIST PDF ─────────────────────────────────────────────── */
 
-export function generateChecklistPDF({ setName, setId, totalCards, ownedLocalIds, allCards }) {
-  const doc = new jsPDF({ format: 'a4', unit: 'mm' });
-  const W = 210, H = 297;
+export function generateChecklistPDF({ setName, setId, totalCards, ownedLocalIds, allCards, pageSize = 'a4' }) {
+  const doc = new jsPDF({ format: pageSize, unit: 'mm' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
   const owned = new Set(ownedLocalIds);
   const ownedCount = allCards.filter((c) => owned.has(c.localId)).length;
   const missing = allCards.filter((c) => !owned.has(c.localId));
@@ -241,9 +241,9 @@ export function generateChecklistPDF({ setName, setId, totalCards, ownedLocalIds
 
 /* ── BINDER PAGES PDF ──────────────────────────────────────────── */
 
-export function generateBinderPagesPDF({ setName, setId, totalCards, ownedLocalIds, allCards }) {
-  const doc = new jsPDF({ format: 'a4', unit: 'mm' });
-  const W = 210, H = 297;
+export function generateBinderPagesPDF({ setName, setId, totalCards, ownedLocalIds, allCards, pageSize = 'a4' }) {
+  const doc = new jsPDF({ format: pageSize, unit: 'mm' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
   const owned = new Set(ownedLocalIds);
   const ownedCount = allCards.filter((c) => owned.has(c.localId)).length;
   const pct = totalCards ? Math.round((ownedCount / totalCards) * 100) : 0;

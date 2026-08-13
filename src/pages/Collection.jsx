@@ -218,9 +218,17 @@ export default function Collection() {
       )}
 
       {tab === 'completion' && (
-        loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-        ) : <SetCompletionDashboard items={items} />
+        <>
+          <div className="flex items-center justify-between px-4 pt-3">
+            <p className="text-sm text-muted-foreground">Track your set progress and download printable checklists.</p>
+            <Link to="/sets" className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
+              <Target className="h-4 w-4" /> Checklist Manager
+            </Link>
+          </div>
+          {loading ? (
+            <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+          ) : <SetCompletionDashboard items={items} />}
+        </>
       )}
 
       {tab === 'analytics' && (

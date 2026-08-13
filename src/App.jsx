@@ -14,6 +14,7 @@ import Home from '@/pages/Home';
 import Explore from '@/pages/Explore';
 import CardDetail from '@/pages/CardDetail';
 import Collection from '@/pages/Collection';
+import Sets from '@/pages/Sets';
 import TradeBoard from '@/pages/TradeBoard';
 import Profile from '@/pages/Profile';
 import PackOpenings from '@/pages/PackOpenings';
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/card/:cardId" element={<CardDetail />} />
           <Route path="/set/:setId" element={<Explore />} />
           <Route path="/collection" element={<Collection />} />
+          <Route path="/sets" element={<Sets />} />
           <Route path="/scan" element={<Scanner />} />
           <Route path="/trades" element={<TradeBoard />} />
           <Route path="/trade/:tradeId" element={<TradeThread />} />
