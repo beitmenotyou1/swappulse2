@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { unbridgeRecord } from '@/lib/atprotoRecords';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
 
@@ -87,7 +88,11 @@ export default function TradeThread() {
   const updateStatus = async (status) => {
     setStatusBusy(true);
     try {
-      const updated = await base44.entities.TradeListing.update(trade.id, { status });
+      // Remove the federated copy from the PDS when a trade is cancelled
+      if (status === 'cancelled' && trade?.bridged) {
+        await unbridgeRecord(trade);
+      }
+      const updated = await base44.entities.TradeListing.update(trade.id, { status, ...(status === 'cancelled' ? { bridged: false } : {}) });
       setTrade(updated);
     } catch (e) {
       alert('Could not update status: ' + e.message);

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { UploadCloud, Loader2, CheckCircle2, AlertTriangle, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { bridgeCollectionEntry } from '@/lib/atprotoRecords';
 
 const AUTO_ADD_THRESHOLD = 0.5;
 
@@ -64,7 +65,14 @@ export default function ScannerBatchUpload({ setId, setName, onScanComplete }) {
       // Batch-create all matched collection entries in a single API call
       if (entriesToCreate.length > 0) {
         try {
-          await base44.entities.CollectionEntry.bulkCreate(entriesToCreate);
+          const createdEntries = await base44.entities.CollectionEntry.bulkCreate(entriesToCreate);
+          // Mirror each entry to the PDS (fire and forget — bridge errors are non-fatal)
+          Promise.all((Array.isArray(createdEntries) ? createdEntries : []).map(async (entry) => {
+            try {
+              const bridged = await bridgeCollectionEntry(entry);
+              if (bridged.bridged) await base44.entities.CollectionEntry.update(entry.id, bridged);
+            } catch {}
+          })).catch(() => {});
         } catch {
           // Mark matched entries as error if bulk create fails
           for (const r of scanResults) {

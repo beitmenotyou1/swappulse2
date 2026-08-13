@@ -3,6 +3,7 @@ import { Loader2, Plus, CheckSquare, LayoutGrid, Star, BarChart3, ArrowUpDown, G
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { deleteEntry, updateEntry, bulkUpdateEntries } from '@/lib/offlineSync';
+import { unbridgeRecord } from '@/lib/atprotoRecords';
 import PageHeader from '@/components/PageHeader';
 import { formatPrice, conditionLabel } from '@/lib/format';
 import BinderGrid from '@/components/binder/BinderGrid';
@@ -68,6 +69,8 @@ export default function Collection() {
   }, []);
 
   const remove = async (id) => {
+    const item = items.find((i) => i.id === id);
+    if (item) await unbridgeRecord(item);
     await deleteEntry(id);
     setItems((prev) => prev.filter((i) => i.id !== id));
   };

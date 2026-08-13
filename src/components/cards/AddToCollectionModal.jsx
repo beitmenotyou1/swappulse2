@@ -5,6 +5,7 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { createEntry } from '@/lib/offlineSync';
+import { bridgeCollectionEntry } from '@/lib/atprotoRecords';
 
 export default function AddToCollectionModal({ open, onClose, card }) {
   const [condition, setCondition] = useState('near_mint');
@@ -34,7 +35,16 @@ export default function AddToCollectionModal({ open, onClose, card }) {
         purchase_price: price ? Math.round(parseFloat(price) * 100) : null,
         notes,
       }, NSID.COLLECTION_ENTRY, did, signingKey);
-      await createEntry(stamped);
+      const created = await createEntry(stamped);
+      // Mirror to AT Protocol PDS and persist the real at_uri/cid back to the entity
+      if (created?.id && !created._pending) {
+        try {
+          const bridged = await bridgeCollectionEntry(created);
+          await base44.entities.CollectionEntry.update(created.id, bridged);
+        } catch (e) {
+          console.error('atprotoRecords: bridge collection entry failed', e);
+        }
+      }
       onClose();
       setPrice('');
       setNotes('');

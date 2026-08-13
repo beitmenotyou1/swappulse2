@@ -8,6 +8,7 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link, useLocation } from 'react-router-dom';
+import { bridgeTradeListing } from '@/lib/atprotoRecords';
 
 export default function TradeBoard() {
   const [listings, setListings] = useState([]);
@@ -187,7 +188,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
     const expires_at = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : undefined;
     setSaving(true);
     try {
-      await base44.entities.TradeListing.create({
+      const created = await base44.entities.TradeListing.create({
         offer_card_ids: offers.map((c) => c.id),
         offer_card_names: offers.map((c) => c.name),
         offer_card_images: offers.map((c) => c.image),
@@ -203,6 +204,15 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
         author_name: '',
         author_handle: '',
       });
+      // Mirror to AT Protocol PDS and persist the real at_uri/cid back to the entity
+      if (created?.id) {
+        try {
+          const bridged = await bridgeTradeListing(created);
+          await base44.entities.TradeListing.update(created.id, bridged);
+        } catch (e) {
+          console.error('atprotoRecords: bridge trade listing failed', e);
+        }
+      }
       setOffers([]); setWants([]); setNotes(''); setCircleRef('');
       onClose();
       onCreated();
