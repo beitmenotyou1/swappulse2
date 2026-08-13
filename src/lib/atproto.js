@@ -65,13 +65,13 @@ export const NSID = {
   CROSS_POST_CONFIG: 'org.swappulse.crossPostConfig',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
-    FRESH_PULLS: 'org.swappulse.fresh-pulls',
-    TRADE_FLOOR: 'org.swappulse.trade-floor',
-    MARKET_WATCH: 'org.swappulse.market-watch',
-    SHINY_HUNTERS: 'org.swappulse.shiny-hunters',
-    BUDGET_BUILDS: 'org.swappulse.budget-builds',
-    SMART_BUNDLES: 'org.swappulse.smart-bundles',
-    CARD_OF_DAY: 'org.swappulse.card-of-day',
+    FRESH_PULLS: 'org.swappulse.freshPulls',
+    TRADE_FLOOR: 'org.swappulse.tradeFloor',
+    MARKET_WATCH: 'org.swappulse.marketWatch',
+    SHINY_HUNTERS: 'org.swappulse.shinyHunters',
+    BUDGET_BUILDS: 'org.swappulse.budgetBuilds',
+    SMART_BUNDLES: 'org.swappulse.smartBundles',
+    CARD_OF_DAY: 'org.swappulse.cardOfDay',
     SPOILERS: 'org.swappulse.spoilers',
     LEADERBOARD: 'org.swappulse.leaderboard',
     SPACES: 'org.swappulse.spaces',
@@ -93,6 +93,8 @@ export const NSID = {
 };
 
 const BASE32 = 'abcdefghijklmnopqrstuvwxyz234567';
+// base32-sortable alphabet per the TID spec (atproto.com/specs/tid)
+const BASE32_SORTABLE = '234567abcdefghijklmnopqrstuvwxyz';
 const PLC_PREFIX = 'did:plc:';
 
 function randomBase32(len) {
@@ -111,9 +113,39 @@ export function generateSigningKey() {
   return 'sk_' + randomBase32(32);
 }
 
-// TID-style record key: time-sortable + unique.
+// Per-session clock identifier (10 bits) — generated once to avoid collisions
+// between concurrent TID generators, per the TID spec.
+let _clockId = null;
+let _lastTidMicros = 0n;
+
+function getClockId() {
+  if (_clockId === null) {
+    _clockId = BigInt(crypto.getRandomValues(new Uint16Array(1))[0] & 0x3FF);
+  }
+  return _clockId;
+}
+
+// TID (Timestamp Identifier) record key per atproto.com/specs/tid:
+//   - 64-bit integer, big-endian, base32-sortable encoded
+//   - top bit always 0; next 53 bits = microseconds since UNIX epoch; low 10 bits = clock ID
+//   - always 13 ASCII characters; first char ∈ [234567abcdefghij]
+// Monotonic within a session (timestamp never decreases).
 export function generateRkey() {
-  return (Date.now() * 1000).toString(36) + randomBase32(4);
+  let micros = BigInt(Date.now()) * 1000n;
+  if (micros <= _lastTidMicros) micros = _lastTidMicros + 1n;
+  _lastTidMicros = micros;
+  const tid = (micros << 10n) | getClockId();
+  let chars = '';
+  for (let i = 0; i < 13; i++) {
+    chars += BASE32_SORTABLE[Number((tid >> (5n * BigInt(12 - i))) & 0x1Fn)];
+  }
+  return chars;
+}
+
+// Validates a TID string per the spec regex.
+const TID_RE = /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/;
+export function isValidTid(tid) {
+  return TID_RE.test(tid);
 }
 
 export function buildAtUri(did, nsid, rkey) {
