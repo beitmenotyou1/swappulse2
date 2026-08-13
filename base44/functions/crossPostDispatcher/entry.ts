@@ -67,14 +67,24 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { contentType, contentId, test, configId, url, authorName, authorHandle } = body;
 
-    let did = body.did;
-    if (!did) {
-      try { const me = await base44.auth.me(); did = me?.did; } catch { /* */ }
+    // Require authentication — only the owner can trigger cross-posts for their DID/configs
+    let me;
+    try { me = await base44.auth.me(); } catch { /* */ }
+    if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const callerDid = me.did || me.id;
+
+    // The caller may only cross-post as themselves
+    if (body.did && body.did !== callerDid) {
+      return Response.json({ error: 'You can only cross-post as yourself' }, { status: 403 });
     }
+    const did = callerDid;
 
     let configs = [];
     if (test && configId) {
       const c = await svc.entities.CrossPostConfig.get(configId).catch(() => null);
+      if (c && c.did !== callerDid) {
+        return Response.json({ error: 'You can only test your own cross-post configs' }, { status: 403 });
+      }
       if (c) configs = [c];
     } else if (did && contentType) {
       const all = await svc.entities.CrossPostConfig.filter({ did }, '-created_at', 50).catch(() => []);

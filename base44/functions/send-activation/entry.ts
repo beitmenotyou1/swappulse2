@@ -51,8 +51,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const origin = req.headers.get('origin') || req.headers.get('Origin') || '';
-    const link = `${origin}/activate?token=${record.link_token}`;
+    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org';
+    const link = `${appUrl}/activate?token=${record.link_token}`;
     try {
       const email = buildActivationEmail(u.full_name, link);
       await sendBrandedEmail({ to: u.email, ...email });
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       console.error('send-activation email failed', e?.message || e);
     }
 
-    return Response.json({ ok: true, token: record.link_token, expires_at: record.expires_at });
+    return Response.json({ ok: true, expires_at: record.expires_at });
   } catch (error) {
     console.error('send-activation error', error);
     return Response.json({ error: error.message }, { status: 500 });

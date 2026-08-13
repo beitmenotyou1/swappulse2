@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;
-    const origin = req.headers.get('origin') || req.headers.get('Origin') || '';
+    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org';
     const now = Date.now();
 
     const users = await svc.entities.User.list('-created_date', 500);
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
         if (now - lastReminded < REWARN_INTERVAL_DAYS * DAY) continue;
 
         const token = randomToken();
-        const link = `${origin}/activate?token=${token}`;
+        const link = `${appUrl}/activate?token=${token}`;
         try {
           const email = buildActivationWarningEmail(u.full_name, link);
           await sendBrandedEmail({ to: u.email, ...email });
