@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle, Mail } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { checkPasswordBreach, BREACH_WARNING } from "@/lib/hibp";
+import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 
 function randomPassword() {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)))
@@ -40,7 +41,16 @@ export default function ResetPassword() {
         await base44.functions.invoke("store-login-key", { email: setupEmail, login_key: pwd });
         if (cancelled) return;
         localStorage.removeItem("swappulse_setup_email");
-        setSetupComplete(true);
+        // Auto-login: use the freshly-bound password to sign in immediately
+        setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+        try {
+          await base44.auth.loginViaEmailPassword(setupEmail, pwd);
+          // loginViaEmailPassword hard-redirects on success — execution stops here
+        } catch (loginErr) {
+          // If auto-login fails (e.g. 2FA required), fall back to showing the success screen
+          console.error("Auto-login after setup failed:", loginErr?.message || loginErr);
+        }
+        if (!cancelled) setSetupComplete(true);
       } catch (err) {
         if (!cancelled) setError(err.message || "Could not set up passwordless login. Please try again.");
       } finally {
@@ -55,8 +65,8 @@ export default function ResetPassword() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Setting up passwordless login"
-        subtitle="Enabling email-code login for your account"
+        title="Signing you in"
+        subtitle="Confirming your sign-in link"
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -66,10 +76,10 @@ export default function ResetPassword() {
         {setupComplete ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-foreground">
-              Passwordless login is now enabled for <strong>{setupEmail}</strong>. You can sign in with just your email and a code.
+              You're signed in! Next time, you'll get a 6-digit code instead.
             </p>
-            <Button className="w-full h-12 font-medium" onClick={() => { window.location.href = "/login?email=" + encodeURIComponent(setupEmail); }}>
-              Continue to login
+            <Button className="w-full h-12 font-medium" onClick={() => { window.location.href = "/"; }}>
+              Go to home
             </Button>
           </div>
         ) : (
@@ -93,8 +103,8 @@ export default function ResetPassword() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Set up passwordless login"
-        subtitle="Enter your email to complete the one-time setup"
+        title="Complete your sign-in"
+        subtitle="Enter your email to continue"
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">

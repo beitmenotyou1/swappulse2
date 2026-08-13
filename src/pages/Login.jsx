@@ -214,7 +214,7 @@ export default function Login() {
       {step === "setup" && (
         <div className="space-y-4 text-center">
           <p className="text-sm text-muted-foreground">
-            We've sent a one-time login link to <strong>{email}</strong>. Click the link in the email to enable passwordless login — after this, you'll sign in with just a 6-digit code.
+            We've sent a sign-in link to <strong>{email}</strong>. Click the link in the email to sign in instantly — next time you'll get a 6-digit code instead.
           </p>
           <button type="button" onClick={() => { setStep("email"); setInfo(""); setError(""); }} className="text-primary hover:underline text-sm">
             Back to login
