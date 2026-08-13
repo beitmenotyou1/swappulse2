@@ -103,7 +103,9 @@ export default function Login() {
       // Log in with the stored login_key
       setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
       await base44.auth.loginViaEmailPassword(email, loginKey);
-      // loginViaEmailPassword sets token and hard-redirects
+      // SDK sets the token but does NOT hard-redirect — redirect explicitly
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
+      window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Invalid or expired code");
     } finally {
@@ -115,6 +117,9 @@ export default function Login() {
     setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
     try {
       await base44.auth.loginViaEmailPassword(email, pendingLoginKey);
+      // SDK sets the token but does NOT hard-redirect — redirect explicitly
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
+      window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
       setStep("code");
