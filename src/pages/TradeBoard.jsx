@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Plus, X, ArrowLeftRight, Bookmark, Trash2 } from 'lucide-react';
+import { Loader2, Plus, X, ArrowLeftRight, Bookmark, Trash2, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -18,6 +18,8 @@ export default function TradeBoard() {
   const [initialOffers, setInitialOffers] = useState([]);
   const [myCircleUris, setMyCircleUris] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
+  const [trustedDids, setTrustedDids] = useState(new Set());
+  const [trustedOnly, setTrustedOnly] = useState(false);
   const { toast } = useToast();
   const location = useLocation();
 
@@ -33,6 +35,21 @@ export default function TradeBoard() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Fetch the set of DIDs holding a granted Trusted Trader achievement
+  useEffect(() => {
+    (async () => {
+      try {
+        const badges = await base44.entities.Achievement.filter({
+          achievement_type: 'trusted_trader',
+          status: 'granted',
+        }, '-unlocked_at', 200);
+        setTrustedDids(new Set(badges.map((b) => b.did).filter(Boolean)));
+      } catch {
+        setTrustedDids(new Set());
+      }
+    })();
+  }, []);
 
   const handleMarkCompleted = async (listing) => {
     try {
@@ -94,7 +111,11 @@ export default function TradeBoard() {
   const now = Date.now();
   const visibleListings = listings.filter((t) => {
     if (t.expires_at && new Date(t.expires_at).getTime() < now) return false;
-    return t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref);
+    if (t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref)) {
+      if (trustedOnly && !trustedDids.has(t.did)) return false;
+      return true;
+    }
+    return false;
   });
 
   return (
@@ -104,6 +125,25 @@ export default function TradeBoard() {
           <Plus className="h-4 w-4" /> New Listing
         </button>
       </PageHeader>
+
+      {!loading && listings.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2">
+          <button
+            onClick={() => setTrustedOnly((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              trustedOnly ? 'bg-success text-white' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Trusted traders only
+          </button>
+          {trustedOnly && (
+            <span className="text-xs text-muted-foreground">
+              {visibleListings.length} of {listings.filter((t) => !t.expires_at || new Date(t.expires_at).getTime() >= now).length} listings
+            </span>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
