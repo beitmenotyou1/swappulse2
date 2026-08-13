@@ -1,7 +1,8 @@
 import React from 'react';
-import { Shield, Clock, KeyRound, Fingerprint, Copy, Check } from 'lucide-react';
+import { Shield, Clock, Fingerprint, Copy, Check } from 'lucide-react';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import SettingRow from '@/components/settings/SettingRow';
+import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function AccountSection({ settings, update }) {
@@ -62,10 +63,7 @@ export default function AccountSection({ settings, update }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
-        <p className="mb-1 flex items-center gap-2 font-semibold text-foreground"><KeyRound className="h-4 w-4" /> Planned</p>
-        U2F/WebAuthn key enrolment, encrypted backup codes, active-session revocation and account deletion are on the roadmap. Your toggles above are saved to your repository and ready for when those land.
-      </div>
+      <DeleteAccountSection />
     </div>
   );
 }
