@@ -177,25 +177,33 @@ export default async function(req: Request): Promise<Response> {
       results['HandleClaim'] = `error: ${e?.message}`;
     }
 
-    // ── Phase 6: Anonymise the User record ──
-    // The User entity is platform-managed: email and full_name are read-only,
-    // but we can clear all editable PII fields and release the username.
+    // ── Phase 6: Delete the User record ──
+    // The User entity is platform-managed but CAN be deleted via service role.
+    // Deleting the record (rather than just anonymising it) frees the email so
+    // the collector can re-register in the future.
     try {
-      await svc.entities.User.update(userId, {
-        username: '',
-        avatar: '',
-        header: '',
-        description: '',
-        did: '',
-        login_key: '',
-        two_factor_secret: '',
-        two_factor_enabled: false,
-        push_subscription: '',
-      });
-      results['User'] = 'anonymised';
+      await svc.entities.User.delete(userId);
+      results['User'] = 'deleted';
     } catch (e) {
-      console.error('delete-account: User anonymisation error', e?.message);
-      results['User'] = `error: ${e?.message}`;
+      console.error('delete-account: User deletion error', e?.message);
+      // Fallback: anonymise editable PII fields if hard delete fails
+      try {
+        await svc.entities.User.update(userId, {
+          username: '',
+          avatar: '',
+          header: '',
+          description: '',
+          did: '',
+          login_key: '',
+          two_factor_secret: '',
+          two_factor_enabled: false,
+          push_subscription: '',
+        });
+        results['User'] = `anonymised (delete failed: ${e?.message})`;
+      } catch (e2) {
+        console.error('delete-account: User anonymisation fallback error', e2?.message);
+        results['User'] = `error: ${e2?.message}`;
+      }
     }
 
     console.log('delete-account: complete for user', userId, results);
