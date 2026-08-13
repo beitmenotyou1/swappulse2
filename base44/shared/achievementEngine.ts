@@ -39,7 +39,7 @@ export interface EngineInput {
 
 function prec(rec: any, type: string, lexicon: string): ProofRecord {
   return {
-    uri: rec.at_uri || `at://swappulse/${type}/${rec.id}`,
+    uri: rec.at_uri || `at://did:web:swappulse.org/${type}/${rec.id}`,
     cid: rec.cid || '',
     recordType: rec.record_type || lexicon,
     verifiedAt: rec.created_date || rec.updated_date || new Date().toISOString(),

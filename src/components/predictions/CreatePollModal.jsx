@@ -66,7 +66,7 @@ export default function CreatePollModal({ open, onClose, onCreated }) {
       const expiresAt = new Date(Date.now() + days * 86400000).toISOString();
       const stamped = await stampRecord(
         {
-          card_uri: `at://swappulse/card/${card.id}`,
+          card_uri: `at://did:web:swappulse.org/org.swappulse.card/${card.id}`,
           card_id: card.id,
           card_name: card.name,
           card_image: card.image || '',

@@ -104,7 +104,7 @@ export default function SpaceRoom() {
       const signingKey = generateSigningKey();
       const name = DEMO_NAMES[i % DEMO_NAMES.length];
       const stamped = await stampRecord({
-        space_ref: `at://swappulse/${NSID.VOICE_SPACE}/${sid}`,
+        space_ref: `at://did:web:swappulse.org/${NSID.VOICE_SPACE}/${sid}`,
         space_id: sid,
         role: 'listener',
         joined_at: new Date().toISOString(),

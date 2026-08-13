@@ -134,7 +134,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
       const { did, signingKey } = await ensureUserDid();
       const me = await base44.auth.me().catch(() => null);
       const stamped = await stampRecord({
-        subject: story.at_uri || `at://swappulse/${NSID.STORY}/${story.id}`,
+        subject: story.at_uri || `at://did:web:swappulse.org/${NSID.STORY}/${story.id}`,
         post_id: story.id,
         reaction_type: type,
         reactor_name: me?.full_name || '',

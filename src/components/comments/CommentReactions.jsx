@@ -68,7 +68,7 @@ export default function CommentReactions({ post, user, compact = false }) {
         }
         // Create new reaction
         await base44.entities.Reaction.create({
-          subject: post.at_uri || `at://swappulse/post/${post.id}`,
+          subject: post.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${post.id}`,
           post_id: post.id,
           reaction_type: typeKey,
           reactor_name: user?.full_name || '',

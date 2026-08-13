@@ -78,7 +78,7 @@ export default function ReactionBar({ post, initial }) {
         const me = await base44.auth.me();
         const stamped = await stampRecord(
           {
-            subject: post.at_uri || `at://swappulse/post/${post.id}`,
+            subject: post.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${post.id}`,
             post_id: post.id,
             reaction_type: type,
             target_card_uri: post.card_id || undefined,
