@@ -58,6 +58,13 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
         }, NSID.FOLLOW, did, signingKey);
         const f = await base44.entities.Follow.create(stamped);
         setFollowing(true); setFollowId(f.id);
+        // AT Protocol PDS bridge — mirror as a real app.bsky.graph.follow record.
+        base44.functions.invoke('atproto-bridge', {
+          collection: 'app.bsky.graph.follow',
+          record: { subject: subjectDid, createdAt: new Date().toISOString() },
+        }).then((res) => {
+          if (res?.uri) base44.entities.Follow.update(f.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
+        }).catch(() => {});
         const ps = await stampRecord({
           subject_did: subjectDid, bell_enabled: false,
           notify_on: ['pack_opening', 'trade_listing'], priority: 'standard',
