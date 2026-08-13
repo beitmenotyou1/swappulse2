@@ -117,6 +117,9 @@
           "created_by_id": "{{user.id}}"
         },
         {
+          "data.did": "{{user.data.did}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
@@ -124,10 +127,24 @@
       ]
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
     }
   }
 }
