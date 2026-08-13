@@ -17,21 +17,36 @@ Deno.serve(async (req) => {
 
     const now = Date.now();
     const polls = await svc.entities.SentimentPoll.list('-created_date', 200);
+
+    // Filter to expired unresolved polls (avoids per-poll DB reads for non-candidates).
+    const expired = polls.filter(
+      (p) => !p.outcome && p.expires_at && new Date(p.expires_at).getTime() <= now,
+    );
+
+    // Batch-fetch all CardPricing records for the relevant card_ids in one call
+    // (replaces per-poll CardPricing.filter N+1).
+    const cardIds = [...new Set(expired.map((p) => p.card_id).filter(Boolean))];
+    const pricingRecords = cardIds.length > 0
+      ? await svc.entities.CardPricing.filter({ card_id: { $in: cardIds } }, '-created_date', 500).catch(() => [])
+      : [];
+    // Build lookup: card_id|source → avg
+    const pricingLookup = new Map<string, number>();
+    for (const pr of pricingRecords) {
+      const key = `${pr.card_id}|${pr.source || 'tcgplayer'}`;
+      // Keep the most recent per key (records are sorted -created_date).
+      if (!pricingLookup.has(key)) pricingLookup.set(key, Number(pr.avg) || 0);
+    }
+
     let resolved = 0;
     let inconclusive = 0;
     const errors: any[] = [];
+    const updates: Array<{ id: string; outcome: string }> = [];
 
-    for (const poll of polls) {
-      if (poll.outcome) continue;
-      if (!poll.expires_at) continue;
-      if (new Date(poll.expires_at).getTime() > now) continue;
+    for (const poll of expired) {
       try {
         const priceAtCreation = Number(poll.price_at_creation) || 0;
-        const pricing = await svc.entities.CardPricing.filter({
-          card_id: poll.card_id,
-          source: poll.resolution_source || 'tcgplayer',
-        });
-        const currentAvg = pricing.length ? Number(pricing[0].avg) || 0 : 0;
+        const source = poll.resolution_source || 'tcgplayer';
+        const currentAvg = pricingLookup.get(`${poll.card_id}|${source}`) || 0;
 
         let outcome = 'inconclusive';
         if (priceAtCreation > 0 && currentAvg > 0) {
@@ -48,10 +63,17 @@ Deno.serve(async (req) => {
         }
         if (outcome === 'inconclusive') inconclusive++;
         else resolved++;
-        await svc.entities.SentimentPoll.update(poll.id, { outcome });
+        updates.push({ id: poll.id, outcome });
       } catch (e) {
         errors.push({ id: poll.id, error: e.message });
       }
+    }
+
+    // Batch-update all resolved polls in one call (replaces per-poll SentimentPoll.update N+1).
+    if (updates.length > 0) {
+      await svc.entities.SentimentPoll.bulkUpdate(updates).catch((e) => {
+        errors.push({ error: `bulkUpdate failed: ${e?.message || e}` });
+      });
     }
 
     return Response.json({

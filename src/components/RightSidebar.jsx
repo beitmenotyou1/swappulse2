@@ -40,27 +40,27 @@ export default function RightSidebar({ online = [] }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [items, trades, pricing] = await Promise.all([
+        const [items, trades, pricing, isAuthed] = await Promise.all([
           base44.entities.CollectionEntry.list('-updated_date', 200),
           base44.entities.TradeListing.filter({ status: 'open' }, '-created_date', 3),
           base44.entities.CardPricing.list('-updated_date', 200),
+          base44.auth.isAuthenticated().catch(() => false),
         ]);
         const total = items.reduce((sum, c) => sum + (c.market_value || c.purchase_price || 0), 0);
         setPortfolio({ total, count: items.length });
         setRecentTrades(trades);
         setTrending(computeTrending(pricing));
+
+        // Who to Follow — real trust-graph recommendations (auth only).
+        if (isAuthed) {
+          const res = await base44.functions.invoke('getFeedSkeleton', { limit: 3 });
+          setRecs(res.data?.recommendations || []);
+          setActorDid(res.data?.actorDid || '');
+        } else {
+          setRecs([]);
+        }
       } catch {
         setPortfolio({ total: 0, count: 0 });
-      }
-
-      // Who to Follow — real trust-graph recommendations (auth only).
-      try {
-        const isAuthed = await base44.auth.isAuthenticated();
-        if (!isAuthed) { setRecs([]); return; }
-        const res = await base44.functions.invoke('getFeedSkeleton', { limit: 3 });
-        setRecs(res.data?.recommendations || []);
-        setActorDid(res.data?.actorDid || '');
-      } catch {
         setRecs([]);
       }
     };

@@ -29,15 +29,16 @@ export default function StoriesBar() {
 
   const load = async (did) => {
     const cutoff = new Date().toISOString();
-    const active = await base44.entities.Story.filter({ expires_at: { $gte: cutoff } }, '-created_date', 100).catch(() => []);
-    const friends = did ? await mutualFriendDids(did) : new Set();
+    // Parallelize the three independent fetches (Story, mutual friends, StoryView).
+    const [active, friends, views] = await Promise.all([
+      base44.entities.Story.filter({ expires_at: { $gte: cutoff } }, '-created_date', 100).catch(() => []),
+      did ? mutualFriendDids(did) : Promise.resolve(new Set()),
+      did ? base44.entities.StoryView.filter({ viewer_did: did }).catch(() => []) : Promise.resolve([]),
+    ]);
     // audience gate: public stories visible to all; friends-only to author + mutual friends.
     const visible = active.filter((s) => s.audience === 'public' || s.did === did || friends.has(s.did));
     setStories(visible);
-    if (did) {
-      const views = await base44.entities.StoryView.filter({ viewer_did: did }).catch(() => []);
-      setSeenIds(new Set(views.map((v) => v.story_id)));
-    }
+    if (did) setSeenIds(new Set(views.map((v) => v.story_id)));
   };
 
   useEffect(() => {
