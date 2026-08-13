@@ -120,28 +120,38 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('crossPost resolve content error', e?.message || e); }
     }
 
-    const results = [];
-    for (const cfg of configs) {
+    // Parallelize platform posts (independent external calls) and collect
+    // ExternalActivity records for a single bulkCreate at the end.
+    const now = new Date().toISOString();
+    const postResults = await Promise.all(configs.map(async (cfg) => {
       const message = test
         ? 'Testing SwapPulse cross-posting integration. 🧪'
         : fmt(cfg.template || TEMPLATES[contentType] || TEMPLATES.journal, vars);
       const res = await postToPlatform(cfg.platform, cfg.credential, cfg.extra_credential, message);
+      return { cfg, message, res };
+    }));
+
+    const activityRecords = postResults.map(({ cfg, message }) => ({
+      platform: mapPlatform(cfg.platform),
+      activity_type: 'post',
+      title: message.slice(0, 200),
+      source_url: url || origin,
+      is_live: false,
+      started_at: now,
+      author_name: authorName || cfg.handle || '',
+      author_handle: authorHandle || '',
+      did: cfg.did || did || '',
+      record_type: 'org.swappulse.externalActivity',
+    }));
+    if (activityRecords.length > 0) {
       try {
-        await svc.entities.ExternalActivity.create({
-          platform: mapPlatform(cfg.platform),
-          activity_type: 'post',
-          title: message.slice(0, 200),
-          source_url: url || origin,
-          is_live: false,
-          started_at: new Date().toISOString(),
-          author_name: authorName || cfg.handle || '',
-          author_handle: authorHandle || '',
-          did: cfg.did || did || '',
-          record_type: 'org.swappulse.externalActivity',
-        });
-      } catch (e) { console.error('crossPost log error', e?.message || e); }
-      results.push({ platform: cfg.platform, ok: res.ok, simulated: res.simulated, error: res.error });
+        await svc.entities.ExternalActivity.bulkCreate(activityRecords);
+      } catch (e) { console.error('crossPost bulk log error', e?.message || e); }
     }
+
+    const results = postResults.map(({ cfg, res }) => ({
+      platform: cfg.platform, ok: res.ok, simulated: res.simulated, error: res.error,
+    }));
     return Response.json({ dispatched: results.length, results });
   } catch (error) {
     console.error('crossPostDispatcher error', error?.message || error);

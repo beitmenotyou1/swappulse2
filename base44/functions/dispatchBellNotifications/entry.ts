@@ -29,7 +29,12 @@ Deno.serve(async (req) => {
     );
 
     // Map follower DID -> serialized PushSubscription via User records.
-    const users = await svc.entities.User.list('-created_date', 500);
+    // Batch-fetch only the users whose DIDs appear in the bell-enabled prefs
+    // (avoids a full-table User.list scan).
+    const followerDids = [...new Set(prefs.map((p) => p.did).filter(Boolean))];
+    const users = followerDids.length > 0
+      ? await svc.entities.User.filter({ did: { $in: followerDids } }, '-created_date', 500).catch(() => [])
+      : [];
     const subByDid = new Map();
     for (const u of users) {
       if (u.push_subscription && u.did) subByDid.set(u.did, u.push_subscription);

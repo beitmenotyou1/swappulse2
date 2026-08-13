@@ -56,6 +56,30 @@ export default async function (req: Request): Promise<Response> {
     const emailByDid = new Map<string, string>();
     for (const u of users) emailByDid.set(toDid(u), u.email);
 
+    // Pre-group entity arrays by DID into Maps (avoids O(N*D) per-DID filtering
+    // inside the loop — each filter was a full array scan per DID).
+    const groupBy = <T,>(arr: T[], fn: (x: T) => string | string[] | undefined): Map<string, T[]> => {
+      const m = new Map<string, T[]>();
+      for (const x of arr) {
+        const keys = fn(x);
+        const keyArr = Array.isArray(keys) ? keys : keys ? [keys] : [];
+        for (const k of keyArr) {
+          if (!k) continue;
+          if (!m.has(k)) m.set(k, []);
+          m.get(k)!.push(x);
+        }
+      }
+      return m;
+    };
+    const vouchesByDid = groupBy(vouches, (v: any) => v.vouched_did);
+    const feedbackByDid = groupBy(feedback, (f: any) => f.rated_user_did);
+    const chainsByDid = groupBy(chains, (c: any) => c.participant_dids || []);
+    const correctionsByDid = groupBy(corrections, (c: any) => c.did);
+    const bindersByDid = groupBy(binders, (b: any) => b.did);
+    const voiceSpacesByDid = groupBy(voiceSpaces, (s: any) => s.did);
+    const cardReviewsByDid = groupBy(cardReviews, (r: any) => r.did);
+    const meetupsByDid = groupBy(meetups, (m: any) => m.did);
+
     const dids = new Set<string>();
     for (const u of users) dids.add(toDid(u));
     for (const v of vouches) if (v.vouched_did) dids.add(v.vouched_did);
@@ -76,14 +100,14 @@ export default async function (req: Request): Promise<Response> {
         const slice = {
           userDid: did,
           collectionEntries: [],
-          vouches: vouches.filter((v: any) => v.vouched_did === did),
-          feedback: feedback.filter((f: any) => f.rated_user_did === did),
-          tradeChains: chains.filter((c: any) => (c.participant_dids || []).includes(did)),
-          corrections: corrections.filter((c: any) => c.did === did),
-          binders: binders.filter((b: any) => b.did === did),
-          voiceSpaces: voiceSpaces.filter((s: any) => s.did === did),
-          cardReviews: cardReviews.filter((r: any) => r.did === did),
-          meetups: meetups.filter((m: any) => m.did === did),
+          vouches: vouchesByDid.get(did) || [],
+          feedback: feedbackByDid.get(did) || [],
+          tradeChains: chainsByDid.get(did) || [],
+          corrections: correctionsByDid.get(did) || [],
+          binders: bindersByDid.get(did) || [],
+          voiceSpaces: voiceSpacesByDid.get(did) || [],
+          cardReviews: cardReviewsByDid.get(did) || [],
+          meetups: meetupsByDid.get(did) || [],
           setSizes: {} as Record<string, number>,
           participantsBySpaceId,
           rsvpsByMeetupId,

@@ -21,15 +21,18 @@ Deno.serve(async (req) => {
       ? [agentName]
       : ['trade_assistant', 'market_watch', 'collection_advisor'];
 
-    const results: Record<string, any> = {};
-    for (const name of agentNames) {
-      try {
-        results[name] = await processFeedback(svc, name);
-      } catch (e) {
-        console.error(`processAgentFeedback: failed for ${name}`, e?.message || e);
-        results[name] = { error: e?.message || 'failed' };
-      }
-    }
+    // Process all agents in parallel (independent LLM + entity work per agent).
+    const entries = await Promise.all(
+      agentNames.map(async (name) => {
+        try {
+          return [name, await processFeedback(svc, name)] as const;
+        } catch (e) {
+          console.error(`processAgentFeedback: failed for ${name}`, e?.message || e);
+          return [name, { error: e?.message || 'failed' }] as const;
+        }
+      }),
+    );
+    const results: Record<string, any> = Object.fromEntries(entries);
 
     return Response.json({ ok: true, results });
   } catch (error) {
