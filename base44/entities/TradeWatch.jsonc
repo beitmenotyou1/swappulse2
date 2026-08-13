@@ -1,0 +1,33 @@
+{
+  "name": "TradeWatch",
+  "type": "object",
+  "title": "TradeWatch",
+  "description": "org.swappulse.tradeWatch \u2014 a user's explicit interest in a trade listing. Watchers receive in-app + push notifications when the trade's status changes (completed, cancelled, or updated).",
+  "properties": {
+    "trade_id": {
+      "type": "string",
+      "description": "TradeListing id being watched"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the watcher (simulated)"
+    }
+  },
+  "required": [
+    "trade_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, ArrowLeft, Send } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Bell, BellRing } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
@@ -21,19 +21,23 @@ export default function TradeThread() {
   const [me, setMe] = useState(null);
   const endRef = useRef(null);
   const [statusBusy, setStatusBusy] = useState(false);
+  const [watching, setWatching] = useState(false);
+  const [watchBusy, setWatchBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [t, m, u] = await Promise.all([
+        const [t, m, u, watches] = await Promise.all([
           base44.entities.TradeListing.get(tradeId).catch(() => null),
           base44.entities.TradeMessage.filter({ trade_id: tradeId }, 'created_date', 200).catch(() => []),
           base44.auth.me().catch(() => null),
+          base44.entities.TradeWatch.filter({ trade_id: tradeId }).catch(() => []),
         ]);
         setTrade(t);
         setMessages(m);
         setMe(u);
+        setWatching(watches.length > 0);
       } finally {
         setLoading(false);
       }
@@ -101,6 +105,24 @@ export default function TradeThread() {
     }
   };
 
+  const toggleWatch = async () => {
+    setWatchBusy(true);
+    try {
+      if (watching) {
+        const existing = await base44.entities.TradeWatch.filter({ trade_id: tradeId });
+        for (const w of existing) await base44.entities.TradeWatch.delete(w.id);
+        setWatching(false);
+      } else {
+        await base44.entities.TradeWatch.create({ trade_id: tradeId });
+        setWatching(true);
+      }
+    } catch (e) {
+      alert('Could not update watch status: ' + e.message);
+    } finally {
+      setWatchBusy(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -130,6 +152,15 @@ export default function TradeThread() {
             <div className="mt-3">
               <TradeFairnessCalculator trade={trade} />
             </div>
+            {!isOwner && !['completed', 'cancelled'].includes(trade.status) && (
+              <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+                <button onClick={toggleWatch} disabled={watchBusy} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${watching ? 'bg-accent/20 text-accent' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                  {watching ? <BellRing className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+                  {watching ? 'Watching' : 'Watch this trade'}
+                </button>
+                <span className="text-xs text-muted-foreground">Get notified on updates and completion.</span>
+              </div>
+            )}
             {isOwner && (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">Status</span>

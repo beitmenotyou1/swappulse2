@@ -34,15 +34,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Trade listing not found' }, { status: 404 });
     }
 
-    // Find all participants: TradeMessage authors + listing owner
-    const messages = await svc.entities.TradeMessage.filter(
-      { trade_id }, '-created_date', 200,
-    ).catch(() => []);
+    // Find all interested users: TradeMessage authors + listing owner + watchers
+    const [messages, watches] = await Promise.all([
+      svc.entities.TradeMessage.filter({ trade_id }, '-created_date', 200).catch(() => []),
+      svc.entities.TradeWatch.filter({ trade_id }, '-created_date', 200).catch(() => []),
+    ]);
 
     const participantIds = new Set<string>();
     if (listing.created_by_id) participantIds.add(listing.created_by_id);
     for (const m of messages) {
       if (m.created_by_id) participantIds.add(m.created_by_id);
+    }
+    for (const w of watches) {
+      if (w.created_by_id) participantIds.add(w.created_by_id);
     }
 
     if (participantIds.size === 0) {
