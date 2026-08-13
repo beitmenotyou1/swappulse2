@@ -18,6 +18,8 @@ import { base44 } from '@/api/base44Client';
 export const NSID = {
   // Standard AT Protocol record we reuse for feed posts
   POST: 'app.bsky.feed.post',
+  // Standard AT Protocol record we reuse for reposts
+  REPOST: 'app.bsky.feed.repost',
   // Custom SwapPulse record lexicons
   COLLECTION_ENTRY: 'org.swappulse.collectionEntry',
   TRADE_LISTING: 'org.swappulse.tradeListing',

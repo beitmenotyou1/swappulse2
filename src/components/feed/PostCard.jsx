@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon } from 'lucide-react';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -7,6 +7,9 @@ import { useLivePresence } from '@/lib/livePresence';
 import ReactionBar from '@/components/feed/ReactionBar';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { timeAgo, formatNumber } from '@/lib/format';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
 const TYPE_META = {
   pack_opening: { icon: Sparkles, label: 'Pack Pull', color: 'text-accent' },
@@ -17,9 +20,76 @@ const TYPE_META = {
 export default function PostCard({ post, reactions }) {
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
+  const [repostId, setRepostId] = useState(null);
+  const [pendingRepost, setPendingRepost] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const { user } = useAuth();
   const { liveByDid } = useLivePresence();
+
+  // Check if the current user has already reposted this post (auth only).
+  useEffect(() => {
+    if (!user?.id) return;
+    base44.entities.Repost.filter({ post_id: post.id, created_by_id: user.id }, '-created_date', 1)
+      .then((rows) => {
+        if (rows.length > 0) {
+          setReposted(true);
+          setRepostId(rows[0].id);
+        }
+      })
+      .catch(() => {});
+  }, [post.id, user?.id]);
+
+  const toggleRepost = async () => {
+    if (pendingRepost) return;
+    if (!user?.id) return; // guests get the optimistic toggle only
+    setPendingRepost(true);
+    if (reposted && repostId) {
+      setReposted(false);
+      try {
+        const r = await base44.entities.Repost.get(repostId).catch(() => null);
+        await base44.entities.Repost.delete(repostId);
+        setRepostId(null);
+        if (r?.at_uri?.startsWith('at://did:')) {
+          base44.functions.invoke('atproto-bridge', { action: 'delete', uri: r.at_uri }).catch(() => {});
+        }
+      } catch {
+        setReposted(true);
+      }
+    } else {
+      setReposted(true);
+      try {
+        const { did, signingKey } = await ensureUserDid();
+        const me = await base44.auth.me();
+        const stamped = await stampRecord(
+          {
+            post_id: post.id,
+            post_uri: post.at_uri,
+            post_cid: post.cid,
+            reposter_name: me?.full_name || '',
+            reposter_handle: me?.email?.split('@')[0] || '',
+          },
+          NSID.REPOST,
+          did,
+          signingKey,
+        );
+        const created = await base44.entities.Repost.create(stamped);
+        setRepostId(created.id);
+        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.repost (only if the post has a real at_uri).
+        if (post.at_uri?.startsWith('at://did:') && post.cid) {
+          base44.functions.invoke('atproto-bridge', {
+            collection: 'app.bsky.feed.repost',
+            record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
+          }).then((res) => {
+            if (res?.uri) base44.entities.Repost.update(created.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
+          }).catch(() => {});
+        }
+      } catch {
+        setReposted(false);
+      }
+    }
+    setPendingRepost(false);
+  };
   const liveInfo = post.did ? liveByDid.get(post.did) : null;
   const meta = TYPE_META[post.post_type];
   const likeCount = post.likes + (liked ? 1 : 0);
@@ -76,10 +146,11 @@ export default function PostCard({ post, reactions }) {
               <span>{formatNumber(post.replies)}</span>
             </button>
             <button
-              onClick={() => setReposted(!reposted)}
-              className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 ${reposted ? 'text-emerald-400' : ''}`}
+              onClick={toggleRepost}
+              disabled={pendingRepost}
+              className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 disabled:opacity-50 ${reposted ? 'text-emerald-400' : ''}`}
             >
-              <Repeat2 className="h-4 w-4" />
+              <Repeat2 className={`h-4 w-4 ${reposted ? 'fill-current' : ''}`} />
               <span>{formatNumber(repostCount)}</span>
             </button>
             <button

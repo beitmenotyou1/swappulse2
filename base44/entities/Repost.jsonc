@@ -1,0 +1,61 @@
+{
+  "name": "Repost",
+  "type": "object",
+  "title": "Repost",
+  "description": "org.swappulse.repost \u2014 a user's repost of a Post, mirrored to AT Protocol as a real app.bsky.feed.repost record. The subject (post_uri + post_cid) is the strongRef of the reposted post.",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "Local id of the reposted Post"
+    },
+    "post_uri": {
+      "type": "string",
+      "description": "at:// URI of the reposted Post (subject.uri for the PDS bridge)"
+    },
+    "post_cid": {
+      "type": "string",
+      "description": "cid of the reposted Post (subject.cid for the PDS bridge)"
+    },
+    "reposter_name": {
+      "type": "string"
+    },
+    "reposter_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the reposter (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this repost record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (app.bsky.feed.repost)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the repost to the reposter's signing key (simulated)"
+    }
+  },
+  "required": [
+    "post_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
