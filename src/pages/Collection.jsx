@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Plus, CheckSquare, LayoutGrid, Star, BarChart3, ArrowUpDown, Grid3x3, Layers, Target, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { deleteEntry, updateEntry, bulkUpdateEntries } from '@/lib/offlineSync';
 import PageHeader from '@/components/PageHeader';
@@ -38,6 +38,7 @@ export default function Collection() {
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const navigate = useNavigate();
 
   const load = async () => {
     setLoading(true);
@@ -140,26 +141,12 @@ export default function Collection() {
 
   const selectAll = () => setSelected(new Set(filtered.map((i) => i.id)));
 
-  const moveToTradeList = async () => {
+  const moveToTradeList = () => {
     const picked = items.filter((i) => selected.has(i.id));
     if (!picked.length) return;
-    setBulkBusy(true);
-    try {
-      await base44.entities.TradeListing.create({
-        offer_card_ids: picked.map((i) => i.card_id).filter(Boolean),
-        offer_card_names: picked.map((i) => i.card_name),
-        offer_card_images: picked.map((i) => i.card_image).filter(Boolean),
-        wanted_card_names: ['Open to offers'],
-        status: 'open',
-        visibility: 'public',
-      });
-      toast({ title: 'Moved to trade list', description: `${picked.length} card${picked.length > 1 ? 's' : ''} listed on the Trade Board.` });
-      clearSelection();
-    } catch (e) {
-      toast({ title: 'Could not create trade listing', description: e.message, variant: 'destructive' });
-    } finally {
-      setBulkBusy(false);
-    }
+    const draftOffers = picked.map((i) => ({ id: i.card_id, name: i.card_name, image: i.card_image }));
+    clearSelection();
+    navigate('/trades', { state: { draftOffers } });
   };
 
   const bulkUpdateCondition = async (condition) => {

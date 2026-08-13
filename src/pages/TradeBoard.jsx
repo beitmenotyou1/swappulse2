@@ -7,13 +7,15 @@ import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function TradeBoard() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [initialOffers, setInitialOffers] = useState([]);
   const [myCircleUris, setMyCircleUris] = useState(new Set());
+  const location = useLocation();
 
   const load = async () => {
     setLoading(true);
@@ -27,6 +29,15 @@ export default function TradeBoard() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const draft = location.state?.draftOffers;
+    if (draft?.length) {
+      setInitialOffers(draft);
+      setShowCreate(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, []);
 
   // §2.7 circle-scoped trades are only visible to members of the referenced circle.
   useEffect(() => {
@@ -116,12 +127,17 @@ export default function TradeBoard() {
         </div>
       )}
 
-      <CreateTradeModal open={showCreate} onClose={() => setShowCreate(false)} onCreated={load} />
+      <CreateTradeModal
+        open={showCreate}
+        onClose={() => { setShowCreate(false); setInitialOffers([]); }}
+        onCreated={load}
+        initialOffers={initialOffers}
+      />
     </div>
   );
 }
 
-function CreateTradeModal({ open, onClose, onCreated }) {
+function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
   const [offers, setOffers] = useState([]);
   const [wants, setWants] = useState([]);
   const [regions, setRegions] = useState(['UK']);
@@ -146,6 +162,12 @@ function CreateTradeModal({ open, onClose, onCreated }) {
       }
     })();
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setOffers(initialOffers?.length ? initialOffers : []);
+    setWants([]);
+  }, [open, initialOffers]);
 
   if (!open) return null;
 
