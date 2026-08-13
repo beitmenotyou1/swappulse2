@@ -21,8 +21,9 @@ import GoLiveControl from '@/components/profile/GoLiveControl';
 import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
+import FollowingTab from '@/components/profile/FollowingTab';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
+const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -188,6 +189,8 @@ export default function Profile() {
           <TradeActivityTab />
         ) : tab === 'Reputation' ? (
           <ReputationDashboard reputation={reputation} trades={myTrades} />
+        ) : tab === 'Following' ? (
+          <FollowingTab />
         ) : tab === 'Journals' ? (
           <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
         ) : tab === 'Podcasts' ? (
