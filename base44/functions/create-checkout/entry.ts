@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Minimum sale price is 0.50 in the listing currency.' }, { status: 400 });
     }
 
-    const origin = req.headers.get('origin') || `https://${req.headers.get('host') || ''}`;
+    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL') || `https://${req.headers.get('host') || ''}`;
     const apiKey = Deno.env.get('WIX_PAYMENTS_API_KEY');
     const siteId = Deno.env.get('WIX_PAYMENTS_SITE_ID');
     if (!apiKey || !siteId) {
@@ -42,8 +42,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         cart: { items: [{ name: itemName, quantity: 1, price: price.toFixed(2) }] },
         callbackUrls: {
-          postFlowUrl: `${origin}/`,
-          thankYouPageUrl: `${origin}/order-complete`,
+          postFlowUrl: `${appUrl}/`,
+          thankYouPageUrl: `${appUrl}/order-complete`,
         },
       }),
     });
