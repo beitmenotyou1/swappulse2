@@ -124,10 +124,13 @@ export default function SpaceRoom() {
     (async () => {
       const { did, signingKey } = await ensureUserDid();
       setMyDid(did);
-      const s = await loadSpace();
+      // Parallelize the three independent fetches (space, participants, my existing entry).
+      const [s, , existing] = await Promise.all([
+        loadSpace(),
+        loadParticipants(),
+        base44.entities.SpaceParticipant.filter({ space_id: spaceId, did }).catch(() => []),
+      ]);
       if (!s || s.status === 'ended' || s.status === 'cancelled') { setEnded(true); return; }
-      await loadParticipants();
-      const existing = await base44.entities.SpaceParticipant.filter({ space_id: spaceId, did }).catch(() => []);
       let myPart;
       if (existing.length === 0) {
         const stamped = await stampRecord({

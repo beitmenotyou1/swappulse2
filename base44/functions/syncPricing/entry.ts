@@ -23,13 +23,14 @@ Deno.serve(async (req) => {
       if (!tracked.has(key)) tracked.set(key, { name: name || '', setId: setId || '' });
     };
 
-    const collection = await svc.entities.CollectionEntry.filter({}, '-updated_date', 500);
+    // Parallelize the three independent initial fetches.
+    const [collection, wishlists, trades] = await Promise.all([
+      svc.entities.CollectionEntry.filter({}, '-updated_date', 500),
+      svc.entities.Wishlist.filter({}, '-updated_date', 500),
+      svc.entities.TradeListing.filter({ status: 'open' }, '-updated_date', 200),
+    ]);
     for (const c of collection) add(c.card_id, c.card_name, c.set_id);
-
-    const wishlists = await svc.entities.Wishlist.filter({}, '-updated_date', 500);
     for (const w of wishlists) add(w.card_id, w.card_name, w.set_id);
-
-    const trades = await svc.entities.TradeListing.filter({ status: 'open' }, '-updated_date', 200);
     for (const t of trades) {
       (t.offer_card_ids || []).forEach((id: string, i: number) => add(id, (t.offer_card_names || [])[i], null));
       (t.wanted_card_ids || []).forEach((id: string, i: number) => add(id, (t.wanted_card_names || [])[i], null));

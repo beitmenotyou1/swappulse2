@@ -60,8 +60,16 @@ Deno.serve(async (req) => {
     }
 
     // --- Admin mode: scan ALL wishlists and send notifications ---
-    const wishlists = await svc.entities.Wishlist.list('-created_date', 500);
-    const users = await svc.entities.User.list();
+    // Parallelize the three independent initial fetches.
+    const [wishlists, users, recentLogs] = await Promise.all([
+      svc.entities.Wishlist.list('-created_date', 500),
+      svc.entities.User.list(),
+      svc.entities.NotificationLog.filter(
+        { notification_type: 'price_alert' },
+        '-created_date',
+        500
+      ).catch(() => []),
+    ]);
     const userById = new Map(users.map((u: any) => [u.id, u]));
 
     // Build card_id → [wishlists] map
@@ -72,12 +80,6 @@ Deno.serve(async (req) => {
       byCardId.get(w.card_id)!.push(w);
     }
 
-    // Fetch recent notification logs for dedup (one batch)
-    const recentLogs = await svc.entities.NotificationLog.filter(
-      { notification_type: 'price_alert' },
-      '-created_date',
-      500
-    ).catch(() => []);
     const notifiedKeys = new Set<string>();
     for (const log of recentLogs as any[]) {
       const did = log.did;
