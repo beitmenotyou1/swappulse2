@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
     const { to, subject, html, text } = await req.json();
     if (!to || !subject) return Response.json({ error: 'to and subject are required' }, { status: 400 });
     const body = text || (html ? html.replace(/<[^>]+>/g, " ") : "");
