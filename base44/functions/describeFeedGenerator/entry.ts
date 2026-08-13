@@ -17,6 +17,30 @@ export default async function (_req: Request): Promise<Response> {
           displayName: 'SwapPulse Who to Follow',
         },
       },
+      {
+        uri: 'at://did:web:feed.swappulse.org/app.bsky.feed.generator/trade-listings',
+        did: 'did:web:feed.swappulse.org',
+        description:
+          'Live peer-to-peer card trade listings from the SwapPulse community. Discover open trades offering cards you want.',
+        descriptionLang: 'en',
+        author: {
+          did: 'did:web:feed.swappulse.org',
+          handle: 'trades.swappulse.org',
+          displayName: 'SwapPulse Trades',
+        },
+      },
+      {
+        uri: 'at://did:web:feed.swappulse.org/app.bsky.feed.generator/collection-posts',
+        did: 'did:web:feed.swappulse.org',
+        description:
+          'Community collection activity — card showcases and pack opening pulls from collectors across the network.',
+        descriptionLang: 'en',
+        author: {
+          did: 'did:web:feed.swappulse.org',
+          handle: 'collections.swappulse.org',
+          displayName: 'SwapPulse Collections',
+        },
+      },
     ],
     links: {
       privacyPolicy: 'https://swappulse.org/legal/privacy',

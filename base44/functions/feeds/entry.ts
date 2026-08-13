@@ -136,6 +136,42 @@ Deno.serve(async (req) => {
         const slice = ranked.slice(cursor, cursor + limit);
         return Response.json({ entries: slice, cursor: slice.length === limit ? String(cursor + limit) : undefined });
       }
+      case 'trade-listings': {
+        // Open trade listings, newest first. Expired listings are hidden.
+        const now = new Date().toISOString();
+        const listings = await svc.entities.TradeListing.filter(
+          { status: 'open', visibility: 'public' },
+          '-created_date',
+          limit + cursor + 1,
+        );
+        const active = listings.filter((l) => !l.expires_at || l.expires_at > now);
+        const slice = active.slice(cursor, cursor + limit);
+        return Response.json({
+          feed: slice.map((l) => ({
+            post: l.at_uri || `at://did:web:swappulse.org/org.swappulse.tradeListing/${l.id}`,
+            reason: { $type: 'org.swappulse.feedReason', kind: 'trade_listing' },
+          })),
+          cursor: slice.length === limit ? String(cursor + limit) : undefined,
+        });
+      }
+      case 'collection-posts': {
+        // Showcase + pack-opening posts, prioritising community activity.
+        const [showcase, pulls] = await Promise.all([
+          svc.entities.Post.filter({ post_type: 'showcase' }, '-created_date', limit + cursor + 1),
+          svc.entities.Post.filter({ post_type: 'pack_opening' }, '-created_date', limit + cursor + 1),
+        ]);
+        const merged = [...showcase, ...pulls]
+          .filter(isModerationClean)
+          .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime());
+        const slice = merged.slice(cursor, cursor + limit);
+        return Response.json({
+          feed: slice.map((p) => ({
+            post: p.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${p.id}`,
+            reason: { $type: 'org.swappulse.feedReason', kind: p.post_type === 'showcase' ? 'showcase' : 'pack_pull' },
+          })),
+          cursor: slice.length === limit ? String(cursor + limit) : undefined,
+        });
+      }
       default:
         return Response.json({ error: `Unknown feed: ${feed}` }, { status: 400 });
     }
