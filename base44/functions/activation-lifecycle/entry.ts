@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;
-    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org';
+    const appUrl = Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org';
     const now = Date.now();
 
     const users = await svc.entities.User.list('-created_date', 500);
