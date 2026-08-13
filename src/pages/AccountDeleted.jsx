@@ -6,7 +6,7 @@ import Logo from '@/components/Logo';
 export default function AccountDeleted() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <Logo className="mb-8" />
+      <div className="mb-8"><Logo size={48} withText /></div>
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-raised">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
           <CheckCircle2 className="h-8 w-8 text-success" />

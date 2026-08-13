@@ -143,7 +143,7 @@ export default function DeleteAccountSection() {
 
       {/* Loading overlay */}
       <Dialog open={step === 4}>
-        <DialogContent className="max-w-sm" classNameClose="hidden">
+        <DialogContent className="max-w-sm">
           <div className="flex flex-col items-center gap-4 py-6">
             <Loader2 className="h-10 w-10 animate-spin text-destructive" />
             <p className="text-sm font-semibold">Deleting your account…</p>
