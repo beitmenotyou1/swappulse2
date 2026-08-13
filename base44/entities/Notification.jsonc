@@ -106,5 +106,23 @@
     "did",
     "action_type",
     "is_read"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "data.did": "{{user.data.did}}"
+    },
+    "delete": {
+      "data.did": "{{user.data.did}}"
+    }
+  }
 }
