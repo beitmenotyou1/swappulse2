@@ -1,42 +1,108 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Mail, Loader2, ArrowRight } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import MigrationNotice from "@/components/auth/MigrationNotice";
-import PasswordlessLogin from "@/components/auth/PasswordlessLogin";
+import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
+import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
+
+const CODE_EXPIRY_SECONDS = 300; // 5 minutes
 
 export default function Login() {
   const [searchParams] = useSearchParams();
-  const migrationSuccess = searchParams.get("migration_success") === "1";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState("password"); // "password" | "codeless"
+  const initialEmail = searchParams.get("email") || "";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [email, setEmail] = useState(initialEmail);
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState(initialEmail ? "code" : "email"); // email | code | twofactor
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [token, setToken] = useState(null);
+  const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (step !== "code") return;
+    setCountdown(CODE_EXPIRY_SECONDS);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          setError("Code expired. Please request a new one.");
+          setStep("email");
+          return CODE_EXPIRY_SECONDS;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [step]);
+
+  const sendCode = async (e) => {
+    if (e) e.preventDefault();
     setError("");
+    setInfo("");
+    if (!email) { setError("Enter your email."); return; }
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      await base44.auth.resendOtp(email);
+      setStep("code");
+      setInfo(`We sent a 6-digit code to ${email}. It expires in 5 minutes.`);
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      setError(err.message || "Could not send login code");
     } finally {
       setLoading(false);
     }
   };
 
+  const verifyCode = async () => {
+    setError("");
+    if (otp.length < 6) { setError("Enter the 6-digit code."); return; }
+    setLoading(true);
+    try {
+      const result = await base44.auth.verifyOtp({ email, otpCode: otp });
+      if (!result?.access_token) {
+        setError("Verification failed. Please try again.");
+        return;
+      }
+      try {
+        const res = await base44.functions.invoke("verify-2fa", { mode: "check", email });
+        if (res.data?.requires_2fa) {
+          setToken(result.access_token);
+          setStep("twofactor");
+          return;
+        }
+      } catch {
+        // If check fails, proceed without 2FA
+      }
+      base44.auth.setToken(result.access_token);
+      setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+      window.location.href = "/";
+    } catch (err) {
+      setError(err.message || "Invalid or expired code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTwoFactorSuccess = () => {
+    base44.auth.setToken(token);
+    setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+    window.location.href = "/";
+  };
+
+  const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
   return (
     <AuthLayout
-      icon={LogIn}
+      icon={Mail}
       title="Welcome back"
-      subtitle="Log in to your account"
+      subtitle="Sign in with your email — no password needed"
       footer={
         <>
           Don't have an account?{" "}
@@ -46,81 +112,85 @@ export default function Login() {
         </>
       }
     >
-      {migrationSuccess && (
-        <div className="mb-4 p-3 rounded-lg bg-success/10 text-success text-sm">
-          Migration complete - log in with your new password.
-        </div>
-      )}
-
-      {!migrationSuccess && <MigrationNotice />}
-
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+      )}
+      {info && step === "code" && (
+        <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm">{info}</div>
+      )}
+
+      {step === "email" && (
+        <form onSubmit={sendCode} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                autoFocus
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10 h-12"
+                required
+              />
+            </div>
+          </div>
+          <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+            {loading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending code...</>
+            ) : (
+              <>Send login code <ArrowRight className="w-4 h-4 ml-2" /></>
+            )}
+          </Button>
+        </form>
+      )}
+
+      {step === "code" && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Enter the code sent to {email}</Label>
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} /><InputOTPSlot index={1} /><InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} /><InputOTPSlot index={4} /><InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <span className={countdown < 60 ? "text-destructive font-semibold" : "text-muted-foreground"}>
+              Code expires in {formatTime(countdown)}
+            </span>
+          </div>
+          <Button className="w-full h-12 font-medium" onClick={verifyCode} disabled={loading || otp.length < 6}>
+            {loading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</>
+            ) : (
+              "Verify & log in"
+            )}
+          </Button>
+          <div className="flex justify-between text-xs">
+            <button type="button" onClick={() => { setStep("email"); setOtp(""); setError(""); setInfo(""); }} className="text-muted-foreground hover:text-foreground">
+              Change email
+            </button>
+            <button type="button" onClick={sendCode} disabled={loading} className="text-primary hover:underline disabled:opacity-50">
+              Resend code
+            </button>
+          </div>
         </div>
       )}
 
-      {mode === "codeless" ? (
-        <PasswordlessLogin />
-      ) : (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              autoFocus
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
-          </div>
-        </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Logging in...
-            </>
-          ) : (
-            "Log in"
-          )}
-        </Button>
-      </form>
+      {step === "twofactor" && (
+        <TwoFactorChallenge
+          email={email}
+          onSuccess={handleTwoFactorSuccess}
+          onCancel={() => { setStep("code"); setOtp(""); setToken(null); }}
+        />
       )}
-      <button
-        type="button"
-        onClick={() => setMode(mode === "password" ? "codeless" : "password")}
-        className="w-full text-sm text-primary font-medium hover:underline"
-      >
-        {mode === "password" ? "Sign in with email code instead" : "Use password instead"}
-      </button>
     </AuthLayout>
   );
 }

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { getStoredAuthEpoch, CURRENT_AUTH_EPOCH } from '@/lib/authEpoch';
 
 const AuthContext = createContext();
 
@@ -94,6 +95,15 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+      // Force logout if auth epoch changed (passwordless migration)
+      if (getStoredAuthEpoch() !== CURRENT_AUTH_EPOCH) {
+        base44.auth.logout();
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        setAuthError({ type: 'auth_required', message: 'Authentication required' });
+        return;
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
