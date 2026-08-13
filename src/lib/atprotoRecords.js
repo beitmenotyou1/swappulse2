@@ -112,6 +112,29 @@ export async function bridgeTradeListing(listing) {
   };
 }
 
+// Update a bridged trade listing on the PDS. Call after updating the local
+// entity so the federated copy reflects the new state (e.g. status change).
+// The at_uri stays the same (putRecord replaces in place); only the cid changes.
+export async function updateBridgedTradeListing(listing) {
+  if (!listing?.at_uri || !listing?.bridged) return null;
+  const record = buildTradeListingRecord(listing);
+  try {
+    const res = await base44.functions.invoke('atproto-bridge', {
+      action: 'update',
+      collection: NSID.TRADE_LISTING,
+      record,
+      uri: listing.at_uri,
+    });
+    if (res?.uri && res?.cid) {
+      return { cid: res.cid, bridged: true };
+    }
+    return null;
+  } catch (err) {
+    console.error('atprotoRecords: update trade listing failed', err);
+    return null;
+  }
+}
+
 // Delete a bridged record from the PDS. Call before deleting the local entity
 // so the federated copy is removed too. No-op if the record was never bridged.
 export async function unbridgeRecord(entity) {

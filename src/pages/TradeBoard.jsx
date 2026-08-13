@@ -8,7 +8,7 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link, useLocation } from 'react-router-dom';
-import { bridgeTradeListing } from '@/lib/atprotoRecords';
+import { bridgeTradeListing, updateBridgedTradeListing } from '@/lib/atprotoRecords';
 import { useToast } from "@/components/ui/use-toast";
 
 export default function TradeBoard() {
@@ -17,6 +17,8 @@ export default function TradeBoard() {
   const [showCreate, setShowCreate] = useState(false);
   const [initialOffers, setInitialOffers] = useState([]);
   const [myCircleUris, setMyCircleUris] = useState(new Set());
+  const [currentUser, setCurrentUser] = useState(null);
+  const { toast } = useToast();
   const location = useLocation();
 
   const load = async () => {
@@ -32,6 +34,28 @@ export default function TradeBoard() {
 
   useEffect(() => { load(); }, []);
 
+  const handleMarkCompleted = async (listing) => {
+    try {
+      await base44.entities.TradeListing.update(listing.id, { status: 'completed' });
+      let pdsSynced = false;
+      if (listing.bridged && listing.at_uri) {
+        const syncResult = await updateBridgedTradeListing({ ...listing, status: 'completed' });
+        pdsSynced = !!syncResult?.bridged;
+        if (syncResult?.cid) {
+          await base44.entities.TradeListing.update(listing.id, { cid: syncResult.cid });
+        }
+      }
+      toast({
+        title: pdsSynced ? '✅ Marked completed & synced to AT Protocol' : 'Marked as completed',
+        description: pdsSynced ? 'The network sees the updated status.' : undefined,
+        duration: 4000,
+      });
+      load();
+    } catch (e) {
+      toast({ title: 'Could not update status', description: e.message, variant: 'destructive' });
+    }
+  };
+
   useEffect(() => {
     const draft = location.state?.draftOffers;
     if (draft?.length) {
@@ -44,6 +68,7 @@ export default function TradeBoard() {
   // §2.7 circle-scoped trades are only visible to members of the referenced circle.
   useEffect(() => {
     (async () => {
+      try { setCurrentUser(await base44.auth.me()); } catch { setCurrentUser(null); }
       try {
         const res = await base44.functions.invoke('getMyCircles', {});
         setMyCircleUris(new Set((res.data?.circles || []).map((c) => c.at_uri).filter(Boolean)));
@@ -95,7 +120,11 @@ export default function TradeBoard() {
               <div className="flex items-center gap-2">
                 <Avatar name={t.author_name} src={t.author_avatar} size={32} />
                 <span className="text-sm font-semibold">{t.author_name || 'Collector'}</span>
-                <span className="text-xs text-muted-foreground">· {TRADE_STATUS_LABELS[t.status] || t.status}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  t.status === 'open' ? 'bg-success/15 text-success' :
+                  t.status === 'completed' ? 'bg-secondary text-muted-foreground' :
+                  'bg-warning/15 text-warning'
+                }`}>{TRADE_STATUS_LABELS[t.status] || t.status}</span>
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-secondary p-3">
@@ -121,7 +150,17 @@ export default function TradeBoard() {
                   ))}
                   <span className="rounded bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{t.preferred_currency || 'GBP'}</span>
                 </div>
-                <Link to={`/trade/${t.id}`} className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90">Negotiate</Link>
+                <div className="flex gap-2">
+                  {currentUser && t.created_by_id === currentUser.id && (
+                    <button
+                      onClick={() => handleMarkCompleted(t)}
+                      className="rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary"
+                    >
+                      Mark Completed
+                    </button>
+                  )}
+                  <Link to={`/trade/${t.id}`} className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90">Negotiate</Link>
+                </div>
               </div>
             </div>
           ))}

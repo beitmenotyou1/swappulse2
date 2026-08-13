@@ -100,6 +100,36 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, deleted: true });
     }
 
+    // --- update action (putRecord replaces in place at the same rkey) ---
+    if (action === 'update') {
+      if (!uri || !collection || !record) {
+        return Response.json({ error: 'uri, collection, and record are required for update' }, { status: 400 });
+      }
+      const segs = uri.replace(/^at:\/\//, '').split('/');
+      const rkey = segs[2];
+      if (!rkey) {
+        return Response.json({ error: 'could not parse rkey from uri' }, { status: 400 });
+      }
+      const { pdsUrl, session } = await getSession();
+      let result: any = await pdsRequest(
+        pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord',
+        { repo: session.did, collection, rkey, record },
+      );
+      if (result?.error && result.status === 401) {
+        cachedSession = null;
+        const fresh = await getSession();
+        result = await pdsRequest(
+          fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.putRecord',
+          { repo: fresh.session.did, collection, rkey, record },
+        );
+      }
+      if (result?.error) {
+        console.error('atproto-bridge: putRecord failed', result.status, result.body);
+        return Response.json({ error: `putRecord failed (${result.status})` }, { status: 502 });
+      }
+      return Response.json({ uri: result.uri, cid: result.cid, did: session.did });
+    }
+
     // --- create action (default) ---
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });
