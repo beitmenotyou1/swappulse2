@@ -9,6 +9,7 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
   const { user } = useAuth();
   const [topLevel, setTopLevel] = useState([]);
   const [repliesByParent, setRepliesByParent] = useState({});
+  const [reactionsByPostId, setReactionsByPostId] = useState({});
   const [loading, setLoading] = useState(true);
   const [replyTarget, setReplyTarget] = useState(null);
 
@@ -35,13 +36,35 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
       );
       setTopLevel(tops);
       setRepliesByParent(replies);
+
+      // Batch-fetch reactions for all comments + replies (avoids N+1 per CommentReactions)
+      const allIds = posts.map((p) => p.id);
+      let rxnMap = {};
+      if (allIds.length > 0) {
+        try {
+          const reactions = await base44.entities.Reaction.filter(
+            { post_id: { $in: allIds } },
+            '-created_date',
+            500
+          );
+          reactions.forEach((r) => {
+            if (!rxnMap[r.post_id]) rxnMap[r.post_id] = { counts: {}, mine: null };
+            rxnMap[r.post_id].counts[r.reaction_type] = (rxnMap[r.post_id].counts[r.reaction_type] || 0) + 1;
+            if (r.created_by_id === user?.id) rxnMap[r.post_id].mine = r.reaction_type;
+          });
+        } catch {
+          // fail silently — CommentReactions will fall back to individual fetches
+        }
+      }
+      setReactionsByPostId(rxnMap);
     } catch {
       setTopLevel([]);
       setRepliesByParent({});
+      setReactionsByPostId({});
     } finally {
       setLoading(false);
     }
-  }, [cardId]);
+  }, [cardId, user?.id]);
 
   useEffect(() => {
     loadComments();
@@ -96,6 +119,7 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
               cardImage={cardImage}
               onReply={(c) => setReplyTarget(c)}
               onPosted={loadComments}
+              reactionsByPostId={reactionsByPostId}
             />
           ))}
         </div>

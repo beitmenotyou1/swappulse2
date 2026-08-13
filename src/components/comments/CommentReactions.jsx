@@ -12,12 +12,13 @@ const REACTION_TYPES = [
   { key: 'wow', icon: Sparkles, label: 'Wow' },
 ];
 
-export default function CommentReactions({ post, user, compact = false }) {
-  const [counts, setCounts] = useState({});
-  const [myReaction, setMyReaction] = useState(null);
+export default function CommentReactions({ post, user, compact = false, initialReactions }) {
+  const [counts, setCounts] = useState(initialReactions?.counts || {});
+  const [myReaction, setMyReaction] = useState(initialReactions?.mine || null);
   const [busy, setBusy] = useState(false);
 
   const loadReactions = useCallback(async () => {
+    if (initialReactions) return; // skip fetch when pre-fetched by parent
     try {
       const reactions = await base44.entities.Reaction.filter(
         { post_id: post.id },
@@ -35,7 +36,7 @@ export default function CommentReactions({ post, user, compact = false }) {
     } catch {
       // fail silently
     }
-  }, [post.id, user?.id]);
+  }, [post.id, user?.id, initialReactions]);
 
   useEffect(() => {
     loadReactions();

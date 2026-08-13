@@ -24,7 +24,7 @@ function getDisplayState(comment) {
   return { state: 'visible', warnings: [] };
 }
 
-export default function ModeratedComment({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted }) {
+export default function ModeratedComment({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, reactionsByPostId }) {
   const [revealHidden, setRevealHidden] = useState(false);
   const displayState = getDisplayState(comment);
 
@@ -77,6 +77,7 @@ export default function ModeratedComment({ comment, replies, user, cardId, cardN
         onReply={onReply}
         onPosted={onPosted}
         dimmed={displayState.state === 'hidden' && revealHidden}
+        reactionsByPostId={reactionsByPostId}
       />
     </div>
   );

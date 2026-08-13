@@ -16,7 +16,7 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-export default function CommentItem({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, dimmed }) {
+export default function CommentItem({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, dimmed, reactionsByPostId }) {
   const [showReplies, setShowReplies] = useState(true);
 
   return (
@@ -37,7 +37,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
             >
               <Reply className="h-3.5 w-3.5" /> Reply
             </button>
-            <CommentReactions post={comment} user={user} />
+            <CommentReactions post={comment} user={user} initialReactions={reactionsByPostId?.[comment.id]} />
           </div>
 
           {/* Replies (depth-1 only) */}
@@ -62,7 +62,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
                         </div>
                         <p className="text-sm whitespace-pre-wrap break-words">{reply.content}</p>
                         <div className="mt-1.5">
-                          <CommentReactions post={reply} user={user} compact />
+                          <CommentReactions post={reply} user={user} compact initialReactions={reactionsByPostId?.[reply.id]} />
                         </div>
                       </div>
                     </div>
