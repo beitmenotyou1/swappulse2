@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, MapPin, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2, BadgeCheck } from 'lucide-react';
+import { Loader2, Star, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2, BadgeCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -120,13 +120,14 @@ export default function Profile() {
             <p className="text-sm text-muted-foreground">@{user?.custom_handle || (user?.email?.split('@')[0] || 'collector')}</p>
             {user?.handle_verified && <BadgeCheck className="h-4 w-4 text-success" />}
           </div>
-          <p className="mt-2 text-sm">Pokémon TCG collector and the soul behind SwapPulse.</p>
+          {user?.description && <p className="mt-2 text-sm">{user.description}</p>}
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Sutton, Surrey</span>
-            <span className="flex items-center gap-1 text-accent">
-              <Star className="h-3.5 w-3.5 fill-current" />
-              {repAvg ? `Trusted Trader · ${repAvg}★ (${reputation.length})` : 'Trusted Trader'}
-            </span>
+            {repAvg && (
+              <span className="flex items-center gap-1 text-accent">
+                <Star className="h-3.5 w-3.5 fill-current" />
+                Trusted Trader · {repAvg}★ ({reputation.length})
+              </span>
+            )}
           </div>
 
           <div className="mt-3"><NotificationToggle /></div>

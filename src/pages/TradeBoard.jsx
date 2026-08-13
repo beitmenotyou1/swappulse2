@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Plus, X, ArrowLeftRight, Star } from 'lucide-react';
+import { Loader2, Plus, X, ArrowLeftRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -94,7 +94,6 @@ export default function TradeBoard() {
                 <Avatar name={t.author_name} src={t.author_avatar} size={32} />
                 <span className="text-sm font-semibold">{t.author_name || 'Collector'}</span>
                 <span className="text-xs text-muted-foreground">· {TRADE_STATUS_LABELS[t.status] || t.status}</span>
-                <span className="ml-auto rounded-full bg-accent/15 px-2 py-0.5 text-xs font-bold text-accent">★ Trusted</span>
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-secondary p-3">

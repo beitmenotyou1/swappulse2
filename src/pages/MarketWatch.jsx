@@ -132,14 +132,7 @@ export default function MarketWatch() {
         <section className="rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><Bell className="h-4 w-4 text-accent" /> Price Alerts</h3>
           <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-lg bg-secondary px-3 py-2 text-sm">
-              <span>Charizard ex &gt; £50</span>
-              <span className="text-xs text-muted-foreground">Active</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-secondary px-3 py-2 text-sm">
-              <span>Mew ex &lt; £25</span>
-              <span className="text-xs text-muted-foreground">Active</span>
-            </div>
+            <p className="py-4 text-center text-sm text-muted-foreground">No price alerts set yet.</p>
             <button className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm text-muted-foreground hover:bg-secondary">
               <Plus className="h-4 w-4" /> Add Alert
             </button>

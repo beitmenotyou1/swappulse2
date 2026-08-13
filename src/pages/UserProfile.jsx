@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, Star, MapPin, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import Avatar from '@/components/Avatar';
@@ -70,11 +70,6 @@ export default function UserProfile() {
             <FriendsBadge isFriend={isFriend} />
           </div>
           <p className="text-sm text-muted-foreground">@{profile?.handle || 'collector'}</p>
-          <p className="mt-2 text-sm">Pokémon TCG collector on SwapPulse.</p>
-          <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> United Kingdom</span>
-            <span className="flex items-center gap-1 text-accent"><Star className="h-3.5 w-3.5 fill-current" /> Collector</span>
-          </div>
           <div className="mt-2 text-sm text-muted-foreground">
             <span><b className="text-foreground">{posts.length}</b> Posts</span>
           </div>
