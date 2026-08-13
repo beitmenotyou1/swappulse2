@@ -2,17 +2,22 @@
   "name": "ModerationLabel",
   "type": "object",
   "title": "ModerationLabel",
+  "description": "org.swappulse.moderationLabel \u2014 a label applied to a record or account, following the AT Protocol label spec (atproto.com/specs/label). Label values use lower-case kebab-syntax per the spec's recommended string syntax. The `neg` field enables label negation/retraction lifecycle.",
   "properties": {
     "labeler_did": {
       "type": "string",
-      "description": "AT Protocol DID of the user applying the label"
+      "description": "AT Protocol DID of the labeler (spec field: src)"
     },
     "labeler_name": {
       "type": "string"
     },
     "subject_uri": {
       "type": "string",
-      "description": "at:// URI of the record being labeled"
+      "description": "at:// URI of the record being labeled (spec field: uri)"
+    },
+    "subject_cid": {
+      "type": "string",
+      "description": "CID of the subject record, if the label applies to a specific version (spec field: cid, optional)"
     },
     "label_type": {
       "type": "string",
@@ -21,18 +26,29 @@
         "nsfw",
         "scam",
         "misgraded",
-        "off_topic",
+        "off-topic",
         "harassment",
         "toxic",
-        "verified_binder",
-        "circle_curator",
-        "journal_featured",
-        "meetup_organiser"
-      ]
+        "verified-binder",
+        "circle-curator",
+        "journal-featured",
+        "meetup-organiser"
+      ],
+      "description": "The label value (spec field: val). Lower-case kebab-syntax per the label spec's recommended string syntax."
+    },
+    "neg": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, this label negates an earlier label with the same src, uri, and val (spec field: neg). Used for label retraction lifecycle."
     },
     "note": {
       "type": "string",
       "maxLength": 280
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this label expires and should no longer be hydrated (spec field: exp, optional)"
     },
     "at_uri": {
       "type": "string"
