@@ -45,7 +45,9 @@ export default function ResetPassword() {
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
         try {
           await base44.auth.loginViaEmailPassword(setupEmail, pwd);
-          // loginViaEmailPassword hard-redirects on success — execution stops here
+          // SDK sets the token but does NOT hard-redirect — redirect explicitly
+          if (!cancelled) window.location.href = "/";
+          return;
         } catch (loginErr) {
           // If auto-login fails (e.g. 2FA required), fall back to showing the success screen
           console.error("Auto-login after setup failed:", loginErr?.message || loginErr);
