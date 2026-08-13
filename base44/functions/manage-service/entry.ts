@@ -86,19 +86,20 @@ export default async function (req) {
         const forService = openIncidents.filter((inc) =>
           (inc.affected_services || []).includes(service.name)
         );
-        for (const inc of forService) {
+        // Parallelize all incident resolution updates (independent writes).
+        await Promise.all(forService.map((inc) => {
           const updatesArr = [...(inc.updates || []), {
             text: `${service.name} marked operational by ${me.full_name || me.email}. ${message}`,
             status: 'resolved',
             authored_by: me.full_name || me.email || me.id,
             created_at: now,
           }];
-          await svc.entities.StatusIncident.update(inc.id, {
+          return svc.entities.StatusIncident.update(inc.id, {
             status: 'resolved',
             resolved_at: now,
             updates: updatesArr,
           });
-        }
+        }));
       }
 
       return Response.json({ ok: true, serviceSlug: service.slug, oldStatus, newStatus: status });

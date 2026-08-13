@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
       if (!checkoutId) return new Response('ok', { status: 200 });
 
       const listings = await svc.entities.MarketListing.filter({ checkout_session_id: checkoutId }).catch(() => []);
-      for (const l of listings) {
-        if (l.status === 'pending') {
-          await svc.entities.MarketListing.update(l.id, { status: 'sold', checkout_session_id: '' });
-        }
-      }
+      const pending = listings.filter((l) => l.status === 'pending');
+      // Parallelize updates (independent writes; typically just one listing per checkout).
+      await Promise.all(pending.map((l) =>
+        svc.entities.MarketListing.update(l.id, { status: 'sold', checkout_session_id: '' }),
+      ));
     }
 
     return new Response('ok', { status: 200 });

@@ -90,21 +90,14 @@ export default async function(req) {
     const allUsers = await svc.entities.User.list('-created_date', 500);
     const activeUsers = allUsers.filter(u => u.email && !u.restricted);
 
-    let sent = 0;
-    let failed = 0;
-    for (const u of activeUsers) {
-      try {
-        await sendBrandedEmail({
-          to: u.email,
-          subject,
-          html: htmlVersion,
-          text: textVersion,
-        });
-        sent++;
-      } catch (e) {
-        console.error('weeklySentimentReport: failed to send to', u.email, e?.message || e);
-        failed++;
-      }
+    // Parallelize all email sends (independent SMTP calls).
+    const results = await Promise.allSettled(activeUsers.map((u) =>
+      sendBrandedEmail({ to: u.email, subject, html: htmlVersion, text: textVersion }),
+    ));
+    const sent = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    for (const r of results) {
+      if (r.status === 'rejected') console.error('weeklySentimentReport: send failed', r.reason?.message || r.reason);
     }
 
     return Response.json({

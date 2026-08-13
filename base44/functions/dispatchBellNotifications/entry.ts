@@ -53,22 +53,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    let dispatched = 0;
-    let skipped = 0;
-    for (const pref of prefs) {
+    // Filter eligible prefs, then parallelize all push sends (independent network calls).
+    const eligible = prefs.filter((pref) => {
       const notifyOn = pref.notify_on || [];
-      if (!notifyOn.includes(category)) { skipped++; continue; }
+      if (!notifyOn.includes(category)) return false;
       const subStr = subByDid.get(pref.did);
-      if (!subStr || !pushConfigured) { skipped++; continue; }
-      try {
-        await webPush.sendNotification(
-          JSON.parse(subStr),
+      return !!subStr && pushConfigured;
+    });
+    let dispatched = 0;
+    let skipped = prefs.length - eligible.length;
+    if (eligible.length > 0) {
+      const results = await Promise.allSettled(eligible.map((pref) =>
+        webPush.sendNotification(
+          JSON.parse(subByDid.get(pref.did)),
           JSON.stringify({ title: `${authorName} · SwapPulse`, body: preview || 'New post', url }),
-        );
-        dispatched++;
-      } catch (e) {
+        ),
+      ));
+      for (const r of results) {
         // 410/404 = expired subscription - silently drop, no retry.
-        skipped++;
+        if (r.status === 'fulfilled') dispatched++;
+        else skipped++;
       }
     }
     return Response.json({ dispatched, skipped, total_prefs: prefs.length });

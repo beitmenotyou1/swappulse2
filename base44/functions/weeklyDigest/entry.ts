@@ -56,23 +56,20 @@ Deno.serve(async (req) => {
       svc.entities.TradeListing.list("-created_date", 200).catch(() => []),
       svc.entities.Wishlist.list("-updated_date", 500).catch(() => []),
     ]);
-    const opted = all.filter((u) => u.weekly_digest === true);
+    const opted = all.filter((u) => u.weekly_digest === true && u.email);
     const collectionByOwner = partitionByOwner(collection);
     const tradesByOwner = partitionByOwner(trades);
     const wishlistByOwner = partitionByOwner(wishlist);
-    let sent = 0;
-    let failed = 0;
-    for (const u of opted) {
-      if (!u.email) continue;
-      try {
-        const stats = buildDigestStats(svc, u, collectionByOwner, tradesByOwner, wishlistByOwner);
-        const email = buildWeeklyDigestEmail(u.full_name, stats);
-        await sendBrandedEmail({ to: u.email, ...email });
-        sent++;
-      } catch (e) {
-        console.error('weeklyDigest send failed for', u.email, e?.message || e);
-        failed++;
-      }
+    // Parallelize all email sends (independent SMTP calls).
+    const results = await Promise.allSettled(opted.map((u) => {
+      const stats = buildDigestStats(svc, u, collectionByOwner, tradesByOwner, wishlistByOwner);
+      const email = buildWeeklyDigestEmail(u.full_name, stats);
+      return sendBrandedEmail({ to: u.email, ...email });
+    }));
+    const sent = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    for (const r of failed ? results : []) {
+      if (r.status === 'rejected') console.error('weeklyDigest send failed', r.reason?.message || r.reason);
     }
     return Response.json({ sent, failed, opted_in: opted.length });
   } catch (error) {

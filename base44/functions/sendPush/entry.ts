@@ -26,19 +26,14 @@ Deno.serve(async (req) => {
 
     const svc = base44.asServiceRole;
     const users = await svc.entities.User.list('-created_date', 500);
+    const subscribed = users.filter((u) => u.push_subscription);
 
-    let sent = 0;
-    let failed = 0;
-    for (const u of users) {
-      const sub = u.push_subscription;
-      if (!sub) continue;
-      try {
-        await webPush.sendNotification(JSON.parse(sub), payload);
-        sent++;
-      } catch {
-        failed++;
-      }
-    }
+    // Parallelize all push sends (independent network calls).
+    const results = await Promise.allSettled(subscribed.map((u) =>
+      webPush.sendNotification(JSON.parse(u.push_subscription), payload),
+    ));
+    const sent = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
     return Response.json({ sent, failed });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
