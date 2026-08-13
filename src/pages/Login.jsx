@@ -24,7 +24,7 @@ export default function Login() {
   const [info, setInfo] = useState("");
   const [pendingLoginKey, setPendingLoginKey] = useState(null);
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
-  const [stayLoggedIn, setStayLoggedIn] = useState(true);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
