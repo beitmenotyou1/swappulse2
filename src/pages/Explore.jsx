@@ -8,6 +8,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ExploreCardTile from '@/components/cards/ExploreCardTile';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
+import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 
 export default function Explore() {
   const { settings } = useSettings();
@@ -21,6 +22,7 @@ export default function Explore() {
   const [selected, setSelected] = useState(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [searchMode, setSearchMode] = useState('cards');
 
   const runSearch = useCallback(async (q) => {
     if (q.trim().length < 2) {
@@ -97,19 +99,41 @@ export default function Explore() {
   return (
     <div>
       <PageHeader title="Explore" subtitle="Search the Pokémon TCG catalog" />
-      <div className="border-b border-border p-4">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search cards by name…"
-            className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
-          />
+      <div className="border-b border-border p-4 space-y-3">
+        <div className="flex gap-1 rounded-full bg-secondary p-1">
+          <button
+            onClick={() => setSearchMode('cards')}
+            className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${searchMode === 'cards' ? 'bg-background text-foreground shadow-base' : 'text-muted-foreground'}`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setSearchMode('people')}
+            className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${searchMode === 'people' ? 'bg-background text-foreground shadow-base' : 'text-muted-foreground'}`}
+          >
+            People
+          </button>
         </div>
+        {searchMode === 'cards' && (
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search cards by name…"
+              className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
+            />
+          </div>
+        )}
       </div>
 
-      {!searched && (
+      {searchMode === 'people' && (
+        <div className="p-4">
+          <ExternalActorSearch />
+        </div>
+      )}
+
+      {searchMode === 'cards' && !searched && (
         <div className="p-4">
           <div className="mb-6">
             <NetworkFeedSection limit={12} title="From the Network" />
@@ -139,17 +163,17 @@ export default function Explore() {
         </div>
       )}
 
-      {loading && (
+      {searchMode === 'cards' && loading && (
         <div className="flex justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
 
-      {!loading && searched && results.length === 0 && (
+      {searchMode === 'cards' && !loading && searched && results.length === 0 && (
         <p className="py-16 text-center text-sm text-muted-foreground">No cards found for "{query}"</p>
       )}
 
-      {!loading && results.length > 0 && (
+      {searchMode === 'cards' && !loading && results.length > 0 && (
         <div className="p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{results.length} results</p>
