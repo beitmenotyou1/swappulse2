@@ -53,6 +53,8 @@ export default function Home() {
     }
     (async () => {
       try {
+        const isAuthed = await base44.auth.isAuthenticated();
+        if (!isAuthed) { setReactionsMap({}); return; }
         const res = await base44.functions.invoke('getReactions', { postIds: posts.map((p) => p.id) });
         setReactionsMap(res.data?.reactions || {});
       } catch {

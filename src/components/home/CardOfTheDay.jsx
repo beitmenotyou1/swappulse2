@@ -14,6 +14,8 @@ export default function CardOfTheDay() {
     let active = true;
     (async () => {
       try {
+        const isAuthed = await base44.auth.isAuthenticated();
+        if (!isAuthed) return;
         const res = await base44.functions.invoke('feeds', { feed: 'card-of-day' });
         const f = res.data?.featured;
         if (!active) return;

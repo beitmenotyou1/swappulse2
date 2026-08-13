@@ -10,6 +10,8 @@ export default function TradeInterestBanner() {
   useEffect(() => {
     (async () => {
       try {
+        const isAuthed = await base44.auth.isAuthenticated();
+        if (!isAuthed) return;
         const res = await base44.functions.invoke('getTradeInterest', {});
         setData(res.data);
       } catch {
