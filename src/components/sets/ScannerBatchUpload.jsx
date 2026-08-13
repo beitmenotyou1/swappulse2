@@ -26,6 +26,7 @@ export default function ScannerBatchUpload({ setId, setName, onScanComplete }) {
 
     const scanResults = [];
     const matchedIds = [];
+    const entriesToCreate = [];
 
     try {
       for (let i = 0; i < fileArr.length; i++) {
@@ -42,26 +43,33 @@ export default function ScannerBatchUpload({ setId, setName, onScanComplete }) {
         const top = candidates[0];
 
         if (top && (top.confidence ?? 0) >= AUTO_ADD_THRESHOLD) {
-          // 3. Auto-add to collection
-          try {
-            await base44.entities.CollectionEntry.create({
-              card_id: top.card_id,
-              card_name: top.card_name,
-              set_id: top.set_id || setId,
-              set_name: top.set_name || '',
-              local_id: top.local_id || '',
-              rarity: top.rarity || '',
-              card_image: top.image || '',
-            });
-            matchedIds.push(top.card_id);
-            scanResults.push({ card: top, status: 'matched', confidence: top.confidence });
-          } catch {
-            scanResults.push({ card: top, status: 'error', confidence: top.confidence });
-          }
+          entriesToCreate.push({
+            card_id: top.card_id,
+            card_name: top.card_name,
+            set_id: top.set_id || setId,
+            set_name: top.set_name || '',
+            local_id: top.local_id || '',
+            rarity: top.rarity || '',
+            card_image: top.image || '',
+          });
+          matchedIds.push(top.card_id);
+          scanResults.push({ card: top, status: 'matched', confidence: top.confidence });
         } else if (top) {
           scanResults.push({ card: top, status: 'review', confidence: top.confidence });
         } else {
           scanResults.push({ card: null, status: 'no_match', confidence: 0 });
+        }
+      }
+
+      // Batch-create all matched collection entries in a single API call
+      if (entriesToCreate.length > 0) {
+        try {
+          await base44.entities.CollectionEntry.bulkCreate(entriesToCreate);
+        } catch {
+          // Mark matched entries as error if bulk create fails
+          for (const r of scanResults) {
+            if (r.status === 'matched') r.status = 'error';
+          }
         }
       }
 

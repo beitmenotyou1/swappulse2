@@ -170,15 +170,17 @@ class RealTimeManager {
         }
       } catch {}
     };
-    await diff('Post', (it) => this.emit(it.post_type === 'pack_opening' ? 'feed.new_pull' : 'feed.new_post', it));
-    await diff('TradeListing', (it) => { this.emit('trade.new_listing', it); this.checkMatch(it); });
-    await diff('CardPricing', (it) => { this.emit('market.price_update', it); this.checkPriceAlert(it); });
-    await diff('Reputation', (it) => this.emit('profile.reputation_update', it));
-    await diff('TradeMessage', (it) => this.emit('trade.message', it));
-    await diff('VoiceSpace', (it) => { if (it.status === 'live') this.emit('space.started', it); if (it.status === 'ended' || it.status === 'cancelled') this.emit('space.ended', it); });
-    await diff('SpaceParticipant', (it) => this.emit('space.participant_update', it));
-    await diff('PodcastEpisode', (it) => this.emit('podcast.new', it));
-    await diff('ExternalActivity', (it) => { if (it.is_live) this.emit('presence.external_live', it); else this.emit('presence.external_offline', it); });
+    await Promise.all([
+      diff('Post', (it) => this.emit(it.post_type === 'pack_opening' ? 'feed.new_pull' : 'feed.new_post', it)),
+      diff('TradeListing', (it) => { this.emit('trade.new_listing', it); this.checkMatch(it); }),
+      diff('CardPricing', (it) => { this.emit('market.price_update', it); this.checkPriceAlert(it); }),
+      diff('Reputation', (it) => this.emit('profile.reputation_update', it)),
+      diff('TradeMessage', (it) => this.emit('trade.message', it)),
+      diff('VoiceSpace', (it) => { if (it.status === 'live') this.emit('space.started', it); if (it.status === 'ended' || it.status === 'cancelled') this.emit('space.ended', it); }),
+      diff('SpaceParticipant', (it) => this.emit('space.participant_update', it)),
+      diff('PodcastEpisode', (it) => this.emit('podcast.new', it)),
+      diff('ExternalActivity', (it) => { if (it.is_live) this.emit('presence.external_live', it); else this.emit('presence.external_offline', it); }),
+    ]);
   }
 
   checkMatch(listing) {
