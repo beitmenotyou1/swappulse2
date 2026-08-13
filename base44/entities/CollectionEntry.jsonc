@@ -2,6 +2,7 @@
   "name": "CollectionEntry",
   "type": "object",
   "title": "CollectionEntry",
+  "description": "org.swappulse.collectionEntry \u2014 a Pok\u00e9mon TCG card held in a collector's digital binder, mirrored to AT Protocol as a real org.swappulse.collectionEntry record so collection state is portable across PDSs.",
   "properties": {
     "card_id": {
       "type": "string",
@@ -81,7 +82,7 @@
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -89,11 +90,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.collectionEntry)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the record to the owner's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the entry has been mirrored to the AT Protocol PDS as a real org.swappulse.collectionEntry record"
     }
   },
   "required": [

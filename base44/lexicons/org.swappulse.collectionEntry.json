@@ -1,0 +1,67 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.collectionEntry",
+  "revision": 1,
+  "description": "A Pokémon TCG card held in a collector's digital binder. Mirrored from the SwapPulse CollectionEntry entity so collection state is portable across PDSs.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A single card entry in a collector's collection.",
+      "record": {
+        "type": "object",
+        "required": ["cardUri", "condition", "variant", "acquisitionDate", "createdAt"],
+        "properties": {
+          "cardUri": {
+            "type": "string",
+            "description": "TCGDex card id (canonical reference to the catalog record)"
+          },
+          "cardName": { "type": "string" },
+          "setName": { "type": "string" },
+          "setCode": { "type": "string", "description": "Canonical TCGDex set id (e.g. sv04.5)" },
+          "cardNumber": { "type": "string", "description": "Card number within the set" },
+          "rarity": { "type": "string" },
+          "category": { "type": "string" },
+          "imageUrl": { "type": "string" },
+          "condition": {
+            "type": "string",
+            "knownValues": ["mint", "near_mint", "excellent", "good", "damaged"]
+          },
+          "variant": {
+            "type": "string",
+            "knownValues": ["normal", "holo", "reverse_holo"]
+          },
+          "acquisitionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO 8601 date the card was acquired"
+          },
+          "purchasePrice": {
+            "type": "integer",
+            "description": "Purchase price in pence (GBP)"
+          },
+          "marketValue": {
+            "type": "integer",
+            "description": "Current estimated market value in pence"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "showcased": {
+            "type": "boolean",
+            "description": "Whether the card is pinned to the public digital binder"
+          },
+          "binderIndex": {
+            "type": "integer",
+            "description": "Display order within the digital binder"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.tradeListing",
+  "revision": 1,
+  "description": "A peer-to-peer card trade listing published by a collector. Offer/wanted card sets reference TCGDex catalog records; status tracks the trade lifecycle.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A trade listing offering cards in exchange for wanted cards.",
+      "record": {
+        "type": "object",
+        "required": ["offerCardUris", "wantedCardUris", "status", "visibility", "createdAt"],
+        "properties": {
+          "offerCardUris": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "TCGDex card ids the listing owner is offering"
+          },
+          "offerCardNames": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "offerCardImages": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "wantedCardUris": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "TCGDex card ids the listing owner wants in return"
+          },
+          "wantedCardNames": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "status": {
+            "type": "string",
+            "knownValues": ["open", "negotiating", "pending_ship", "completed", "cancelled"]
+          },
+          "visibility": {
+            "type": "string",
+            "knownValues": ["public", "wishlist_only", "circle_scoped"]
+          },
+          "circleRef": {
+            "type": "string",
+            "description": "at:// strongRef of the scoping Circle (required when visibility is circle_scoped)"
+          },
+          "shippingRegions": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Regions the seller ships to, e.g. UK, EU, NA"
+          },
+          "preferredCurrency": {
+            "type": "string",
+            "knownValues": ["GBP", "EUR", "USD"]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Optional listing expiry (max 90 days from creation)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

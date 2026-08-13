@@ -2,6 +2,7 @@
   "name": "TradeListing",
   "type": "object",
   "title": "TradeListing",
+  "description": "org.swappulse.tradeListing \u2014 a peer-to-peer card trade listing published by a collector, mirrored to AT Protocol as a real org.swappulse.tradeListing record. Offer/wanted card sets reference TCGDex catalog records; status tracks the trade lifecycle.",
   "properties": {
     "offer_card_ids": {
       "type": "array",
@@ -89,6 +90,31 @@
     },
     "author_avatar": {
       "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the listing author (simulated)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.tradeListing)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the listing to the author's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the listing has been mirrored to the AT Protocol PDS as a real org.swappulse.tradeListing record"
     }
   },
   "required": [
