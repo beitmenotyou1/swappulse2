@@ -24,7 +24,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("email"); // email | confirm-email | code | profile | tour
   const [otp, setOtp] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const generatedPasswordRef = useRef("");
@@ -48,13 +47,6 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const inviteRes = await base44.functions.invoke("validate-invite", { code: inviteCode.trim() });
-      if (!inviteRes.data?.valid) {
-        setError("That invite code isn't valid or has already been used.");
-        setStep("email");
-        setLoading(false);
-        return;
-      }
       // Register with a random password (user never sees it; login is passwordless)
       const pwd = randomPassword();
       generatedPasswordRef.current = pwd;
@@ -79,7 +71,6 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
         try { await base44.auth.updateMe({ login_key: generatedPasswordRef.current }); } catch {}
-        try { await base44.functions.invoke("validate-invite", { code: inviteCode.trim(), redeem: true }); } catch {}
       }
       setStep("profile");
     } catch (err) {
@@ -183,10 +174,6 @@ export default function Register() {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input id="email" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12" required />
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="invite">Invite code</Label>
-          <Input id="invite" placeholder="Enter your alpha invite code" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} className="h-12" required />
         </div>
         <label className="flex items-start gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" required />
