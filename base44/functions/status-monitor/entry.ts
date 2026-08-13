@@ -45,12 +45,12 @@ export default async function(req) {
       vapid: checkVapid(),
     };
 
-    // Fetch StatusService records for mappable services
-    const allServiceRecords = await svc.entities.StatusService.list('-created_date', 100);
+    // Parallelize the two independent initial fetches.
+    const [allServiceRecords, allIncidents] = await Promise.all([
+      svc.entities.StatusService.list('-created_date', 100),
+      svc.entities.StatusIncident.list('-started_at', 100),
+    ]);
     const serviceBySlug = new Map(allServiceRecords.map((s) => [s.slug, s]));
-
-    // Fetch open incidents
-    const allIncidents = await svc.entities.StatusIncident.list('-started_at', 100);
     const openIncidents = allIncidents.filter((i) => i.status !== 'resolved');
 
     const created = [];

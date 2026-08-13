@@ -38,20 +38,23 @@ export default async function(req) {
       'Author handle: ' + (post.author_handle || 'unknown') + '\n\n' +
       'Provide a brief assessment, whether it impacts trust, and a recommendation.';
 
-    const reviewResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: reviewPrompt,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          assessment: { type: 'string', description: 'Brief assessment of the toxic behavior' },
-          impacts_trust: { type: 'boolean', description: 'Whether this impacts trade trustworthiness' },
-          recommendation: { type: 'string', description: 'Recommended action for the trade assistant' }
+    // Parallelize the LLM review and the user strike lookup (independent).
+    const [reviewResponse, user] = await Promise.all([
+      base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: reviewPrompt,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            assessment: { type: 'string', description: 'Brief assessment of the toxic behavior' },
+            impacts_trust: { type: 'boolean', description: 'Whether this impacts trade trustworthiness' },
+            recommendation: { type: 'string', description: 'Recommended action for the trade assistant' }
+          }
         }
-      }
-    });
+      }),
+      base44.asServiceRole.entities.User.get(authorId),
+    ]);
 
     // 3. Add a strike to the user's trust profile
-    const user = await base44.asServiceRole.entities.User.get(authorId);
     const currentStrikes = (user.moderation_strikes || 0) + 1;
     const shouldRestrict = currentStrikes > 3;
 

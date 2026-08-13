@@ -17,10 +17,11 @@ export default async function(req: Request): Promise<Response> {
       const svc = base44.asServiceRole;
       if (body.endpoint) {
         try {
-          const tokens = await svc.entities.PushToken.filter({ did: user.did, endpoint: body.endpoint }, '-created_date', 10);
-          for (const t of tokens) {
-            await svc.entities.PushToken.update(t.id, { is_active: false });
-          }
+          // Batch-deactivate all matching tokens in one call (replaces filter + per-token update loop).
+          await svc.entities.PushToken.updateMany(
+            { did: user.did, endpoint: body.endpoint },
+            { $set: { is_active: false } },
+          );
         } catch (e) {
           console.error('unregister-push-token error', e?.message || e);
         }
