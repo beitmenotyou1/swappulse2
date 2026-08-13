@@ -65,6 +65,17 @@ export default function ComposeBox({ onPosted }) {
       // Hashtag abuse labeler - evaluates the new post and attaches moderation labels.
       if (created?.id) {
         base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
+        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.post on the federated network.
+        base44.functions.invoke('atproto-bridge', {
+          collection: 'app.bsky.feed.post',
+          record: {
+            text: (content.trim() || stamped.card_name || 'New SwapPulse post').slice(0, 3000),
+            createdAt: new Date().toISOString(),
+            langs: ['en'],
+          },
+        }).then((res) => {
+          if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
+        }).catch(() => {});
       }
       // Bell notification dispatch - Web Push to bell-enabled followers.
       const cat = stamped.post_type === 'pack_opening' ? 'pack_opening'
