@@ -1,0 +1,44 @@
+{
+  "name": "Wishlist Listing Alerts",
+  "description": "Scans active MarketListing entries every 6 hours and notifies collectors when a card on their Wishlist gets listed within their max price",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */6 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "wishlist_listing_alerts",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "matchWishlistListings"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Match wishlist to listings",
+            "description": "Notify collectors of wishlist matches"
+          }
+        }
+      }
+    ]
+  }
+}

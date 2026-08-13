@@ -58,6 +58,7 @@ import Challenges from '@/pages/Challenges';
 import ChallengeDetail from '@/pages/ChallengeDetail';
 import Leaderboard from '@/pages/Leaderboard';
 import TradeAssistant from '@/pages/TradeAssistant';
+import MarketWatchAssistant from '@/pages/MarketWatchAssistant';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -135,6 +136,7 @@ const AuthenticatedApp = () => {
           <Route path="/who-to-follow" element={<WhoToFollow />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/trade-assistant" element={<TradeAssistant />} />
+          <Route path="/market-watch-assistant" element={<MarketWatchAssistant />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
