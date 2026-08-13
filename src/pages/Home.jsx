@@ -7,6 +7,7 @@ import TradeInterestBanner from '@/components/feed/TradeInterestBanner';
 import CardOfTheDay from '@/components/home/CardOfTheDay';
 import StoriesBar from '@/components/stories/StoriesBar';
 import SpaceBar from '@/components/spaces/SpaceBar';
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { useAuth } from '@/lib/AuthContext';
 
