@@ -7,6 +7,8 @@ import MetricsSection from '@/components/admin/MetricsSection';
 import InviteCodesSection from '@/components/admin/InviteCodesSection';
 import EmailTestSection from '@/components/admin/EmailTestSection';
 import IncidentsSection from '@/components/admin/IncidentsSection';
+import ServicesSection from '@/components/admin/ServicesSection';
+import MaintenanceSection from '@/components/admin/MaintenanceSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 export default function Admin() {
@@ -64,6 +66,8 @@ export default function Admin() {
         )}
         <InviteCodesSection />
         <EmailTestSection />
+        <ServicesSection />
+        <MaintenanceSection />
         <IncidentsSection />
       </div>
     </>
