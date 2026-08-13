@@ -1,5 +1,5 @@
 // Public TCGDex catalog gateway — catalog data is public, no auth required.
-import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
+import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -19,11 +19,11 @@ Deno.serve(async (req) => {
     } else if (action === 'getCard') {
       path = `/cards/${encodeURIComponent(body.cardId)}`;
     } else if (action === 'getCardBySet') {
-      path = `/sets/${encodeURIComponent(body.setId)}/${encodeURIComponent(body.localId)}`;
+      path = `/sets/${encodeURIComponent(normalizeSetId(body.setId))}/${encodeURIComponent(body.localId)}`;
     } else if (action === 'getSets') {
       path = '/sets';
     } else if (action === 'getSet') {
-      path = `/sets/${encodeURIComponent(body.setId)}`;
+      path = `/sets/${encodeURIComponent(normalizeSetId(body.setId))}`;
     } else if (action === 'getSeries') {
       path = '/series';
     } else if (action === 'getSerie') {

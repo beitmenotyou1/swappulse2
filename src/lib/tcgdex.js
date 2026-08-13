@@ -56,8 +56,9 @@ export async function getCard(cardId, lang = 'en') {
 
 /** Fetch a card by its set id + local id (TCGDex /sets/{setId}/{localId}). */
 export async function getCardBySet(setId, localId, lang = 'en') {
-  return cached(`card:${lang}:${setId}:${localId}`, async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getCardBySet', setId, localId, lang });
+  const nid = normalizeSetId(setId);
+  return cached(`card:${lang}:${nid}:${localId}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getCardBySet', setId: nid, localId, lang });
     return res.data?.data ?? null;
   });
 }
@@ -70,8 +71,9 @@ export async function getSets(lang = 'en') {
 }
 
 export async function getSet(setId, lang = 'en') {
-  return cached(`set:${lang}:${setId}`, async () => {
-    const res = await base44.functions.invoke('tcgdex', { action: 'getSet', setId, lang });
+  const nid = normalizeSetId(setId);
+  return cached(`set:${lang}:${nid}`, async () => {
+    const res = await base44.functions.invoke('tcgdex', { action: 'getSet', setId: nid, lang });
     return res.data?.data ?? null;
   });
 }
@@ -110,6 +112,21 @@ export const getEnergyTypes = (lang) => listEndpoint('getEnergyTypes', 'energyty
 export const getRegulationMarks = (lang) => listEndpoint('getRegulationMarks', 'regulationmarks', lang);
 export const getSuffixes = (lang) => listEndpoint('getSuffixes', 'suffixes', lang);
 export const getTrainerTypes = (lang) => listEndpoint('getTrainerTypes', 'trainertypes', lang);
+
+/**
+ * Normalize a set ID to TCGDex's canonical format.
+ * TCGDex uses leading zeros for single-digit SV sets (sv01, sv02, ...) and
+ * ".5" for half-sets (sv04.5, sv06.5). Some stored data uses short forms
+ * like "sv4a" (a = .5) or "sv1" (no leading zero).
+ *   sv4a  → sv04.5,  sv1 → sv01,  sv04.5 → sv04.5 (no change)
+ */
+export function normalizeSetId(setId) {
+  if (!setId) return setId;
+  let s = String(setId).toLowerCase().trim();
+  s = s.replace(/^([a-z]+)(\d+)a$/, '$1$2.5');
+  s = s.replace(/^([a-z]+)(\d)(\D|$)/, '$10$2$3');
+  return s;
+}
 
 export function rarityKey(rarityStr) {
   if (!rarityStr) return 'common';

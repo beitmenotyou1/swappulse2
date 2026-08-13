@@ -12,7 +12,7 @@
 import { evaluateAchievements, EngineInput } from './achievementEngine.ts';
 import { ACHIEVEMENT_CONFIG, ACHIEVEMENT_KEYS, GLOBAL_SETTINGS } from './achievementConfig.ts';
 import { buildRestorationPath } from './achievementNotifications.ts';
-import { fetchTcgdex } from './tcgdexClient.ts';
+import { fetchTcgdex, normalizeSetId } from './tcgdexClient.ts';
 
 export function toDid(user: any): string {
   return user.did || 'did:plc:' + String(user.id).replace(/-/g, '').slice(0, 24);
@@ -28,7 +28,7 @@ async function fetchSetSizes(setIds: string[]): Promise<Record<string, number>> 
   for (const id of setIds) {
     if (!id) continue;
     try {
-      const data = await fetchTcgdex(`/sets/${encodeURIComponent(id)}`);
+      const data = await fetchTcgdex(`/sets/${encodeURIComponent(normalizeSetId(id))}`);
       const total = data && Array.isArray(data.cards) ? data.cards.length : (data?.cardCount ?? 0);
       if (total) sizes[id] = total;
     } catch {
@@ -88,6 +88,32 @@ export async function fetchProofDataForUser(
   ]);
   const tradeChains = tradeChainsAll.filter((c: any) => (c.participant_dids || []).includes(did));
 
+  // Compute per-voucher trust scores for the Trusted Trader gate.
+  // Batch-fetch incoming vouches for all distinct voucher DIDs in a single query.
+  const RELATIONSHIP_WEIGHT: Record<string, number> = {
+    repeat_trader: 3, trade_partner: 2, personal_acquaintance: 2, community_member: 1,
+  };
+  const voucherDids = [...new Set(
+    vouches.filter((v: any) => !v.revoked_at && v.did && v.did !== did).map((v: any) => v.did),
+  )];
+  const allVoucherVouches = voucherDids.length > 0
+    ? await svc.entities.Vouch.filter({ vouched_did: { $in: voucherDids } }, '-created_date', 2000).catch(() => [])
+    : [];
+  const vouchesByVouched = new Map<string, any[]>();
+  for (const v of allVoucherVouches) {
+    if (!vouchesByVouched.has(v.vouched_did)) vouchesByVouched.set(v.vouched_did, []);
+    vouchesByVouched.get(v.vouched_did)!.push(v);
+  }
+  const voucherTrustScores: Record<string, number> = {};
+  for (const d of voucherDids) {
+    const incoming = vouchesByVouched.get(d) || [];
+    const active = incoming.filter((v: any) => !v.revoked_at);
+    const seen = new Map<string, any>();
+    for (const v of active) if (!seen.has(v.did)) seen.set(v.did, v);
+    const rawScore = [...seen.values()].reduce((s, v) => s + (RELATIONSHIP_WEIGHT[v.relationship] || 1), 0);
+    voucherTrustScores[d] = Math.min(100, Math.round(rawScore * 8));
+  }
+
   let setSizes: Record<string, number> = {};
   if (opts.includeSetCompletion) {
     const setCount = new Map<string, number>();
@@ -107,6 +133,7 @@ export async function fetchProofDataForUser(
   return {
     userDid: did, collectionEntries, vouches, feedback, tradeChains, corrections, binders,
     voiceSpaces, cardReviews, meetups, setSizes, participantsBySpaceId, rsvpsByMeetupId,
+    voucherTrustScores,
   };
 }
 

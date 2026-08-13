@@ -41,7 +41,7 @@ export default function RightSidebar({ online = [] }) {
     const load = async () => {
       try {
         const [items, trades, pricing, isAuthed] = await Promise.all([
-          base44.entities.CollectionEntry.list('-updated_date', 200),
+          base44.entities.CollectionEntry.list('-updated_date', 200).catch(() => []),
           base44.entities.TradeListing.filter({ status: 'open' }, '-created_date', 3),
           base44.entities.CardPricing.list('-updated_date', 200),
           base44.auth.isAuthenticated().catch(() => false),

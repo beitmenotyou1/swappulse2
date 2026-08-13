@@ -43,3 +43,26 @@ export async function fetchTcgdex(path: string, lang = 'en'): Promise<any> {
 export function num(v: any): number | null {
   return typeof v === 'number' && isFinite(v) ? v : null;
 }
+
+/**
+ * Normalize a set ID to TCGDex's canonical format.
+ * TCGDex uses leading zeros for single-digit SV sets (sv01, sv02, ...) and
+ * ".5" for half-sets (sv04.5, sv06.5). Some stored data uses short forms
+ * like "sv4a" (a = .5) or "sv1" (no leading zero). This normalizes them:
+ *   sv4a  → sv04.5   (a suffix → .5, pad single digit)
+ *   sv1   → sv01     (pad single digit)
+ *   sv4   → sv04     (pad single digit)
+ *   sv04.5 → sv04.5  (already canonical, no change)
+ *   sv10  → sv10     (double-digit, no change)
+ *   sv10.5b → sv10.5b (variant suffix, no change)
+ */
+export function normalizeSetId(setId: string): string {
+  if (!setId) return setId;
+  let s = String(setId).toLowerCase().trim();
+  // Convert trailing 'a' suffix to '.5' (e.g., "sv4a" → "sv4.5")
+  s = s.replace(/^([a-z]+)(\d+)a$/, '$1$2.5');
+  // Pad single-digit set numbers with a leading zero (e.g., "sv4" → "sv04", "sv4.5" → "sv04.5")
+  // Only matches when the digit after the letter prefix is followed by a non-digit or end.
+  s = s.replace(/^([a-z]+)(\d)(\D|$)/, '$10$2$3');
+  return s;
+}

@@ -35,6 +35,7 @@ export interface EngineInput {
   setSizes: Record<string, number>;
   participantsBySpaceId: Record<string, number>;
   rsvpsByMeetupId: Record<string, number>;
+  voucherTrustScores?: Record<string, number>;
 }
 
 function prec(rec: any, type: string, lexicon: string): ProofRecord {
@@ -157,20 +158,25 @@ function evalWeightedVouches(cfg: any, input: EngineInput): EvalResult {
   const distinct = new Set(active.map((v) => v.did));
   const freshCutoff = monthsAgoIso(req.exclude_revoked_months || 0);
   const recentlyRevoked = input.vouches.filter((v) => v.revoked_at && v.revoked_at >= freshCutoff);
-  // min_voucher_trust_score (per-voucher trust ≥ N) is pending a per-voucher
-  // trust lookup — would require fetching each voucher's incoming vouches.
-  const qualified = distinct.size >= (req.minimum_distinct_vouchers || 0) && recentlyRevoked.length === 0;
-  const proofRecords: ProofRecord[] = [...distinct].slice(0, 8).map((d) => ({
+  // Per-voucher trust gate: only count vouchers whose own trust score meets the threshold.
+  const minVoucherTrust = req.min_voucher_trust_score || 0;
+  const trustScores = input.voucherTrustScores || {};
+  const qualifyingVouchers = minVoucherTrust > 0
+    ? [...distinct].filter((d) => (trustScores[d] || 0) >= minVoucherTrust)
+    : [...distinct];
+  const qualified = qualifyingVouchers.length >= (req.minimum_distinct_vouchers || 0) && recentlyRevoked.length === 0;
+  const proofRecords: ProofRecord[] = qualifyingVouchers.slice(0, 8).map((d) => ({
     uri: `at://${d}/org.swappulse.vouch`, cid: '', recordType: 'org.swappulse.vouch',
     verifiedAt: new Date().toISOString(),
   }));
+  const belowThreshold = distinct.size - qualifyingVouchers.length;
   return {
-    key: cfg.id, qualified, metricValue: distinct.size, proofRecords,
-    proofSummary: `${distinct.size} distinct vouches (min ${req.minimum_distinct_vouchers}). ` +
+    key: cfg.id, qualified, metricValue: qualifyingVouchers.length, proofRecords,
+    proofSummary: `${qualifyingVouchers.length} distinct vouches with trust ≥ ${minVoucherTrust} (min ${req.minimum_distinct_vouchers}). ` +
+      (belowThreshold > 0 ? `${belowThreshold} vouch(es) below trust threshold. ` : '') +
       (recentlyRevoked.length === 0
         ? `No vouches revoked in the last ${req.exclude_revoked_months} months.`
-        : `${recentlyRevoked.length} vouch(es) revoked recently — disqualified.`) +
-      ` Per-voucher trust gate (≥${req.min_voucher_trust_score}) pending.`,
+        : `${recentlyRevoked.length} vouch(es) revoked recently — disqualified.`),
   };
 }
 
@@ -190,13 +196,17 @@ function evalRecordExistence(cfg: any, input: EngineInput): EvalResult {
 
 function evalAcceptedSubmissions(cfg: any, input: EngineInput): EvalResult {
   const req = cfg.proof_requirements;
-  const count = input.corrections.length;
-  // max_reversal_rate gate pending a reversal/accepted field on ScannerCorrection.
-  const qualified = count >= (req.minimum_accepted_count || 0);
+  // Only count accepted corrections (accepted defaults to true for legacy records).
+  const accepted = input.corrections.filter((c) => c.accepted !== false);
+  const rejected = input.corrections.length - accepted.length;
+  const reversalRate = input.corrections.length > 0 ? rejected / input.corrections.length : 0;
+  const count = accepted.length;
+  const maxReversal = req.max_reversal_rate ?? 1;
+  const qualified = count >= (req.minimum_accepted_count || 0) && reversalRate <= maxReversal;
   return {
     key: cfg.id, qualified, metricValue: count,
-    proofRecords: input.corrections.slice(0, 8).map((c) => prec(c, 'scannerCorrection', 'org.swappulse.scannerCorrection')),
-    proofSummary: `${count} scanner corrections (min ${req.minimum_accepted_count}). Reversal-rate gate (≤${req.max_reversal_rate}) pending a reversal field.`,
+    proofRecords: accepted.slice(0, 8).map((c) => prec(c, 'scannerCorrection', 'org.swappulse.scannerCorrection')),
+    proofSummary: `${count} accepted scanner corrections (min ${req.minimum_accepted_count}). Reversal rate ${(reversalRate * 100).toFixed(1)}% (≤${(maxReversal * 100).toFixed(0)}%).`,
   };
 }
 

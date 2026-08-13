@@ -80,6 +80,21 @@ export default async function (req: Request): Promise<Response> {
     const cardReviewsByDid = groupBy(cardReviews, (r: any) => r.did);
     const meetupsByDid = groupBy(meetups, (m: any) => m.did);
 
+    // Compute per-voucher trust scores from the full vouches array (avoids
+    // per-voucher DB lookups in the loop). Each voucher's trust score is
+    // computed from their incoming vouches, matching getTrustProfile's formula.
+    const RELATIONSHIP_WEIGHT: Record<string, number> = {
+      repeat_trader: 3, trade_partner: 2, personal_acquaintance: 2, community_member: 1,
+    };
+    const voucherTrustScores: Record<string, number> = {};
+    for (const [vouchedDid, incoming] of vouchesByDid) {
+      const active = incoming.filter((v: any) => !v.revoked_at);
+      const seen = new Map<string, any>();
+      for (const v of active) if (!seen.has(v.did)) seen.set(v.did, v);
+      const rawScore = [...seen.values()].reduce((s, v) => s + (RELATIONSHIP_WEIGHT[v.relationship] || 1), 0);
+      voucherTrustScores[vouchedDid] = Math.min(100, Math.round(rawScore * 8));
+    }
+
     const dids = new Set<string>();
     for (const u of users) dids.add(toDid(u));
     for (const v of vouches) if (v.vouched_did) dids.add(v.vouched_did);
@@ -111,6 +126,7 @@ export default async function (req: Request): Promise<Response> {
           setSizes: {} as Record<string, number>,
           participantsBySpaceId,
           rsvpsByMeetupId,
+          voucherTrustScores,
         };
         const results = evaluateAchievements(slice);
         const r = await reconcileAchievements(svc, did, results, {

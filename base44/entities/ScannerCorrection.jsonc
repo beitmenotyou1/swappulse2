@@ -49,6 +49,11 @@
       ],
       "description": "The nature of the correction. 'confirm_correct' is a positive training signal."
     },
+    "accepted": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this correction was accepted by community verification. Defaults to true; set to false when a correction is overturned (feeds the Scanner Sage reversal-rate gate)."
+    },
     "scanner_version": {
       "type": "string",
       "description": "Version tag of the scanner model that produced the prediction."
