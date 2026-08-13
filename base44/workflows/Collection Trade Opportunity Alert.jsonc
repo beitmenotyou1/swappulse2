@@ -1,0 +1,92 @@
+{
+  "description": "When a user updates their collection, the collection_advisor compares the item against current TCGDex data. If a high-value trade opportunity is found, waits 10 minutes then sends a push notification with the trade advice.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "collection_trade_opportunity",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "analyze_opportunity": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "analyzeCollectionOpportunity",
+            "args": {
+              "card_id": "${ .trigger.data.card_id }",
+              "card_name": "${ .trigger.data.card_name }",
+              "set_id": "${ .trigger.data.set_id }",
+              "market_value": "${ .trigger.data.market_value }",
+              "purchase_price": "${ .trigger.data.purchase_price }",
+              "user_id": "${ .trigger.data.created_by_id }"
+            }
+          },
+          "then": "check_opportunity",
+          "x-base44": {
+            "title": "Analyze collection update",
+            "description": "Compare against TCGDex data"
+          }
+        }
+      },
+      {
+        "check_opportunity": {
+          "switch": [
+            {
+              "when": "${ .analyze_opportunity.high_value_opportunity == true }",
+              "then": "wait_before_notify"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "High-value opportunity?",
+            "description": "Branch on trade signal"
+          }
+        }
+      },
+      {
+        "wait_before_notify": {
+          "wait": "PT10M",
+          "then": "send_push",
+          "x-base44": {
+            "title": "Wait 10 minutes",
+            "description": "Pause before notifying"
+          }
+        }
+      },
+      {
+        "send_push": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendTradeAdvicePush",
+            "args": {
+              "user_id": "${ .analyze_opportunity.user_id }",
+              "title": "High-Value Trade Opportunity",
+              "body": "${ .analyze_opportunity.advice }",
+              "url": "/collection"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send trade advice push",
+            "description": "Notify the collector"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "update"
+      ],
+      "entity_name": "CollectionEntry"
+    }
+  },
+  "name": "Collection Trade Opportunity Alert"
+}
