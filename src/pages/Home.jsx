@@ -24,6 +24,7 @@ export default function Home() {
   const [tab, setTab] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
   const [repostMap, setRepostMap] = useState({});
+  const [showTour, setShowTour] = useState(() => !localStorage.getItem('swappulse_onboarding_done'));
   const { user } = useAuth();
 
   const loadPosts = useCallback(async () => {
@@ -87,6 +88,10 @@ export default function Home() {
   }, [posts, user?.id]);
 
   const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
+
+  if (showTour) {
+    return <OnboardingTour onComplete={() => setShowTour(false)} />;
+  }
 
   return (
     <div>
