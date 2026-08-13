@@ -9,6 +9,7 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { unbridgeRecord } from '@/lib/atprotoRecords';
 import { TRADE_STATUS_LABELS } from '@/lib/format';
 import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
+import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
@@ -178,6 +179,12 @@ export default function TradeThread() {
               </div>
             )}
           </div>
+
+          {trade.status === 'completed' && (
+            <div className="border-b border-border p-4">
+              <TradeFeedbackForm trade={trade} me={me} messages={messages} />
+            </div>
+          )}
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 ? (

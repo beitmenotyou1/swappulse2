@@ -8,6 +8,7 @@ import PostCard from '@/components/feed/PostCard';
 import FollowBellButton from '@/components/follow/FollowBellButton';
 import FriendsBadge from '@/components/follow/FriendsBadge';
 import AddFriendLink from '@/components/follow/AddFriendLink';
+import ReputationSummary from '@/components/profile/ReputationSummary';
 
 // Other-user profile, reached from feed author links. Hosts the follow+bell
 // control, the Friends badge, and the add-friend flow.
@@ -79,7 +80,8 @@ export default function UserProfile() {
             subjectHandle={profile?.handle}
           />
         </div>
-        <div className="mt-4">
+        <div className="mt-4 space-y-4">
+          <ReputationSummary did={subjectDid} />
           {loading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : posts.length === 0 ? (
