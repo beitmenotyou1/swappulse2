@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 
 const SOURCE_LABELS = {
   trust_proximity: { label: 'Trust proximity', icon: ShieldCheck, tone: 'text-success' },
@@ -131,6 +132,12 @@ export default function WhoToFollow() {
       </PageHeader>
 
       <div className="mx-auto max-w-2xl space-y-4 p-4">
+        <ExternalActorSearch />
+
+        <div className="border-t border-border pt-4">
+          <h2 className="mb-3 text-sm font-bold text-muted-foreground uppercase tracking-wide">Recommended collectors</h2>
+        </div>
+
         {loading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (

@@ -6,12 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import UsernameField from "@/components/auth/UsernameField";
 
-export default function ProfileSetup({ onDone, portedDid, initialFullName, initialAvatar, initialDescription }) {
+export default function ProfileSetup({ onDone, portedDid, initialFullName, initialAvatar, initialDescription, initialHeader }) {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState(initialFullName || "");
   const [description, setDescription] = useState(initialDescription || "");
   const [avatar, setAvatar] = useState(initialAvatar || "");
-  const [header, setHeader] = useState("");
+  const [header, setHeader] = useState(initialHeader || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const avatarRef = useRef(null);

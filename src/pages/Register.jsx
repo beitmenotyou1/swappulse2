@@ -107,11 +107,21 @@ export default function Register() {
   if (step === "profile") {
     return (
       <ProfileSetup
-        onDone={() => setStep("tour")}
+        onDone={async () => {
+          if (atProtoProfile?.follows?.length) {
+            try {
+              await base44.functions.invoke("import-atproto-graph", { follows: atProtoProfile.follows });
+            } catch (e) {
+              console.error("Failed to import follows:", e);
+            }
+          }
+          setStep("tour");
+        }}
         portedDid={portedDid}
         initialFullName={atProtoProfile?.displayName || ""}
         initialAvatar={atProtoProfile?.avatar || ""}
         initialDescription={atProtoProfile?.description || ""}
+        initialHeader={atProtoProfile?.banner || ""}
       />
     );
   }

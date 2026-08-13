@@ -20,6 +20,7 @@ const TABS = [
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
+  const [externalPosts, setExternalPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
@@ -32,8 +33,19 @@ export default function Home() {
     try {
       const data = await base44.entities.Post.list('-created_date', 50);
       setPosts(data);
+      // Fetch external posts for authenticated users (federation follows)
+      try {
+        const authed = await base44.auth.isAuthenticated();
+        if (authed) {
+          const extRes = await base44.functions.invoke('fetch-external-feed', { limit: 30 });
+          setExternalPosts(extRes.data?.items || []);
+        }
+      } catch {
+        setExternalPosts([]);
+      }
     } catch {
       setPosts([]);
+      setExternalPosts([]);
     } finally {
       setLoading(false);
     }
@@ -87,7 +99,10 @@ export default function Home() {
     })();
   }, [posts, user?.id]);
 
-  const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
+  const filtered = tab === 'all'
+    ? [...posts, ...externalPosts].sort((a, b) =>
+        new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
+    : posts.filter((p) => p.post_type === tab);
 
   if (showTour) {
     return <OnboardingTour onComplete={() => setShowTour(false)} />;

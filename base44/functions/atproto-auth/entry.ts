@@ -13,6 +13,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
+const APPVIEW = 'https://public.api.bsky.app';
+
 // --- Handle / DID resolution ---
 
 async function resolveHandle(handle: string): Promise<string> {
@@ -88,14 +90,14 @@ async function createSession(
   return await res.json();
 }
 
-async function getProfile(
-  pdsUrl: string,
+// Fetches the full profile (including banner) from the public AppView.
+async function getFullProfile(
   accessJwt: string,
   did: string,
-): Promise<{ displayName?: string; avatar?: string; description?: string }> {
+): Promise<{ displayName?: string; avatar?: string; banner?: string; description?: string }> {
   try {
     const res = await fetch(
-      `${pdsUrl}/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`,
+      `${APPVIEW}/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`,
       { headers: { Authorization: `Bearer ${accessJwt}` } },
     );
     if (!res.ok) return {};
@@ -103,11 +105,49 @@ async function getProfile(
     return {
       displayName: data.displayName || data.handle || '',
       avatar: data.avatar || '',
+      banner: data.banner || '',
       description: data.description || '',
     };
   } catch {
     return {};
   }
+}
+
+// Paginates through the user's follows via the public AppView.
+// Returns up to `max` follows with did/handle/displayName/avatar.
+async function getFollows(
+  accessJwt: string,
+  did: string,
+  max = 200,
+): Promise<Array<{ did: string; handle: string; displayName: string; avatar: string }>> {
+  const follows: Array<{ did: string; handle: string; displayName: string; avatar: string }> = [];
+  let cursor: string | undefined;
+  while (follows.length < max) {
+    const params = new URLSearchParams({ actor: did, limit: '100' });
+    if (cursor) params.set('cursor', cursor);
+    try {
+      const res = await fetch(
+        `${APPVIEW}/xrpc/app.bsky.graph.getFollows?${params}`,
+        { headers: { Authorization: `Bearer ${accessJwt}` } },
+      );
+      if (!res.ok) break;
+      const data = await res.json();
+      for (const f of data.follows || []) {
+        follows.push({
+          did: f.did,
+          handle: f.handle || '',
+          displayName: f.displayName || '',
+          avatar: f.avatar || '',
+        });
+        if (follows.length >= max) break;
+      }
+      cursor = data.cursor;
+      if (!cursor) break;
+    } catch {
+      break;
+    }
+  }
+  return follows;
 }
 
 function maskEmail(email: string): string {
@@ -188,8 +228,8 @@ Deno.serve(async (req) => {
     // 3. Authenticate against the PDS
     const session = await createSession(pdsUrl, handle, appPassword);
 
-    // 4. Fetch profile
-    const profile = await getProfile(pdsUrl, session.accessJwt, session.did);
+    // 4. Fetch full profile (including banner) from the AppView
+    const profile = await getFullProfile(session.accessJwt, session.did);
 
     // 5. For login mode: look up SwapPulse user by DID, send login code
     if (mode === 'login') {
@@ -214,7 +254,9 @@ Deno.serve(async (req) => {
       return Response.json({ code_sent: true, email: user.email, emailMasked: maskEmail(user.email) });
     }
 
-    // 6. For verify mode: return DID + profile
+    // 6. For verify mode: fetch follows then return DID + profile + follows
+    const follows = await getFollows(session.accessJwt, session.did, 200);
+
     return Response.json({
       verified: true,
       did: session.did,
@@ -222,7 +264,9 @@ Deno.serve(async (req) => {
       email: session.email || '',
       displayName: profile.displayName || '',
       avatar: profile.avatar || '',
+      banner: profile.banner || '',
       description: profile.description || '',
+      follows,
     });
   } catch (error) {
     console.error('atproto-auth error:', error?.message || error);
