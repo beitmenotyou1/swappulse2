@@ -7,6 +7,17 @@ const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
 
+// Process session-only flag: if set, move the token from localStorage to sessionStorage
+// so it's cleared when the browser closes (used when "Stay logged in" is unchecked).
+// Runs before getAppParams so the token is in sessionStorage when read below.
+if (!isNode && sessionStorage.getItem("swappulse_session_only") === "true") {
+	const token = storage.getItem("base44_access_token");
+	if (token) {
+		sessionStorage.setItem("base44_access_token", token);
+		storage.removeItem("base44_access_token");
+	}
+}
+
 const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl = false } = {}) => {
 	if (isNode) {
 		return defaultValue;

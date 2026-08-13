@@ -105,11 +105,17 @@ export default function Login() {
       } catch {
         // If check fails, proceed without 2FA
       }
+      // Set session-only flag BEFORE login so it survives the SDK's hard redirect.
+      // When unchecked, app-params.js will move the token to sessionStorage on next load.
+      if (!stayLoggedIn) {
+        sessionStorage.setItem("swappulse_session_only", "true");
+      } else {
+        sessionStorage.removeItem("swappulse_session_only");
+      }
       // Log in with the stored login_key
       setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
       await base44.auth.loginViaEmailPassword(email, loginKey);
-      applySessionPersistence();
-      // SDK sets the token but does NOT hard-redirect — redirect explicitly
+      // SDK hard-redirects to returnTo (or "/") — set explicit fallback in case it doesn't
       const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
       window.location.href = returnTo;
     } catch (err) {
@@ -121,10 +127,14 @@ export default function Login() {
 
   const handleTwoFactorSuccess = async () => {
     setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+    // Set session-only flag BEFORE login (same as verifyCode)
+    if (!stayLoggedIn) {
+      sessionStorage.setItem("swappulse_session_only", "true");
+    } else {
+      sessionStorage.removeItem("swappulse_session_only");
+    }
     try {
       await base44.auth.loginViaEmailPassword(email, pendingLoginKey);
-      applySessionPersistence();
-      // SDK sets the token but does NOT hard-redirect — redirect explicitly
       const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
       window.location.href = returnTo;
     } catch (err) {
@@ -133,19 +143,6 @@ export default function Login() {
       setOtp("");
       setPendingLoginKey(null);
     }
-  };
-
-  // When "Stay Logged In" is unchecked, move the auth token from localStorage
-  // (where the SDK stores it) to sessionStorage so it's cleared when the browser closes
-  const applySessionPersistence = () => {
-    if (stayLoggedIn) return;
-    try {
-      const token = localStorage.getItem("base44_access_token");
-      if (token) {
-        sessionStorage.setItem("base44_access_token", token);
-        localStorage.removeItem("base44_access_token");
-      }
-    } catch {}
   };
 
   const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;

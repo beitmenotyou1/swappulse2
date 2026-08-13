@@ -127,8 +127,11 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    // Clear session-stored token (used when "Stay logged in" is unchecked)
-    try { sessionStorage.removeItem("base44_access_token"); } catch {}
+    // Clear session-stored token and session-only flag (used when "Stay logged in" is unchecked)
+    try {
+      sessionStorage.removeItem("base44_access_token");
+      sessionStorage.removeItem("swappulse_session_only");
+    } catch {}
     
     if (shouldRedirect) {
       // Use the SDK's logout method which handles token cleanup and redirect
