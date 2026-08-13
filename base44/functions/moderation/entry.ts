@@ -15,6 +15,7 @@ function isToday(iso) {
 }
 
 function mapRow(p, priorFlags) {
+  const aiLabel = (p.moderation_labels || []).find((l) => l.ai_generated);
   return {
     id: p.id,
     timestamp: p.created_date,
@@ -31,8 +32,16 @@ function mapRow(p, priorFlags) {
       severity: l.severity,
       confidence: l.confidence,
       reason: l.reason,
+      ai_generated: l.ai_generated || false,
+      recommended_action: l.recommended_action || null,
       detectedAt: p.created_date,
     })),
+    aiRecommendation: aiLabel ? {
+      label: aiLabel.label,
+      confidence: aiLabel.confidence,
+      action: aiLabel.recommended_action,
+      reasoning: aiLabel.reason,
+    } : null,
     status: p.moderation_status || 'pending',
     assignedTo: p.moderated_by,
     resolvedAt: p.moderated_at,
@@ -124,6 +133,21 @@ Deno.serve(async (req) => {
         notes: notes || '',
         auto_generated: false,
       });
+
+      // Learning loop: log the moderator's decision as AgentFeedback for the moderation agent.
+      // escalate = AI was right (suggestion_accepted); approve/dismiss = AI was wrong (suggestion_rejected).
+      const aiLabel = (post.moderation_labels || []).find((l) => l.ai_generated);
+      if (aiLabel) {
+        const feedbackType = decision === 'escalate' ? 'suggestion_accepted' : 'suggestion_rejected';
+        base44.entities.AgentFeedback.create({
+          agent_name: 'moderation_agent',
+          feedback_type: feedbackType,
+          original_content: `Label: ${aiLabel.label}, Action: ${aiLabel.recommended_action}, Confidence: ${aiLabel.confidence}, Reasoning: ${aiLabel.reason || 'N/A'}`,
+          user_comment: notes || '',
+          context_summary: (post.content || '').slice(0, 200),
+          processed: false,
+        }).catch((e) => console.error('moderation: AgentFeedback log failed', e?.message));
+      }
 
       // Emit label negation to the network when a moderator dismisses labels.
       // The neg retraction lifecycle propagates label removals to all PDSs

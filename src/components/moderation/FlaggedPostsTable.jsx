@@ -42,6 +42,7 @@ export default function FlaggedPostsTable({ rows, loading, selectedIds, onToggle
               <th className="p-2 text-left">Content</th>
               <th className="p-2 text-left">Hashtags</th>
               <th className="p-2 text-left">Labels</th>
+              <th className="p-2 text-left">AI Rec</th>
               <th className="p-2 text-left">Conf.</th>
               <th className="p-2 text-left">Action</th>
             </tr>
@@ -49,14 +50,14 @@ export default function FlaggedPostsTable({ rows, loading, selectedIds, onToggle
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="p-6 text-center text-muted-foreground">
+                <td colSpan={10} className="p-6 text-center text-muted-foreground">
                   Loading flagged posts…
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="p-6 text-center text-muted-foreground">
+                <td colSpan={10} className="p-6 text-center text-muted-foreground">
                   No flagged posts match your filters.
                 </td>
               </tr>
@@ -110,9 +111,26 @@ export default function FlaggedPostsTable({ rows, loading, selectedIds, onToggle
                             className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${severityStyle[l.severity] || severityStyle.inform}`}
                           >
                             {l.label.replace('hashtag-', '')}
+                            {l.ai_generated && ' · AI'}
                           </span>
                         ))}
                       </div>
+                    </td>
+                    <td className="p-2">
+                      {row.aiRecommendation ? (
+                        <div className="text-[11px]">
+                          <span className={`rounded px-1.5 py-0.5 font-semibold ${
+                            row.aiRecommendation.action === 'hide' ? 'bg-destructive/15 text-destructive' :
+                            row.aiRecommendation.action === 'warn' ? 'bg-warning/15 text-warning' :
+                            'bg-secondary text-muted-foreground'
+                          }`}>
+                            {row.aiRecommendation.action}
+                          </span>
+                          <p className="mt-0.5 text-muted-foreground">{Math.round((row.aiRecommendation.confidence || 0) * 100)}%</p>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="p-2 text-xs">{Math.round(maxConf)}%</td>
                     <td className="p-2">

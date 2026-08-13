@@ -53,6 +53,7 @@ import DonateThanks from '@/pages/DonateThanks';
 import HandleProfile from '@/pages/HandleProfile';
 import Admin from '@/pages/Admin';
 import Moderation from '@/pages/Moderation';
+import ModerationAgent from '@/pages/ModerationAgent';
 import WhoToFollow from '@/pages/WhoToFollow';
 import Achievements from '@/pages/Achievements';
 import Challenges from '@/pages/Challenges';
@@ -139,6 +140,7 @@ const AuthenticatedApp = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
+          <Route path="/moderation-agent" element={<ModerationAgent />} />
           <Route path="/who-to-follow" element={<WhoToFollow />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/trade-assistant" element={<TradeAssistant />} />

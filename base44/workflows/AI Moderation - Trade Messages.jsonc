@@ -1,0 +1,41 @@
+{
+  "name": "AI Moderation - Trade Messages",
+  "description": "Runs AI moderation analysis on new trade messages to detect scam attempts and abuse in negotiations",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "TradeMessage",
+      "events": [
+        "create"
+      ]
+    },
+    "condition": "${ (.trigger.data.body // \"\") | length > 10 }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "ai_moderation_messages",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "moderate_message": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "ai-moderation",
+            "args": {
+              "content_type": "trade_message",
+              "content_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "AI moderate new trade message",
+            "description": "Detect scam and abuse in negotiation messages"
+          }
+        }
+      }
+    ]
+  }
+}
