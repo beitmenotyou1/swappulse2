@@ -1,14 +1,24 @@
 import React, { useState } from 'react';
-import { MessageSquare, X, Loader2, Send, Camera } from 'lucide-react';
+import { MessageSquare, X, Loader2, Send, Camera, Star, Lightbulb, Bug, MessageCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+
+const CATEGORIES = [
+  { id: 'suggestion', label: 'Suggestion', icon: Lightbulb, desc: 'A new feature idea', color: 'text-amber-500' },
+  { id: 'bug', label: 'Bug Report', icon: Bug, desc: 'Something is broken', color: 'text-destructive' },
+  { id: 'comment', label: 'Comment', icon: MessageCircle, desc: 'General thoughts', color: 'text-primary' },
+];
 
 export default function FeedbackButton() {
   const [open, setOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState('');
+  const [category, setCategory] = useState('suggestion');
+  const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -34,7 +44,11 @@ export default function FeedbackButton() {
   };
 
   const start = async () => {
+    setCategory('suggestion');
+    setTitle('');
     setComment('');
+    setRating(0);
+    setHoverRating(0);
     setScreenshotUrl('');
     setOpen(true);
     await capture();
@@ -48,7 +62,10 @@ export default function FeedbackButton() {
     setSubmitting(true);
     try {
       await base44.functions.invoke('submit-feedback', {
+        category,
+        title,
         comment,
+        rating: rating || null,
         page: window.location.pathname,
         screenshotUrl,
         userAgent: navigator.userAgent,
@@ -85,10 +102,10 @@ export default function FeedbackButton() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={() => !submitting && setOpen(false)}>
           <div
-            className="w-full max-w-lg rounded-t-2xl border border-border bg-card p-4 shadow-xl sm:rounded-2xl"
+            className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-border p-4">
               <h2 className="flex items-center gap-2 text-lg font-bold">
                 <MessageSquare className="h-5 w-5 text-primary" /> Send feedback
               </h2>
@@ -97,35 +114,117 @@ export default function FeedbackButton() {
               </button>
             </div>
 
-            <p className="mb-3 text-sm text-muted-foreground">
-              We captured a snapshot of this page to help us see what you see. Add your comments below.
-            </p>
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Category selector */}
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium">What kind of feedback?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CATEGORIES.map((c) => {
+                    const Icon = c.icon;
+                    const active = category === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setCategory(c.id)}
+                        className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-colors ${
+                          active
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-background hover:bg-secondary/50'
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 ${active ? c.color : 'text-muted-foreground'}`} />
+                        <span className="text-xs font-semibold">{c.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {CATEGORIES.find((c) => c.id === category)?.desc}
+                </p>
+              </div>
 
-            <div className="mb-3 overflow-hidden rounded-xl border border-border bg-secondary/50">
-              {capturing ? (
-                <div className="flex h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Capturing page…
+              {/* Title */}
+              <div className="mb-4">
+                <label htmlFor="feedback-title" className="mb-2 block text-sm font-medium">
+                  Title <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <input
+                  id="feedback-title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
+                  placeholder="Summarise your feedback in a few words"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </div>
+
+              {/* Rating */}
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium">
+                  Rate your experience <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setRating(n)}
+                      onMouseEnter={() => setHoverRating(n)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="rounded p-0.5 transition-transform hover:scale-110"
+                      aria-label={`${n} star${n > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        className={`h-7 w-7 ${(hoverRating || rating) >= n ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40'}`}
+                      />
+                    </button>
+                  ))}
+                  {rating > 0 && (
+                    <span className="ml-2 text-sm text-muted-foreground">{rating}/5</span>
+                  )}
                 </div>
-              ) : screenshotUrl ? (
-                <img src={screenshotUrl} alt="Page snapshot" className="max-h-48 w-full object-top object-contain" />
-              ) : (
-                <div className="flex h-40 flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
-                  <Camera className="h-6 w-6" />
-                  Snapshot unavailable - your comments still help.
+              </div>
+
+              {/* Comment */}
+              <div className="mb-4">
+                <label htmlFor="feedback-comment" className="mb-2 block text-sm font-medium">
+                  Comments <span className="text-destructive">*</span>
+                </label>
+                <textarea
+                  id="feedback-comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={4}
+                  maxLength={5000}
+                  placeholder="Tell us more about your experience, what you'd like to see, or what went wrong…"
+                  className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                <p className="mt-1 text-right text-xs text-muted-foreground">{comment.length}/5000</p>
+              </div>
+
+              {/* Snapshot */}
+              <div>
+                <label className="mb-2 block text-sm font-medium">Page snapshot</label>
+                <div className="overflow-hidden rounded-xl border border-border bg-secondary/50">
+                  {capturing ? (
+                    <div className="flex h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Capturing page…
+                    </div>
+                  ) : screenshotUrl ? (
+                    <img src={screenshotUrl} alt="Page snapshot" className="max-h-48 w-full object-top object-contain" />
+                  ) : (
+                    <div className="flex h-40 flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
+                      <Camera className="h-6 w-6" />
+                      Snapshot unavailable - your comments still help.
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-              maxLength={5000}
-              placeholder="What did you spot? A bug, a confusing bit, a feature wish…"
-              className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-
-            <div className="mt-3 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 border-t border-border p-4">
               <button onClick={() => setOpen(false)} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">
                 Cancel
               </button>

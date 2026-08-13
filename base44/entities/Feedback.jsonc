@@ -2,12 +2,33 @@
   "name": "Feedback",
   "type": "object",
   "title": "Feedback",
-  "description": "org.swappulse.feedback \u2014 collector feedback submitted via the in-app feedback button (page snapshot + comment), routed to the team for review.",
+  "description": "org.swappulse.feedback \u2014 collector feedback submitted via the in-app feedback button (page snapshot + comment), categorised and rated, routed to the team for review.",
   "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "suggestion",
+        "bug",
+        "comment"
+      ],
+      "default": "comment",
+      "description": "Feedback type: suggestion (new feature idea), bug (issue report), or comment (general insight)"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Short headline summarising the feedback"
+    },
     "comment": {
       "type": "string",
       "maxLength": 5000,
       "description": "The collector's written feedback"
+    },
+    "rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Optional 1-5 star rating of the experience"
     },
     "page": {
       "type": "string",
@@ -35,6 +56,7 @@
     }
   },
   "required": [
+    "category",
     "comment",
     "page"
   ],
