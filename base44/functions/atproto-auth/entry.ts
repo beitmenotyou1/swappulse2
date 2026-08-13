@@ -91,26 +91,74 @@ async function createSession(
 }
 
 // Fetches the full profile (including banner) from the public AppView.
+// Tries without auth first (public profiles are publicly readable), then with
+// the PDS access token, then falls back to fetching the profile record directly
+// from the PDS via com.atproto.repo.getRecord. Logs each failure so issues are
+// debuggable instead of silently returning empty data.
 async function getFullProfile(
   accessJwt: string,
   did: string,
+  pdsUrl?: string,
 ): Promise<{ displayName?: string; avatar?: string; banner?: string; description?: string }> {
+  const actorParam = encodeURIComponent(did);
+
+  // 1. Try AppView without auth (public endpoint)
   try {
-    const res = await fetch(
-      `${APPVIEW}/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`,
-      { headers: { Authorization: `Bearer ${accessJwt}` } },
-    );
-    if (!res.ok) return {};
-    const data = await res.json();
-    return {
-      displayName: data.displayName || data.handle || '',
-      avatar: data.avatar || '',
-      banner: data.banner || '',
-      description: data.description || '',
-    };
-  } catch {
-    return {};
+    const res = await fetch(`${APPVIEW}/xrpc/app.bsky.actor.getProfile?actor=${actorParam}`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        displayName: data.displayName || data.handle || '',
+        avatar: data.avatar || '',
+        banner: data.banner || '',
+        description: data.description || '',
+      };
+    }
+  } catch (e) {
+    console.error('atproto-auth: AppView getProfile (no auth) failed:', e?.message || e);
   }
+
+  // 2. Try AppView with the PDS access token
+  try {
+    const res = await fetch(`${APPVIEW}/xrpc/app.bsky.actor.getProfile?actor=${actorParam}`, {
+      headers: { Authorization: `Bearer ${accessJwt}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        displayName: data.displayName || data.handle || '',
+        avatar: data.avatar || '',
+        banner: data.banner || '',
+        description: data.description || '',
+      };
+    }
+  } catch (e) {
+    console.error('atproto-auth: AppView getProfile (auth) failed:', e?.message || e);
+  }
+
+  // 3. Fallback: fetch the profile record directly from the PDS
+  if (pdsUrl) {
+    try {
+      const res = await fetch(
+        `${pdsUrl}/xrpc/com.atproto.repo.getRecord?repo=${actorParam}&collection=app.bsky.actor.profile&rkey=self`,
+        { headers: { Authorization: `Bearer ${accessJwt}` } },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const value = data?.value || {};
+        return {
+          displayName: value.displayName || '',
+          avatar: value.avatar || '',
+          banner: value.banner || '',
+          description: value.description || '',
+        };
+      }
+    } catch (e) {
+      console.error('atproto-auth: PDS getRecord fallback failed:', e?.message || e);
+    }
+  }
+
+  return {};
 }
 
 // Paginates through the user's follows via the public AppView.
@@ -228,8 +276,8 @@ Deno.serve(async (req) => {
     // 3. Authenticate against the PDS
     const session = await createSession(pdsUrl, handle, appPassword);
 
-    // 4. Fetch full profile (including banner) from the AppView
-    const profile = await getFullProfile(session.accessJwt, session.did);
+    // 4. Fetch full profile (including banner) from the AppView, with PDS fallback
+    const profile = await getFullProfile(session.accessJwt, session.did, pdsUrl);
 
     // 5. For login mode: look up SwapPulse user by DID, send login code
     if (mode === 'login') {
@@ -262,7 +310,8 @@ Deno.serve(async (req) => {
       did: session.did,
       handle: session.handle,
       email: session.email || '',
-      displayName: profile.displayName || '',
+      // Fall back to the AT Protocol handle if displayName wasn't retrieved
+      displayName: profile.displayName || session.handle || '',
       avatar: profile.avatar || '',
       banner: profile.banner || '',
       description: profile.description || '',

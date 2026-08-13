@@ -17,6 +17,18 @@ function randomPassword() {
     .map((b) => b.toString(36).padStart(2, "0")).join("") + "!A1";
 }
 
+// Sanitises an AT Protocol handle into a valid SwapPulse username.
+// "alice.bsky.social" → "alice"; "bob.example.com" → "bob"
+// Falls back to the full handle stripped of non-alphanumeric chars if the
+// first segment is too short (< 3 chars).
+function handleToUsername(handle) {
+  if (!handle) return "";
+  const firstSegment = handle.split(".")[0].replace(/[^a-z0-9_]/gi, "").toLowerCase();
+  if (firstSegment.length >= 3) return firstSegment;
+  const full = handle.replace(/[^a-z0-9_]/gi, "").toLowerCase();
+  return full.slice(0, 30);
+}
+
 export default function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -118,6 +130,7 @@ export default function Register() {
           setStep("tour");
         }}
         portedDid={portedDid}
+        initialUsername={atProtoProfile?.handle ? handleToUsername(atProtoProfile.handle) : ""}
         initialFullName={atProtoProfile?.displayName || ""}
         initialAvatar={atProtoProfile?.avatar || ""}
         initialDescription={atProtoProfile?.description || ""}
