@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Avatar from '@/components/Avatar';
 import CommentReactions from './CommentReactions';
+import ExternalReply from './ExternalReply';
 import { Reply, CornerDownRight } from 'lucide-react';
 
 function timeAgo(iso) {
@@ -51,7 +52,9 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
               </button>
               {showReplies && (
                 <div className="mt-2 space-y-2 border-l-2 border-border pl-3">
-                  {replies.map((reply) => (
+                  {replies.map((reply) => reply.external ? (
+                    <ExternalReply key={reply.id} reply={reply} />
+                  ) : (
                     <div key={reply.id} className="flex gap-2">
                       <CornerDownRight className="mt-1 h-3 w-3 shrink-0 text-muted-foreground/50" />
                       <Avatar name={reply.author_name} src={reply.author_avatar} size={24} />

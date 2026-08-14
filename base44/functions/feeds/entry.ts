@@ -172,6 +172,28 @@ Deno.serve(async (req) => {
           cursor: slice.length === limit ? String(cursor + limit) : undefined,
         });
       }
+      case 'card-channel': {
+        // All posts in a card's discussion thread (top-level + replies),
+        // newest first. Excludes shadow-banned/suspended authors and moderated-out posts.
+        const cardId = body.cardId;
+        if (!cardId) return Response.json({ error: 'cardId required' }, { status: 400 });
+        const [posts, enforced] = await Promise.all([
+          svc.entities.Post.filter({ card_id: cardId }, '-created_date', limit + cursor + 1),
+          svc.entities.AccountStatus.filter({ status: { $in: ['shadow_banned', 'suspended'] } }, '-updated_date', 200).catch(() => []),
+        ]);
+        const enforcedDids = new Set((enforced as any[]).map((a) => a.user_did).filter(Boolean));
+        const clean = posts
+          .filter((p: any) => !enforcedDids.has(p.did))
+          .filter(isModerationClean);
+        const slice = clean.slice(cursor, cursor + limit);
+        return Response.json({
+          feed: slice.map((p) => ({
+            post: p.at_uri || `at://did:web:swappulse.org/app.bsky.feed.post/${p.id}`,
+            reason: { $type: 'org.swappulse.feedReason', kind: 'card_channel' },
+          })),
+          cursor: slice.length === limit ? String(cursor + limit) : undefined,
+        });
+      }
       default:
         return Response.json({ error: `Unknown feed: ${feed}` }, { status: 400 });
     }

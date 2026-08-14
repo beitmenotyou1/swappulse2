@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import CommentComposer from './CommentComposer';
 import ModeratedComment from './ModeratedComment';
+import ExternalReply from './ExternalReply';
 import { MessageCircle, Loader2 } from 'lucide-react';
 
 export default function CommentThread({ cardId, cardName, cardImage }) {
@@ -57,6 +58,33 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
         }
       }
       setReactionsByPostId(rxnMap);
+
+      // Fetch external Bluesky replies for bridged top-level posts and merge
+      // them into the reply trees, deduped by at_uri (bridged local replies
+      // already exist locally and are skipped).
+      const bridgedTops = tops.filter((p) => p.bridged && p.at_uri);
+      if (bridgedTops.length > 0) {
+        try {
+          const authed = await base44.auth.isAuthenticated();
+          if (authed) {
+            const res = await base44.functions.invoke('fetch-card-thread', {
+              uris: bridgedTops.map((p) => p.at_uri),
+            });
+            const extByUri = res?.data?.repliesByUri || {};
+            const localUris = new Set(posts.map((p) => p.at_uri).filter(Boolean));
+            setRepliesByParent((prev) => {
+              const next = { ...prev };
+              for (const top of bridgedTops) {
+                const ext = (extByUri[top.at_uri] || []).filter((r) => !localUris.has(r.at_uri));
+                if (ext.length) next[top.id] = [...(next[top.id] || []), ...ext];
+              }
+              return next;
+            });
+          }
+        } catch {
+          // external replies are best-effort — silent on failure
+        }
+      }
     } catch {
       setTopLevel([]);
       setRepliesByParent({});
