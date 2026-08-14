@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Star, Loader2, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid } from '@/lib/atproto';
+import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 
 export default function TradeFeedbackForm({ trade, me, messages }) {
   const [rating, setRating] = useState(0);
@@ -52,7 +52,8 @@ export default function TradeFeedbackForm({ trade, me, messages }) {
     if (rating === 0) return;
     setSubmitting(true);
     try {
-      await base44.entities.Reputation.create({
+      const { did, signingKey } = await ensureUserDid();
+      const stamped = await stampRecord({
         did: counterpartyDid,
         rater_did: myDid,
         rater_name: me?.full_name || 'Collector',
@@ -60,7 +61,29 @@ export default function TradeFeedbackForm({ trade, me, messages }) {
         trade_uri: trade.at_uri || trade.id,
         rating,
         comment: comment.trim(),
-      });
+      }, NSID.TRADING_FEEDBACK, did, signingKey);
+      const rep = await base44.entities.Reputation.create(stamped);
+      // Bridge to the PDS as a real org.swappulse.tradingFeedback record so the
+      // reputation is portable across PDSs and SwapPulse instances. Non-fatal.
+      base44.functions.invoke('atproto-bridge', {
+        collection: NSID.TRADING_FEEDBACK,
+        record: {
+          rated_user_did: counterpartyDid,
+          rater_did: myDid,
+          rater_name: me?.full_name || 'Collector',
+          rater_handle: me?.email?.split('@')[0] || 'collector',
+          trade_uri: trade.at_uri || trade.id,
+          rating,
+          comment: comment.trim(),
+          createdAt: new Date().toISOString(),
+        },
+      }).then((res) => {
+        const uri = res?.data?.uri || res?.uri;
+        const cid = res?.data?.cid || res?.cid;
+        if (uri) {
+          base44.entities.Reputation.update(rep.id, { at_uri: uri, cid: cid || '', bridged: true }).catch(() => {});
+        }
+      }).catch(() => {});
       setSubmitted(true);
     } catch (e) {
       alert('Could not submit feedback: ' + e.message);

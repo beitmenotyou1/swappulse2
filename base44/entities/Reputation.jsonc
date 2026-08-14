@@ -37,8 +37,17 @@
     "at_uri": {
       "type": "string"
     },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash of the federated record (simulated)"
+    },
     "record_type": {
       "type": "string"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the reputation record has been mirrored to the AT Protocol PDS as a real org.swappulse.tradingFeedback record, making it portable across PDSs and SwapPulse instances"
     }
   },
   "required": [

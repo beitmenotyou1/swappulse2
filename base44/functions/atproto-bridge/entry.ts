@@ -12,87 +12,7 @@
 // create, and delete the local record on delete. If the PDS is unreachable
 // the call errors (non-fatal — the local record still persists).
 
-let cachedSession: { accessJwt: string; refreshJwt: string; did: string; handle: string; expiresAt: number } | null = null;
-
-async function getSession() {
-  const pdsUrl = Deno.env.get('PDS_URL');
-  const identifier = Deno.env.get('PDS_IDENTIFIER');
-  const password = Deno.env.get('PDS_APP_PASSWORD');
-  if (!pdsUrl || !identifier || !password) {
-    throw new Error('PDS not configured. Set PDS_URL, PDS_IDENTIFIER, PDS_APP_PASSWORD secrets.');
-  }
-
-  // If we have a cached session that's still valid, reuse it
-  if (cachedSession && Date.now() < cachedSession.expiresAt) {
-    return { pdsUrl, session: cachedSession };
-  }
-
-  // If we have a refresh token, try refreshing the session first (avoids
-  // re-authenticating with the app password on every call after long idle)
-  if (cachedSession?.refreshJwt) {
-    try {
-      const refreshRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${cachedSession.refreshJwt}`,
-        },
-      });
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        cachedSession = {
-          accessJwt: data.accessJwt,
-          refreshJwt: data.refreshJwt || cachedSession.refreshJwt,
-          did: data.did || cachedSession.did,
-          handle: data.handle || cachedSession.handle,
-          expiresAt: Date.now() + 25 * 60 * 1000,
-        };
-        return { pdsUrl, session: cachedSession };
-      }
-      // Refresh failed (expired/revoked) — fall through to createSession
-      console.log('atproto-bridge: refreshSession failed, falling back to createSession');
-    } catch (e) {
-      console.error('atproto-bridge: refreshSession error', e?.message);
-    }
-  }
-
-  // Fresh createSession with app password
-  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identifier, password }),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`PDS createSession failed (${res.status}): ${body}`);
-  }
-  const data = await res.json();
-  cachedSession = {
-    accessJwt: data.accessJwt,
-    refreshJwt: data.refreshJwt,
-    did: data.did,
-    handle: data.handle,
-    expiresAt: Date.now() + 25 * 60 * 1000,
-  };
-  return { pdsUrl, session: cachedSession };
-}
-
-async function pdsRequest(pdsUrl: string, accessJwt: string, endpoint: string, payload: object) {
-  const res = await fetch(`${pdsUrl}/xrpc/${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessJwt}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    return { error: true, status: res.status, body };
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : {};
-}
+import { getPdsSession, clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -111,14 +31,14 @@ Deno.serve(async (req) => {
       if (!rkey || !collectionFromUri) {
         return Response.json({ error: 'could not parse rkey/collection from uri' }, { status: 400 });
       }
-      const { pdsUrl, session } = await getSession();
+      const { pdsUrl, session } = await getPdsSession();
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.deleteRecord',
         { repo: session.did, collection: collectionFromUri, rkey },
       );
       if (result?.error && result.status === 401) {
-        cachedSession = null;
-        const fresh = await getSession();
+        clearPdsSession();
+        const fresh = await getPdsSession();
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.deleteRecord',
           { repo: fresh.session.did, collection: collectionFromUri, rkey },
@@ -143,14 +63,14 @@ Deno.serve(async (req) => {
       if (!rkey) {
         return Response.json({ error: 'could not parse rkey from uri' }, { status: 400 });
       }
-      const { pdsUrl, session } = await getSession();
+      const { pdsUrl, session } = await getPdsSession();
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord',
         { repo: session.did, collection, rkey, record },
       );
       if (result?.error && result.status === 401) {
-        cachedSession = null;
-        const fresh = await getSession();
+        clearPdsSession();
+        const fresh = await getPdsSession();
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.putRecord',
           { repo: fresh.session.did, collection, rkey, record },
@@ -169,14 +89,14 @@ Deno.serve(async (req) => {
       if (!Array.isArray(labels) || labels.length === 0) {
         return Response.json({ error: 'labels array is required for emitLabels' }, { status: 400 });
       }
-      const { pdsUrl, session } = await getSession();
+      const { pdsUrl, session } = await getPdsSession();
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.label.emitLabels',
         { labels },
       );
       if (result?.error && result.status === 401) {
-        cachedSession = null;
-        const fresh = await getSession();
+        clearPdsSession();
+        const fresh = await getPdsSession();
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.label.emitLabels',
           { labels },
@@ -193,14 +113,14 @@ Deno.serve(async (req) => {
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });
     }
-    const { pdsUrl, session } = await getSession();
+    const { pdsUrl, session } = await getPdsSession();
     let result: any = await pdsRequest(
       pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord',
       { repo: session.did, collection, record },
     );
     if (result?.error && result.status === 401) {
-      cachedSession = null;
-      const fresh = await getSession();
+      clearPdsSession();
+      const fresh = await getPdsSession();
       result = await pdsRequest(
         fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.createRecord',
         { repo: fresh.session.did, collection, record },
