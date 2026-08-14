@@ -45,6 +45,29 @@ async function pdsAdminPost(endpoint: string, payload: object): Promise<any> {
   return body;
 }
 
+async function pdsAdminGet(endpoint: string): Promise<any> {
+  const pdsUrl = Deno.env.get('PDS_URL');
+  if (!pdsUrl) throw new Error('PDS_URL not configured');
+  const res = await fetch(`${pdsUrl}/xrpc/${endpoint}`, {
+    headers: { 'Authorization': adminAuthHeader() },
+  });
+  const text = await res.text();
+  let body: any;
+  try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+  if (!res.ok) return { error: true, status: res.status, body };
+  return body;
+}
+
+// Returns true if the DID resolves on the given PDS (com.atproto.repo.describeRepo).
+async function didResolvesOnPds(did: string, pdsUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.describeRepo?repo=${encodeURIComponent(did)}`);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function createAppPassword(pdsUrl: string, did: string, password: string): Promise<string> {
   const sessionRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
@@ -128,3 +151,40 @@ export async function provisionIdentityForUser(
 
   return { did, handle: finalHandle };
 }
+
+// Repair path: for a user who already has a real did:plc on the current PDS
+// but no stored PdsCredential (e.g. identity was provisioned before credentials
+// were tracked). Re-issues an app password via the admin API without recreating
+// the account: resets the account password, creates an app password from the
+// new session, and stores the credential. Does NOT change the user's did or
+// handle.
+export async function repairCredentialForUser(
+  svc: any,
+  userId: string,
+  did: string,
+): Promise<void> {
+  const pdsUrl = Deno.env.get('PDS_URL');
+  if (!pdsUrl) throw new Error('PDS_URL not configured');
+
+  const password = randomPassword();
+  const res = await pdsAdminPost('com.atproto.admin.updateAccount', { did, password });
+  if (res?.error) {
+    const errStr = JSON.stringify(res.body || {}).slice(0, 300);
+    throw new Error(`updateAccount failed (${res.status}): ${errStr}`);
+  }
+
+  const appPassword = await createAppPassword(pdsUrl, did, password);
+
+  const existing = await svc.entities.PdsCredential.filter({ user_id: userId }).catch(() => []);
+  if (existing && existing.length > 0) {
+    await svc.entities.PdsCredential.update(existing[0].id, {
+      did, pds_url: pdsUrl, app_password: appPassword,
+    });
+  } else {
+    await svc.entities.PdsCredential.create({
+      user_id: userId, did, pds_url: pdsUrl, app_password: appPassword,
+    });
+  }
+}
+
+export { didResolvesOnPds };

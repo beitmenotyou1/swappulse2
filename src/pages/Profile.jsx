@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2, BadgeCheck } from 'lucide-react';
+import { Loader2, Star, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -22,8 +22,10 @@ import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import FollowingTab from '@/components/profile/FollowingTab';
+import ActivityTab from '@/components/profile/ActivityTab';
+import ProfileHandle from '@/components/profile/ProfileHandle';
 
-const TABS = ['Posts', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
+const TABS = ['Posts', 'Activity', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -120,10 +122,12 @@ export default function Profile() {
         </div>
         <div className="mt-3">
           <h1 className="text-xl font-extrabold">{user?.full_name || 'Collector'}</h1>
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm text-muted-foreground">@{user?.custom_handle || (user?.email?.split('@')[0] || 'collector')}</p>
-            {user?.handle_verified && <BadgeCheck className="h-4 w-4 text-success" />}
-          </div>
+          <ProfileHandle
+            bskyHandle={user?.bsky_handle}
+            username={user?.username}
+            did={did}
+            verified={user?.handle_verified}
+          />
           {user?.description && <p className="mt-2 text-sm">{user.description}</p>}
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             {repAvg && (
@@ -165,6 +169,8 @@ export default function Profile() {
           ) : (
             myPosts.map((p) => <PostCard key={p.id} post={p} />)
           )
+        ) : tab === 'Activity' ? (
+          <ActivityTab did={did} />
         ) : tab === 'Binder' ? (
           <div className="p-4">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">

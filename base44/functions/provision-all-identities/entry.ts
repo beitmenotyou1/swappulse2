@@ -1,12 +1,20 @@
-// provision-all-identities — admin-triggered backfill that provisions a PDS
-// identity for every existing User who doesn't have a did:plc yet.
+// provision-all-identities — admin-triggered backfill that ensures every
+// existing User has a PDS identity AND a stored PdsCredential on the current
+// self-hosted PDS (PDS_URL).
 //
-// Idempotent: skips users who already have a did:plc. Processes up to 50 per
-// run to stay within function time limits. Returns { provisioned, skipped,
-// failed, errors }. Re-run until failed=0 and provisioned stops increasing.
+// Three paths per user:
+//   1. Already fully provisioned (PdsCredential on current PDS) → skip.
+//   2. Has a did:plc that resolves on the current PDS but no credential →
+//      repair (re-issue an app password without recreating the account).
+//   3. No did:plc on the current PDS (simulated DID, or DID on another PDS) →
+//      provision a new account on the current PDS.
+//
+// Idempotent. Processes up to 50 per run to stay within function time limits.
+// Returns { provisioned, repaired, skipped, failed, errors }. Re-run until
+// failed=0 and provisioned+repaired stop increasing.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { provisionIdentityForUser } from '../../shared/provisionIdentity.ts';
+import { provisionIdentityForUser, repairCredentialForUser, didResolvesOnPds } from '../../shared/provisionIdentity.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -25,41 +33,76 @@ export default async function(req: Request): Promise<Response> {
     const LIMIT = 50;
     const users = await svc.entities.User.list('-created_date', LIMIT);
 
-    // Skip only users already provisioned on the CURRENT PDS (a PdsCredential
-    // whose pds_url matches PDS_URL). Users with simulated DIDs (no credential)
-    // and users whose credential points at a different PDS (e.g. bsky.social)
-    // are re-provisioned onto the self-hosted PDS. provisionIdentityForUser
-    // replaces any existing credential and overwrites did/bsky_handle.
+    // Path 1: users with a PdsCredential on the current PDS are fully done.
     const allCreds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
-    const provisionedOnCurrent = new Set(
-      (allCreds || []).filter((c: any) => c.pds_url === currentPdsUrl).map((c: any) => c.user_id)
-    );
+    const credByUser = new Map<string, any>();
+    for (const c of (allCreds || [])) {
+      if (c.pds_url === currentPdsUrl) credByUser.set(c.user_id, c);
+    }
 
-    let provisioned = 0, skipped = 0, failed = 0;
+    let provisioned = 0, repaired = 0, skipped = 0, failed = 0;
     const errors: Array<{ id: string; error: string }> = [];
 
     for (const u of users) {
-      if (provisionedOnCurrent.has(u.id)) {
+      // Path 1: fully provisioned on current PDS.
+      if (credByUser.has(u.id)) {
         skipped++;
         continue;
       }
-      try {
-        await provisionIdentityForUser(
-          svc,
-          u.id,
-          u.username || u.full_name || (u.email ? u.email.split('@')[0] : '') || 'collector',
-          u.email || `collector@swappulse.org`,
-        );
-        provisioned++;
-      } catch (err: any) {
-        failed++;
-        errors.push({ id: u.id, error: err?.message || 'provision failed' });
-        console.error('provision-all-identities: failed for', u.id, err?.message || err);
+
+      const hasDidPlc = !!(u.did && u.did.startsWith('did:plc:'));
+
+      if (hasDidPlc) {
+        // Does this did:plc resolve on the CURRENT PDS?
+        const onCurrentPds = await didResolvesOnPds(u.did, currentPdsUrl);
+        if (onCurrentPds) {
+          // Path 2: account exists on current PDS but no credential → repair.
+          try {
+            await repairCredentialForUser(svc, u.id, u.did);
+            repaired++;
+          } catch (err: any) {
+            failed++;
+            errors.push({ id: u.id, error: `repair: ${err?.message || 'failed'}` });
+            console.error('provision-all-identities: repair failed for', u.id, err?.message || err);
+          }
+        } else {
+          // Path 3: did:plc lives on a different PDS → provision a new
+          // account on the current PDS (replaces the foreign DID).
+          try {
+            await provisionIdentityForUser(
+              svc,
+              u.id,
+              u.username || u.full_name || (u.email ? u.email.split('@')[0] : '') || 'collector',
+              u.email || `collector@swappulse.org`,
+            );
+            provisioned++;
+          } catch (err: any) {
+            failed++;
+            errors.push({ id: u.id, error: `provision: ${err?.message || 'failed'}` });
+            console.error('provision-all-identities: provision failed for', u.id, err?.message || err);
+          }
+        }
+      } else {
+        // Path 3: simulated / no DID → provision a new account.
+        try {
+          await provisionIdentityForUser(
+            svc,
+            u.id,
+            u.username || u.full_name || (u.email ? u.email.split('@')[0] : '') || 'collector',
+            u.email || `collector@swappulse.org`,
+          );
+          provisioned++;
+        } catch (err: any) {
+          failed++;
+          errors.push({ id: u.id, error: `provision: ${err?.message || 'failed'}` });
+          console.error('provision-all-identities: provision failed for', u.id, err?.message || err);
+        }
       }
     }
 
     return Response.json({
       provisioned,
+      repaired,
       skipped,
       failed,
       total: users.length,

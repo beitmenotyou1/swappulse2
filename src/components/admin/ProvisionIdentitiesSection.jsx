@@ -20,7 +20,7 @@ export default function ProvisionIdentitiesSection() {
       setResult(data);
       toast({
         title: 'Backfill complete',
-        description: `${data.provisioned || 0} provisioned, ${data.skipped || 0} skipped, ${data.failed || 0} failed`,
+        description: `${data.provisioned || 0} provisioned, ${data.repaired || 0} repaired, ${data.skipped || 0} skipped, ${data.failed || 0} failed`,
       });
     } catch (err) {
       toast({
@@ -40,8 +40,10 @@ export default function ProvisionIdentitiesSection() {
         Provision Federated Identities
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">
-        Creates a PDS identity (did:plc + username.swappulse.org handle) for existing users
-        who don't have one yet. Idempotent — re-run until failed is 0.
+        Ensures every existing user has a PDS identity (did:plc + username.swappulse.org
+        handle) and a stored bridge credential on the current PDS. Users with an existing
+        did:plc but no credential are repaired (app password re-issued) instead of
+        recreated. Idempotent — re-run until failed is 0.
       </p>
       <button
         onClick={run}
@@ -52,10 +54,14 @@ export default function ProvisionIdentitiesSection() {
         {running ? 'Running…' : 'Provision Identities'}
       </button>
       {result && (
-        <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+        <div className="mt-3 grid grid-cols-4 gap-2 text-sm">
           <div className="rounded-lg bg-secondary p-2 text-center">
             <p className="font-bold text-primary">{result.provisioned || 0}</p>
             <p className="text-xs text-muted-foreground">Provisioned</p>
+          </div>
+          <div className="rounded-lg bg-secondary p-2 text-center">
+            <p className="font-bold text-success">{result.repaired || 0}</p>
+            <p className="text-xs text-muted-foreground">Repaired</p>
           </div>
           <div className="rounded-lg bg-secondary p-2 text-center">
             <p className="font-bold">{result.skipped || 0}</p>
