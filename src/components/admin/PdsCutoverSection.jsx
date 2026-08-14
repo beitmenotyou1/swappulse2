@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, ServerCog, RefreshCw, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Loader2, ServerCog, RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, Database } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 // PdsCutoverSection — guided admin panel for switching the whole site to a new
@@ -22,6 +22,18 @@ export default function PdsCutoverSection() {
   const [provisionResult, setProvisionResult] = useState(null);
   const [migrateResult, setMigrateResult] = useState(null);
   const [verifyResult, setVerifyResult] = useState(null);
+  const [blobStats, setBlobStats] = useState(null);
+  const [blobLoading, setBlobLoading] = useState(false);
+
+  const loadBlobStats = async () => {
+    setBlobLoading(true);
+    try {
+      const res = await base44.functions.invoke('pds-blob-stats', {});
+      setBlobStats(res?.data || res);
+    } catch { /* ignore */ } finally { setBlobLoading(false); }
+  };
+
+  useEffect(() => { loadBlobStats(); }, []);
 
   const runProvision = async () => {
     setStep('provision');
@@ -109,7 +121,7 @@ export default function PdsCutoverSection() {
           <li>Create a shared bridge account on the new PDS (the one <code className="font-mono">PDS_IDENTIFIER</code> authenticates).</li>
           <li>Set <code className="font-mono">PDS_INVITE_REQUIRED=false</code> on the new PDS (or pre-generate invite codes).</li>
           <li>Point <code className="font-mono">*.swappulse.org</code> DNS at the new PDS so handles resolve.</li>
-          <li>Set <code className="font-mono">OLD_PDS_URL</code> / <code className="font-mono">OLD_PDS_IDENTIFIER</code> / <code className="font-mono">OLD_PDS_APP_PASSWORD</code> to the <strong>old</strong> PDS values <em>before</em> flipping the main secrets.</li>
+          <li><em>Optional:</em> set <code className="font-mono">OLD_PDS_URL</code> / <code className="font-mono">OLD_PDS_IDENTIFIER</code> / <code className="font-mono">OLD_PDS_APP_PASSWORD</code> to the <strong>old</strong> PDS values so step 2 can delete old records. If unset, old records are orphaned (not deleted) — that's safe.</li>
           <li>Then update <code className="font-mono">PDS_URL</code> / <code className="font-mono">PDS_IDENTIFIER</code> / <code className="font-mono">PDS_APP_PASSWORD</code> / <code className="font-mono">PDS_ADMIN_PASSWORD</code> to the new PDS.</li>
         </ul>
       </div>
@@ -177,6 +189,28 @@ export default function PdsCutoverSection() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* PDS Blob Storage status */}
+      <div className="mt-4 rounded-lg border border-border bg-secondary/40 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <Database className="h-3.5 w-3.5 text-primary" /> PDS Blob Storage
+          </p>
+          <button onClick={loadBlobStats} disabled={blobLoading} className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50">
+            {blobLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Refresh'}
+          </button>
+        </div>
+        {blobStats ? (
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded-lg bg-background p-1.5"><p className="font-bold text-primary">{blobStats.pds || 0}</p><p className="text-muted-foreground">PDS-backed</p></div>
+            <div className="rounded-lg bg-background p-1.5"><p className="font-bold">{blobStats.external || 0}</p><p className="text-muted-foreground">External</p></div>
+            <div className="rounded-lg bg-background p-1.5"><p className="font-bold">{blobStats.total || 0}</p><p className="text-muted-foreground">Total media</p></div>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">{blobLoading ? 'Loading…' : 'No blob data yet — run a scan to populate.'}</p>
+        )}
+        <p className="mt-1.5 text-[11px] text-muted-foreground">New uploads are stored as PDS blobs (portable & federated); legacy media stays on external storage until re-uploaded.</p>
       </div>
 
       <p className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">

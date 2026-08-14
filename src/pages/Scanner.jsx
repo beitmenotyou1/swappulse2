@@ -3,6 +3,7 @@ import { ScanLine, Camera, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { queueScannerCorrection, createEntry } from '@/lib/offlineSync';
+import { uploadMedia } from '@/lib/pdsBlob';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -79,8 +80,7 @@ export default function Scanner() {
     setScans((prev) => [{ id: scanId, status: 'uploading', file }, ...prev]);
     let imageUrl;
     try {
-      const up = await base44.integrations.Core.UploadFile({ file });
-      imageUrl = up.file_url;
+      imageUrl = await uploadMedia(file);
     } catch {
       setScans((prev) => prev.map((s) => (s.id === scanId ? { ...s, status: 'fallback', error: 'Upload failed' } : s)));
       return;

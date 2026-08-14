@@ -20,7 +20,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "firehose_ingestion",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -31,15 +31,29 @@
             "function_name": "firehose-ingest",
             "args": {}
           },
-          "then": "end",
+          "then": "reconcile",
           "x-base44": {
             "title": "Ingest from Firehose",
-            "description": "Poll PDS/AppView for remote SwapPulse records and ingest into local DB"
+            "description": "Poll PDS/AppView for remote SwapPulse records (creates/updates/deletes) and ingest into local DB"
+          }
+        }
+      },
+      {
+        "reconcile": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "outbound-reconcile",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Outbound Reconcile",
+            "description": "Push locally-changed bridged records to the PDS, reconciling drift"
           }
         }
       }
     ]
   },
-  "description": "Scheduled firehose ingestion \u2014 polls the AT Protocol PDS/AppView every 5 minutes for SwapPulse custom-lexicon records from the local repo and followed remote DIDs, ingesting creates/updates/deletes into the local DB so feeds blend local + remote records in real time.",
+  "description": "Scheduled bidirectional sync \u2014 every 5 minutes ingests remote SwapPulse records (creates/updates/deletes) from the PDS/AppView into the local DB, then pushes locally-changed bridged records back to the PDS to reconcile drift.",
   "name": "Firehose Ingestion"
 }

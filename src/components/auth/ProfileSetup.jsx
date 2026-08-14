@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import UsernameField from "@/components/auth/UsernameField";
+import { uploadMedia } from "@/lib/pdsBlob";
 
 export default function ProfileSetup({ onDone, portedDid, initialUsername, initialFullName, initialAvatar, initialDescription, initialHeader }) {
   const [username, setUsername] = useState(initialUsername || "");
@@ -18,8 +19,7 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
   const headerRef = useRef(null);
 
   const uploadImage = async (file) => {
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    return file_url;
+    return await uploadMedia(file);
   };
 
   const handleAvatar = async (e) => {

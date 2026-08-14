@@ -58,6 +58,27 @@ export default async function (req: Request): Promise<Response> {
       }
     }
 
+    // Collect blob CIDs referenced in record fields (PDS blob URLs of the form
+    // .../com.atproto.sync.getBlob?did=...&cid=...) so the archive is a complete,
+    // portable record of the user's media alongside their structured data.
+    const blobs: Array<{ cid: string; did: string; collection: string; field: string }> = [];
+    const blobRe = /com\.atproto\.sync\.getBlob\?did=([^&]+)&cid=([^&"\\]+)/;
+    for (const [collection, items] of Object.entries(records)) {
+      for (const item of items || []) {
+        const walk = (val: any, field: string) => {
+          if (typeof val === 'string') {
+            const m = val.match(blobRe);
+            if (m) blobs.push({ cid: m[2], did: m[1], collection, field });
+          } else if (Array.isArray(val)) {
+            val.forEach((v, i) => walk(v, `${field}[${i}]`));
+          } else if (val && typeof val === 'object') {
+            for (const [k, v] of Object.entries(val)) walk(v, k);
+          }
+        };
+        walk(item.record, '');
+      }
+    }
+
     const carArchive = {
       version: 1,
       variant: 'swappulse-repo-export-v1',
@@ -70,6 +91,8 @@ export default async function (req: Request): Promise<Response> {
         full_name: user.full_name,
       },
       totalRecords,
+      blobCount: blobs.length,
+      blobs,
       records,
     };
 
