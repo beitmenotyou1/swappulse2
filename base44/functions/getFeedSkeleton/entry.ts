@@ -16,6 +16,7 @@ import {
   toDid,
   defaultPreferences,
 } from '../../shared/recommendationEngine.ts';
+import { getEnforcedUserIds } from '../../shared/enforcement.ts';
 
 const FEED_DID = 'did:web:feed.swappulse.org';
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -53,9 +54,13 @@ export default async function (req: Request): Promise<Response> {
         '-created_date',
         200,
       );
-      const slice = listings.slice(cursor, cursor + limit);
+      const enforcedIds = await getEnforcedUserIds(svc);
+      const visible = enforcedIds.size > 0
+        ? listings.filter((l: any) => !enforcedIds.has(l.created_by_id))
+        : listings;
+      const slice = visible.slice(cursor, cursor + limit);
       return Response.json({
-        cursor: cursor + limit < listings.length ? String(cursor + limit) : undefined,
+        cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
         feed: slice.map((l: any) => ({
           post: l.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${l.id}`,
           reason: { $type: 'org.swappulse.feedReason', kind: 'trade_listing' },
@@ -70,9 +75,13 @@ export default async function (req: Request): Promise<Response> {
         '-created_date',
         200,
       );
-      const slice = posts.slice(cursor, cursor + limit);
+      const enforcedIds = await getEnforcedUserIds(svc);
+      const visible = enforcedIds.size > 0
+        ? posts.filter((p: any) => !enforcedIds.has(p.created_by_id))
+        : posts;
+      const slice = visible.slice(cursor, cursor + limit);
       return Response.json({
-        cursor: cursor + limit < posts.length ? String(cursor + limit) : undefined,
+        cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
         feed: slice.map((p: any) => ({
           post: p.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${p.id}`,
           reason: { $type: 'org.swappulse.feedReason', kind: 'collection_post' },

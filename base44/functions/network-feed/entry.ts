@@ -15,6 +15,7 @@
 //   { items: EnrichedRecord[], total: number, source: 'pds' }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getEnforcedDids } from '../../shared/enforcement.ts';
 
 let cachedSession: { accessJwt: string; did: string; expiresAt: number } | null = null;
 
@@ -154,6 +155,12 @@ Deno.serve(async (req) => {
         createdAt: record.createdAt || '',
       };
     });
+
+    // Filter out content from shadow-banned or suspended users
+    const enforcedDids = await getEnforcedDids(svc);
+    if (enforcedDids.size > 0) {
+      items = items.filter((item) => !enforcedDids.has(item.authorDid));
+    }
 
     // Filter by DID if requested (profile page)
     if (filterDid) {

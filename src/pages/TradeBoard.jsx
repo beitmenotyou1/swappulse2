@@ -20,13 +20,19 @@ export default function TradeBoard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [trustedDids, setTrustedDids] = useState(new Set());
   const [trustedOnly, setTrustedOnly] = useState(false);
+  const [enforcedIds, setEnforcedIds] = useState(new Set());
   const { toast } = useToast();
   const location = useLocation();
 
   const load = async () => {
     setLoading(true);
     try {
-      setListings(await base44.entities.TradeListing.filter({ status: 'open' }, '-created_date', 50));
+      const [trades, enforced] = await Promise.all([
+        base44.entities.TradeListing.filter({ status: 'open' }, '-created_date', 50).catch(() => []),
+        base44.functions.invoke('get-enforced-dids', {}).catch(() => ({ data: { user_ids: [] } })),
+      ]);
+      setListings(trades);
+      setEnforcedIds(new Set(enforced.data?.user_ids || []));
     } catch {
       setListings([]);
     } finally {
@@ -110,6 +116,7 @@ export default function TradeBoard() {
 
   const now = Date.now();
   const visibleListings = listings.filter((t) => {
+    if (enforcedIds.has(t.created_by_id) && (!currentUser || t.created_by_id !== currentUser.id)) return false;
     if (t.expires_at && new Date(t.expires_at).getTime() < now) return false;
     if (t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref)) {
       if (trustedOnly && !trustedDids.has(t.did)) return false;

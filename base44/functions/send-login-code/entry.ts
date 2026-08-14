@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { checkBlocklist } from '../../shared/enforcement.ts';
 
 export default async function(req) {
   try {
@@ -17,6 +18,12 @@ export default async function(req) {
       return Response.json({ not_found: true });
     }
     const user = users[0];
+
+    // Check if email is on the re-registration blocklist
+    const isBlocked = await checkBlocklist(svc, email);
+    if (isBlocked) {
+      return Response.json({ error: 'This email address is not permitted to access this platform.' }, { status: 403 });
+    }
 
     // If user has no login_key, they need a one-time setup via the reset flow.
     // Don't send a code — the frontend will trigger resetPasswordRequest instead.

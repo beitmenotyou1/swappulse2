@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getActiveSuspension } from '../../shared/enforcement.ts';
 
 export default async function(req) {
   try {
@@ -36,6 +37,16 @@ export default async function(req) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
     const user = users[0];
+
+    // Check if the account is suspended
+    const suspension = await getActiveSuspension(svc, user.id);
+    if (suspension) {
+      return Response.json({
+        suspended: true,
+        reason: suspension.suspension_reason || 'Your account has been suspended.',
+        suspended_until: suspension.suspended_until || null,
+      });
+    }
 
     // If user has no login_key, they need a one-time setup via the reset flow
     // to bind a real password to their account. Return needs_setup so the

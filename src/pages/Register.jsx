@@ -70,6 +70,12 @@ export default function Register() {
     }
     setLoading(true);
     try {
+      // Check re-registration blocklist before creating the account
+      const blocklistCheck = await base44.functions.invoke("check-username", { email: email.trim().toLowerCase() });
+      if (blocklistCheck.data?.available === false) {
+        setError(blocklistCheck.data.reason || "This email address is not available.");
+        return;
+      }
       // Register with a random password (user never sees it; login is passwordless)
       const pwd = randomPassword();
       generatedPasswordRef.current = pwd;

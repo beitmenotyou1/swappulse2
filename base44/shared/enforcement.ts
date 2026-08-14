@@ -16,6 +16,7 @@ import type { Base44Client } from 'npm:@base44/sdk@0.8.40';
 export interface AccountStatusRecord {
   id: string;
   user_id: string;
+  user_did: string;
   status: 'active' | 'shadow_banned' | 'suspended';
   suspended_until: string | null;
   suspension_reason: string;
@@ -45,6 +46,24 @@ export async function getEnforcedUserIds(svc: any): Promise<Set<string>> {
     return new Set((records || []).map((r: AccountStatusRecord) => r.user_id));
   } catch (e) {
     console.error('enforcement: getEnforcedUserIds failed', e?.message || e);
+    return new Set();
+  }
+}
+
+/**
+ * Returns a Set of DIDs whose content should be hidden from public feeds.
+ * Used by network-feed which filters by authorDid.
+ */
+export async function getEnforcedDids(svc: any): Promise<Set<string>> {
+  try {
+    const records = await svc.entities.AccountStatus.filter(
+      { status: { $in: ['shadow_banned', 'suspended'] } },
+      '-updated_date',
+      500,
+    );
+    return new Set((records || []).map((r: AccountStatusRecord) => r.user_did).filter(Boolean));
+  } catch (e) {
+    console.error('enforcement: getEnforcedDids failed', e?.message || e);
     return new Set();
   }
 }

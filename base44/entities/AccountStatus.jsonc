@@ -16,6 +16,10 @@
       "type": "string",
       "description": "Username/handle of the user (for display in moderation UI)"
     },
+    "user_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user (for feed filtering by authorDid)"
+    },
     "status": {
       "type": "string",
       "enum": [

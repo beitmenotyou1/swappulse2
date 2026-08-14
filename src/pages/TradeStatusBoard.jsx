@@ -21,16 +21,19 @@ export default function TradeStatusBoard() {
   const [me, setMe] = useState(null);
   const [scope, setScope] = useState('all'); // 'all' | 'mine'
   const [query, setQuery] = useState('');
+  const [enforcedIds, setEnforcedIds] = useState(new Set());
 
   const load = async () => {
     setLoading(true);
     try {
-      const [user, trades] = await Promise.all([
+      const [user, trades, enforced] = await Promise.all([
         base44.auth.me().catch(() => null),
         base44.entities.TradeListing.filter({}, '-updated_date', 200).catch(() => []),
+        base44.functions.invoke('get-enforced-dids', {}).catch(() => ({ data: { user_ids: [] } })),
       ]);
       setMe(user);
       setAllTrades(trades);
+      setEnforcedIds(new Set(enforced.data?.user_ids || []));
     } finally {
       setLoading(false);
     }
@@ -51,6 +54,9 @@ export default function TradeStatusBoard() {
 
   const filtered = useMemo(() => {
     let list = allTrades;
+    if (enforcedIds.size > 0 && !(scope === 'mine' && me)) {
+      list = list.filter((t) => !enforcedIds.has(t.created_by_id));
+    }
     if (scope === 'mine' && me) list = list.filter((t) => t.created_by_id === me.id);
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -61,7 +67,7 @@ export default function TradeStatusBoard() {
       );
     }
     return list;
-  }, [allTrades, scope, me, query]);
+  }, [allTrades, scope, me, query, enforcedIds]);
 
   const byStatus = useMemo(() => {
     const map = {};

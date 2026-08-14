@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Mail, Loader2, ArrowRight } from "lucide-react";
+import { Mail, Loader2, ArrowRight, Ban } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import AtProtoForm from "@/components/auth/AtProtoForm";
 import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
@@ -27,6 +27,7 @@ export default function Login() {
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [authMethod, setAuthMethod] = useState("email");
+  const [suspension, setSuspension] = useState(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -90,6 +91,11 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("verify-login-code", { email, code: otp });
+      if (res.data?.suspended) {
+        setSuspension(res.data);
+        setStep("suspended");
+        return;
+      }
       if (res.data?.needs_setup) {
         // User lost their login_key between send and verify — fall back to setup
         try {
@@ -282,6 +288,27 @@ export default function Login() {
             We've sent a sign-in link to <strong>{email}</strong>. Click the link in the email to sign in instantly — next time you'll get a 6-digit code instead.
           </p>
           <button type="button" onClick={() => { setStep("email"); setInfo(""); setError(""); }} className="text-primary hover:underline text-sm">
+            Back to login
+          </button>
+        </div>
+      )}
+
+      {step === "suspended" && suspension && (
+        <div className="space-y-4 text-center">
+          <div className="mx-auto mb-2 rounded-full bg-destructive/10 p-3 w-fit">
+            <Ban className="h-8 w-8 text-destructive" />
+          </div>
+          <h2 className="text-xl font-bold text-destructive">Account suspended</h2>
+          <p className="text-sm text-muted-foreground">{suspension.reason}</p>
+          {suspension.suspended_until && (
+            <p className="text-sm text-muted-foreground">
+              Your suspension will be lifted on {new Date(suspension.suspended_until).toLocaleDateString()}.
+            </p>
+          )}
+          {!suspension.suspended_until && (
+            <p className="text-sm text-muted-foreground">This suspension is indefinite. If you believe this is an error, please contact support.</p>
+          )}
+          <button type="button" onClick={() => { setStep("email"); setOtp(""); setSuspension(null); }} className="text-primary hover:underline text-sm">
             Back to login
           </button>
         </div>
