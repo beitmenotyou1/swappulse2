@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { Download, Globe, Loader2, ArrowRightLeft, Info } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogAction, AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 export default function AtProtoSection({ settings, update }) {
   const { toast } = useToast();
@@ -95,14 +100,34 @@ export default function AtProtoSection({ settings, update }) {
           placeholder="https://your-new-pds.example.com"
           className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
         />
-        <button
-          onClick={handleMigrate}
-          disabled={migrating || !newPdsUrl.trim()}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-sm font-bold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
-        >
-          {migrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
-          {migrating ? 'Migrating...' : 'Migrate to New PDS'}
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              disabled={migrating || !newPdsUrl.trim()}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-sm font-bold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
+            >
+              {migrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
+              {migrating ? 'Migrating...' : 'Migrate to New PDS'}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm PDS migration</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will transfer all your SwapPulse records to <strong className="text-foreground break-all">{newPdsUrl}</strong>. The migration is irreversible — make sure you have access to the new PDS and can update your PLC directory entry afterward.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleMigrate}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {migrating ? 'Migrating...' : 'Yes, migrate'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <div className="rounded-xl border border-dashed border-border p-4">
