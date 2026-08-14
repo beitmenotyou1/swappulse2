@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Search, ShieldCheck, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { ensureUserDid, NSID } from '@/lib/atproto';
+import { bridgeVouch } from '@/lib/federatedBridge';
 import Avatar from '@/components/Avatar';
 
 const RELATIONSHIPS = [
@@ -58,24 +59,20 @@ export default function VouchForm({ onCreated }) {
     if (!resolved || isSelf || !context.trim()) return;
     setSaving(true);
     try {
-      const { did, signingKey } = await ensureUserDid();
       const me = await base44.auth.me();
-      const stamped = await stampRecord(
-        {
-          vouched_did: resolved.did,
-          vouched_name: resolved.name,
-          vouched_handle: resolved.handle,
-          relationship,
-          context: context.trim(),
-          revocable: true,
-          voucher_name: me?.full_name || '',
-          voucher_handle: me?.email?.split('@')[0] || '',
-        },
-        NSID.VOUCH,
-        did,
-        signingKey,
-      );
-      await base44.entities.Vouch.create(stamped);
+      const vouchData = {
+        vouched_did: resolved.did,
+        vouched_name: resolved.name,
+        vouched_handle: resolved.handle,
+        relationship,
+        context: context.trim(),
+        revocable: true,
+        voucher_name: me?.full_name || '',
+        voucher_handle: me?.custom_handle || (me?.email?.split('@')[0] || ''),
+      };
+      // bridgeVouch stamps the record locally AND creates it on the PDS
+      const bridgedFields = await bridgeVouch(vouchData);
+      await base44.entities.Vouch.create({ ...vouchData, ...bridgedFields });
       setHandle('');
       setResolved(null);
       setContext('');

@@ -1,8 +1,14 @@
 // §2.5 getTrustProfile - computes a collector's trust score from incoming
-// vouches and returns incoming + outgoing vouch lists. Mirrors the Social
-// Service trust.service.ts computation (no Redis adjacency list; scans Vouch
-// records per call - fine at this scale).
+// vouches and returns incoming + outgoing vouch lists. Now federated: merges
+// local Vouch records with remote org.swappulse.vouch records fetched from the
+// AT Protocol PDS via the public AppView, so a collector's trust graph is
+// portable and verifiable across instances.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getPdsSession } from '../../shared/pdsSession.ts';
+import { mergeFederatedRecords } from '../../shared/federatedMerge.ts';
+
+const APPVIEW = 'https://public.api.bsky.app';
+const VOUCH_COLLECTION = 'org.swappulse.vouch';
 
 const RELATIONSHIP_WEIGHT = {
   repeat_trader: 3,
@@ -22,11 +28,61 @@ Deno.serve(async (req) => {
     const targetDid = String(body.did || '');
     if (!targetDid) return Response.json({ error: 'did required' }, { status: 400 });
 
-    // Parallelize the two independent vouch fetches.
-    const [incoming, outgoing] = await Promise.all([
+    // Fetch remote vouches from the PDS (records where vouchedDid === targetDid)
+    let remoteIncoming: any[] = [];
+    let remoteOutgoing: any[] = [];
+    try {
+      const { session } = await getPdsSession();
+      const listUrl = `${APPVIEW}/xrpc/com.atproto.repo.listRecords?repo=${encodeURIComponent(session.did)}&collection=${VOUCH_COLLECTION}&limit=100`;
+      const res = await fetch(listUrl);
+      if (res.ok) {
+        const data = await res.json();
+        for (const rec of (data.records || [])) {
+          const val = rec.value || {};
+          const atUri = rec.uri || '';
+          if (val.vouchedDid === targetDid) {
+            remoteIncoming.push({
+              did: val.voucherDid || session.did,
+              vouched_did: val.vouchedDid,
+              relationship: val.relationship || 'community_member',
+              context: val.context || '',
+              voucher_name: val.voucherName || '',
+              voucher_handle: val.voucherHandle || '',
+              revoked_at: val.revokedAt || '',
+              created_date: val.createdAt || '',
+              at_uri: atUri,
+              bridged: true,
+            });
+          }
+          if (val.voucherDid === targetDid) {
+            remoteOutgoing.push({
+              did: val.voucherDid,
+              vouched_did: val.vouchedDid,
+              relationship: val.relationship || 'community_member',
+              context: val.context || '',
+              vouched_name: val.vouchedName || '',
+              vouched_handle: val.vouchedHandle || '',
+              revoked_at: val.revokedAt || '',
+              created_date: val.createdAt || '',
+              at_uri: atUri,
+              bridged: true,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('getTrustProfile: PDS fetch failed', e?.message || e);
+    }
+
+    // Fetch local vouches and merge with remote
+    const [localIncoming, localOutgoing] = await Promise.all([
       svc.entities.Vouch.filter({ vouched_did: targetDid }, '-created_date', 200),
       svc.entities.Vouch.filter({ did: targetDid }, '-created_date', 200),
     ]);
+
+    // Merge local + remote by at_uri (dedup)
+    const incoming = mergeFederatedRecords(localIncoming, remoteIncoming, { sortField: 'created_date' });
+    const outgoing = mergeFederatedRecords(localOutgoing, remoteOutgoing, { sortField: 'created_date' });
 
     const activeIncoming = incoming.filter((v) => !v.revoked_at);
     // Hardening: count each voucher at most once (latest active vouch wins) to

@@ -2,6 +2,7 @@
   "name": "Vouch",
   "type": "object",
   "title": "Vouch",
+  "description": "org.swappulse.vouch \u2014 a collector's vouch for another collector's trustworthiness, mirrored to AT Protocol as a real org.swappulse.vouch record so the trust graph is portable and verifiable across PDSs and SwapPulse instances.",
   "properties": {
     "vouched_did": {
       "type": "string",
@@ -51,11 +52,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the voucher (simulated)"
+      "description": "AT Protocol DID of the voucher"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -63,11 +64,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.vouch)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the vouch to the voucher's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the vouch has been mirrored to the AT Protocol PDS as a real org.swappulse.vouch record"
     }
   },
   "required": [

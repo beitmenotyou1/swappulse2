@@ -1,0 +1,65 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.circle",
+  "revision": 1,
+  "description": "A collector circle — a themed community group. Mirrored from the SwapPulse Circle entity so circles are portable community objects across PDSs and SwapPulse instances. Circle membership is encoded in memberDids so the AppView membership-check layer can resolve who may see circle-scoped content.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A single circle definition.",
+      "record": {
+        "type": "object",
+        "required": ["name", "visibility", "createdAt"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "memberDids": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "format": "did",
+              "description": "AT Protocol DID of a member"
+            }
+          },
+          "memberCount": {
+            "type": "integer",
+            "default": 1
+          },
+          "visibility": {
+            "type": "string",
+            "knownValues": ["private", "members_visible", "public"],
+            "default": "public"
+          },
+          "theme": {
+            "type": "string",
+            "knownValues": ["vintage", "competitive", "shiny", "investment", "local_region", "artist", "general"],
+            "default": "general"
+          },
+          "region": {
+            "type": "string",
+            "description": "Geographic region for local circles"
+          },
+          "curatorDid": {
+            "type": "string",
+            "format": "did",
+            "description": "AT Protocol DID of the circle curator"
+          },
+          "curatorName": { "type": "string" },
+          "curatorHandle": { "type": "string" },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

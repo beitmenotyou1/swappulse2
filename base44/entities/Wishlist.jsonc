@@ -2,6 +2,7 @@
   "name": "Wishlist",
   "type": "object",
   "title": "Wishlist",
+  "description": "org.swappulse.wishlist \u2014 a card a collector wants to acquire, mirrored to AT Protocol as a real org.swappulse.wishlist record. Visibility is enforced by the SwapPulse AppView membership-check layer: the record is published to the PDS but only visible to the owner via the AppView. Enables cross-instance trade matching.",
   "properties": {
     "card_id": {
       "type": "string"
@@ -24,6 +25,31 @@
     "max_price": {
       "type": "number",
       "description": "Max willing to pay in pence"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the wishlist owner"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.wishlist)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the wishlist to the owner's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the wishlist has been mirrored to the AT Protocol PDS as a real org.swappulse.wishlist record"
     }
   },
   "required": [

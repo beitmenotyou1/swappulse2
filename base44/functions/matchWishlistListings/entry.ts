@@ -102,7 +102,32 @@ Deno.serve(async (req) => {
         }
 
         const owner = userById.get(w.created_by_id);
-        if (!owner) continue;
+        if (!owner) {
+          // Remote wishlist (ingested via firehose, created_by_id = null) —
+          // notify the local listing owner that a remote collector wants their card
+          if (w.did && listing.created_by_id) {
+            const listingOwner = userById.get(listing.created_by_id);
+            if (listingOwner) {
+              const remoteDedupKey = `${listingOwner.did}:${listing.id}:remote`;
+              if (notifiedKeys.has(remoteDedupKey)) continue;
+              notifiedKeys.add(remoteDedupKey);
+              try {
+                await dispatchNotification(svc, {
+                  recipientDid: listingOwner.did,
+                  type: 'price_alert',
+                  title: 'Cross-instance wishlist match!',
+                  body: `A remote collector wants ${listing.card_name} — you have it listed`,
+                  params: { cardId: listing.card_id, listingId: listing.id },
+                  imageUrl: listing.card_image,
+                  priority: 'standard',
+                });
+              } catch (e) {
+                console.error('matchWishlistListings: remote match dispatch failed', e?.message || e);
+              }
+            }
+          }
+          continue;
+        }
 
         const did = (owner as any).did || 'did:plc:' + String(owner.id).replace(/-/g, '').slice(0, 24);
         const dedupKey = `${did}:${listing.id}`;

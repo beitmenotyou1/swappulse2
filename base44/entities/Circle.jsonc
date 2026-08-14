@@ -2,6 +2,7 @@
   "name": "Circle",
   "type": "object",
   "title": "Circle",
+  "description": "org.swappulse.circle \u2014 a collector circle (themed community group), mirrored to AT Protocol as a real org.swappulse.circle record so circles are portable community objects across PDSs and SwapPulse instances. Circle membership is encoded in member_dids so the AppView membership-check layer can resolve who may see circle-scoped content.",
   "properties": {
     "name": {
       "type": "string",
@@ -79,11 +80,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the circle curator (simulated)"
+      "description": "AT Protocol DID of the circle curator"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -91,11 +92,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.circle)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the circle to the curator's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the circle has been mirrored to the AT Protocol PDS as a real org.swappulse.circle record"
     }
   },
   "required": [

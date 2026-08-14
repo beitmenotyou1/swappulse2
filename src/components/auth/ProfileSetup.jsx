@@ -68,6 +68,18 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
         updateData.did = portedDid;
       }
       await base44.auth.updateMe(updateData);
+      // Provision a real AT Protocol DID on the PDS (unless the user ported
+      // an existing AT Protocol identity, which already has a real DID).
+      if (!portedDid) {
+        try {
+          await base44.functions.invoke('provision-did', {
+            email: undefined,
+            handle: username,
+          });
+        } catch (e) {
+          console.error('ProfileSetup: provision-did failed (non-fatal)', e);
+        }
+      }
       onDone?.();
     } catch (err) {
       setError(err.message || "Failed to save profile");
