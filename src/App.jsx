@@ -22,6 +22,7 @@ import MarketWatch from '@/pages/MarketWatch';
 import Share from '@/pages/Share';
 import TradeThread from '@/pages/TradeThread';
 import TradeDashboard from '@/pages/TradeDashboard';
+import TradeStatusBoard from '@/pages/TradeStatusBoard';
 import Compose from '@/pages/Compose';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -107,6 +108,7 @@ const AuthenticatedApp = () => {
         <Route path="/set/:setId" element={<Explore />} />
         <Route path="/sets" element={<Sets />} />
         <Route path="/trades" element={<TradeBoard />} />
+        <Route path="/trade-board" element={<TradeStatusBoard />} />
         <Route path="/trade/:tradeId" element={<TradeThread />} />
         <Route path="/packs" element={<PackOpenings />} />
         <Route path="/market" element={<MarketWatch />} />
