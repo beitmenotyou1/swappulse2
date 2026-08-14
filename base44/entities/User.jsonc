@@ -56,6 +56,14 @@
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the user"
+    },
+    "bsky_handle": {
+      "type": "string",
+      "description": "Linked Bluesky handle (set when the user links their account via Settings). Empty when not linked."
+    },
+    "signing_key": {
+      "type": "string",
+      "description": "Local HMAC signing key for simulated AT Protocol record signatures"
     }
   },
   "required": [

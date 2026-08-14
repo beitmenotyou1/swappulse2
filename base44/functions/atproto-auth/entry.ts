@@ -307,7 +307,42 @@ Deno.serve(async (req) => {
     // 4. Fetch full profile (including banner) from the AppView, with PDS fallback
     const profile = await getFullProfile(session.accessJwt, session.did, pdsUrl);
 
-    // 5. For login mode: look up SwapPulse user by DID, send login code
+    // 5. For link mode: persist the credential + DID on the user's account.
+    //    The user is already authenticated (they're in Settings linking their
+    //    Bluesky account). Stores the app password in PdsCredential (service
+    //    role bypasses RLS) and sets the did:plc on the User record.
+    if (mode === 'link') {
+      const base44 = createClientFromRequest(req);
+      const me = await base44.auth.me().catch(() => null);
+      if (!me) return Response.json({ error: 'Sign in to link your Bluesky account.' }, { status: 401 });
+
+      // Persist the app password in PdsCredential (service role bypasses RLS).
+      // If a credential already exists (re-linking), update it in place.
+      const existing = await base44.asServiceRole.entities.PdsCredential
+        .filter({ user_id: me.id }).catch(() => []);
+      if (existing && existing.length > 0) {
+        await base44.asServiceRole.entities.PdsCredential.update(existing[0].id, {
+          did: session.did, pds_url: pdsUrl, app_password: appPassword,
+        });
+      } else {
+        await base44.asServiceRole.entities.PdsCredential.create({
+          user_id: me.id, did: session.did, pds_url: pdsUrl, app_password: appPassword,
+        });
+      }
+
+      // Set the did:plc + bsky_handle on the user record
+      await base44.auth.updateMe({ did: session.did, bsky_handle: session.handle });
+
+      return Response.json({
+        linked: true,
+        did: session.did,
+        handle: session.handle,
+        displayName: profile.displayName || session.handle || '',
+        avatar: profile.avatar || '',
+      });
+    }
+
+    // 6. For login mode: look up SwapPulse user by DID, send login code
     if (mode === 'login') {
       const base44 = createClientFromRequest(req);
       const svc = base44.asServiceRole;

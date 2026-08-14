@@ -7,6 +7,7 @@ import {
   AlertDialogTitle, AlertDialogDescription, AlertDialogFooter,
   AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
+import BlueskyLinkCard from '@/components/settings/BlueskyLinkCard';
 
 export default function AtProtoSection({ settings, update }) {
   const { toast } = useToast();
@@ -65,6 +66,8 @@ export default function AtProtoSection({ settings, update }) {
 
   return (
     <div className="space-y-4">
+      <BlueskyLinkCard />
+
       <div className="rounded-xl border border-border bg-card p-4">
         <p className="flex items-center gap-2 text-sm font-bold">
           <Download className="h-4 w-4 text-primary" /> Repository Export

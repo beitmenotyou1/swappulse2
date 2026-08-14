@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ComposeBox from '@/components/feed/ComposeBox';
 import PageHeader from '@/components/PageHeader';
+import BlueskyLinkPrompt from '@/components/BlueskyLinkPrompt';
 
 export default function Compose() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Compose() {
   return (
     <div className="mx-auto max-w-xl">
       <PageHeader title={replyTo ? 'Reply' : 'New Post'} />
+      <BlueskyLinkPrompt />
       <ComposeBox onPosted={() => navigate('/')} replyTo={replyTo} />
     </div>
   );

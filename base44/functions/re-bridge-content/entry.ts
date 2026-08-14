@@ -25,42 +25,21 @@ export default async function(req: Request): Promise<Response> {
     const pdsUrl = Deno.env.get('PDS_URL');
     if (!pdsUrl) return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
 
-    // Ensure the user has a did:plc + credential
+    // Re-bridge only works for users who have linked a Bluesky account
+    // (a did:plc + stored PdsCredential). Users without a linked account
+    // have no per-user PDS repo to migrate content into.
     if (!user.did?.startsWith('did:plc:')) {
-      // No DID yet — auto-provision one, then re-read the user
-      try {
-        await base44.functions.invoke('provision-did', { email: user.email });
-      } catch (e) {
-        console.error('re-bridge: auto-provision failed', e?.message || e);
-        return Response.json({ ok: true, skipped: 'provision_failed' });
-      }
-    }
-
-    // Re-read the user to get the current did
-    const currentUser = await base44.auth.me().catch(() => null);
-    if (!currentUser?.did?.startsWith('did:plc:')) {
       return Response.json({ ok: true, skipped: 'no_did' });
     }
 
-    // Get the user's PDS credential
-    let creds = await base44.asServiceRole.entities.PdsCredential
-      .filter({ user_id: currentUser.id }).catch(() => []);
-    if (!creds || creds.length === 0 || !creds[0].app_password) {
-      // Credential missing — try to provision one
-      try {
-        await base44.functions.invoke('provision-did', { email: currentUser.email });
-      } catch (e) {
-        console.error('re-bridge: credential provision failed', e?.message || e);
-      }
-      creds = await base44.asServiceRole.entities.PdsCredential
-        .filter({ user_id: currentUser.id }).catch(() => []);
-    }
+    const creds = await base44.asServiceRole.entities.PdsCredential
+      .filter({ user_id: user.id }).catch(() => []);
     if (!creds || creds.length === 0 || !creds[0].app_password) {
       return Response.json({ ok: true, skipped: 'no_credential' });
     }
 
     const cred = creds[0];
-    const userDid = currentUser.did;
+    const userDid = user.did;
     const userPrefix = `at://${userDid}/`;
 
     // Get both sessions: user's own (for creating) + shared bridge (for deleting old records)
@@ -93,7 +72,7 @@ export default async function(req: Request): Promise<Response> {
 
     // --- Re-bridge Posts (including replies) ---
     const posts = await base44.asServiceRole.entities.Post
-      .filter({ created_by_id: currentUser.id }, '-created_date', 100).catch(() => []);
+      .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
     for (const post of posts || []) {
       if (!post.at_uri || post.at_uri.startsWith(userPrefix)) continue;
       const record: any = {
@@ -124,7 +103,7 @@ export default async function(req: Request): Promise<Response> {
 
     // --- Re-bridge Reposts ---
     const reposts = await base44.asServiceRole.entities.Repost
-      .filter({ created_by_id: currentUser.id }, '-created_date', 100).catch(() => []);
+      .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
     for (const repost of reposts || []) {
       if (!repost.at_uri || repost.at_uri.startsWith(userPrefix)) continue;
       if (!repost.post_uri || !repost.post_cid) continue;
@@ -150,7 +129,7 @@ export default async function(req: Request): Promise<Response> {
 
     // --- Re-bridge Reactions (likes) ---
     const reactions = await base44.asServiceRole.entities.Reaction
-      .filter({ created_by_id: currentUser.id }, '-created_date', 100).catch(() => []);
+      .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
     for (const reaction of reactions || []) {
       if (!reaction.at_uri || reaction.at_uri.startsWith(userPrefix)) continue;
       if (!reaction.subject) continue;

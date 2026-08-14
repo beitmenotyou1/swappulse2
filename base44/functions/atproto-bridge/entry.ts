@@ -29,7 +29,9 @@ async function resolveSession(req: Request) {
     const user = await base44.auth.me();
 
     if (user?.did?.startsWith('did:plc:')) {
-      // Look up the per-user credential from the server-side store
+      // Look up the per-user credential from the server-side store. Users
+      // get a PdsCredential by linking a Bluesky account in Settings; until
+      // then they fall through to the shared bridge session below.
       const creds = await base44.asServiceRole.entities.PdsCredential
         .filter({ user_id: user.id }).catch(() => []);
       if (creds && creds.length > 0 && creds[0].app_password) {
@@ -38,21 +40,6 @@ async function resolveSession(req: Request) {
         } catch (e) {
           console.error('atproto-bridge: per-user session failed, falling back to shared', e?.message || e);
         }
-      }
-    } else if (user && user.id) {
-      // User has no did:plc — auto-provision one, then retry
-      try {
-        await base44.functions.invoke('provision-did', { email: user.email });
-        const updated = await base44.auth.me();
-        if (updated?.did?.startsWith('did:plc:')) {
-          const creds = await base44.asServiceRole.entities.PdsCredential
-            .filter({ user_id: user.id }).catch(() => []);
-          if (creds && creds.length > 0 && creds[0].app_password) {
-            return await getPdsSessionForUser(pdsUrl, updated.did, creds[0].app_password);
-          }
-        }
-      } catch (e) {
-        console.error('atproto-bridge: auto-provision failed, falling back to shared', e?.message || e);
       }
     }
   } catch {

@@ -210,34 +210,15 @@ export async function verifySignature(record, signature, signingKey) {
 }
 
 // Ensures the current user has a persistent DID + signing key on their
-// account. If the user already has a DID, returns it. If not, tries to
-// provision a real PDS-backed DID via the provision-did backend function.
-// If provisioning fails (PDS not configured, invite codes required, etc.),
-// falls back to a simulated DID so the app remains functional.
+// account. If the user already has a DID (e.g. from linking a Bluesky
+// account in Settings), returns it. Otherwise generates a simulated DID
+// so the app remains functional until they link a real account.
 export async function ensureUserDid() {
   const me = await base44.auth.me();
   if (me?.did && me?.signing_key) return { did: me.did, signingKey: me.signing_key };
 
-  // Try to provision a real DID via the PDS
-  try {
-    const handle = me?.custom_handle || (me?.email?.split('@')[0] || '');
-    const res = await base44.functions.invoke('provision-did', {
-      email: me?.email,
-      handle,
-    });
-    if (res?.data?.did) {
-      // Real DID provisioned — provision-did persisted it to the user record.
-      // Generate a local signing key for HMAC signatures (the PDS holds the
-      // real cryptographic signing key; our sig field is a simulated HMAC).
-      const signingKey = generateSigningKey();
-      await base44.auth.updateMe({ signing_key: signingKey });
-      return { did: res.data.did, signingKey };
-    }
-  } catch (e) {
-    console.error('ensureUserDid: provision-did failed, falling back to simulated', e?.message || e);
-  }
-
-  // Fallback: simulated DID (preserves existing behavior for legacy users)
+  // Simulated DID — users link a real Bluesky account in Settings to get a
+  // genuine did:plc. Until then, a local DID keeps the app functional.
   const did = me?.did || generateDid();
   const signingKey = generateSigningKey();
   await base44.auth.updateMe({ did, signing_key: signingKey });
