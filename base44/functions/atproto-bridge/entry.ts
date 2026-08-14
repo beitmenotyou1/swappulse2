@@ -16,21 +16,43 @@ import { getPdsSession, getPdsSessionForUser, clearPdsSession, pdsRequest } from
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Resolve the PDS session to use for this request. If the calling user has a
-// real PDS-backed DID + app password, use a per-user session (writes to the
-// user's own repo). Otherwise fall back to the shared bridge account session.
+// real PDS-backed did:plc + a stored PdsCredential, use a per-user session
+// (writes to the user's own repo). If the user has no did:plc, auto-provision
+// one via provision-did before proceeding. Falls back to the shared bridge
+// account only if per-user auth fails (e.g. PDS unreachable, no credential).
 async function resolveSession(req: Request) {
   const pdsUrl = Deno.env.get('PDS_URL');
   if (!pdsUrl) throw new Error('PDS_URL not configured');
 
-  // Try to get the calling user's per-user credentials
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user?.did?.startsWith('did:plc:') && user?.pds_app_password) {
+
+    if (user?.did?.startsWith('did:plc:')) {
+      // Look up the per-user credential from the server-side store
+      const creds = await base44.asServiceRole.entities.PdsCredential
+        .filter({ user_id: user.id }).catch(() => []);
+      if (creds && creds.length > 0 && creds[0].app_password) {
+        try {
+          return await getPdsSessionForUser(pdsUrl, user.did, creds[0].app_password);
+        } catch (e) {
+          console.error('atproto-bridge: per-user session failed, falling back to shared', e?.message || e);
+        }
+      }
+    } else if (user && user.id) {
+      // User has no did:plc — auto-provision one, then retry
       try {
-        return await getPdsSessionForUser(pdsUrl, user.did, user.pds_app_password);
+        await base44.functions.invoke('provision-did', { email: user.email });
+        const updated = await base44.auth.me();
+        if (updated?.did?.startsWith('did:plc:')) {
+          const creds = await base44.asServiceRole.entities.PdsCredential
+            .filter({ user_id: user.id }).catch(() => []);
+          if (creds && creds.length > 0 && creds[0].app_password) {
+            return await getPdsSessionForUser(pdsUrl, updated.did, creds[0].app_password);
+          }
+        }
       } catch (e) {
-        console.error('atproto-bridge: per-user session failed, falling back to shared', e?.message || e);
+        console.error('atproto-bridge: auto-provision failed, falling back to shared', e?.message || e);
       }
     }
   } catch {

@@ -1,20 +1,24 @@
 // provision-did — creates a real AT Protocol account on the configured PDS for
-// a user, returning a genuine did:plc DID and a persistent app password for
-// per-user PDS sessions. Called at registration to replace simulated DIDs.
+// a user, returning a genuine did:plc DID and persisting the app password in a
+// server-side PdsCredential record (never on the User entity, never returned to
+// the client).
 //
 // Flow:
-//   1. Call com.atproto.server.createAccount on the PDS with the user's email,
-//      a generated handle, and a generated password.
-//   2. If successful, call com.atproto.server.createAppPassword to get a
-//      persistent app password for future bridge sessions.
-//   3. Return { did, handle, appPassword } so the caller can persist them on
-//      the user record.
+//   1. If the user already has a PdsCredential, return { did, already_provisioned }.
+//   2. Otherwise, call com.atproto.server.createAccount on the PDS with the
+//      user's email, a generated handle, and a generated password.
+//   3. Call com.atproto.server.createAppPassword to get a persistent app password.
+//   4. Persist { user_id, did, pds_url, app_password } in PdsCredential (service role).
+//   5. Call updateMe({ did }) so the User record carries the did:plc.
+//   6. Return { did, handle, provisioned } — app_password is NOT returned.
 //
-// If the PDS doesn't support account creation (invite codes required, etc.),
-// the function returns an error and the caller falls back to a simulated DID.
+// For users who already have a did:plc on their User record but no PdsCredential
+// (the app password was lost because the User entity had no field to store it),
+// a NEW PDS account is created (the old one is inaccessible and has no real
+// content since resolveSession always fell back to the shared bridge account).
 //
-// Input:  { email, handle }  — email + desired handle (without domain)
-// Output: { did, handle, appPassword }  or  { error, fallback: true }
+// Input:  { email, handle }  — optional overrides; defaults from user record
+// Output: { did, handle, provisioned } or { did, already_provisioned }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
@@ -31,28 +35,29 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await req.json().catch(() => ({}));
-    const email = String(body.email || user.email || '').trim().toLowerCase();
-    const handleInput = String(body.handle || '').trim().toLowerCase();
-
-    if (!email) return Response.json({ error: 'email required' }, { status: 400 });
-
-    // If the user already has a real DID, return it
-    if (user.did && user.did.startsWith('did:plc:')) {
-      return Response.json({ did: user.did, handle: user.custom_handle || handleInput, already_provisioned: true });
-    }
-
     const pdsUrl = Deno.env.get('PDS_URL');
     if (!pdsUrl) {
       return Response.json({ error: 'PDS_URL not configured', fallback: true }, { status: 502 });
     }
 
-    // Derive a handle — use the user's chosen handle + the PDS domain, or a
-    // generated handle from the user id.
+    // If the user already has a credential, return it
+    const existing = await base44.asServiceRole.entities.PdsCredential
+      .filter({ user_id: user.id }).catch(() => []);
+    if (existing && existing.length > 0) {
+      return Response.json({ did: existing[0].did, already_provisioned: true });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const email = String(body.email || user.email || '').trim().toLowerCase();
+    if (!email) return Response.json({ error: 'email required' }, { status: 400 });
+
+    // Generate a unique handle — add a short random suffix to avoid conflicts
+    // with any old orphaned PDS account from a previous provisioning attempt.
     const pdsHost = new URL(pdsUrl).hostname;
-    const handle = handleInput
-      ? `${handleInput.replace(/[^a-z0-9-]/g, '')}.${pdsHost}`
-      : `user${user.id.replace(/-/g, '').slice(0, 8)}.${pdsHost}`;
+    const baseHandle = String(body.handle || user.username || `user${user.id.replace(/-/g, '').slice(0, 8)}`)
+      .toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const suffix = Math.random().toString(36).slice(2, 6);
+    const handle = `${baseHandle}${suffix}.${pdsHost}`;
 
     const password = generatePassword();
 
@@ -66,7 +71,6 @@ export default async function(req: Request): Promise<Response> {
     if (!createRes.ok) {
       const errBody = await createRes.text();
       console.error('provision-did: createAccount failed', createRes.status, errBody);
-      // Fail gracefully — caller falls back to simulated DID
       return Response.json({
         error: `createAccount failed (${createRes.status})`,
         details: errBody,
@@ -95,8 +99,7 @@ export default async function(req: Request): Promise<Response> {
         body: JSON.stringify({ name: 'swappulse-bridge' }),
       });
       if (appRes.ok) {
-        const appData = await appRes.json();
-        appPassword = appData.password || '';
+        appPassword = (await appRes.json()).password || '';
       } else {
         console.error('provision-did: createAppPassword failed', appRes.status, await appRes.text());
       }
@@ -104,13 +107,18 @@ export default async function(req: Request): Promise<Response> {
       console.error('provision-did: createAppPassword error', e?.message || e);
     }
 
-    // Step 3: Persist the DID + app password on the user record
-    const updateData: any = { did };
-    if (appPassword) updateData.pds_app_password = appPassword;
-    if (handle) updateData.pds_handle = handle;
-    await base44.auth.updateMe(updateData);
+    // Step 3: Persist the did:plc on the User record (needed by resolveSession)
+    await base44.auth.updateMe({ did });
 
-    return Response.json({ did, handle, appPassword, provisioned: true });
+    // Step 4: Store the app password in PdsCredential (service role bypasses RLS)
+    await base44.asServiceRole.entities.PdsCredential.create({
+      user_id: user.id,
+      did,
+      pds_url: pdsUrl,
+      app_password: appPassword,
+    });
+
+    return Response.json({ did, handle, provisioned: true });
   } catch (error) {
     console.error('provision-did error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error', fallback: true }, { status: 500 });
