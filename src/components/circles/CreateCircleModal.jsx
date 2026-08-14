@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeCircle } from '@/lib/federatedBridge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
@@ -56,6 +57,9 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
         signingKey,
       );
       const created = await base44.entities.Circle.create(stamped);
+      bridgeCircle(stamped).then((res) => {
+        if (res.bridged) base44.entities.Circle.update(created.id, res).catch(() => {});
+      }).catch(() => {});
       onCreated?.(created);
       setName('');
       setDescription('');
