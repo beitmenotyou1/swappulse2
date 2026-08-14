@@ -356,6 +356,211 @@ export async function bridgeReaction(reaction) {
   };
 }
 
+// --- Journal: entity row → AT Protocol record ---
+
+export function buildJournalRecord(journal, authorDid = '', authorName = '', authorHandle = '') {
+  return {
+    $type: NSID.JOURNAL,
+    title: journal.title || '',
+    subtitle: journal.subtitle || '',
+    body: journal.body || '',
+    coverImageUri: journal.cover_image_uri || '',
+    embeddedCardUris: journal.embedded_card_uris || [],
+    embeddedStats: journal.embedded_stats || {},
+    tags: journal.tags || [],
+    visibility: journal.visibility || 'public',
+    publishedAt: journal.published_at || new Date().toISOString(),
+    authorDid: authorDid || '',
+    authorName: authorName || '',
+    authorHandle: authorHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- CardReview: entity row → AT Protocol record ---
+
+export function buildCardReviewRecord(review, authorDid = '', authorName = '', authorHandle = '') {
+  return {
+    $type: NSID.CARD_REVIEW,
+    cardUri: review.card_id || '',
+    cardName: review.card_name || '',
+    artwork: review.artwork ?? 3,
+    playability: review.playability ?? 3,
+    collectibility: review.collectibility ?? 3,
+    investment: review.investment ?? 3,
+    reviewText: review.review_text || '',
+    variant: review.variant || 'normal',
+    reviewerDid: authorDid || '',
+    reviewerName: authorName || '',
+    reviewerHandle: authorHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- Binder: entity row → AT Protocol record ---
+
+export function buildBinderRecord(binder, authorDid = '', authorName = '', authorHandle = '') {
+  return {
+    $type: NSID.BINDER,
+    title: binder.title || '',
+    description: binder.description || '',
+    coverImageUri: binder.cover_image_uri || '',
+    theme: binder.theme || 'classic_purple',
+    pages: binder.pages || [],
+    visibility: binder.visibility || 'public',
+    authorDid: authorDid || '',
+    authorName: authorName || '',
+    authorHandle: authorHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- TradeChain: entity row → AT Protocol record ---
+
+export function buildTradeChainRecord(chain, organiserDid = '', organiserName = '') {
+  return {
+    $type: NSID.TRADE_CHAIN,
+    participantDids: chain.participant_dids || [],
+    participantNames: chain.participant_names || [],
+    shipstoDids: chain.shipsto_dids || [],
+    tradeListingUris: chain.trade_listing_uris || [],
+    shippingConfirmed: chain.shipping_confirmed || [],
+    receiptConfirmed: chain.receipt_confirmed || [],
+    chainOrder: chain.chain_order || 'clockwise',
+    status: chain.status || 'proposed',
+    totalValue: chain.total_value ?? 0,
+    completedAt: chain.completed_at || '',
+    organiserDid: organiserDid || '',
+    organiserName: organiserName || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- TradeDispute: entity row → AT Protocol record ---
+
+export function buildTradeDisputeRecord(dispute, filerDid = '', filerName = '', filerHandle = '') {
+  return {
+    $type: NSID.TRADE_DISPUTE,
+    tradeRef: dispute.trade_ref || '',
+    tradeId: dispute.trade_id || '',
+    reason: dispute.reason || 'other',
+    description: dispute.description || '',
+    photoUrls: dispute.photo_urls || [],
+    status: dispute.status || 'pending',
+    filedByDid: filerDid || '',
+    filedByName: filerName || '',
+    filedByHandle: filerHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- VoiceSpace: entity row → AT Protocol record ---
+
+export function buildVoiceSpaceRecord(space, hostDid = '', hostName = '', hostHandle = '') {
+  return {
+    $type: NSID.VOICE_SPACE,
+    title: space.title || '',
+    description: space.description || '',
+    status: space.status || 'live',
+    streamUrl: space.stream_url || '',
+    platform: space.platform || 'other',
+    plannedDurationMinutes: space.planned_duration_minutes ?? 60,
+    autoEndAt: space.auto_end_at || '',
+    startedAt: space.started_at || new Date().toISOString(),
+    endedAt: space.ended_at || '',
+    coHostDids: space.co_host_dids || [],
+    topicTags: space.topic_tags || [],
+    cardUrisDiscussed: space.card_uris_discussed || [],
+    recordingAvailable: space.recording_available ?? false,
+    hostDid: hostDid || '',
+    hostName: hostName || '',
+    hostHandle: hostHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- PodcastEpisode: entity row → AT Protocol record ---
+
+export function buildPodcastEpisodeRecord(episode, hostDid = '', hostName = '', hostHandle = '') {
+  return {
+    $type: NSID.PODCAST_EPISODE,
+    title: episode.title || '',
+    description: episode.description || '',
+    audioUrl: episode.audio_url || '',
+    durationSeconds: episode.duration_seconds ?? 0,
+    episodeNumber: episode.episode_number ?? 1,
+    seasonNumber: episode.season_number ?? 1,
+    coverImageUrl: episode.cover_image_url || '',
+    sourceSpaceId: episode.source_space_id || '',
+    chapterMarks: episode.chapter_marks || [],
+    showNotes: episode.show_notes || '',
+    tags: episode.tags || [],
+    publishedAt: episode.published_at || new Date().toISOString(),
+    hostDid: hostDid || '',
+    hostName: hostName || '',
+    hostHandle: hostHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- Bridge helpers for Phase 3 record types ---
+
+export async function bridgeJournal(journal) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildJournalRecord(journal, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.JOURNAL);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
+export async function bridgeCardReview(review) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildCardReviewRecord(review, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.CARD_REVIEW);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
+export async function bridgeBinder(binder) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildBinderRecord(binder, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.BINDER);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
+export async function bridgeTradeChain(chain) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildTradeChainRecord(chain, did, me.name);
+  const stamped = await bridgeRecord(record, NSID.TRADE_CHAIN);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
+export async function bridgeTradeDispute(dispute) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildTradeDisputeRecord(dispute, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.TRADE_DISPUTE);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
+export async function bridgeVoiceSpace(space) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildVoiceSpaceRecord(space, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.VOICE_SPACE);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
+export async function bridgePodcastEpisode(episode) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildPodcastEpisodeRecord(episode, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.PODCAST_EPISODE);
+  return { did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid, record_type: stamped.record_type, sig: stamped.sig, bridged: stamped.bridged ?? false };
+}
+
 // Delete a bridged record from the PDS. Call before deleting the local entity.
 export async function unbridgeFederatedRecord(entity) {
   if (!entity?.at_uri || !entity?.bridged) return false;

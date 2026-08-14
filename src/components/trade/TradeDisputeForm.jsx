@@ -3,6 +3,7 @@ import { Loader2, Flag, X, Upload, ImagePlus, AlertTriangle } from 'lucide-react
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeTradeDispute } from '@/lib/federatedBridge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
@@ -77,7 +78,10 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
         did,
         signingKey,
       );
-      await base44.entities.TradeDispute.create(stamped);
+      const created = await base44.entities.TradeDispute.create(stamped);
+      bridgeTradeDispute(stamped).then((res) => {
+        if (res.bridged) base44.entities.TradeDispute.update(created.id, res).catch(() => {});
+      }).catch(() => {});
       toast({ title: 'Dispute filed', description: 'Our moderators will review your report.' });
       reset();
       onFiled?.();

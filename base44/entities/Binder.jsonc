@@ -2,6 +2,7 @@
   "name": "Binder",
   "type": "object",
   "title": "Binder",
+  "description": "org.swappulse.binder \u2014 a collector's digital binder (themed card display), mirrored to AT Protocol as a real org.swappulse.binder record so binders are portable and viewable across instances.",
   "properties": {
     "title": {
       "type": "string",
@@ -93,11 +94,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the binder author (simulated)"
+      "description": "AT Protocol DID of the binder author"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -105,11 +106,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.binder)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the binder to the author's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the binder has been mirrored to the AT Protocol PDS as a real org.swappulse.binder record"
     }
   },
   "required": [

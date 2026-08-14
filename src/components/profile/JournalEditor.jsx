@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeJournal } from '@/lib/federatedBridge';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { formatPrice } from '@/lib/format';
 
@@ -79,6 +80,9 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
           signingKey,
         );
         const created = await base44.entities.Journal.create(stamped);
+        bridgeJournal(stamped).then((res) => {
+          if (res.bridged) base44.entities.Journal.update(created.id, res).catch(() => {});
+        }).catch(() => {});
         dispatchCrossPost('journal', created.id, {
           url: window.location.origin + '/profile',
           authorName: me?.full_name,

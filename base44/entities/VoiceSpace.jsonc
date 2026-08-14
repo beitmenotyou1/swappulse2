@@ -2,7 +2,7 @@
   "name": "VoiceSpace",
   "type": "object",
   "title": "VoiceSpace",
-  "description": "org.swappulse.voiceSpace \u2014 manual live stream declaration. A collector goes live by pasting an external stream URL (Twitch, YouTube, Kick, etc.); their profile shows a red live ring until the planned duration elapses or they end the stream. No OAuth, no webhooks, platform-agnostic.",
+  "description": "org.swappulse.voiceSpace \u2014 manual live stream declaration, mirrored to AT Protocol as a real org.swappulse.voiceSpace record so live streams are discoverable across instances. A collector goes live by pasting an external stream URL; their profile shows a red live ring until the planned duration elapses or they end the stream.",
   "properties": {
     "title": {
       "type": "string",
@@ -110,11 +110,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the host (simulated)"
+      "description": "AT Protocol DID of the host"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -127,6 +127,11 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the stream to the host's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the stream has been mirrored to the AT Protocol PDS as a real org.swappulse.voiceSpace record"
     }
   },
   "required": [

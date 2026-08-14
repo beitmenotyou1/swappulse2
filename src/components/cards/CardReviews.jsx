@@ -5,6 +5,7 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import { variantLabel } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeCardReview } from '@/lib/federatedBridge';
 
 // §4.3 Community Card Reviews - four-dimension rating (artwork, playability,
 // collectibility, investment) 1-5 each, plus optional review text + variant.
@@ -110,6 +111,9 @@ export default function CardReviews({ card }) {
         author_handle: me?.email?.split('@')[0] || 'collector',
       }, NSID.CARD_REVIEW, did, signingKey);
       const created = await base44.entities.CardReview.create(stamped);
+      bridgeCardReview(stamped).then((res) => {
+        if (res.bridged) base44.entities.CardReview.update(created.id, res).catch(() => {});
+      }).catch(() => {});
       setReviews((prev) => [created, ...prev.filter((r) => r.id !== created.id)]);
       setForm({ artwork: 5, playability: 5, collectibility: 5, investment: 5, review_text: '', variant: 'normal' });
     } catch (e) {

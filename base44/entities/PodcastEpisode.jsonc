@@ -2,6 +2,7 @@
   "name": "PodcastEpisode",
   "type": "object",
   "title": "PodcastEpisode",
+  "description": "org.swappulse.podcastEpisode \u2014 a podcast episode (often derived from a voice space recording), mirrored to AT Protocol as a real org.swappulse.podcastEpisode record so episodes are portable and playable across instances.",
   "properties": {
     "title": {
       "type": "string",
@@ -84,11 +85,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the host (simulated)"
+      "description": "AT Protocol DID of the host"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -101,6 +102,11 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the episode to the host's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the episode has been mirrored to the AT Protocol PDS as a real org.swappulse.podcastEpisode record"
     }
   },
   "required": [

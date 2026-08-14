@@ -34,6 +34,13 @@ const COLLECTIONS: Record<string, string> = {
   'org.swappulse.challengeEntry': 'ChallengeEntry',
   'org.swappulse.story': 'Story',
   'org.swappulse.reaction': 'Reaction',
+  'org.swappulse.journal': 'Journal',
+  'org.swappulse.cardReview': 'CardReview',
+  'org.swappulse.binder': 'Binder',
+  'org.swappulse.tradeChain': 'TradeChain',
+  'org.swappulse.tradeDispute': 'TradeDispute',
+  'org.swappulse.voiceSpace': 'VoiceSpace',
+  'org.swappulse.podcastEpisode': 'PodcastEpisode',
 };
 
 // Field mapping: PDS record field → local entity field
@@ -222,6 +229,155 @@ function mapReactionFields(val: any, atUri: string, did: string) {
   };
 }
 
+function mapJournalFields(val: any, atUri: string, did: string) {
+  return {
+    title: val.title || '',
+    subtitle: val.subtitle || '',
+    body: val.body || '',
+    cover_image_uri: val.coverImageUri || '',
+    embedded_card_uris: val.embeddedCardUris || [],
+    embedded_stats: val.embeddedStats || {},
+    tags: val.tags || [],
+    visibility: val.visibility || 'public',
+    published_at: val.publishedAt || '',
+    author_name: val.authorName || '',
+    author_handle: val.authorHandle || '',
+    did: val.authorDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.journal',
+    bridged: true,
+  };
+}
+
+function mapCardReviewFields(val: any, atUri: string, did: string) {
+  return {
+    card_id: val.cardUri || '',
+    card_name: val.cardName || '',
+    artwork: val.artwork ?? 3,
+    playability: val.playability ?? 3,
+    collectibility: val.collectibility ?? 3,
+    investment: val.investment ?? 3,
+    review_text: val.reviewText || '',
+    variant: val.variant || 'normal',
+    author_name: val.reviewerName || '',
+    author_handle: val.reviewerHandle || '',
+    did: val.reviewerDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.cardReview',
+    bridged: true,
+  };
+}
+
+function mapBinderFields(val: any, atUri: string, did: string) {
+  return {
+    title: val.title || '',
+    description: val.description || '',
+    cover_image_uri: val.coverImageUri || '',
+    theme: val.theme || 'classic_purple',
+    pages: val.pages || [],
+    visibility: val.visibility || 'public',
+    author_name: val.authorName || '',
+    author_handle: val.authorHandle || '',
+    did: val.authorDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.binder',
+    bridged: true,
+  };
+}
+
+function mapTradeChainFields(val: any, atUri: string, did: string) {
+  return {
+    participant_dids: val.participantDids || [],
+    participant_names: val.participantNames || [],
+    shipsto_dids: val.shipstoDids || [],
+    trade_listing_uris: val.tradeListingUris || [],
+    shipping_confirmed: val.shippingConfirmed || [],
+    receipt_confirmed: val.receiptConfirmed || [],
+    chain_order: val.chainOrder || 'clockwise',
+    status: val.status || 'proposed',
+    total_value: val.totalValue ?? 0,
+    completed_at: val.completedAt || '',
+    author_name: val.organiserName || '',
+    did: val.organiserDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.tradeChain',
+    bridged: true,
+  };
+}
+
+function mapTradeDisputeFields(val: any, atUri: string, did: string) {
+  return {
+    trade_id: val.tradeId || '',
+    trade_ref: val.tradeRef || '',
+    reason: val.reason || 'other',
+    description: val.description || '',
+    photo_urls: val.photoUrls || [],
+    status: val.status || 'pending',
+    filed_by_name: val.filedByName || '',
+    filed_by_handle: val.filedByHandle || '',
+    did: val.filedByDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.tradeDispute',
+    bridged: true,
+  };
+}
+
+function mapVoiceSpaceFields(val: any, atUri: string, did: string) {
+  return {
+    title: val.title || '',
+    description: val.description || '',
+    status: val.status || 'live',
+    stream_url: val.streamUrl || '',
+    platform: val.platform || 'other',
+    planned_duration_minutes: val.plannedDurationMinutes ?? 60,
+    auto_end_at: val.autoEndAt || '',
+    started_at: val.startedAt || '',
+    ended_at: val.endedAt || '',
+    co_host_dids: val.coHostDids || [],
+    topic_tags: val.topicTags || [],
+    card_uris_discussed: val.cardUrisDiscussed || [],
+    recording_available: val.recordingAvailable ?? false,
+    podcast_episode_uri: val.podcastEpisodeUri || '',
+    host_name: val.hostName || '',
+    host_handle: val.hostHandle || '',
+    did: val.hostDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.voiceSpace',
+    bridged: true,
+  };
+}
+
+function mapPodcastEpisodeFields(val: any, atUri: string, did: string) {
+  return {
+    title: val.title || '',
+    description: val.description || '',
+    audio_url: val.audioUrl || '',
+    duration_seconds: val.durationSeconds ?? 0,
+    episode_number: val.episodeNumber ?? 1,
+    season_number: val.seasonNumber ?? 1,
+    cover_image_url: val.coverImageUrl || '',
+    source_space_id: val.sourceSpaceId || '',
+    chapter_marks: val.chapterMarks || [],
+    show_notes: val.showNotes || '',
+    tags: val.tags || [],
+    play_count: 0,
+    published_at: val.publishedAt || '',
+    host_name: val.hostName || '',
+    host_handle: val.hostHandle || '',
+    did: val.hostDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.podcastEpisode',
+    bridged: true,
+  };
+}
+
 const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string) => any> = {
   'org.swappulse.vouch': mapVouchFields,
   'org.swappulse.wishlist': mapWishlistFields,
@@ -232,6 +388,13 @@ const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string) => an
   'org.swappulse.challengeEntry': mapChallengeEntryFields,
   'org.swappulse.story': mapStoryFields,
   'org.swappulse.reaction': mapReactionFields,
+  'org.swappulse.journal': mapJournalFields,
+  'org.swappulse.cardReview': mapCardReviewFields,
+  'org.swappulse.binder': mapBinderFields,
+  'org.swappulse.tradeChain': mapTradeChainFields,
+  'org.swappulse.tradeDispute': mapTradeDisputeFields,
+  'org.swappulse.voiceSpace': mapVoiceSpaceFields,
+  'org.swappulse.podcastEpisode': mapPodcastEpisodeFields,
 };
 
 export default async function(req: Request): Promise<Response> {

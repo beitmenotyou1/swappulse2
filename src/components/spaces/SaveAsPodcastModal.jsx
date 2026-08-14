@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { X, UploadCloud, Plus, Trash2, Loader2, Mic } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgePodcastEpisode } from '@/lib/federatedBridge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -90,6 +91,9 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
       };
       const stamped = await stampRecord(payload, NSID.PODCAST_EPISODE, did, signingKey);
       const ep = await base44.entities.PodcastEpisode.create(stamped);
+      bridgePodcastEpisode(stamped).then((res) => {
+        if (res.bridged) base44.entities.PodcastEpisode.update(ep.id, res).catch(() => {});
+      }).catch(() => {});
 
       // Link the episode back to the source stream.
       try {

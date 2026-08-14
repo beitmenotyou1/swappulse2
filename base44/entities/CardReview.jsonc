@@ -2,6 +2,7 @@
   "name": "CardReview",
   "type": "object",
   "title": "CardReview",
+  "description": "org.swappulse.cardReview \u2014 a collector's multi-axis review of a specific card (artwork, playability, collectibility, investment), mirrored to AT Protocol as a real org.swappulse.cardReview record so reviews are portable and discoverable across instances.",
   "properties": {
     "card_id": {
       "type": "string",
@@ -54,11 +55,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the reviewer (simulated)"
+      "description": "AT Protocol DID of the reviewer"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -66,11 +67,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.cardReview)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the review to the reviewer's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the review has been mirrored to the AT Protocol PDS as a real org.swappulse.cardReview record"
     }
   },
   "required": [

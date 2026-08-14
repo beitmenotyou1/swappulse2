@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Radio } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeVoiceSpace } from '@/lib/federatedBridge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -96,6 +97,9 @@ export default function GoLiveModal({ onClose, onLive }) {
       };
       const stamped = await stampRecord(payload, NSID.VOICE_SPACE, did, signingKey);
       const space = await base44.entities.VoiceSpace.create(stamped);
+      bridgeVoiceSpace(stamped).then((res) => {
+        if (res.bridged) base44.entities.VoiceSpace.update(space.id, res).catch(() => {});
+      }).catch(() => {});
       // Notify bell-enabled followers who opted into goes_live alerts.
       try {
         await base44.functions.invoke('dispatchBellNotifications', {

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2, Plus, Trash2, X, Save } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeBinder } from '@/lib/federatedBridge';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { cardImageUrl } from '@/lib/tcgdex';
 import PageHeader from '@/components/PageHeader';
@@ -87,6 +88,9 @@ export default function BinderEdit() {
         navigate(`/binder/${binderId}`);
       } else {
         const created = await base44.entities.Binder.create(stamped);
+        bridgeBinder(stamped).then((res) => {
+          if (res.bridged) base44.entities.Binder.update(created.id, res).catch(() => {});
+        }).catch(() => {});
         dispatchCrossPost('binder', created.id, {
           url: window.location.origin + '/binder/' + created.id,
           authorName: me?.full_name,

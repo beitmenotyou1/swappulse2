@@ -2,6 +2,7 @@
   "name": "TradeChain",
   "type": "object",
   "title": "TradeChain",
+  "description": "org.swappulse.tradeChain \u2014 a multi-party trade chain (3-5 participants shipping cards in sequence), mirrored to AT Protocol as a real org.swappulse.tradeChain record so chains are portable and verifiable across instances.",
   "properties": {
     "participant_dids": {
       "type": "array",
@@ -73,11 +74,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the chain organiser (simulated)"
+      "description": "AT Protocol DID of the chain organiser"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -85,11 +86,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.tradeChain)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the chain to the organiser's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the chain has been mirrored to the AT Protocol PDS as a real org.swappulse.tradeChain record"
     }
   },
   "required": [
