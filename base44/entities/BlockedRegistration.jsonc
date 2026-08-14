@@ -1,0 +1,105 @@
+{
+  "name": "BlockedRegistration",
+  "type": "object",
+  "title": "BlockedRegistration",
+  "description": "org.swappulse.blockedRegistration \u2014 email and/or handle blocklist preventing re-registration by deleted or suspended offenders. Checked at registration (send-login-code, verify-login-code) and at handle claim (check-username, verifyHandleClaim).",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Lowercased email address blocked from registration (empty if only handle is blocked)"
+    },
+    "handle": {
+      "type": "string",
+      "description": "Lowercased username/handle blocked from being claimed (empty if only email is blocked)"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "scam",
+        "spam",
+        "harassment",
+        "ban_evasion",
+        "other"
+      ],
+      "description": "Why this block was added"
+    },
+    "source_action": {
+      "type": "string",
+      "enum": [
+        "platform_deletion",
+        "suspension",
+        "manual"
+      ],
+      "description": "What enforcement action created this blocklist entry"
+    },
+    "blocked_by": {
+      "type": "string",
+      "description": "User id of the admin/moderator who added the block"
+    },
+    "blocked_by_name": {
+      "type": "string"
+    },
+    "blocked_at": {
+      "type": "string",
+      "format": "date-time",
+      "default": "now"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "reason",
+    "source_action"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    }
+  }
+}

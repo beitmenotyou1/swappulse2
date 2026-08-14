@@ -1,0 +1,130 @@
+{
+  "name": "AccountStatus",
+  "type": "object",
+  "title": "AccountStatus",
+  "description": "org.swappulse.accountStatus \u2014 enforcement state for a single user. One record per user, created lazily on first enforcement action. status 'active' means no enforcement is active; 'shadow_banned' silently hides the user's content from others; 'suspended' blocks login and content creation. Service role bypasses RLS for backend feed-filtering and auth checks.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Platform User id this status record belongs to"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user (for lookup by auth flows)"
+    },
+    "user_handle": {
+      "type": "string",
+      "description": "Username/handle of the user (for display in moderation UI)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "shadow_banned",
+        "suspended"
+      ],
+      "default": "active",
+      "description": "Current enforcement state"
+    },
+    "suspended_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the suspension expires (null = indefinite). Auth checks treat null as still-suspended."
+    },
+    "suspension_reason": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Reason shown to the suspended user at login"
+    },
+    "suspended_by": {
+      "type": "string",
+      "description": "User id of the moderator/admin who suspended"
+    },
+    "suspended_by_name": {
+      "type": "string"
+    },
+    "suspended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "shadow_banned_by": {
+      "type": "string",
+      "description": "User id of the moderator/admin who shadow-banned"
+    },
+    "shadow_banned_by_name": {
+      "type": "string"
+    },
+    "shadow_banned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "shadow_ban_reason": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "reinstated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the last enforcement was lifted (suspension reinstated or shadow ban lifted)"
+    },
+    "reinstated_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
