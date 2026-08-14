@@ -17,14 +17,29 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const svc = base44.asServiceRole;
+    const currentPdsUrl = Deno.env.get('PDS_URL');
+    if (!currentPdsUrl) {
+      return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
+    }
+
     const LIMIT = 50;
     const users = await svc.entities.User.list('-created_date', LIMIT);
+
+    // Skip only users already provisioned on the CURRENT PDS (a PdsCredential
+    // whose pds_url matches PDS_URL). Users with simulated DIDs (no credential)
+    // and users whose credential points at a different PDS (e.g. bsky.social)
+    // are re-provisioned onto the self-hosted PDS. provisionIdentityForUser
+    // replaces any existing credential and overwrites did/bsky_handle.
+    const allCreds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
+    const provisionedOnCurrent = new Set(
+      (allCreds || []).filter((c: any) => c.pds_url === currentPdsUrl).map((c: any) => c.user_id)
+    );
 
     let provisioned = 0, skipped = 0, failed = 0;
     const errors: Array<{ id: string; error: string }> = [];
 
     for (const u of users) {
-      if (u.did?.startsWith('did:plc:')) {
+      if (provisionedOnCurrent.has(u.id)) {
         skipped++;
         continue;
       }
