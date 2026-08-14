@@ -1,6 +1,8 @@
 // §2.9 wix-payments-webhook - receives Wix Payments order events. On order
 // approved, matches the checkout session to a pending MarketListing and marks
 // it sold. JWT is verified against the WIX_PAYMENTS_WEBHOOK_PUBLIC_KEY.
+// Returns 200 on processed or permanent errors (so Wix stops retrying), 500
+// on transient DB errors (so Wix retries the delivery).
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import jwt from 'npm:jsonwebtoken@9';
 
@@ -31,9 +33,12 @@ Deno.serve(async (req) => {
       const checkoutId = order?.checkoutId;
       if (!checkoutId) return new Response('ok', { status: 200 });
 
-      const listings = await svc.entities.MarketListing.filter({ checkout_session_id: checkoutId }).catch(() => []);
+      // DB read — let transient errors propagate to the outer catch (500) so
+      // Wix retries. Do NOT swallow with .catch(() => []).
+      const listings = await svc.entities.MarketListing.filter({ checkout_session_id: checkoutId });
       const pending = listings.filter((l) => l.status === 'pending');
-      // Parallelize updates (independent writes; typically just one listing per checkout).
+      // Idempotent: only pending listings are moved to 'sold'; a redelivered
+      // event finds no pending listings and returns 200.
       await Promise.all(pending.map((l) =>
         svc.entities.MarketListing.update(l.id, { status: 'sold', checkout_session_id: '' }),
       ));
@@ -41,7 +46,8 @@ Deno.serve(async (req) => {
 
     return new Response('ok', { status: 200 });
   } catch (error) {
-    console.error('wix-webhook error', error);
-    return new Response('error', { status: 200 });
+    // Transient error (DB unavailable, etc.) — return 500 so Wix retries.
+    console.error('wix-webhook error', error?.message || error);
+    return new Response('error', { status: 500 });
   }
 });

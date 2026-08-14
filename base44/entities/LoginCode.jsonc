@@ -21,6 +21,11 @@
       "type": "boolean",
       "default": false,
       "description": "Whether the code has been used"
+    },
+    "failed_attempts": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of failed verification attempts for this code; the code is deleted after 5 failures to prevent brute force"
     }
   },
   "required": [

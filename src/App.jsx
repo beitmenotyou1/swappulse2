@@ -56,6 +56,7 @@ import Admin from '@/pages/Admin';
 import Moderation from '@/pages/Moderation';
 import ModerationAgent from '@/pages/ModerationAgent';
 import AccountDeleted from '@/pages/AccountDeleted';
+import OrderComplete from '@/pages/OrderComplete';
 import WhoToFollow from '@/pages/WhoToFollow';
 import Achievements from '@/pages/Achievements';
 import Challenges from '@/pages/Challenges';
@@ -99,6 +100,7 @@ const AuthenticatedApp = () => {
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
       <Route path="/account-deleted" element={<AccountDeleted />} />
+      <Route path="/order-complete" element={<OrderComplete />} />
       <Route path="/status" element={<Status />} />
       <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />

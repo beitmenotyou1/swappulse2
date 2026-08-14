@@ -74,6 +74,7 @@ export default function TradeThread() {
         author_name: me?.full_name || 'Collector',
         author_handle: me?.email?.split('@')[0] || 'collector',
         author_avatar: '',
+        listing_author_id: trade?.created_by_id || '',
       }, NSID.TRADE_NEGOTIATION, did, signingKey);
       const created = await base44.entities.TradeMessage.create(stamped);
       setMessages((prev) => (hasMsg(prev, created) ? prev : [...prev, created]));

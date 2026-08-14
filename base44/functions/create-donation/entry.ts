@@ -13,7 +13,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'The minimum donation is 0.50 in your currency.' }, { status: 400 });
     }
 
-    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL') || `https://${req.headers.get('host') || ''}`;
+    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL');
+    if (!appUrl) {
+      console.error('create-donation: missing app URL (X-Base44-App-Url / WIX_CHECKOUT_APP_URL)');
+      return Response.json({ error: 'Checkout not configured.' }, { status: 500 });
+    }
     const apiKey = Deno.env.get('WIX_PAYMENTS_API_KEY');
     const siteId = Deno.env.get('WIX_PAYMENTS_SITE_ID');
     if (!apiKey || !siteId) {

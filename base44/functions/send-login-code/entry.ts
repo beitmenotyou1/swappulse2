@@ -31,8 +31,36 @@ export default async function(req) {
       return Response.json({ needs_setup: true });
     }
 
-    // Generate 6-digit code
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    // Rate-limit: min 60s between sends, max 5 per hour per email.
+    const rlNow = Date.now();
+    const rlRecords = await svc.entities.AuthRateLimit.filter({ email }, '-created_date', 1).catch(() => []);
+    const rlExisting = rlRecords[0];
+    if (rlExisting) {
+      const lastAgo = rlNow - new Date(rlExisting.last_request_at || rlExisting.created_date).getTime();
+      if (lastAgo < 60_000) {
+        return Response.json({ error: 'Please wait a minute before requesting another code.' }, { status: 429 });
+      }
+      const windowStart = new Date(rlExisting.window_start || rlExisting.created_date).getTime();
+      const inWindow = rlNow - windowStart < 3_600_000;
+      if (inWindow && (rlExisting.count || 0) >= 5) {
+        return Response.json({ error: 'Too many code requests. Please try again later.' }, { status: 429 });
+      }
+      await svc.entities.AuthRateLimit.update(rlExisting.id, {
+        last_request_at: new Date(rlNow).toISOString(),
+        count: inWindow ? (rlExisting.count || 0) + 1 : 1,
+        window_start: inWindow ? rlExisting.window_start : new Date(rlNow).toISOString(),
+      });
+    } else {
+      await svc.entities.AuthRateLimit.create({
+        email,
+        last_request_at: new Date(rlNow).toISOString(),
+        window_start: new Date(rlNow).toISOString(),
+        count: 1,
+      });
+    }
+
+    // Generate 6-digit code (cryptographically secure)
+    const code = String(100000 + crypto.getRandomValues(new Uint32Array(1))[0] % 900000);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
     // Delete old codes for this email

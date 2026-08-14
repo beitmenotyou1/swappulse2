@@ -45,6 +45,19 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { action, collection, record, uri } = body;
 
+    // Gate moderation-sensitive actions. emitLabels is admin-only (moderation
+    // power). delete/update require an authenticated caller so the shared
+    // bridge session can't be abused by unauthenticated requests.
+    if (action === 'emitLabels' || action === 'delete' || action === 'update') {
+      const base44Auth = createClientFromRequest(req);
+      let caller: any;
+      try { caller = await base44Auth.auth.me(); } catch { caller = null; }
+      if (!caller) return Response.json({ error: 'Authentication required' }, { status: 401 });
+      if (action === 'emitLabels' && caller.role !== 'admin') {
+        return Response.json({ error: 'Admin only' }, { status: 403 });
+      }
+    }
+
     // --- delete action ---
     if (action === 'delete') {
       if (!uri || typeof uri !== 'string') {

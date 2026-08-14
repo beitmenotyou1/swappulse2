@@ -1,0 +1,52 @@
+{
+  "name": "AuthRateLimit",
+  "type": "object",
+  "title": "AuthRateLimit",
+  "description": "Per-email rate-limit tracker for passwordless login code requests. Enforces a minimum 60-second gap between sends and a maximum of 5 requests per hour to prevent email bombing and brute-force abuse.",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Lowercased email address this rate limit applies to"
+    },
+    "count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of code requests in the current 1-hour window"
+    },
+    "window_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of the current 1-hour rate-limit window"
+    },
+    "last_request_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the most recent code request was made"
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

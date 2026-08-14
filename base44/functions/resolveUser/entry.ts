@@ -25,13 +25,17 @@ Deno.serve(async (req) => {
       return emailHandle === handle || full === handle || (u.email || '').toLowerCase() === handle;
     });
 
-    if (!found) return Response.json({ found: false });
+    // Only return users who have a real PDS-backed DID — never fabricate a
+    // did:plc from the user id, which would create fake federated identities.
+    if (!found || !found.did || !found.did.startsWith('did:plc:')) {
+      return Response.json({ found: false });
+    }
     return Response.json({
       found: true,
-      did: found.did || 'did:plc:' + String(found.id).replace(/-/g, '').slice(0, 24),
+      did: found.did,
       name: found.full_name || '',
       handle: (found.email || '').split('@')[0] || handle,
-      avatar: found.avatar_url || '',
+      avatar: found.avatar || '',
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
