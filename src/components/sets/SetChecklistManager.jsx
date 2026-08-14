@@ -7,6 +7,7 @@ import MissingCardsList from './MissingCardsList';
 import PdfDownloadPanel from './PdfDownloadPanel';
 import BinderPreview from './BinderPreview';
 import ScannerBatchUpload from './ScannerBatchUpload';
+import SetBuddiesSection from './SetBuddiesSection';
 import { useSetChecklist } from '@/hooks/useSetChecklist';
 
 export default function SetChecklistManager({ userId }) {
@@ -119,6 +120,11 @@ export default function SetChecklistManager({ userId }) {
           <BinderPreview
             cards={checklist.cards}
             ownedLocalIds={checklist.cards.filter((c) => c.is_owned).map((c) => c.local_id)}
+          />
+          <SetBuddiesSection
+            setId={checklist.set_id}
+            setName={checklist.set_name}
+            myCardIds={checklist.cards.filter((c) => c.is_owned).map((c) => c.tcgdex_id)}
           />
         </div>
       </div>

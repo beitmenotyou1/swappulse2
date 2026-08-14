@@ -1,0 +1,100 @@
+{
+  "name": "PullNomination",
+  "type": "object",
+  "title": "PullNomination",
+  "description": "org.swappulse.pullNomination \u2014 a collector's nomination of their best card pull for a given week's 'Pull of the Week' community vote. Mirrored to AT Protocol so nominations are federated across SwapPulse instances and the wider Bluesky network.",
+  "properties": {
+    "week_key": {
+      "type": "string",
+      "description": "ISO week key, e.g. 2026-W33"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id of the pulled card"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "card_rarity": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "nominator_name": {
+      "type": "string"
+    },
+    "nominator_handle": {
+      "type": "string"
+    },
+    "nominator_avatar": {
+      "type": "string"
+    },
+    "post_uri": {
+      "type": "string",
+      "description": "at:// URI of the pack-opening post this nomination is based on"
+    },
+    "vote_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the nominator (simulated)"
+    },
+    "at_uri": {
+      "type": "string"
+    },
+    "cid": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string"
+    },
+    "sig": {
+      "type": "string"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "week_key",
+    "card_id",
+    "card_name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

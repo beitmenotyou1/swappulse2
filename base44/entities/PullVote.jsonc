@@ -1,0 +1,48 @@
+{
+  "name": "PullVote",
+  "type": "object",
+  "title": "PullVote",
+  "description": "org.swappulse.pullVote \u2014 a single vote cast by a collector for a PullNomination in the weekly Pull of the Week contest. One vote per user per week; prevents double-voting.",
+  "properties": {
+    "week_key": {
+      "type": "string"
+    },
+    "nomination_id": {
+      "type": "string",
+      "description": "PullNomination id this vote is for"
+    },
+    "voter_name": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "week_key",
+    "nomination_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

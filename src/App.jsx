@@ -67,6 +67,8 @@ import CollectionAdvisor from '@/pages/CollectionAdvisor';
 import SentimentConversationalist from '@/pages/SentimentConversationalist';
 import AchievementGoalTracker from '@/pages/AchievementGoalTracker';
 import NetworkingConcierge from '@/pages/NetworkingConcierge';
+import PackParties from '@/pages/PackParties';
+import PullOfTheWeek from '@/pages/PullOfTheWeek';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -127,6 +129,8 @@ const AuthenticatedApp = () => {
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
         <Route path="/challenges/:challengeId/leaderboard" element={<Leaderboard />} />
+        <Route path="/pack-parties" element={<PackParties />} />
+        <Route path="/pull-of-the-week" element={<PullOfTheWeek />} />
         <Route path="/help" element={<Help />} />
       </Route>
       {/* Auth required — login gate */}

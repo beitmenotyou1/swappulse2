@@ -1,0 +1,112 @@
+{
+  "name": "PackParty",
+  "type": "object",
+  "title": "PackParty",
+  "description": "org.swappulse.packParty \u2014 a synchronized pack-opening event where collectors open packs of the same set at the same time and share reactions in real time. Mirrored to AT Protocol so parties are discoverable across instances.",
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "set_id": {
+      "type": "string",
+      "description": "TCGDex set id the party is opening"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "set_image": {
+      "type": "string"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the party goes live"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "live",
+        "completed"
+      ],
+      "default": "scheduled"
+    },
+    "host_name": {
+      "type": "string"
+    },
+    "host_handle": {
+      "type": "string"
+    },
+    "host_avatar": {
+      "type": "string"
+    },
+    "participant_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "max_participants": {
+      "type": "integer",
+      "default": 50
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the host (simulated)"
+    },
+    "at_uri": {
+      "type": "string"
+    },
+    "cid": {
+      "type": "string"
+    },
+    "record_type": {
+      "type": "string"
+    },
+    "sig": {
+      "type": "string"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "set_id",
+    "scheduled_at"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

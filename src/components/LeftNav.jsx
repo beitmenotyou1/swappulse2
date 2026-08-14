@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogIn, LogOut } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -26,6 +26,8 @@ const more = [
   { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', authOnly: true },
   { to: '/achievements', icon: Trophy, label: 'Achievements', authOnly: true },
   { to: '/challenges', icon: Target, label: 'Challenges' },
+  { to: '/pack-parties', icon: Sparkles, label: 'Pack Parties' },
+  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of the Week' },
   { to: '/packs', icon: Package, label: 'Pack Openings' },
   { to: '/market', icon: BarChart3, label: 'Market Watch' },
   { to: '/predictions', icon: Vote, label: 'Predictions' },

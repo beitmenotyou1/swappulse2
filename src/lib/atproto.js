@@ -64,6 +64,10 @@ export const NSID = {
   PODCAST_PLAY: 'org.swappulse.podcastPlay',
   EXTERNAL_ACTIVITY: 'org.swappulse.externalActivity',
   CROSS_POST_CONFIG: 'org.swappulse.crossPostConfig',
+  // Alpha 1.5 record lexicons — AT Protocol-native social features
+  CARD_MENTION: 'org.swappulse.cardMention',
+  PACK_PARTY: 'org.swappulse.packParty',
+  PULL_NOMINATION: 'org.swappulse.pullNomination',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.freshPulls',
