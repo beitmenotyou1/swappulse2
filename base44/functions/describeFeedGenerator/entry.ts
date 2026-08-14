@@ -41,18 +41,6 @@ export default async function (_req: Request): Promise<Response> {
           displayName: 'SwapPulse Collections',
         },
       },
-      {
-        uri: 'at://did:web:feed.swappulse.org/app.bsky.feed.generator/card-channel',
-        did: 'did:web:feed.swappulse.org',
-        description:
-          'Federated per-card discussion channels — every post mentioning a specific Pokémon TCG card, aggregated from SwapPulse and the wider Bluesky network via the org.swappulse.cardMention facet.',
-        descriptionLang: 'en',
-        author: {
-          did: 'did:web:feed.swappulse.org',
-          handle: 'cards.swappulse.org',
-          displayName: 'SwapPulse Card Channels',
-        },
-      },
     ],
     links: {
       privacyPolicy: 'https://swappulse.org/legal/privacy',
