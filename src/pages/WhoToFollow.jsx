@@ -8,6 +8,7 @@ import Avatar from '@/components/Avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
+import BlueskyMutualsSection from '@/components/follow/BlueskyMutualsSection';
 import { createBridgedFollow } from '@/lib/followBridge';
 
 const SOURCE_LABELS = {
@@ -127,6 +128,8 @@ export default function WhoToFollow() {
       </PageHeader>
 
       <div className="mx-auto max-w-2xl space-y-4 p-4">
+        <BlueskyMutualsSection />
+
         <ExternalActorSearch />
 
         <div className="border-t border-border pt-4">
