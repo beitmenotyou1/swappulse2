@@ -61,11 +61,42 @@ export default async function(req: Request): Promise<Response> {
 
     const password = generatePassword();
 
-    // Step 1: Create the account on the PDS
+    // Step 1a: Fetch a one-use invite code via the admin API. The PDS rejects
+    // createAccount without either phone verification or an invite code; the
+    // admin-issued invite code bypasses phone verification (same pattern as
+    // the official pdsadmin account-create script). If PDS_ADMIN_PASSWORD is
+    // not set, fall back to the shared bridge account.
+    const adminPassword = Deno.env.get('PDS_ADMIN_PASSWORD');
+    let inviteCode = '';
+    if (adminPassword) {
+      try {
+        const invRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createInviteCode`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${btoa(`admin:${adminPassword}`)}`,
+          },
+          body: JSON.stringify({ useCount: 1 }),
+        });
+        if (invRes.ok) {
+          inviteCode = (await invRes.json()).code || '';
+        } else {
+          console.error('provision-did: createInviteCode failed', invRes.status, await invRes.text());
+        }
+      } catch (e) {
+        console.error('provision-did: createInviteCode error', e?.message || e);
+      }
+    } else {
+      console.warn('provision-did: PDS_ADMIN_PASSWORD not set — createAccount will likely fail without an invite code');
+    }
+
+    // Step 1b: Create the account on the PDS
+    const createBody: Record<string, string> = { handle, email, password };
+    if (inviteCode) createBody.inviteCode = inviteCode;
     const createRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createAccount`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ handle, email, password }),
+      body: JSON.stringify(createBody),
     });
 
     if (!createRes.ok) {
