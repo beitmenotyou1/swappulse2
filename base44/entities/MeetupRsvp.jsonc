@@ -2,6 +2,7 @@
   "name": "MeetupRsvp",
   "type": "object",
   "title": "MeetupRsvp",
+  "description": "org.swappulse.meetupRsvp \u2014 an attendee's RSVP for a meetup, mirrored to AT Protocol as a real org.swappulse.meetupRsvp record. References the meetup via strongRef so RSVPs are portable and verifiable across instances.",
   "properties": {
     "meetup_ref": {
       "type": "string",
@@ -44,11 +45,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the attendee (simulated)"
+      "description": "AT Protocol DID of the attendee"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -56,11 +57,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.meetupRsvp)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the RSVP to the attendee's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the RSVP has been mirrored to the AT Protocol PDS as a real org.swappulse.meetupRsvp record"
     }
   },
   "required": [

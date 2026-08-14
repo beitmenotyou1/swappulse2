@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeReaction } from '@/lib/federatedBridge';
 
 const REACTIONS = {
   insane_pull: { emoji: '🔥', label: 'Insane Pull' },
@@ -91,6 +92,10 @@ export default function ReactionBar({ post, initial }) {
         );
         const created = await base44.entities.Reaction.create(stamped);
         setMineId(created.id);
+        // Bridge as org.swappulse.reaction to the PDS (SwapPulse custom lexicon for federation)
+        bridgeReaction(stamped).then((res) => {
+          if (res.bridged) base44.entities.Reaction.update(created.id, res).catch(() => {});
+        }).catch(() => {});
         // AT Protocol PDS bridge — mirror as a real app.bsky.feed.like (only for genuinely bridged posts).
         if (post.bridged && post.at_uri && post.cid) {
           base44.functions.invoke('atproto-bridge', {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Loader2, Image as ImageIcon, Type, CreditCard, Trash2, Plus, Globe, Users } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, generateRkey, NSID } from '@/lib/atproto';
+import { bridgeStory } from '@/lib/federatedBridge';
 import { cardImageUrl } from '@/lib/tcgdex';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 
@@ -70,7 +71,11 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
         author_avatar: '',
         did,
       }, NSID.STORY, did, signingKey);
-      await base44.entities.Story.create(stamped);
+      const created = await base44.entities.Story.create(stamped);
+      // Bridge to AT Protocol PDS as a real org.swappulse.story record
+      bridgeStory(stamped).then((res) => {
+        if (res.bridged) base44.entities.Story.update(created.id, res).catch(() => {});
+      }).catch(() => {});
       base44.functions.invoke('dispatchBellNotifications', {
         author_did: did, author_name: me?.full_name || '', category: 'story',
         preview: finalSegs[0]?.text_overlay || 'Shared a story', url: '/',

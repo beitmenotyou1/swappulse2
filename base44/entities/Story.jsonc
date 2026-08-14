@@ -2,6 +2,7 @@
   "name": "Story",
   "type": "object",
   "title": "Story",
+  "description": "org.swappulse.story \u2014 an ephemeral 24-hour story, mirrored to AT Protocol as a real org.swappulse.story record. Stories expire client-side after 24 hours; the PDS record remains for audit but the AppView filters expired stories from feeds.",
   "properties": {
     "segments": {
       "type": "array",
@@ -121,11 +122,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the author (simulated)"
+      "description": "AT Protocol DID of the author"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -138,6 +139,11 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the story to the author's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the story has been mirrored to the AT Protocol PDS as a real org.swappulse.story record"
     }
   },
   "required": [

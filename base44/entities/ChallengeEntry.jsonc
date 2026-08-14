@@ -2,7 +2,7 @@
   "name": "ChallengeEntry",
   "type": "object",
   "title": "ChallengeEntry",
-  "description": "org.swappulse.challengeEntry \u2014 a user's contribution to a challenge. The leaderboard feed generator reads the author's profile settings (SettingsConfig.config.challenges.leaderboardOptIn) to decide visibility; override_profile_visibility allows a per-entry override. status and moderator_labels gate quality (rejected / spam_suspected entries are excluded from ranking).",
+  "description": "org.swappulse.challengeEntry \u2014 a user's contribution to a challenge, mirrored to AT Protocol as a real org.swappulse.challengeEntry record. References the challenge via strongRef so entries are portable and verifiable across instances. The leaderboard feed generator reads the author's profile settings to decide visibility.",
   "properties": {
     "challenge_id": {
       "type": "string",
@@ -133,11 +133,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the participant (simulated)"
+      "description": "AT Protocol DID of the participant"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -145,11 +145,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.challengeEntry)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the entry to the participant's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the entry has been mirrored to the AT Protocol PDS as a real org.swappulse.challengeEntry record"
     }
   },
   "required": [

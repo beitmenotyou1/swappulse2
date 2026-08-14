@@ -148,6 +148,214 @@ export async function bridgeCircle(circle) {
   };
 }
 
+// --- Meetup: entity row → AT Protocol record ---
+
+export function buildMeetupRecord(meetup, organiserDid = '', organiserName = '', organiserHandle = '') {
+  return {
+    $type: NSID.MEETUP,
+    title: meetup.title || '',
+    description: meetup.description || '',
+    scheduledAt: meetup.scheduled_at || '',
+    estimatedDuration: meetup.estimated_duration ?? null,
+    locationName: meetup.location_name || '',
+    region: meetup.region || '',
+    lat: meetup.lat ?? null,
+    lng: meetup.lng ?? null,
+    capacity: meetup.capacity ?? null,
+    requiredVouches: meetup.required_vouches ?? 0,
+    status: meetup.status || 'scheduled',
+    organiserDid: organiserDid || '',
+    organiserName: organiserName || '',
+    organiserHandle: organiserHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- MeetupRSVP: entity row → AT Protocol record ---
+
+export function buildMeetupRsvpRecord(rsvp, attendeeDid = '', attendeeName = '', attendeeHandle = '') {
+  return {
+    $type: NSID.MEETUP_RSVP,
+    meetupRef: rsvp.meetup_ref || '',
+    attending: rsvp.attending || 'yes',
+    bringingTradeBinder: rsvp.bringing_trade_binder ?? false,
+    lookingForCards: rsvp.looking_for_cards || [],
+    attendeeDid: attendeeDid || '',
+    attendeeName: attendeeName || '',
+    attendeeHandle: attendeeHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- Challenge: entity row → AT Protocol record ---
+
+export function buildChallengeRecord(challenge, publisherDid = '', publisherName = '') {
+  return {
+    $type: NSID.CHALLENGE,
+    challengeType: challenge.challenge_type || 'community_goal',
+    mode: challenge.mode || 'collective',
+    category: challenge.category || '',
+    title: challenge.title || '',
+    description: challenge.description || '',
+    rules: challenge.rules || '',
+    scope: challenge.scope || 'global',
+    circleRef: challenge.circle_ref || '',
+    goal: challenge.goal || {},
+    reward: challenge.reward || {},
+    leaderboardConfig: challenge.leaderboard_config || {},
+    targetSetCode: challenge.target_set_code || '',
+    budgetLimit: challenge.budget_limit ?? null,
+    rewardBadge: challenge.reward_badge || '',
+    startsAt: challenge.starts_at || '',
+    endsAt: challenge.ends_at || '',
+    votingEndsAt: challenge.voting_ends_at || '',
+    status: challenge.status || 'upcoming',
+    tags: challenge.tags || [],
+    imageUrl: challenge.image_url || '',
+    publisherDid: publisherDid || '',
+    publisherName: publisherName || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- ChallengeEntry: entity row → AT Protocol record ---
+
+export function buildChallengeEntryRecord(entry, participantDid = '', participantName = '') {
+  return {
+    $type: NSID.CHALLENGE_ENTRY,
+    challengeRef: entry.challenge_ref || '',
+    challengeId: entry.challenge_id || '',
+    entryType: entry.entry_type || 'card_pull',
+    category: entry.category || '',
+    contributionCount: entry.contribution_count ?? 1,
+    contributionUris: entry.contribution_uris || [],
+    verificationHash: entry.verification_hash || '',
+    notes: entry.notes || '',
+    status: entry.status || 'pending',
+    participantDid: participantDid || '',
+    participantName: participantName || '',
+    submittedAt: entry.submitted_at || new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- Story: entity row → AT Protocol record ---
+
+export function buildStoryRecord(story, authorDid = '', authorName = '', authorHandle = '') {
+  return {
+    $type: NSID.STORY,
+    segments: story.segments || [],
+    audience: story.audience || 'friends',
+    storyGroup: story.story_group || '',
+    expiresAt: story.expires_at || '',
+    authorDid: authorDid || '',
+    authorName: authorName || '',
+    authorHandle: authorHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- Reaction: entity row → AT Protocol record ---
+
+export function buildReactionRecord(reaction, reactorDid = '', reactorName = '', reactorHandle = '') {
+  return {
+    $type: NSID.REACTION,
+    subject: reaction.subject || '',
+    reactionType: reaction.reaction_type || 'wow',
+    targetCardUri: reaction.target_card_uri || '',
+    reactorDid: reactorDid || '',
+    reactorName: reactorName || '',
+    reactorHandle: reactorHandle || '',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// --- Bridge helpers for Phase 2 record types ---
+
+async function getMe() {
+  try {
+    const me = await base44.auth.me();
+    return {
+      name: me?.full_name || '',
+      handle: me?.custom_handle || (me?.email?.split('@')[0] || ''),
+    };
+  } catch {
+    return { name: '', handle: '' };
+  }
+}
+
+export async function bridgeMeetup(meetup) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildMeetupRecord(meetup, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.MEETUP);
+  return {
+    did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid,
+    record_type: stamped.record_type, sig: stamped.sig,
+    bridged: stamped.bridged ?? false,
+  };
+}
+
+export async function bridgeMeetupRsvp(rsvp) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildMeetupRsvpRecord(rsvp, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.MEETUP_RSVP);
+  return {
+    did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid,
+    record_type: stamped.record_type, sig: stamped.sig,
+    bridged: stamped.bridged ?? false,
+  };
+}
+
+export async function bridgeChallenge(challenge) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildChallengeRecord(challenge, did, me.name);
+  const stamped = await bridgeRecord(record, NSID.CHALLENGE);
+  return {
+    did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid,
+    record_type: stamped.record_type, sig: stamped.sig,
+    bridged: stamped.bridged ?? false,
+  };
+}
+
+export async function bridgeChallengeEntry(entry) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildChallengeEntryRecord(entry, did, me.name);
+  const stamped = await bridgeRecord(record, NSID.CHALLENGE_ENTRY);
+  return {
+    did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid,
+    record_type: stamped.record_type, sig: stamped.sig,
+    bridged: stamped.bridged ?? false,
+  };
+}
+
+export async function bridgeStory(story) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildStoryRecord(story, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.STORY);
+  return {
+    did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid,
+    record_type: stamped.record_type, sig: stamped.sig,
+    bridged: stamped.bridged ?? false,
+  };
+}
+
+export async function bridgeReaction(reaction) {
+  const { did } = await ensureUserDid();
+  const me = await getMe();
+  const record = buildReactionRecord(reaction, did, me.name, me.handle);
+  const stamped = await bridgeRecord(record, NSID.REACTION);
+  return {
+    did: stamped.did, at_uri: stamped.at_uri, cid: stamped.cid,
+    record_type: stamped.record_type, sig: stamped.sig,
+    bridged: stamped.bridged ?? false,
+  };
+}
+
 // Delete a bridged record from the PDS. Call before deleting the local entity.
 export async function unbridgeFederatedRecord(entity) {
   if (!entity?.at_uri || !entity?.bridged) return false;

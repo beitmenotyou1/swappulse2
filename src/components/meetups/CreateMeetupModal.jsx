@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeMeetup } from '@/lib/federatedBridge';
 
 export default function CreateMeetupModal({ open, onClose, onCreated }) {
   const [title, setTitle] = useState('');
@@ -46,7 +47,11 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
         did,
         signingKey,
       );
-      await base44.entities.Meetup.create(stamped);
+      const created = await base44.entities.Meetup.create(stamped);
+      // Bridge to AT Protocol PDS as a real org.swappulse.meetup record
+      bridgeMeetup(stamped).then((res) => {
+        if (res.bridged) base44.entities.Meetup.update(created.id, res).catch(() => {});
+      }).catch(() => {});
       setTitle(''); setDescription(''); setScheduledAt(''); setLocationName(''); setRegion(''); setCapacity(10); setRequiredVouches(0);
       onCreated?.();
       onClose();

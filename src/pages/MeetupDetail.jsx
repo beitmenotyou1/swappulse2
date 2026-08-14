@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { bridgeMeetupRsvp } from '@/lib/federatedBridge';
 import { useAuth } from '@/lib/AuthContext';
 import { CalendarDays, MapPin, Users, ShieldCheck, Loader2, BookOpen, X } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -71,7 +72,11 @@ export default function MeetupDetail() {
           did,
           signingKey,
         );
-        await base44.entities.MeetupRsvp.create(stamped);
+        const created = await base44.entities.MeetupRsvp.create(stamped);
+        // Bridge to AT Protocol PDS as a real org.swappulse.meetupRsvp record
+        bridgeMeetupRsvp(stamped).then((res) => {
+          if (res.bridged) base44.entities.MeetupRsvp.update(created.id, res).catch(() => {});
+        }).catch(() => {});
         await base44.entities.Meetup.update(m.id, { rsvp_count: (m.rsvp_count || 0) + 1 });
       }
       await load();

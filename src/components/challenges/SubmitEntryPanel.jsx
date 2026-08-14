@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { bridgeChallengeEntry } from '@/lib/federatedBridge';
 import { Loader2, Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,6 +50,12 @@ export default function SubmitEntryPanel({ challenge }) {
         category: challenge.category,
       });
       setResult(res.data);
+      // Bridge to AT Protocol PDS as a real org.swappulse.challengeEntry record
+      if (res.data?.entry?.id) {
+        bridgeChallengeEntry(res.data.entry).then((bridgeRes) => {
+          if (bridgeRes.bridged) base44.entities.ChallengeEntry.update(res.data.entry.id, bridgeRes).catch(() => {});
+        }).catch(() => {});
+      }
       setSelected(new Set()); setNotes('');
     } catch (e) { setResult({ error: e?.message || 'Submit failed' }); }
     finally { setSubmitting(false); }

@@ -2,7 +2,7 @@
   "name": "Challenge",
   "type": "object",
   "title": "Challenge",
-  "description": "org.swappulse.challenge \u2014 a community challenge definition. Participation model is set by `mode`: collective (shared global goal, no ranking), competitive (multi-axis opt-in leaderboard), or guild (circle-scoped, Alpha 1.2). `goal` defines the metric, target and quality filters; `reward` defines what contributors receive (shared=true grants to all on collective completion). `leaderboard_config` is ignored for collective challenges.",
+  "description": "org.swappulse.challenge \u2014 a community challenge definition, mirrored to AT Protocol as a real org.swappulse.challenge record so challenges are discoverable across instances. Participation model is set by `mode`: collective (shared global goal, no ranking), competitive (multi-axis opt-in leaderboard), or guild (circle-scoped). `goal` defines the metric, target and quality filters; `reward` defines what contributors receive.",
   "properties": {
     "challenge_type": {
       "type": "string",
@@ -251,11 +251,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the publisher (simulated)"
+      "description": "AT Protocol DID of the publisher"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -263,11 +263,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.challenge)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the challenge to the publisher's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the challenge has been mirrored to the AT Protocol PDS as a real org.swappulse.challenge record"
     }
   },
   "required": [

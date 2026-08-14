@@ -2,6 +2,7 @@
   "name": "Reaction",
   "type": "object",
   "title": "Reaction",
+  "description": "org.swappulse.reaction \u2014 a collector's reaction to a post (insane_pull, jealous, congrats, trade_interest, etc.), mirrored to AT Protocol as a real org.swappulse.reaction record. References the post via strongRef so reactions are portable and verifiable across instances.",
   "properties": {
     "subject": {
       "type": "string",
@@ -38,11 +39,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the reactor (simulated)"
+      "description": "AT Protocol DID of the reactor"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -50,11 +51,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.reaction)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the reaction to the reactor's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the reaction has been mirrored to the AT Protocol PDS as a real org.swappulse.reaction record"
     }
   },
   "required": [

@@ -28,6 +28,12 @@ const COLLECTIONS: Record<string, string> = {
   'org.swappulse.packParty': 'PackParty',
   'org.swappulse.pullNomination': 'PullNomination',
   'org.swappulse.tradingFeedback': 'Reputation',
+  'org.swappulse.meetup': 'Meetup',
+  'org.swappulse.meetupRsvp': 'MeetupRsvp',
+  'org.swappulse.challenge': 'Challenge',
+  'org.swappulse.challengeEntry': 'ChallengeEntry',
+  'org.swappulse.story': 'Story',
+  'org.swappulse.reaction': 'Reaction',
 };
 
 // Field mapping: PDS record field → local entity field
@@ -88,10 +94,144 @@ function mapCircleFields(val: any, atUri: string, did: string) {
   };
 }
 
+function mapMeetupFields(val: any, atUri: string, did: string) {
+  return {
+    title: val.title || '',
+    description: val.description || '',
+    scheduled_at: val.scheduledAt || '',
+    estimated_duration: val.estimatedDuration ?? null,
+    location_name: val.locationName || '',
+    region: val.region || '',
+    lat: val.lat ?? null,
+    lng: val.lng ?? null,
+    capacity: val.capacity ?? null,
+    required_vouches: val.requiredVouches ?? 0,
+    status: val.status || 'scheduled',
+    creator_did: val.organiserDid || did,
+    rsvp_count: 0,
+    author_name: val.organiserName || '',
+    author_handle: val.organiserHandle || '',
+    did: val.organiserDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.meetup',
+    bridged: true,
+  };
+}
+
+function mapMeetupRsvpFields(val: any, atUri: string, did: string) {
+  return {
+    meetup_ref: val.meetupRef || '',
+    meetup_id: '',
+    attending: val.attending || 'yes',
+    bringing_trade_binder: val.bringingTradeBinder ?? false,
+    looking_for_cards: val.lookingForCards || [],
+    attendee_name: val.attendeeName || '',
+    attendee_handle: val.attendeeHandle || '',
+    did: val.attendeeDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.meetupRsvp',
+    bridged: true,
+  };
+}
+
+function mapChallengeFields(val: any, atUri: string, did: string) {
+  return {
+    challenge_type: val.challengeType || 'community_goal',
+    mode: val.mode || 'collective',
+    category: val.category || '',
+    title: val.title || '',
+    description: val.description || '',
+    rules: val.rules || '',
+    scope: val.scope || 'global',
+    circle_ref: val.circleRef || '',
+    goal: val.goal || {},
+    reward: val.reward || {},
+    leaderboard_config: val.leaderboardConfig || {},
+    target_set_code: val.targetSetCode || '',
+    budget_limit: val.budgetLimit ?? null,
+    reward_badge: val.rewardBadge || '',
+    starts_at: val.startsAt || '',
+    ends_at: val.endsAt || '',
+    voting_ends_at: val.votingEndsAt || '',
+    status: val.status || 'upcoming',
+    tags: val.tags || [],
+    image_url: val.imageUrl || '',
+    author_name: val.publisherName || '',
+    creator_did: val.publisherDid || did,
+    did: val.publisherDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.challenge',
+    bridged: true,
+  };
+}
+
+function mapChallengeEntryFields(val: any, atUri: string, did: string) {
+  return {
+    challenge_ref: val.challengeRef || '',
+    challenge_id: val.challengeId || '',
+    participant_did: val.participantDid || did,
+    participant_name: val.participantName || '',
+    entry_type: val.entryType || 'card_pull',
+    category: val.category || '',
+    contribution_count: val.contributionCount ?? 1,
+    contribution_uris: val.contributionUris || [],
+    verification_hash: val.verificationHash || '',
+    notes: val.notes || '',
+    status: val.status || 'pending',
+    submitted_at: val.submittedAt || '',
+    did: val.participantDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.challengeEntry',
+    bridged: true,
+  };
+}
+
+function mapStoryFields(val: any, atUri: string, did: string) {
+  return {
+    segments: val.segments || [],
+    audience: val.audience || 'friends',
+    story_group: val.storyGroup || '',
+    expires_at: val.expiresAt || '',
+    author_name: val.authorName || '',
+    author_handle: val.authorHandle || '',
+    did: val.authorDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.story',
+    bridged: true,
+  };
+}
+
+function mapReactionFields(val: any, atUri: string, did: string) {
+  return {
+    subject: val.subject || '',
+    post_id: '',
+    reaction_type: val.reactionType || 'wow',
+    target_card_uri: val.targetCardUri || '',
+    reactor_name: val.reactorName || '',
+    reactor_handle: val.reactorHandle || '',
+    did: val.reactorDid || did,
+    at_uri: atUri,
+    cid: '',
+    record_type: 'org.swappulse.reaction',
+    bridged: true,
+  };
+}
+
 const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string) => any> = {
   'org.swappulse.vouch': mapVouchFields,
   'org.swappulse.wishlist': mapWishlistFields,
   'org.swappulse.circle': mapCircleFields,
+  'org.swappulse.meetup': mapMeetupFields,
+  'org.swappulse.meetupRsvp': mapMeetupRsvpFields,
+  'org.swappulse.challenge': mapChallengeFields,
+  'org.swappulse.challengeEntry': mapChallengeEntryFields,
+  'org.swappulse.story': mapStoryFields,
+  'org.swappulse.reaction': mapReactionFields,
 };
 
 export default async function(req: Request): Promise<Response> {

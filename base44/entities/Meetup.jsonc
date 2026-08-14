@@ -2,6 +2,7 @@
   "name": "Meetup",
   "type": "object",
   "title": "Meetup",
+  "description": "org.swappulse.meetup \u2014 a local in-person collector meetup, mirrored to AT Protocol as a real org.swappulse.meetup record so meetups are discoverable across instances. RSVPs are separate org.swappulse.meetupRsvp records referencing this meetup via strongRef.",
   "properties": {
     "title": {
       "type": "string",
@@ -73,11 +74,11 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the organiser (simulated)"
+      "description": "AT Protocol DID of the organiser"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "at:// URI of this record (real once bridged to the PDS)"
     },
     "cid": {
       "type": "string",
@@ -85,11 +86,16 @@
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID"
+      "description": "SwapPulse lexicon NSID (org.swappulse.meetup)"
     },
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the meetup to the organiser's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the meetup has been mirrored to the AT Protocol PDS as a real org.swappulse.meetup record"
     }
   },
   "required": [
