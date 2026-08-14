@@ -21,8 +21,9 @@ export default function BlueskyLinkPrompt() {
     } catch {}
   }, []);
 
-  // Show only for logged-in users without a linked Bluesky handle
-  if (!user || user.bsky_handle || dismissed) return null;
+  // Show only for logged-in users with no did:plc AND no linked handle —
+  // auto-provisioned users (did:plc set) never see this prompt.
+  if (!user || user.did?.startsWith('did:plc:') || user.bsky_handle || dismissed) return null;
 
   const dismiss = () => {
     try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch {}

@@ -72,12 +72,9 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
       // an existing AT Protocol identity, which already has a real DID).
       if (!portedDid) {
         try {
-          await base44.functions.invoke('provision-did', {
-            email: undefined,
-            handle: username,
-          });
+          await base44.functions.invoke('provision-identity', { username });
         } catch (e) {
-          console.error('ProfileSetup: provision-did failed (non-fatal)', e);
+          console.error('ProfileSetup: provision-identity failed (non-fatal)', e);
         }
       }
       onDone?.();
