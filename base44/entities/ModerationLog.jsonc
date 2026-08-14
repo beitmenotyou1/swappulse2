@@ -2,7 +2,7 @@
   "name": "ModerationLog",
   "type": "object",
   "title": "ModerationLog",
-  "description": "org.swappulse.moderationLog \u2014 audit trail of moderator decisions on flagged posts.",
+  "description": "org.swappulse.moderationLog \u2014 audit trail of moderator decisions on flagged posts and account enforcement actions.",
   "properties": {
     "moderator_id": {
       "type": "string",
@@ -18,17 +18,28 @@
         "dismiss",
         "escalate",
         "auto-resolve",
-        "auto-escalate"
+        "auto-escalate",
+        "suspend",
+        "lift_suspension",
+        "shadow_ban",
+        "lift_shadow_ban",
+        "force_delete",
+        "blocklist_add",
+        "blocklist_remove"
       ],
-      "description": "Moderation action taken"
+      "description": "Moderation or enforcement action taken"
     },
     "target_post_id": {
       "type": "string",
-      "description": "Id of the post that was reviewed"
+      "description": "Id of the post that was reviewed (empty for account enforcement actions)"
+    },
+    "target_user_id": {
+      "type": "string",
+      "description": "Id of the user targeted by an enforcement action (suspend, shadow ban, force delete)"
     },
     "target_author": {
       "type": "string",
-      "description": "Handle or id of the flagged post's author"
+      "description": "Handle or id of the flagged post's author or the enforcement target"
     },
     "labels_affected": {
       "type": "array",
@@ -39,7 +50,7 @@
     },
     "notes": {
       "type": "string",
-      "description": "Optional moderator notes"
+      "description": "Optional moderator notes (e.g. suspension reason)"
     },
     "auto_generated": {
       "type": "boolean",
@@ -48,8 +59,7 @@
   },
   "required": [
     "moderator_id",
-    "action",
-    "target_post_id"
+    "action"
   ],
   "rls": {
     "read": {
@@ -58,9 +68,18 @@
       }
     },
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
     },
     "update": {
       "user_condition": {
