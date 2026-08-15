@@ -8,6 +8,7 @@ import CardOfTheDay from '@/components/home/CardOfTheDay';
 import StoriesBar from '@/components/stories/StoriesBar';
 import SpaceBar from '@/components/spaces/SpaceBar';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
+import PushOnboardingPrompt from '@/components/onboarding/PushOnboardingPrompt';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
@@ -27,7 +28,13 @@ export default function Home() {
   const [repostMap, setRepostMap] = useState({});
   const [likeMap, setLikeMap] = useState({});
   const [showTour, setShowTour] = useState(() => !localStorage.getItem('swappulse_onboarding_done'));
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
   const { user } = useAuth();
+
+  const completeTour = () => {
+    setShowTour(false);
+    if (!localStorage.getItem('swappulse_push_prompted')) setShowPushPrompt(true);
+  };
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -116,7 +123,7 @@ export default function Home() {
   const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
 
   if (showTour) {
-    return <OnboardingTour onComplete={() => setShowTour(false)} />;
+    return <OnboardingTour onComplete={completeTour} />;
   }
 
   return (
@@ -169,6 +176,7 @@ export default function Home() {
           ))}
         </div>
       )}
+      <PushOnboardingPrompt open={showPushPrompt} onClose={() => setShowPushPrompt(false)} />
     </div>
   );
 }

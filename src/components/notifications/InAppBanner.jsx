@@ -4,7 +4,7 @@ import { X, Bell, TrendingUp, Repeat2, Mic, MessageCircle, Heart, Trophy, Gift, 
 import { parseDeepLink, navigateFromDeepLink } from '@/lib/deepLinks';
 import { base44 } from '@/api/base44Client';
 
-const AUTO_DISMISS_MS = 5000;
+const AUTO_DISMISS_MS = 30000;
 
 const TYPE_ICONS = {
   trade_match: Repeat2,

@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useUnreadDMCount } from '@/hooks/useUnreadDMCount';
+import { PopoverTrigger } from '@/components/ui/popover';
+import NotificationPopover from '@/components/notifications/NotificationPopover';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -62,21 +64,40 @@ export default function LeftNav() {
         </NavLink>
       </div>
       <div className="flex flex-col items-center gap-1 xl:items-stretch">
-        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => (
+        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
+          if (item.to === '/notifications') {
+            return (
+              <NotificationPopover
+                key={item.to}
+                side="right"
+                align="start"
+                trigger={
+                  <PopoverTrigger asChild>
+                    <button aria-label={item.label} className={linkClass({ isActive: false })}>
+                      <item.icon className="h-6 w-6 shrink-0" />
+                      <span className="hidden xl:inline">{item.label}</span>
+                      {unread > 0 && (
+                        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white live-pulse">{unread}</span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                }
+              />
+            );
+          }
+          return (
           <NavLink key={item.to} to={item.to} end={item.to === '/'} aria-label={item.label} className={linkClass}>
             <item.icon className="h-6 w-6 shrink-0" />
             <span className="hidden xl:inline">{item.label}</span>
             {item.to === '/spaces' && liveCount > 0 && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white">{liveCount}</span>
             )}
-            {item.to === '/notifications' && unread > 0 && (
-              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white live-pulse">{unread}</span>
-            )}
             {item.to === '/messages' && unreadDMs > 0 && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">{unreadDMs}</span>
             )}
           </NavLink>
-        ))}
+          );
+        })}
 
         <button
           onClick={() => setShowMore((v) => !v)}

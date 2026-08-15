@@ -6,6 +6,8 @@ import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useUnreadDMCount } from '@/hooks/useUnreadDMCount';
 import { useAuth } from '@/lib/AuthContext';
+import { PopoverTrigger } from '@/components/ui/popover';
+import NotificationPopover from '@/components/notifications/NotificationPopover';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -102,6 +104,31 @@ export default function MobileNav() {
             <div className="grid grid-cols-3 gap-2">
               {moreItems.filter((i) => (!i.authOnly || isAuthenticated) && (!i.adminOnly || user?.role === 'admin')).map((item) => {
                 const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
+                if (item.to === '/notifications') {
+                  return (
+                    <NotificationPopover
+                      key={item.to}
+                      side="top"
+                      align="center"
+                      onNavigate={() => setMoreOpen(false)}
+                      trigger={
+                        <PopoverTrigger asChild>
+                          <button
+                            className={`relative flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium transition-colors hover:bg-secondary ${
+                              active ? 'text-primary' : 'text-foreground'
+                            }`}
+                          >
+                            <item.icon className="h-5 w-5" />
+                            {item.label}
+                            {unread > 0 && (
+                              <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
+                            )}
+                          </button>
+                        </PopoverTrigger>
+                      }
+                    />
+                  );
+                }
                 return (
                   <Link
                     key={item.to}
@@ -115,9 +142,6 @@ export default function MobileNav() {
                     {item.label}
                     {item.to === '/spaces' && liveCount > 0 && (
                       <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{liveCount}</span>
-                    )}
-                    {item.to === '/notifications' && unread > 0 && (
-                      <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
                     )}
                     {item.to === '/messages' && unreadDMs > 0 && (
                       <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">{unreadDMs}</span>
