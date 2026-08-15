@@ -55,6 +55,16 @@ export function useNotifications() {
     return () => { if (unsub) unsub(); };
   }, [did, refresh]);
 
+  // Polling fallback: refresh every 30s while the page is visible, so the
+  // list doesn't appear frozen if the realtime subscription misses a write.
+  useEffect(() => {
+    if (!did) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') refresh();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [did, refresh]);
+
   const unreadCount = items.filter((n) => !n.is_read).length;
 
   const markRead = useCallback(async (id) => {

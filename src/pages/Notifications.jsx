@@ -1,65 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Loader2, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, MessageCircle, Repeat2, Globe } from 'lucide-react';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
-import Avatar from '@/components/Avatar';
 import PageHeader from '@/components/PageHeader';
-import { Image } from '@/components/ui/image';
 import AchievementNotificationCard from '@/components/notifications/AchievementNotificationCard';
-import InteractionActions from '@/components/notifications/InteractionActions';
-import FollowBackButton from '@/components/notifications/FollowBackButton';
-
-const ACTION_META = {
-  trade_match: { Icon: ArrowLeftRight, tint: 'text-primary' },
-  price_alert: { Icon: TrendingDown, tint: 'text-success' },
-  reaction: { Icon: Heart, tint: 'text-destructive' },
-  like: { Icon: Heart, tint: 'text-destructive' },
-  repost: { Icon: Repeat2, tint: 'text-emerald-500' },
-  comment: { Icon: MessageCircle, tint: 'text-primary' },
-  follow: { Icon: UserPlus, tint: 'text-primary' },
-  mention: { Icon: AtSign, tint: 'text-primary' },
-  voice_live: { Icon: Radio, tint: 'text-destructive' },
-  podcast: { Icon: Mic, tint: 'text-primary' },
-  reputation: { Icon: Star, tint: 'text-accent' },
-  message: { Icon: MessageSquare, tint: 'text-primary' },
-  pack_pull: { Icon: Star, tint: 'text-accent' },
-};
-
-function describe(n) {
-  const actor = n.actor_name || 'Someone';
-  switch (n.action_type) {
-    case 'trade_match': return `${actor} listed a trade matching your wishlist`;
-    case 'price_alert': return `Price drop on ${n.target_label || 'a wishlist card'}`;
-    case 'reaction':
-    case 'like': return `${actor} reacted to your ${n.target_label || 'post'}`;
-    case 'comment': return `${actor} commented on your ${n.target_label || 'post'}`;
-    case 'follow': return `${actor} followed you`;
-    case 'mention': return `${actor} mentioned you`;
-    case 'voice_live': return `${actor} went live`;
-    case 'podcast': return `${actor} published a new podcast`;
-    case 'reputation': return n.target_label || 'Your reputation was updated';
-    case 'message': return `${actor} sent you a trade message`;
-    case 'pack_pull': return `${actor} pulled a card on your wishlist`;
-    default: return `${actor} notified you`;
-  }
-}
+import NotificationFilterTabs from '@/components/notifications/NotificationFilterTabs';
+import NotificationGroup from '@/components/notifications/NotificationGroup';
+import NotificationCard from '@/components/notifications/NotificationCard';
 
 const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
 
+function groupByDate(items) {
+  const today = [];
+  const earlier = [];
+  const now = new Date();
+  for (const n of items) {
+    const d = new Date(n.created_date);
+    if (d.toDateString() === now.toDateString()) today.push(n);
+    else earlier.push(n);
+  }
+  return { today, earlier };
+}
+
+const EMPTY_MSG = {
+  all: 'No notifications yet',
+  unread: 'No unread notifications',
+  mentions: 'No mentions',
+  follows: 'No new follows',
+};
+
 export default function Notifications() {
   const navigate = useNavigate();
-  const { items, loading, unreadCount, markRead, markAllRead } = useNotifications();
-  const [filterUnread, setFilterUnread] = useState(false);
+  const { items, loading, unreadCount, refresh, markRead, markAllRead } = useNotifications();
+  const [filter, setFilter] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const visible = filterUnread ? items.filter((n) => !n.is_read) : items;
+  const counts = useMemo(() => ({
+    all: items.length,
+    unread: items.filter((n) => !n.is_read).length,
+    mentions: items.filter((n) => n.action_type === 'mention').length,
+    follows: items.filter((n) => n.action_type === 'follow').length,
+  }), [items]);
+
+  const visible = useMemo(() => {
+    switch (filter) {
+      case 'unread': return items.filter((n) => !n.is_read);
+      case 'mentions': return items.filter((n) => n.action_type === 'mention');
+      case 'follows': return items.filter((n) => n.action_type === 'follow');
+      default: return items;
+    }
+  }, [items, filter]);
+
+  const { today, earlier } = useMemo(() => groupByDate(visible), [visible]);
 
   const open = async (n) => {
-    if (isAchievement(n)) return; // card handles its own actions
+    if (isAchievement(n)) return;
     if (!n.is_read) await markRead(n.id);
     if (!n.target_path) return;
-    // External URLs (Bluesky deep links for remote posts) open in a new tab;
-    // internal routes use the SPA navigator.
     if (n.target_path.startsWith('http')) {
       window.open(n.target_path, '_blank', 'noopener,noreferrer');
     } else {
@@ -69,105 +66,59 @@ export default function Notifications() {
 
   const dismiss = async (id) => { await markRead(id); };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try { await refresh(); } finally { setRefreshing(false); }
+  };
+
+  const renderCard = (n) => {
+    if (isAchievement(n)) {
+      return (
+        <div key={n.id} className={!n.is_read ? 'bg-primary/5' : ''}>
+          <AchievementNotificationCard n={n} onDismiss={dismiss} />
+        </div>
+      );
+    }
+    return <NotificationCard key={n.id} n={n} onOpen={open} onDismiss={dismiss} />;
+  };
+
   return (
     <div>
       <PageHeader title="Notifications" subtitle="Trade matches, price drops and activity from across SwapPulse">
-        {unreadCount > 0 && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={markAllRead}
-            className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-secondary"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center rounded-full border border-border bg-card p-2 hover:bg-secondary disabled:opacity-50"
+            aria-label="Refresh notifications"
           >
-            <CheckCheck className="h-4 w-4" /> Mark all read
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
-        )}
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-secondary"
+            >
+              <CheckCheck className="h-4 w-4" /> Mark all read
+            </button>
+          )}
+        </div>
       </PageHeader>
 
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-        <span className="relative flex h-2.5 w-2.5">
-          {unreadCount > 0 && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />}
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
-        </span>
-        <span className="text-sm font-bold">{unreadCount}</span>
-        <span className="text-xs text-muted-foreground">unread</span>
-        <button
-          onClick={() => setFilterUnread((v) => !v)}
-          className={`ml-auto rounded-full px-3 py-1.5 text-xs font-semibold ${filterUnread ? 'bg-primary text-primary-foreground' : 'border border-border bg-card'}`}
-        >
-          {filterUnread ? 'Unread only' : 'All'}
-        </button>
-      </div>
+      <NotificationFilterTabs active={filter} onChange={setFilter} counts={counts} />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Bell className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-semibold">{filterUnread ? 'No unread notifications' : 'No notifications yet'}</p>
+          <p className="text-sm font-semibold">{EMPTY_MSG[filter] || 'No notifications yet'}</p>
           <p className="text-xs text-muted-foreground">Trade matches and price alerts will show up here.</p>
         </div>
       ) : (
-        <div className="divide-y divide-border">
-          {visible.map((n) => {
-            if (isAchievement(n)) {
-              return (
-                <div key={n.id} className={!n.is_read ? 'bg-primary/5' : ''}>
-                  <AchievementNotificationCard n={n} onDismiss={dismiss} />
-                </div>
-              );
-            }
-            const meta = ACTION_META[n.action_type] || { Icon: Bell, tint: 'text-muted-foreground' };
-            const unread = !n.is_read;
-            return (
-              <div key={n.id}>
-              <div
-                onClick={() => open(n)}
-                className={`flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/60 ${unread ? 'bg-primary/5' : ''}`}
-              >
-                <span className="mt-1.5 w-2 shrink-0">
-                  {unread && <span className="block h-2 w-2 rounded-full bg-primary" />}
-                </span>
-                <div className="relative shrink-0">
-                  <Avatar name={n.actor_name} src={n.actor_avatar} size={40} />
-                  <span className={`absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-background ring-1 ring-border ${meta.tint}`}>
-                    <meta.Icon className="h-3 w-3" />
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm leading-snug">
-                    {describe(n)}
-                    {n.group_count > 1 && <span className="ml-1 font-semibold text-primary">· {n.group_count}× </span>}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    {n.actor_handle && <p className="truncate text-xs text-muted-foreground">@{n.actor_handle}</p>}
-                    {n.metadata?.origin === 'remote' && (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                        <Globe className="h-2.5 w-2.5" /> Bluesky
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {n.created_date ? formatDistanceToNowStrict(new Date(n.created_date), { addSuffix: true }) : ''}
-                  </p>
-                </div>
-                {n.target_image && (
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg ring-1 ring-border">
-                    <Image src={n.target_image} alt="" fittingType="fill" className="h-full w-full" />
-                  </div>
-                )}
-              </div>
-              {['like', 'repost', 'comment'].includes(n.action_type) && (
-                <div className="px-4 pb-2">
-                  <InteractionActions n={n} onResponded={() => markRead(n.id)} />
-                </div>
-              )}
-              {n.action_type === 'follow' && (
-                <div className="px-4 pb-2" onClick={(e) => e.stopPropagation()}>
-                  <FollowBackButton n={n} onResponded={() => markRead(n.id)} />
-                </div>
-              )}
-              </div>
-            );
-          })}
+        <div>
+          <NotificationGroup title="Today">{today.map(renderCard)}</NotificationGroup>
+          <NotificationGroup title="Earlier">{earlier.map(renderCard)}</NotificationGroup>
         </div>
       )}
     </div>
