@@ -1,0 +1,151 @@
+{
+  "name": "SeoAudit",
+  "type": "object",
+  "title": "SeoAudit",
+  "description": "org.swappulse.seoAudit \u2014 stores the results of a weekly SEO audit run. The seo-audit backend function creates one record per audit, auto-fixes what it can, and emails the admin a summary. The admin dashboard reads these for trend visualisation.",
+  "properties": {
+    "audit_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this audit ran"
+    },
+    "overall_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Overall SEO health score (0-100)"
+    },
+    "pages_audited": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total number of public pages checked"
+    },
+    "issues_found": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total issues discovered before auto-fix"
+    },
+    "issues_fixed": {
+      "type": "integer",
+      "default": 0,
+      "description": "Issues automatically fixed by the audit"
+    },
+    "manual_action_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ]
+          },
+          "page": {
+            "type": "string"
+          },
+          "issue": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Issues that could not be auto-fixed and need manual attention"
+    },
+    "auto_fixed_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "string"
+          },
+          "issue": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Issues that were automatically fixed"
+    },
+    "sitemap_entry_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of URLs in the sitemap at audit time"
+    },
+    "broken_canonicals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pages with broken or missing canonical URLs"
+    },
+    "missing_og_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pages missing Open Graph images"
+    },
+    "missing_jsonld": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pages missing structured data"
+    },
+    "thin_content_pages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pages with very little indexable content"
+    },
+    "trend_data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Score history for trend visualisation (last 8 weeks)"
+    }
+  },
+  "required": [
+    "audit_date",
+    "overall_score"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

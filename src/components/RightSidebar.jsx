@@ -174,9 +174,13 @@ export default function RightSidebar({ online = [] }) {
         </section>
       )}
 
-      <p className="px-2 text-xs text-muted-foreground">
-        © SwapPulse - Built on the AT Protocol · Powered by TCGdex
-      </p>
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-2 text-xs text-muted-foreground">
+        <span>© SwapPulse - Built on the AT Protocol · Powered by TCGdex</span>
+        <span className="text-border-strong">·</span>
+        <Link to="/help" className="font-medium text-muted-foreground transition-colors hover:text-primary">Help</Link>
+        <span className="text-border-strong">·</span>
+        <Link to="/status" className="font-medium text-muted-foreground transition-colors hover:text-primary">Status</Link>
+      </div>
     </aside>
   );
 }
