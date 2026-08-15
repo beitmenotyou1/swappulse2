@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 
 const HEARTBEAT_MS = 30000;
 const BACKOFF = [1000, 2000, 4000, 8000, 16000, 30000];
-const TRACKED = ['Post', 'TradeListing', 'CardPricing', 'Reputation', 'TradeMessage', 'Wishlist', 'VoiceSpace', 'SpaceParticipant', 'PodcastEpisode', 'ExternalActivity'];
+const TRACKED = ['Post', 'TradeListing', 'CardPricing', 'Reputation', 'TradeMessage', 'Wishlist', 'VoiceSpace', 'SpaceParticipant', 'PodcastEpisode', 'ExternalActivity', 'Notification', 'Like', 'Repost', 'Reaction', 'Follow', 'Story', 'DirectMessage', 'Conversation'];
 
 class RealTimeManager {
   constructor() {
@@ -148,6 +148,30 @@ class RealTimeManager {
         else this.emit('presence.external_offline', e.data);
       }
     });
+    sub('Notification', (e) => {
+      if (e.type === 'create') this.emit('notification.new', e.data);
+    });
+    sub('Like', (e) => {
+      if (e.type === 'create') this.emit('interaction.like', e.data);
+    });
+    sub('Repost', (e) => {
+      if (e.type === 'create') this.emit('interaction.repost', e.data);
+    });
+    sub('Reaction', (e) => {
+      if (e.type === 'create') this.emit('interaction.reaction', e.data);
+    });
+    sub('Follow', (e) => {
+      if (e.type === 'create') this.emit('interaction.follow', e.data);
+    });
+    sub('Story', (e) => {
+      if (e.type === 'create') this.emit('story.new', e.data);
+    });
+    sub('DirectMessage', (e) => {
+      if (e.type === 'create') this.emit('dm.new', e.data);
+    });
+    sub('Conversation', (e) => {
+      if (e.type === 'create' || e.type === 'update') this.emit('dm.conversation_update', e.data);
+    });
   }
 
   async seedKnownIds() {
@@ -180,6 +204,14 @@ class RealTimeManager {
       diff('SpaceParticipant', (it) => this.emit('space.participant_update', it)),
       diff('PodcastEpisode', (it) => this.emit('podcast.new', it)),
       diff('ExternalActivity', (it) => { if (it.is_live) this.emit('presence.external_live', it); else this.emit('presence.external_offline', it); }),
+      diff('Notification', (it) => this.emit('notification.new', it)),
+      diff('Like', (it) => this.emit('interaction.like', it)),
+      diff('Repost', (it) => this.emit('interaction.repost', it)),
+      diff('Reaction', (it) => this.emit('interaction.reaction', it)),
+      diff('Follow', (it) => this.emit('interaction.follow', it)),
+      diff('Story', (it) => this.emit('story.new', it)),
+      diff('DirectMessage', (it) => this.emit('dm.new', it)),
+      diff('Conversation', (it) => this.emit('dm.conversation_update', it)),
     ]);
   }
 
@@ -225,17 +257,21 @@ class RealTimeManager {
     try {
       const me = await base44.auth.me();
       if (!me?.did) return;
-      const rec = {
-        did: me.did,
-        action_type,
-        is_read: false,
-        source_uri: source?.at_uri || source?.uri || '',
-        ...(build ? build(me) : {}),
-      };
-      await base44.entities.Notification.create(rec);
-      this.emit('notification.new', rec);
-      // Dispatch push notification (fire and forget — in-app record already created)
-      this.dispatchPush(action_type, rec, source);
+      const fields = build ? build(me) : {};
+      // Route through the server-side notify-system-event function so the
+      // recipient's notification preferences (paused / who_filter / on_site_only)
+      // are enforced before the Notification record is created or push sent.
+      const res = await base44.functions.invoke('notify-system-event', {
+        recipientDid: me.did,
+        actionType: action_type,
+        source,
+        fields,
+      }).catch(() => null);
+      // The server creates the record; emit locally so the bell updates instantly
+      // even if the realtime subscription hasn't fired yet.
+      if (res?.data?.ok || res?.ok) {
+        this.emit('notification.new', { did: me.did, action_type, ...fields });
+      }
     } catch (e) {
       console.error('notifyForMe failed', e?.message || e);
     }

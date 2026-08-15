@@ -6,6 +6,7 @@ import { ensureUserDid } from '@/lib/atproto';
 import Avatar from '@/components/Avatar';
 import PostCard from '@/components/feed/PostCard';
 import FollowBellButton from '@/components/follow/FollowBellButton';
+import MessageButton from '@/components/messages/MessageButton';
 import FriendsBadge from '@/components/follow/FriendsBadge';
 import FollowsYouBadge from '@/components/follow/FollowsYouBadge';
 import AddFriendLink from '@/components/follow/AddFriendLink';
@@ -108,12 +109,20 @@ export default function UserProfile() {
         </Link>
         <div className={`${isExternal ? 'mt-2' : '-mt-6'} flex items-end justify-between`}>
           <Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-background" />
-          <FollowBellButton
-            subjectDid={subjectDid}
-            subjectName={profile?.name}
-            subjectHandle={profile?.bsky_handle || profile?.username}
-            subjectAvatar={profile?.avatar}
-          />
+          <div className="flex items-center gap-2">
+            <FollowBellButton
+              subjectDid={subjectDid}
+              subjectName={profile?.name}
+              subjectHandle={profile?.bsky_handle || profile?.username}
+              subjectAvatar={profile?.avatar}
+            />
+            <MessageButton
+              targetDid={subjectDid}
+              targetName={profile?.name}
+              targetHandle={profile?.bsky_handle || profile?.username}
+              targetAvatar={profile?.avatar}
+            />
+          </div>
         </div>
         <div className="mt-3">
           <div className="flex items-center gap-2">

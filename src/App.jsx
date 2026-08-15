@@ -72,6 +72,7 @@ import AchievementGoalTracker from '@/pages/AchievementGoalTracker';
 import NetworkingConcierge from '@/pages/NetworkingConcierge';
 import PackParties from '@/pages/PackParties';
 import PullOfTheWeek from '@/pages/PullOfTheWeek';
+import Messages from '@/pages/Messages';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -150,6 +151,8 @@ const AuthenticatedApp = () => {
           <Route path="/binder/:binderId/edit" element={<BinderEdit />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/trade-dashboard" element={<TradeDashboard />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />

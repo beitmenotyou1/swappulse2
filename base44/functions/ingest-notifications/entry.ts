@@ -204,8 +204,24 @@ export default async function(req: Request): Promise<Response> {
               postId = post.id;
               targetPath = `/post/${post.id}`;
               targetLabel = post.content ? post.content.slice(0, 80) : 'your post';
-              const field = m.actionType === 'like' ? 'likes' : m.actionType === 'repost' ? 'reposts' : 'replies';
-              await svc.entities.Post.update(post.id, { [field]: (post[field] || 0) + 1 }).catch(() => {});
+              // Idempotent counter increment: only increment if no prior
+              // Like/Repost entity exists for this actor + subject. This
+              // prevents double-counting when the same interaction is seen by
+              // both the notification-inbox and firehose ingestion paths.
+              if (m.actionType === 'like' || m.actionType === 'repost') {
+                const entityName = m.actionType === 'like' ? 'Like' : 'Repost';
+                const prior = await svc.entities[entityName].filter(
+                  { did: m.actorDid, post_uri: m.subjectUri }, '-created_date', 1,
+                ).catch(() => []);
+                if (!prior || prior.length === 0) {
+                  const field = m.actionType === 'like' ? 'likes' : 'reposts';
+                  await svc.entities.Post.update(post.id, { [field]: (post[field] || 0) + 1 }).catch(() => {});
+                }
+              } else {
+                // Reply counter — increment unconditionally (reply posts are
+                // deduped by at_uri before reaching here, so no double-count).
+                await svc.entities.Post.update(post.id, { replies: (post.replies || 0) + 1 }).catch(() => {});
+              }
             } else {
               targetPath = bskyPostUrl(m.subjectUri);
               targetLabel = 'your post on Bluesky';

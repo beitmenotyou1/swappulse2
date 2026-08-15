@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/lib/AuthContext';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
+import { useUnreadDMCount } from '@/hooks/useUnreadDMCount';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -19,6 +20,7 @@ const primary = [
   { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
   { to: '/spaces', icon: Radio, label: 'Live Now' },
   { to: '/notifications', icon: Bell, label: 'Notifications', authOnly: true },
+  { to: '/messages', icon: MessageSquare, label: 'Messages', authOnly: true },
 ];
 
 const more = [
@@ -44,6 +46,7 @@ export default function LeftNav() {
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
   const unread = useUnreadCount();
+  const unreadDMs = useUnreadDMCount();
   const [showMore, setShowMore] = useState(false);
 
   const linkClass = ({ isActive }) =>
@@ -68,6 +71,9 @@ export default function LeftNav() {
             )}
             {item.to === '/notifications' && unread > 0 && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white live-pulse">{unread}</span>
+            )}
+            {item.to === '/messages' && unreadDMs > 0 && (
+              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">{unreadDMs}</span>
             )}
           </NavLink>
         ))}

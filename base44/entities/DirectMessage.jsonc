@@ -1,0 +1,105 @@
+{
+  "name": "DirectMessage",
+  "type": "object",
+  "title": "DirectMessage",
+  "description": "org.swappulse.directMessage \u2014 a single message in a 1:1 conversation, mirrored to AT Protocol as a real org.swappulse.directMessage record. The sender is tracked by created_by_id + did; the recipient by recipient_did so RLS grants read access to both. read is set true by the recipient when they open the thread, driving the unread badge.",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "Local id of the Conversation this message belongs to"
+    },
+    "conversation_ref": {
+      "type": "string",
+      "description": "at:// URI of the bridged Conversation record (for federated linking)"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the sender"
+    },
+    "recipient_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the recipient"
+    },
+    "body": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Message text body"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the recipient has opened the thread containing this message"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.directMessage)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the message to the sender's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the message has been mirrored to the AT Protocol PDS as a real org.swappulse.directMessage record"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "did",
+    "recipient_did",
+    "body"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_did": "{{user.data.did}}"
+        }
+      ]
+    }
+  }
+}

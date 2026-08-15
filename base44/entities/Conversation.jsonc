@@ -1,0 +1,108 @@
+{
+  "name": "Conversation",
+  "type": "object",
+  "title": "Conversation",
+  "description": "org.swappulse.conversation \u2014 a 1:1 direct-message conversation between two collectors, mirrored to AT Protocol as a real org.swappulse.conversation record. The creator is tracked by created_by_id; the other participant is tracked by recipient_did so RLS can grant read access to both without an array-contains operator. participant_dids stores both DIDs for display and lookup. last_message_at/preview drive the conversation list ordering and preview.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the conversation creator"
+    },
+    "recipient_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the other participant"
+    },
+    "participant_dids": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string"
+      },
+      "description": "Both participant DIDs in sorted order for symmetric lookup"
+    },
+    "recipient_name": {
+      "type": "string"
+    },
+    "recipient_handle": {
+      "type": "string"
+    },
+    "recipient_avatar": {
+      "type": "string"
+    },
+    "last_message_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_message_preview": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Truncated preview of the most recent message for the list view"
+    },
+    "last_message_did": {
+      "type": "string",
+      "description": "DID of the participant who sent the last message"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.conversation)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the conversation to the creator's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the conversation has been mirrored to the AT Protocol PDS as a real org.swappulse.conversation record"
+    }
+  },
+  "required": [
+    "did",
+    "recipient_did",
+    "participant_dids"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_did": "{{user.data.did}}"
+        }
+      ]
+    }
+  }
+}

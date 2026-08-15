@@ -40,6 +40,6 @@
       }
     ]
   },
-  "description": "Every 5 minutes, polls each provisioned user's Bluesky notification inbox (listNotifications) and mirrors inbound interactions as on-site Notification records with origin='remote', completing the bidirectional notification loop.",
+  "description": "Every 5 minutes (the platform minimum), polls each provisioned user's Bluesky notification inbox (listNotifications) and mirrors inbound interactions as on-site Notification records with origin='remote', completing the bidirectional notification loop.",
   "name": "Notification Ingestion"
 }

@@ -56,8 +56,18 @@ async function maybeNotifyInteraction(base44, collection, val, repoDid, commentU
       const posts = await svc.entities.Post.filter({ at_uri: subjectUri }, '-created_date', 1).catch(() => []);
       const post = posts?.[0];
       if (!post) return;
-      const field = collection === 'app.bsky.feed.like' ? 'likes' : 'reposts';
-      await svc.entities.Post.update(post.id, { [field]: (post[field] || 0) + 1 }).catch(() => {});
+      // Idempotent: only increment if no prior Like/Repost entity exists for
+      // this actor + subject (the notification-inbox path may have already
+      // incremented it). The record itself is deduped by at_uri before this
+      // point, but the counter increment is a separate concern.
+      const entityName = collection === 'app.bsky.feed.like' ? 'Like' : 'Repost';
+      const prior = await svc.entities[entityName].filter(
+        { did: repoDid, post_uri: subjectUri }, '-created_date', 1,
+      ).catch(() => []);
+      if (!prior || prior.length === 0) {
+        const field = collection === 'app.bsky.feed.like' ? 'likes' : 'reposts';
+        await svc.entities.Post.update(post.id, { [field]: (post[field] || 0) + 1 }).catch(() => {});
+      }
       if (post.did && post.did !== repoDid) {
         await base44.functions.invoke('notify-interaction', {
           recipientDid: post.did,
@@ -258,6 +268,18 @@ export default async function(req: Request): Promise<Response> {
                       if (current > 0) {
                         await svc.entities.Post.update(post.id, { [field]: current - 1 }).catch(() => {});
                       }
+                    }
+                  }
+                }
+                // Decrement the parent post's replies counter when a remote
+                // reply is tombstoned, so counts stay accurate over time.
+                if (entityName === 'Post' && local.parent_uri) {
+                  const parents = await svc.entities.Post.filter({ at_uri: local.parent_uri }, '-created_date', 1).catch(() => []);
+                  const parent = parents?.[0];
+                  if (parent) {
+                    const current = parent.replies || 0;
+                    if (current > 0) {
+                      await svc.entities.Post.update(parent.id, { replies: current - 1 }).catch(() => {});
                     }
                   }
                 }

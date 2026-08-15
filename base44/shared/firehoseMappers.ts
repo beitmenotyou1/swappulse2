@@ -31,6 +31,8 @@ export const COLLECTIONS: Record<string, string> = {
   'org.swappulse.tradeDispute': 'TradeDispute',
   'org.swappulse.voiceSpace': 'VoiceSpace',
   'org.swappulse.podcastEpisode': 'PodcastEpisode',
+  'org.swappulse.conversation': 'Conversation',
+  'org.swappulse.directMessage': 'DirectMessage',
 };
 
 // Standard AT Protocol record mappers (app.bsky.*). These map remote
@@ -217,6 +219,24 @@ function mapPodcastEpisodeFields(val: any, atUri: string, did: string) {
     record_type: 'org.swappulse.podcastEpisode', bridged: true,
   };
 }
+function mapConversationFields(val: any, atUri: string, did: string) {
+  return {
+    recipient_did: val.recipientDid || '', participant_dids: val.participantDids || [],
+    recipient_name: val.recipientName || '', recipient_handle: val.recipientHandle || '',
+    recipient_avatar: val.recipientAvatar || '', last_message_at: val.lastMessageAt || '',
+    last_message_preview: val.lastMessagePreview || '', last_message_did: val.lastMessageDid || '',
+    did, at_uri: atUri, cid: '', record_type: 'org.swappulse.conversation', bridged: true,
+  };
+}
+function mapDirectMessageFields(val: any, atUri: string, did: string) {
+  return {
+    conversation_id: '', conversation_ref: val.conversationRef || '',
+    did, recipient_did: val.recipientDid || '', body: val.body || '',
+    author_name: val.authorName || '', author_handle: val.authorHandle || '',
+    author_avatar: val.authorAvatar || '', read: false,
+    at_uri: atUri, cid: '', record_type: 'org.swappulse.directMessage', bridged: true,
+  };
+}
 
 export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string, profile?: any) => any> = {
   'app.bsky.feed.post': mapPostFields,
@@ -239,6 +259,8 @@ export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string
   'org.swappulse.tradeDispute': mapTradeDisputeFields,
   'org.swappulse.voiceSpace': mapVoiceSpaceFields,
   'org.swappulse.podcastEpisode': mapPodcastEpisodeFields,
+  'org.swappulse.conversation': mapConversationFields,
+  'org.swappulse.directMessage': mapDirectMessageFields,
 };
 
 // Generic entity → AT Protocol record serializer (camelCase + $type). Used by

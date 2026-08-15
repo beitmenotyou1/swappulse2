@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogOut, Sparkles } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogOut, Sparkles } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
+import { useUnreadDMCount } from '@/hooks/useUnreadDMCount';
 import { useAuth } from '@/lib/AuthContext';
 
 const primary = [
@@ -30,6 +31,7 @@ const moreItems = [
   { to: '/grading', icon: Award, label: 'Grading', authOnly: true },
   { to: '/spaces', icon: Radio, label: 'Live' },
   { to: '/notifications', icon: Bell, label: 'Alerts', authOnly: true },
+  { to: '/messages', icon: MessageSquare, label: 'Messages', authOnly: true },
   { to: '/help', icon: HelpCircle, label: 'Help' },
   { to: '/donate', icon: Heart, label: 'Donate' },
   { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
@@ -44,6 +46,7 @@ export default function MobileNav() {
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
   const unread = useUnreadCount();
+  const unreadDMs = useUnreadDMCount();
   const { user, isAuthenticated, logout } = useAuth();
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
@@ -115,6 +118,9 @@ export default function MobileNav() {
                     )}
                     {item.to === '/notifications' && unread > 0 && (
                       <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
+                    )}
+                    {item.to === '/messages' && unreadDMs > 0 && (
+                      <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">{unreadDMs}</span>
                     )}
                   </Link>
                 );

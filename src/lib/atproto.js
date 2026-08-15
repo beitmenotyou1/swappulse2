@@ -69,6 +69,9 @@ export const NSID = {
   CARD_MENTION: 'org.swappulse.cardMention',
   PACK_PARTY: 'org.swappulse.packParty',
   PULL_NOMINATION: 'org.swappulse.pullNomination',
+  // Direct messaging
+  CONVERSATION: 'org.swappulse.conversation',
+  DIRECT_MESSAGE: 'org.swappulse.directMessage',
   // Custom feed generators (independent XRPC services users subscribe to)
   FEED: {
     FRESH_PULLS: 'org.swappulse.freshPulls',

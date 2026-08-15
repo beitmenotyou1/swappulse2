@@ -261,6 +261,19 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
   return created;
 }
 
+// Delete a reply post: delete the local Post, decrement the parent's replies
+// counter (guarded > 0), and delete the bridged PDS record if present.
+export async function deleteReply(reply, parentPost) {
+  await base44.entities.Post.delete(reply.id).catch(() => {});
+  const ref = normalizeRef(parentPost);
+  if (ref?.isLocal) {
+    await base44.entities.Post.update(ref.id, { replies: Math.max(0, (ref.replies || 0) - 1) }).catch(() => {});
+  }
+  if (reply?.at_uri?.startsWith('at://did:')) {
+    base44.functions.invoke('atproto-bridge', { action: 'delete', uri: reply.at_uri }).catch(() => {});
+  }
+}
+
 // Create a quote-repost: a new app.bsky.feed.post with the target embedded as
 // a quote (app.bsky.embed.record). The local Post stores the quote text; the
 // embed is only in the bridged PDS record. Works for both local and external

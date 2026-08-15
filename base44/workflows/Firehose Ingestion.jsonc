@@ -54,6 +54,6 @@
       }
     ]
   },
-  "description": "Scheduled bidirectional sync \u2014 every 5 minutes ingests remote SwapPulse records (creates/updates/deletes) from the PDS/AppView into the local DB, then pushes locally-changed bridged records back to the PDS to reconcile drift.",
+  "description": "Scheduled bidirectional sync \u2014 every 5 minutes (the platform minimum) ingests remote SwapPulse records (creates/updates/deletes) from the PDS/AppView into the local DB, then pushes locally-changed bridged records back to the PDS to reconcile drift.",
   "name": "Firehose Ingestion"
 }
