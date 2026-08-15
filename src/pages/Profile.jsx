@@ -20,6 +20,7 @@ import GoLiveModal from '@/components/spaces/GoLiveModal';
 import GoLiveControl from '@/components/profile/GoLiveControl';
 import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
+import EditProfileModal from '@/components/profile/EditProfileModal';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import FollowingTab from '@/components/profile/FollowingTab';
 import ActivityTab from '@/components/profile/ActivityTab';
@@ -40,6 +41,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [liveSpace, setLiveSpace] = useState(null);
   const [showGoLive, setShowGoLive] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [ending, setEnding] = useState(false);
 
   const load = async () => {
@@ -118,7 +120,15 @@ export default function Profile() {
             <LiveAvatar did={did} name={user?.full_name} size={96} className="ring-4 ring-background" />
             {liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
           </span>
-          <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowEdit(true)}
+              className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
+            >
+              Edit profile
+            </button>
+            <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
+          </div>
         </div>
         <div className="mt-3">
           <h1 className="text-xl font-extrabold">{user?.full_name || 'Collector'}</h1>
@@ -213,6 +223,9 @@ export default function Profile() {
       </div>
       {showGoLive && (
         <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />
+      )}
+      {showEdit && (
+        <EditProfileModal onClose={() => setShowEdit(false)} onSaved={load} />
       )}
     </div>
   );

@@ -47,7 +47,8 @@ export default function DomainHandleModal({ onClose }) {
     setBusy(true);
     try {
       const res = await base44.functions.invoke('verifyHandleClaim', { domain: cleanDomain, did });
-      if (!res?.verified) {
+      const data = res?.data || res;
+      if (!data?.verified) {
         toast({
           title: 'Verification failed',
           description: `No did=${did} found at _atproto.${cleanDomain}. Add the TXT record and retry.`,
@@ -67,8 +68,14 @@ export default function DomainHandleModal({ onClose }) {
       };
       const stamped = await stampRecord(payload, HANDLE_CLAIM_NSID, did, signingKey);
       await base44.entities.HandleClaim.create(stamped);
-      await base44.auth.updateMe({ custom_handle: cleanDomain, handle_verified: true });
-      toast({ title: 'Handle updated', description: `You are now @${cleanDomain}` });
+      // Push the handle to the PDS so it propagates to the wider AT Protocol.
+      const upd = await base44.functions.invoke('update-pds-handle', { handle: cleanDomain });
+      const updData = upd?.data || upd;
+      if (!updData?.ok) {
+        throw new Error(updData?.error || 'PDS handle update failed');
+      }
+      await base44.auth.updateMe({ custom_handle: cleanDomain, handle_verified: true, bsky_handle: cleanDomain });
+      toast({ title: 'Handle updated', description: `You are now @${cleanDomain} on Bluesky` });
       onClose?.();
     } catch (e) {
       toast({ title: 'Could not verify', description: e.message, variant: 'destructive' });
