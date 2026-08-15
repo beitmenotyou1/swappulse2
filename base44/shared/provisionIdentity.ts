@@ -9,7 +9,11 @@ const HANDLE_SUFFIX = '.swappulse.org';
 function adminAuthHeader(): string {
   const pwd = Deno.env.get('PDS_ADMIN_PASSWORD');
   if (!pwd) throw new Error('PDS_ADMIN_PASSWORD not configured');
-  return 'Basic ' + btoa(`admin:${pwd}`);
+  // Reference PDS (bluesky-social/pds) admin endpoints expect a Bearer token
+  // equal to PDS_ADMIN_PASSWORD — NOT Basic auth. Basic auth is rejected with
+  // 400 InvalidToken "Unexpected authorization type", which is why no
+  // PdsCredential records were ever created.
+  return 'Bearer ' + pwd;
 }
 
 function randomPassword(): string {
@@ -93,6 +97,42 @@ async function createAppPassword(pdsUrl: string, did: string, password: string):
   return appPwdData.password;
 }
 
+// Public account creation — com.atproto.server.createAccount. The PDS has
+// inviteCodeRequired: false, so no invite code is needed. This is the same
+// path the Bluesky app uses to sign up and avoids the admin auth scheme
+// (which varies across PDS versions and was rejecting our admin token).
+// Returns { did, handle, accessJwt }.
+async function pdsServerCreateAccount(handle: string, email: string, password: string): Promise<any> {
+  const pdsUrl = Deno.env.get('PDS_URL');
+  if (!pdsUrl) throw new Error('PDS_URL not configured');
+  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createAccount`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ handle, email, password }),
+  });
+  const text = await res.text();
+  let body: any;
+  try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+  if (!res.ok) return { error: true, status: res.status, body };
+  return body;
+}
+
+// Mint an app password using an access JWT returned by createAccount (skips
+// the separate createSession step).
+async function createAppPasswordFromToken(pdsUrl: string, accessJwt: string): Promise<string> {
+  const appPwdRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createAppPassword`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessJwt}` },
+    body: JSON.stringify({ name: 'SwapPulse Bridge' }),
+  });
+  if (!appPwdRes.ok) {
+    const body = await appPwdRes.text();
+    throw new Error(`createAppPassword failed (${appPwdRes.status}): ${body.slice(0, 200)}`);
+  }
+  const appPwdData = await appPwdRes.json();
+  return appPwdData.password;
+}
+
 // Provisions a PDS identity for a user. Idempotent: skips if the user already
 // has a did:plc (caller should check, but we double-check here too).
 export async function provisionIdentityForUser(
@@ -112,12 +152,12 @@ export async function provisionIdentityForUser(
   let result: any;
 
   while (attempt < 10) {
-    result = await pdsAdminPost('com.atproto.admin.createAccount', { handle, email, password });
+    result = await pdsServerCreateAccount(handle, email, password);
     if (!result?.error) break;
 
     const errStr = typeof result.body === 'string' ? result.body : JSON.stringify(result.body || {});
-    // HandleNotAvailable → append incrementing suffix and retry
-    if (errStr.includes('Handle') && (errStr.includes('avail') || errStr.includes('taken') || errStr.includes('Already'))) {
+    // HandleNotAvailable / InvalidHandle → append incrementing suffix and retry
+    if (errStr.includes('Handle') && (errStr.includes('avail') || errStr.includes('taken') || errStr.includes('Already') || errStr.includes('Invalid'))) {
       attempt++;
       handle = `${base}-${attempt + 1}${HANDLE_SUFFIX}`;
       continue;
@@ -132,7 +172,9 @@ export async function provisionIdentityForUser(
   const did: string = result.did;
   const finalHandle: string = result.handle;
 
-  const appPassword = await createAppPassword(pdsUrl, did, password);
+  // createAccount returns an accessJwt — use it to mint the bridge app
+  // password directly (no separate createSession needed).
+  const appPassword = await createAppPasswordFromToken(pdsUrl, result.accessJwt);
 
   // Store credential (service role bypasses RLS)
   const existing = await svc.entities.PdsCredential.filter({ user_id: userId }).catch(() => []);
