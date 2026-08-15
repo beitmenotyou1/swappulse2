@@ -1,9 +1,15 @@
-// Shared post-interaction helpers (like / repost / reply) that encapsulate the
-// federated bridging pattern: stamp locally → create entity → bridge to the
-// PDS via atproto-bridge → update entity with at_uri/cid/bridged on success.
-// Also increments the parent post's counters and fires notify-interaction so
-// the post author is notified. Reused by PostCard, CommentComposer,
-// PostReplyThread, and the respond-to-notification UI so the logic lives once.
+// Shared post-interaction helpers (like / repost / reply / quote-repost) that
+// encapsulate the federated bridging pattern: stamp locally → create entity →
+// bridge to the PDS via atproto-bridge → update entity with at_uri/cid/bridged
+// on success. Also increments the parent post's counters and fires
+// notify-interaction so the post author is notified. Reused by PostCard,
+// CommentComposer, PostReplyThread, CommentActions, and the respond-to-
+// notification UI so the logic lives once.
+//
+// All helpers accept either a local Post object (has .id) or an external
+// strongRef { at_uri, cid, did, root_uri?, root_cid?, content? } via
+// normalizeRef. External refs are treated as already-bridged (they live on
+// bsky.app) so interactions target the real record directly.
 
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
@@ -17,7 +23,7 @@ function actorFromUser(me) {
   };
 }
 
-function notify(actionType, recipientDid, post, actor, origin = 'local', commentText = '') {
+function notify(actionType, recipientDid, post, actor, origin = 'local', commentText = '', commentRef = {}) {
   if (!recipientDid) return Promise.resolve();
   return base44.functions.invoke('notify-interaction', {
     recipientDid,
@@ -30,35 +36,68 @@ function notify(actionType, recipientDid, post, actor, origin = 'local', comment
     postUri: post.at_uri,
     origin,
     commentText,
+    commentId: commentRef.commentId || '',
+    commentUri: commentRef.commentUri || '',
+    commentCid: commentRef.commentCid || '',
   }).catch(() => {});
 }
 
-// Create a like on a post: local Like + PDS bridge + counter + author notify.
+// Normalize a comment/post reference for the interaction helpers. Accepts
+// either a local Post object (has .id) or an external strongRef
+// { at_uri, cid, did, root_uri?, root_cid?, content? }. External refs are
+// treated as already-bridged (they live on bsky.app) so likes/reposts/replies
+// target the real record directly.
+export function normalizeRef(ref) {
+  if (!ref) return null;
+  const isLocal = !!ref.id;
+  return {
+    id: ref.id || null,
+    at_uri: ref.at_uri || '',
+    cid: ref.cid || '',
+    did: ref.did || '',
+    bridged: isLocal ? !!ref.bridged : true,
+    root_uri: ref.root_uri || ref.at_uri || '',
+    root_cid: ref.root_cid || ref.cid || '',
+    likes: ref.likes || 0,
+    reposts: ref.reposts || 0,
+    replies: ref.replies || 0,
+    content: ref.content || '',
+    isLocal,
+  };
+}
+
+// Create a like on a post/comment: local Like + PDS bridge + counter + author notify.
 export async function createLike(post) {
+  const ref = normalizeRef(post);
   const { did, signingKey } = await ensureUserDid();
   const me = await base44.auth.me();
   const stamped = await stampRecord(
-    { post_id: post.id, post_uri: post.at_uri || '', post_cid: post.cid || '' },
+    { post_id: ref.id || '', post_uri: ref.at_uri, post_cid: ref.cid || '' },
     'app.bsky.feed.like', did, signingKey,
   );
   const created = await base44.entities.Like.create(stamped);
-  await base44.entities.Post.update(post.id, { likes: (post.likes || 0) + 1 }).catch(() => {});
-  if (post.bridged && post.at_uri && post.cid) {
+  if (ref.isLocal) {
+    await base44.entities.Post.update(ref.id, { likes: (ref.likes || 0) + 1 }).catch(() => {});
+  }
+  if (ref.bridged && ref.at_uri && ref.cid) {
     base44.functions.invoke('atproto-bridge', {
       collection: 'app.bsky.feed.like',
-      record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
+      record: { subject: { uri: ref.at_uri, cid: ref.cid }, createdAt: new Date().toISOString() },
     }).then((res) => {
       if (res?.uri) base44.entities.Like.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
     }).catch(() => {});
   }
-  notify('like', post.did, post, actorFromUser(me));
+  if (ref.isLocal) notify('like', ref.did, ref, actorFromUser(me));
   return created;
 }
 
 // Remove a like: delete local + PDS record + decrement counter.
 export async function deleteLike(like, post) {
+  const ref = normalizeRef(post);
   await base44.entities.Like.delete(like.id);
-  await base44.entities.Post.update(post.id, { likes: Math.max(0, (post.likes || 0) - 1) }).catch(() => {});
+  if (ref?.isLocal) {
+    await base44.entities.Post.update(ref.id, { likes: Math.max(0, (ref.likes || 0) - 1) }).catch(() => {});
+  }
   if (like?.at_uri?.startsWith('at://did:')) {
     base44.functions.invoke('atproto-bridge', { action: 'delete', uri: like.at_uri }).catch(() => {});
   }
@@ -66,36 +105,42 @@ export async function deleteLike(like, post) {
 
 // Create a repost: local Repost + PDS bridge + counter + author notify.
 export async function createRepost(post) {
+  const ref = normalizeRef(post);
   const { did, signingKey } = await ensureUserDid();
   const me = await base44.auth.me();
   const stamped = await stampRecord(
     {
-      post_id: post.id,
-      post_uri: post.at_uri || '',
-      post_cid: post.cid || '',
+      post_id: ref.id || '',
+      post_uri: ref.at_uri,
+      post_cid: ref.cid || '',
       reposter_name: me?.display_name || me?.full_name || '',
       reposter_handle: me?.bsky_handle || me?.username || (me?.email ? me.email.split('@')[0] : ''),
     },
     NSID.REPOST, did, signingKey,
   );
   const created = await base44.entities.Repost.create(stamped);
-  await base44.entities.Post.update(post.id, { reposts: (post.reposts || 0) + 1 }).catch(() => {});
-  if (post.bridged && post.at_uri && post.cid) {
+  if (ref.isLocal) {
+    await base44.entities.Post.update(ref.id, { reposts: (ref.reposts || 0) + 1 }).catch(() => {});
+  }
+  if (ref.bridged && ref.at_uri && ref.cid) {
     base44.functions.invoke('atproto-bridge', {
       collection: 'app.bsky.feed.repost',
-      record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
+      record: { subject: { uri: ref.at_uri, cid: ref.cid }, createdAt: new Date().toISOString() },
     }).then((res) => {
       if (res?.uri) base44.entities.Repost.update(created.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
     }).catch(() => {});
   }
-  notify('repost', post.did, post, actorFromUser(me));
+  if (ref.isLocal) notify('repost', ref.did, ref, actorFromUser(me));
   return created;
 }
 
 // Remove a repost: delete local + PDS record + decrement counter.
 export async function deleteRepost(repost, post) {
+  const ref = normalizeRef(post);
   await base44.entities.Repost.delete(repost.id);
-  await base44.entities.Post.update(post.id, { reposts: Math.max(0, (post.reposts || 0) - 1) }).catch(() => {});
+  if (ref?.isLocal) {
+    await base44.entities.Post.update(ref.id, { reposts: Math.max(0, (ref.reposts || 0) - 1) }).catch(() => {});
+  }
   if (repost?.at_uri?.startsWith('at://did:')) {
     base44.functions.invoke('atproto-bridge', { action: 'delete', uri: repost.at_uri }).catch(() => {});
   }
@@ -104,13 +149,15 @@ export async function deleteRepost(repost, post) {
 // Create a federated reply post: stamps parent/root refs, bridges to the PDS
 // as app.bsky.feed.post with a reply field (only when the parent is bridged),
 // increments the parent's replies counter, and notifies the parent's author.
-// `extra` fields (e.g. card_id) merge into the stamped record.
+// `extra` fields (e.g. card_id) merge into the stamped record. Works for both
+// local Post parents and external strongRef parents via normalizeRef.
 export async function createReply(parentPost, text, user, extra = {}, localReplyTo = null) {
+  const ref = normalizeRef(parentPost);
   const { did, signingKey } = await ensureUserDid();
-  const parentUri = parentPost.at_uri || null;
-  const parentCid = parentPost.cid || null;
-  const rootUri = parentPost.root_uri || parentPost.at_uri || null;
-  const rootCid = parentPost.root_cid || parentPost.cid || null;
+  const parentUri = ref.at_uri || null;
+  const parentCid = ref.cid || null;
+  const rootUri = ref.root_uri || ref.at_uri || null;
+  const rootCid = ref.root_cid || ref.cid || null;
   const stamped = await stampRecord({
     content: text.trim(),
     post_type: 'text',
@@ -118,7 +165,7 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
     author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
     author_avatar: user?.avatar || '',
     likes: 0, reposts: 0, replies: 0,
-    reply_to: localReplyTo || parentPost.id || null,
+    reply_to: ref.isLocal ? (localReplyTo || ref.id || null) : null,
     parent_uri: parentUri,
     parent_cid: parentCid,
     root_uri: rootUri,
@@ -126,13 +173,13 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
     ...extra,
   }, NSID.POST, did, signingKey);
   const created = await base44.entities.Post.create(stamped);
-  if (parentPost.id) {
-    await base44.entities.Post.update(parentPost.id, { replies: (parentPost.replies || 0) + 1 }).catch(() => {});
+  if (ref.isLocal) {
+    await base44.entities.Post.update(ref.id, { replies: (ref.replies || 0) + 1 }).catch(() => {});
   }
   if (created?.id) {
     base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
   }
-  if (parentPost.bridged && parentUri && parentCid && rootUri && rootCid) {
+  if (ref.bridged && parentUri && parentCid && rootUri && rootCid) {
     base44.functions.invoke('atproto-bridge', {
       collection: 'app.bsky.feed.post',
       record: {
@@ -145,6 +192,47 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
       if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
     }).catch(() => {});
   }
-  notify('comment', parentPost.did, parentPost, actorFromUser(user), 'local', text.trim().slice(0, 200));
+  if (ref.isLocal) {
+    notify('comment', ref.did, ref, actorFromUser(user), 'local', text.trim().slice(0, 200), {
+      commentId: created.id,
+      commentUri: created.at_uri,
+      commentCid: created.cid,
+    });
+  }
+  return created;
+}
+
+// Create a quote-repost: a new app.bsky.feed.post with the target embedded as
+// a quote (app.bsky.embed.record). The local Post stores the quote text; the
+// embed is only in the bridged PDS record. Works for both local and external
+// targets via normalizeRef.
+export async function createQuoteRepost(post, text, user) {
+  const ref = normalizeRef(post);
+  const { did, signingKey } = await ensureUserDid();
+  const stamped = await stampRecord({
+    content: text.trim(),
+    post_type: 'text',
+    author_name: user?.display_name || user?.full_name || 'Collector',
+    author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
+    author_avatar: user?.avatar || '',
+    likes: 0, reposts: 0, replies: 0,
+  }, NSID.POST, did, signingKey);
+  const created = await base44.entities.Post.create(stamped);
+  if (created?.id) {
+    base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
+  }
+  if (ref.at_uri && ref.cid) {
+    base44.functions.invoke('atproto-bridge', {
+      collection: 'app.bsky.feed.post',
+      record: {
+        text: text.trim().slice(0, 3000),
+        createdAt: new Date().toISOString(),
+        langs: ['en'],
+        embed: { $type: 'app.bsky.embed.record', record: { uri: ref.at_uri, cid: ref.cid } },
+      },
+    }).then((res) => {
+      if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
+    }).catch(() => {});
+  }
   return created;
 }

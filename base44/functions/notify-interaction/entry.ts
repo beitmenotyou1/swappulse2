@@ -26,7 +26,7 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;
     const body = await req.json().catch(() => ({}));
-    const { recipientDid, actionType, post, postUri, origin, commentText } = body;
+    const { recipientDid, actionType, post, postUri, origin, commentText, commentId, commentUri, commentCid } = body;
     let { actorDid, actorName, actorHandle, actorAvatar } = body;
 
     if (!recipientDid || !actionType || !post?.id) {
@@ -108,6 +108,9 @@ export default async function(req: Request): Promise<Response> {
           postCid: post.cid || '',
           origin: origin || 'local',
           commentText: commentText || '',
+          commentId: commentId || '',
+          commentUri: commentUri || '',
+          commentCid: commentCid || '',
         },
       });
       notificationId = notification?.id || null;

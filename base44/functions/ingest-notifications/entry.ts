@@ -246,7 +246,7 @@ export default async function(req: Request): Promise<Response> {
               group_key: m.groupKey,
               group_count: 1,
               is_read: !!m.n.isRead,
-              metadata: { postId, postUri: m.subjectUri, postCid: m.n.cid || '', origin: 'remote', reason: m.n.reason, commentText: m.actionType === 'comment' ? (m.n.record?.text || '').slice(0, 200) : '' },
+              metadata: { postId, postUri: m.subjectUri, postCid: m.n.cid || '', origin: 'remote', reason: m.n.reason, commentText: m.actionType === 'comment' ? (m.n.record?.text || '').slice(0, 200) : '', commentUri: m.actionType === 'comment' ? (m.n.uri || '') : '', commentCid: m.actionType === 'comment' ? (m.n.cid || '') : '' },
             });
             notificationId = notif?.id || null;
             created++;

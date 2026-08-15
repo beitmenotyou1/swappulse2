@@ -42,7 +42,7 @@ async function getProfile(repoDid: string): Promise<any> {
 // the post's counter and notify the author via notify-interaction with a
 // 'remote' origin so the notification carries a "via Bluesky" badge. Only
 // called for newly-ingested records from remote repos.
-async function maybeNotifyInteraction(base44, collection, val, repoDid) {
+async function maybeNotifyInteraction(base44, collection, val, repoDid, commentUri = '', commentCid = '') {
   try {
     const profile = await getProfile(repoDid);
     const actorName = profile?.displayName || '';
@@ -84,6 +84,8 @@ async function maybeNotifyInteraction(base44, collection, val, repoDid) {
           postUri: parentUri,
           origin: 'remote',
           commentText: (val?.text || '').slice(0, 200),
+          commentUri,
+          commentCid,
         }).catch(() => {});
       }
     }
@@ -129,7 +131,7 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
             const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
             await svc.entities.Post.create(mapped).catch(() => {});
             synced++;
-            await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '');
+            await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '', rp.uri, rp.cid || '');
           } catch (e) {
             console.error('firehose-ingest: reply sync error', e?.message || e);
           }
@@ -225,7 +227,7 @@ export default async function(req: Request): Promise<Response> {
               }
               collectionStats[collection]++;
               if (isNew && !isLocal) {
-                await maybeNotifyInteraction(base44, collection, val, repoDid);
+                await maybeNotifyInteraction(base44, collection, val, repoDid, atUri, rec.cid || '');
               }
             } catch (e) {
               errors++;
