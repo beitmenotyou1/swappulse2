@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Avatar from "@/components/Avatar";
+import ProfileMetricsBar from "@/components/profile/ProfileMetricsBar";
 
 // ExternalActorSearch — federated profile search. Accepts a handle (with or
 // without domain) or a DID, calls get-merged-profile, and renders a merged
@@ -117,10 +118,12 @@ export default function ExternalActorSearch() {
               {result.description && (
                 <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{result.description}</p>
               )}
-              <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
-                <span>{result.follows_count || 0} following</span>
-                <span>{result.followers_count || 0} followers</span>
-                <span>{result.posts_count || 0} posts</span>
+              <div className="mt-1">
+                <ProfileMetricsBar
+                  followers={result.followers_count || 0}
+                  following={result.follows_count || 0}
+                  posts={result.posts_count || 0}
+                />
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import FollowsYouBadge from '@/components/follow/FollowsYouBadge';
 import AddFriendLink from '@/components/follow/AddFriendLink';
 import ReputationSummary from '@/components/profile/ReputationSummary';
 import ProfileHandle from '@/components/profile/ProfileHandle';
+import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import ActivityTab from '@/components/profile/ActivityTab';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 
@@ -60,6 +61,8 @@ export default function UserProfile() {
     handle_verified: merged?.handle_verified || false,
     description: merged?.description || '',
     followers_count: merged?.followers_count || 0,
+    follows_count: merged?.follows_count || 0,
+    posts_count: merged?.posts_count || 0,
     remote_synced: !!merged?.remote_synced,
   };
 
@@ -98,15 +101,14 @@ export default function UserProfile() {
             verified={profile?.handle_verified}
             syncedFromBsky={profile?.remote_synced}
           />
+          <ProfileMetricsBar
+            followers={profile?.followers_count || 0}
+            following={profile?.follows_count || 0}
+            posts={profile?.posts_count || posts.length}
+          />
           {profile?.description && (
             <p className="mt-2 text-sm">{profile.description}</p>
           )}
-          <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
-            <span><b className="text-foreground">{posts.length}</b> Posts</span>
-            {profile?.followers_count > 0 && (
-              <span><b className="text-foreground">{profile.followers_count}</b> Followers</span>
-            )}
-          </div>
           <AddFriendLink
             subjectDid={subjectDid}
             subjectName={profile?.name}

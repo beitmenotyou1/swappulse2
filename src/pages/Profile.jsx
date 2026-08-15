@@ -25,6 +25,7 @@ import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import FollowingTab from '@/components/profile/FollowingTab';
 import ActivityTab from '@/components/profile/ActivityTab';
 import ProfileHandle from '@/components/profile/ProfileHandle';
+import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 
 const TABS = ['Posts', 'Activity', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
@@ -148,6 +149,11 @@ export default function Profile() {
             verified={user?.handle_verified}
             syncedFromBsky={!!merged?.remote_synced}
           />
+          <ProfileMetricsBar
+            followers={merged?.followers_count || 0}
+            following={merged?.follows_count || 0}
+            posts={myPosts.length}
+          />
           {(merged?.description || user?.description) && <p className="mt-2 text-sm">{merged?.description || user.description}</p>}
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             {repAvg && (
@@ -160,7 +166,6 @@ export default function Profile() {
 
           <div className="mt-3"><NotificationToggle /></div>
           <div className="mt-3 flex gap-4 text-sm">
-            <span><b>{myPosts.length}</b> <span className="text-muted-foreground">Posts</span></span>
             <span><b>{myCollection.length}</b> <span className="text-muted-foreground">Cards</span></span>
             <span><b>{myTrades.length}</b> <span className="text-muted-foreground">Trades</span></span>
           </div>
