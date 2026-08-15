@@ -12,7 +12,11 @@ export default function ProfileHandle({ bskyHandle, username, did, verified }) {
   // never fabricate the domain for users without a real federated identity.
   // Falls back to the local username (no domain) gracefully.
   const display = bskyHandle || username || 'collector';
-  const bskyUrl = bskyHandle ? `https://bsky.app/profile/${bskyHandle}` : null;
+  // Prefer a DID-based Bluesky URL — it resolves on bsky.app even before the
+  // handle's DNS/well-known is set up. Falls back to the handle if no DID.
+  const bskyUrl = did
+    ? `https://bsky.app/profile/${did}`
+    : (bskyHandle ? `https://bsky.app/profile/${bskyHandle}` : null);
 
   const copyDid = () => {
     if (!did) return;
