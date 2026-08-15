@@ -42,11 +42,72 @@ function bskyPostUrl(uri: string): string {
   return `https://bsky.app/profile/${parts[0]}/post/${parts[2]}`;
 }
 
+// Automatic cleanup: remove stale duplicate notifications (same group_key,
+// keeping the most recent) and backfill broken target_paths so every
+// notification is clickable. Runs at the start of each ingestion cycle so
+// the list never freezes or dead-ends, even if duplicates slipped in during
+// a prior race or a dedup-check failure.
+async function cleanupStaleNotifications(svc: any): Promise<number> {
+  let cleaned = 0;
+  try {
+    const recent = await svc.entities.Notification.list('-created_date', 200).catch(() => []);
+    if (!recent || !recent.length) return 0;
+
+    // 1. Dedup: group by group_key, delete all but the most recent per group.
+    const byGroupKey = new Map<string, any[]>();
+    for (const n of recent) {
+      if (!n.group_key) continue;
+      if (!byGroupKey.has(n.group_key)) byGroupKey.set(n.group_key, []);
+      byGroupKey.get(n.group_key).push(n);
+    }
+    const deletedIds = new Set<string>();
+    for (const [, group] of byGroupKey) {
+      if (group.length <= 1) continue;
+      // recent is sorted -created_date, so group[0] is the most recent.
+      for (let i = 1; i < group.length; i++) {
+        await svc.entities.Notification.delete(group[i].id).catch(() => {});
+        deletedIds.add(group[i].id);
+        cleaned++;
+      }
+    }
+
+    // 2. Backfill broken target_paths on remaining notifications.
+    for (const n of recent) {
+      if (deletedIds.has(n.id)) continue;
+      let newPath = '';
+      if (['like', 'repost', 'comment'].includes(n.action_type)) {
+        if (!n.target_path) {
+          newPath = n.metadata?.postId
+            ? `/post/${n.metadata.postId}`
+            : n.source_uri ? bskyPostUrl(n.source_uri) : '';
+        }
+      } else if (n.action_type === 'follow') {
+        if (n.target_path?.startsWith('/u/') && n.actor_did) {
+          newPath = `/profile/${n.actor_did}`;
+        }
+      } else if (n.action_type === 'mention') {
+        if (!n.target_path && n.source_uri) newPath = bskyPostUrl(n.source_uri);
+      }
+      if (newPath) {
+        await svc.entities.Notification.update(n.id, { target_path: newPath }).catch(() => {});
+        cleaned++;
+      }
+    }
+  } catch (e) {
+    console.error('ingest-notifications: cleanup failed', e?.message || e);
+  }
+  return cleaned;
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;
     const enforcedDids = await getEnforcedDids(svc);
+
+    // Automatic cleanup: prune stale duplicates and backfill broken target
+    // paths so the notification list never freezes or dead-ends.
+    const cleaned = await cleanupStaleNotifications(svc);
 
     const creds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
     if (!creds || !creds.length) {
@@ -219,7 +280,7 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    return Response.json({ processed: batch.length, created, skipped, errors });
+    return Response.json({ processed: batch.length, created, skipped, errors, cleaned });
   } catch (error) {
     console.error('ingest-notifications error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
