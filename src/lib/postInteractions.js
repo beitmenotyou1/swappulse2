@@ -17,7 +17,7 @@ function actorFromUser(me) {
   };
 }
 
-function notify(actionType, recipientDid, post, actor, origin = 'local') {
+function notify(actionType, recipientDid, post, actor, origin = 'local', commentText = '') {
   if (!recipientDid) return Promise.resolve();
   return base44.functions.invoke('notify-interaction', {
     recipientDid,
@@ -29,6 +29,7 @@ function notify(actionType, recipientDid, post, actor, origin = 'local') {
     post: { id: post.id, at_uri: post.at_uri, cid: post.cid, content: post.content },
     postUri: post.at_uri,
     origin,
+    commentText,
   }).catch(() => {});
 }
 
@@ -144,6 +145,6 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
       if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
     }).catch(() => {});
   }
-  notify('comment', parentPost.did, parentPost, actorFromUser(user), 'local');
+  notify('comment', parentPost.did, parentPost, actorFromUser(user), 'local', text.trim().slice(0, 200));
   return created;
 }

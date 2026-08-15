@@ -83,6 +83,7 @@ async function maybeNotifyInteraction(base44, collection, val, repoDid) {
           post: { id: parent.id, at_uri: parent.at_uri, cid: parent.cid, content: parent.content },
           postUri: parentUri,
           origin: 'remote',
+          commentText: (val?.text || '').slice(0, 200),
         }).catch(() => {});
       }
     }

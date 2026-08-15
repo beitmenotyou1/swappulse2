@@ -71,6 +71,11 @@ export default function NotificationCard({ n, onOpen, onDismiss }) {
             {actionText(n)}
             {n.group_count > 1 && <span className="ml-1 font-semibold text-primary">· {n.group_count}×</span>}
           </p>
+          {n.action_type === 'comment' && n.metadata?.commentText && (
+            <p className="mt-1 line-clamp-2 rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs italic text-muted-foreground">
+              &ldquo;{n.metadata.commentText}&rdquo;
+            </p>
+          )}
           <div className="mt-0.5 flex items-center gap-1.5">
             {n.actor_handle && <span className="truncate text-xs text-muted-foreground">@{n.actor_handle}</span>}
             {n.metadata?.origin === 'remote' && (
