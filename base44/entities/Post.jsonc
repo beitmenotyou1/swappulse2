@@ -135,6 +135,17 @@
       "type": "integer",
       "default": 0
     },
+    "reply_policy": {
+      "type": "string",
+      "enum": [
+        "everybody",
+        "nobody",
+        "mentioned",
+        "followers"
+      ],
+      "default": "everybody",
+      "description": "Who can reply to this post (postGate). Mirrored to the PDS as an app.bsky.feed.postgate record. Enforced client-side on createReply; the bridged postgate is the source of truth for remote enforcement."
+    },
     "reply_to": {
       "type": "string",
       "description": "Post id this is a reply to"

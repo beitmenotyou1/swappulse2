@@ -24,6 +24,8 @@ function canonicalise(tags) {
   return out;
 }
 
+const POLICY_LABELS = { everybody: 'Everyone', followers: 'Followers', mentioned: 'Mentioned', nobody: 'No one' };
+
 export default function ComposeBox({ onPosted, replyTo }) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
@@ -31,6 +33,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [attachedCard, setAttachedCard] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [replyPolicy, setReplyPolicy] = useState('everybody');
 
   const typeButtons = [
     { key: 'pack_opening', icon: Sparkles, label: 'Pack Pull' },
@@ -66,6 +69,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         likes: 0,
         reposts: 0,
         replies: 0,
+        reply_policy: replyPolicy,
         reply_to: replyTo?.id || null,
         parent_uri: parentUri,
         parent_cid: parentCid,
@@ -89,7 +93,23 @@ export default function ComposeBox({ onPosted, replyTo }) {
             ...(replyRef ? { reply: replyRef } : {}),
           },
         }).then((res) => {
-          if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
+          if (res?.uri) {
+            base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
+            // Bridge a postgate record for non-default reply policies.
+            if (replyPolicy !== 'everybody') {
+              const allowRules = replyPolicy === 'nobody'
+                ? [{ $type: 'app.bsky.feed.postgate#disableRule' }]
+                : replyPolicy === 'mentioned'
+                ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
+                : replyPolicy === 'followers'
+                ? [{ $type: 'app.bsky.feed.postgate#followersRule' }]
+                : [];
+              base44.functions.invoke('atproto-bridge', {
+                collection: 'app.bsky.feed.postgate',
+                record: { post: res.uri, createdAt: new Date().toISOString(), allowRules },
+              }).catch(() => {});
+            }
+          }
         }).catch(() => {});
       }
       // Bell notification dispatch - Web Push to bell-enabled followers.
@@ -158,6 +178,23 @@ export default function ComposeBox({ onPosted, replyTo }) {
                 <p className="text-xs text-muted-foreground">{attachedCard.set?.name}</p>
                 <p className="text-xs text-primary">{attachedCard.rarity}</p>
               </div>
+            </div>
+          )}
+
+          {!replyTo && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Who can reply:</span>
+              {Object.entries(POLICY_LABELS).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setReplyPolicy(value)}
+                  className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                    replyPolicy === value ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           )}
 

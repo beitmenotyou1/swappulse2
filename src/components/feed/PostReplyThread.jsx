@@ -37,6 +37,7 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   const load = useCallback(async () => {
     if (!parentPost?.id) { setLoading(false); return; }
@@ -71,10 +72,13 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
     const trimmed = text.trim();
     if (!trimmed || posting || !user?.id) return;
     setPosting(true);
+    setReplyError('');
     try {
       await createReply(parentPost, trimmed, user);
       setText('');
       load();
+    } catch (e) {
+      setReplyError(e?.message || 'Could not post reply');
     } finally {
       setPosting(false);
     }
@@ -122,13 +126,18 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
       {user?.id && (
         <div className="mt-2 flex items-end gap-2">
           <CornerDownRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value.slice(0, MAX_LEN))}
-            placeholder="Write a reply…"
-            rows={1}
-            className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
+          <div className="flex-1">
+            <textarea
+              value={text}
+              onChange={(e) => { setText(e.target.value.slice(0, MAX_LEN)); setReplyError(''); }}
+              placeholder="Write a reply…"
+              rows={1}
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+            {replyError && (
+              <p className="mt-1 text-xs text-destructive">{replyError}</p>
+            )}
+          </div>
           <button
             onClick={submit}
             disabled={!text.trim() || posting}

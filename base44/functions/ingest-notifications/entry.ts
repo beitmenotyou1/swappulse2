@@ -29,7 +29,7 @@ const REASON_MAP: Record<string, string> = {
   like: 'like',
   repost: 'repost',
   reply: 'comment',
-  quote: 'repost',
+  quote: 'quote',
   follow: 'follow',
   mention: 'mention',
 };
@@ -157,8 +157,12 @@ export default async function(req: Request): Promise<Response> {
           if (!actorDid || actorDid === userDid || enforcedDids.has(actorDid)) continue;
 
           let subjectUri = '';
-          if (n.reason === 'like' || n.reason === 'repost' || n.reason === 'quote') {
+          let quoteText = '';
+          if (n.reason === 'like' || n.reason === 'repost') {
             subjectUri = n.reasonSubject || '';
+          } else if (n.reason === 'quote') {
+            subjectUri = n.reasonSubject || '';
+            quoteText = (n.record?.text || '').slice(0, 200);
           } else if (n.reason === 'reply') {
             subjectUri = n.record?.reply?.parent?.uri || '';
           } else if (n.reason === 'mention') {
@@ -166,7 +170,7 @@ export default async function(req: Request): Promise<Response> {
           }
           const groupKey = `${actionType}:${subjectUri || n.uri || ''}:${actorDid}`;
           groupKeys.push(groupKey);
-          mapped.push({ n, actionType, actor, actorDid, subjectUri, groupKey });
+          mapped.push({ n, actionType, actor, actorDid, subjectUri, groupKey, quoteText });
         }
         if (!mapped.length) continue;
 
@@ -206,6 +210,21 @@ export default async function(req: Request): Promise<Response> {
               targetPath = bskyPostUrl(m.subjectUri);
               targetLabel = 'your post on Bluesky';
             }
+          } else if (m.actionType === 'quote') {
+            // The subject is the quoted post; the quote post itself is m.n.uri
+            // (external). Try to find the quoted post locally for postId; target
+            // the quote post on Bluesky so the user can see the quoter's commentary.
+            if (m.subjectUri) {
+              const posts = await svc.entities.Post.filter({ at_uri: m.subjectUri }, '-created_date', 1).catch(() => []);
+              const post = posts?.[0];
+              if (post) {
+                postId = post.id;
+                targetLabel = post.content ? post.content.slice(0, 80) : 'your post';
+              } else {
+                targetLabel = 'your post on Bluesky';
+              }
+            }
+            targetPath = bskyPostUrl(m.n.uri) || bskyPostUrl(m.subjectUri);
           } else if (m.actionType === 'follow') {
             // Durable DID-based route — survives a future handle change.
             targetPath = m.actorDid ? `/profile/${m.actorDid}` : '';
@@ -221,10 +240,14 @@ export default async function(req: Request): Promise<Response> {
           if (!targetPath && m.actionType === 'comment' && m.n?.uri) {
             targetPath = bskyPostUrl(m.n.uri);
           }
+          if (!targetPath && m.actionType === 'quote' && m.n?.uri) {
+            targetPath = bskyPostUrl(m.n.uri);
+          }
 
           const verb = m.actionType === 'like' ? 'liked'
             : m.actionType === 'repost' ? 'reposted'
             : m.actionType === 'comment' ? 'replied to'
+            : m.actionType === 'quote' ? 'quoted'
             : m.actionType === 'follow' ? 'followed'
             : 'mentioned';
           const suffix = m.actionType === 'follow' ? 'you' : 'your post';
@@ -246,7 +269,7 @@ export default async function(req: Request): Promise<Response> {
               group_key: m.groupKey,
               group_count: 1,
               is_read: !!m.n.isRead,
-              metadata: { postId, postUri: m.subjectUri, postCid: m.n.cid || '', origin: 'remote', reason: m.n.reason, commentText: m.actionType === 'comment' ? (m.n.record?.text || '').slice(0, 200) : '', commentUri: m.actionType === 'comment' ? (m.n.uri || '') : '', commentCid: m.actionType === 'comment' ? (m.n.cid || '') : '' },
+              metadata: { postId, postUri: m.subjectUri, postCid: m.n.cid || '', origin: 'remote', reason: m.n.reason, commentText: m.actionType === 'comment' ? (m.n.record?.text || '').slice(0, 200) : '', commentUri: m.actionType === 'comment' ? (m.n.uri || '') : '', commentCid: m.actionType === 'comment' ? (m.n.cid || '') : '', quoteText: m.actionType === 'quote' ? m.quoteText : '' },
             });
             notificationId = notif?.id || null;
             created++;

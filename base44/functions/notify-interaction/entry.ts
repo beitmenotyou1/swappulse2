@@ -19,14 +19,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
 import { shouldDeliverNotification } from '../../shared/notificationFilter.ts';
 
-const VALID_TYPES = new Set(['like', 'repost', 'comment']);
+const VALID_TYPES = new Set(['like', 'repost', 'quote', 'comment', 'reaction']);
 
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;
     const body = await req.json().catch(() => ({}));
-    const { recipientDid, actionType, post, postUri, origin, commentText, commentId, commentUri, commentCid } = body;
+    const { recipientDid, actionType, post, postUri, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType } = body;
     let { actorDid, actorName, actorHandle, actorAvatar } = body;
 
     if (!recipientDid || !actionType || !post?.id) {
@@ -83,7 +83,11 @@ export default async function(req: Request): Promise<Response> {
 
     const targetPath = `/post/${post.id}`;
     const targetLabel = post.content ? post.content.slice(0, 80) : 'your post';
-    const verb = actionType === 'like' ? 'liked' : actionType === 'repost' ? 'reposted' : 'commented on';
+    const verb = actionType === 'like' ? 'liked'
+      : actionType === 'repost' ? 'reposted'
+      : actionType === 'quote' ? 'quoted'
+      : actionType === 'reaction' ? 'reacted to'
+      : 'commented on';
     const title = `${actorName || 'Someone'} ${verb} your post`;
 
     let notificationId: string | null = null;
@@ -111,6 +115,8 @@ export default async function(req: Request): Promise<Response> {
           commentId: commentId || '',
           commentUri: commentUri || '',
           commentCid: commentCid || '',
+          quoteText: quoteText || '',
+          reactionType: reactionType || '',
         },
       });
       notificationId = notification?.id || null;

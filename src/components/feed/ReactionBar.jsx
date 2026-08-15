@@ -92,6 +92,17 @@ export default function ReactionBar({ post, initial }) {
         );
         const created = await base44.entities.Reaction.create(stamped);
         setMineId(created.id);
+        // Notify the post author about the reaction.
+        if (post.did && post.did !== did) {
+          base44.functions.invoke('notify-interaction', {
+            recipientDid: post.did,
+            actionType: 'reaction',
+            post: { id: post.id, at_uri: post.at_uri, cid: post.cid, content: post.content },
+            postUri: post.at_uri,
+            origin: 'local',
+            reactionType: type,
+          }).catch(() => {});
+        }
         // Bridge as org.swappulse.reaction to the PDS (SwapPulse custom lexicon for federation)
         bridgeReaction(stamped).then((res) => {
           if (res.bridged) base44.entities.Reaction.update(created.id, res).catch(() => {});

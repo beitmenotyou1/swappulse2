@@ -23,7 +23,7 @@ function actorFromUser(me) {
   };
 }
 
-function notify(actionType, recipientDid, post, actor, origin = 'local', commentText = '', commentRef = {}) {
+function notify(actionType, recipientDid, post, actor, origin = 'local', extra = {}) {
   if (!recipientDid) return Promise.resolve();
   return base44.functions.invoke('notify-interaction', {
     recipientDid,
@@ -35,11 +35,37 @@ function notify(actionType, recipientDid, post, actor, origin = 'local', comment
     post: { id: post.id, at_uri: post.at_uri, cid: post.cid, content: post.content },
     postUri: post.at_uri,
     origin,
-    commentText,
-    commentId: commentRef.commentId || '',
-    commentUri: commentRef.commentUri || '',
-    commentCid: commentRef.commentCid || '',
+    commentText: extra.commentText || '',
+    commentId: extra.commentId || '',
+    commentUri: extra.commentUri || '',
+    commentCid: extra.commentCid || '',
+    quoteText: extra.quoteText || '',
+    reactionType: extra.reactionType || '',
   }).catch(() => {});
+}
+
+// Fetch the true root of a reply thread from the AppView. Used when the
+// parent is an external strongRef that doesn't carry root_uri — without this,
+// deep nested replies bridge with the immediate parent as "root" and don't
+// thread correctly on bsky.app. Returns { rootUri, rootCid } or null.
+async function resolveThreadRoot(parentUri) {
+  try {
+    const url = new URL('https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread');
+    url.searchParams.set('uri', parentUri);
+    url.searchParams.set('depth', '0');
+    url.searchParams.set('parentHeight', '80');
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    let thread = data.thread;
+    while (thread?.parent && thread.parent.$type === 'app.bsky.feed.defs#threadViewPost') {
+      thread = thread.parent;
+    }
+    if (thread?.post?.uri) {
+      return { rootUri: thread.post.uri, rootCid: thread.post.cid || '' };
+    }
+  } catch { /* ignore — fall back to parent as root */ }
+  return null;
 }
 
 // Normalize a comment/post reference for the interaction helpers. Accepts
@@ -62,6 +88,7 @@ export function normalizeRef(ref) {
     reposts: ref.reposts || 0,
     replies: ref.replies || 0,
     content: ref.content || '',
+    reply_policy: ref.reply_policy || 'everybody',
     isLocal,
   };
 }
@@ -154,10 +181,41 @@ export async function deleteRepost(repost, post) {
 export async function createReply(parentPost, text, user, extra = {}, localReplyTo = null) {
   const ref = normalizeRef(parentPost);
   const { did, signingKey } = await ensureUserDid();
+
+  // Enforce the parent post's reply policy (postGate) for local posts.
+  if (ref.isLocal && ref.reply_policy && ref.reply_policy !== 'everybody') {
+    if (ref.reply_policy === 'nobody') {
+      throw new Error('Replies are disabled on this post.');
+    }
+    if (ref.reply_policy === 'followers') {
+      const follows = await base44.entities.Follow.filter({ did: ref.did, subject_did: did }, '-created_date', 1).catch(() => []);
+      if (!follows?.length) {
+        throw new Error('Only followers can reply to this post.');
+      }
+    }
+    if (ref.reply_policy === 'mentioned') {
+      const content = ref.content || '';
+      const userHandle = user?.bsky_handle || user?.email?.split('@')[0] || '';
+      if (!content.includes('@' + userHandle) && !content.includes(did)) {
+        throw new Error('Only mentioned users can reply to this post.');
+      }
+    }
+  }
+
   const parentUri = ref.at_uri || null;
   const parentCid = ref.cid || null;
-  const rootUri = ref.root_uri || ref.at_uri || null;
-  const rootCid = ref.root_cid || ref.cid || null;
+  let rootUri = ref.root_uri || ref.at_uri || null;
+  let rootCid = ref.root_cid || ref.cid || null;
+
+  // If the parent is external and lacks root_uri, resolve the true thread root
+  // from the AppView so deep nested replies bridge with the correct reply.root.
+  if (!ref.isLocal && parentUri && !ref.root_uri) {
+    const resolved = await resolveThreadRoot(parentUri);
+    if (resolved) {
+      rootUri = resolved.rootUri;
+      rootCid = resolved.rootCid;
+    }
+  }
   const stamped = await stampRecord({
     content: text.trim(),
     post_type: 'text',
@@ -193,7 +251,8 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
     }).catch(() => {});
   }
   if (ref.isLocal) {
-    notify('comment', ref.did, ref, actorFromUser(user), 'local', text.trim().slice(0, 200), {
+    notify('comment', ref.did, ref, actorFromUser(user), 'local', {
+      commentText: text.trim().slice(0, 200),
       commentId: created.id,
       commentUri: created.at_uri,
       commentCid: created.cid,
@@ -233,6 +292,9 @@ export async function createQuoteRepost(post, text, user) {
     }).then((res) => {
       if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
     }).catch(() => {});
+  }
+  if (ref.isLocal) {
+    notify('quote', ref.did, { id: created.id, at_uri: ref.at_uri, cid: ref.cid, content: text.trim() }, actorFromUser(user), 'local', { quoteText: text.trim().slice(0, 200) });
   }
   return created;
 }

@@ -76,6 +76,17 @@ export default function CommentReactions({ post, user, compact = false, initialR
           reactor_handle: user?.handle || '',
           reactor_avatar: user?.avatar_url || '',
         });
+        // Notify the post author about the reaction.
+        if (post.did) {
+          base44.functions.invoke('notify-interaction', {
+            recipientDid: post.did,
+            actionType: 'reaction',
+            post: { id: post.id, at_uri: post.at_uri, cid: post.cid, content: post.content },
+            postUri: post.at_uri,
+            origin: 'local',
+            reactionType: typeKey,
+          }).catch(() => {});
+        }
         setMyReaction(typeKey);
         setCounts((c) => ({ ...c, [typeKey]: (c[typeKey] || 0) + 1 }));
       }

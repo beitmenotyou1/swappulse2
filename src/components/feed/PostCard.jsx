@@ -11,6 +11,7 @@ import { timeAgo, formatNumber } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { createLike, deleteLike, createRepost, deleteRepost } from '@/lib/postInteractions';
+import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetViewerLiked } from '@/lib/viewerLikes';
 import ReportDialog from '@/components/moderation/ReportDialog';
 import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
@@ -56,6 +57,20 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
     }
   }, [myLike?.id]);
 
+  // Reconcile like state from the PDS (likes made directly on bsky.app).
+  useEffect(() => {
+    if (myLike || !post.at_uri) return;
+    let alive = true;
+    (async () => {
+      await loadViewerLikes();
+      if (!alive) return;
+      if (isLikedByViewer(post.at_uri)) {
+        setLiked(true);
+      }
+    })();
+    return () => { alive = false; };
+  }, [post.at_uri, myLike]);
+
   const toggleLike = async () => {
     if (pendingLike || !user?.id) return;
     setPendingLike(true);
@@ -65,6 +80,19 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
         const l = await base44.entities.Like.get(likeId).catch(() => null);
         await deleteLike(l, post);
         setLikeId(null);
+        unsetViewerLiked(post.at_uri);
+      } catch {
+        setLiked(true);
+      }
+    } else if (liked && !likeId && post.at_uri) {
+      // PDS-only like (made on bsky.app) — delete via bridge.
+      setLiked(false);
+      try {
+        const viewerLike = getViewerLike(post.at_uri);
+        if (viewerLike?.likeUri) {
+          await base44.functions.invoke('atproto-bridge', { action: 'delete', uri: viewerLike.likeUri }).catch(() => {});
+        }
+        unsetViewerLiked(post.at_uri);
       } catch {
         setLiked(true);
       }
@@ -73,6 +101,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
       try {
         const created = await createLike(post);
         setLikeId(created.id);
+        setViewerLiked(post.at_uri, created.at_uri, created.cid);
       } catch {
         setLiked(false);
       }

@@ -7,6 +7,7 @@ import {
   createLike, deleteLike, createRepost, deleteRepost,
   createReply, createQuoteRepost, normalizeRef,
 } from '@/lib/postInteractions';
+import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetViewerLiked } from '@/lib/viewerLikes';
 
 const MAX_LEN = 500;
 
@@ -28,6 +29,7 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [posting, setPosting] = useState(false);
+  const [replyError, setReplyError] = useState('');
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteText, setQuoteText] = useState('');
   const [quotePosting, setQuotePosting] = useState(false);
@@ -43,8 +45,11 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
           base44.entities.Like.filter({ ...filter, created_by_id: user.id }, '-created_date', 5).catch(() => []),
           base44.entities.Repost.filter({ ...filter, created_by_id: user.id }, '-created_date', 5).catch(() => []),
         ]);
+        // Also check PDS viewer-state for likes made directly on bsky.app.
+        await loadViewerLikes();
         if (!alive) return;
         if (likes[0]) { setLiked(true); setLikeId(likes[0].id); }
+        else if (ref.at_uri && isLikedByViewer(ref.at_uri)) { setLiked(true); }
         if (reposts[0]) { setReposted(true); setRepostId(reposts[0].id); }
       } catch { /* ignore */ }
     })();
@@ -63,10 +68,20 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
         const l = await base44.entities.Like.get(likeId).catch(() => null);
         await deleteLike(l, comment);
         setLikeId(null);
+        unsetViewerLiked(ref.at_uri);
+      } else if (liked && !likeId && ref.at_uri) {
+        // PDS-only like (made on bsky.app) — delete via bridge.
+        setLiked(false);
+        const viewerLike = getViewerLike(ref.at_uri);
+        if (viewerLike?.likeUri) {
+          base44.functions.invoke('atproto-bridge', { action: 'delete', uri: viewerLike.likeUri }).catch(() => {});
+        }
+        unsetViewerLiked(ref.at_uri);
       } else {
         setLiked(true);
         const created = await createLike(comment);
         setLikeId(created.id);
+        setViewerLiked(ref.at_uri, created.at_uri, created.cid);
       }
     } finally {
       setBusy(false);
@@ -120,11 +135,14 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
     const trimmed = replyText.trim();
     if (!trimmed || posting) return;
     setPosting(true);
+    setReplyError('');
     try {
       await createReply(comment, trimmed, user);
       setReplyText('');
       setShowReply(false);
       onPosted?.();
+    } catch (err) {
+      setReplyError(err?.message || 'Could not post reply');
     } finally {
       setPosting(false);
     }
@@ -196,19 +214,22 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
           <div className="relative">
             <textarea
               value={replyText}
-              onChange={(e) => setReplyText(e.target.value.slice(0, MAX_LEN))}
+              onChange={(e) => { setReplyText(e.target.value.slice(0, MAX_LEN)); setReplyError(''); }}
               placeholder="Write a reply…"
               rows={2}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
             <button
-              onClick={() => { setShowReply(false); setReplyText(''); }}
+              onClick={() => { setShowReply(false); setReplyText(''); setReplyError(''); }}
               className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:bg-secondary"
               aria-label="Cancel reply"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
+          {replyError && (
+            <p className="mt-1 text-xs text-destructive">{replyError}</p>
+          )}
           <button
             onClick={submitReply}
             disabled={!replyText.trim() || posting}

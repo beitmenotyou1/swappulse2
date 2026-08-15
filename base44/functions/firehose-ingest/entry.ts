@@ -243,6 +243,24 @@ export default async function(req: Request): Promise<Response> {
             for (const local of localByDid || []) {
               if (!local.at_uri) continue;
               if (!pdsUriSet.has(local.at_uri)) {
+                // Decrement the parent post's counter when a remote like/repost
+                // is tombstoned, so counts stay accurate over time. Idempotent:
+                // the record is deleted here, so a redelivered delete won't
+                // re-match. Guards against double-decrement below 0.
+                if (entityName === 'Like' || entityName === 'Repost') {
+                  const subjectUri = local.post_uri;
+                  if (subjectUri) {
+                    const posts = await svc.entities.Post.filter({ at_uri: subjectUri }, '-created_date', 1).catch(() => []);
+                    const post = posts?.[0];
+                    if (post) {
+                      const field = entityName === 'Like' ? 'likes' : 'reposts';
+                      const current = post[field] || 0;
+                      if (current > 0) {
+                        await svc.entities.Post.update(post.id, { [field]: current - 1 }).catch(() => {});
+                      }
+                    }
+                  }
+                }
                 await svc.entities[entityName].delete(local.id).catch(() => {});
                 deleted++;
               }

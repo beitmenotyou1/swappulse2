@@ -1,10 +1,15 @@
 import React from 'react';
-import { Bell, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, MessageCircle, Repeat2, Globe } from 'lucide-react';
+import { Bell, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, MessageCircle, Repeat2, Quote, Globe } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import Avatar from '@/components/Avatar';
 import { Image } from '@/components/ui/image';
 import InteractionActions from '@/components/notifications/InteractionActions';
 import FollowBackButton from '@/components/notifications/FollowBackButton';
+
+const REACTION_EMOJI = {
+  insane_pull: '🔥', jealous: '😏', congrats: '🎉', trade_interest: '🤝',
+  gratz_set: '🏆', better_luck: '🍀', wow: '🤯',
+};
 
 const ACTION_META = {
   trade_match: { Icon: ArrowLeftRight, tint: 'text-primary' },
@@ -12,6 +17,7 @@ const ACTION_META = {
   reaction: { Icon: Heart, tint: 'text-destructive' },
   like: { Icon: Heart, tint: 'text-destructive' },
   repost: { Icon: Repeat2, tint: 'text-emerald-500' },
+  quote: { Icon: Quote, tint: 'text-primary' },
   comment: { Icon: MessageCircle, tint: 'text-primary' },
   follow: { Icon: UserPlus, tint: 'text-primary' },
   mention: { Icon: AtSign, tint: 'text-primary' },
@@ -28,8 +34,12 @@ function actionText(n) {
   switch (n.action_type) {
     case 'trade_match': return 'listed a trade matching your wishlist';
     case 'price_alert': return `Price drop on ${n.target_label || 'a wishlist card'}`;
-    case 'reaction':
-    case 'like': return `reacted to your ${n.target_label || 'post'}`;
+    case 'reaction': {
+      const emoji = n.metadata?.reactionType ? REACTION_EMOJI[n.metadata.reactionType] || '' : '';
+      return `reacted ${emoji ? emoji + ' ' : ''}to your ${n.target_label || 'post'}`;
+    }
+    case 'like': return `liked your ${n.target_label || 'post'}`;
+    case 'quote': return 'quoted your post';
     case 'comment': return `commented on your ${n.target_label || 'post'}`;
     case 'follow': return 'followed you';
     case 'mention': return 'mentioned you';
@@ -74,6 +84,11 @@ export default function NotificationCard({ n, onOpen, onDismiss }) {
           {n.action_type === 'comment' && n.metadata?.commentText && (
             <p className="mt-1 line-clamp-2 rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs italic text-muted-foreground">
               &ldquo;{n.metadata.commentText}&rdquo;
+            </p>
+          )}
+          {n.action_type === 'quote' && n.metadata?.quoteText && (
+            <p className="mt-1 line-clamp-2 rounded-lg bg-secondary/60 px-2.5 py-1.5 text-xs italic text-muted-foreground">
+              &ldquo;{n.metadata.quoteText}&rdquo;
             </p>
           )}
           <div className="mt-0.5 flex items-center gap-1.5">
