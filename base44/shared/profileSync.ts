@@ -29,20 +29,21 @@ function atProtoTimestamp(d?: string): string {
   return iso;
 }
 
-// Fetch avatar bytes from the stored URL and upload as a blob to the user's
-// PDS, returning the blob ref to embed in the profile record. Returns null if
-// there is no avatar or the upload fails (non-fatal — profile syncs without
-// avatar, preserving the existing one if any).
-async function uploadAvatarBlob(
+// Fetch image bytes from a stored URL and upload as a blob to the user's PDS,
+// returning the blob ref to embed in the profile record. Used for both avatar
+// and banner. Returns null if there is no image or the upload fails (non-fatal
+// — profile syncs without the image, preserving the existing one if any).
+async function uploadImageBlob(
   pdsUrl: string,
   accessJwt: string,
-  avatarUrl: string,
+  imageUrl: string,
+  label = 'image',
 ): Promise<any | null> {
-  if (!avatarUrl) return null;
+  if (!imageUrl) return null;
   try {
-    const imgRes = await fetch(avatarUrl);
+    const imgRes = await fetch(imageUrl);
     if (!imgRes.ok) {
-      console.error('profileSync: avatar fetch failed', imgRes.status);
+      console.error(`profileSync: ${label} fetch failed`, imgRes.status);
       return null;
     }
     const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
@@ -60,7 +61,7 @@ async function uploadAvatarBlob(
     const data = await upRes.json();
     return data.blob || null;
   } catch (e) {
-    console.error('profileSync: avatar upload error', e?.message || e);
+    console.error(`profileSync: ${label} upload error`, e?.message || e);
     return null;
   }
 }
@@ -70,7 +71,7 @@ export async function syncProfileForUser(
   pdsUrl: string,
   userDid: string,
   appPassword: string,
-  userRecord: { display_name?: string; full_name?: string; avatar?: string; description?: string; created_date?: string },
+  userRecord: { display_name?: string; full_name?: string; avatar?: string; header?: string; description?: string; created_date?: string },
 ): Promise<{ ok: boolean; uri?: string; cid?: string; error?: string }> {
   let session: any;
   try {
@@ -89,8 +90,10 @@ export async function syncProfileForUser(
   const description = truncate(userRecord.description || '', 256);
   if (description) record.description = description;
 
-  const avatarBlob = await uploadAvatarBlob(pdsUrl, session.accessJwt, userRecord.avatar || '');
+  const avatarBlob = await uploadImageBlob(pdsUrl, session.accessJwt, userRecord.avatar || '', 'avatar');
   if (avatarBlob) record.avatar = avatarBlob;
+  const bannerBlob = await uploadImageBlob(pdsUrl, session.accessJwt, userRecord.header || '', 'banner');
+  if (bannerBlob) record.banner = bannerBlob;
 
   try {
     const res = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord', {

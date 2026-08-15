@@ -20,9 +20,12 @@ export default function EditProfileModal({ onClose, onSaved }) {
   const [fullName, setFullName] = useState(user?.display_name || user?.full_name || '');
   const [description, setDescription] = useState(user?.description || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [header, setHeader] = useState(user?.header || '');
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingHeader, setUploadingHeader] = useState(false);
   const fileRef = useRef(null);
+  const headerRef = useRef(null);
 
   const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
@@ -38,6 +41,20 @@ export default function EditProfileModal({ onClose, onSaved }) {
     }
   };
 
+  const handleHeader = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHeader(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setHeader(file_url);
+    } catch {
+      toast({ title: 'Upload failed', description: 'Could not upload image', variant: 'destructive' });
+    } finally {
+      setUploadingHeader(false);
+    }
+  };
+
   const save = async () => {
     if (busy) return;
     setBusy(true);
@@ -49,6 +66,7 @@ export default function EditProfileModal({ onClose, onSaved }) {
         display_name: fullName.trim(),
         description,
         avatar,
+        header,
       });
       // Refresh the user in context so the profile header updates instantly.
       await checkUserAuth();
@@ -85,6 +103,25 @@ export default function EditProfileModal({ onClose, onSaved }) {
         </div>
 
         <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Header image</label>
+            <div
+              className="relative h-28 w-full cursor-pointer overflow-hidden rounded-xl border border-border bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30"
+              onClick={() => headerRef.current?.click()}
+            >
+              {header ? (
+                <img src={header} alt="Header" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">Tap to add a header image</div>
+              )}
+              <span className="absolute bottom-2 right-2 rounded-full bg-background/80 p-1.5 backdrop-blur">
+                {uploadingHeader ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              </span>
+            </div>
+            <input ref={headerRef} type="file" accept="image/*" onChange={handleHeader} className="hidden" />
+            <p className="mt-1 text-[11px] text-muted-foreground">Recommended 1500×500. Shown at the top of your profile.</p>
+          </div>
+
           <div className="flex justify-center">
             <div className="relative h-20 w-20">
               {avatar ? (

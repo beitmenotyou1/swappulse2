@@ -30,6 +30,7 @@ export default async function(req: Request): Promise<Response> {
       bsky_handle: u.bsky_handle || '',
       username: usernameFallback,
       avatar: u.avatar || '',
+      header: u.header || '',
       did: u.did || '',
       description: u.description || '',
       handle_verified: !!(u as any).handle_verified,

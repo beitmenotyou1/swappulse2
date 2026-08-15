@@ -45,6 +45,7 @@ export default function UserProfile() {
           bsky_handle: (r && r.found && r.bsky_handle) || '',
           username: (r && r.found && r.username) || head?.author_handle || 'collector',
           avatar: (r && r.found && r.avatar) || head?.author_avatar || '',
+          header: (r && r.found && r.header) || '',
           did: subjectDid,
           handle_verified: (r && r.found && r.handle_verified) || false,
         });
@@ -60,7 +61,11 @@ export default function UserProfile() {
 
   return (
     <div>
-      <div className="h-32 w-full bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30" />
+      <div className="h-32 w-full overflow-hidden bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30">
+        {profile?.header ? (
+          <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />
+        ) : null}
+      </div>
       <div className="px-4">
         <Link to="/" className="-mt-10 mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Back

@@ -113,7 +113,11 @@ export default function Profile() {
 
   return (
     <div>
-      <div className="h-40 w-full bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30" />
+      <div className="h-40 w-full overflow-hidden bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30">
+        {user?.header ? (
+          <img src={user.header} alt="Profile header" className="h-full w-full object-cover" />
+        ) : null}
+      </div>
       <div className="px-4">
         <div className="-mt-12 flex items-end justify-between">
           <span className="relative inline-block">
