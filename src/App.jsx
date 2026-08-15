@@ -73,6 +73,8 @@ import NetworkingConcierge from '@/pages/NetworkingConcierge';
 import PackParties from '@/pages/PackParties';
 import PullOfTheWeek from '@/pages/PullOfTheWeek';
 import Messages from '@/pages/Messages';
+import SitemapXml from '@/pages/SitemapXml';
+import RobotsTxt from '@/pages/RobotsTxt';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -105,6 +107,8 @@ const AuthenticatedApp = () => {
       <Route path="/account-deleted" element={<AccountDeleted />} />
       <Route path="/order-complete" element={<OrderComplete />} />
       <Route path="/status" element={<Status />} />
+      <Route path="/sitemap.xml" element={<SitemapXml />} />
+      <Route path="/robots.txt" element={<RobotsTxt />} />
       <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
       {/* Public browsable content — no login required */}

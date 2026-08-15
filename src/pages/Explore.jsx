@@ -10,8 +10,14 @@ import ExploreCardTile from '@/components/cards/ExploreCardTile';
 import PostCard from '@/components/feed/PostCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
+import useSEO from '@/hooks/useSEO';
 
 export default function Explore() {
+  useSEO({
+    title: 'Explore Cards',
+    description: 'Search the Pokémon TCG catalog, discover recent sets, and browse community posts on SwapPulse.',
+    canonicalPath: '/explore',
+  });
   const { settings } = useSettings();
   const lang = localeToTcgdexLang(settings?.language?.preferredContent?.[0] || settings?.language?.targetLanguage);
   const [query, setQuery] = useState('');

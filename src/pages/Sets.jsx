@@ -3,8 +3,14 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import SetChecklistManager from '@/components/sets/SetChecklistManager';
 import { Loader2 } from 'lucide-react';
+import useSEO from '@/hooks/useSEO';
 
 export default function Sets() {
+  useSEO({
+    title: 'Set Checklists',
+    description: 'Track your Pokémon TCG set completion, scan cards, and download printable PDF checklists on SwapPulse.',
+    canonicalPath: '/sets',
+  });
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 

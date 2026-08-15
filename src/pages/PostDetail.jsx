@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PostCard from '@/components/feed/PostCard';
 import PostReplyThread from '@/components/feed/PostReplyThread';
+import useSEO from '@/hooks/useSEO';
 
 // Dedicated post detail page: renders a single post with its full reply
 // thread and a composer. Reached from the inline thread's "View full thread"
@@ -13,6 +14,12 @@ export default function PostDetail() {
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  useSEO({
+    title: post ? (post.content?.slice(0, 60) || 'Post') : 'Post',
+    description: post ? (post.content?.slice(0, 160) || 'A post on SwapPulse') : 'A post on the SwapPulse Pokémon TCG collector community.',
+    canonicalPath: `/post/${postId}`,
+    jsonLd: post ? { '@context': 'https://schema.org', '@type': 'DiscussionForumPosting', headline: post.content?.slice(0, 80) || 'Post', author: { '@type': 'Person', name: post.author_name || 'Collector' } } : null,
+  });
 
   useEffect(() => {
     if (!postId) return;

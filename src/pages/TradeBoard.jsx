@@ -10,8 +10,14 @@ import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link, useLocation } from 'react-router-dom';
 import { bridgeTradeListing, updateBridgedTradeListing } from '@/lib/atprotoRecords';
 import { useToast } from "@/components/ui/use-toast";
+import useSEO from '@/hooks/useSEO';
 
 export default function TradeBoard() {
+  useSEO({
+    title: 'Trade Board',
+    description: 'Browse and post open Pokémon TCG trade listings on the SwapPulse trade board — peer-to-peer card exchange.',
+    canonicalPath: '/trades',
+  });
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

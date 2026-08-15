@@ -16,6 +16,7 @@ import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import ActivityTab from '@/components/profile/ActivityTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
+import useSEO from '@/hooks/useSEO';
 
 // Other-user profile. Renders the merged SwapPulse + Bluesky profile. For
 // non-members (is_member=false, remote_synced=true) it shows a prominent
@@ -28,6 +29,12 @@ export default function UserProfile() {
   const [friendship, setFriendship] = useState({ my: null, their: null });
   const [tab, setTab] = useState('Posts');
   const { profile: merged, loading: merging } = useMergedProfile({ did: subjectDid });
+  useSEO({
+    title: merged?.name ? `${merged.name} (Collector Profile)` : 'Collector Profile',
+    description: merged?.description ? `${merged.description}` : `${merged?.name || 'Collector'} on SwapPulse — the decentralized Pokémon TCG collector community.`,
+    canonicalPath: `/profile/${subjectDid}`,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', name: merged?.name || 'Collector', url: `https://swappulse.org/profile/${subjectDid}` },
+  });
 
   const isExternal = !!merged && !merged.is_member && !!merged.remote_synced;
   const isMember = !!merged && !!merged.is_member;

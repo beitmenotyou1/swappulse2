@@ -9,10 +9,17 @@ import CardReviews from '@/components/cards/CardReviews';
 import WishlistAlertModal from '@/components/wishlist/WishlistAlertModal';
 import DiscussionTab from '@/components/comments/DiscussionTab';
 import { formatPrice } from '@/lib/format';
+import useSEO from '@/hooks/useSEO';
 
 export default function CardDetail() {
   const { cardId } = useParams();
   const [card, setCard] = useState(null);
+  useSEO({
+    title: card ? `${card.name} — ${card.set?.name || 'Pokémon Card'}` : 'Card Details',
+    description: card ? `${card.name} from ${card.set?.name || 'Pokémon TCG'}. View stats, reviews, and community discussion on SwapPulse.` : 'Pokémon TCG card details, reviews, and community discussion on SwapPulse.',
+    canonicalPath: `/card/${cardId}`,
+    jsonLd: card ? { '@context': 'https://schema.org', '@type': 'Product', name: card.name, description: `Pokémon TCG card from ${card.set?.name || ''}` } : null,
+  });
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [showAlert, setShowAlert] = useState(false);

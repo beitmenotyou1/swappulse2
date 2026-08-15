@@ -12,6 +12,7 @@ import PushOnboardingPrompt from '@/components/onboarding/PushOnboardingPrompt';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   { key: 'all', label: 'For You' },
@@ -21,6 +22,12 @@ const TABS = [
 ];
 
 export default function Home() {
+  useSEO({
+    title: 'Home Feed',
+    description: 'Discover fresh pack pulls, trades, and showcases from the SwapPulse Pokémon TCG collector community.',
+    canonicalPath: '/',
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebSite', name: 'SwapPulse', url: 'https://swappulse.org' },
+  });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');

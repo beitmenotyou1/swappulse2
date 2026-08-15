@@ -1,0 +1,45 @@
+{
+  "name": "Weekly SEO Audit",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 9 * * 1",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Runs the SEO audit weekly, which auto-fixes what it can, persists a SeoAudit record, and emails admins a summary.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "weekly_seo_audit",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_audit": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "seo-audit",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run SEO audit",
+            "description": "Audit, auto-fix, persist, email admins"
+          }
+        }
+      }
+    ]
+  }
+}
