@@ -117,7 +117,7 @@ export default function Profile() {
       <div className="px-4">
         <div className="-mt-12 flex items-end justify-between">
           <span className="relative inline-block">
-            <LiveAvatar did={did} name={user?.display_name || user?.full_name} size={96} className="ring-4 ring-background" />
+            <LiveAvatar did={did} name={user?.display_name || user?.full_name} src={user?.avatar} size={96} className="ring-4 ring-background" />
             {liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
           </span>
           <div className="flex items-center gap-2">

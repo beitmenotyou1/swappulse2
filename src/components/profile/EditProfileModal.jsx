@@ -120,12 +120,12 @@ export default function EditProfileModal({ onClose, onSaved }) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              maxLength={500}
+              maxLength={250}
               rows={3}
               placeholder="Tell other collectors about yourself…"
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
-            <p className="mt-1 text-right text-[11px] text-muted-foreground">{(description || '').length}/500</p>
+            <p className="mt-1 text-right text-[11px] text-muted-foreground">{(description || '').length}/250</p>
           </div>
 
           <div className="flex gap-2 pt-1">
