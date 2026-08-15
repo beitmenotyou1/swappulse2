@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Avatar from '@/components/Avatar';
 import CommentReactions from './CommentReactions';
-import CommentActionBar from './CommentActionBar';
 import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
-import { CornerDownRight } from 'lucide-react';
+import { Reply, CornerDownRight } from 'lucide-react';
 
 function timeAgo(iso) {
   if (!iso) return '';
@@ -40,8 +39,13 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
           </div>
           <p className="mt-0.5 text-sm whitespace-pre-wrap break-words">{comment.content}</p>
 
-          <div className="mt-2 space-y-1.5">
-            <CommentActionBar comment={comment} user={user} onPosted={onPosted} />
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              onClick={() => onReply?.(comment)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+            >
+              <Reply className="h-3.5 w-3.5" /> Reply
+            </button>
             <CommentReactions post={comment} user={user} initialReactions={reactionsByPostId?.[comment.id]} />
           </div>
 
@@ -67,8 +71,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
                           <span className="text-xs text-muted-foreground">{timeAgo(reply.created_date)}</span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap break-words">{reply.content}</p>
-                        <div className="mt-1.5 space-y-1">
-                          <CommentActionBar comment={reply} user={user} compact onPosted={onPosted} />
+                        <div className="mt-1.5">
                           <CommentReactions post={reply} user={user} compact initialReactions={reactionsByPostId?.[reply.id]} />
                         </div>
                       </div>

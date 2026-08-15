@@ -1,125 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Repeat2, MessageCircle, Loader2, Send, X, Quote } from 'lucide-react';
+import { Heart, MessageCircle, Loader2, Send, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { createLike, deleteLike, createRepost, deleteRepost, createReply, createQuotePost } from '@/lib/postInteractions';
+import { createLike, deleteLike, createReply } from '@/lib/postInteractions';
 
-// Inline Like + Repost (direct + quote) + Reply actions shown on
-// like/repost/comment notification cards. For comment notifications, the
-// actions target the comment itself (metadata.commentUri/commentCid) so the
-// user can reply to / like / repost the comment directly from the
-// notification. For like/repost notifications, actions target the triggering
-// post (metadata.postId). All actions create real federated records that
-// appear on bsky.app.
+// Inline Like + Reply actions shown on like/repost/comment notification cards.
+// Both create real federated records against the triggering post (resolved via
+// metadata.postId), so the response appears on SwapPulse and Bluesky and the
+// original actor is notified in turn.
 export default function InteractionActions({ n, onResponded }) {
   const { user } = useAuth();
-  const isInteraction = ['like', 'repost', 'comment'].includes(n?.action_type);
   const postId = n?.metadata?.postId;
-  const commentUri = n?.metadata?.commentUri;
-  const commentCid = n?.metadata?.commentCid;
-  const isComment = n?.action_type === 'comment';
-  const hasCommentRef = isComment && commentUri && commentCid;
-
-  const [target, setTarget] = useState(null);
+  const isInteraction = ['like', 'repost', 'comment'].includes(n?.action_type);
   const [busy, setBusy] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeId, setLikeId] = useState(null);
-  const [reposted, setReposted] = useState(false);
-  const [repostId, setRepostId] = useState(null);
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [showRepostMenu, setShowRepostMenu] = useState(false);
-  const [showQuote, setShowQuote] = useState(false);
-  const [quoteText, setQuoteText] = useState('');
   const [posting, setPosting] = useState(false);
 
-  // Resolve the target ref and existing like/repost state.
+  // Check whether the current user already liked the triggering post.
   useEffect(() => {
-    if (!isInteraction || !user?.id) return;
+    if (!isInteraction || !postId || !user?.id) return;
     let alive = true;
     (async () => {
-      if (hasCommentRef) {
-        // Comment notification: target the comment directly via at_uri/cid.
-        const commentRef = {
-          id: '',
-          bridged: true,
-          at_uri: commentUri,
-          cid: commentCid,
-          did: n.actor_did,
-          content: n.metadata?.commentText || '',
-          likes: 0, reposts: 0, replies: 0,
-          root_uri: commentUri,
-          root_cid: commentCid,
-        };
-        if (alive) setTarget(commentRef);
-        try {
-          const [likes, reposts] = await Promise.all([
-            base44.entities.Like.filter({ post_uri: commentUri }, '-created_date', 50).catch(() => []),
-            base44.entities.Repost.filter({ post_uri: commentUri }, '-created_date', 50).catch(() => []),
-          ]);
-          if (!alive) return;
-          const myLike = likes.find((l) => l.created_by_id === user.id);
-          const myRepost = reposts.find((r) => r.created_by_id === user.id);
-          if (myLike) { setLiked(true); setLikeId(myLike.id); }
-          if (myRepost) { setReposted(true); setRepostId(myRepost.id); }
-        } catch { /* ignore */ }
-      } else if (postId) {
-        try {
-          const post = await base44.entities.Post.get(postId).catch(() => null);
-          if (!alive || !post) return;
-          setTarget(post);
-          const [likes, reposts] = await Promise.all([
-            base44.entities.Like.filter({ post_id: postId }, '-created_date', 50).catch(() => []),
-            base44.entities.Repost.filter({ post_id: postId }, '-created_date', 50).catch(() => []),
-          ]);
-          if (!alive) return;
-          const myLike = likes.find((l) => l.created_by_id === user.id);
-          const myRepost = reposts.find((r) => r.created_by_id === user.id);
-          if (myLike) { setLiked(true); setLikeId(myLike.id); }
-          if (myRepost) { setReposted(true); setRepostId(myRepost.id); }
-        } catch { /* ignore */ }
-      }
+      try {
+        const likes = await base44.entities.Like.filter({ post_id: postId }, '-created_date', 50);
+        const mine = likes.find((l) => l.created_by_id === user.id);
+        if (alive && mine) { setLiked(true); setLikeId(mine.id); }
+      } catch { /* ignore */ }
     })();
     return () => { alive = false; };
-  }, [isInteraction, hasCommentRef, commentUri, commentCid, postId, user?.id]);
+  }, [postId, user?.id, isInteraction]);
 
-  if (!isInteraction || !user?.id || !target) return null;
+  if (!isInteraction || !postId || !user?.id) return null;
 
   const toggleLike = async (e) => {
     e?.stopPropagation();
     if (busy) return;
     setBusy(true);
     try {
+      const post = await base44.entities.Post.get(postId).catch(() => null);
+      if (!post) return;
       if (liked && likeId) {
-        setLiked(false);
         const l = await base44.entities.Like.get(likeId).catch(() => null);
-        await deleteLike(l, target);
+        await deleteLike(l, post);
+        setLiked(false);
         setLikeId(null);
       } else {
+        const created = await createLike(post);
         setLiked(true);
-        const created = await createLike(target);
         setLikeId(created.id);
       }
-    } finally { setBusy(false); }
-  };
-
-  const doRepost = async (e) => {
-    e?.stopPropagation();
-    if (busy) return;
-    setBusy(true);
-    setShowRepostMenu(false);
-    try {
-      if (reposted && repostId) {
-        setReposted(false);
-        const r = await base44.entities.Repost.get(repostId).catch(() => null);
-        await deleteRepost(r, target);
-        setRepostId(null);
-      } else {
-        setReposted(true);
-        const created = await createRepost(target);
-        setRepostId(created.id);
-      }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submitReply = async (e) => {
@@ -128,89 +63,44 @@ export default function InteractionActions({ n, onResponded }) {
     if (!trimmed || posting) return;
     setPosting(true);
     try {
-      await createReply(target, trimmed, user);
+      const post = await base44.entities.Post.get(postId).catch(() => null);
+      if (post) await createReply(post, trimmed, user);
       setReplyText('');
       setShowReply(false);
       onResponded?.();
-    } finally { setPosting(false); }
-  };
-
-  const submitQuote = async (e) => {
-    e?.stopPropagation();
-    const trimmed = quoteText.trim();
-    if (!trimmed || posting) return;
-    setPosting(true);
-    try {
-      await createQuotePost(target, trimmed, user);
-      setQuoteText('');
-      setShowQuote(false);
-      onResponded?.();
-    } finally { setPosting(false); }
+    } finally {
+      setPosting(false);
+    }
   };
 
   return (
-    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={toggleLike}
-          disabled={busy}
-          aria-label="Like"
-          aria-pressed={liked}
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${liked ? 'border-red-200 bg-red-50 text-red-500 dark:border-red-900/50 dark:bg-red-950/30' : 'border-border bg-card hover:bg-secondary'}`}
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className={`h-3.5 w-3.5 ${liked ? 'fill-current' : ''}`} />}
-          {liked ? 'Liked' : 'Like'}
-        </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setShowRepostMenu((v) => !v)}
-            aria-label="Repost"
-            aria-pressed={reposted}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${showRepostMenu || reposted ? 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/50 dark:bg-emerald-950/30' : 'border-border bg-card hover:bg-secondary'}`}
-          >
-            <Repeat2 className={`h-3.5 w-3.5 ${reposted ? 'fill-current' : ''}`} />
-            {reposted ? 'Reposted' : 'Repost'}
-          </button>
-          {showRepostMenu && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowRepostMenu(false)} />
-              <div className="absolute left-0 top-full z-20 mt-1 flex flex-col rounded-lg border border-border bg-popover p-1 shadow-raised">
-                <button
-                  onClick={doRepost}
-                  className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                >
-                  <Repeat2 className="h-3.5 w-3.5" /> {reposted ? 'Undo repost' : 'Repost'}
-                </button>
-                <button
-                  onClick={() => { setShowRepostMenu(false); setShowQuote(true); }}
-                  className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                >
-                  <Quote className="h-3.5 w-3.5" /> Quote
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        <button
-          onClick={() => setShowReply((v) => !v)}
-          aria-label="Reply"
-          aria-pressed={showReply}
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${showReply ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:bg-secondary'}`}
-        >
-          <MessageCircle className="h-3.5 w-3.5" />
-          Reply
-        </button>
-      </div>
-
+    <div className="mt-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={toggleLike}
+        disabled={busy}
+        aria-label="Like the post"
+        aria-pressed={liked}
+        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${liked ? 'border-red-200 bg-red-50 text-red-500 dark:border-red-900/50 dark:bg-red-950/30' : 'border-border bg-card hover:bg-secondary'}`}
+      >
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className={`h-3.5 w-3.5 ${liked ? 'fill-current' : ''}`} />}
+        {liked ? 'Liked' : 'Like'}
+      </button>
+      <button
+        onClick={() => setShowReply((v) => !v)}
+        aria-label="Reply to the post"
+        aria-pressed={showReply}
+        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${showReply ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:bg-secondary'}`}
+      >
+        <MessageCircle className="h-3.5 w-3.5" />
+        Reply
+      </button>
       {showReply && (
-        <div className="mt-2">
+        <div className="mt-2 w-full">
           <div className="relative">
             <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value.slice(0, 500))}
-              placeholder={isComment ? 'Reply to this comment…' : 'Write a reply…'}
+              placeholder="Write a reply…"
               rows={2}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
@@ -229,39 +119,6 @@ export default function InteractionActions({ n, onResponded }) {
           >
             {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
             Post reply
-          </button>
-        </div>
-      )}
-
-      {showQuote && (
-        <div className="mt-2">
-          <div className="mb-1.5 rounded-lg border-l-2 border-primary bg-secondary px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{n?.actor_name || 'Collector'}</span>
-            <p className="mt-0.5 line-clamp-2">{n?.metadata?.commentText || n?.target_label || ''}</p>
-          </div>
-          <div className="relative">
-            <textarea
-              value={quoteText}
-              onChange={(e) => setQuoteText(e.target.value.slice(0, 500))}
-              placeholder="Add your commentary…"
-              rows={2}
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
-            <button
-              onClick={() => { setShowQuote(false); setQuoteText(''); }}
-              className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:bg-secondary"
-              aria-label="Cancel quote"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <button
-            onClick={submitQuote}
-            disabled={!quoteText.trim() || posting}
-            className="mt-1.5 flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-40"
-          >
-            {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            Post quote
           </button>
         </div>
       )}

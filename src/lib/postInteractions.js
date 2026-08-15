@@ -17,7 +17,7 @@ function actorFromUser(me) {
   };
 }
 
-function notify(actionType, recipientDid, post, actor, origin = 'local', commentText = '', commentRef = null) {
+function notify(actionType, recipientDid, post, actor, origin = 'local', commentText = '') {
   if (!recipientDid) return Promise.resolve();
   return base44.functions.invoke('notify-interaction', {
     recipientDid,
@@ -30,8 +30,6 @@ function notify(actionType, recipientDid, post, actor, origin = 'local', comment
     postUri: post.at_uri,
     origin,
     commentText,
-    commentUri: commentRef?.at_uri || '',
-    commentCid: commentRef?.cid || '',
   }).catch(() => {});
 }
 
@@ -147,39 +145,6 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
       if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
     }).catch(() => {});
   }
-  notify('comment', parentPost.did, parentPost, actorFromUser(user), 'local', text.trim().slice(0, 200), created);
-  return created;
-}
-
-// Create a quote-repost: a new post with an embedded record pointing at the
-// target comment/post (app.bsky.feed.post with embed.record). Bridges to the
-// PDS so the quote appears on bsky.app. `targetPost` may be a local Post or
-// an external ref ({ at_uri, cid, bridged: true }).
-export async function createQuotePost(targetPost, text, user) {
-  const { did, signingKey } = await ensureUserDid();
-  const stamped = await stampRecord({
-    content: text.trim(),
-    post_type: 'text',
-    author_name: user?.display_name || user?.full_name || 'Collector',
-    author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
-    author_avatar: user?.avatar || '',
-    likes: 0, reposts: 0, replies: 0,
-    quote_uri: targetPost.at_uri || '',
-    quote_cid: targetPost.cid || '',
-  }, NSID.POST, did, signingKey);
-  const created = await base44.entities.Post.create(stamped);
-  if (targetPost.bridged && targetPost.at_uri && targetPost.cid) {
-    base44.functions.invoke('atproto-bridge', {
-      collection: 'app.bsky.feed.post',
-      record: {
-        text: text.trim().slice(0, 3000),
-        createdAt: new Date().toISOString(),
-        langs: ['en'],
-        embed: { $type: 'app.bsky.embed.record', record: { uri: targetPost.at_uri, cid: targetPost.cid } },
-      },
-    }).then((res) => {
-      if (res?.uri) base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
-    }).catch(() => {});
-  }
+  notify('comment', parentPost.did, parentPost, actorFromUser(user), 'local', text.trim().slice(0, 200));
   return created;
 }

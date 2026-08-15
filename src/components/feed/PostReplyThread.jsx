@@ -6,11 +6,10 @@ import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
 import { timeAgo } from '@/lib/format';
 import { createReply } from '@/lib/postInteractions';
-import CommentActionBar from '@/components/comments/CommentActionBar';
 
 const MAX_LEN = 500;
 
-function ReplyNode({ reply, children, user, onReplied }) {
+function ReplyNode({ reply, children }) {
   return (
     <div className="flex gap-2">
       <LiveAvatar did={reply.did} name={reply.author_name} src={reply.author_avatar} size={28} />
@@ -20,7 +19,6 @@ function ReplyNode({ reply, children, user, onReplied }) {
           <span className="text-muted-foreground">{reply.content}</span>
         </p>
         <p className="text-[11px] text-muted-foreground">{timeAgo(reply.created_date)}</p>
-        <CommentActionBar comment={reply} user={user} compact onPosted={onReplied} />
         {children}
       </div>
     </div>
@@ -87,7 +85,7 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
       <div className={depth > 0 ? 'mt-2 border-l-2 border-border pl-2' : 'mt-2 space-y-2'}>
         {kids.map((r) => (
           <div key={r.id} className={depth > 0 ? 'mb-2' : ''}>
-            <ReplyNode reply={r} user={user} onReplied={load}>
+            <ReplyNode reply={r}>
               {depth < 5 && renderTree(r.id, depth + 1)}
             </ReplyNode>
           </div>
@@ -108,7 +106,7 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
       ) : (
         <div className="space-y-2">
           {directReplies.slice(0, 3).map((r) => (
-            <ReplyNode key={r.id} reply={r} user={user} onReplied={load} />
+            <ReplyNode key={r.id} reply={r} />
           ))}
           {all.length > 3 && showFullThreadLink && (
             <Link to={`/post/${parentPost.id}`} className="text-xs font-semibold text-primary hover:underline">

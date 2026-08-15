@@ -155,14 +155,6 @@
       "type": "string",
       "description": "CID of the root post in the reply thread (for federated reply threading)"
     },
-    "quote_uri": {
-      "type": "string",
-      "description": "at:// URI of the quoted post/comment (for quote-reposts via app.bsky.embed.record)"
-    },
-    "quote_cid": {
-      "type": "string",
-      "description": "CID of the quoted post/comment (for quote-reposts via app.bsky.embed.record)"
-    },
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the author (simulated)"
