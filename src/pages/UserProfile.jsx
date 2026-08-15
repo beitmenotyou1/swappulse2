@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, ExternalLink } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import Avatar from '@/components/Avatar';
@@ -13,11 +13,13 @@ import ReputationSummary from '@/components/profile/ReputationSummary';
 import ProfileHandle from '@/components/profile/ProfileHandle';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import ActivityTab from '@/components/profile/ActivityTab';
+import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 
-// Other-user profile, reached from feed author links. Hosts the follow+bell
-// control, the Friends badge, and the add-friend flow. Renders the merged
-// SwapPulse + Bluesky profile (remote wins for shared identity fields).
+// Other-user profile. Renders the merged SwapPulse + Bluesky profile. For
+// non-members (is_member=false, remote_synced=true) it shows a prominent
+// external banner strip, hides member-only sections (reputation, friendship,
+// add-friend), and pulls the Posts tab from the federated Bluesky author feed.
 export default function UserProfile() {
   const { did: subjectDid } = useParams();
   const [loading, setLoading] = useState(true);
@@ -26,30 +28,52 @@ export default function UserProfile() {
   const [tab, setTab] = useState('Posts');
   const { profile: merged, loading: merging } = useMergedProfile({ did: subjectDid });
 
+  const isExternal = !!merged && !merged.is_member && !!merged.remote_synced;
+  const isMember = !!merged && !!merged.is_member;
+
+  // Load posts: federated Bluesky feed for externals, local posts for members.
   useEffect(() => {
     let active = true;
     (async () => {
+      if (merging) return;
       setLoading(true);
       try {
-        const me = await base44.auth.me().catch(() => null);
-        const { did: myDid } = await ensureUserDid().catch(() => ({ did: me?.did || '' }));
-        const [p, mine, theirs] = await Promise.all([
-          base44.entities.Post.filter({ did: subjectDid }, '-created_date', 50).catch(() => []),
-          myDid ? base44.entities.Friendship.filter({ did: myDid, friend_did: subjectDid }).catch(() => []) : [],
-          myDid ? base44.entities.Friendship.filter({ did: subjectDid, friend_did: myDid }).catch(() => []) : [],
-        ]);
-        if (!active) return;
-        setPosts(p);
-        setFriendship({ my: mine[0] || null, their: theirs[0] || null });
-      } catch {} finally {
+        if (isExternal) {
+          const res = await base44.functions.invoke('get-author-feed', { did: subjectDid, limit: 50 });
+          const data = res?.data ?? res;
+          if (active) setPosts(data?.items || []);
+        } else {
+          const p = await base44.entities.Post.filter({ did: subjectDid }, '-created_date', 50).catch(() => []);
+          if (active) setPosts(p);
+        }
+      } catch {
+        if (active) setPosts([]);
+      } finally {
         if (active) setLoading(false);
       }
     })();
     return () => { active = false; };
-  }, [subjectDid]);
+  }, [subjectDid, isExternal, merging]);
 
-  // Derive display values from the merged profile, falling back to the first
-  // post's author metadata while the merge is loading or if it fails.
+  // Friendship status — members only.
+  useEffect(() => {
+    if (!isMember) { setFriendship({ my: null, their: null }); return; }
+    let active = true;
+    (async () => {
+      try {
+        const me = await base44.auth.me().catch(() => null);
+        const { did: myDid } = await ensureUserDid().catch(() => ({ did: me?.did || '' }));
+        if (!myDid || !active) return;
+        const [mine, theirs] = await Promise.all([
+          base44.entities.Friendship.filter({ did: myDid, friend_did: subjectDid }).catch(() => []),
+          base44.entities.Friendship.filter({ did: subjectDid, friend_did: myDid }).catch(() => []),
+        ]);
+        if (active) setFriendship({ my: mine[0] || null, their: theirs[0] || null });
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [subjectDid, isMember]);
+
   const head = posts[0];
   const profile = {
     name: merged?.name || head?.author_name || 'Collector',
@@ -75,24 +99,27 @@ export default function UserProfile() {
           <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />
         ) : null}
       </div>
+      {isExternal && (
+        <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} />
+      )}
       <div className="px-4">
-        <Link to="/" className="-mt-10 mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+        <Link to="/" className={`${isExternal ? 'mt-2' : '-mt-10'} mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary`}>
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
-        <div className="-mt-6 flex items-end justify-between">
+        <div className={`${isExternal ? 'mt-2' : '-mt-6'} flex items-end justify-between`}>
           <Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-background" />
           <FollowBellButton
             subjectDid={subjectDid}
             subjectName={profile?.name}
-            subjectHandle={profile?.handle}
+            subjectHandle={profile?.bsky_handle || profile?.username}
             subjectAvatar={profile?.avatar}
           />
         </div>
         <div className="mt-3">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold">{profile?.name || 'Collector'}</h1>
-            <FollowsYouBadge subjectDid={subjectDid} />
-            <FriendsBadge isFriend={isFriend} />
+            {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
+            {!isExternal && <FriendsBadge isFriend={isFriend} />}
           </div>
           <ProfileHandle
             bskyHandle={profile?.bsky_handle}
@@ -109,11 +136,13 @@ export default function UserProfile() {
           {profile?.description && (
             <p className="mt-2 text-sm">{profile.description}</p>
           )}
-          <AddFriendLink
-            subjectDid={subjectDid}
-            subjectName={profile?.name}
-            subjectHandle={profile?.bsky_handle || profile?.username}
-          />
+          {!isExternal && (
+            <AddFriendLink
+              subjectDid={subjectDid}
+              subjectName={profile?.name}
+              subjectHandle={profile?.bsky_handle || profile?.username}
+            />
+          )}
         </div>
         <div className="mt-4 flex overflow-x-auto border-b border-border">
           {['Posts', 'Activity'].map((t) => (
@@ -128,13 +157,24 @@ export default function UserProfile() {
           ))}
         </div>
         <div className="mt-4 space-y-4">
-          <ReputationSummary did={subjectDid} />
+          {!isExternal && <ReputationSummary did={subjectDid} />}
           {tab === 'Activity' ? (
-            <ActivityTab did={subjectDid} />
+            isExternal ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                <p>No on-site activity — this collector posts on Bluesky.</p>
+                <a href={`https://bsky.app/profile/${subjectDid}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+                  View on Bluesky <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            ) : (
+              <ActivityTab did={subjectDid} />
+            )
           ) : loading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : posts.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">No posts yet.</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              {isExternal ? 'No posts found on Bluesky.' : 'No posts yet.'}
+            </p>
           ) : (
             posts.map((p) => <PostCard key={p.id} post={p} />)
           )}

@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { cardImageUrl } from '@/lib/tcgdex';
 import Avatar from '@/components/Avatar';
+import ExternalIndicator from '@/components/ExternalIndicator';
+import { useMembership } from '@/lib/membershipContext';
 
 // Pulls recent trade listings and collection entries directly from the
 // AT Protocol PDS via the network-feed backend function. When `did` is
@@ -19,6 +21,11 @@ export default function NetworkFeedSection({
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { registerDid } = useMembership();
+
+  useEffect(() => {
+    items.forEach((i) => i?.authorDid && registerDid(i.authorDid));
+  }, [items, registerDid]);
 
   useEffect(() => {
     let active = true;
@@ -88,6 +95,7 @@ export default function NetworkFeedSection({
                 <div className="flex items-center gap-2">
                   <Avatar name={t.authorName} src={t.authorAvatar} size={28} />
                   <span className="text-sm font-semibold">{t.authorName || 'Collector'}</span>
+                  <ExternalIndicator did={t.authorDid} />
                   {t.status && (
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       t.status === 'open' ? 'bg-success/15 text-success' :

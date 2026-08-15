@@ -12,6 +12,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { createLike, deleteLike, createRepost, deleteRepost } from '@/lib/postInteractions';
 import ReportDialog from '@/components/moderation/ReportDialog';
+import ExternalIndicator from '@/components/ExternalIndicator';
+import { useMembership } from '@/lib/membershipContext';
 
 const TYPE_META = {
   pack_opening: { icon: Sparkles, label: 'Pack Pull', color: 'text-accent' },
@@ -32,6 +34,11 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
 
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
+  const { registerDid } = useMembership();
+
+  useEffect(() => {
+    if (post.did) registerDid(post.did);
+  }, [post.did, registerDid]);
 
   // Sync existing repost state from the batched map (avoids a per-card API call).
   useEffect(() => {
@@ -113,6 +120,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
             ) : (
               <span className="font-bold truncate">{post.author_name || 'Collector'}</span>
             )}
+            <ExternalIndicator did={post.did} />
             <span className="text-muted-foreground truncate">@{post.author_handle || 'user'}</span>
             <span className="text-muted-foreground">·</span>
             <span className="text-muted-foreground">{timeAgo(post.created_date)}</span>

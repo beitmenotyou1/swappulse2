@@ -74,3 +74,19 @@ export function mergeProfiles(local: any | null, remote: any | null): any {
     fetched_at: new Date().toISOString(),
   };
 }
+
+// Fetch an actor's author feed (app.bsky.feed.getAuthorFeed) from the public
+// AppView. Returns the raw feed entries on success, null on failure.
+export async function fetchAuthorFeed(did: string, limit = 50): Promise<any[] | null> {
+  if (!did) return null;
+  try {
+    const res = await fetch(
+      `${APPVIEW}/xrpc/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(did)}&limit=${limit}`,
+    );
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    return data.feed || null;
+  } catch {
+    return null;
+  }
+}

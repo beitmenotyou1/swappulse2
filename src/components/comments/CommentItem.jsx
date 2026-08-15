@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Avatar from '@/components/Avatar';
 import CommentReactions from './CommentReactions';
+import ExternalIndicator from '@/components/ExternalIndicator';
+import { useMembership } from '@/lib/membershipContext';
 import { Reply, CornerDownRight } from 'lucide-react';
 
 function timeAgo(iso) {
@@ -18,6 +20,12 @@ function timeAgo(iso) {
 
 export default function CommentItem({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, dimmed, reactionsByPostId }) {
   const [showReplies, setShowReplies] = useState(true);
+  const { registerDid } = useMembership();
+
+  useEffect(() => {
+    if (comment?.did) registerDid(comment.did);
+    replies.forEach((r) => r?.did && registerDid(r.did));
+  }, [comment?.did, replies, registerDid]);
 
   return (
     <div className={`rounded-xl border border-border bg-card p-3 ${dimmed ? 'opacity-50' : ''}`}>
@@ -26,6 +34,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold truncate">{comment.author_name || 'Collector'}</span>
+            <ExternalIndicator did={comment.did} />
             <span className="text-xs text-muted-foreground">{timeAgo(comment.created_date)}</span>
           </div>
           <p className="mt-0.5 text-sm whitespace-pre-wrap break-words">{comment.content}</p>
@@ -58,6 +67,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold truncate">{reply.author_name || 'Collector'}</span>
+                          <ExternalIndicator did={reply.did} />
                           <span className="text-xs text-muted-foreground">{timeAgo(reply.created_date)}</span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap break-words">{reply.content}</p>

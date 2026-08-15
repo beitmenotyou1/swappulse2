@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Avatar from "@/components/Avatar";
 import ProfileMetricsBar from "@/components/profile/ProfileMetricsBar";
+import ExternalIndicator from "@/components/ExternalIndicator";
 
 // ExternalActorSearch — federated profile search. Accepts a handle (with or
 // without domain) or a DID, calls get-merged-profile, and renders a merged
@@ -100,6 +101,7 @@ export default function ExternalActorSearch() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="truncate font-semibold">{result.name || result.bsky_handle}</p>
+                <ExternalIndicator external={!result.is_member} />
                 {result.is_member ? (
                   <Badge variant="secondary" className="text-xs">SwapPulse member</Badge>
                 ) : (
