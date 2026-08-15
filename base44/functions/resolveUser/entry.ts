@@ -22,7 +22,12 @@ Deno.serve(async (req) => {
     const found = users.find((u) => {
       const emailHandle = (u.email || '').split('@')[0].toLowerCase();
       const full = (u.full_name || '').toLowerCase().replace(/\s+/g, '');
-      return emailHandle === handle || full === handle || (u.email || '').toLowerCase() === handle;
+      // Match the federated handle (username.swappulse.org or a verified
+      // custom domain like swappulse.org) so /u/<domain> resolves after a
+      // domain-handle claim.
+      const bsky = (u.bsky_handle || '').toLowerCase().replace(/^@/, '');
+      const custom = (u.custom_handle || '').toLowerCase().replace(/^@/, '');
+      return bsky === handle || custom === handle || emailHandle === handle || full === handle || (u.email || '').toLowerCase() === handle;
     });
 
     // Only return users who have a real PDS-backed DID — never fabricate a
@@ -34,7 +39,7 @@ Deno.serve(async (req) => {
       found: true,
       did: found.did,
       name: found.full_name || '',
-      handle: (found.email || '').split('@')[0] || handle,
+      handle: found.bsky_handle || found.custom_handle || (found.email || '').split('@')[0] || handle,
       avatar: found.avatar || '',
     });
   } catch (error) {
