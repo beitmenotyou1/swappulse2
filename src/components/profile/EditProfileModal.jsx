@@ -11,7 +11,7 @@ import { uploadMedia } from '@/lib/pdsBlob';
 export default function EditProfileModal({ onClose, onSaved }) {
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
-  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [fullName, setFullName] = useState(user?.display_name || user?.full_name || '');
   const [description, setDescription] = useState(user?.description || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [busy, setBusy] = useState(false);
@@ -35,8 +35,11 @@ export default function EditProfileModal({ onClose, onSaved }) {
     if (busy) return;
     setBusy(true);
     try {
+      // full_name is platform-locked and cannot be updated after registration,
+      // so we persist the editable display name in the custom `display_name`
+      // field (which updateMe CAN write) and fall back to full_name when rendering.
       await base44.auth.updateMe({
-        full_name: fullName || user?.username || 'Collector',
+        display_name: fullName.trim(),
         description,
         avatar,
       });

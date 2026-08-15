@@ -17,6 +17,11 @@
       "description": "Unique username (handle)",
       "maxLength": 30
     },
+    "display_name": {
+      "type": "string",
+      "description": "User-editable display name shown across the app and synced to the AT Protocol profile. Falls back to the built-in full_name when empty (full_name is platform-locked and cannot be updated after registration).",
+      "maxLength": 64
+    },
     "avatar": {
       "type": "string",
       "description": "Profile picture URL"

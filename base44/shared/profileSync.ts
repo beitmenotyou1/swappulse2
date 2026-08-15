@@ -70,7 +70,7 @@ export async function syncProfileForUser(
   pdsUrl: string,
   userDid: string,
   appPassword: string,
-  userRecord: { full_name?: string; avatar?: string; description?: string; created_date?: string },
+  userRecord: { display_name?: string; full_name?: string; avatar?: string; description?: string; created_date?: string },
 ): Promise<{ ok: boolean; uri?: string; cid?: string; error?: string }> {
   let session: any;
   try {
@@ -84,7 +84,7 @@ export async function syncProfileForUser(
     $type: PROFILE_COLLECTION,
     createdAt: atProtoTimestamp(userRecord.created_date),
   };
-  const displayName = truncate(userRecord.full_name || '', 64);
+  const displayName = truncate(userRecord.display_name || userRecord.full_name || '', 64);
   if (displayName) record.displayName = displayName;
   const description = truncate(userRecord.description || '', 256);
   if (description) record.description = description;

@@ -26,7 +26,7 @@ export default async function(req: Request): Promise<Response> {
 
     return Response.json({
       found: true,
-      name: u.full_name || u.username || emailLocal || 'Collector',
+      name: u.display_name || u.full_name || u.username || emailLocal || 'Collector',
       bsky_handle: u.bsky_handle || '',
       username: usernameFallback,
       avatar: u.avatar || '',
