@@ -1,0 +1,60 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.challenge",
+  "revision": 1,
+  "description": "A community challenge definition, mirrored to AT Protocol so challenges are discoverable across instances. Participation model is set by mode: collective, competitive, or guild.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A community challenge.",
+      "record": {
+        "type": "object",
+        "required": ["challengeType", "title", "status", "createdAt"],
+        "properties": {
+          "challengeType": { "type": "string", "knownValues": ["set_sprint", "budget_deck", "pull_of_week", "community_goal"] },
+          "mode": { "type": "string", "knownValues": ["collective", "guild", "competitive"], "description": "Participation model" },
+          "category": { "type": "string", "knownValues": ["helpful-trader", "accuracy-champion", "community-builder", "set-completer", "shiny-hunter", "journal-writer", "meetup-organiser"], "description": "Leaderboard axis (competitive only)" },
+          "title": { "type": "string", "maxLength": 100 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "rules": { "type": "string", "maxLength": 2000 },
+          "scope": { "type": "string", "knownValues": ["global", "circle"] },
+          "circleRef": { "type": "string", "format": "at-uri", "description": "at:// URI of the scoping Circle (required when scope is circle)" },
+          "goal": {
+            "type": "object",
+            "description": "What participants must accomplish",
+            "properties": {
+              "metric": { "type": "string", "knownValues": ["cards_logged", "shiny_pulls_logged", "trades_completed", "scanner_corrections", "vouches_given", "journals_published", "meetups_attended", "sets_completed", "grading_submissions"] },
+              "target": { "type": "integer" },
+              "filters": { "type": "object" }
+            }
+          },
+          "reward": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "knownValues": ["badge", "theme", "feature_unlock", "achievement", "recognition"] },
+              "badgeId": { "type": "string" },
+              "themeId": { "type": "string" },
+              "shared": { "type": "boolean" }
+            }
+          },
+          "leaderboardConfig": { "type": "object" },
+          "targetSetCode": { "type": "string" },
+          "budgetLimit": { "type": "number", "description": "Budget limit in pence" },
+          "rewardBadge": { "type": "string", "maxLength": 50 },
+          "startsAt": { "type": "string", "format": "datetime" },
+          "endsAt": { "type": "string", "format": "datetime" },
+          "votingEndsAt": { "type": "string", "format": "datetime" },
+          "status": { "type": "string", "knownValues": ["upcoming", "active", "voting", "completed", "cancelled"] },
+          "winnerDids": { "type": "array", "items": { "type": "string", "format": "did" }, "description": "Competitive only; populated on completion" },
+          "creatorDid": { "type": "string", "format": "did", "description": "DID of the challenge creator" },
+          "guildApproved": { "type": "boolean" },
+          "tags": { "type": "array", "items": { "type": "string" }, "maxLength": 10 },
+          "imageUrl": { "type": "string", "format": "uri", "description": "Challenge banner/thumbnail URL" },
+          "publisherName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

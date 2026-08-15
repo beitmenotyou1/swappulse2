@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.packParty",
+  "revision": 1,
+  "description": "A synchronized pack-opening event where collectors open packs of the same set at the same time and share reactions in real time. Mirrored to AT Protocol so parties are discoverable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A pack-opening party event.",
+      "record": {
+        "type": "object",
+        "required": ["title", "setId", "scheduledAt", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 100 },
+          "description": { "type": "string", "maxLength": 500 },
+          "setId": { "type": "string", "description": "TCGDex set id the party is opening" },
+          "setName": { "type": "string" },
+          "setImage": { "type": "string", "format": "uri" },
+          "scheduledAt": { "type": "string", "format": "datetime", "description": "When the party goes live" },
+          "status": { "type": "string", "knownValues": ["scheduled", "live", "completed"] },
+          "hostDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the host" },
+          "hostName": { "type": "string" },
+          "hostHandle": { "type": "string" },
+          "hostAvatar": { "type": "string", "format": "uri" },
+          "participantCount": { "type": "integer" },
+          "maxParticipants": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

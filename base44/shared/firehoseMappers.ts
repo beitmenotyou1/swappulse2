@@ -33,6 +33,8 @@ export const COLLECTIONS: Record<string, string> = {
   'org.swappulse.podcastEpisode': 'PodcastEpisode',
   'org.swappulse.conversation': 'Conversation',
   'org.swappulse.directMessage': 'DirectMessage',
+  'org.swappulse.collectionEntry': 'CollectionEntry',
+  'org.swappulse.tradeListing': 'TradeListing',
 };
 
 // Standard AT Protocol record mappers (app.bsky.*). These map remote
@@ -237,6 +239,55 @@ function mapDirectMessageFields(val: any, atUri: string, did: string) {
     at_uri: atUri, cid: '', record_type: 'org.swappulse.directMessage', bridged: true,
   };
 }
+function mapPackPartyFields(val: any, atUri: string, did: string) {
+  return {
+    title: val.title || '', description: val.description || '', set_id: val.setId || '',
+    set_name: val.setName || '', set_image: val.setImage || '', scheduled_at: val.scheduledAt || '',
+    status: val.status || 'scheduled', host_name: val.hostName || '', host_handle: val.hostHandle || '',
+    host_avatar: val.hostAvatar || '', participant_count: val.participantCount ?? 0,
+    max_participants: val.maxParticipants ?? 50, did: val.hostDid || did, at_uri: atUri, cid: '',
+    record_type: 'org.swappulse.packParty', bridged: true,
+  };
+}
+function mapPullNominationFields(val: any, atUri: string, did: string) {
+  return {
+    week_key: val.weekKey || '', card_id: val.cardUri || '', card_name: val.cardName || '',
+    card_image: val.cardImage || '', card_rarity: val.cardRarity || '', set_name: val.setName || '',
+    nominator_name: val.nominatorName || '', nominator_handle: val.nominatorHandle || '',
+    nominator_avatar: val.nominatorAvatar || '', post_uri: val.postUri || '', vote_count: val.voteCount ?? 0,
+    did: val.nominatorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.pullNomination', bridged: true,
+  };
+}
+function mapTradingFeedbackFields(val: any, atUri: string, did: string) {
+  return {
+    trade_uri: val.tradeUri || '', trade_id: val.tradeId || '', rated_user_did: val.ratedUserDid || '',
+    rater_did: val.raterDid || did, rater_name: val.raterName || '', rater_handle: val.raterHandle || '',
+    rater_avatar: val.raterAvatar || '', rating: val.rating ?? 5, comment: val.comment || '',
+    did: val.raterDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.tradingFeedback',
+  };
+}
+function mapCollectionEntryFields(val: any, atUri: string, did: string) {
+  return {
+    card_id: val.cardUri || '', card_name: val.cardName || '', card_image: val.imageUrl || '',
+    set_id: val.setCode || '', set_name: val.setName || '', local_id: val.cardNumber || '',
+    rarity: val.rarity || '', category: val.category || '', condition: val.condition || 'near_mint',
+    variant: val.variant || 'normal', acquisition_date: val.acquisitionDate || '',
+    purchase_price: val.purchasePrice ?? null, market_value: val.marketValue ?? null,
+    notes: val.notes || '', showcased: val.showcased ?? false, binder_index: val.binderIndex ?? 0,
+    did: val.authorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.collectionEntry', bridged: true,
+  };
+}
+function mapTradeListingFields(val: any, atUri: string, did: string) {
+  return {
+    offer_card_ids: val.offerCardUris || [], offer_card_names: val.offerCardNames || [],
+    offer_card_images: val.offerCardImages || [], wanted_card_ids: val.wantedCardUris || [],
+    wanted_card_names: val.wantedCardNames || [], status: val.status || 'open',
+    visibility: val.visibility || 'public', circle_ref: val.circleRef || '',
+    shipping_regions: val.shippingRegions || [], preferred_currency: val.preferredCurrency || 'GBP',
+    notes: val.notes || '', expires_at: val.expiresAt || '', did: val.authorDid || did,
+    at_uri: atUri, cid: '', record_type: 'org.swappulse.tradeListing', bridged: true,
+  };
+}
 
 export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string, profile?: any) => any> = {
   'app.bsky.feed.post': mapPostFields,
@@ -261,6 +312,11 @@ export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string
   'org.swappulse.podcastEpisode': mapPodcastEpisodeFields,
   'org.swappulse.conversation': mapConversationFields,
   'org.swappulse.directMessage': mapDirectMessageFields,
+  'org.swappulse.packParty': mapPackPartyFields,
+  'org.swappulse.pullNomination': mapPullNominationFields,
+  'org.swappulse.tradingFeedback': mapTradingFeedbackFields,
+  'org.swappulse.collectionEntry': mapCollectionEntryFields,
+  'org.swappulse.tradeListing': mapTradeListingFields,
 };
 
 // Generic entity → AT Protocol record serializer (camelCase + $type). Used by
@@ -282,6 +338,129 @@ export function entityToRecord(entity: any, collection: string): any {
     if (META_FIELDS.has(k)) continue;
     if (v === null || v === undefined) continue;
     rec[camelCase(k)] = v;
+  }
+  rec.createdAt = entity.created_date || new Date().toISOString();
+  return rec;
+}
+
+// ─── Outbound record builders (entity → lexicon-valid record) ─────────────
+// Per-collection serializers that emit exactly the fields each lexicon
+// requires, with correct camelCase names and types. Required fields are always
+// present (defaulted to '' if missing); optional fields are included only when
+// non-empty. Used by outbound-reconcile so every createRecord/putRecord
+// produces a record the PDS validates against the registered lexicon.
+
+type FieldPair = [string, string]; // [recordField, entityField]
+
+const BUILDER_CONFIG: Record<string, { required: FieldPair[]; optional: FieldPair[] }> = {
+  'org.swappulse.collectionEntry': {
+    required: [['cardUri', 'card_id'], ['cardName', 'card_name']],
+    optional: [['setName', 'set_name'], ['setCode', 'set_id'], ['cardNumber', 'local_id'], ['rarity', 'rarity'], ['category', 'category'], ['imageUrl', 'card_image'], ['condition', 'condition'], ['variant', 'variant'], ['acquisitionDate', 'acquisition_date'], ['purchasePrice', 'purchase_price'], ['marketValue', 'market_value'], ['notes', 'notes'], ['showcased', 'showcased'], ['binderIndex', 'binder_index'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar']],
+  },
+  'org.swappulse.tradeListing': {
+    required: [['offerCardNames', 'offer_card_names'], ['wantedCardNames', 'wanted_card_names'], ['status', 'status'], ['visibility', 'visibility']],
+    optional: [['offerCardUris', 'offer_card_ids'], ['offerCardImages', 'offer_card_images'], ['wantedCardUris', 'wanted_card_ids'], ['circleRef', 'circle_ref'], ['shippingRegions', 'shipping_regions'], ['preferredCurrency', 'preferred_currency'], ['notes', 'notes'], ['expiresAt', 'expires_at'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar']],
+  },
+  'org.swappulse.vouch': {
+    required: [['vouchedDid', 'vouched_did'], ['relationship', 'relationship'], ['context', 'context']],
+    optional: [['vouchedName', 'vouched_name'], ['vouchedHandle', 'vouched_handle'], ['voucherName', 'voucher_name'], ['voucherHandle', 'voucher_handle'], ['voucherDid', 'did'], ['tradeRefs', 'trade_refs'], ['revocable', 'revocable'], ['revokedAt', 'revoked_at']],
+  },
+  'org.swappulse.wishlist': {
+    required: [['cardUri', 'card_id'], ['cardName', 'card_name']],
+    optional: [['imageUrl', 'card_image'], ['setCode', 'set_id'], ['setName', 'set_name'], ['rarity', 'rarity'], ['maxPrice', 'max_price'], ['ownerDid', 'did']],
+  },
+  'org.swappulse.circle': {
+    required: [['name', 'name'], ['visibility', 'visibility']],
+    optional: [['description', 'description'], ['memberDids', 'member_dids'], ['memberProfiles', 'member_profiles'], ['memberCount', 'member_count'], ['theme', 'theme'], ['region', 'region'], ['curatorDid', 'did'], ['curatorName', 'author_name'], ['curatorHandle', 'author_handle']],
+  },
+  'org.swappulse.packParty': {
+    required: [['title', 'title'], ['setId', 'set_id'], ['scheduledAt', 'scheduled_at']],
+    optional: [['description', 'description'], ['setName', 'set_name'], ['setImage', 'set_image'], ['status', 'status'], ['hostDid', 'did'], ['hostName', 'host_name'], ['hostHandle', 'host_handle'], ['hostAvatar', 'host_avatar'], ['participantCount', 'participant_count'], ['maxParticipants', 'max_participants']],
+  },
+  'org.swappulse.pullNomination': {
+    required: [['weekKey', 'week_key'], ['cardUri', 'card_id'], ['cardName', 'card_name']],
+    optional: [['cardImage', 'card_image'], ['cardRarity', 'card_rarity'], ['setName', 'set_name'], ['nominatorDid', 'did'], ['nominatorName', 'nominator_name'], ['nominatorHandle', 'nominator_handle'], ['nominatorAvatar', 'nominator_avatar'], ['postUri', 'post_uri'], ['voteCount', 'vote_count']],
+  },
+  'org.swappulse.tradingFeedback': {
+    required: [['tradeUri', 'trade_uri'], ['ratedUserDid', 'rated_user_did'], ['rating', 'rating']],
+    optional: [['tradeId', 'trade_id'], ['raterDid', 'rater_did'], ['raterName', 'rater_name'], ['raterHandle', 'rater_handle'], ['raterAvatar', 'rater_avatar'], ['comment', 'comment']],
+  },
+  'org.swappulse.meetup': {
+    required: [['title', 'title'], ['description', 'description'], ['scheduledAt', 'scheduled_at'], ['locationName', 'location_name'], ['status', 'status']],
+    optional: [['estimatedDuration', 'estimated_duration'], ['region', 'region'], ['lat', 'lat'], ['lng', 'lng'], ['capacity', 'capacity'], ['requiredVouches', 'required_vouches'], ['creatorDid', 'creator_did'], ['rsvpCount', 'rsvp_count'], ['organiserName', 'author_name'], ['organiserHandle', 'author_handle']],
+  },
+  'org.swappulse.meetupRsvp': {
+    required: [['meetupRef', 'meetup_ref'], ['meetupId', 'meetup_id'], ['attending', 'attending']],
+    optional: [['bringingTradeBinder', 'bringing_trade_binder'], ['lookingForCards', 'looking_for_cards'], ['attendeeDid', 'did'], ['attendeeName', 'attendee_name'], ['attendeeHandle', 'attendee_handle'], ['attendeeAvatar', 'attendee_avatar']],
+  },
+  'org.swappulse.challenge': {
+    required: [['challengeType', 'challenge_type'], ['title', 'title'], ['status', 'status']],
+    optional: [['mode', 'mode'], ['category', 'category'], ['description', 'description'], ['rules', 'rules'], ['scope', 'scope'], ['circleRef', 'circle_ref'], ['goal', 'goal'], ['reward', 'reward'], ['leaderboardConfig', 'leaderboard_config'], ['targetSetCode', 'target_set_code'], ['budgetLimit', 'budget_limit'], ['rewardBadge', 'reward_badge'], ['startsAt', 'starts_at'], ['endsAt', 'ends_at'], ['votingEndsAt', 'voting_ends_at'], ['winnerDids', 'winner_dids'], ['creatorDid', 'creator_did'], ['guildApproved', 'guild_approved'], ['tags', 'tags'], ['imageUrl', 'image_url'], ['publisherName', 'author_name']],
+  },
+  'org.swappulse.challengeEntry': {
+    required: [['challengeId', 'challenge_id'], ['entryType', 'entry_type'], ['submittedAt', 'submitted_at']],
+    optional: [['challengeRef', 'challenge_ref'], ['participantDid', 'participant_did'], ['participantName', 'participant_name'], ['category', 'category'], ['contributionCount', 'contribution_count'], ['contributionUris', 'contribution_uris'], ['verificationHash', 'verification_hash'], ['moderatorLabels', 'moderator_labels'], ['notes', 'notes'], ['overrideProfileVisibility', 'override_profile_visibility'], ['status', 'status'], ['rejectionReason', 'rejection_reason'], ['setCompletionPercent', 'set_completion_percent'], ['pullPostUri', 'pull_post_uri'], ['collectionTotalValue', 'collection_total_value'], ['deckList', 'deck_list']],
+  },
+  'org.swappulse.story': {
+    required: [['expiresAt', 'expires_at'], ['audience', 'audience']],
+    optional: [['segments', 'segments'], ['storyGroup', 'story_group'], ['content', 'content'], ['imageUri', 'image_uri'], ['bgGradient', 'bg_gradient'], ['viewedBy', 'viewed_by'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle']],
+  },
+  'org.swappulse.reaction': {
+    required: [['subject', 'subject'], ['reactionType', 'reaction_type']],
+    optional: [['postId', 'post_id'], ['targetCardUri', 'target_card_uri'], ['reactorDid', 'did'], ['reactorName', 'reactor_name'], ['reactorHandle', 'reactor_handle'], ['reactorAvatar', 'reactor_avatar']],
+  },
+  'org.swappulse.journal': {
+    required: [['title', 'title'], ['body', 'body'], ['visibility', 'visibility']],
+    optional: [['subtitle', 'subtitle'], ['coverImageUri', 'cover_image_uri'], ['embeddedCardUris', 'embedded_card_uris'], ['embeddedStats', 'embedded_stats'], ['tags', 'tags'], ['publishedAt', 'published_at'], ['likeCount', 'like_count'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar']],
+  },
+  'org.swappulse.cardReview': {
+    required: [['cardUri', 'card_id'], ['artwork', 'artwork'], ['playability', 'playability'], ['collectibility', 'collectibility'], ['investment', 'investment']],
+    optional: [['cardName', 'card_name'], ['cardImage', 'card_image'], ['reviewText', 'review_text'], ['variant', 'variant'], ['reviewerDid', 'did'], ['reviewerName', 'author_name'], ['reviewerHandle', 'author_handle']],
+  },
+  'org.swappulse.binder': {
+    required: [['title', 'title'], ['visibility', 'visibility']],
+    optional: [['description', 'description'], ['coverImageUri', 'cover_image_uri'], ['theme', 'theme'], ['pages', 'pages'], ['likeCount', 'like_count'], ['viewCount', 'view_count'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar']],
+  },
+  'org.swappulse.tradeChain': {
+    required: [['participantDids', 'participant_dids'], ['chainOrder', 'chain_order'], ['status', 'status'], ['totalValue', 'total_value']],
+    optional: [['participantNames', 'participant_names'], ['shipstoDids', 'shipsto_dids'], ['tradeListingUris', 'trade_listing_uris'], ['shippingConfirmed', 'shipping_confirmed'], ['receiptConfirmed', 'receipt_confirmed'], ['completedAt', 'completed_at'], ['organiserDid', 'did'], ['organiserName', 'author_name']],
+  },
+  'org.swappulse.tradeDispute': {
+    required: [['tradeId', 'trade_id'], ['reason', 'reason'], ['description', 'description']],
+    optional: [['tradeRef', 'trade_ref'], ['photoUrls', 'photo_urls'], ['status', 'status'], ['resolutionNotes', 'resolution_notes'], ['resolvedBy', 'resolved_by'], ['resolvedAt', 'resolved_at'], ['filedByDid', 'did'], ['filedByName', 'filed_by_name'], ['filedByHandle', 'filed_by_handle'], ['filedByAvatar', 'filed_by_avatar']],
+  },
+  'org.swappulse.voiceSpace': {
+    required: [['title', 'title'], ['status', 'status']],
+    optional: [['description', 'description'], ['streamUrl', 'stream_url'], ['platform', 'platform'], ['plannedDurationMinutes', 'planned_duration_minutes'], ['autoEndAt', 'auto_end_at'], ['startedAt', 'started_at'], ['endedAt', 'ended_at'], ['viewerCountEstimate', 'viewer_count_estimate'], ['coHostDids', 'co_host_dids'], ['topicTags', 'topic_tags'], ['cardUrisDiscussed', 'card_uris_discussed'], ['recordingAvailable', 'recording_available'], ['podcastEpisodeUri', 'podcast_episode_uri'], ['hostDid', 'did'], ['hostName', 'host_name'], ['hostHandle', 'host_handle'], ['hostAvatar', 'host_avatar']],
+  },
+  'org.swappulse.podcastEpisode': {
+    required: [['title', 'title'], ['audioUrl', 'audio_url'], ['durationSeconds', 'duration_seconds'], ['publishedAt', 'published_at']],
+    optional: [['description', 'description'], ['episodeNumber', 'episode_number'], ['seasonNumber', 'season_number'], ['coverImageUrl', 'cover_image_url'], ['sourceSpaceId', 'source_space_id'], ['chapterMarks', 'chapter_marks'], ['showNotes', 'show_notes'], ['tags', 'tags'], ['playCount', 'play_count'], ['hostDid', 'did'], ['hostName', 'host_name'], ['hostHandle', 'host_handle'], ['hostAvatar', 'host_avatar']],
+  },
+  'org.swappulse.conversation': {
+    required: [['recipientDid', 'recipient_did'], ['participantDids', 'participant_dids']],
+    optional: [['recipientName', 'recipient_name'], ['recipientHandle', 'recipient_handle'], ['recipientAvatar', 'recipient_avatar'], ['lastMessageAt', 'last_message_at'], ['lastMessagePreview', 'last_message_preview'], ['lastMessageDid', 'last_message_did'], ['authorDid', 'did']],
+  },
+  'org.swappulse.directMessage': {
+    required: [['recipientDid', 'recipient_did'], ['body', 'body']],
+    optional: [['conversationId', 'conversation_id'], ['conversationRef', 'conversation_ref'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar'], ['read', 'read']],
+  },
+};
+
+// Build a lexicon-valid AT Protocol record from a local entity for the given
+// collection. Falls back to the generic entityToRecord for app.bsky.* and any
+// collection without an explicit builder config.
+export function buildRecord(entity: any, collection: string): any {
+  const config = BUILDER_CONFIG[collection];
+  if (!config) return entityToRecord(entity, collection);
+  const rec: any = { $type: collection };
+  for (const [recField, entityField] of config.required) {
+    const v = entity[entityField];
+    rec[recField] = v ?? (typeof v === 'number' ? 0 : '');
+  }
+  for (const [recField, entityField] of config.optional) {
+    const v = entity[entityField];
+    if (v !== null && v !== undefined && v !== '') rec[recField] = v;
   }
   rec.createdAt = entity.created_date || new Date().toISOString();
   return rec;

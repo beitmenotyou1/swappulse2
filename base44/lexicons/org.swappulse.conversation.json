@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.conversation",
+  "revision": 1,
+  "description": "A 1:1 direct-message conversation between two collectors, mirrored to AT Protocol as a real org.swappulse.conversation record. The creator is tracked by authorDid; the other participant by recipientDid so both can read.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A 1:1 DM conversation.",
+      "record": {
+        "type": "object",
+        "required": ["recipientDid", "participantDids", "createdAt"],
+        "properties": {
+          "recipientDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the other participant" },
+          "participantDids": { "type": "array", "minLength": 2, "maxLength": 2, "items": { "type": "string", "format": "did" }, "description": "Both participant DIDs in sorted order for symmetric lookup" },
+          "recipientName": { "type": "string" },
+          "recipientHandle": { "type": "string" },
+          "recipientAvatar": { "type": "string", "format": "uri" },
+          "lastMessageAt": { "type": "string", "format": "datetime" },
+          "lastMessagePreview": { "type": "string", "maxLength": 200, "description": "Truncated preview of the most recent message" },
+          "lastMessageDid": { "type": "string", "format": "did", "description": "DID of the participant who sent the last message" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the conversation creator" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.podcastEpisode",
+  "revision": 1,
+  "description": "A podcast episode (often derived from a voice space recording), mirrored to AT Protocol as a real org.swappulse.podcastEpisode record so episodes are portable and playable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A podcast episode.",
+      "record": {
+        "type": "object",
+        "required": ["title", "audioUrl", "durationSeconds", "publishedAt", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 200 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "audioUrl": { "type": "string", "format": "uri", "description": "Processed MP3/M4A/WebM audio file URL" },
+          "durationSeconds": { "type": "integer", "minimum": 1 },
+          "episodeNumber": { "type": "integer", "minimum": 1 },
+          "seasonNumber": { "type": "integer", "minimum": 1 },
+          "coverImageUrl": { "type": "string", "format": "uri" },
+          "sourceSpaceId": { "type": "string", "description": "Original voice space record if derived from a recording" },
+          "chapterMarks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "timestampSeconds": { "type": "integer" },
+                "title": { "type": "string", "maxLength": 100 },
+                "cardUri": { "type": "string" }
+              }
+            }
+          },
+          "showNotes": { "type": "string", "maxLength": 5000 },
+          "tags": { "type": "array", "items": { "type": "string", "maxLength": 30 }, "maxLength": 10 },
+          "playCount": { "type": "integer" },
+          "publishedAt": { "type": "string", "format": "datetime" },
+          "hostDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the host" },
+          "hostName": { "type": "string" },
+          "hostHandle": { "type": "string" },
+          "hostAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

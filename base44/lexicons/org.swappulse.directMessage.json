@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.directMessage",
+  "revision": 1,
+  "description": "A single message in a 1:1 conversation, mirrored to AT Protocol as a real org.swappulse.directMessage record. The sender is tracked by authorDid; the recipient by recipientDid so both can read.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A direct message in a conversation.",
+      "record": {
+        "type": "object",
+        "required": ["recipientDid", "body", "createdAt"],
+        "properties": {
+          "conversationId": { "type": "string", "description": "Local id of the Conversation this message belongs to" },
+          "conversationRef": { "type": "string", "format": "at-uri", "description": "at:// URI of the bridged Conversation record" },
+          "recipientDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the recipient" },
+          "body": { "type": "string", "maxLength": 2000, "description": "Message text body" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the sender" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "authorAvatar": { "type": "string", "format": "uri" },
+          "read": { "type": "boolean", "description": "True once the recipient has opened the thread containing this message" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

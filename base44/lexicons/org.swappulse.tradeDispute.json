@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.tradeDispute",
+  "revision": 1,
+  "description": "A user-submitted dispute flag against a trade listing, mirrored to AT Protocol as a real org.swappulse.tradeDispute record. Filed when a collector has an issue with cards received. Moderators review and resolve.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A trade dispute flag.",
+      "record": {
+        "type": "object",
+        "required": ["tradeId", "reason", "description", "createdAt"],
+        "properties": {
+          "tradeId": { "type": "string", "description": "TradeListing id being disputed" },
+          "tradeRef": { "type": "string", "format": "at-uri", "description": "at:// URI of the disputed trade listing" },
+          "reason": { "type": "string", "knownValues": ["misgraded", "wrong_card", "damaged", "not_received", "scam", "other"], "description": "The category of dispute" },
+          "description": { "type": "string", "maxLength": 2000, "description": "Free-text explanation of the dispute" },
+          "photoUrls": { "type": "array", "items": { "type": "string", "format": "uri" }, "description": "Uploaded photos of the cards received, as evidence" },
+          "status": { "type": "string", "knownValues": ["pending", "reviewed", "resolved", "dismissed"] },
+          "resolutionNotes": { "type": "string", "maxLength": 2000, "description": "Moderator notes on the resolution decision" },
+          "resolvedBy": { "type": "string", "description": "User id of the moderator who resolved the dispute" },
+          "resolvedAt": { "type": "string", "format": "datetime" },
+          "filedByDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the filer" },
+          "filedByName": { "type": "string" },
+          "filedByHandle": { "type": "string" },
+          "filedByAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.voiceSpace",
+  "revision": 1,
+  "description": "Manual live stream declaration, mirrored to AT Protocol as a real org.swappulse.voiceSpace record so live streams are discoverable across instances. A collector goes live by pasting an external stream URL.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A live stream declaration.",
+      "record": {
+        "type": "object",
+        "required": ["title", "status", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 120, "description": "Stream title (5-120 chars)" },
+          "description": { "type": "string", "maxLength": 1000 },
+          "status": { "type": "string", "knownValues": ["scheduled", "live", "ended", "cancelled"], "description": "Lifecycle state" },
+          "streamUrl": { "type": "string", "format": "uri", "description": "External stream URL on any platform" },
+          "platform": { "type": "string", "knownValues": ["twitch", "youtube", "kick", "facebook_gaming", "rumble", "custom", "other"], "description": "Streaming platform" },
+          "plannedDurationMinutes": { "type": "integer", "minimum": 15, "maximum": 480, "description": "Planned stream duration in minutes" },
+          "autoEndAt": { "type": "string", "format": "datetime", "description": "Calculated end time = startedAt + plannedDurationMinutes" },
+          "startedAt": { "type": "string", "format": "datetime", "description": "When the stream went live" },
+          "endedAt": { "type": "string", "format": "datetime", "description": "When the stream ended or was cancelled" },
+          "viewerCountEstimate": { "type": "integer", "description": "Optional manual entry for approximate viewer count" },
+          "coHostDids": { "type": "array", "items": { "type": "string", "format": "did" }, "maxLength": 3, "description": "AT Protocol DIDs of co-hosts" },
+          "topicTags": { "type": "array", "items": { "type": "string", "maxLength": 30 }, "maxLength": 5 },
+          "cardUrisDiscussed": { "type": "array", "items": { "type": "string" }, "maxLength": 20, "description": "Cards referenced during the stream" },
+          "recordingAvailable": { "type": "boolean", "description": "Whether a recording is available post-stream" },
+          "podcastEpisodeUri": { "type": "string", "format": "at-uri", "description": "at:// URI of podcast episode if converted from a recording" },
+          "hostDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the host" },
+          "hostName": { "type": "string" },
+          "hostHandle": { "type": "string" },
+          "hostAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

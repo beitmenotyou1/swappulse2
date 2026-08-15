@@ -2,40 +2,25 @@
   "lexicon": 1,
   "id": "org.swappulse.wishlist",
   "revision": 1,
-  "description": "A card a collector wants to acquire. Mirrored from the SwapPulse Wishlist entity so wishlists are portable across PDSs and enable cross-instance trade matching. Visibility is enforced by the SwapPulse AppView membership-check layer — the record is published to the PDS but only visible to the owner via the AppView.",
+  "description": "A card a collector wants to acquire, mirrored to AT Protocol as a real org.swappulse.wishlist record. Enables cross-instance trade matching.",
   "defs": {
     "main": {
       "type": "record",
       "key": "tid",
-      "description": "A single wishlist entry for a wanted card.",
+      "description": "A wishlist entry for a wanted card.",
       "record": {
         "type": "object",
         "required": ["cardUri", "cardName", "createdAt"],
         "properties": {
-          "cardUri": {
-            "type": "string",
-            "description": "TCGDex card id (canonical reference to the catalog record)"
-          },
+          "cardUri": { "type": "string", "description": "TCGDex card id of the wanted card" },
           "cardName": { "type": "string" },
-          "setName": { "type": "string" },
-          "setCode": { "type": "string", "description": "Canonical TCGDex set id" },
-          "rarity": { "type": "string" },
           "imageUrl": { "type": "string", "format": "uri" },
-          "maxPrice": {
-            "type": "integer",
-            "description": "Max willing to pay in pence"
-          },
-          "ownerDid": {
-            "type": "string",
-            "format": "did",
-            "description": "AT Protocol DID of the wishlist owner (embedded so the record is self-describing on the network)"
-          },
-          "ownerName": { "type": "string" },
-          "ownerHandle": { "type": "string" },
-          "createdAt": {
-            "type": "string",
-            "format": "datetime"
-          }
+          "setCode": { "type": "string", "description": "Canonical TCGDex set id" },
+          "setName": { "type": "string" },
+          "rarity": { "type": "string" },
+          "maxPrice": { "type": "number", "description": "Max willing to pay in pence" },
+          "ownerDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the wishlist owner" },
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     }

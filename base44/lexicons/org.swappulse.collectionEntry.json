@@ -10,12 +10,9 @@
       "description": "A single card entry in a collector's collection.",
       "record": {
         "type": "object",
-        "required": ["cardUri", "condition", "variant", "acquisitionDate", "createdAt"],
+        "required": ["cardUri", "cardName", "createdAt"],
         "properties": {
-          "cardUri": {
-            "type": "string",
-            "description": "TCGDex card id (canonical reference to the catalog record)"
-          },
+          "cardUri": { "type": "string", "description": "TCGDex card id (canonical reference to the catalog record)" },
           "cardName": { "type": "string" },
           "setName": { "type": "string" },
           "setCode": { "type": "string", "description": "Canonical TCGDex set id (e.g. sv04.5)" },
@@ -23,48 +20,16 @@
           "rarity": { "type": "string" },
           "category": { "type": "string" },
           "imageUrl": { "type": "string", "format": "uri" },
-          "condition": {
-            "type": "string",
-            "knownValues": ["mint", "near_mint", "excellent", "good", "damaged"]
-          },
-          "variant": {
-            "type": "string",
-            "knownValues": ["normal", "holo", "reverse_holo"]
-          },
-          "acquisitionDate": {
-            "type": "string",
-            "format": "date",
-            "description": "ISO 8601 date the card was acquired"
-          },
-          "purchasePrice": {
-            "type": "integer",
-            "description": "Purchase price in pence (GBP)"
-          },
-          "marketValue": {
-            "type": "integer",
-            "description": "Current estimated market value in pence"
-          },
-          "notes": {
-            "type": "string",
-            "maxLength": 500
-          },
-          "showcased": {
-            "type": "boolean",
-            "description": "Whether the card is pinned to the public digital binder"
-          },
-          "binderIndex": {
-            "type": "integer",
-            "description": "Display order within the digital binder"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "datetime"
-          },
-          "authorDid": {
-            "type": "string",
-            "format": "did",
-            "description": "AT Protocol DID of the collection owner (embedded so the record is self-describing on the network)"
-          },
+          "condition": { "type": "string", "knownValues": ["mint", "near_mint", "excellent", "good", "damaged"] },
+          "variant": { "type": "string", "knownValues": ["normal", "holo", "reverse_holo"] },
+          "acquisitionDate": { "type": "string", "format": "date", "description": "ISO 8601 date the card was acquired" },
+          "purchasePrice": { "type": "number", "description": "Purchase price in pence" },
+          "marketValue": { "type": "number", "description": "Current estimated market value in pence" },
+          "notes": { "type": "string", "maxLength": 500 },
+          "showcased": { "type": "boolean", "description": "Whether the card is pinned to the public digital binder" },
+          "binderIndex": { "type": "integer", "description": "Display order within the digital binder" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the collection owner" },
           "authorName": { "type": "string" },
           "authorHandle": { "type": "string" },
           "authorAvatar": { "type": "string", "format": "uri" }

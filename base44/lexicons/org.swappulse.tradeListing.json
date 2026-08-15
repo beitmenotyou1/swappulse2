@@ -10,74 +10,22 @@
       "description": "A trade listing offering cards in exchange for wanted cards.",
       "record": {
         "type": "object",
-        "required": ["offerCardUris", "wantedCardUris", "status", "visibility", "createdAt"],
+        "required": ["offerCardNames", "wantedCardNames", "status", "visibility", "createdAt"],
         "properties": {
-          "offerCardUris": {
-            "type": "array",
-            "items": { "type": "string" },
-            "minLength": 1,
-            "maxLength": 50,
-            "description": "TCGDex card ids the listing owner is offering"
-          },
-          "offerCardNames": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "offerCardImages": {
-            "type": "array",
-            "items": { "type": "string", "format": "uri" }
-          },
-          "wantedCardUris": {
-            "type": "array",
-            "items": { "type": "string" },
-            "minLength": 1,
-            "maxLength": 50,
-            "description": "TCGDex card ids the listing owner wants in return"
-          },
-          "wantedCardNames": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "status": {
-            "type": "string",
-            "knownValues": ["open", "negotiating", "pending_ship", "completed", "cancelled"]
-          },
-          "visibility": {
-            "type": "string",
-            "knownValues": ["public", "wishlist_only", "circle_scoped"]
-          },
-          "circleRef": {
-            "type": "string",
-            "format": "at-uri",
-            "description": "at:// URI of the scoping Circle (required when visibility is circle_scoped)"
-          },
-          "shippingRegions": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Regions the seller ships to, e.g. UK, EU, NA"
-          },
-          "preferredCurrency": {
-            "type": "string",
-            "knownValues": ["GBP", "EUR", "USD"]
-          },
-          "notes": {
-            "type": "string",
-            "maxLength": 500
-          },
-          "expiresAt": {
-            "type": "string",
-            "format": "datetime",
-            "description": "Optional listing expiry (max 90 days from creation)"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "datetime"
-          },
-          "authorDid": {
-            "type": "string",
-            "format": "did",
-            "description": "AT Protocol DID of the listing author (embedded so the record is self-describing on the network)"
-          },
+          "offerCardUris": { "type": "array", "items": { "type": "string" }, "maxLength": 50, "description": "TCGDex card ids the listing owner is offering" },
+          "offerCardNames": { "type": "array", "items": { "type": "string" } },
+          "offerCardImages": { "type": "array", "items": { "type": "string", "format": "uri" } },
+          "wantedCardUris": { "type": "array", "items": { "type": "string" }, "maxLength": 50, "description": "TCGDex card ids the listing owner wants in return" },
+          "wantedCardNames": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "knownValues": ["open", "negotiating", "pending_ship", "completed", "cancelled"] },
+          "visibility": { "type": "string", "knownValues": ["public", "wishlist_only", "circle_scoped"] },
+          "circleRef": { "type": "string", "format": "at-uri", "description": "at:// URI of the scoping Circle (required when visibility is circle_scoped)" },
+          "shippingRegions": { "type": "array", "items": { "type": "string" }, "description": "Regions the seller ships to, e.g. UK, EU, NA" },
+          "preferredCurrency": { "type": "string", "knownValues": ["GBP", "EUR", "USD"] },
+          "notes": { "type": "string", "maxLength": 500 },
+          "expiresAt": { "type": "string", "format": "datetime", "description": "Optional listing expiry (max 90 days from creation)" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the listing author" },
           "authorName": { "type": "string" },
           "authorHandle": { "type": "string" },
           "authorAvatar": { "type": "string", "format": "uri" }

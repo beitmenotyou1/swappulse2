@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.pullNomination",
+  "revision": 1,
+  "description": "A collector's nomination of their best card pull for a given week's 'Pull of the Week' community vote. Mirrored to AT Protocol so nominations are federated across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A Pull of the Week nomination.",
+      "record": {
+        "type": "object",
+        "required": ["weekKey", "cardUri", "cardName", "createdAt"],
+        "properties": {
+          "weekKey": { "type": "string", "description": "ISO week key, e.g. 2026-W33" },
+          "cardUri": { "type": "string", "description": "TCGDex card id of the pulled card" },
+          "cardName": { "type": "string" },
+          "cardImage": { "type": "string", "format": "uri" },
+          "cardRarity": { "type": "string" },
+          "setName": { "type": "string" },
+          "nominatorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the nominator" },
+          "nominatorName": { "type": "string" },
+          "nominatorHandle": { "type": "string" },
+          "nominatorAvatar": { "type": "string", "format": "uri" },
+          "postUri": { "type": "string", "format": "at-uri", "description": "at:// URI of the pack-opening post this nomination is based on" },
+          "voteCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

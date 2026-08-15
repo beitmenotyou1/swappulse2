@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.challengeEntry",
+  "revision": 1,
+  "description": "A user's contribution to a challenge, mirrored to AT Protocol as a real org.swappulse.challengeEntry record. References the challenge via strongRef so entries are portable and verifiable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A challenge entry contribution.",
+      "record": {
+        "type": "object",
+        "required": ["challengeId", "entryType", "submittedAt", "createdAt"],
+        "properties": {
+          "challengeRef": { "type": "string", "format": "at-uri", "description": "at:// strongRef of the challenge" },
+          "challengeId": { "type": "string", "description": "Challenge id this entry belongs to" },
+          "participantDid": { "type": "string", "format": "did" },
+          "participantName": { "type": "string" },
+          "entryType": { "type": "string", "knownValues": ["set_progress", "deck_list", "card_pull", "collection_value"] },
+          "category": { "type": "string", "knownValues": ["helpful-trader", "accuracy-champion", "community-builder", "set-completer", "shiny-hunter", "journal-writer", "meetup-organiser"] },
+          "contributionCount": { "type": "integer" },
+          "contributionUris": { "type": "array", "items": { "type": "string", "format": "at-uri" }, "maxLength": 1000, "description": "Supporting at:// URIs for verification" },
+          "verificationHash": { "type": "string", "description": "Cryptographic hash of contribution data for integrity verification" },
+          "moderatorLabels": { "type": "array", "items": { "type": "string", "knownValues": ["verified", "under_review", "flagged_for_review", "spam_suspected"] } },
+          "notes": { "type": "string", "maxLength": 500 },
+          "overrideProfileVisibility": { "type": "object" },
+          "status": { "type": "string", "knownValues": ["pending", "approved", "rejected", "expired"] },
+          "rejectionReason": { "type": "string", "maxLength": 200 },
+          "setCompletionPercent": { "type": "number" },
+          "pullPostUri": { "type": "string", "format": "at-uri" },
+          "collectionTotalValue": { "type": "number" },
+          "deckList": { "type": "array", "items": { "type": "object" } },
+          "submittedAt": { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

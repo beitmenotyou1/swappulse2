@@ -2,61 +2,28 @@
   "lexicon": 1,
   "id": "org.swappulse.vouch",
   "revision": 1,
-  "description": "A collector's vouch for another collector's trustworthiness. Mirrored from the SwapPulse Vouch entity so the trust graph is portable and verifiable across PDSs and SwapPulse instances.",
+  "description": "A collector's vouch for another collector's trustworthiness, mirrored to AT Protocol so the trust graph is portable and verifiable across PDSs and SwapPulse instances.",
   "defs": {
     "main": {
       "type": "record",
       "key": "tid",
-      "description": "A single vouch from one collector endorsing another.",
+      "description": "A vouch endorsing another collector.",
       "record": {
         "type": "object",
         "required": ["vouchedDid", "relationship", "context", "createdAt"],
         "properties": {
-          "vouchedDid": {
-            "type": "string",
-            "format": "did",
-            "description": "AT Protocol DID of the endorsed collector"
-          },
+          "vouchedDid": { "type": "string", "format": "did", "description": "DID of the endorsed user" },
           "vouchedName": { "type": "string" },
           "vouchedHandle": { "type": "string" },
-          "voucherDid": {
-            "type": "string",
-            "format": "did",
-            "description": "AT Protocol DID of the voucher (embedded so the record is self-describing on the network)"
-          },
           "voucherName": { "type": "string" },
           "voucherHandle": { "type": "string" },
-          "relationship": {
-            "type": "string",
-            "knownValues": ["trade_partner", "community_member", "personal_acquaintance", "repeat_trader"]
-          },
-          "context": {
-            "type": "string",
-            "maxLength": 280,
-            "description": "Brief explanation of why this vouch is given"
-          },
-          "tradeRefs": {
-            "type": "array",
-            "maxItems": 5,
-            "items": {
-              "type": "string",
-              "format": "uri",
-              "description": "at:// URI of a completed trade record supporting this vouch"
-            }
-          },
-          "revocable": {
-            "type": "boolean",
-            "default": true
-          },
-          "revokedAt": {
-            "type": "string",
-            "format": "datetime",
-            "description": "When the vouch was revoked (null if active)"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "datetime"
-          }
+          "voucherDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the voucher" },
+          "relationship": { "type": "string", "knownValues": ["trade_partner", "community_member", "personal_acquaintance", "repeat_trader"] },
+          "context": { "type": "string", "maxLength": 280, "description": "Brief explanation of why this vouch is given" },
+          "tradeRefs": { "type": "array", "items": { "type": "string", "format": "at-uri" }, "maxLength": 5, "description": "strongRef at:// URIs of completed trade records supporting this vouch" },
+          "revocable": { "type": "boolean" },
+          "revokedAt": { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     }

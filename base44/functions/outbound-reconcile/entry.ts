@@ -11,7 +11,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
-import { COLLECTIONS, entityToRecord } from '../../shared/firehoseMappers.ts';
+import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
 
 // bsky.* collections have strict lexicons and are bridged at create/update
 // time with the correct record shape — the generic entityToRecord serializer
@@ -80,7 +80,7 @@ export default async function (req: Request): Promise<Response> {
           for (const rec of local) {
             if (!rec.at_uri) continue;
             const pdsCid = pdsByUri.get(rec.at_uri);
-            const record = entityToRecord(rec, collection);
+            const record = buildRecord(rec, collection);
             try {
               if (!pdsCid) {
                 // Missing on PDS → re-create

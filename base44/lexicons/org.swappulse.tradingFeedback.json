@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.tradingFeedback",
+  "revision": 1,
+  "description": "Feedback left by a trader after a completed trade, mirrored to AT Protocol so trading reputation is portable and verifiable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "Trading feedback for a completed trade.",
+      "record": {
+        "type": "object",
+        "required": ["tradeUri", "ratedUserDid", "rating", "createdAt"],
+        "properties": {
+          "tradeUri": { "type": "string", "format": "at-uri", "description": "at:// URI of the completed trade listing" },
+          "tradeId": { "type": "string", "description": "Local id of the TradeListing this feedback covers" },
+          "ratedUserDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the trader being rated" },
+          "raterDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the rater" },
+          "raterName": { "type": "string" },
+          "raterHandle": { "type": "string" },
+          "raterAvatar": { "type": "string", "format": "uri" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "comment": { "type": "string", "maxLength": 500 },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

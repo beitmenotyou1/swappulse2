@@ -1,0 +1,55 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.binder",
+  "revision": 1,
+  "description": "A collector's digital binder (themed card display), mirrored to AT Protocol as a real org.swappulse.binder record so binders are portable and viewable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A digital binder.",
+      "record": {
+        "type": "object",
+        "required": ["title", "visibility", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 100 },
+          "description": { "type": "string", "maxLength": 500 },
+          "coverImageUri": { "type": "string", "format": "uri", "description": "Optional blob URI for custom binder cover art" },
+          "theme": { "type": "string", "knownValues": ["classic_purple", "holo_foil", "vintage_leather", "midnight", "rainbow", "custom"] },
+          "pages": {
+            "type": "array",
+            "minLength": 1,
+            "maxLength": 10,
+            "items": {
+              "type": "object",
+              "properties": {
+                "pageNumber": { "type": "integer", "minimum": 1, "maximum": 10 },
+                "slots": {
+                  "type": "array",
+                  "minLength": 6,
+                  "maxLength": 6,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "slotIndex": { "type": "integer", "minimum": 1, "maximum": 6 },
+                      "collectionEntryUri": { "type": "string", "format": "at-uri", "description": "at:// URI of the collectionEntry record in this slot" },
+                      "customCaption": { "type": "string", "maxLength": 100 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "visibility": { "type": "string", "knownValues": ["public", "followers", "private"] },
+          "likeCount": { "type": "integer" },
+          "viewCount": { "type": "integer" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the binder author" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "authorAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

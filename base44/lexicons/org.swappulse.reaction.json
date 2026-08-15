@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.reaction",
+  "revision": 1,
+  "description": "A collector's reaction to a post (insane_pull, jealous, congrats, trade_interest, etc.), mirrored to AT Protocol as a real org.swappulse.reaction record. References the post via strongRef so reactions are portable and verifiable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A reaction to a post.",
+      "record": {
+        "type": "object",
+        "required": ["subject", "reactionType", "createdAt"],
+        "properties": {
+          "subject": { "type": "string", "format": "at-uri", "description": "strongRef at:// URI of the post being reacted to" },
+          "postId": { "type": "string", "description": "Local id of the reacted Post for fast lookup" },
+          "reactionType": { "type": "string", "knownValues": ["insane_pull", "jealous", "congrats", "trade_interest", "gratz_set", "better_luck", "wow"] },
+          "targetCardUri": { "type": "string", "description": "If trade_interest, the specific card URI the reactor wants" },
+          "reactorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the reactor" },
+          "reactorName": { "type": "string" },
+          "reactorHandle": { "type": "string" },
+          "reactorAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

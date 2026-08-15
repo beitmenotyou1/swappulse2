@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.tradeChain",
+  "revision": 1,
+  "description": "A multi-party trade chain (3-5 participants shipping cards in sequence), mirrored to AT Protocol as a real org.swappulse.tradeChain record so chains are portable and verifiable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A multi-party trade chain.",
+      "record": {
+        "type": "object",
+        "required": ["participantDids", "chainOrder", "status", "totalValue", "createdAt"],
+        "properties": {
+          "participantDids": { "type": "array", "items": { "type": "string", "format": "did" }, "description": "DIDs of the 3-5 participants, in chain order" },
+          "participantNames": { "type": "array", "items": { "type": "string" } },
+          "shipstoDids": { "type": "array", "items": { "type": "string", "format": "did" }, "description": "Next participant each ships to" },
+          "tradeListingUris": { "type": "array", "items": { "type": "string", "format": "at-uri" } },
+          "shippingConfirmed": { "type": "array", "items": { "type": "boolean" } },
+          "receiptConfirmed": { "type": "array", "items": { "type": "boolean" } },
+          "chainOrder": { "type": "string", "knownValues": ["clockwise", "anticlockwise"] },
+          "status": { "type": "string", "knownValues": ["proposed", "accepted", "in_transit", "completed", "cancelled"] },
+          "totalValue": { "type": "number", "description": "Combined value in pence" },
+          "completedAt": { "type": "string", "format": "datetime" },
+          "organiserDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the chain organiser" },
+          "organiserName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

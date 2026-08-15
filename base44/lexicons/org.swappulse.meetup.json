@@ -1,0 +1,35 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.meetup",
+  "revision": 1,
+  "description": "A local in-person collector meetup, mirrored to AT Protocol so meetups are discoverable across instances. RSVPs are separate org.swappulse.meetupRsvp records referencing this meetup via strongRef.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A collector meetup event.",
+      "record": {
+        "type": "object",
+        "required": ["title", "description", "scheduledAt", "locationName", "status", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 100 },
+          "description": { "type": "string", "maxLength": 1000 },
+          "scheduledAt": { "type": "string", "format": "datetime" },
+          "estimatedDuration": { "type": "integer", "description": "Duration in minutes" },
+          "locationName": { "type": "string", "maxLength": 200, "description": "Human-readable venue name" },
+          "region": { "type": "string", "description": "Broader region for discovery, e.g. 'London'" },
+          "lat": { "type": "number", "description": "Geocoded latitude (region centroid)" },
+          "lng": { "type": "number", "description": "Geocoded longitude (region centroid)" },
+          "capacity": { "type": "integer", "minimum": 2, "maximum": 50 },
+          "requiredVouches": { "type": "integer", "minimum": 0, "description": "Minimum incoming vouches needed to see the attendee list" },
+          "status": { "type": "string", "knownValues": ["scheduled", "ongoing", "completed", "cancelled"] },
+          "creatorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the meetup organiser" },
+          "rsvpCount": { "type": "integer" },
+          "organiserName": { "type": "string" },
+          "organiserHandle": { "type": "string" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

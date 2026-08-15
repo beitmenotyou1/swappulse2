@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.meetupRsvp",
+  "revision": 1,
+  "description": "An attendee's RSVP for a meetup, mirrored to AT Protocol as a real org.swappulse.meetupRsvp record. References the meetup via strongRef so RSVPs are portable and verifiable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A meetup RSVP.",
+      "record": {
+        "type": "object",
+        "required": ["meetupRef", "meetupId", "attending", "createdAt"],
+        "properties": {
+          "meetupRef": { "type": "string", "format": "at-uri", "description": "strongRef at:// URI of the meetup" },
+          "meetupId": { "type": "string", "description": "Local id of the Meetup for fast lookup" },
+          "attending": { "type": "string", "knownValues": ["yes", "maybe", "no"] },
+          "bringingTradeBinder": { "type": "boolean", "description": "Whether the attendee will bring their physical binder" },
+          "lookingForCards": { "type": "array", "items": { "type": "string" }, "maxLength": 10, "description": "Card names the attendee is hunting for" },
+          "attendeeDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the attendee" },
+          "attendeeName": { "type": "string" },
+          "attendeeHandle": { "type": "string" },
+          "attendeeAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

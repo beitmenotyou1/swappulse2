@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.story",
+  "revision": 1,
+  "description": "An ephemeral 24-hour story, mirrored to AT Protocol as a real org.swappulse.story record. Stories expire client-side after 24 hours; the PDS record remains for audit but the AppView filters expired stories from feeds.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "An ephemeral story with one or more media segments.",
+      "record": {
+        "type": "object",
+        "required": ["expiresAt", "audience", "createdAt"],
+        "properties": {
+          "segments": {
+            "type": "array",
+            "minLength": 1,
+            "maxLength": 20,
+            "description": "Ordered media segments composing the story",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order": { "type": "integer", "minimum": 0 },
+                "mediaBlob": { "type": "string", "format": "uri", "description": "Uploaded image or video URL" },
+                "mediaType": { "type": "string", "knownValues": ["image", "video", "text", "card"] },
+                "textOverlay": { "type": "string", "maxLength": 200 },
+                "textPosition": { "type": "string", "knownValues": ["top", "center", "bottom"] },
+                "backgroundColor": { "type": "string", "description": "Hex colour behind text overlay" },
+                "cardEmbedUri": { "type": "string", "description": "TCGDex card id of an embedded card segment" },
+                "cardName": { "type": "string" },
+                "cardImage": { "type": "string", "format": "uri" },
+                "duration": { "type": "integer", "minimum": 3, "maximum": 15, "description": "Display duration in seconds for non-video segments" }
+              }
+            }
+          },
+          "audience": { "type": "string", "knownValues": ["friends", "public"], "description": "Who can view this story" },
+          "storyGroup": { "type": "string", "description": "Identifier grouping segments into one story (record rkey)" },
+          "content": { "type": "string", "maxLength": 280, "description": "Legacy: text body for single text stories" },
+          "imageUri": { "type": "string", "format": "uri", "description": "Legacy: uploaded image URL for single image stories" },
+          "bgGradient": { "type": "string", "knownValues": ["purple", "sunset", "ocean"], "description": "Legacy: gradient key for text-story backgrounds" },
+          "expiresAt": { "type": "string", "format": "datetime", "description": "When the story becomes invisible (createdAt + 24h)" },
+          "viewedBy": { "type": "array", "items": { "type": "string", "format": "did" }, "description": "Legacy denormalized seen DIDs" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the author" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

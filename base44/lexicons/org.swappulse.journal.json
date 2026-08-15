@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.journal",
+  "revision": 1,
+  "description": "A collector's published journal entry, mirrored to AT Protocol as a real org.swappulse.journal record so journals are portable and discoverable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A published collector journal entry.",
+      "record": {
+        "type": "object",
+        "required": ["title", "body", "visibility", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 200 },
+          "subtitle": { "type": "string", "maxLength": 300 },
+          "body": { "type": "string", "maxLength": 50000, "description": "Markdown-formatted journal content" },
+          "coverImageUri": { "type": "string", "format": "uri", "description": "Cover image blob URI" },
+          "embeddedCardUris": { "type": "array", "items": { "type": "string", "format": "at-uri" }, "maxLength": 20, "description": "at:// URIs of cards referenced in the journal" },
+          "embeddedStats": {
+            "type": "object",
+            "description": "Frozen collection stats snapshot at publication time",
+            "properties": {
+              "totalCollectionValue": { "type": "number" },
+              "setCompletionPercent": { "type": "number" },
+              "totalCards": { "type": "integer" },
+              "rarestCardUri": { "type": "string" }
+            }
+          },
+          "tags": { "type": "array", "items": { "type": "string", "maxLength": 30 }, "maxLength": 10 },
+          "visibility": { "type": "string", "knownValues": ["public", "followers", "private"] },
+          "publishedAt": { "type": "string", "format": "datetime" },
+          "likeCount": { "type": "integer" },
+          "authorDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the journal author" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "authorAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
