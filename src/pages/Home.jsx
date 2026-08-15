@@ -9,6 +9,7 @@ import StoriesBar from '@/components/stories/StoriesBar';
 import SpaceBar from '@/components/spaces/SpaceBar';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 
 const TABS = [
@@ -20,7 +21,6 @@ const TABS = [
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
-  const [externalPosts, setExternalPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
@@ -32,21 +32,15 @@ export default function Home() {
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await base44.entities.Post.list('-created_date', 50);
-      setPosts(data);
-      // Fetch external posts for authenticated users (federation follows)
-      try {
-        const authed = await base44.auth.isAuthenticated();
-        if (authed) {
-          const extRes = await base44.functions.invoke('fetch-external-feed', { limit: 30 });
-          setExternalPosts(extRes.data?.items || []);
-        }
-      } catch {
-        setExternalPosts([]);
+      const authed = await base44.auth.isAuthenticated();
+      if (authed) {
+        const res = await base44.functions.invoke('get-follow-feed', { limit: 50 });
+        setPosts(res.data?.items || []);
+      } else {
+        setPosts([]);
       }
     } catch {
       setPosts([]);
-      setExternalPosts([]);
     } finally {
       setLoading(false);
     }
@@ -119,10 +113,7 @@ export default function Home() {
     })();
   }, [posts, user?.id]);
 
-  const filtered = tab === 'all'
-    ? [...posts, ...externalPosts].sort((a, b) =>
-        new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
-    : posts.filter((p) => p.post_type === tab);
+  const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
 
   if (showTour) {
     return <OnboardingTour onComplete={() => setShowTour(false)} />;
@@ -167,8 +158,9 @@ export default function Home() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="px-4 py-20 text-center">
-          <p className="text-lg font-bold">No posts yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Share a pull or start a trade to get the feed going.</p>
+          <p className="text-lg font-bold">Your feed is quiet</p>
+          <p className="mt-1 text-sm text-muted-foreground">Follow some collectors to fill your feed.</p>
+          <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Discover collectors</Link>
         </div>
       ) : (
         <div className="animate-fade-in">

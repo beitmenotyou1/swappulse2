@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "notification_ingestion",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "ingest": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "ingest-notifications",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Ingest Bluesky Notifications",
+            "description": "Poll app.bsky.notification.listNotifications per provisioned user and mirror likes, reposts, replies, follows, and mentions as on-site notifications"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Every 5 minutes, polls each provisioned user's Bluesky notification inbox (listNotifications) and mirrors inbound interactions as on-site Notification records with origin='remote', completing the bidirectional notification loop.",
+  "name": "Notification Ingestion"
+}

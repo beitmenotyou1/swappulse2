@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ExploreCardTile from '@/components/cards/ExploreCardTile';
+import PostCard from '@/components/feed/PostCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 
@@ -23,6 +24,7 @@ export default function Explore() {
   const [selectMode, setSelectMode] = useState(false);
   const [adding, setAdding] = useState(false);
   const [searchMode, setSearchMode] = useState('cards');
+  const [latestPosts, setLatestPosts] = useState([]);
 
   const runSearch = useCallback(async (q) => {
     if (q.trim().length < 2) {
@@ -50,6 +52,15 @@ export default function Explore() {
       } catch {}
     })();
   }, [lang]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const p = await base44.entities.Post.list('-created_date', 20);
+        setLatestPosts(p || []);
+      } catch { setLatestPosts([]); }
+    })();
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => runSearch(query), 400);
@@ -138,6 +149,18 @@ export default function Explore() {
           <div className="mb-6">
             <NetworkFeedSection limit={12} title="From the Network" />
           </div>
+          {latestPosts.length > 0 && (
+            <div className="mb-6">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
+                <Flame className="h-4 w-4 text-accent" /> Latest Posts
+              </h2>
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                {latestPosts.map((p) => (
+                  <PostCard key={p.id} post={p} />
+                ))}
+              </div>
+            </div>
+          )}
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
             <Flame className="h-4 w-4 text-accent" /> Recent Sets
           </h2>

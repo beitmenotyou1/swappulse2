@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Loader2, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, Repeat2, Globe } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useNotifications } from '@/hooks/useNotifications';
 import Avatar from '@/components/Avatar';
@@ -14,6 +14,7 @@ const ACTION_META = {
   price_alert: { Icon: TrendingDown, tint: 'text-success' },
   reaction: { Icon: Heart, tint: 'text-destructive' },
   like: { Icon: Heart, tint: 'text-destructive' },
+  repost: { Icon: Repeat2, tint: 'text-emerald-500' },
   follow: { Icon: UserPlus, tint: 'text-primary' },
   mention: { Icon: AtSign, tint: 'text-primary' },
   voice_live: { Icon: Radio, tint: 'text-destructive' },
@@ -126,7 +127,14 @@ export default function Notifications() {
                     {describe(n)}
                     {n.group_count > 1 && <span className="ml-1 font-semibold text-primary">· {n.group_count}× </span>}
                   </p>
-                  {n.actor_handle && <p className="truncate text-xs text-muted-foreground">@{n.actor_handle}</p>}
+                  <div className="flex items-center gap-1">
+                    {n.actor_handle && <p className="truncate text-xs text-muted-foreground">@{n.actor_handle}</p>}
+                    {n.metadata?.origin === 'remote' && (
+                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                        <Globe className="h-2.5 w-2.5" /> Bluesky
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {n.created_date ? formatDistanceToNowStrict(new Date(n.created_date), { addSuffix: true }) : ''}
                   </p>
