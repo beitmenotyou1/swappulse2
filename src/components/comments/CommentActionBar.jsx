@@ -4,28 +4,19 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { createLike, deleteLike, createRepost, deleteRepost, createReply, createQuotePost } from '@/lib/postInteractions';
 
-// Inline Like + Repost (direct + quote) + Reply actions shown on
-// like/repost/comment notification cards. For comment notifications, the
-// actions target the comment itself (metadata.commentUri/commentCid) so the
-// user can reply to / like / repost the comment directly from the
-// notification. For like/repost notifications, actions target the triggering
-// post (metadata.postId). All actions create real federated records that
-// appear on bsky.app.
-export default function InteractionActions({ n, onResponded }) {
-  const { user } = useAuth();
-  const isInteraction = ['like', 'repost', 'comment'].includes(n?.action_type);
-  const postId = n?.metadata?.postId;
-  const commentUri = n?.metadata?.commentUri;
-  const commentCid = n?.metadata?.commentCid;
-  const isComment = n?.action_type === 'comment';
-  const hasCommentRef = isComment && commentUri && commentCid;
-
-  const [target, setTarget] = useState(null);
-  const [busy, setBusy] = useState(false);
+// Reusable Like + Repost (direct + quote) + Reply action bar for any comment
+// surface (card discussions, post reply threads, notification cards). Works
+// with both internal comments (local Post records with id/at_uri/cid) and
+// external Bluesky-origin comments (at_uri/cid only, no local id) by
+// normalising into a ref that the federated interaction helpers accept.
+export default function CommentActionBar({ comment, user, compact = false, onPosted }) {
+  const { user: me } = useAuth();
+  const currentUser = user || me;
   const [liked, setLiked] = useState(false);
   const [likeId, setLikeId] = useState(null);
   const [reposted, setReposted] = useState(false);
   const [repostId, setRepostId] = useState(null);
+  const [busy, setBusy] = useState(false);
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showRepostMenu, setShowRepostMenu] = useState(false);
@@ -33,57 +24,50 @@ export default function InteractionActions({ n, onResponded }) {
   const [quoteText, setQuoteText] = useState('');
   const [posting, setPosting] = useState(false);
 
-  // Resolve the target ref and existing like/repost state.
+  // Normalise: internal comments have a local id; external comments have
+  // at_uri/cid only. The ref shape is what createLike/createRepost/createReply
+  // expect — { id, at_uri, cid, bridged, did, content, likes, reposts, replies,
+  // root_uri, root_cid }. For external comments we synthesise bridged=true so
+  // the PDS bridge fires against the real Bluesky record.
+  const isInternal = !!comment?.id;
+  const ref = isInternal
+    ? comment
+    : {
+        id: '',
+        bridged: true,
+        at_uri: comment?.at_uri || '',
+        cid: comment?.cid || '',
+        did: comment?.did || '',
+        content: comment?.content || '',
+        likes: 0, reposts: 0, replies: 0,
+        root_uri: comment?.root_uri || comment?.at_uri || '',
+        root_cid: comment?.root_cid || comment?.cid || '',
+      };
+
+  const atUri = ref.at_uri;
+
+  // Check existing like/repost state by at_uri (works for both internal and
+  // external — Like/Repost entities store post_uri for remote-originated ones).
   useEffect(() => {
-    if (!isInteraction || !user?.id) return;
+    if (!currentUser?.id || !atUri) return;
     let alive = true;
     (async () => {
-      if (hasCommentRef) {
-        // Comment notification: target the comment directly via at_uri/cid.
-        const commentRef = {
-          id: '',
-          bridged: true,
-          at_uri: commentUri,
-          cid: commentCid,
-          did: n.actor_did,
-          content: n.metadata?.commentText || '',
-          likes: 0, reposts: 0, replies: 0,
-          root_uri: commentUri,
-          root_cid: commentCid,
-        };
-        if (alive) setTarget(commentRef);
-        try {
-          const [likes, reposts] = await Promise.all([
-            base44.entities.Like.filter({ post_uri: commentUri }, '-created_date', 50).catch(() => []),
-            base44.entities.Repost.filter({ post_uri: commentUri }, '-created_date', 50).catch(() => []),
-          ]);
-          if (!alive) return;
-          const myLike = likes.find((l) => l.created_by_id === user.id);
-          const myRepost = reposts.find((r) => r.created_by_id === user.id);
-          if (myLike) { setLiked(true); setLikeId(myLike.id); }
-          if (myRepost) { setReposted(true); setRepostId(myRepost.id); }
-        } catch { /* ignore */ }
-      } else if (postId) {
-        try {
-          const post = await base44.entities.Post.get(postId).catch(() => null);
-          if (!alive || !post) return;
-          setTarget(post);
-          const [likes, reposts] = await Promise.all([
-            base44.entities.Like.filter({ post_id: postId }, '-created_date', 50).catch(() => []),
-            base44.entities.Repost.filter({ post_id: postId }, '-created_date', 50).catch(() => []),
-          ]);
-          if (!alive) return;
-          const myLike = likes.find((l) => l.created_by_id === user.id);
-          const myRepost = reposts.find((r) => r.created_by_id === user.id);
-          if (myLike) { setLiked(true); setLikeId(myLike.id); }
-          if (myRepost) { setReposted(true); setRepostId(myRepost.id); }
-        } catch { /* ignore */ }
-      }
+      try {
+        const [likes, reposts] = await Promise.all([
+          base44.entities.Like.filter({ post_uri: atUri }, '-created_date', 50).catch(() => []),
+          base44.entities.Repost.filter({ post_uri: atUri }, '-created_date', 50).catch(() => []),
+        ]);
+        if (!alive) return;
+        const myLike = likes.find((l) => l.created_by_id === currentUser.id);
+        const myRepost = reposts.find((r) => r.created_by_id === currentUser.id);
+        if (myLike) { setLiked(true); setLikeId(myLike.id); }
+        if (myRepost) { setReposted(true); setRepostId(myRepost.id); }
+      } catch { /* ignore */ }
     })();
     return () => { alive = false; };
-  }, [isInteraction, hasCommentRef, commentUri, commentCid, postId, user?.id]);
+  }, [currentUser?.id, atUri]);
 
-  if (!isInteraction || !user?.id || !target) return null;
+  if (!currentUser?.id || !atUri) return null;
 
   const toggleLike = async (e) => {
     e?.stopPropagation();
@@ -93,11 +77,11 @@ export default function InteractionActions({ n, onResponded }) {
       if (liked && likeId) {
         setLiked(false);
         const l = await base44.entities.Like.get(likeId).catch(() => null);
-        await deleteLike(l, target);
+        await deleteLike(l, ref);
         setLikeId(null);
       } else {
         setLiked(true);
-        const created = await createLike(target);
+        const created = await createLike(ref);
         setLikeId(created.id);
       }
     } finally { setBusy(false); }
@@ -112,11 +96,11 @@ export default function InteractionActions({ n, onResponded }) {
       if (reposted && repostId) {
         setReposted(false);
         const r = await base44.entities.Repost.get(repostId).catch(() => null);
-        await deleteRepost(r, target);
+        await deleteRepost(r, ref);
         setRepostId(null);
       } else {
         setReposted(true);
-        const created = await createRepost(target);
+        const created = await createRepost(ref);
         setRepostId(created.id);
       }
     } finally { setBusy(false); }
@@ -128,10 +112,10 @@ export default function InteractionActions({ n, onResponded }) {
     if (!trimmed || posting) return;
     setPosting(true);
     try {
-      await createReply(target, trimmed, user);
+      await createReply(ref, trimmed, currentUser);
       setReplyText('');
       setShowReply(false);
-      onResponded?.();
+      onPosted?.();
     } finally { setPosting(false); }
   };
 
@@ -141,25 +125,27 @@ export default function InteractionActions({ n, onResponded }) {
     if (!trimmed || posting) return;
     setPosting(true);
     try {
-      await createQuotePost(target, trimmed, user);
+      await createQuotePost(ref, trimmed, currentUser);
       setQuoteText('');
       setShowQuote(false);
-      onResponded?.();
+      onPosted?.();
     } finally { setPosting(false); }
   };
 
+  const btn = compact ? 'px-1.5 py-0.5 text-[11px] gap-1' : 'px-2.5 py-1 text-xs gap-1.5';
+  const iconSize = compact ? 'h-3 w-3' : 'h-3.5 w-3.5';
+
   return (
-    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-1">
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-0.5">
         <button
           onClick={toggleLike}
           disabled={busy}
           aria-label="Like"
           aria-pressed={liked}
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${liked ? 'border-red-200 bg-red-50 text-red-500 dark:border-red-900/50 dark:bg-red-950/30' : 'border-border bg-card hover:bg-secondary'}`}
+          className={`flex items-center rounded-full transition-colors disabled:opacity-50 ${btn} ${liked ? 'text-red-500' : 'text-muted-foreground hover:bg-red-500/10 hover:text-red-500'}`}
         >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className={`h-3.5 w-3.5 ${liked ? 'fill-current' : ''}`} />}
-          {liked ? 'Liked' : 'Like'}
+          {busy ? <Loader2 className={`${iconSize} animate-spin`} /> : <Heart className={`${iconSize} ${liked ? 'fill-current' : ''}`} />}
         </button>
 
         <div className="relative">
@@ -167,10 +153,9 @@ export default function InteractionActions({ n, onResponded }) {
             onClick={() => setShowRepostMenu((v) => !v)}
             aria-label="Repost"
             aria-pressed={reposted}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${showRepostMenu || reposted ? 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/50 dark:bg-emerald-950/30' : 'border-border bg-card hover:bg-secondary'}`}
+            className={`flex items-center rounded-full transition-colors ${btn} ${reposted ? 'text-emerald-500' : 'text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500'}`}
           >
-            <Repeat2 className={`h-3.5 w-3.5 ${reposted ? 'fill-current' : ''}`} />
-            {reposted ? 'Reposted' : 'Repost'}
+            <Repeat2 className={`${iconSize} ${reposted ? 'fill-current' : ''}`} />
           </button>
           {showRepostMenu && (
             <>
@@ -197,10 +182,9 @@ export default function InteractionActions({ n, onResponded }) {
           onClick={() => setShowReply((v) => !v)}
           aria-label="Reply"
           aria-pressed={showReply}
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${showReply ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:bg-secondary'}`}
+          className={`flex items-center rounded-full transition-colors ${btn} ${showReply ? 'text-primary' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}
         >
-          <MessageCircle className="h-3.5 w-3.5" />
-          Reply
+          <MessageCircle className={iconSize} />
         </button>
       </div>
 
@@ -210,7 +194,7 @@ export default function InteractionActions({ n, onResponded }) {
             <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value.slice(0, 500))}
-              placeholder={isComment ? 'Reply to this comment…' : 'Write a reply…'}
+              placeholder="Write a reply…"
               rows={2}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
@@ -236,8 +220,8 @@ export default function InteractionActions({ n, onResponded }) {
       {showQuote && (
         <div className="mt-2">
           <div className="mb-1.5 rounded-lg border-l-2 border-primary bg-secondary px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{n?.actor_name || 'Collector'}</span>
-            <p className="mt-0.5 line-clamp-2">{n?.metadata?.commentText || n?.target_label || ''}</p>
+            <span className="font-semibold text-foreground">{comment?.author_name || 'Collector'}</span>
+            <p className="mt-0.5 line-clamp-2">{comment?.content || ''}</p>
           </div>
           <div className="relative">
             <textarea
