@@ -5,6 +5,13 @@
 // entity map used by both firehose-ingest and outbound-reconcile.
 
 export const COLLECTIONS: Record<string, string> = {
+  // Standard AT Protocol records — bidirectional sync of posts, reposts,
+  // likes, and follows with the wider Bluesky network.
+  'app.bsky.feed.post': 'Post',
+  'app.bsky.feed.repost': 'Repost',
+  'app.bsky.feed.like': 'Like',
+  'app.bsky.graph.follow': 'Follow',
+  // SwapPulse custom lexicon records
   'org.swappulse.vouch': 'Vouch',
   'org.swappulse.wishlist': 'Wishlist',
   'org.swappulse.circle': 'Circle',
@@ -26,6 +33,41 @@ export const COLLECTIONS: Record<string, string> = {
   'org.swappulse.podcastEpisode': 'PodcastEpisode',
 };
 
+// Standard AT Protocol record mappers (app.bsky.*). These map remote
+// Bluesky records into local entities so interactions from other instances
+// surface in SwapPulse feeds and profiles.
+function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
+  return {
+    content: val.text || '',
+    post_type: 'text',
+    author_name: profile?.displayName || '',
+    author_handle: profile?.handle || '',
+    author_avatar: profile?.avatar || '',
+    parent_uri: val.reply?.parent?.uri || '',
+    parent_cid: val.reply?.parent?.cid || '',
+    root_uri: val.reply?.root?.uri || '',
+    root_cid: val.reply?.root?.cid || '',
+    did, at_uri: atUri, cid: '', record_type: 'app.bsky.feed.post', bridged: true,
+  };
+}
+function mapRepostFields(val: any, atUri: string, did: string) {
+  return {
+    post_id: '', post_uri: val.subject?.uri || '', post_cid: val.subject?.cid || '',
+    did, at_uri: atUri, cid: '', record_type: 'app.bsky.feed.repost', bridged: true,
+  };
+}
+function mapLikeFields(val: any, atUri: string, did: string) {
+  return {
+    post_id: '', post_uri: val.subject?.uri || '', post_cid: val.subject?.cid || '',
+    did, at_uri: atUri, cid: '', record_type: 'app.bsky.feed.like', bridged: true,
+  };
+}
+function mapFollowFields(val: any, atUri: string, did: string) {
+  return {
+    subject_did: val.subject || '', did, at_uri: atUri, cid: '',
+    record_type: 'app.bsky.graph.follow', bridged: true,
+  };
+}
 function mapVouchFields(val: any, atUri: string, did: string) {
   return {
     vouched_did: val.vouchedDid || '', vouched_name: val.vouchedName || '', vouched_handle: val.vouchedHandle || '',
@@ -176,7 +218,11 @@ function mapPodcastEpisodeFields(val: any, atUri: string, did: string) {
   };
 }
 
-export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string) => any> = {
+export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string, profile?: any) => any> = {
+  'app.bsky.feed.post': mapPostFields,
+  'app.bsky.feed.repost': mapRepostFields,
+  'app.bsky.feed.like': mapLikeFields,
+  'app.bsky.graph.follow': mapFollowFields,
   'org.swappulse.vouch': mapVouchFields,
   'org.swappulse.wishlist': mapWishlistFields,
   'org.swappulse.circle': mapCircleFields,

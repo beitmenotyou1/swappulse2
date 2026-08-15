@@ -25,6 +25,7 @@ export default function Home() {
   const [tab, setTab] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
   const [repostMap, setRepostMap] = useState({});
+  const [likeMap, setLikeMap] = useState({});
   const [showTour, setShowTour] = useState(() => !localStorage.getItem('swappulse_onboarding_done'));
   const { user } = useAuth();
 
@@ -99,6 +100,25 @@ export default function Home() {
     })();
   }, [posts, user?.id]);
 
+  // Batch-fetch the current user's likes for loaded posts (avoids an N+1 call per card).
+  useEffect(() => {
+    if (!user?.id || !posts.length) { setLikeMap({}); return; }
+    (async () => {
+      try {
+        const rows = await base44.entities.Like.filter(
+          { created_by_id: user.id, post_id: { $in: posts.map((p) => p.id) } },
+          '-created_date',
+          50
+        );
+        const map = {};
+        for (const l of rows) { map[l.post_id] = l; }
+        setLikeMap(map);
+      } catch {
+        setLikeMap({});
+      }
+    })();
+  }, [posts, user?.id]);
+
   const filtered = tab === 'all'
     ? [...posts, ...externalPosts].sort((a, b) =>
         new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())
@@ -153,7 +173,7 @@ export default function Home() {
       ) : (
         <div className="animate-fade-in">
           {filtered.map((post) => (
-            <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} myRepost={repostMap[post.id]} />
+            <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} myRepost={repostMap[post.id]} myLike={likeMap[post.id]} />
           ))}
         </div>
       )}

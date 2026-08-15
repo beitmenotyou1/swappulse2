@@ -1,0 +1,60 @@
+{
+  "name": "Like",
+  "type": "object",
+  "title": "Like",
+  "description": "app.bsky.feed.like \u2014 a user's like on a Post, mirrored to AT Protocol as a real app.bsky.feed.like record. The subject (post_uri + post_cid) is the strongRef of the liked post. Enables bidirectional like sync: likes created in SwapPulse appear on Bluesky and vice versa.",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "Local id of the liked Post (empty for remote-originated likes)"
+    },
+    "post_uri": {
+      "type": "string",
+      "description": "at:// URI of the liked Post (subject.uri for the PDS bridge)"
+    },
+    "post_cid": {
+      "type": "string",
+      "description": "cid of the liked Post (subject.cid for the PDS bridge)"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the liker"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this like record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "Standard AT Protocol record type (app.bsky.feed.like)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the like to the liker's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the like has been mirrored to the AT Protocol PDS as a real app.bsky.feed.like record"
+    }
+  },
+  "required": [
+    "post_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

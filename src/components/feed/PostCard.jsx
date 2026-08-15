@@ -18,8 +18,10 @@ const TYPE_META = {
   showcase: { icon: ImageIcon, label: 'Showcase', color: 'text-rarity-holo' },
 };
 
-export default function PostCard({ post, reactions, myRepost }) {
+export default function PostCard({ post, reactions, myRepost, myLike }) {
   const [liked, setLiked] = useState(false);
+  const [likeId, setLikeId] = useState(null);
+  const [pendingLike, setPendingLike] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [repostId, setRepostId] = useState(null);
   const [pendingRepost, setPendingRepost] = useState(false);
@@ -37,6 +39,60 @@ export default function PostCard({ post, reactions, myRepost }) {
       setRepostId(myRepost.id);
     }
   }, [myRepost?.id]);
+
+  // Sync existing like state from the batched map.
+  useEffect(() => {
+    if (myLike) {
+      setLiked(true);
+      setLikeId(myLike.id);
+    }
+  }, [myLike?.id]);
+
+  const toggleLike = async () => {
+    if (pendingLike) return;
+    if (!user?.id) return; // guests get the optimistic toggle only
+    setPendingLike(true);
+    if (liked && likeId) {
+      setLiked(false);
+      try {
+        const l = await base44.entities.Like.get(likeId).catch(() => null);
+        await base44.entities.Like.delete(likeId);
+        setLikeId(null);
+        await base44.entities.Post.update(post.id, { likes: Math.max(0, (post.likes || 0) - 1) }).catch(() => {});
+        if (l?.at_uri?.startsWith('at://did:')) {
+          base44.functions.invoke('atproto-bridge', { action: 'delete', uri: l.at_uri }).catch(() => {});
+        }
+      } catch {
+        setLiked(true);
+      }
+    } else {
+      setLiked(true);
+      try {
+        const { did, signingKey } = await ensureUserDid();
+        const stamped = await stampRecord(
+          { post_id: post.id, post_uri: post.at_uri || '', post_cid: post.cid || '' },
+          'app.bsky.feed.like',
+          did,
+          signingKey,
+        );
+        const created = await base44.entities.Like.create(stamped);
+        setLikeId(created.id);
+        await base44.entities.Post.update(post.id, { likes: (post.likes || 0) + 1 }).catch(() => {});
+        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.like (only for genuinely bridged posts).
+        if (post.bridged && post.at_uri && post.cid) {
+          base44.functions.invoke('atproto-bridge', {
+            collection: 'app.bsky.feed.like',
+            record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
+          }).then((res) => {
+            if (res?.uri) base44.entities.Like.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
+          }).catch(() => {});
+        }
+      } catch {
+        setLiked(false);
+      }
+    }
+    setPendingLike(false);
+  };
 
   const toggleRepost = async () => {
     if (pendingRepost) return;
@@ -158,10 +214,11 @@ export default function PostCard({ post, reactions, myRepost }) {
               <span>{formatNumber(repostCount)}</span>
             </button>
             <button
-              onClick={() => setLiked(!liked)}
+              onClick={toggleLike}
+              disabled={pendingLike}
               aria-label="Like"
               aria-pressed={liked}
-              className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400 ${liked ? 'text-red-500' : ''}`}
+              className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 ${liked ? 'text-red-500' : ''}`}
             >
               <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
               <span>{formatNumber(likeCount)}</span>

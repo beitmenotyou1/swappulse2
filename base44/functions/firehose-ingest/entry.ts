@@ -19,6 +19,25 @@ import { COLLECTIONS, FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
+// Resolve a remote actor's profile (displayName, handle, avatar) from the
+// AppView once per repo DID, so inbound posts carry author metadata for
+// rendering. Cached for the duration of the ingest run.
+const profileCache = new Map<string, any>();
+async function getProfile(repoDid: string): Promise<any> {
+  if (profileCache.has(repoDid)) return profileCache.get(repoDid);
+  let profile: any = null;
+  try {
+    const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
+    url.searchParams.set('actor', repoDid);
+    const res = await fetch(url);
+    if (res.ok) profile = await res.json();
+  } catch (e) {
+    console.error(`firehose-ingest: getProfile failed for ${repoDid}`, e?.message || e);
+  }
+  profileCache.set(repoDid, profile);
+  return profile;
+}
+
 async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string) {
   const all: any[] = [];
   let cursor: string | null = null;
@@ -70,6 +89,11 @@ export default async function(req: Request): Promise<Response> {
           const records = await listRecords(listUrl, repoDid, collection, isLocal ? accessJwt : undefined);
           const pdsUriSet = new Set(records.map((r: any) => r.uri));
 
+          // Resolve the remote actor's profile once per repo for post records
+          // so inbound posts carry author_name/handle/avatar for rendering.
+          const profile = !isLocal && collection === 'app.bsky.feed.post'
+            ? await getProfile(repoDid) : undefined;
+
           for (const rec of records) {
             try {
               const atUri = rec.uri || '';
@@ -82,7 +106,7 @@ export default async function(req: Request): Promise<Response> {
                 if (existing && existing.length > 0) continue;
               }
 
-              const mapped = mapper(val, atUri, repoDid);
+              const mapped = mapper(val, atUri, repoDid, profile);
               const existing = await svc.entities[entityName].filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
               if (existing && existing.length > 0) {
                 await svc.entities[entityName].update(existing[0].id, mapped).catch(() => {});

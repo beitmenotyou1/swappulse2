@@ -13,6 +13,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, entityToRecord } from '../../shared/firehoseMappers.ts';
 
+// bsky.* collections have strict lexicons and are bridged at create/update
+// time with the correct record shape — the generic entityToRecord serializer
+// would produce invalid records the PDS rejects, so skip them here.
+const SKIP_FOR_RECONCILE = new Set([
+  'app.bsky.feed.post',
+  'app.bsky.feed.repost',
+  'app.bsky.feed.like',
+  'app.bsky.graph.follow',
+]);
+
 async function listPdsRecords(pdsUrl: string, accessJwt: string, did: string, collection: string) {
   const all: any[] = [];
   let cursor: string | null = null;
@@ -58,6 +68,7 @@ export default async function (req: Request): Promise<Response> {
 
       let userReconciled = 0;
       for (const [collection, entityName] of Object.entries(COLLECTIONS)) {
+        if (SKIP_FOR_RECONCILE.has(collection)) continue;
         try {
           const local = await svc.entities[entityName]
             .filter({ did: cred.did, bridged: true }, '-updated_date', 50).catch(() => []);
