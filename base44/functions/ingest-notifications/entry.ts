@@ -118,6 +118,9 @@ export default async function(req: Request): Promise<Response> {
 
         for (const m of mapped) {
           if (existingKeys.has(m.groupKey)) { skipped++; continue; }
+          // Claim this groupKey within the batch so subsequent items with the
+          // same key (e.g. multiple replies from the same actor) are deduped.
+          existingKeys.add(m.groupKey);
 
           // Enforce the recipient's notification preferences before creating.
           const filter = await shouldDeliverNotification(svc, { recipientDid: userDid, actorDid: m.actorDid })
@@ -149,6 +152,13 @@ export default async function(req: Request): Promise<Response> {
           } else if (m.actionType === 'mention') {
             targetPath = bskyPostUrl(m.subjectUri);
             targetLabel = 'mentioned you';
+          }
+
+          // Fallback for comments: if no targetPath was set (subjectUri was
+          // empty because the Bluesky notification lacked a parent URI),
+          // deep-link to the reply itself on Bluesky so the card is clickable.
+          if (!targetPath && m.actionType === 'comment' && m.n?.uri) {
+            targetPath = bskyPostUrl(m.n.uri);
           }
 
           const verb = m.actionType === 'like' ? 'liked'

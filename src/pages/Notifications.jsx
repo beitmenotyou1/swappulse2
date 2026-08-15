@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Loader2, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, Repeat2, Globe } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, MessageCircle, Repeat2, Globe } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useNotifications } from '@/hooks/useNotifications';
 import Avatar from '@/components/Avatar';
@@ -16,6 +16,7 @@ const ACTION_META = {
   reaction: { Icon: Heart, tint: 'text-destructive' },
   like: { Icon: Heart, tint: 'text-destructive' },
   repost: { Icon: Repeat2, tint: 'text-emerald-500' },
+  comment: { Icon: MessageCircle, tint: 'text-primary' },
   follow: { Icon: UserPlus, tint: 'text-primary' },
   mention: { Icon: AtSign, tint: 'text-primary' },
   voice_live: { Icon: Radio, tint: 'text-destructive' },
@@ -32,6 +33,7 @@ function describe(n) {
     case 'price_alert': return `Price drop on ${n.target_label || 'a wishlist card'}`;
     case 'reaction':
     case 'like': return `${actor} reacted to your ${n.target_label || 'post'}`;
+    case 'comment': return `${actor} commented on your ${n.target_label || 'post'}`;
     case 'follow': return `${actor} followed you`;
     case 'mention': return `${actor} mentioned you`;
     case 'voice_live': return `${actor} went live`;

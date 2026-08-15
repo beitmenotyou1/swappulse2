@@ -77,7 +77,7 @@ export default async function(req: Request): Promise<Response> {
       if (!post.at_uri || post.at_uri.startsWith(userPrefix)) continue;
       const record: any = {
         text: post.content || '',
-        createdAt: post.created_date || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
       if (post.parent_uri && post.parent_cid && post.root_uri && post.root_cid) {
         record.reply = {
@@ -109,7 +109,7 @@ export default async function(req: Request): Promise<Response> {
       if (!repost.post_uri || !repost.post_cid) continue;
       const record = {
         subject: { uri: repost.post_uri, cid: repost.post_cid },
-        createdAt: repost.created_date || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
       try {
         const res = await pdsRequest(pdsUrl, userSession.accessJwt, 'com.atproto.repo.createRecord', {
@@ -142,7 +142,7 @@ export default async function(req: Request): Promise<Response> {
       if (!subjectCid) continue; // can't create a like without the subject cid
       const record = {
         subject: { uri: reaction.subject, cid: subjectCid },
-        createdAt: reaction.created_date || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
       try {
         const res = await pdsRequest(pdsUrl, userSession.accessJwt, 'com.atproto.repo.createRecord', {
