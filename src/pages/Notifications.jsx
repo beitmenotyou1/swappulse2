@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import { Image } from '@/components/ui/image';
 import AchievementNotificationCard from '@/components/notifications/AchievementNotificationCard';
 import InteractionActions from '@/components/notifications/InteractionActions';
+import FollowBackButton from '@/components/notifications/FollowBackButton';
 
 const ACTION_META = {
   trade_match: { Icon: ArrowLeftRight, tint: 'text-primary' },
@@ -54,7 +55,14 @@ export default function Notifications() {
   const open = async (n) => {
     if (isAchievement(n)) return; // card handles its own actions
     if (!n.is_read) await markRead(n.id);
-    if (n.target_path) navigate(n.target_path);
+    if (!n.target_path) return;
+    // External URLs (Bluesky deep links for remote posts) open in a new tab;
+    // internal routes use the SPA navigator.
+    if (n.target_path.startsWith('http')) {
+      window.open(n.target_path, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(n.target_path);
+    }
   };
 
   const dismiss = async (id) => { await markRead(id); };
@@ -148,6 +156,11 @@ export default function Notifications() {
               {['like', 'repost', 'comment'].includes(n.action_type) && (
                 <div className="px-4 pb-2">
                   <InteractionActions n={n} onResponded={() => markRead(n.id)} />
+                </div>
+              )}
+              {n.action_type === 'follow' && (
+                <div className="px-4 pb-2" onClick={(e) => e.stopPropagation()}>
+                  <FollowBackButton n={n} onResponded={() => markRead(n.id)} />
                 </div>
               )}
               </div>

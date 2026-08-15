@@ -143,7 +143,8 @@ export default async function(req: Request): Promise<Response> {
               targetLabel = 'your post on Bluesky';
             }
           } else if (m.actionType === 'follow') {
-            targetPath = m.actor.handle ? `/u/${m.actor.handle}` : '';
+            // Durable DID-based route — survives a future handle change.
+            targetPath = m.actorDid ? `/profile/${m.actorDid}` : '';
             targetLabel = 'followed you';
           } else if (m.actionType === 'mention') {
             targetPath = bskyPostUrl(m.subjectUri);
