@@ -77,6 +77,13 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
           console.error('ProfileSetup: provision-identity failed (non-fatal)', e);
         }
       }
+      // Push the profile (name, avatar, bio) to the PDS as an
+      // app.bsky.actor.profile record so it's visible off-site on Bluesky.
+      try {
+        await base44.functions.invoke('sync-profile-records', {});
+      } catch (e) {
+        console.error('ProfileSetup: sync-profile-records failed (non-fatal)', e);
+      }
       onDone?.();
     } catch (err) {
       setError(err.message || "Failed to save profile");

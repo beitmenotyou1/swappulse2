@@ -11,6 +11,7 @@ import ServicesSection from '@/components/admin/ServicesSection';
 import MaintenanceSection from '@/components/admin/MaintenanceSection';
 import BackfillSection from '@/components/admin/BackfillSection';
 import ProvisionIdentitiesSection from '@/components/admin/ProvisionIdentitiesSection';
+import SyncProfilesSection from '@/components/admin/SyncProfilesSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 export default function Admin() {
@@ -72,6 +73,7 @@ export default function Admin() {
         <MaintenanceSection />
         <BackfillSection />
         <ProvisionIdentitiesSection />
+        <SyncProfilesSection />
         <IncidentsSection />
       </div>
     </>

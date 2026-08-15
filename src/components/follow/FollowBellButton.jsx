@@ -9,6 +9,7 @@ import { createBridgedFollow, deleteBridgedFollow } from '@/lib/followBridge';
 // preference's bell_enabled, opting into push notifications for the subject.
 export default function FollowBellButton({ subjectDid, subjectName, subjectHandle, subjectAvatar }) {
   const [myDid, setMyDid] = useState('');
+  const [isGuest, setIsGuest] = useState(false);
   const [following, setFollowing] = useState(false);
   const [bell, setBell] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,6 +24,7 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
       const { did } = await ensureUserDid().catch(() => ({ did: me?.did || '' }));
       if (!active) return;
       setMyDid(did);
+      setIsGuest(!me);
       if (!did || did === subjectDid) return;
       const [f, p] = await Promise.all([
         base44.entities.Follow.filter({ did, subject_did: subjectDid }).catch(() => []),
@@ -38,6 +40,21 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
   }, [subjectDid]);
 
   if (!subjectDid || myDid === subjectDid) return null;
+
+  // Logged-out visitors can't create a bridged follow (no DID), so link them
+  // to the subject's Bluesky profile to follow from their own AT Protocol app.
+  if (isGuest) {
+    return (
+      <a
+        href={`https://bsky.app/profile/${subjectDid}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
+      >
+        <UserPlus className="h-4 w-4" /> Follow on Bluesky
+      </a>
+    );
+  }
 
   const pulse = () => {
     if (bellRef.current?.animate) {
