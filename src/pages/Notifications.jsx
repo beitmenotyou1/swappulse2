@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import PageHeader from '@/components/PageHeader';
 import { Image } from '@/components/ui/image';
 import AchievementNotificationCard from '@/components/notifications/AchievementNotificationCard';
+import InteractionActions from '@/components/notifications/InteractionActions';
 
 const ACTION_META = {
   trade_match: { Icon: ArrowLeftRight, tint: 'text-primary' },
@@ -106,10 +107,10 @@ export default function Notifications() {
             const meta = ACTION_META[n.action_type] || { Icon: Bell, tint: 'text-muted-foreground' };
             const unread = !n.is_read;
             return (
-              <button
-                key={n.id}
+              <div key={n.id}>
+              <div
                 onClick={() => open(n)}
-                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/60 ${unread ? 'bg-primary/5' : ''}`}
+                className={`flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/60 ${unread ? 'bg-primary/5' : ''}`}
               >
                 <span className="mt-1.5 w-2 shrink-0">
                   {unread && <span className="block h-2 w-2 rounded-full bg-primary" />}
@@ -135,7 +136,13 @@ export default function Notifications() {
                     <Image src={n.target_image} alt="" fittingType="fill" className="h-full w-full" />
                   </div>
                 )}
-              </button>
+              </div>
+              {['like', 'repost', 'comment'].includes(n.action_type) && (
+                <div className="px-4 pb-2">
+                  <InteractionActions n={n} onResponded={() => markRead(n.id)} />
+                </div>
+              )}
+              </div>
             );
           })}
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, X, CornerDownRight } from 'lucide-react';
+import { createReply } from '@/lib/postInteractions';
 
 const MAX_LEN = 500;
 
@@ -22,28 +23,32 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
     setBusy(true);
     setError('');
     try {
-      // Depth-2: if replying to a reply, re-parent to the top-level comment
-      let replyTo = replyTarget?.id || null;
-      if (replyTarget?.reply_to) {
-        replyTo = replyTarget.reply_to; // re-parent to top-level
+      if (replyTarget) {
+        // Reply to an existing comment — federated via createReply (sets
+        // parent/root refs, bridges to the PDS, increments the parent's
+        // replies counter, notifies the parent author). Re-parent depth-2
+        // replies to the top-level comment locally so the card discussion
+        // stays flat, while federating with the direct parent for threading.
+        const replyToId = replyTarget.reply_to || replyTarget.id;
+        await createReply(replyTarget, trimmed, user, {
+          card_id: cardId,
+          card_name: cardName || '',
+          card_image: cardImage || '',
+        }, replyToId);
+      } else {
+        // Top-level card comment — standalone post (no reply threading).
+        const post = await base44.entities.Post.create({
+          content: trimmed,
+          post_type: 'text',
+          card_id: cardId,
+          card_name: cardName || '',
+          card_image: cardImage || '',
+          author_name: user?.full_name || 'Collector',
+          author_handle: user?.handle || '',
+          author_avatar: user?.avatar_url || '',
+        });
+        base44.functions.invoke('autoModerateComment', { post_id: post.id }).catch(() => {});
       }
-
-      const post = await base44.entities.Post.create({
-        content: trimmed,
-        post_type: 'text',
-        card_id: cardId,
-        card_name: cardName || '',
-        card_image: cardImage || '',
-        reply_to: replyTo,
-        author_name: user?.full_name || 'Collector',
-        author_handle: user?.handle || '',
-        author_avatar: user?.avatar_url || '',
-      });
-
-      // Run auto-mod on the new comment (non-blocking — labels apply async)
-      base44.functions
-        .invoke('autoModerateComment', { post_id: post.id })
-        .catch(() => {});
 
       setText('');
       onCancelReply?.();

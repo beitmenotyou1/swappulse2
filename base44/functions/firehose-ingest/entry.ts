@@ -38,6 +38,59 @@ async function getProfile(repoDid: string): Promise<any> {
   return profile;
 }
 
+// For an inbound interaction (like/repost/reply) on a local post, increment
+// the post's counter and notify the author via notify-interaction with a
+// 'remote' origin so the notification carries a "via Bluesky" badge. Only
+// called for newly-ingested records from remote repos.
+async function maybeNotifyInteraction(base44, collection, val, repoDid) {
+  try {
+    const profile = await getProfile(repoDid);
+    const actorName = profile?.displayName || '';
+    const actorHandle = profile?.handle || '';
+    const actorAvatar = profile?.avatar || '';
+    const svc = base44.asServiceRole;
+
+    if (collection === 'app.bsky.feed.like' || collection === 'app.bsky.feed.repost') {
+      const subjectUri = val?.subject?.uri;
+      if (!subjectUri) return;
+      const posts = await svc.entities.Post.filter({ at_uri: subjectUri }, '-created_date', 1).catch(() => []);
+      const post = posts?.[0];
+      if (!post) return;
+      const field = collection === 'app.bsky.feed.like' ? 'likes' : 'reposts';
+      await svc.entities.Post.update(post.id, { [field]: (post[field] || 0) + 1 }).catch(() => {});
+      if (post.did && post.did !== repoDid) {
+        await base44.functions.invoke('notify-interaction', {
+          recipientDid: post.did,
+          actionType: collection === 'app.bsky.feed.like' ? 'like' : 'repost',
+          actorDid: repoDid, actorName, actorHandle, actorAvatar,
+          post: { id: post.id, at_uri: post.at_uri, cid: post.cid, content: post.content },
+          postUri: subjectUri,
+          origin: 'remote',
+        }).catch(() => {});
+      }
+    } else if (collection === 'app.bsky.feed.post') {
+      const parentUri = val?.reply?.parent?.uri;
+      if (!parentUri) return;
+      const posts = await svc.entities.Post.filter({ at_uri: parentUri }, '-created_date', 1).catch(() => []);
+      const parent = posts?.[0];
+      if (!parent) return;
+      await svc.entities.Post.update(parent.id, { replies: (parent.replies || 0) + 1 }).catch(() => {});
+      if (parent.did && parent.did !== repoDid) {
+        await base44.functions.invoke('notify-interaction', {
+          recipientDid: parent.did,
+          actionType: 'comment',
+          actorDid: repoDid, actorName, actorHandle, actorAvatar,
+          post: { id: parent.id, at_uri: parent.at_uri, cid: parent.cid, content: parent.content },
+          postUri: parentUri,
+          origin: 'remote',
+        }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error('firehose-ingest: maybeNotifyInteraction error', e?.message || e);
+  }
+}
+
 async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string) {
   const all: any[] = [];
   let cursor: string | null = null;
@@ -108,14 +161,19 @@ export default async function(req: Request): Promise<Response> {
 
               const mapped = mapper(val, atUri, repoDid, profile);
               const existing = await svc.entities[entityName].filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
+              let isNew = false;
               if (existing && existing.length > 0) {
                 await svc.entities[entityName].update(existing[0].id, mapped).catch(() => {});
                 updated++;
               } else {
                 await svc.entities[entityName].create(mapped).catch(() => {});
                 ingested++;
+                isNew = true;
               }
               collectionStats[collection]++;
+              if (isNew && !isLocal) {
+                await maybeNotifyInteraction(base44, collection, val, repoDid);
+              }
             } catch (e) {
               errors++;
               console.error(`firehose-ingest: record error for ${collection}`, e?.message || e);

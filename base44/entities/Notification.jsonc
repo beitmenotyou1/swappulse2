@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "title": "Notification",
-  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, mention, achievement earned/revoked, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details).",
+  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, repost, comment, mention, achievement earned/revoked, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details, interaction post refs for respond-to-notification).",
   "properties": {
     "did": {
       "type": "string",
@@ -12,6 +12,8 @@
       "type": "string",
       "enum": [
         "like",
+        "repost",
+        "comment",
         "follow",
         "mention",
         "trade_match",
@@ -74,7 +76,7 @@
     },
     "group_key": {
       "type": "string",
-      "description": "Aggregation key for grouped notifications"
+      "description": "Aggregation key for grouped notifications and dedup (e.g. `${actionType}:${postUri}:${actorDid}`)"
     },
     "group_count": {
       "type": "integer",
@@ -83,7 +85,7 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath })"
+      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath } or interaction { postId, postUri, postCid, origin })"
     },
     "at_uri": {
       "type": "string",

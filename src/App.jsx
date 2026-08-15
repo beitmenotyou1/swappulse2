@@ -20,6 +20,7 @@ import Profile from '@/pages/Profile';
 import PackOpenings from '@/pages/PackOpenings';
 import MarketWatch from '@/pages/MarketWatch';
 import Share from '@/pages/Share';
+import PostDetail from '@/pages/PostDetail';
 import TradeThread from '@/pages/TradeThread';
 import TradeDashboard from '@/pages/TradeDashboard';
 import TradeStatusBoard from '@/pages/TradeStatusBoard';
@@ -117,6 +118,7 @@ const AuthenticatedApp = () => {
         <Route path="/packs" element={<PackOpenings />} />
         <Route path="/market" element={<MarketWatch />} />
         <Route path="/share" element={<Share />} />
+        <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/binders" element={<Binders />} />
         <Route path="/binder/:binderId" element={<BinderDetail />} />
         <Route path="/trust" element={<Trust />} />

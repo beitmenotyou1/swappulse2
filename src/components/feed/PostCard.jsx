@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag } from 'lucide-react';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
 import { useLivePresence } from '@/lib/livePresence';
 import ReactionBar from '@/components/feed/ReactionBar';
+import PostReplyThread from '@/components/feed/PostReplyThread';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { timeAgo, formatNumber } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { createLike, deleteLike, createRepost, deleteRepost } from '@/lib/postInteractions';
 import ReportDialog from '@/components/moderation/ReportDialog';
 
 const TYPE_META = {
@@ -27,10 +28,10 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   const [pendingRepost, setPendingRepost] = useState(false);
   const [saved, setSaved] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [showThread, setShowThread] = useState(false);
 
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
-  const navigate = useNavigate();
 
   // Sync existing repost state from the batched map (avoids a per-card API call).
   useEffect(() => {
@@ -49,44 +50,22 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   }, [myLike?.id]);
 
   const toggleLike = async () => {
-    if (pendingLike) return;
-    if (!user?.id) return; // guests get the optimistic toggle only
+    if (pendingLike || !user?.id) return;
     setPendingLike(true);
     if (liked && likeId) {
       setLiked(false);
       try {
         const l = await base44.entities.Like.get(likeId).catch(() => null);
-        await base44.entities.Like.delete(likeId);
+        await deleteLike(l, post);
         setLikeId(null);
-        await base44.entities.Post.update(post.id, { likes: Math.max(0, (post.likes || 0) - 1) }).catch(() => {});
-        if (l?.at_uri?.startsWith('at://did:')) {
-          base44.functions.invoke('atproto-bridge', { action: 'delete', uri: l.at_uri }).catch(() => {});
-        }
       } catch {
         setLiked(true);
       }
     } else {
       setLiked(true);
       try {
-        const { did, signingKey } = await ensureUserDid();
-        const stamped = await stampRecord(
-          { post_id: post.id, post_uri: post.at_uri || '', post_cid: post.cid || '' },
-          'app.bsky.feed.like',
-          did,
-          signingKey,
-        );
-        const created = await base44.entities.Like.create(stamped);
+        const created = await createLike(post);
         setLikeId(created.id);
-        await base44.entities.Post.update(post.id, { likes: (post.likes || 0) + 1 }).catch(() => {});
-        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.like (only for genuinely bridged posts).
-        if (post.bridged && post.at_uri && post.cid) {
-          base44.functions.invoke('atproto-bridge', {
-            collection: 'app.bsky.feed.like',
-            record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
-          }).then((res) => {
-            if (res?.uri) base44.entities.Like.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
-          }).catch(() => {});
-        }
       } catch {
         setLiked(false);
       }
@@ -95,49 +74,22 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   };
 
   const toggleRepost = async () => {
-    if (pendingRepost) return;
-    if (!user?.id) return; // guests get the optimistic toggle only
+    if (pendingRepost || !user?.id) return;
     setPendingRepost(true);
     if (reposted && repostId) {
       setReposted(false);
       try {
         const r = await base44.entities.Repost.get(repostId).catch(() => null);
-        await base44.entities.Repost.delete(repostId);
+        await deleteRepost(r, post);
         setRepostId(null);
-        if (r?.at_uri?.startsWith('at://did:')) {
-          base44.functions.invoke('atproto-bridge', { action: 'delete', uri: r.at_uri }).catch(() => {});
-        }
       } catch {
         setReposted(true);
       }
     } else {
       setReposted(true);
       try {
-        const { did, signingKey } = await ensureUserDid();
-        const me = await base44.auth.me();
-        const stamped = await stampRecord(
-          {
-            post_id: post.id,
-            post_uri: post.at_uri,
-            post_cid: post.cid,
-            reposter_name: me?.full_name || '',
-            reposter_handle: me?.email?.split('@')[0] || '',
-          },
-          NSID.REPOST,
-          did,
-          signingKey,
-        );
-        const created = await base44.entities.Repost.create(stamped);
+        const created = await createRepost(post);
         setRepostId(created.id);
-        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.repost (only for genuinely bridged posts).
-        if (post.bridged && post.at_uri && post.cid) {
-          base44.functions.invoke('atproto-bridge', {
-            collection: 'app.bsky.feed.repost',
-            record: { subject: { uri: post.at_uri, cid: post.cid }, createdAt: new Date().toISOString() },
-          }).then((res) => {
-            if (res?.uri) base44.entities.Repost.update(created.id, { at_uri: res.uri, cid: res.cid }).catch(() => {});
-          }).catch(() => {});
-        }
       } catch {
         setReposted(false);
       }
@@ -196,9 +148,10 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
 
           <div className="mt-3 flex items-center justify-between max-w-md text-muted-foreground">
             <button
-              onClick={() => navigate('/compose', { state: { replyTo: post } })}
+              onClick={() => setShowThread((v) => !v)}
               aria-label="Reply"
-              className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary"
+              aria-pressed={showThread}
+              className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary ${showThread ? 'text-primary' : ''}`}
             >
               <MessageCircle className="h-4 w-4" />
               <span>{formatNumber(post.replies)}</span>
@@ -243,6 +196,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
             </button>
           </div>
           <ReactionBar post={post} initial={reactions} />
+          {showThread && <PostReplyThread parentPost={post} />}
         </div>
       </div>
       <ReportDialog
