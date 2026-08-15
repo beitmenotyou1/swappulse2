@@ -18,6 +18,17 @@ function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n) : s;
 }
 
+// AT Protocol `datetime` lexicon format: ISO 8601 with seconds precision and
+// a trailing Z. Base44's created_date stores microsecond precision
+// (e.g. 2026-07-25T02:42:41.824000Z) which the PDS rejects as "Invalid
+// datetime", so normalize any input to seconds precision.
+function atProtoTimestamp(d?: string): string {
+  let iso = d || new Date().toISOString();
+  iso = iso.replace(/\.\d+Z?$/, 'Z');
+  if (!iso.endsWith('Z')) iso += 'Z';
+  return iso;
+}
+
 // Fetch avatar bytes from the stored URL and upload as a blob to the user's
 // PDS, returning the blob ref to embed in the profile record. Returns null if
 // there is no avatar or the upload fails (non-fatal — profile syncs without
@@ -71,7 +82,7 @@ export async function syncProfileForUser(
 
   const record: any = {
     $type: PROFILE_COLLECTION,
-    createdAt: userRecord.created_date || new Date().toISOString(),
+    createdAt: atProtoTimestamp(userRecord.created_date),
   };
   const displayName = truncate(userRecord.full_name || '', 64);
   if (displayName) record.displayName = displayName;

@@ -9,7 +9,7 @@ import { uploadMedia } from '@/lib/pdsBlob';
 // Saves via base44.auth.updateMe and fire-and-forget syncs the new profile to
 // the PDS as an app.bsky.actor.profile record so it shows on Bluesky.
 export default function EditProfileModal({ onClose, onSaved }) {
-  const { user } = useAuth();
+  const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [description, setDescription] = useState(user?.description || '');
@@ -40,8 +40,15 @@ export default function EditProfileModal({ onClose, onSaved }) {
         description,
         avatar,
       });
-      // Push the updated profile to the PDS so it's visible off-site on Bluesky.
-      base44.functions.invoke('sync-profile-records', {}).catch(() => {});
+      // Refresh the user in context so the profile header updates instantly.
+      await checkUserAuth();
+      // Relay the new profile to the AT Protocol PDS so it syncs to Bluesky.
+      try {
+        await base44.functions.invoke('sync-profile-records', {});
+      } catch (e) {
+        console.error('EditProfileModal: PDS sync failed', e);
+        toast({ title: 'Saved locally', description: 'Bluesky sync will retry shortly.' });
+      }
       toast({ title: 'Profile updated' });
       onSaved?.();
       onClose?.();
