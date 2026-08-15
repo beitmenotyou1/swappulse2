@@ -1,0 +1,82 @@
+{
+  "name": "NotificationPreference",
+  "type": "object",
+  "title": "NotificationPreference",
+  "description": "org.swappulse.notificationPreference \u2014 a per-user record controlling which notifications reach them. Two independent controls plus a master pause: who_filter (everyone | followed_only) gates by relationship, on_site_only gates by origin (on-site users vs. whole fediverse), paused drops all notifications entirely. Enforced centrally by the notificationFilter shared helper before any Notification is created or push dispatched. One record per user; missing record = defaults (everyone, on-site-only false, paused false).",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id this preference belongs to"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the preference owner (denormalized for service-role lookup by recipientDid)"
+    },
+    "who_filter": {
+      "type": "string",
+      "enum": [
+        "everyone",
+        "followed_only"
+      ],
+      "default": "everyone",
+      "description": "Relationship filter: 'everyone' delivers from any actor; 'followed_only' delivers only when the recipient follows the actor (a Follow record with did==recipientDid and subject_did==actorDid exists)."
+    },
+    "on_site_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "Origin filter: true delivers only from actors who are registered SwapPulse users (a User record with a matching did exists); false delivers from the whole fediverse including remote Bluesky-only actors."
+    },
+    "paused": {
+      "type": "boolean",
+      "default": false,
+      "description": "Master pause: true drops all notifications entirely (no in-app Notification record, no push), overriding who_filter and on_site_only."
+    }
+  },
+  "required": [
+    "user_id",
+    "did",
+    "who_filter",
+    "on_site_only",
+    "paused"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
+    }
+  }
+}

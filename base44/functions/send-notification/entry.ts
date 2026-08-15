@@ -27,6 +27,7 @@ export default async function(req: Request): Promise<Response> {
       subjectUri: body.subjectUri,
       imageUrl: body.imageUrl,
       priority: body.priority || 'standard',
+      actorDid: body.actorDid,
     };
 
     const svc = base44.asServiceRole;

@@ -4,6 +4,7 @@
 // records for the recipient (falls back to legacy User.push_subscription).
 import webPush from 'npm:web-push@3.6.7';
 import { buildDeepLink } from './deepLinkRoutes.ts';
+import { shouldDeliverNotification } from './notificationFilter.ts';
 
 export interface SendNotificationInput {
   recipientDid: string;
@@ -14,6 +15,7 @@ export interface SendNotificationInput {
   subjectUri?: string;
   imageUrl?: string;
   priority?: 'standard' | 'high';
+  actorDid?: string;
 }
 
 const MAX_DAILY_PUSHES = 50;
@@ -55,6 +57,23 @@ export async function dispatchNotification(
   input: SendNotificationInput
 ): Promise<{ delivered: boolean; deepLink: string; reason?: string; logId?: string }> {
   const deepLink = buildDeepLink(input.type, input.params);
+
+  // 0. Enforce the recipient's notification preferences (who can reach them,
+  //    on-site-only, master pause). actorDid is optional — system-generated
+  //    notifications (price alerts, achievements) have no actor, so only the
+  //    master pause applies to them.
+  try {
+    const filter = await shouldDeliverNotification(svc, {
+      recipientDid: input.recipientDid,
+      actorDid: input.actorDid,
+    });
+    if (!filter.allowed) {
+      return { delivered: false, deepLink, reason: `filtered:${filter.reason}` };
+    }
+  } catch (e) {
+    console.error('dispatchNotification: pref filter failed', e?.message || e);
+    // Fail open — don't silently mute on a filter error.
+  }
 
   // 1. Check preferences from SettingsConfig
   let pushEnabled = true;

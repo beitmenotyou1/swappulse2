@@ -17,6 +17,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
+import { shouldDeliverNotification } from '../../shared/notificationFilter.ts';
 
 const VALID_TYPES = new Set(['like', 'repost', 'comment']);
 
@@ -53,6 +54,18 @@ export default async function(req: Request): Promise<Response> {
     // Don't notify people about their own interactions.
     if (actorDid && recipientDid && actorDid === recipientDid) {
       return Response.json({ ok: true, skipped: 'self' });
+    }
+
+    // Enforce the recipient's notification preferences (who can reach them,
+    // on-site-only, master pause) before creating any record or push.
+    try {
+      const filter = await shouldDeliverNotification(svc, { recipientDid, actorDid });
+      if (!filter.allowed) {
+        return Response.json({ ok: true, skipped: 'filtered', reason: filter.reason });
+      }
+    } catch (e) {
+      console.error('notify-interaction: pref filter failed', e?.message || e);
+      // Fail open — don't silently mute on a filter error.
     }
 
     const subjectUri = postUri || post.at_uri || '';

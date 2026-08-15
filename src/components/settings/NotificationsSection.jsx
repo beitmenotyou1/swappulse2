@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bell, Moon } from 'lucide-react';
 import SettingRow from '@/components/settings/SettingRow';
+import WhoCanReachYouCard from '@/components/settings/WhoCanReachYouCard';
 
 const CHANNELS = [
   { key: 'push', label: 'Push notifications' },
@@ -34,6 +35,8 @@ export default function NotificationsSection({ settings, update }) {
 
   return (
     <div className="space-y-4">
+      <WhoCanReachYouCard />
+
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="flex items-center gap-2 text-sm font-bold"><Bell className="h-4 w-4 text-primary" /> Channels</p>
         {CHANNELS.map((c) => (
