@@ -58,7 +58,12 @@ export default async function(req: Request): Promise<Response> {
         if (onCurrentPds) {
           // Path 2: account exists on current PDS but no credential → repair.
           try {
-            await repairCredentialForUser(svc, u.id, u.did);
+            await repairCredentialForUser(
+              svc,
+              u.id,
+              u.username || u.full_name || (u.email ? u.email.split('@')[0] : '') || 'collector',
+              u.email || `collector@swappulse.org`,
+            );
             repaired++;
           } catch (err: any) {
             failed++;

@@ -194,39 +194,24 @@ export async function provisionIdentityForUser(
   return { did, handle: finalHandle };
 }
 
-// Repair path: for a user who already has a real did:plc on the current PDS
-// but no stored PdsCredential (e.g. identity was provisioned before credentials
-// were tracked). Re-issues an app password via the admin API without recreating
-// the account: resets the account password, creates an app password from the
-// new session, and stores the credential. Does NOT change the user's did or
-// handle.
+// Repair path: the user has a did:plc that resolves on the current PDS but no
+// stored PdsCredential — a previous provisioning run created the PDS account
+// but crashed before storing the bridge credential. The PDS admin write
+// endpoints (com.atproto.admin.updateAccount) reject our auth on this PDS, so
+// we cannot reset the existing account's password to mint an app password for
+// it. Instead we re-provision a fresh account via the public createAccount
+// endpoint. The old account is abandoned — it was never usable (no credential
+// was ever stored, so no content was ever bridged to it), so abandoning it is
+// safe. The handle-conflict retry in provisionIdentityForUser handles the
+// taken handle by appending -2, -3, etc. The user's did + handle are updated
+// to the new account.
 export async function repairCredentialForUser(
   svc: any,
   userId: string,
-  did: string,
-): Promise<void> {
-  const pdsUrl = Deno.env.get('PDS_URL');
-  if (!pdsUrl) throw new Error('PDS_URL not configured');
-
-  const password = randomPassword();
-  const res = await pdsAdminPost('com.atproto.admin.updateAccount', { did, password });
-  if (res?.error) {
-    const errStr = JSON.stringify(res.body || {}).slice(0, 300);
-    throw new Error(`updateAccount failed (${res.status}): ${errStr}`);
-  }
-
-  const appPassword = await createAppPassword(pdsUrl, did, password);
-
-  const existing = await svc.entities.PdsCredential.filter({ user_id: userId }).catch(() => []);
-  if (existing && existing.length > 0) {
-    await svc.entities.PdsCredential.update(existing[0].id, {
-      did, pds_url: pdsUrl, app_password: appPassword,
-    });
-  } else {
-    await svc.entities.PdsCredential.create({
-      user_id: userId, did, pds_url: pdsUrl, app_password: appPassword,
-    });
-  }
+  username: string,
+  email: string,
+): Promise<{ did: string; handle: string }> {
+  return provisionIdentityForUser(svc, userId, username, email);
 }
 
 export { didResolvesOnPds };
