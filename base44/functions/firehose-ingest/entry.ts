@@ -91,6 +91,58 @@ async function maybeNotifyInteraction(base44, collection, val, repoDid) {
   }
 }
 
+// Post-centric inbound reply sync. The repo-scan loop above only ingests
+// records authored by repos the bridge account follows — so a reply from a
+// non-followed Bluesky user on a local post is never ingested and the author
+// never gets notified. This pass queries the AppView directly for replies on
+// each recent local post (getPostThread), upserts any reply posts not yet in
+// the local DB, and fires the same notify-interaction path. Idempotent: a
+// reply already present locally (from a prior run or the repo-scan) is skipped.
+async function syncInboundReplies(base44: any, svc: any): Promise<number> {
+  let synced = 0;
+  try {
+    const posts = await svc.entities.Post.list('-created_date', 25).catch(() => []);
+    const localPosts = (posts || []).filter((p: any) => p.at_uri);
+    const postMapper = FIELD_MAPPERS['app.bsky.feed.post'];
+    if (!postMapper) return 0;
+    for (const post of localPosts) {
+      try {
+        const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getPostThread`);
+        url.searchParams.set('uri', post.at_uri);
+        url.searchParams.set('depth', '1');
+        url.searchParams.set('parentHeight', '0');
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        const thread = data?.thread;
+        if (!thread || thread.$type !== 'app.bsky.feed.defs#threadViewPost') continue;
+        const replies = thread.replies || [];
+        for (const replyNode of replies) {
+          try {
+            if (replyNode?.$type !== 'app.bsky.feed.defs#threadViewPost') continue;
+            const rp = replyNode.post;
+            if (!rp?.uri) continue;
+            const existing = await svc.entities.Post.filter({ at_uri: rp.uri }, '-created_date', 1).catch(() => []);
+            if (existing && existing.length > 0) continue;
+            const author = rp.author || {};
+            const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
+            await svc.entities.Post.create(mapped).catch(() => {});
+            synced++;
+            await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '');
+          } catch (e) {
+            console.error('firehose-ingest: reply sync error', e?.message || e);
+          }
+        }
+      } catch (e) {
+        console.error('firehose-ingest: getPostThread error for', post.at_uri, e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.error('firehose-ingest: syncInboundReplies error', e?.message || e);
+  }
+  return synced;
+}
+
 async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string) {
   const all: any[] = [];
   let cursor: string | null = null;
@@ -202,10 +254,15 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
+    // Catch replies from Bluesky users the bridge account doesn't follow —
+    // the repo-scan above can't see them, so query the AppView per local post.
+    const replies_synced = await syncInboundReplies(base44, svc);
+
     return Response.json({
       ingested, updated, deleted, errors,
       collections: collectionStats,
       repos_scanned: reposToScan.length,
+      replies_synced,
     });
   } catch (error) {
     console.error('firehose-ingest error:', error?.message || error);
