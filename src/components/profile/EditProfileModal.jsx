@@ -3,7 +3,13 @@ import { X, Loader2, Camera } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { uploadMedia } from '@/lib/pdsBlob';
+// Avatars are stored as a reliable, publicly-accessible external URL
+// (UploadFile → media.base44.com) so they render on the site immediately.
+// sync-profile-records then fetches this URL and pushes it to the PDS as a
+// real blob ref in the app.bsky.actor.profile record, so it federates to
+// Bluesky. We intentionally do NOT use the PDS getBlob URL here — the PDS
+// returns "Blob not found" for blobs not yet referenced by a record, which
+// breaks site display and the sync fetch in one shot.
 
 // Inline edit modal for the current user's profile (name, bio, avatar).
 // Saves via base44.auth.updateMe and fire-and-forget syncs the new profile to
@@ -23,7 +29,8 @@ export default function EditProfileModal({ onClose, onSaved }) {
     if (!file) return;
     setUploading(true);
     try {
-      setAvatar(await uploadMedia(file));
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setAvatar(file_url);
     } catch {
       toast({ title: 'Upload failed', description: 'Could not upload image', variant: 'destructive' });
     } finally {
