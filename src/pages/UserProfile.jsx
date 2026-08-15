@@ -12,16 +12,18 @@ import AddFriendLink from '@/components/follow/AddFriendLink';
 import ReputationSummary from '@/components/profile/ReputationSummary';
 import ProfileHandle from '@/components/profile/ProfileHandle';
 import ActivityTab from '@/components/profile/ActivityTab';
+import { useMergedProfile } from '@/hooks/useMergedProfile';
 
 // Other-user profile, reached from feed author links. Hosts the follow+bell
-// control, the Friends badge, and the add-friend flow.
+// control, the Friends badge, and the add-friend flow. Renders the merged
+// SwapPulse + Bluesky profile (remote wins for shared identity fields).
 export default function UserProfile() {
   const { did: subjectDid } = useParams();
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
-  const [profile, setProfile] = useState(null);
   const [friendship, setFriendship] = useState({ my: null, their: null });
   const [tab, setTab] = useState('Posts');
+  const { profile: merged, loading: merging } = useMergedProfile({ did: subjectDid });
 
   useEffect(() => {
     let active = true;
@@ -30,25 +32,13 @@ export default function UserProfile() {
       try {
         const me = await base44.auth.me().catch(() => null);
         const { did: myDid } = await ensureUserDid().catch(() => ({ did: me?.did || '' }));
-        const [p, mine, theirs, resolved] = await Promise.all([
+        const [p, mine, theirs] = await Promise.all([
           base44.entities.Post.filter({ did: subjectDid }, '-created_date', 50).catch(() => []),
           myDid ? base44.entities.Friendship.filter({ did: myDid, friend_did: subjectDid }).catch(() => []) : [],
           myDid ? base44.entities.Friendship.filter({ did: subjectDid, friend_did: myDid }).catch(() => []) : [],
-          base44.functions.invoke('get-profile-by-did', { did: subjectDid }).catch(() => null),
         ]);
         if (!active) return;
         setPosts(p);
-        const r = resolved?.data ?? resolved;
-        const head = p[0];
-        setProfile({
-          name: (r && r.found && r.name) || head?.author_name || 'Collector',
-          bsky_handle: (r && r.found && r.bsky_handle) || '',
-          username: (r && r.found && r.username) || head?.author_handle || 'collector',
-          avatar: (r && r.found && r.avatar) || head?.author_avatar || '',
-          header: (r && r.found && r.header) || '',
-          did: subjectDid,
-          handle_verified: (r && r.found && r.handle_verified) || false,
-        });
         setFriendship({ my: mine[0] || null, their: theirs[0] || null });
       } catch {} finally {
         if (active) setLoading(false);
@@ -56,6 +46,22 @@ export default function UserProfile() {
     })();
     return () => { active = false; };
   }, [subjectDid]);
+
+  // Derive display values from the merged profile, falling back to the first
+  // post's author metadata while the merge is loading or if it fails.
+  const head = posts[0];
+  const profile = {
+    name: merged?.name || head?.author_name || 'Collector',
+    bsky_handle: merged?.bsky_handle || '',
+    username: merged?.username || head?.author_handle || 'collector',
+    avatar: merged?.avatar || head?.author_avatar || '',
+    header: merged?.header || '',
+    did: subjectDid,
+    handle_verified: merged?.handle_verified || false,
+    description: merged?.description || '',
+    followers_count: merged?.followers_count || 0,
+    remote_synced: !!merged?.remote_synced,
+  };
 
   const isFriend = friendship.my?.status === 'accepted' && friendship.their?.status === 'accepted';
 
@@ -90,9 +96,16 @@ export default function UserProfile() {
             username={profile?.username}
             did={profile?.did}
             verified={profile?.handle_verified}
+            syncedFromBsky={profile?.remote_synced}
           />
-          <div className="mt-2 text-sm text-muted-foreground">
+          {profile?.description && (
+            <p className="mt-2 text-sm">{profile.description}</p>
+          )}
+          <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
             <span><b className="text-foreground">{posts.length}</b> Posts</span>
+            {profile?.followers_count > 0 && (
+              <span><b className="text-foreground">{profile.followers_count}</b> Followers</span>
+            )}
           </div>
           <AddFriendLink
             subjectDid={subjectDid}

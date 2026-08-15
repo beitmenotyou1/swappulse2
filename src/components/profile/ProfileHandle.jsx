@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { BadgeCheck, Copy, Check, ExternalLink } from 'lucide-react';
+import { BadgeCheck, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 
 // Shared profile-header handle display. Shows the federated handle
 // prominently as @username.swappulse.org with the full did:plc on a
 // secondary line (copyable) and a "View on Bluesky" link when the handle
 // resolves externally. Falls back to the local username when no federated
 // handle is set yet.
-export default function ProfileHandle({ bskyHandle, username, did, verified }) {
+export default function ProfileHandle({ bskyHandle, username, did, verified, syncedFromBsky }) {
   const [copied, setCopied] = useState(false);
   // Federated handle (username.swappulse.org) only when one is actually set —
   // never fabricate the domain for users without a real federated identity.
@@ -30,6 +30,14 @@ export default function ProfileHandle({ bskyHandle, username, did, verified }) {
       <div className="flex items-center gap-1.5">
         <p className="text-sm font-semibold text-foreground">@{display}</p>
         {verified && <BadgeCheck className="h-4 w-4 text-success" />}
+        {syncedFromBsky && (
+          <span
+            title="Identity synced live from Bluesky"
+            className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+          >
+            <RefreshCw className="h-2.5 w-2.5" /> synced
+          </span>
+        )}
       </div>
       {did && (
         <button

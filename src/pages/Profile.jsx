@@ -25,6 +25,7 @@ import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import FollowingTab from '@/components/profile/FollowingTab';
 import ActivityTab from '@/components/profile/ActivityTab';
 import ProfileHandle from '@/components/profile/ProfileHandle';
+import { useMergedProfile } from '@/hooks/useMergedProfile';
 
 const TABS = ['Posts', 'Activity', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
@@ -43,6 +44,10 @@ export default function Profile() {
   const [showGoLive, setShowGoLive] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [ending, setEnding] = useState(false);
+
+  // Merged profile overlays live Bluesky identity (remote wins for shared
+  // fields) on top of the local user record for the header display.
+  const { profile: merged } = useMergedProfile({ did });
 
   const load = async () => {
     setLoading(true);
@@ -114,14 +119,14 @@ export default function Profile() {
   return (
     <div>
       <div className="h-40 w-full overflow-hidden bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30">
-        {user?.header ? (
-          <img src={user.header} alt="Profile header" className="h-full w-full object-cover" />
+        {(merged?.header || user?.header) ? (
+          <img src={merged?.header || user.header} alt="Profile header" className="h-full w-full object-cover" />
         ) : null}
       </div>
       <div className="px-4">
         <div className="-mt-12 flex items-end justify-between">
           <span className="relative inline-block">
-            <LiveAvatar did={did} name={user?.display_name || user?.full_name} src={user?.avatar} size={96} className="ring-4 ring-background" />
+            <LiveAvatar did={did} name={merged?.name || user?.display_name || user?.full_name} src={merged?.avatar || user?.avatar} size={96} className="ring-4 ring-background" />
             {liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
           </span>
           <div className="flex items-center gap-2">
@@ -135,14 +140,15 @@ export default function Profile() {
           </div>
         </div>
         <div className="mt-3">
-          <h1 className="text-xl font-extrabold">{user?.display_name || user?.full_name || 'Collector'}</h1>
+          <h1 className="text-xl font-extrabold">{merged?.name || user?.display_name || user?.full_name || 'Collector'}</h1>
           <ProfileHandle
             bskyHandle={user?.bsky_handle}
             username={user?.username}
             did={did}
             verified={user?.handle_verified}
+            syncedFromBsky={!!merged?.remote_synced}
           />
-          {user?.description && <p className="mt-2 text-sm">{user.description}</p>}
+          {(merged?.description || user?.description) && <p className="mt-2 text-sm">{merged?.description || user.description}</p>}
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             {repAvg && (
               <span className="flex items-center gap-1 text-accent">
