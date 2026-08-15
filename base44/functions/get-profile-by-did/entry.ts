@@ -18,11 +18,17 @@ export default async function(req: Request): Promise<Response> {
     const u = (users || []).find((x: any) => x.did === did);
     if (!u) return Response.json({ found: false });
 
+    // Derive a local username from the email local-part when neither a
+    // federated handle nor a username is set, so the profile header never
+    // falls back to the generic "collector" placeholder.
+    const emailLocal = (u.email || '').split('@')[0] || '';
+    const usernameFallback = u.username || emailLocal || '';
+
     return Response.json({
       found: true,
-      name: u.full_name || u.username || '',
+      name: u.full_name || u.username || emailLocal || 'Collector',
       bsky_handle: u.bsky_handle || '',
-      username: u.username || '',
+      username: usernameFallback,
       avatar: u.avatar || '',
       did: u.did || '',
       description: u.description || '',
