@@ -8,6 +8,10 @@ import AddToCollectionModal from '@/components/cards/AddToCollectionModal';
 import CardReviews from '@/components/cards/CardReviews';
 import WishlistAlertModal from '@/components/wishlist/WishlistAlertModal';
 import DiscussionTab from '@/components/comments/DiscussionTab';
+import CardEvolutionChain from '@/components/cards/CardEvolutionChain';
+import CardVariantPricing from '@/components/cards/CardVariantPricing';
+import CardSetRail from '@/components/cards/CardSetRail';
+import PriceHistoryChart from '@/components/cards/PriceHistoryChart';
 import { formatPrice } from '@/lib/format';
 import useSEO from '@/hooks/useSEO';
 
@@ -253,6 +257,14 @@ export default function CardDetail() {
           </div>
         )}
 
+        <div className="mt-5">
+          <PriceHistoryChart card={card} />
+        </div>
+
+        <div className="mt-5">
+          <CardVariantPricing card={card} />
+        </div>
+
         <div className="mt-5 rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 text-sm font-bold">Variants</h3>
           <div className="flex flex-wrap gap-2">
@@ -274,6 +286,46 @@ export default function CardDetail() {
             ))}
           </div>
         </div>
+
+        {card.weaknesses?.length > 0 || card.resistances?.length > 0 ? (
+          <div className="mt-5 rounded-2xl border border-border bg-card p-4">
+            <h3 className="mb-3 text-sm font-bold">Weakness & Resistance</h3>
+            <div className="flex flex-wrap gap-4 text-sm">
+              {card.weaknesses?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Weakness</p>
+                  {card.weaknesses.map((w, i) => (
+                    <p key={i} className="font-semibold text-destructive">{w.type} {w.value}</p>
+                  ))}
+                </div>
+              )}
+              {card.resistances?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Resistance</p>
+                  {card.resistances.map((r, i) => (
+                    <p key={i} className="font-semibold text-success">{r.type} {r.value}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {card.regulationMark && (
+          <div className="mt-5 rounded-2xl border border-border bg-card p-4">
+            <h3 className="mb-1 text-sm font-bold">Legality</h3>
+            <p className="text-sm text-muted-foreground">
+              Regulation Mark <span className="font-semibold text-foreground">{card.regulationMark}</span>
+              {card.legalInStandard && <span className="ml-2 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">Standard-legal</span>}
+              {card.legalInExpanded != null && !card.legalInExpanded && <span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">Not Expanded-legal</span>}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 space-y-4 px-4">
+        <CardEvolutionChain card={card} />
+        <CardSetRail card={card} />
       </div>
 
       <div className={tab !== 'overview' ? 'hidden' : ''}>

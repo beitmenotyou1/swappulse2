@@ -10,6 +10,8 @@ import ExploreCardTile from '@/components/cards/ExploreCardTile';
 import PostCard from '@/components/feed/PostCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
+import FilterPanel from '@/components/explore/FilterPanel';
+import TrendingRail from '@/components/explore/TrendingRail';
 import useSEO from '@/hooks/useSEO';
 
 export default function Explore() {
@@ -31,9 +33,10 @@ export default function Explore() {
   const [adding, setAdding] = useState(false);
   const [searchMode, setSearchMode] = useState('cards');
   const [latestPosts, setLatestPosts] = useState([]);
+  const [filters, setFilters] = useState({ set: '', rarity: '', type: '', minPrice: '', maxPrice: '' });
 
-  const runSearch = useCallback(async (q) => {
-    if (q.trim().length < 2) {
+  const runSearch = useCallback(async (q, f = filters) => {
+    if (q.trim().length < 2 && !f.set && !f.rarity) {
       setResults([]);
       setSearched(false);
       return;
@@ -41,14 +44,32 @@ export default function Explore() {
     setLoading(true);
     setSearched(true);
     try {
-      const cards = await searchCards(q.trim(), { page: 1, perPage: 36, lang });
-      setResults(cards);
+      const cards = await searchCards(q.trim(), {
+        page: 1, perPage: 36, lang,
+        setName: f.set || undefined,
+        rarity: f.rarity || undefined,
+      });
+      // Client-side filter for type and price range (TCGDex search doesn't
+      // support these params directly, so filter the returned results)
+      let filtered = cards;
+      if (f.type) {
+        filtered = filtered.filter((c) => (c.types || []).some((t) => t.toLowerCase() === f.type.toLowerCase()));
+      }
+      if (f.minPrice || f.maxPrice) {
+        const min = f.minPrice ? parseFloat(f.minPrice) : 0;
+        const max = f.maxPrice ? parseFloat(f.maxPrice) : Infinity;
+        filtered = filtered.filter((c) => {
+          const p = c.pricing?.tcgplayer?.avg || c.pricing?.cardmarket?.avg || 0;
+          return p >= min && p <= max;
+        });
+      }
+      setResults(filtered);
     } catch {
       setResults([]);
     } finally {
       setLoading(false);
     }
-  }, [lang]);
+  }, [lang, filters]);
 
   useEffect(() => {
     (async () => {
@@ -69,9 +90,9 @@ export default function Explore() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => runSearch(query), 400);
+    const t = setTimeout(() => runSearch(query, filters), 400);
     return () => clearTimeout(t);
-  }, [query, runSearch]);
+  }, [query, filters, runSearch]);
 
   const toggleSelect = (id) =>
     setSelected((prev) => {
@@ -132,14 +153,17 @@ export default function Explore() {
           </button>
         </div>
         {searchMode === 'cards' && (
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search cards by name…"
-              className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search cards by name…"
+                className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <FilterPanel onApply={setFilters} activeFilters={filters} />
           </div>
         )}
       </div>
@@ -152,6 +176,9 @@ export default function Explore() {
 
       {searchMode === 'cards' && !searched && (
         <div className="p-4">
+          <div className="mb-6">
+            <TrendingRail limit={10} />
+          </div>
           <div className="mb-6">
             <NetworkFeedSection limit={12} title="From the Network" />
           </div>
