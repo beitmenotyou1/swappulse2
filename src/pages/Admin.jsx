@@ -16,6 +16,7 @@ import FederationDiagnosticsSection from '@/components/admin/FederationDiagnosti
 import SeoAuditSection from '@/components/admin/SeoAuditSection';
 import DataSubjectRequestsSection from '@/components/admin/DataSubjectRequestsSection';
 import DsarSummaryCard from '@/components/admin/DsarSummaryCard';
+import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 export default function Admin() {
@@ -82,6 +83,7 @@ export default function Admin() {
         <SyncProfilesSection />
         <IncidentsSection />
         <DataSubjectRequestsSection />
+        <BotProtectionLogSection />
         <SeoAuditSection />
       </div>
     </>
