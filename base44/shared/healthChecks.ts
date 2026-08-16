@@ -43,17 +43,21 @@ export function checkBase44() {
 }
 
 export async function checkAtProtoRelay() {
-  // Our firehose ingestion depends on the AppView (public.api.bsky.app) for
-  // profile lookups, post threads, and search — NOT the bsky.network relay
-  // directly. Checking the relay reported false outages when the AppView
-  // (our actual dependency) was still serving requests. Probe the AppView
-  // with a real API call our ingestion code makes.
+  // The firehose ingestion pipeline's core dependency is our own PDS — it
+  // lists records from the PDS repo for bidirectional sync. The AppView
+  // (public.api.bsky.app) is a secondary dependency used only for profile
+  // enrichment, reply sync, and broad search; the firehose-ingest function
+  // handles AppView slowness gracefully (try/catch per feature, continues
+  // ingesting from the PDS). Checking the AppView as a hard dependency
+  // reported false outages when the core pipeline was still functioning.
+  // Probe the PDS health endpoint — if it's up, the firehose pipeline can
+  // do its core job.
   try {
+    const pdsUrl = Deno.env.get('PDS_URL');
+    if (!pdsUrl) throw new Error('PDS_URL not configured');
     const start = Date.now();
-    const url = new URL('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile');
-    url.searchParams.set('actor', 'bsky.app');
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(15000),
+    const res = await fetch(`${pdsUrl}/xrpc/_health`, {
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return { status: 'up', latencyMs: Date.now() - start };
