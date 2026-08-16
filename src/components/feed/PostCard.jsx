@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag } from 'lucide-react';
+import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag, Quote } from 'lucide-react';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
 import { useLivePresence } from '@/lib/livePresence';
@@ -13,6 +13,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { createLike, deleteLike, createRepost, deleteRepost } from '@/lib/postInteractions';
 import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetViewerLiked } from '@/lib/viewerLikes';
 import ReportDialog from '@/components/moderation/ReportDialog';
+import QuoteComposeModal from '@/components/feed/QuoteComposeModal';
+import QuotedPostCard from '@/components/feed/QuotedPostCard';
 import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
 import RichText from '@/components/RichText';
@@ -33,6 +35,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   const [pendingRepost, setPendingRepost] = useState(false);
   const [saved, setSaved] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
   const [showThread, setShowThread] = useState(false);
 
   const { user } = useAuth();
@@ -186,6 +189,10 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
             </div>
           )}
 
+          {(post.quote_of_id || post.quote_ref) && (
+            <QuotedPostCard quoteOfId={post.quote_of_id} quoteRef={post.quote_ref} />
+          )}
+
           <div className="mt-3 flex items-center justify-between max-w-md text-muted-foreground">
             <button
               onClick={() => setShowThread((v) => !v)}
@@ -205,6 +212,14 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
             >
               <Repeat2 className={`h-4 w-4 ${reposted ? 'fill-current' : ''}`} />
               <span>{formatNumber(repostCount)}</span>
+            </button>
+            <button
+              onClick={() => setQuoteOpen(true)}
+              disabled={!user?.id}
+              aria-label="Quote"
+              className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+            >
+              <Quote className="h-4 w-4" />
             </button>
             <button
               onClick={toggleLike}
@@ -246,6 +261,11 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
         contentId={post.id}
         contentPreview={post.content}
         authorHandle={post.author_handle}
+      />
+      <QuoteComposeModal
+        open={quoteOpen}
+        onClose={() => setQuoteOpen(false)}
+        targetPost={post}
       />
     </article>
   );

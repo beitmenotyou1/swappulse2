@@ -20,6 +20,7 @@ export default function PostDetail() {
   const { postId, atUri } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
+  const [ancestors, setAncestors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { canView } = usePostVisibility();
@@ -61,6 +62,40 @@ export default function PostDetail() {
     })();
     return () => { alive = false; };
   }, [postId, atUri]);
+
+  // Walk the parent chain upward so the full conversation reads top-to-bottom
+  // above the focused post. Resolves each ancestor from the local DB first
+  // (by at_uri), falling back to resolve-post-by-uri for remote ancestors.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setAncestors([]);
+      if (!post?.parent_uri) return;
+      const chain = [];
+      let currentUri = post.parent_uri;
+      const seen = new Set();
+      while (currentUri && alive && !seen.has(currentUri)) {
+        seen.add(currentUri);
+        let ancestor = null;
+        try {
+          const local = await base44.entities.Post.filter({ at_uri: currentUri }, '-created_date', 1).catch(() => []);
+          if (local?.length) {
+            ancestor = local[0];
+          } else {
+            const res = await base44.functions.invoke('resolve-post-by-uri', { at_uri: currentUri }).catch(() => null);
+            const body = res?.data ?? res;
+            if (body?.post) ancestor = body.post;
+          }
+        } catch { /* ignore — stop chain */ }
+        if (!alive) return;
+        if (!ancestor) break;
+        chain.unshift(ancestor);
+        currentUri = ancestor.parent_uri || null;
+      }
+      if (alive) setAncestors(chain);
+    })();
+    return () => { alive = false; };
+  }, [post?.id, post?.parent_uri]);
 
   if (loading) {
     return (
@@ -110,6 +145,13 @@ export default function PostDetail() {
         </button>
         <h1 className="text-lg font-bold">Post</h1>
       </div>
+      {ancestors.length > 0 && (
+        <div className="border-l-2 border-border pl-3 ml-4 mr-4 mb-2 space-y-1">
+          {ancestors.map((a) => (
+            <PostCard key={a.id || a.at_uri} post={a} />
+          ))}
+        </div>
+      )}
       <PostCard post={post} />
       <div className="px-4 pb-8">
         <h2 className="mb-2 mt-4 flex items-center gap-2 text-sm font-bold">

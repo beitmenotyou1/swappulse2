@@ -51,6 +51,14 @@
       },
       "description": "Normalised hashtags (lowercased, trimmed, deduped) for discovery"
     },
+    "quote_of_id": {
+      "type": "string",
+      "description": "Local id of the Post this post quotes (commentary layered over an embedded original). Populated at compose time so the QuotedPostCard embed renders before the PDS bridge completes."
+    },
+    "quote_ref": {
+      "type": "string",
+      "description": "at:// URI of the quoted post (the embedded original). For local quotes this is the target's at_uri; for quotes of external posts it is the remote at:// URI. Used to render the embed and to bridge app.bsky.embed.record."
+    },
     "moderation_labels": {
       "type": "array",
       "description": "Hashtag abuse / moderation labels applied by the labeler at creation time",

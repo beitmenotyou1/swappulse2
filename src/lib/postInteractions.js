@@ -279,10 +279,12 @@ export async function deleteReply(reply, parentPost) {
 }
 
 // Create a quote-repost: a new app.bsky.feed.post with the target embedded as
-// a quote (app.bsky.embed.record). The local Post stores the quote text; the
-// embed is only in the bridged PDS record. Works for both local and external
-// targets via normalizeRef.
-export async function createQuoteRepost(post, text, user) {
+// a quote (app.bsky.embed.record). The local Post stores the quote text plus
+// quote_of_id / quote_ref so the QuotedPostCard embed renders before the PDS
+// bridge completes. `extra` carries visibility_scope, reply_policy, hashtags,
+// canonical_tags and mentioned_dids (same shape as ComposeBox). Works for both
+// local and external targets via normalizeRef.
+export async function createQuoteRepost(post, text, user, extra = {}) {
   const ref = normalizeRef(post);
   await ensureBotAllowed('post', text);
   const { did, signingKey } = await ensureUserDid();
@@ -293,6 +295,13 @@ export async function createQuoteRepost(post, text, user) {
     author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
     author_avatar: user?.avatar || '',
     likes: 0, reposts: 0, replies: 0,
+    quote_of_id: ref.isLocal ? ref.id : (extra.quote_of_id || ''),
+    quote_ref: ref.at_uri || '',
+    visibility_scope: extra.visibility_scope || 'public',
+    reply_policy: extra.reply_policy || 'everybody',
+    hashtags: extra.hashtags || [],
+    canonical_tags: extra.canonical_tags || [],
+    mentioned_dids: extra.mentioned_dids || [],
   }, NSID.POST, did, signingKey);
   const created = await base44.entities.Post.create(stamped);
   if (created?.id) {
