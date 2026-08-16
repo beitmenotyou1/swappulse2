@@ -14,6 +14,8 @@ import ReputationSummary from '@/components/profile/ReputationSummary';
 import ProfileHandle from '@/components/profile/ProfileHandle';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import ActivityTab from '@/components/profile/ActivityTab';
+import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
+import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import useSEO from '@/hooks/useSEO';
@@ -161,7 +163,7 @@ export default function UserProfile() {
           )}
         </div>
         <div className="mt-4 flex overflow-x-auto border-b border-border">
-          {['Posts', 'Activity'].map((t) => (
+          {['Posts', 'Trades', 'Collections', 'Activity'].map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -184,6 +186,18 @@ export default function UserProfile() {
               </div>
             ) : (
               <ActivityTab did={subjectDid} />
+            )
+          ) : tab === 'Trades' ? (
+            isExternal ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">Trade history is only available for SwapPulse members.</p>
+            ) : (
+              <TradeHistoryTab did={subjectDid} />
+            )
+          ) : tab === 'Collections' ? (
+            isExternal ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">Shared collections are only available for SwapPulse members.</p>
+            ) : (
+              <SharedCollectionsTab did={subjectDid} />
             )
           ) : loading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
