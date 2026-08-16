@@ -8,10 +8,9 @@ import { useToast } from '@/components/ui/use-toast';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 
 // Camera-first story composer (Instagram/Snapchat style). Opens the device
-// camera, captures a photo, optionally adds a text overlay, and posts. Falls
-// back to a file picker when the camera is unavailable (no HTTPS, denied
-// permission, or desktop without webcam). Text-only and card-embed modes are
-// available via the toolbar so all story types remain reachable.
+// camera, captures a photo (resized to max 1080px), optionally adds a text
+// overlay, and posts. Falls back to a file picker when the camera is
+// unavailable. Text-only and card-embed modes are reachable via the toolbar.
 
 const BG_COLORS = ['#6d4aff', '#10b981', '#fbbf24', '#ef4444', '#ec4899', '#1e293b'];
 const POSITIONS = [
@@ -20,13 +19,16 @@ const POSITIONS = [
   { key: 'bottom', label: 'Bottom' },
 ];
 const POS_CLASS = { top: 'items-start pt-20', center: 'items-center', bottom: 'items-end pb-28' };
+const MAX_CAPTURE_WIDTH = 1080;
 
 export default function StoryCamera({ open, onClose, onCreated, myDid }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileRef = useRef(null);
+  const postingRef = useRef(false);
   const [facing, setFacing] = useState('user');
-  const [capture, setCapture] = useState(null); // data: URL (camera) or http URL (upload)
+  const [capture, setCapture] = useState(null); // preview URL (blob: or https)
+  const [captureBlob, setCaptureBlob] = useState(null); // Blob to upload (camera only)
   const [textOverlay, setTextOverlay] = useState('');
   const [textPosition, setTextPosition] = useState('center');
   const [posting, setPosting] = useState(false);
@@ -41,6 +43,10 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
   const stopStream = () => {
     if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+  };
+
+  const revokeCapture = () => {
+    if (capture && capture.startsWith('blob:')) URL.revokeObjectURL(capture);
   };
 
   useEffect(() => {
@@ -60,24 +66,38 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
     return () => { active = false; stopStream(); };
   }, [open, facing, mode, capture]);
 
-  useEffect(() => () => stopStream(), []);
+  useEffect(() => () => { stopStream(); revokeCapture(); }, []);
 
   if (!open) return null;
 
   const takePhoto = () => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
+    let w = video.videoWidth;
+    let h = video.videoHeight;
+    if (w > MAX_CAPTURE_WIDTH) { h = Math.round((h * MAX_CAPTURE_WIDTH) / w); w = MAX_CAPTURE_WIDTH; }
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext('2d');
-    if (facing === 'user') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setCapture(canvas.toDataURL('image/jpeg', 0.9));
+    if (facing === 'user') { ctx.translate(w, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(video, 0, 0, w, h);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      revokeCapture();
+      const url = URL.createObjectURL(blob);
+      setCapture(url);
+      setCaptureBlob(blob);
+    }, 'image/jpeg', 0.85);
     stopStream();
   };
 
-  const retake = () => { setCapture(null); setTextOverlay(''); };
+  const retake = () => {
+    revokeCapture();
+    setCapture(null);
+    setCaptureBlob(null);
+    setTextOverlay('');
+  };
 
   const switchCamera = () => { stopStream(); setFacing((f) => (f === 'user' ? 'environment' : 'user')); };
 
@@ -87,7 +107,9 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      revokeCapture();
       setCapture(file_url);
+      setCaptureBlob(null);
       setMode('camera');
     } catch {
       toast({ title: 'Upload failed', variant: 'destructive' });
@@ -97,25 +119,26 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
   };
 
   const post = async () => {
-    let finalSegs = [];
+    if (postingRef.current) return;
+    postingRef.current = true;
     setPosting(true);
     try {
+      let finalSegs = [];
       if (mode === 'camera' && capture) {
         let mediaUrl = capture;
-        if (capture.startsWith('data:')) {
-          const blob = await (await fetch(capture)).blob();
-          const file = new File([blob], 'story.jpg', { type: 'image/jpeg' });
+        if (captureBlob) {
+          const file = new File([captureBlob], 'story.jpg', { type: 'image/jpeg' });
           const res = await base44.integrations.Core.UploadFile({ file });
           mediaUrl = res.file_url;
         }
         finalSegs = [{ order: 0, media_type: 'image', media_blob: mediaUrl, text_overlay: textOverlay, text_position: textPosition, duration: 5 }];
       } else if (mode === 'text') {
-        if (!textOverlay.trim()) { setPosting(false); return; }
+        if (!textOverlay.trim()) { postingRef.current = false; setPosting(false); return; }
         finalSegs = [{ order: 0, media_type: 'text', text_overlay: textOverlay, text_position: textPosition, background_color: bgColor, duration: 5 }];
       } else if (mode === 'card' && cardSeg) {
         finalSegs = [{ ...cardSeg, order: 0, text_overlay: textOverlay, text_position: textPosition, duration: 5 }];
       }
-      if (!finalSegs.length) { setPosting(false); return; }
+      if (!finalSegs.length) { postingRef.current = false; setPosting(false); return; }
 
       const { did, signingKey } = await ensureUserDid();
       const me = await base44.auth.me().catch(() => null);
@@ -135,17 +158,18 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
         author_did: did, author_name: me?.display_name || me?.full_name || '', category: 'story',
         preview: finalSegs[0]?.text_overlay || 'Shared a story', url: '/',
       }).catch(() => {});
-      setCapture(null); setTextOverlay(''); setCardSeg(null); setMode('camera');
+      revokeCapture();
+      setCapture(null); setCaptureBlob(null); setTextOverlay(''); setCardSeg(null); setMode('camera');
       onCreated?.();
       onClose();
-    } catch {
-      toast({ title: 'Could not post story', variant: 'destructive' });
+    } catch (err) {
+      console.error('StoryCamera post failed:', err);
+      toast({ title: 'Could not post story', description: err?.message || 'Please try again', variant: 'destructive' });
     } finally {
       setPosting(false);
+      postingRef.current = false;
     }
   };
-
-  const hasContent = mode === 'camera' ? capture : (mode === 'text' ? textOverlay.trim() : cardSeg);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
@@ -155,10 +179,10 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
           <X className="h-5 w-5" />
         </button>
         <div className="flex gap-2">
-          <button onClick={() => { stopStream(); setMode('text'); setCapture(null); }} className={`rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur ${mode === 'text' ? 'bg-primary text-white' : 'bg-black/40 text-white'}`}>
+          <button onClick={() => { stopStream(); revokeCapture(); setMode('text'); setCapture(null); setCaptureBlob(null); }} className={`rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur ${mode === 'text' ? 'bg-primary text-white' : 'bg-black/40 text-white'}`}>
             <Type className="inline h-3.5 w-3.5" /> Text
           </button>
-          <button onClick={() => { stopStream(); setMode('card'); setCapture(null); }} className={`rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur ${mode === 'card' ? 'bg-primary text-white' : 'bg-black/40 text-white'}`}>
+          <button onClick={() => { stopStream(); revokeCapture(); setMode('card'); setCapture(null); setCaptureBlob(null); }} className={`rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur ${mode === 'card' ? 'bg-primary text-white' : 'bg-black/40 text-white'}`}>
             <CreditCard className="inline h-3.5 w-3.5" /> Card
           </button>
         </div>
