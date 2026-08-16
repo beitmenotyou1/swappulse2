@@ -84,36 +84,14 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // 5. Merge + time-sort
+    // 5. Merge + time-sort — For You is strictly followed accounts only;
+    // discovery of new collectors happens in the Explore tab.
     items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     const followedCount = items.length;
 
-    // 6. Recent-fallback: if the follow-based feed is below threshold, fill
-    // with recent local posts (member + ingested remote) so the feed is never
-    // empty for users with few/no follows. Excludes replies to keep the feed
-    // clean. Dedup by id/at_uri.
-    const THRESHOLD = 30;
-    if (followedCount < THRESHOLD) {
-      try {
-        const recent = await base44.entities.Post.list('-created_date', Math.min(limit * 2, 100)).catch(() => []);
-        const seen = new Set(items.map((p: any) => p.id || p.at_uri).filter(Boolean));
-        for (const p of recent || []) {
-          if (p.reply_to) continue; // skip replies — keep the feed to top-level posts
-          const key = p.id || p.at_uri;
-          if (!key || seen.has(key)) continue;
-          items.push({ ...p, external: false, fallback: true });
-          seen.add(key);
-          if (items.length >= limit) break;
-        }
-        items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
-      } catch (e) {
-        console.error('get-follow-feed: recent-fallback error', e?.message || e);
-      }
-    }
-
     return Response.json({
       items: items.slice(0, limit),
-      source: followedCount === 0 ? 'recent' : 'follow',
+      source: 'follow',
       followed_count: followedCount,
       authed: true,
     });
