@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Eye, Volume2, VolumeX } from 'lucide-react';
+import { X, Eye, Volume2, VolumeX, Loader2, Send } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { startOrFindConversation, sendDirectMessage } from '@/lib/dmBridge';
 import { useToast } from '@/components/ui/use-toast';
 import Avatar from '@/components/Avatar';
 
@@ -50,6 +51,8 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
   const [showSeenBy, setShowSeenBy] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [viewerDid, setViewerDid] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
   const dragStartY = useRef(null);
   const videoRef = useRef(null);
   const viewedRef = useRef(new Set());
@@ -145,6 +148,23 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
     } catch { /* ignore */ }
   };
 
+  const sendReply = async () => {
+    const trimmed = replyText.trim();
+    if (!trimmed || !story?.did || isOwn) return;
+    setSendingReply(true);
+    try {
+      const me = await base44.auth.me().catch(() => null);
+      const convo = await startOrFindConversation(story.did, story.author_name, story.author_handle, story.author_avatar);
+      await sendDirectMessage(convo, trimmed, me);
+      toast({ title: `Replied to @${story.author_handle || story.author_name || 'collector'}` });
+      setReplyText('');
+    } catch {
+      toast({ title: 'Reply failed', variant: 'destructive' });
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
   const loadViewers = async () => {
     if (!story) return;
     const v = await base44.entities.StoryView.filter({ story_id: story.id }, '-viewed_at', 200).catch(() => []);
@@ -220,25 +240,66 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
 
         {/* Mute toggle for video */}
         {isVideo && (
-          <button className="absolute bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/50 p-2 text-white" onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}>
+          <button className="absolute bottom-36 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/50 p-2 text-white" onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}>
             {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </button>
         )}
 
-        {/* Tap zones: left=prev, centre=pause/resume, right=next */}
+        {/* Tap zones: left=prev, right=next, hold anywhere to pause */}
         <div className="absolute inset-0 z-20 flex">
-          <button className="h-full flex-1" onClick={back} aria-label="Previous" />
-          <button className="h-full flex-1" onClick={() => setPaused((p) => !p)} aria-label="Pause or resume" />
-          <button className="h-full flex-1" onClick={advance} aria-label="Next" />
+          <button
+            className="h-full flex-1"
+            onClick={back}
+            onPointerDown={() => setPaused(true)}
+            onPointerUp={() => setPaused(false)}
+            onPointerCancel={() => setPaused(false)}
+            onPointerLeave={() => setPaused(false)}
+            aria-label="Previous"
+          />
+          <button
+            className="h-full flex-[2]"
+            onClick={advance}
+            onPointerDown={() => setPaused(true)}
+            onPointerUp={() => setPaused(false)}
+            onPointerCancel={() => setPaused(false)}
+            onPointerLeave={() => setPaused(false)}
+            aria-label="Next"
+          />
         </div>
 
-        {/* Quick reactions */}
-        <div className="absolute bottom-8 left-1/2 z-30 flex -translate-x-1/2 gap-2" onClick={(e) => e.stopPropagation()}>
-          {Object.entries(STORY_REACTIONS).map(([type, r]) => (
-            <button key={type} onClick={() => sendReaction(type)} title={r.label} className="flex h-9 items-center gap-1 rounded-full border border-white/30 bg-black/40 px-3 text-sm text-white backdrop-blur transition hover:bg-primary/80">
-              <span>{r.emoji}</span>
-            </button>
-          ))}
+        {/* Reply bar + quick reactions */}
+        <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-6" onClick={(e) => e.stopPropagation()}>
+          {!isOwn && (
+            <div className="mb-3 flex justify-center gap-2">
+              {Object.entries(STORY_REACTIONS).map(([type, r]) => (
+                <button key={type} onClick={() => sendReaction(type)} title={r.label} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/40 text-base backdrop-blur transition hover:bg-primary/80">
+                  <span>{r.emoji}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {isOwn ? (
+            <p className="text-center text-xs text-white/60">Your story</p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                placeholder={`Reply to @${story.author_handle || story.author_name || 'collector'}…`}
+                className="flex-1 rounded-full border border-white/30 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-white/60 outline-none backdrop-blur"
+              />
+              <button
+                onClick={sendReply}
+                disabled={sendingReply || !replyText.trim()}
+                className="rounded-full bg-primary p-2.5 text-white disabled:opacity-50"
+                aria-label="Send reply"
+              >
+                {sendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Seen-by toggle for own stories */}

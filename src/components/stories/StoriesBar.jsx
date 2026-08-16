@@ -6,7 +6,7 @@ import Avatar from '@/components/Avatar';
 import LiveAvatar from '@/components/LiveAvatar';
 import StoryViewer from './StoryViewer';
 import { useLivePresence } from '@/lib/livePresence';
-import CreateStoryModal from './CreateStoryModal';
+import StoryCamera from './StoryCamera';
 import { useAuth } from '@/lib/AuthContext';
 
 // Returns the set of DIDs the current user follows (outgoing follows).
@@ -20,7 +20,7 @@ export default function StoriesBar() {
   const [myDid, setMyDid] = useState('');
   const [seenIds, setSeenIds] = useState(new Set());
   const [startDid, setStartDid] = useState(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const { liveByDid } = useLivePresence();
   const { user } = useAuth();
   const myDisplayName = user?.display_name || user?.full_name || 'You';
@@ -84,7 +84,7 @@ export default function StoriesBar() {
     <div className="flex items-center gap-4 overflow-x-auto border-b border-border bg-card px-4 py-3">
       {/* Own slot is always first */}
       <button
-        onClick={() => (hasMine ? setStartDid(myDid) : setCreateOpen(true))}
+        onClick={() => (hasMine ? setStartDid(myDid) : setCameraOpen(true))}
         className="flex shrink-0 flex-col items-center gap-1"
       >
         <div className="relative">
@@ -130,7 +130,7 @@ export default function StoriesBar() {
       {startDid && (
         <StoryViewer grouped={grouped} startDid={startDid} myDid={myDid} onClose={() => setStartDid(null)} onViewed={(d) => load(d)} />
       )}
-      <CreateStoryModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={() => load(myDid)} myDid={myDid} />
+      <StoryCamera open={cameraOpen} onClose={() => setCameraOpen(false)} onCreated={() => load(myDid)} myDid={myDid} />
     </div>
   );
 }
