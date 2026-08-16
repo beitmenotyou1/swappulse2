@@ -4,12 +4,14 @@ import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import MessageBubble from '@/components/messages/MessageBubble';
 import { sendDirectMessage, markConversationRead } from '@/lib/dmBridge';
+import { decryptMessage, publishPublicKey } from '@/lib/e2ee';
 
 export default function MessageThread({ conversation, myDid, onBack }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [decrypted, setDecrypted] = useState({});
   const scrollRef = useRef(null);
 
   const refresh = async () => {
@@ -40,6 +42,23 @@ export default function MessageThread({ conversation, myDid, onBack }) {
     } catch {}
     return () => { if (unsub) unsub(); };
   }, [conversation?.id, myDid]);
+
+  // Publish my ECDH public key so partners can encrypt to me, then decrypt
+  // each message body end-to-end (ciphertext is stored in body; legacy
+  // plaintext passes through unchanged).
+  useEffect(() => { publishPublicKey().catch(() => {}); }, []);
+  useEffect(() => {
+    if (!messages.length || !myDid) return;
+    let cancelled = false;
+    (async () => {
+      for (const m of messages) {
+        const theirDid = m.did === myDid ? m.recipient_did : m.did;
+        const res = await decryptMessage(m.body, myDid, theirDid);
+        if (!cancelled) setDecrypted((prev) => ({ ...prev, [m.id]: res }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [messages, myDid]);
 
   // Auto-scroll to the latest message.
   useEffect(() => {
@@ -88,9 +107,20 @@ export default function MessageThread({ conversation, myDid, onBack }) {
             Say hello — send the first message.
           </div>
         ) : (
-          messages.map((m) => (
-            <MessageBubble key={m.id} message={m} isMine={m.did === myDid} />
-          ))
+          messages.map((m) => {
+            const d = decrypted[m.id];
+            return (
+              <MessageBubble
+                key={m.id}
+                message={m}
+                isMine={m.did === myDid}
+                text={d?.text}
+                encrypted={d?.encrypted}
+                pending={d?.pending}
+                failed={d?.failed}
+              />
+            );
+          })
         )}
       </div>
 

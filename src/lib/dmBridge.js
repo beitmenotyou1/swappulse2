@@ -9,6 +9,7 @@
 
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { encryptMessage, publishPublicKey } from '@/lib/e2ee';
 
 // Find an existing conversation between two DIDs (either direction), or null.
 async function findConversation(myDid, theirDid) {
@@ -63,12 +64,19 @@ export async function sendDirectMessage(conversation, text, user) {
   const trimmed = text.trim().slice(0, 2000);
   if (!trimmed) return null;
 
+  // Ensure my ECDH public key is published so the recipient can decrypt.
+  await publishPublicKey().catch(() => {});
+
+  // End-to-end encrypt the body (falls back to plaintext if the recipient
+  // hasn't published a key yet, so the conversation still works on first contact).
+  const { body: storedBody, encrypted } = await encryptMessage(trimmed, did, recipientDid);
+
   const stamped = await stampRecord({
     conversation_id: conversation.id,
     conversation_ref: conversation.at_uri || '',
     did,
     recipient_did: recipientDid,
-    body: trimmed,
+    body: storedBody,
     author_name: user?.display_name || user?.full_name || 'Collector',
     author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
     author_avatar: user?.avatar || '',
@@ -77,20 +85,23 @@ export async function sendDirectMessage(conversation, text, user) {
 
   const created = await base44.entities.DirectMessage.create(stamped);
 
-  // Update the conversation's last-message metadata.
+  // Update the conversation's last-message metadata. The preview is masked
+  // when encrypted so the list view never leaks plaintext.
+  const preview = encrypted ? '🔒 Encrypted message' : trimmed.slice(0, 200);
   base44.entities.Conversation.update(conversation.id, {
     last_message_at: new Date().toISOString(),
-    last_message_preview: trimmed.slice(0, 200),
+    last_message_preview: preview,
     last_message_did: did,
   }).catch(() => {});
 
-  // Bridge the message to the PDS (fire-and-forget, non-fatal).
+  // Bridge the ciphertext to the PDS (fire-and-forget, non-fatal).
   base44.functions.invoke('atproto-bridge', {
     collection: NSID.DIRECT_MESSAGE,
     record: {
       conversationRef: conversation.at_uri || '',
       recipientDid,
-      body: trimmed,
+      body: storedBody,
+      encrypted,
       createdAt: new Date().toISOString(),
     },
   }).then((res) => {
@@ -99,7 +110,7 @@ export async function sendDirectMessage(conversation, text, user) {
     if (uri) base44.entities.DirectMessage.update(created.id, { at_uri: uri, cid: cid || '', bridged: true }).catch(() => {});
   }).catch(() => {});
 
-  // Notify the recipient via notify-interaction so they get an in-app + push notification.
+  // Notify the recipient — never leak plaintext in the notification payload.
   if (recipientDid && recipientDid !== did) {
     base44.functions.invoke('notify-interaction', {
       recipientDid,
@@ -108,10 +119,10 @@ export async function sendDirectMessage(conversation, text, user) {
       actorName: user?.display_name || user?.full_name || '',
       actorHandle: user?.bsky_handle || user?.username || '',
       actorAvatar: user?.avatar || '',
-      post: { id: conversation.id, at_uri: conversation.at_uri, cid: conversation.cid, content: trimmed.slice(0, 80) },
+      post: { id: conversation.id, at_uri: conversation.at_uri, cid: conversation.cid, content: encrypted ? '🔒 Encrypted message' : trimmed.slice(0, 80) },
       postUri: conversation.at_uri,
       origin: 'local',
-      commentText: trimmed.slice(0, 200),
+      commentText: preview,
     }).catch(() => {});
   }
 

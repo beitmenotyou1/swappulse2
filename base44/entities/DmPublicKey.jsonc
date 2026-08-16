@@ -1,0 +1,32 @@
+{
+  "name": "DmPublicKey",
+  "type": "object",
+  "title": "DmPublicKey",
+  "description": "org.swappulse.dmPublicKey \u2014 a user's published ECDH (P-256) public key for end-to-end encrypted direct messages. The matching private key never leaves the user's browser (IndexedDB). Senders fetch the recipient's public key, derive a shared AES-GCM key via ECDH, and store only ciphertext in DirectMessage.body. Writes are bound to the DID owner so no one can publish a key impersonating another user.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID this public key belongs to"
+    },
+    "public_key": {
+      "type": "string",
+      "description": "JSON-stringified ECDH P-256 public JWK"
+    }
+  },
+  "required": [
+    "did",
+    "public_key"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "data.did": "{{user.data.did}}"
+    },
+    "update": {
+      "data.did": "{{user.data.did}}"
+    },
+    "delete": {
+      "data.did": "{{user.data.did}}"
+    }
+  }
+}
