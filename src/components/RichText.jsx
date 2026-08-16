@@ -14,7 +14,7 @@ import { confirmExternalLink, isExternalUrl } from '@/lib/externalLink';
 
 const HASHTAG_OR_URL = /(#(?:[\p{L}\p{N}_]+))|(https?:\/\/[^\s]+)/gu;
 
-export default function RichText({ text, className = '', as: Tag = 'p' }) {
+export default function RichText({ text, className = '', as: Tag = 'p', linkClassName = 'font-medium text-primary hover:underline' }) {
   if (!text) return <Tag className={className} />;
 
   const parts = [];
@@ -35,7 +35,7 @@ export default function RichText({ text, className = '', as: Tag = 'p' }) {
         <Link
           key={`h-${key}`}
           to={`/hashtag/${canonical}`}
-          className="font-medium text-primary hover:underline"
+          className={linkClassName}
         >
           {full}
         </Link>
@@ -53,7 +53,7 @@ export default function RichText({ text, className = '', as: Tag = 'p' }) {
             e.preventDefault();
             confirmExternalLink(href);
           }}
-          className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
+          className={`inline-flex items-center gap-0.5 ${linkClassName}`}
         >
           {full}
           {external && <ExternalLinkIcon className="h-3 w-3 shrink-0" />}

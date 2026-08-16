@@ -1,5 +1,6 @@
 import React from 'react';
 import Avatar from '@/components/Avatar';
+import RichText from '@/components/RichText';
 
 export default function MessageBubble({ message, isMine }) {
   const time = message.created_date
@@ -18,7 +19,7 @@ export default function MessageBubble({ message, isMine }) {
               : 'rounded-bl-md bg-secondary text-secondary-foreground'
           }`}
         >
-          {message.body}
+          <RichText text={message.body} linkClassName={isMine ? 'font-medium text-primary-foreground hover:underline' : 'font-medium text-primary hover:underline'} />
         </div>
         <span className="mt-0.5 px-1 text-[10px] text-muted-foreground">{time}</span>
       </div>

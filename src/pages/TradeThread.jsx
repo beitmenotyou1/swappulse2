@@ -11,6 +11,7 @@ import { TRADE_STATUS_LABELS } from '@/lib/format';
 import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
 import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
 import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
+import RichText from '@/components/RichText';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
@@ -219,7 +220,7 @@ export default function TradeThread() {
                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-primary text-white' : 'bg-secondary'}`}>
                     {!mine && <p className="mb-0.5 text-xs font-semibold text-muted-foreground">{m.author_name}</p>}
-                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                    <RichText text={m.body} className="whitespace-pre-wrap break-words" linkClassName={mine ? 'font-medium text-primary-foreground hover:underline' : 'font-medium text-primary hover:underline'} />
                   </div>
                 </div>
               );
