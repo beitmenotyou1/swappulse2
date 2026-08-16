@@ -7,6 +7,7 @@ import LiveAvatar from '@/components/LiveAvatar';
 import StoryViewer from './StoryViewer';
 import { useLivePresence } from '@/lib/livePresence';
 import CreateStoryModal from './CreateStoryModal';
+import { useAuth } from '@/lib/AuthContext';
 
 // Returns the set of DIDs with whom the current user shares an accepted,
 // mutual friendship (both directions accepted).
@@ -26,6 +27,9 @@ export default function StoriesBar() {
   const [startDid, setStartDid] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const { liveByDid } = useLivePresence();
+  const { user } = useAuth();
+  const myDisplayName = user?.display_name || user?.full_name || 'You';
+  const myAvatar = user?.avatar || '';
 
   const load = async (did) => {
     const cutoff = new Date().toISOString();
@@ -91,10 +95,10 @@ export default function StoriesBar() {
         <div className="relative">
           {hasMine ? (
             <div className="rounded-full bg-gradient-to-tr from-[#6d4aff] to-[#8b5cf6] p-[3px]">
-              <div className="rounded-full ring-2 ring-card"><Avatar name="You" size={72} /></div>
+              <div className="rounded-full ring-2 ring-card"><Avatar name={myDisplayName} src={myAvatar} size={72} /></div>
             </div>
           ) : (
-            <Avatar name="You" size={72} />
+            <Avatar name={myDisplayName} src={myAvatar} size={72} />
           )}
           {!hasMine && (
             <span className="absolute -bottom-0.5 -right-0.5 grid h-6 w-6 place-items-center rounded-full bg-primary text-white ring-2 ring-card">

@@ -72,9 +72,9 @@ export default function TradeThread() {
       const stamped = await stampRecord({
         trade_id: tradeId,
         body: text,
-        author_name: me?.full_name || 'Collector',
-        author_handle: me?.email?.split('@')[0] || 'collector',
-        author_avatar: '',
+        author_name: me?.display_name || me?.full_name || 'Collector',
+        author_handle: me?.username || me?.bsky_handle || 'collector',
+        author_avatar: me?.avatar || '',
         listing_author_id: trade?.created_by_id || '',
       }, NSID.TRADE_NEGOTIATION, did, signingKey);
       const created = await base44.entities.TradeMessage.create(stamped);

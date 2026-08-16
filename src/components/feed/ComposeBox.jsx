@@ -66,8 +66,8 @@ export default function ComposeBox({ onPosted, replyTo }) {
         card_image: attachedCard?.image,
         card_rarity: attachedCard?.rarity,
         set_name: attachedCard?.set?.name,
-        author_name: user?.full_name,
-        author_handle: user?.email?.split('@')[0],
+        author_name: user?.display_name || user?.full_name,
+        author_handle: user?.username || user?.bsky_handle || '',
         likes: 0,
         reposts: 0,
         replies: 0,
@@ -120,15 +120,15 @@ export default function ComposeBox({ onPosted, replyTo }) {
         : stamped.post_type === 'showcase' ? 'binder' : null;
       if (cat) {
         base44.functions.invoke('dispatchBellNotifications', {
-          author_did: did, author_name: user?.full_name, category: cat,
+          author_did: did, author_name: user?.display_name || user?.full_name, category: cat,
           preview: content.trim() || stamped.card_name || 'New post', url: '/',
         }).catch(() => {});
       }
       if (cat && created?.id) {
         dispatchCrossPost(cat, created.id, {
           url: window.location.origin + '/',
-          authorName: user?.full_name,
-          authorHandle: user?.email?.split('@')[0],
+          authorName: user?.display_name || user?.full_name,
+          authorHandle: user?.username || user?.bsky_handle || '',
         });
       }
       setContent('');
@@ -155,7 +155,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         </div>
       )}
       <div className="flex gap-3">
-        <Avatar name={user?.full_name} size={44} />
+        <Avatar name={user?.display_name || user?.full_name} src={user?.avatar} size={44} />
         <div className="flex-1">
           <textarea
             value={content}

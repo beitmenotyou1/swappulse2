@@ -44,9 +44,9 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
           card_id: cardId,
           card_name: cardName || '',
           card_image: cardImage || '',
-          author_name: user?.full_name || 'Collector',
-          author_handle: user?.handle || '',
-          author_avatar: user?.avatar_url || '',
+          author_name: user?.display_name || user?.full_name || 'Collector',
+          author_handle: user?.username || user?.bsky_handle || '',
+          author_avatar: user?.avatar || '',
         }));
         base44.functions.invoke('autoModerateComment', { post_id: post.id }).catch(() => {});
       }

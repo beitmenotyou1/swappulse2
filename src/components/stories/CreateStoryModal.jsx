@@ -67,9 +67,9 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
         audience,
         story_group,
         expires_at,
-        author_name: me?.full_name || '',
-        author_handle: me?.email?.split('@')[0] || '',
-        author_avatar: '',
+        author_name: me?.display_name || me?.full_name || '',
+        author_handle: me?.username || me?.bsky_handle || '',
+        author_avatar: me?.avatar || '',
         did,
       }, NSID.STORY, did, signingKey);
       const created = await base44.entities.Story.create(stamped);
@@ -78,7 +78,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
         if (res.bridged) base44.entities.Story.update(created.id, res).catch(() => {});
       }).catch(() => {});
       base44.functions.invoke('dispatchBellNotifications', {
-        author_did: did, author_name: me?.full_name || '', category: 'story',
+        author_did: did, author_name: me?.display_name || me?.full_name || '', category: 'story',
         preview: finalSegs[0]?.text_overlay || 'Shared a story', url: '/',
       }).catch(() => {});
       setSegments([]); setSeg(emptySeg()); setAudience('friends');
