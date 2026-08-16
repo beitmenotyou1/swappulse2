@@ -139,19 +139,11 @@ export default function ExternalActorSearch() {
               {following ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : isFollowing ? <UserCheck className="w-4 h-4 mr-1" /> : <UserPlus className="w-4 h-4 mr-1" />}
               {isFollowing ? "Following" : "Follow"}
             </Button>
-            {result.is_member ? (
-              <Button asChild size="sm" variant="outline">
-                <Link to={`/profile/${result.did}`}>
-                  View profile <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild size="sm" variant="outline">
-                <a href={`https://bsky.app/profile/${result.did}`} target="_blank" rel="noreferrer">
-                  View on Bluesky <ExternalLink className="w-4 h-4 ml-1" />
-                </a>
-              </Button>
-            )}
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/profile/${result.did}`}>
+                View profile <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+            </Button>
           </div>
         </div>
       )}
