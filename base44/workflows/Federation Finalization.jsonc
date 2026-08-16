@@ -1,0 +1,243 @@
+{
+  "name": "Federation Finalization",
+  "description": "Admin-triggered: publishes all 23 org.swappulse.* lexicon definitions to the network, then pushes all historical unbridged custom records to the PDS in batches. Each batch processes up to ~100s of records; the workflow runs 5 batches back-to-back (with 1-minute pauses) to auto-paginate. If records still remain, re-trigger the workflow from the dashboard.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "one_time",
+      "cron_expression": null,
+      "one_time_date": "2027-01-01T00:00:00Z",
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "federation_finalization",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "register_lexicons": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "register-lexicons",
+            "args": {}
+          },
+          "then": "push_1",
+          "x-base44": {
+            "title": "Register Lexicons",
+            "description": "Publish all 23 org.swappulse.* lexicon definitions to the PDS"
+          }
+        }
+      },
+      {
+        "push_1": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "initial-push-custom-records",
+            "args": {}
+          },
+          "then": "check_1",
+          "x-base44": {
+            "title": "Push Batch 1",
+            "description": "First batch of unbridged records"
+          }
+        }
+      },
+      {
+        "check_1": {
+          "switch": [
+            {
+              "when": "${ .push_1.done == true }",
+              "then": "end"
+            },
+            {
+              "when": "${ .push_1.pushed == 0 }",
+              "then": "end"
+            },
+            {
+              "when": "${ true }",
+              "then": "wait_1"
+            }
+          ],
+          "x-base44": {
+            "title": "Check Batch 1",
+            "description": "Stop if all bridged or no progress"
+          }
+        }
+      },
+      {
+        "wait_1": {
+          "wait": "PT1M",
+          "then": "push_2",
+          "x-base44": {
+            "title": "Wait 1 Minute",
+            "description": "Pause to avoid PDS rate limits"
+          }
+        }
+      },
+      {
+        "push_2": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "initial-push-custom-records",
+            "args": {}
+          },
+          "then": "check_2",
+          "x-base44": {
+            "title": "Push Batch 2",
+            "description": "Second batch of unbridged records"
+          }
+        }
+      },
+      {
+        "check_2": {
+          "switch": [
+            {
+              "when": "${ .push_2.done == true }",
+              "then": "end"
+            },
+            {
+              "when": "${ .push_2.pushed == 0 }",
+              "then": "end"
+            },
+            {
+              "when": "${ true }",
+              "then": "wait_2"
+            }
+          ],
+          "x-base44": {
+            "title": "Check Batch 2",
+            "description": "Stop if all bridged or no progress"
+          }
+        }
+      },
+      {
+        "wait_2": {
+          "wait": "PT1M",
+          "then": "push_3",
+          "x-base44": {
+            "title": "Wait 1 Minute",
+            "description": "Pause to avoid PDS rate limits"
+          }
+        }
+      },
+      {
+        "push_3": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "initial-push-custom-records",
+            "args": {}
+          },
+          "then": "check_3",
+          "x-base44": {
+            "title": "Push Batch 3",
+            "description": "Third batch of unbridged records"
+          }
+        }
+      },
+      {
+        "check_3": {
+          "switch": [
+            {
+              "when": "${ .push_3.done == true }",
+              "then": "end"
+            },
+            {
+              "when": "${ .push_3.pushed == 0 }",
+              "then": "end"
+            },
+            {
+              "when": "${ true }",
+              "then": "wait_3"
+            }
+          ],
+          "x-base44": {
+            "title": "Check Batch 3",
+            "description": "Stop if all bridged or no progress"
+          }
+        }
+      },
+      {
+        "wait_3": {
+          "wait": "PT1M",
+          "then": "push_4",
+          "x-base44": {
+            "title": "Wait 1 Minute",
+            "description": "Pause to avoid PDS rate limits"
+          }
+        }
+      },
+      {
+        "push_4": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "initial-push-custom-records",
+            "args": {}
+          },
+          "then": "check_4",
+          "x-base44": {
+            "title": "Push Batch 4",
+            "description": "Fourth batch of unbridged records"
+          }
+        }
+      },
+      {
+        "check_4": {
+          "switch": [
+            {
+              "when": "${ .push_4.done == true }",
+              "then": "end"
+            },
+            {
+              "when": "${ .push_4.pushed == 0 }",
+              "then": "end"
+            },
+            {
+              "when": "${ true }",
+              "then": "wait_4"
+            }
+          ],
+          "x-base44": {
+            "title": "Check Batch 4",
+            "description": "Stop if all bridged or no progress"
+          }
+        }
+      },
+      {
+        "wait_4": {
+          "wait": "PT1M",
+          "then": "push_5",
+          "x-base44": {
+            "title": "Wait 1 Minute",
+            "description": "Pause to avoid PDS rate limits"
+          }
+        }
+      },
+      {
+        "push_5": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "initial-push-custom-records",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Push Batch 5",
+            "description": "Final batch \u2014 re-trigger workflow from dashboard if records remain"
+          }
+        }
+      }
+    ]
+  }
+}
