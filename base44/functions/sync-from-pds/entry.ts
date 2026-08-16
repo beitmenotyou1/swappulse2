@@ -81,10 +81,20 @@ export default async function (req: Request): Promise<Response> {
 
       const localRecords = await svc.entities[entity].filter({ bridged: true }, '-updated_date', 500);
 
+      const bridgePrefix = `at://${did}/`;
       let deleted = 0;
       let cidMismatches = 0;
+      let skipped = 0;
       for (const local of localRecords) {
         if (!local.at_uri) continue;
+        // Only verify/delete records that live under the shared bridge account's
+        // own repo — that's the only repo this sync can list. Records bridged
+        // under a user's own did:plc live in a repo we can't see from here, so
+        // skip them entirely (never delete user-repo content).
+        if (!local.at_uri.startsWith(bridgePrefix)) {
+          skipped++;
+          continue;
+        }
         if (!pdsUriSet.has(local.at_uri)) {
           // Orphaned — deleted on PDS, delete locally
           try {
@@ -112,6 +122,7 @@ export default async function (req: Request): Promise<Response> {
         pdsCount: pdsRecords.length,
         localBridged: localRecords.length,
         deleted,
+        skipped,
         cidMismatches,
       });
     }
