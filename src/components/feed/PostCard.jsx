@@ -15,6 +15,7 @@ import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetV
 import ReportDialog from '@/components/moderation/ReportDialog';
 import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
+import RichText from '@/components/RichText';
 
 const TYPE_META = {
   pack_opening: { icon: Sparkles, label: 'Pack Pull', color: 'text-accent' },
@@ -161,7 +162,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
           </div>
 
           {post.content && (
-            <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed">{post.content}</p>
+            <RichText text={post.content} className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed" />
           )}
 
           {post.card_id && (

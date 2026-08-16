@@ -7,6 +7,7 @@ import LiveAvatar from '@/components/LiveAvatar';
 import { timeAgo } from '@/lib/format';
 import { createReply } from '@/lib/postInteractions';
 import CommentActions from '@/components/comments/CommentActions';
+import RichText from '@/components/RichText';
 
 const MAX_LEN = 500;
 
@@ -17,7 +18,7 @@ function ReplyNode({ reply, children, onPosted }) {
       <div className="min-w-0 flex-1">
         <p className="text-xs leading-snug">
           <span className="font-semibold">{reply.author_name || 'Collector'}</span>{' '}
-          <span className="text-muted-foreground">{reply.content}</span>
+          <RichText as="span" text={reply.content} className="text-muted-foreground" />
         </p>
         <p className="text-[11px] text-muted-foreground">{timeAgo(reply.created_date)}</p>
         <CommentActions comment={reply} onPosted={onPosted} compact />

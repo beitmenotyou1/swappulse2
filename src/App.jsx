@@ -78,6 +78,8 @@ import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
+import HashtagPage from '@/pages/HashtagPage';
+import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -149,6 +151,7 @@ const AuthenticatedApp = () => {
         <Route path="/help" element={<Help />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/hashtag/:tag" element={<HashtagPage />} />
       </Route>
       {/* Auth required — login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
@@ -199,6 +202,7 @@ function App() {
             </PodcastPlayerProvider>
           </LivePresenceProvider>
         </Router>
+        <ExternalLinkConfirm />
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>

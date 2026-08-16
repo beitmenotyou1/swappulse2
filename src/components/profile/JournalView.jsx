@@ -1,7 +1,9 @@
 import React from 'react';
-import { X, Heart } from 'lucide-react';
+import { X, Heart, ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { formatPrice } from '@/lib/format';
+import { remarkHashtags } from '@/lib/remarkHashtags';
+import { confirmExternalLink, isExternalUrl } from '@/lib/externalLink';
 
 export default function JournalView({ journal, onClose }) {
   if (!journal) return null;
@@ -45,7 +47,30 @@ export default function JournalView({ journal, onClose }) {
           )}
 
           <div className="space-y-3 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_h1]:text-base [&_h1]:font-bold [&_h1]:mt-4 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-3 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_code]:bg-secondary [&_code]:rounded [&_code]:px-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:rounded-lg">
-            <ReactMarkdown>{journal.body || ''}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkHashtags]}
+              components={{
+                a: ({ href, children }) => {
+                  const external = isExternalUrl(href);
+                  return (
+                    <a
+                      href={external ? undefined : href}
+                      onClick={(e) => {
+                        if (!external) return;
+                        e.preventDefault();
+                        confirmExternalLink(href);
+                      }}
+                      className="inline-flex items-center gap-0.5"
+                    >
+                      {children}
+                      {external && <ExternalLinkIcon className="h-3 w-3 shrink-0" />}
+                    </a>
+                  );
+                },
+              }}
+            >
+              {journal.body || ''}
+            </ReactMarkdown>
           </div>
         </div>
       </div>

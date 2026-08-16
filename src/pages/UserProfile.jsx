@@ -19,6 +19,7 @@ import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import useSEO from '@/hooks/useSEO';
+import RichText from '@/components/RichText';
 
 // Other-user profile. Renders the merged SwapPulse + Bluesky profile. For
 // non-members (is_member=false, remote_synced=true) it shows a prominent
@@ -152,7 +153,7 @@ export default function UserProfile() {
             posts={profile?.posts_count || posts.length}
           />
           {profile?.description && (
-            <p className="mt-2 text-sm">{profile.description}</p>
+            <RichText text={profile.description} className="mt-2 text-sm" />
           )}
           {!isExternal && (
             <AddFriendLink

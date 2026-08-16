@@ -5,6 +5,7 @@ import CommentActions from './CommentActions';
 import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
 import { CornerDownRight } from 'lucide-react';
+import RichText from '@/components/RichText';
 
 function timeAgo(iso) {
   if (!iso) return '';
@@ -38,7 +39,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
             <ExternalIndicator did={comment.did} />
             <span className="text-xs text-muted-foreground">{timeAgo(comment.created_date)}</span>
           </div>
-          <p className="mt-0.5 text-sm whitespace-pre-wrap break-words">{comment.content}</p>
+          <RichText text={comment.content} className="mt-0.5 text-sm whitespace-pre-wrap break-words" />
 
           <div className="mt-2 space-y-1.5">
             <CommentActions comment={comment} onReply={onReply} onPosted={onPosted} compact />
@@ -66,7 +67,7 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
                           <ExternalIndicator did={reply.did} />
                           <span className="text-xs text-muted-foreground">{timeAgo(reply.created_date)}</span>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap break-words">{reply.content}</p>
+                        <RichText text={reply.content} className="text-sm whitespace-pre-wrap break-words" />
                         <div className="mt-1.5 space-y-1">
                           <CommentActions comment={reply} onReply={onReply} onPosted={onPosted} compact />
                           <CommentReactions post={reply} user={user} compact initialReactions={reactionsByPostId?.[reply.id]} />

@@ -27,6 +27,7 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import ProfileHandle from '@/components/profile/ProfileHandle';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
+import RichText from '@/components/RichText';
 
 const TABS = ['Posts', 'Activity', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
@@ -155,7 +156,7 @@ export default function Profile() {
             following={merged?.follows_count || 0}
             posts={myPosts.length}
           />
-          {(merged?.description || user?.description) && <p className="mt-2 text-sm">{merged?.description || user.description}</p>}
+          {(merged?.description || user?.description) && <RichText text={merged?.description || user.description} className="mt-2 text-sm" />}
           <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
             {repAvg && (
               <span className="flex items-center gap-1 text-accent">
