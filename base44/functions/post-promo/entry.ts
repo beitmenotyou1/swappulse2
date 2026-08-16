@@ -18,43 +18,56 @@ import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 
 // --- Message fragment pools (composed randomly each run) ---
+// Written to sound like a real collector talking — conversational, personal,
+// relatable — not corporate marketing copy. Links are always full https://
+// URLs and hashtags are real, commonly-searched Pokémon TCG community tags.
 const HOOKS = [
-  "Just pulled a rare? Show it off on SwapPulse! \u{1F389}",
-  "Hunting that one card to finish a set? We feel you.",
-  "Your collection deserves more than a spreadsheet.",
-  "Trade Pok\u00E9mon TCG cards with collectors worldwide.",
-  "Built on the AT Protocol \u2014 your collection, your data.",
-  "Free, open-source, and made by collectors, for collectors.",
-  "Every card has a story. What's yours?",
-  "From pack pulls to set completion \u2014 track it all.",
-  "Tired of walled gardens? SwapPulse is federated and free.",
-  "Scan, bind, trade, and share \u2014 all in one place.",
+  "Just pulled the chase card I've been hunting for weeks \u{1F389}",
+  "We've all been there \u2014 one card away from finishing a set and it's nowhere to be found.",
+  "My binder was a mess of spreadsheets and phone notes until I found something better.",
+  "Honestly? Trading online used to stress me out. Not anymore.",
+  "Remember when social media actually felt like a community? Yeah, me too.",
+  "I just scanned my entire deck box in like five minutes. Five minutes!",
+  "Got my first vouch last week and it honestly felt better than a pull.",
+  "Someone on the other side of the world just completed my set. Wild.",
+  "Tired of algorithms deciding what I see. So I switched.",
+  "My local card shop is great, but the community online? Next level.",
+  "Finally found a place that treats collectors like people, not data points.",
+  "Been logging every pull since January and the progress feels SO good.",
 ];
 
 const VALUE_PROPS = [
-  "Track collections, log pulls, and trade with verified collectors.",
-  "Federated with Bluesky \u2014 your posts reach the whole network.",
-  "No paywalls, no ads. Just collectors helping collectors.",
-  "AI card scanner, digital binders, challenges, and meetups.",
-  "Trade safely with our vouch-based trust graph.",
-  "Your posts, follows, and likes federate across the AT Protocol.",
-  "Build your collector profile and earn community achievements.",
+  "SwapPulse is where collectors actually talk to each other \u2014 no ads, no algorithm, just people who love the hobby.",
+  "It's built on the AT Protocol, so your posts show up on Bluesky too. Same account, bigger reach.",
+  "Scan a card, add it to your collection, build a binder, find a trade \u2014 all in one place, all free.",
+  "Every trader gets vouched for by the community, so you know who you're dealing with before you mail anything.",
+  "No paywalls. No premium tiers. No selling your data. It's just collectors helping collectors.",
+  "Your collection, your posts, your follows \u2014 they're yours. You can take them with you anytime.",
+  "Challenges, meetups, pack parties \u2014 it's the card shop vibe, but online and global.",
+  "The AI scanner nailed every card I threw at it, even the old base set ones.",
 ];
 
 const CTAS = [
-  "Join free: swappulse.org",
-  "Create your account: swappulse.org",
-  "Start collecting: swappulse.org",
-  "Discover SwapPulse: swappulse.org",
+  "Come hang out with us: https://swappulse.org",
+  "Make a free account and say hi: https://swappulse.org",
+  "Start your collection here: https://swappulse.org",
+  "See what we're building: https://swappulse.org",
+  "Join the community: https://swappulse.org",
+  "Bring your binder: https://swappulse.org",
 ];
 
+// Real, commonly-searched Pokémon TCG community hashtags. These are tags
+// collectors actually follow and search for on Bluesky and other platforms \u2014
+// not invented brand tags. Capped at 4 per post to stay readable.
 const HASHTAG_SETS = [
-  "#PokemonTCG #SwapPulse",
-  "#PokemonCollection #SwapPulse",
-  "#TCGTrading #SwapPulse",
-  "#CardCollecting #SwapPulse",
-  "#PokemonTCG #SwapPulse #ATProtocol",
-  "#PokemonCards #SwapPulse",
+  "#PokemonTCG #PTCGO #PokemonCards #TCG",
+  "#PokemonTCG #PullOfTheWeek #CardCollecting",
+  "#PokemonTCG #PokemonCommunity #TCGTrading",
+  "#PokemonTCG #ShinyHunting #PokemonCollection",
+  "#PokemonTCG #PackOpening #PullOfTheWeek",
+  "#PokemonTCG #TCGCommunity #CardCollector",
+  "#PokemonTCG #PokemonCards #TradingCards",
+  "#PokemonTCG #PTCGO #CardCollecting #PullOfTheWeek",
 ];
 
 function pick<T>(arr: T[]): T {
