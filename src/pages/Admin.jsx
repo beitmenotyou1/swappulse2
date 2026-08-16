@@ -14,6 +14,7 @@ import ProvisionIdentitiesSection from '@/components/admin/ProvisionIdentitiesSe
 import SyncProfilesSection from '@/components/admin/SyncProfilesSection';
 import FederationDiagnosticsSection from '@/components/admin/FederationDiagnosticsSection';
 import SeoAuditSection from '@/components/admin/SeoAuditSection';
+import DataSubjectRequestsSection from '@/components/admin/DataSubjectRequestsSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 export default function Admin() {
@@ -78,6 +79,7 @@ export default function Admin() {
         <FederationDiagnosticsSection />
         <SyncProfilesSection />
         <IncidentsSection />
+        <DataSubjectRequestsSection />
         <SeoAuditSection />
       </div>
     </>

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { buildDay1Email, buildDay3Email, buildDay7Email } from '../../shared/emailContent.ts';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { getConsentMap, hasMarketingConsent } from '../../shared/consentCheck.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -94,8 +95,9 @@ Deno.serve(async (req) => {
     ]);
 
     const sent = new Set(sentRecords.map((r) => r.user_id + ":" + r.email_type));
+    const consentMap = await getConsentMap(svc);
 
-    let day1 = 0, day3 = 0, day7 = 0, failed = 0;
+    let day1 = 0, day3 = 0, day7 = 0, failed = 0, skipped = 0;
     const pendingCreates: any[] = [];
     const send = async (u, type, emailObj) => {
       try {
@@ -114,6 +116,8 @@ Deno.serve(async (req) => {
 
     for (const u of allUsers) {
       if (!u.email) continue;
+      // GDPR/CCPA: skip users who withdrew marketing consent
+      if (!hasMarketingConsent(consentMap.get(u.id))) { skipped++; continue; }
       const ageDays = (now - new Date(u.created_date).getTime()) / DAY_MS;
 
       if (ageDays >= 1 && !sent.has(u.id + ":day1")) {
@@ -134,7 +138,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ day1, day3, day7, failed, users: allUsers.length });
+    return Response.json({ day1, day3, day7, failed, skipped, users: allUsers.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

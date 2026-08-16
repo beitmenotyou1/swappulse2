@@ -12,6 +12,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
+import { getConsentMap, isDoNotSell } from '../../shared/consentCheck.ts';
 
 const SKIP_COLLECTIONS = new Set([
   'app.bsky.feed.post',
@@ -47,9 +48,16 @@ export default async function (req: Request): Promise<Response> {
     // All users provisioned on the current PDS
     const creds = await svc.entities.PdsCredential
       .filter({ pds_url: pdsUrl }, '-created_date', 100).catch(() => []);
+    const consentMap = await getConsentMap(svc);
 
     for (const cred of creds || []) {
       if (Date.now() - startTime > TIME_BUDGET_MS) break;
+
+      // CCPA opt-out: skip users who enabled Do Not Sell or Share
+      if (isDoNotSell(consentMap.get(cred.user_id))) {
+        console.log('initial-push: skipping user (do-not-sell)', cred.did);
+        continue;
+      }
 
       let session: any;
       try {

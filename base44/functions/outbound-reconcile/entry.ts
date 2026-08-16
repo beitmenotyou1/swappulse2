@@ -12,6 +12,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
+import { getConsentMap, isDoNotSell } from '../../shared/consentCheck.ts';
 
 // bsky.* collections have strict lexicons and are bridged at create/update
 // time with the correct record shape — the generic entityToRecord serializer
@@ -52,10 +53,17 @@ export default async function (req: Request): Promise<Response> {
     }
 
     const creds = await svc.entities.PdsCredential.list('-created_date', 10).catch(() => []);
-    let reconciled = 0, created = 0, updated = 0, errors = 0;
+    const consentMap = await getConsentMap(svc);
+    let reconciled = 0, created = 0, updated = 0, errors = 0, skipped = 0;
     const perUser: any[] = [];
 
     for (const cred of creds) {
+      // CCPA opt-out: skip users who enabled Do Not Sell or Share
+      if (isDoNotSell(consentMap.get(cred.user_id))) {
+        console.log('outbound-reconcile: skipping user (do-not-sell)', cred.did);
+        skipped++;
+        continue;
+      }
       let session: any;
       try {
         const s = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
@@ -127,7 +135,7 @@ export default async function (req: Request): Promise<Response> {
       perUser.push({ did: cred.did, reconciled: userReconciled });
     }
 
-    return Response.json({ reconciled, created, updated, errors, users: creds.length, perUser });
+    return Response.json({ reconciled, created, updated, errors, skipped, users: creds.length, perUser });
   } catch (error) {
     console.error('outbound-reconcile error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });

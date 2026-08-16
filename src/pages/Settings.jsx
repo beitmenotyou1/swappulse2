@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target, Lock, Network } from 'lucide-react';
+import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target, Lock, Network, Scale } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { useSettings } from '@/hooks/useSettings';
 import AccountSection from '@/components/settings/AccountSection';
@@ -11,6 +11,7 @@ import AdvancedSection from '@/components/settings/AdvancedSection';
 import ChallengesSection from '@/components/settings/ChallengesSection';
 import SecuritySection from '@/components/settings/SecuritySection';
 import AtProtoSection from '@/components/settings/AtProtoSection';
+import DataPrivacyRightsSection from '@/components/settings/DataPrivacyRightsSection';
 
 const TABS = [
   { key: 'account', label: 'Account', Icon: Shield, Comp: AccountSection },
@@ -21,6 +22,7 @@ const TABS = [
   { key: 'advanced', label: 'Advanced', Icon: Wrench, Comp: AdvancedSection },
   { key: 'challenges', label: 'Challenges', Icon: Target, Comp: ChallengesSection },
   { key: 'security', label: 'Security', Icon: Lock, Comp: SecuritySection },
+  { key: 'datarights', label: 'Data & Rights', Icon: Scale, Comp: DataPrivacyRightsSection },
   { key: 'atprotocol', label: 'AT Protocol', Icon: Network, Comp: AtProtoSection },
 ];
 

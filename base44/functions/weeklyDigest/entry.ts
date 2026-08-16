@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { buildWeeklyDigestEmail } from '../../shared/emailContent.ts';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { getConsentMap, hasMarketingConsent } from '../../shared/consentCheck.ts';
 
 function fmt(pence) {
   if (!pence) return "£0.00";
@@ -56,7 +57,8 @@ Deno.serve(async (req) => {
       svc.entities.TradeListing.list("-created_date", 200).catch(() => []),
       svc.entities.Wishlist.list("-updated_date", 500).catch(() => []),
     ]);
-    const opted = all.filter((u) => u.weekly_digest === true && u.email);
+    const consentMap = await getConsentMap(svc);
+    const opted = all.filter((u) => u.weekly_digest === true && u.email && hasMarketingConsent(consentMap.get(u.id)));
     const collectionByOwner = partitionByOwner(collection);
     const tradesByOwner = partitionByOwner(trades);
     const wishlistByOwner = partitionByOwner(wishlist);

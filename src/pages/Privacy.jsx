@@ -115,6 +115,15 @@ export default function Privacy() {
               SwapPulse does not control how third-party AT Protocol services handle your data once they receive it.
               Their privacy practices are governed by their own policies.
             </p>
+            <p>
+              <strong>CCPA opt-out:</strong> Under the California Consumer Privacy Act, federating your data to the
+              wider AT Protocol network counts as a "share." If you do not want your records shared, you can enable{' '}
+              <strong>"Do Not Sell or Share My Personal Information"</strong> in{' '}
+              <Link to="/settings" className="text-primary hover:underline">Settings → Data & Rights</Link>. This stops
+              outbound federation of your records, but note that <strong>site functions become limited</strong> — your
+              posts, trades, and profile will not appear on Bluesky or other federated apps. You can turn it off at any
+              time to re-enable full federation.
+            </p>
 
             <h2 id="how-we-use" className="mt-8 scroll-mt-20 text-xl font-bold">5. How We Use Your Data</h2>
             <p>We use your data to:</p>
@@ -134,14 +143,18 @@ export default function Privacy() {
 
             <h2 id="cookies" className="mt-8 scroll-mt-20 text-xl font-bold">6. Cookies & Local Storage</h2>
             <p>
-              SwapPulse uses browser local storage and session storage to maintain your login session, store
-              preferences (theme, language, accessibility settings), and cache data for offline use. We do not use
-              third-party tracking cookies or analytics cookies. Your session token is stored locally on your device
-              and is sent only to SwapPulse and your PDS.
+              When you first visit SwapPulse, a cookie consent banner lets you choose which categories of cookies and
+              local storage you allow. You can revisit and change your choices at any time in{' '}
+              <Link to="/settings" className="text-primary hover:underline">Settings → Data & Rights</Link>.
             </p>
+            <p><strong>Essential</strong> — login, session, and security. Always on; required for the site to function.</p>
+            <p><strong>Functional</strong> — preferences (theme, language, accessibility), offline cache, and PWA features.</p>
+            <p><strong>Analytics</strong> — aggregate usage insights. No individual tracking or third-party profiling.</p>
+            <p><strong>Marketing</strong> — onboarding emails and the weekly digest. Off by default.</p>
             <p>
-              As a Progressive Web App (PWA), SwapPulse stores a service worker and cached assets on your device to
-              enable offline functionality and faster loading. You can clear this data through your browser settings
+              We do not use third-party tracking cookies. Your session token is stored locally on your device and is
+              sent only to SwapPulse and your PDS. As a Progressive Web App (PWA), SwapPulse stores a service worker
+              and cached assets on your device for offline use. You can clear this data through your browser settings
               at any time.
             </p>
 
@@ -180,18 +193,25 @@ export default function Privacy() {
             </ul>
 
             <h2 id="rights" className="mt-8 scroll-mt-20 text-xl font-bold">10. Your Rights</h2>
-            <p>Depending on your jurisdiction (GDPR, CCPA, UK Data Protection Act), you may have the right to:</p>
+            <p>
+              Depending on your jurisdiction (GDPR, CCPA, UK Data Protection Act), you have the right to exercise the
+              following. SwapPulse provides a dedicated{' '}
+              <Link to="/settings" className="text-primary hover:underline">Data & Privacy Rights</Link> center in
+              Settings where you can exercise all of these rights directly:
+            </p>
             <ul>
-              <li><strong>Access</strong> — Request a copy of your personal data. You can export your data through the Settings page or via the AT Protocol repo export.</li>
-              <li><strong>Rectification</strong> — Correct inaccurate profile information through the Settings page.</li>
-              <li><strong>Erasure</strong> — Delete your account through the Settings page. See Section 9 for limitations.</li>
-              <li><strong>Portability</strong> — Export your data in a machine-readable format. The AT Protocol is designed for this; your data is portable by design.</li>
-              <li><strong>Objection</strong> — Opt out of certain data processing, such as push notifications and email digests, through Settings.</li>
-              <li><strong>Withdraw consent</strong> — Withdraw consent for optional features (push notifications, email digests) at any time.</li>
+              <li><strong>Access</strong> — Request a copy of your personal data. Use "Download my data" in Settings for an instant JSON archive, or submit an access request for an emailed copy.</li>
+              <li><strong>Rectification</strong> — Correct inaccurate data. Update your profile in Settings, or submit a rectification request for data you cannot edit yourself.</li>
+              <li><strong>Erasure</strong> — Delete your account through Settings → Account → Danger zone. For partial erasure, submit an erasure request and we will review it.</li>
+              <li><strong>Portability</strong> — Export your data in a machine-readable JSON format using "Download my data." The AT Protocol is designed for portability; your data is yours.</li>
+              <li><strong>Objection</strong> — Opt out of certain processing, including federation (Do Not Sell or Share), push notifications, and email digests, in Settings → Data & Rights.</li>
+              <li><strong>Restriction</strong> — Request that we limit processing of your data temporarily. Submit a restriction request in Settings → Data & Rights.</li>
+              <li><strong>Withdraw consent</strong> — Withdraw consent for marketing emails, analytics, and push notifications at any time in Settings → Data & Rights.</li>
+              <li><strong>Do Not Sell or Share (CCPA)</strong> — Opt out of having your data federated to the wider AT Protocol network. See Section 4 for details on how this limits site functions.</li>
             </ul>
             <p>
-              To exercise these rights, use the in-app Settings page or contact us through the Help page. We will
-              respond within 30 days.
+              To exercise these rights, use the Data & Privacy Rights center in Settings, or contact us through the
+              Help page. We will respond to all requests within 30 days, as required by law.
             </p>
 
             <h2 id="children" className="mt-8 scroll-mt-20 text-xl font-bold">11. Children's Privacy</h2>

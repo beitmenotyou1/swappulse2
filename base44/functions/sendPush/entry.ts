@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import webPush from 'npm:web-push@3.6.7';
+import { getConsentMap, hasNotificationConsent } from '../../shared/consentCheck.ts';
 
 // Broadcasts a Web Push notification to every registered app user. Admin-only.
 // Requires VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY env vars (add in dashboard settings).
@@ -26,7 +27,8 @@ Deno.serve(async (req) => {
 
     const svc = base44.asServiceRole;
     const users = await svc.entities.User.list('-created_date', 500);
-    const subscribed = users.filter((u) => u.push_subscription);
+    const consentMap = await getConsentMap(svc);
+    const subscribed = users.filter((u) => u.push_subscription && hasNotificationConsent(consentMap.get(u.id)));
 
     // Parallelize all push sends (independent network calls).
     const results = await Promise.allSettled(subscribed.map((u) =>

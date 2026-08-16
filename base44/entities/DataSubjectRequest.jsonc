@@ -1,0 +1,96 @@
+{
+  "name": "DataSubjectRequest",
+  "type": "object",
+  "title": "DataSubjectRequest",
+  "description": "org.swappulse.dataSubjectRequest \u2014 a user-submitted request to exercise a data protection right under GDPR, CCPA, or the UK Data Protection Act: access, rectification, erasure, objection, restriction, consent withdrawal, or portability. Admins review and resolve; the status tracks the lifecycle. The submit-data-subject-request backend function creates these and notifies admins.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id of the requester"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the requester"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "access",
+        "rectification",
+        "erasure",
+        "objection",
+        "restriction",
+        "consent_withdrawal",
+        "portability"
+      ],
+      "description": "The type of data subject right being exercised"
+    },
+    "details": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Free-text details from the user about what they need"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Lifecycle status of the request"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "User id of the admin who resolved the request"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Admin notes on how the request was resolved"
+    }
+  },
+  "required": [
+    "user_id",
+    "request_type",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "name": "ConsentRecord",
+  "type": "object",
+  "title": "ConsentRecord",
+  "description": "org.swappulse.consentRecord \u2014 a per-user record of consent preferences under GDPR, CCPA, and the UK Data Protection Act. Tracks cookie category consent, the CCPA do-not-sell-or-share opt-out (which stops outbound federation), and marketing/analytics/notification consent flags. One record per user; missing record = defaults (all consent true, do_not_sell false). Enforced by the consentCheck shared helper before any outbound federation or marketing communication. The update-consent-preferences backend function upserts this record.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id this consent belongs to"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user (denormalized for service-role lookup)"
+    },
+    "cookie_categories": {
+      "type": "object",
+      "properties": {
+        "essential": {
+          "type": "boolean",
+          "default": true
+        },
+        "analytics": {
+          "type": "boolean",
+          "default": false
+        },
+        "marketing": {
+          "type": "boolean",
+          "default": false
+        },
+        "functional": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "description": "Cookie consent categories. Essential is always true."
+    },
+    "do_not_sell": {
+      "type": "boolean",
+      "default": false,
+      "description": "CCPA opt-out: when true, outbound federation of the user's records to the AT Protocol network is stopped, limiting site functions (posting, trading, federation visibility)."
+    },
+    "marketing_consent": {
+      "type": "boolean",
+      "default": true,
+      "description": "Consent for marketing emails (onboarding sequence, digest). Default true (opt-out model)."
+    },
+    "analytics_consent": {
+      "type": "boolean",
+      "default": true,
+      "description": "Consent for analytics processing. Default true (opt-out model)."
+    },
+    "notification_consent": {
+      "type": "boolean",
+      "default": true,
+      "description": "Consent for push notifications. Default true (opt-out model)."
+    },
+    "consent_given_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the user last gave or updated consent"
+    },
+    "consent_version": {
+      "type": "string",
+      "description": "Version of the consent banner/policy the user agreed to"
+    },
+    "ip_hash": {
+      "type": "string",
+      "description": "Hashed IP address for audit purposes"
+    }
+  },
+  "required": [
+    "user_id",
+    "did"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
