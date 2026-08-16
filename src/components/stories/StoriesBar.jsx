@@ -9,15 +9,10 @@ import { useLivePresence } from '@/lib/livePresence';
 import CreateStoryModal from './CreateStoryModal';
 import { useAuth } from '@/lib/AuthContext';
 
-// Returns the set of DIDs with whom the current user shares an accepted,
-// mutual friendship (both directions accepted).
-async function mutualFriendDids(me) {
-  const [mine, theirs] = await Promise.all([
-    base44.entities.Friendship.filter({ did: me, status: 'accepted' }).catch(() => []),
-    base44.entities.Friendship.filter({ friend_did: me, status: 'accepted' }).catch(() => []),
-  ]);
-  const theirSet = new Set(theirs.map((t) => t.did));
-  return new Set(mine.filter((m) => theirSet.has(m.friend_did)).map((m) => m.friend_did));
+// Returns the set of DIDs the current user follows (outgoing follows).
+async function followedDids(me) {
+  const follows = await base44.entities.Follow.filter({ did: me }).catch(() => []);
+  return new Set(follows.map((f) => f.subject_did).filter(Boolean));
 }
 
 export default function StoriesBar() {
@@ -34,13 +29,13 @@ export default function StoriesBar() {
   const load = async (did) => {
     const cutoff = new Date().toISOString();
     // Parallelize the three independent fetches (Story, mutual friends, StoryView).
-    const [active, friends, views] = await Promise.all([
+    const [active, follows, views] = await Promise.all([
       base44.entities.Story.filter({ expires_at: { $gte: cutoff } }, '-created_date', 100).catch(() => []),
-      did ? mutualFriendDids(did) : Promise.resolve(new Set()),
+      did ? followedDids(did) : Promise.resolve(new Set()),
       did ? base44.entities.StoryView.filter({ viewer_did: did }).catch(() => []) : Promise.resolve([]),
     ]);
-    // audience gate: public stories visible to all; friends-only to author + mutual friends.
-    const visible = active.filter((s) => s.audience === 'public' || s.did === did || friends.has(s.did));
+    // Only show stories from collectors the user follows (plus their own).
+    const visible = active.filter((s) => s.did === did || follows.has(s.did));
     setStories(visible);
     if (did) setSeenIds(new Set(views.map((v) => v.story_id)));
   };
