@@ -1,0 +1,110 @@
+{
+  "name": "BotRiskState",
+  "type": "object",
+  "title": "BotRiskState",
+  "description": "org.swappulse.botRiskState \u2014 per-subject cumulative bot-risk state used by the shared botGuard module to score write actions. One record per user (or anonymous auth-flow subject). Tracks the rolling action-velocity window, cumulative risk score, challenge history, any active block, and the pending challenge token for the in-flow 'verify you're human' captcha. Service-role writes bypass RLS; only the owner or an admin reads it directly.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id this state belongs to (or anonymous key for pre-auth subjects)"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the subject (empty for anonymous attempts)"
+    },
+    "risk_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "description": "Cumulative bot-risk score (0-100), raised by flags and failures, lowered by passed challenges"
+    },
+    "challenges_passed": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total 'verify you're human' challenges successfully completed"
+    },
+    "challenges_failed": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total challenges failed; 3 consecutive failures trigger a temporary block"
+    },
+    "last_challenge_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "blocked_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the temporary block expires; while in the past the subject is blocked outright"
+    },
+    "pending_challenge_token": {
+      "type": "string",
+      "description": "Single-use token issued when a challenge is required; cleared on verify"
+    },
+    "pending_challenge_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the pending challenge was issued (used for behavioural timing validation)"
+    },
+    "action_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Actions in the current rolling rate-limit window"
+    },
+    "action_window_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of the current rolling rate-limit window"
+    },
+    "last_action_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "flagged_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of times this subject hit a hard block; feeds escalation"
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

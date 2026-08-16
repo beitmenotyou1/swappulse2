@@ -1,0 +1,92 @@
+{
+  "name": "BotAttempt",
+  "type": "object",
+  "title": "BotAttempt",
+  "description": "org.swappulse.botAttempt \u2014 an audit record of a bot-protection verdict on a write action. Created by the shared botGuard module whenever an action is challenged, blocked, or flagged as borderline-risk. Admins and moderators review these in the Moderation dashboard to spot automated abuse patterns and feed the account-enforcement path. IPs are stored hashed, never raw.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 user id of the actor (empty for anonymous/auth-flow attempts)"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the actor (empty for anonymous attempts)"
+    },
+    "anon_id": {
+      "type": "string",
+      "description": "Anonymous subject key used for pre-auth attempts (e.g. 'anon:email' or 'anon:iphash')"
+    },
+    "action_type": {
+      "type": "string",
+      "description": "The write action that was evaluated (post, comment, like, repost, reaction, follow, trade_message, scan, dm, login_code, register, etc.)"
+    },
+    "risk_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "description": "Computed bot-risk score (0-100) at the time of the verdict"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Signal reasons that contributed to the score (e.g. bot_ua, rate_soft_post, new_account_burst, low_diversity, challenge_failed)"
+    },
+    "ip_hash": {
+      "type": "string",
+      "description": "Hashed client IP address for audit (never the raw IP)"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "allowed",
+        "challenged",
+        "blocked",
+        "challenge_passed",
+        "challenge_failed"
+      ],
+      "description": "The verdict outcome: allowed (borderline but permitted), challenged (captcha required), blocked (hard block), challenge_passed (captcha verified), challenge_failed (captcha failed)"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "Optional short hash of the submitted content for repetition analysis"
+    }
+  },
+  "required": [
+    "action_type",
+    "outcome"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
