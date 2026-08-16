@@ -53,7 +53,11 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
   const removeSegment = (i) => setSegments((prev) => prev.filter((_, idx) => idx !== i));
 
   const publish = async () => {
-    const finalSegs = segments.length ? segments : (seg.media_type === 'text' && seg.text_overlay.trim() ? [{ ...seg, order: 0 }] : []);
+    const currentValid =
+      (seg.media_type === 'text' && seg.text_overlay.trim()) ||
+      ((seg.media_type === 'image' || seg.media_type === 'video') && seg.media_blob) ||
+      (seg.media_type === 'card' && seg.card_embed_uri);
+    const finalSegs = segments.length ? segments : (currentValid ? [{ ...seg, order: 0 }] : []);
     if (!finalSegs.length) return;
     setSaving(true);
     try {
