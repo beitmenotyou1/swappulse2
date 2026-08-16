@@ -12,6 +12,7 @@ import ActivityFeed from '@/components/moderation/ActivityFeed';
 import BulkActions from '@/components/moderation/BulkActions';
 import TradeDisputesSection from '@/components/moderation/TradeDisputesSection';
 import AccountEnforcementSection from '@/components/moderation/AccountEnforcementSection';
+import BotAttemptsSection from '@/components/moderation/BotAttemptsSection';
 
 const DEFAULT_FILTERS = {
   severity: [],
@@ -151,6 +152,7 @@ export default function Moderation() {
             ['posts', 'Flagged Posts'],
             ['disputes', 'Trade Disputes'],
             ['enforcement', 'Account Enforcement'],
+            ['bots', 'Bot Protection'],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -167,6 +169,8 @@ export default function Moderation() {
           <TradeDisputesSection />
         ) : tab === 'enforcement' ? (
           <AccountEnforcementSection />
+        ) : tab === 'bots' ? (
+          <BotAttemptsSection />
         ) : (
           <>
         <KpiStrip stats={stats} />

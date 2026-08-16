@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeReaction } from '@/lib/federatedBridge';
+import { ensureBotAllowed } from '@/lib/botGuardClient';
 
 const REACTIONS = {
   insane_pull: { emoji: '🔥', label: 'Insane Pull' },
@@ -75,6 +76,7 @@ export default function ReactionBar({ post, initial }) {
       setMine(type);
       setMineId(null);
       try {
+        await ensureBotAllowed('reaction', '');
         const { did, signingKey } = await ensureUserDid();
         const me = await base44.auth.me();
         const stamped = await stampRecord(

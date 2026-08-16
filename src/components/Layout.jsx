@@ -15,6 +15,7 @@ import NotificationPopupListener from '@/components/notifications/NotificationPo
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import Footer from '@/components/Footer';
 import CookieConsentBanner from '@/components/consent/CookieConsentBanner';
+import BotChallengeProvider from '@/lib/BotChallengeProvider';
 import { usePresence } from '@/hooks/usePresence';
 import { useApplyAccessibility } from '@/hooks/useSettings';
 
@@ -22,6 +23,7 @@ export default function Layout() {
   const online = usePresence();
   useApplyAccessibility();
   return (
+    <BotChallengeProvider>
     <BannerProvider>
       <a
         href="#main-content"
@@ -53,5 +55,6 @@ export default function Layout() {
       <NotificationHandler />
       <NotificationPopupListener />
     </BannerProvider>
+    </BotChallengeProvider>
   );
 }

@@ -7,6 +7,7 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { dispatchCrossPost } from '@/lib/crosspost';
+import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
 
 function extractHashtags(text) {
   const matches = text.match(/#([\p{L}\p{N}_]+)/gu) || [];
@@ -45,6 +46,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
     if (!content.trim() && !attachedCard) return;
     setPosting(true);
     try {
+      await ensureBotAllowed('post', content);
       const { did, signingKey } = await ensureUserDid();
       const hashtags = extractHashtags(content).slice(0, 10);
       const canonical_tags = canonicalise(hashtags);
@@ -134,7 +136,11 @@ export default function ComposeBox({ onPosted, replyTo }) {
       setPostType('text');
       onPosted?.();
     } catch (e) {
-      alert('Could not post: ' + e.message);
+      if (isBotBlockError(e)) {
+        alert(e.message);
+      } else {
+        alert('Could not post: ' + e.message);
+      }
     } finally {
       setPosting(false);
     }

@@ -27,6 +27,7 @@ export default async function(req: Request): Promise<Response> {
 
     const verdict = await checkBotRisk(svc, {
       user, actionType, content, req, captchaToken, challengeToken, anonId,
+      turnstileSecret: secrets.get('TURNSTILE_SECRET_KEY') || '',
     });
 
     const siteKey = (verdict.challengeRequired ? (secrets.get('TURNSTILE_SITE_KEY') || '') : '');

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import BotChallengeModal from '@/components/bot/BotChallengeModal';
 import { setBotChallengeAPI, checkBotRiskServer, BotBlockError } from '@/lib/botGuardClient';
 
@@ -55,5 +55,3 @@ export default function BotChallengeProvider({ children }) {
     </>
   );
 }
-
-import { useRef } from 'react';

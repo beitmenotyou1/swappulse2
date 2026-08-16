@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, X, CornerDownRight } from 'lucide-react';
 import { createReply } from '@/lib/postInteractions';
+import { withBotGuard, isBotBlockError } from '@/lib/botGuardClient';
 
 const MAX_LEN = 500;
 
@@ -37,7 +38,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
         }, replyToId);
       } else {
         // Top-level card comment — standalone post (no reply threading).
-        const post = await base44.entities.Post.create({
+        const post = await withBotGuard('comment', trimmed, () => base44.entities.Post.create({
           content: trimmed,
           post_type: 'text',
           card_id: cardId,
@@ -46,7 +47,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
           author_name: user?.full_name || 'Collector',
           author_handle: user?.handle || '',
           author_avatar: user?.avatar_url || '',
-        });
+        }));
         base44.functions.invoke('autoModerateComment', { post_id: post.id }).catch(() => {});
       }
 
@@ -54,7 +55,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
       onCancelReply?.();
       onPosted?.();
     } catch (e) {
-      setError(e?.message || 'Could not post comment');
+      setError(isBotBlockError(e) ? e.message : (e?.message || 'Could not post comment'));
     } finally {
       setBusy(false);
     }

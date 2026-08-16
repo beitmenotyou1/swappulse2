@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { checkBlocklist } from '../../shared/enforcement.ts';
+import { checkBotRisk } from '../../shared/botGuard.ts';
 
 export default async function(req) {
   try {
@@ -23,6 +24,19 @@ export default async function(req) {
     const isBlocked = await checkBlocklist(svc, email);
     if (isBlocked) {
       return Response.json({ error: 'This email address is not permitted to access this platform.' }, { status: 403 });
+    }
+
+    // Bot protection — block automated login-code requests (bot UA, hard
+    // rate, active block window). The captcha challenge flow is handled on
+    // the client for authenticated writes; for the auth flow a challenge
+    // verdict is treated as a soft block to stop bots without breaking humans.
+    try {
+      const verdict = await checkBotRisk(svc, { user: null, actionType: 'login_code', req, anonId: email });
+      if (verdict.block || verdict.challengeRequired) {
+        return Response.json({ error: 'Too many requests. Please try again shortly.' }, { status: 429 });
+      }
+    } catch (e) {
+      console.error('send-login-code: bot guard failed', e?.message || e);
     }
 
     // If user has no login_key, they need a one-time setup via the reset flow.

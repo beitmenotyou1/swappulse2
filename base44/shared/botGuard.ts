@@ -10,8 +10,6 @@
 // challenge (captcha required); severe risk or hard-rate-limit returns a
 // block. Admins bypass entirely so ops are never locked out.
 
-import { secrets } from 'base44:runtime';
-
 export interface BotVerdict {
   allow: boolean;
   challengeRequired: boolean;
@@ -89,8 +87,9 @@ export async function checkBotRisk(svc: any, opts: {
   captchaToken?: string;
   challengeToken?: string;
   anonId?: string;
+  turnstileSecret?: string;
 }): Promise<BotVerdict> {
-  const { user, actionType, content, req, captchaToken, challengeToken, anonId } = opts;
+  const { user, actionType, content, req, captchaToken, challengeToken, anonId, turnstileSecret } = opts;
   const reasons: string[] = [];
   let riskScore = 0;
 
@@ -136,7 +135,7 @@ export async function checkBotRisk(svc: any, opts: {
 
   // Challenge verification path (captcha or behavioural token supplied).
   if (captchaToken || challengeToken) {
-    const verified = await verifyChallenge(svc, state, { captchaToken, challengeToken });
+    const verified = await verifyChallenge(svc, state, { captchaToken, challengeToken, turnstileSecret });
     if (verified.ok) {
       try {
         await svc.entities.BotRiskState.update(state.id, {
@@ -267,12 +266,11 @@ async function issueChallenge(svc: any, state: any): Promise<string> {
   return token;
 }
 
-async function verifyChallenge(svc: any, state: any, opts: { captchaToken?: string; challengeToken?: string }): Promise<{ ok: boolean }> {
+async function verifyChallenge(svc: any, state: any, opts: { captchaToken?: string; challengeToken?: string; turnstileSecret?: string }): Promise<{ ok: boolean }> {
   if (!state) return { ok: false };
-  const { captchaToken, challengeToken } = opts;
+  const { captchaToken, challengeToken, turnstileSecret } = opts;
 
   // Real captcha (Cloudflare Turnstile) when configured.
-  const turnstileSecret = secrets.get('TURNSTILE_SECRET_KEY');
   if (captchaToken && turnstileSecret) {
     try {
       const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {

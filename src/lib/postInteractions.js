@@ -13,6 +13,7 @@
 
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { ensureBotAllowed } from '@/lib/botGuardClient';
 
 function actorFromUser(me) {
   return {
@@ -96,6 +97,7 @@ export function normalizeRef(ref) {
 // Create a like on a post/comment: local Like + PDS bridge + counter + author notify.
 export async function createLike(post) {
   const ref = normalizeRef(post);
+  await ensureBotAllowed('like', ref.content || '');
   const { did, signingKey } = await ensureUserDid();
   const me = await base44.auth.me();
   const stamped = await stampRecord(
@@ -133,6 +135,7 @@ export async function deleteLike(like, post) {
 // Create a repost: local Repost + PDS bridge + counter + author notify.
 export async function createRepost(post) {
   const ref = normalizeRef(post);
+  await ensureBotAllowed('repost', ref.content || '');
   const { did, signingKey } = await ensureUserDid();
   const me = await base44.auth.me();
   const stamped = await stampRecord(
@@ -180,6 +183,7 @@ export async function deleteRepost(repost, post) {
 // local Post parents and external strongRef parents via normalizeRef.
 export async function createReply(parentPost, text, user, extra = {}, localReplyTo = null) {
   const ref = normalizeRef(parentPost);
+  await ensureBotAllowed('reply', text);
   const { did, signingKey } = await ensureUserDid();
 
   // Enforce the parent post's reply policy (postGate) for local posts.
@@ -280,6 +284,7 @@ export async function deleteReply(reply, parentPost) {
 // targets via normalizeRef.
 export async function createQuoteRepost(post, text, user) {
   const ref = normalizeRef(post);
+  await ensureBotAllowed('post', text);
   const { did, signingKey } = await ensureUserDid();
   const stamped = await stampRecord({
     content: text.trim(),
