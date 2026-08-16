@@ -16,6 +16,7 @@ import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   { key: 'all', label: 'For You' },
+  { key: 'explore', label: 'Explore' },
   { key: 'pack_opening', label: 'Fresh Pulls' },
   { key: 'trade', label: 'Trade Floor' },
   { key: 'showcase', label: 'Showcase' },
@@ -29,6 +30,7 @@ export default function Home() {
     jsonLd: { '@context': 'https://schema.org', '@type': 'WebSite', name: 'SwapPulse', url: 'https://swappulse.org' },
   });
   const [posts, setPosts] = useState([]);
+  const [explorePosts, setExplorePosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
@@ -55,16 +57,23 @@ export default function Home() {
     try {
       const authed = await base44.auth.isAuthenticated();
       if (authed) {
-        const res = await base44.functions.invoke('get-follow-feed', { limit: 50 });
+        const [res, recent] = await Promise.all([
+          base44.functions.invoke('get-follow-feed', { limit: 50 }),
+          base44.entities.Post.list('-created_date', 50).catch(() => []),
+        ]);
         setPosts(res.data?.items || []);
         setFollowedCount(res.data?.followed_count ?? 0);
+        // Explore = all recent posts, to discover collectors outside your follows.
+        setExplorePosts(recent || []);
       } else {
         // Guests: show recent public posts so the landing page has content.
         const recent = await base44.entities.Post.list('-created_date', 50).catch(() => []);
         setPosts(recent || []);
+        setExplorePosts(recent || []);
       }
     } catch {
       setPosts([]);
+      setExplorePosts([]);
     } finally {
       setLoading(false);
     }
@@ -137,7 +146,13 @@ export default function Home() {
     })();
   }, [posts, user?.id]);
 
-  const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
+  // For You = followed only; Explore = all posts (discover new people);
+  // Fresh Pulls / Trade Floor / Showcase filter the followed set, unchanged.
+  const filtered = tab === 'explore'
+    ? explorePosts
+    : tab === 'all'
+      ? posts
+      : posts.filter((p) => p.post_type === tab);
 
   if (showTour) {
     return <OnboardingTour onComplete={completeTour} />;
@@ -176,7 +191,7 @@ export default function Home() {
 
       <TradeInterestBanner />
 
-      {!loading && user && followedCount === 0 && filtered.length > 0 && (
+      {!loading && user && tab === 'all' && followedCount === 0 && filtered.length > 0 && (
         <div className="mx-4 my-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <p className="font-semibold text-foreground">Follow collectors to personalize your feed</p>
           <p className="mt-0.5 text-muted-foreground">You're seeing recent posts from the community. Follow collectors to see their content first.</p>
