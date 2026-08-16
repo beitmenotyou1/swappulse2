@@ -174,17 +174,17 @@ export default function RightSidebar({ online = [] }) {
         </section>
       )}
 
-      <div className="mt-auto rounded-2xl px-4 py-4" style={{ backgroundColor: '#0f121a', color: '#94a3b8' }}>
+      <div className="mt-auto rounded-2xl px-4 py-4 text-muted-foreground">
         <p className="text-xs font-medium">© SwapPulse - Built on the AT Protocol · Powered by TCGdex</p>
         <nav className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
-          <Link to="/terms" className="text-xs font-medium transition-colors hover:text-white">Terms</Link>
-          <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-white">Privacy</Link>
-          <Link to="/help" className="text-xs font-medium transition-colors hover:text-white">Help</Link>
-          <Link to="/status" className="text-xs font-medium transition-colors hover:text-white">Status</Link>
-          <Link to="/explore" className="text-xs font-medium transition-colors hover:text-white">Explore</Link>
-          <Link to="/donate" className="text-xs font-medium transition-colors hover:text-white">Donate</Link>
+          <Link to="/terms" className="text-xs font-medium transition-colors hover:text-foreground">Terms</Link>
+          <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-foreground">Privacy</Link>
+          <Link to="/help" className="text-xs font-medium transition-colors hover:text-foreground">Help</Link>
+          <Link to="/status" className="text-xs font-medium transition-colors hover:text-foreground">Status</Link>
+          <Link to="/explore" className="text-xs font-medium transition-colors hover:text-foreground">Explore</Link>
+          <Link to="/donate" className="text-xs font-medium transition-colors hover:text-foreground">Donate</Link>
         </nav>
-        <p className="mt-3 text-[11px] leading-relaxed" style={{ color: '#64748b' }}>
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
           SwapPulse is a free, open-source platform. Pokémon and Pokémon TCG are trademarks of Nintendo, Game Freak, and The Pokémon Company. SwapPulse is not affiliated with or endorsed by them.
         </p>
       </div>
