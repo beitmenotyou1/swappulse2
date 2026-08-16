@@ -17,6 +17,7 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
+import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import useSEO from '@/hooks/useSEO';
 import RichText from '@/components/RichText';
@@ -137,6 +138,7 @@ export default function UserProfile() {
         <div className="mt-3">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-extrabold">{profile?.name || 'Collector'}</h1>
+            <TrustedTraderBadge did={subjectDid} size="md" />
             {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
             {!isExternal && <FriendsBadge isFriend={isFriend} />}
           </div>
