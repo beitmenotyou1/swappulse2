@@ -43,10 +43,17 @@ export function checkBase44() {
 }
 
 export async function checkAtProtoRelay() {
+  // Our firehose ingestion depends on the AppView (public.api.bsky.app) for
+  // profile lookups, post threads, and search — NOT the bsky.network relay
+  // directly. Checking the relay reported false outages when the AppView
+  // (our actual dependency) was still serving requests. Probe the AppView
+  // with a real API call our ingestion code makes.
   try {
     const start = Date.now();
-    const res = await fetch('https://bsky.network/xrpc/_health', {
-      signal: AbortSignal.timeout(10000),
+    const url = new URL('https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile');
+    url.searchParams.set('actor', 'bsky.app');
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return { status: 'up', latencyMs: Date.now() - start };
