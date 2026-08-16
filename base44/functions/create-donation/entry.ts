@@ -18,8 +18,8 @@ Deno.serve(async (req) => {
       console.error('create-donation: missing app URL (X-Base44-App-Url / WIX_CHECKOUT_APP_URL)');
       return Response.json({ error: 'Checkout not configured.' }, { status: 500 });
     }
-    const apiKey = Deno.env.get('WIX_PAYMENTS_API_KEY');
-    const siteId = Deno.env.get('WIX_PAYMENTS_SITE_ID');
+    const apiKey = Deno.env.get('WIX_CHECKOUT_API_KEY') || Deno.env.get('WIX_PAYMENTS_API_KEY');
+    const siteId = Deno.env.get('WIX_CHECKOUT_SITE_ID') || Deno.env.get('WIX_PAYMENTS_SITE_ID');
     if (!apiKey || !siteId) {
       console.error('create-donation: missing Wix Payments env');
       return Response.json({ error: 'Payments are not configured right now.' }, { status: 500 });

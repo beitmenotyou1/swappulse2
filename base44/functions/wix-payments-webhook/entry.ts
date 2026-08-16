@@ -9,9 +9,12 @@ import jwt from 'npm:jsonwebtoken@9';
 Deno.serve(async (req) => {
   try {
     const raw = await req.text();
-    const publicKey = Deno.env.get('WIX_PAYMENTS_WEBHOOK_PUBLIC_KEY');
+    // Support both the platform-standard key (WIX_CHECKOUT_*) and the legacy
+    // app key (WIX_PAYMENTS_*) so the webhook works regardless of which
+    // provisioning path set the secret.
+    const publicKey = Deno.env.get('WIX_CHECKOUT_WEBHOOK_PUBLIC_KEY') || Deno.env.get('WIX_PAYMENTS_WEBHOOK_PUBLIC_KEY');
     if (!publicKey) {
-      console.error('wix-webhook: missing WIX_PAYMENTS_WEBHOOK_PUBLIC_KEY');
+      console.error('wix-webhook: missing webhook public key (WIX_CHECKOUT_WEBHOOK_PUBLIC_KEY / WIX_PAYMENTS_WEBHOOK_PUBLIC_KEY)');
       return new Response('no key', { status: 500 });
     }
 

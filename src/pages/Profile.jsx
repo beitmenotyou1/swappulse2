@@ -51,16 +51,17 @@ export default function Profile() {
   const { profile: merged } = useMergedProfile({ did });
 
   const load = async () => {
+    if (!user?.id) { setLoading(false); return; }
     setLoading(true);
     try {
       const { did: myDid } = await ensureUserDid();
       setDid(myDid);
       const [p, c, t, r, j, vs] = await Promise.all([
-        base44.entities.Post.filter({}, '-created_date', 50),
-        base44.entities.CollectionEntry.list('-updated_date', 100),
-        base44.entities.TradeListing.filter({}, '-created_date', 20),
+        base44.entities.Post.filter({ created_by_id: user.id }, '-created_date', 50),
+        base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100),
+        base44.entities.TradeListing.filter({ created_by_id: user.id }, '-created_date', 20),
         base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
-        base44.entities.Journal.filter({}, '-created_date', 50),
+        base44.entities.Journal.filter({ created_by_id: user.id }, '-created_date', 50),
         base44.entities.VoiceSpace.filter({ did: myDid, status: 'live' }, '-created_date', 1).catch(() => []),
       ]);
       setPosts(p);
@@ -74,7 +75,7 @@ export default function Profile() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (user?.id) load(); }, [user?.id]);
 
   // Keep the live-stream state fresh when any VoiceSpace record changes.
   useEffect(() => {
@@ -110,10 +111,10 @@ export default function Profile() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const myPosts = posts.filter((p) => p.author_name === user?.full_name);
+  const myPosts = posts;
   const myCollection = collection;
-  const myTrades = trades.filter((t) => t.author_name === user?.full_name || t.author_name === '');
-  const myJournals = journals.filter((j) => j.did === did || j.author_name === user?.full_name);
+  const myTrades = trades;
+  const myJournals = journals;
   const portfolioValue = myCollection.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const binderCards = myCollection.slice(0, 9);
 

@@ -34,9 +34,15 @@ export default function Home() {
   const [reactionsMap, setReactionsMap] = useState({});
   const [repostMap, setRepostMap] = useState({});
   const [likeMap, setLikeMap] = useState({});
-  const [showTour, setShowTour] = useState(() => !localStorage.getItem('swappulse_onboarding_done'));
+  const [showTour, setShowTour] = useState(false);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const { user } = useAuth();
+
+  // Only show the onboarding tour to authenticated users who haven't seen it.
+  // Guests should see the platform content, not a full-screen tour modal.
+  useEffect(() => {
+    if (user && !localStorage.getItem('swappulse_onboarding_done')) setShowTour(true);
+  }, [user]);
 
   const completeTour = () => {
     setShowTour(false);
@@ -51,7 +57,9 @@ export default function Home() {
         const res = await base44.functions.invoke('get-follow-feed', { limit: 50 });
         setPosts(res.data?.items || []);
       } else {
-        setPosts([]);
+        // Guests: show recent public posts so the landing page has content.
+        const recent = await base44.entities.Post.list('-created_date', 50).catch(() => []);
+        setPosts(recent || []);
       }
     } catch {
       setPosts([]);
@@ -172,9 +180,22 @@ export default function Home() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="px-4 py-20 text-center">
-          <p className="text-lg font-bold">Your feed is quiet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Follow some collectors to fill your feed.</p>
-          <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Discover collectors</Link>
+          {user ? (
+            <>
+              <p className="text-lg font-bold">Your feed is quiet</p>
+              <p className="mt-1 text-sm text-muted-foreground">Follow some collectors to fill your feed.</p>
+              <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Discover collectors</Link>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-bold">Welcome to SwapPulse</p>
+              <p className="mt-1 text-sm text-muted-foreground">Join the decentralized social network for Pokémon TCG collectors — track your collection, trade cards, and connect with the community.</p>
+              <div className="mt-4 flex justify-center gap-3">
+                <Link to="/register" className="inline-flex items-center gap-1 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Create account</Link>
+                <Link to="/explore" className="inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-secondary">Explore cards</Link>
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="animate-fade-in">
