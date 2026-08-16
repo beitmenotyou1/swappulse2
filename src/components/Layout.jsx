@@ -13,6 +13,7 @@ import BannerProvider from '@/components/notifications/BannerProvider';
 import NotificationHandler from '@/components/notifications/NotificationHandler';
 import NotificationPopupListener from '@/components/notifications/NotificationPopupListener';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
+import Footer from '@/components/Footer';
 import { usePresence } from '@/hooks/usePresence';
 import { useApplyAccessibility } from '@/hooks/useSettings';
 
@@ -37,6 +38,7 @@ export default function Layout() {
         <SignInBanner />
         <Outlet />
         <StickyPlayerBar />
+        <Footer />
       </main>
       <div className="hidden w-80 shrink-0 lg:block">
         <RightSidebar online={online} />

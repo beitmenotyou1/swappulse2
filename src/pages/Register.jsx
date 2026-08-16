@@ -25,6 +25,8 @@ export default function Register() {
   const [step, setStep] = useState("email"); // email | confirm-email | code | profile | tour
   const [otp, setOtp] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsConfirmed, setTermsConfirmed] = useState(false);
+  const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const generatedPasswordRef = useRef("");
 
@@ -33,6 +35,14 @@ export default function Register() {
     setError("");
     if (!ageConfirmed) {
       setError("Please confirm you are 13 or older to create an account.");
+      return;
+    }
+    if (!termsConfirmed) {
+      setError("Please agree to the Terms to create an account.");
+      return;
+    }
+    if (!privacyConfirmed) {
+      setError("Please agree to the Privacy Policy to create an account.");
       return;
     }
     setConfirmEmail("");
@@ -187,8 +197,22 @@ export default function Register() {
           </div>
         </div>
         <label className="flex items-start gap-2 text-sm text-muted-foreground">
-          <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" required />
-          <span>I confirm I am 13 or older and agree to SwapPulse's terms (under-16s need a parent or guardian's consent).</span>
+          <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" />
+          <span>I confirm I am 13 or older (under-16s need a parent or guardian's consent).</span>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-muted-foreground">
+          <input type="checkbox" checked={termsConfirmed} onChange={(e) => setTermsConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" />
+          <span>
+            I have read and agree to SwapPulse's{" "}
+            <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Terms</Link>.
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-muted-foreground">
+          <input type="checkbox" checked={privacyConfirmed} onChange={(e) => setPrivacyConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" />
+          <span>
+            I have read and agree to SwapPulse's{" "}
+            <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Privacy Policy</Link>.
+          </span>
         </label>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</> : "Continue"}

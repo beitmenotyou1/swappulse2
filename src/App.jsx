@@ -73,6 +73,8 @@ import NetworkingConcierge from '@/pages/NetworkingConcierge';
 import PackParties from '@/pages/PackParties';
 import PullOfTheWeek from '@/pages/PullOfTheWeek';
 import Messages from '@/pages/Messages';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
 import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
 
@@ -142,6 +144,8 @@ const AuthenticatedApp = () => {
         <Route path="/pack-parties" element={<PackParties />} />
         <Route path="/pull-of-the-week" element={<PullOfTheWeek />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
       </Route>
       {/* Auth required — login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
