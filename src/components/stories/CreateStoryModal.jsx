@@ -3,7 +3,6 @@ import { X, Loader2, Image as ImageIcon, Type, CreditCard, Trash2, Plus, Globe, 
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, generateRkey, NSID } from '@/lib/atproto';
 import { bridgeStory } from '@/lib/federatedBridge';
-import { uploadMedia } from '@/lib/pdsBlob';
 import { cardImageUrl } from '@/lib/tcgdex';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 
@@ -38,7 +37,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
   const upload = async (file, isVideo) => {
     setSaving(true);
     try {
-      const file_url = await uploadMedia(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setSeg((s) => ({ ...s, media_blob: file_url, media_type: isVideo ? 'video' : 'image', duration: isVideo ? 15 : 5 }));
     } catch { /* ignore */ } finally { setSaving(false); }
   };
