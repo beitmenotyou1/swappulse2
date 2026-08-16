@@ -28,6 +28,7 @@ export default function Register() {
   const [termsConfirmed, setTermsConfirmed] = useState(false);
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
+  const [inviteCode] = useState(searchParams.get("invite") || "");
   const generatedPasswordRef = useRef("");
 
   const handleContinue = (e) => {
@@ -87,6 +88,9 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
         try { await base44.auth.updateMe({ login_key: generatedPasswordRef.current }); } catch {}
+        if (inviteCode) {
+          try { await base44.functions.invoke("validate-invite", { code: inviteCode, redeem: true }); } catch {}
+        }
       }
       setStep("profile");
     } catch (err) {

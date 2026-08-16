@@ -28,6 +28,7 @@ import TradeStatusBoard from '@/pages/TradeStatusBoard';
 import Compose from '@/pages/Compose';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import Invite from '@/pages/Invite';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Activate from '@/pages/Activate';
@@ -107,6 +108,7 @@ const AuthenticatedApp = () => {
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
       <Route path="/account-deleted" element={<AccountDeleted />} />
+      <Route path="/invite/:code" element={<Invite />} />
       <Route path="/order-complete" element={<OrderComplete />} />
       <Route path="/status" element={<Status />} />
       <Route path="/sitemap.xml" element={<SitemapXml />} />

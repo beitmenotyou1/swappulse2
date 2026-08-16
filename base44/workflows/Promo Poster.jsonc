@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "promo_poster",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "post_promo": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "post-promo",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Publish promo post",
+            "description": "Varied message to AT Protocol"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */4 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Promo Poster",
+  "description": "Publishes a varied promotional post to the AT Protocol from the SwapPulse promo account every 4 hours. Posts appear on Bluesky but not on the SwapPulse local feed (tracked in PromoPost and skipped by firehose-ingest)."
+}

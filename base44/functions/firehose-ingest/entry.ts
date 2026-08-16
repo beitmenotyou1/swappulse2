@@ -161,7 +161,7 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
 // Bluesky accounts is ingested into the local feed. Rate-limited to 1 search
 // query per run (limit=50). Dedup by at_uri before upserting. Author metadata
 // comes directly from the searchPosts response (author.displayName/handle/avatar).
-async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJwt: string): Promise<{ found: number; ingested: number }> {
+async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJwt: string, promoUris: Set<string>): Promise<{ found: number; ingested: number }> {
   let found = 0, ingested = 0;
   try {
     const postMapper = FIELD_MAPPERS['app.bsky.feed.post'];
@@ -185,6 +185,8 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
     for (const post of posts) {
       try {
         if (!post?.uri) continue;
+        // Skip promotional posts — they must not appear in the local feed.
+        if (promoUris.has(post.uri)) continue;
         // Dedup: skip if already exists locally by at_uri
         const existing = await svc.entities.Post.filter({ at_uri: post.uri }, '-created_date', 1).catch(() => []);
         if (existing && existing.length > 0) continue;
@@ -236,6 +238,11 @@ export default async function(req: Request): Promise<Response> {
     const localDid = session.did;
     const accessJwt = session.accessJwt;
 
+    // Load promo post URIs so externally-published promotional posts are never
+    // ingested into the local feed (they exist on the PDS only).
+    const promoPosts = await svc.entities.PromoPost.list('-created_date', 500).catch(() => []);
+    const promoUris = new Set((promoPosts || []).map((p: any) => p.at_uri).filter(Boolean));
+
     // Discover remote DIDs to ingest from (via Follow records)
     const follows = await svc.entities.Follow.list('-created_date', 200).catch(() => []);
     const remoteDids = new Set<string>();
@@ -270,6 +277,10 @@ export default async function(req: Request): Promise<Response> {
               const atUri = rec.uri || '';
               const val = rec.value || {};
               if (!atUri) continue;
+
+              // Skip promotional posts — they're published to the PDS only and
+              // must not appear in the local SwapPulse feed.
+              if (promoUris.has(atUri)) continue;
 
               // Skip records already local (authored by the local PDS account)
               if (isLocal) {
@@ -357,7 +368,7 @@ export default async function(req: Request): Promise<Response> {
     // Broad ingestion: search the public AppView for PokemonTCG posts from
     // non-followed Bluesky accounts so the home feed has content even when
     // the follow graph is sparse.
-    const searchResult = await searchAppViewPosts(base44, svc, pdsUrl, accessJwt);
+    const searchResult = await searchAppViewPosts(base44, svc, pdsUrl, accessJwt, promoUris);
 
     return Response.json({
       ingested, updated, deleted, errors,

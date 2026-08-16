@@ -1,0 +1,53 @@
+{
+  "name": "PromoPost",
+  "type": "object",
+  "title": "PromoPost",
+  "description": "org.swappulse.promoPost \u2014 tracks promotional posts published to the AT Protocol by the automated promo poster. The firehose-ingest function reads these at_uris and skips them during ingestion so promo posts appear on Bluesky but never on the SwapPulse local feed. Admin-managed; written by the post-promo backend function (service role).",
+  "properties": {
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of the promo post on the PDS (the key firehose-ingest matches against)"
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "The promotional message text that was published"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID the promo post was authored under"
+    },
+    "posted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the promo post was published to the PDS"
+    }
+  },
+  "required": [
+    "at_uri",
+    "content",
+    "did"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
