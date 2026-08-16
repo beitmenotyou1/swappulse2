@@ -37,7 +37,8 @@ function segmentsOf(story) {
 
 function segDuration(seg) {
   if (seg.media_type === 'video') return 15;
-  return Math.min(15, Math.max(3, seg.duration || DEFAULT_DURATION));
+  // Override to a fixed 10s display duration per segment (Instagram-style).
+  return 10;
 }
 
 export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewed }) {
@@ -89,18 +90,21 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
     } catch { /* ignore */ }
   }, [viewerDid, onViewed]);
 
-  useEffect(() => { if (story) markViewed(story); }, [story?.id, markViewed]);
-
-  // Navigate at the segment level: segment → next story → next user → close.
+  // Mark a story fully viewed only when the viewer advances past its last
+  // segment (auto-advance or tap), so the StoriesBar highlight clears once
+  // every segment has been watched and stays cleared until a new story lands.
   const advance = useCallback(() => {
     const u = grouped[userIdx];
     const items = u?.items || [];
-    const curSegs = items[storyIdx] ? segmentsOf(items[storyIdx]) : [];
+    const curStory = items[storyIdx];
+    const curSegs = curStory ? segmentsOf(curStory) : [];
     if (segIdx < curSegs.length - 1) { setProgress(0); setSegIdx(segIdx + 1); return; }
+    // Leaving the current story — record the view now that it's fully watched.
+    if (curStory) markViewed(curStory);
     if (storyIdx < items.length - 1) { setProgress(0); setStoryIdx(storyIdx + 1); setSegIdx(0); return; }
     if (userIdx < grouped.length - 1) { setProgress(0); setUserIdx(userIdx + 1); setStoryIdx(0); setSegIdx(0); return; }
     onClose();
-  }, [segIdx, storyIdx, userIdx, grouped, onClose]);
+  }, [segIdx, storyIdx, userIdx, grouped, onClose, markViewed]);
 
   const back = useCallback(() => {
     if (segIdx > 0) { setProgress(0); setSegIdx(segIdx - 1); return; }
