@@ -36,6 +36,7 @@ export default function Home() {
   const [likeMap, setLikeMap] = useState({});
   const [showTour, setShowTour] = useState(false);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [followedCount, setFollowedCount] = useState(0);
   const { user } = useAuth();
 
   // Only show the onboarding tour to authenticated users who haven't seen it.
@@ -56,6 +57,7 @@ export default function Home() {
       if (authed) {
         const res = await base44.functions.invoke('get-follow-feed', { limit: 50 });
         setPosts(res.data?.items || []);
+        setFollowedCount(res.data?.followed_count ?? 0);
       } else {
         // Guests: show recent public posts so the landing page has content.
         const recent = await base44.entities.Post.list('-created_date', 50).catch(() => []);
@@ -173,6 +175,14 @@ export default function Home() {
       <ComposeBox onPosted={loadPosts} />
 
       <TradeInterestBanner />
+
+      {!loading && user && followedCount === 0 && filtered.length > 0 && (
+        <div className="mx-4 my-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <p className="font-semibold text-foreground">Follow collectors to personalize your feed</p>
+          <p className="mt-0.5 text-muted-foreground">You're seeing recent posts from the community. Follow collectors to see their content first.</p>
+          <Link to="/explore" className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Discover collectors</Link>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16">

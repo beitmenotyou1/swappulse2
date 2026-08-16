@@ -28,7 +28,6 @@ export default async function(req: Request): Promise<Response> {
     // 1. The user's follows
     const follows = await base44.entities.Follow.filter({ did: myDid }, '-created_date', 200).catch(() => []);
     const subjectDids = Array.from(new Set((follows || []).map((f: any) => f.subject_did).filter(Boolean)));
-    if (!subjectDids.length) return Response.json({ items: [], source: 'follow', authed: true });
 
     // 2. Resolve which follows are SwapPulse members (local Post table) vs external
     const svc = base44.asServiceRole;
@@ -85,9 +84,39 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // 5. Merge + time-sort + cap
+    // 5. Merge + time-sort
     items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
-    return Response.json({ items: items.slice(0, limit), source: 'follow', authed: true });
+    const followedCount = items.length;
+
+    // 6. Recent-fallback: if the follow-based feed is below threshold, fill
+    // with recent local posts (member + ingested remote) so the feed is never
+    // empty for users with few/no follows. Excludes replies to keep the feed
+    // clean. Dedup by id/at_uri.
+    const THRESHOLD = 30;
+    if (followedCount < THRESHOLD) {
+      try {
+        const recent = await base44.entities.Post.list('-created_date', Math.min(limit * 2, 100)).catch(() => []);
+        const seen = new Set(items.map((p: any) => p.id || p.at_uri).filter(Boolean));
+        for (const p of recent || []) {
+          if (p.reply_to) continue; // skip replies — keep the feed to top-level posts
+          const key = p.id || p.at_uri;
+          if (!key || seen.has(key)) continue;
+          items.push({ ...p, external: false, fallback: true });
+          seen.add(key);
+          if (items.length >= limit) break;
+        }
+        items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+      } catch (e) {
+        console.error('get-follow-feed: recent-fallback error', e?.message || e);
+      }
+    }
+
+    return Response.json({
+      items: items.slice(0, limit),
+      source: followedCount === 0 ? 'recent' : 'follow',
+      followed_count: followedCount,
+      authed: true,
+    });
   } catch (error) {
     console.error('get-follow-feed error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });

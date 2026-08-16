@@ -156,6 +156,59 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
   return synced;
 }
 
+// AppView search phase: poll public.api.bsky.app for posts matching
+// SwapPulse-relevant signals (PokemonTCG keyword) so content from non-followed
+// Bluesky accounts is ingested into the local feed. Rate-limited to 1 search
+// query per run (limit=50). Dedup by at_uri before upserting. Author metadata
+// comes directly from the searchPosts response (author.displayName/handle/avatar).
+async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJwt: string): Promise<{ found: number; ingested: number }> {
+  let found = 0, ingested = 0;
+  try {
+    const postMapper = FIELD_MAPPERS['app.bsky.feed.post'];
+    if (!postMapper) return { found, ingested };
+
+    // searchPosts requires authentication — route through the PDS (which
+    // proxies to the AppView) using the bridge account's access JWT.
+    const url = new URL(`${pdsUrl}/xrpc/app.bsky.feed.searchPosts`);
+    url.searchParams.set('q', 'PokemonTCG');
+    url.searchParams.set('limit', '50');
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessJwt}` } });
+    if (!res.ok) {
+      console.error(`firehose-ingest: searchPosts failed (${res.status})`);
+      return { found, ingested };
+    }
+    const data = await res.json();
+    const posts = data?.posts || [];
+    found = posts.length;
+    console.log(`firehose-ingest: AppView search found ${found} posts for query "PokemonTCG"`);
+
+    for (const post of posts) {
+      try {
+        if (!post?.uri) continue;
+        // Dedup: skip if already exists locally by at_uri
+        const existing = await svc.entities.Post.filter({ at_uri: post.uri }, '-created_date', 1).catch(() => []);
+        if (existing && existing.length > 0) continue;
+
+        const author = post.author || {};
+        const record = post.record || {};
+        if (record.reply) continue; // skip replies — only ingest top-level posts
+
+        // searchPosts already includes author displayName/handle/avatar, so
+        // pass it directly as the profile argument to mapPostFields.
+        const mapped = postMapper(record, post.uri, author.did || '', author);
+        await svc.entities.Post.create(mapped).catch(() => {});
+        ingested++;
+      } catch (e) {
+        console.error('firehose-ingest: searchPosts record error', e?.message || e);
+      }
+    }
+    console.log(`firehose-ingest: AppView search ingested ${ingested}/${found} posts`);
+  } catch (e) {
+    console.error('firehose-ingest: searchAppViewPosts error', e?.message || e);
+  }
+  return { found, ingested };
+}
+
 async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string) {
   const all: any[] = [];
   let cursor: string | null = null;
@@ -301,11 +354,18 @@ export default async function(req: Request): Promise<Response> {
     // the repo-scan above can't see them, so query the AppView per local post.
     const replies_synced = await syncInboundReplies(base44, svc);
 
+    // Broad ingestion: search the public AppView for PokemonTCG posts from
+    // non-followed Bluesky accounts so the home feed has content even when
+    // the follow graph is sparse.
+    const searchResult = await searchAppViewPosts(base44, svc, pdsUrl, accessJwt);
+
     return Response.json({
       ingested, updated, deleted, errors,
       collections: collectionStats,
       repos_scanned: reposToScan.length,
       replies_synced,
+      search_found: searchResult.found,
+      search_ingested: searchResult.ingested,
     });
   } catch (error) {
     console.error('firehose-ingest error:', error?.message || error);
