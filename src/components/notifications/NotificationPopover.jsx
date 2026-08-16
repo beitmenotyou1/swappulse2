@@ -4,6 +4,7 @@ import { Popover, PopoverContent } from '@/components/ui/popover';
 import { Bell, ArrowLeftRight, TrendingDown, Heart, UserPlus, AtSign, Radio, Mic, Star, MessageSquare, MessageCircle, Repeat2, Quote, Globe } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { resolveNotificationRoute } from '@/lib/notificationRoutes';
 import Avatar from '@/components/Avatar';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -79,8 +80,8 @@ export default function NotificationPopover({ trigger, onNavigate, side = 'right
         await base44.entities.Notification.update(n.id, { is_read: true, read_at: new Date().toISOString() });
       } catch {}
     }
-    const route = n.target_path || '/notifications';
-    navigate(route.startsWith('/') ? route : `/${route}`);
+    const route = resolveNotificationRoute(n);
+    navigate(route);
     onNavigate?.();
   };
 

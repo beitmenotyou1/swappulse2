@@ -128,6 +128,7 @@ const AuthenticatedApp = () => {
         <Route path="/packs" element={<PackOpenings />} />
         <Route path="/market" element={<MarketWatch />} />
         <Route path="/share" element={<Share />} />
+        <Route path="/post/at/:atUri" element={<PostDetail />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/binders" element={<Binders />} />
         <Route path="/binder/:binderId" element={<BinderDetail />} />

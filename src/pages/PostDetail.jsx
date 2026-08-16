@@ -7,42 +7,70 @@ import PostReplyThread from '@/components/feed/PostReplyThread';
 import useSEO from '@/hooks/useSEO';
 
 // Dedicated post detail page: renders a single post with its full reply
-// thread and a composer. Reached from the inline thread's "View full thread"
-// link and from like/repost/comment notification deep links.
+// thread and a composer. Handles two routes:
+//   /post/:postId  — local post by id (existing)
+//   /post/at/:atUri — on-demand fetch from the Bluesky AppView (URL-encoded at_uri)
+// The on-demand variant calls resolve-post-by-uri which fetches the post from
+// the public AppView and creates a local Post record so it can be viewed and
+// interacted with (reply, like, repost, quote) entirely on-site via the
+// existing PostCard + PostReplyThread components.
 export default function PostDetail() {
-  const { postId } = useParams();
+  const { postId, atUri } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   useSEO({
     title: post ? (post.content?.slice(0, 60) || 'Post') : 'Post',
     description: post ? (post.content?.slice(0, 160) || 'A post on SwapPulse') : 'A post on the SwapPulse Pokémon TCG collector community.',
-    canonicalPath: `/post/${postId}`,
+    canonicalPath: atUri ? `/post/at/${atUri}` : `/post/${postId}`,
     jsonLd: post ? { '@context': 'https://schema.org', '@type': 'DiscussionForumPosting', headline: post.content?.slice(0, 80) || 'Post', author: { '@type': 'Person', name: post.author_name || 'Collector' } } : null,
   });
 
   useEffect(() => {
-    if (!postId) return;
     let alive = true;
     (async () => {
       setLoading(true);
+      setError('');
       try {
-        const p = await base44.entities.Post.get(postId).catch(() => null);
-        if (alive) setPost(p);
+        if (atUri) {
+          const decodedUri = decodeURIComponent(atUri);
+          const res = await base44.functions.invoke('resolve-post-by-uri', { at_uri: decodedUri });
+          const body = res?.data ?? res;
+          if (!alive) return;
+          if (body?.postId && body?.post) {
+            setPost(body.post);
+          } else {
+            setError(body?.error || 'Post not found');
+          }
+        } else if (postId) {
+          const p = await base44.entities.Post.get(postId).catch(() => null);
+          if (!alive) return;
+          setPost(p);
+          if (!p) setError('Post not found');
+        }
+      } catch (e) {
+        if (!alive) return;
+        setError(e?.message || 'Failed to load post');
       } finally {
         if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [postId]);
+  }, [postId, atUri]);
 
   if (loading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex flex-col items-center gap-2 py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading post…</p>
+      </div>
+    );
   }
   if (!post) {
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-center">
-        <p className="text-sm font-semibold">Post not found</p>
+        <p className="text-sm font-semibold">{error || 'Post not found'}</p>
         <Link to="/" className="text-sm text-primary hover:underline">Back home</Link>
       </div>
     );

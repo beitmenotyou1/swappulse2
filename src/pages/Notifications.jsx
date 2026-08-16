@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { resolveNotificationRoute } from '@/lib/notificationRoutes';
 import PageHeader from '@/components/PageHeader';
 import AchievementNotificationCard from '@/components/notifications/AchievementNotificationCard';
 import NotificationFilterTabs from '@/components/notifications/NotificationFilterTabs';
@@ -56,12 +57,8 @@ export default function Notifications() {
   const open = async (n) => {
     if (isAchievement(n)) return;
     if (!n.is_read) await markRead(n.id);
-    if (!n.target_path) return;
-    if (n.target_path.startsWith('http')) {
-      window.open(n.target_path, '_blank', 'noopener,noreferrer');
-    } else {
-      navigate(n.target_path);
-    }
+    const route = resolveNotificationRoute(n);
+    if (route && route !== '/notifications') navigate(route);
   };
 
   const dismiss = async (id) => { await markRead(id); };

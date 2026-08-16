@@ -42,6 +42,14 @@ function bskyPostUrl(uri: string): string {
   return `https://bsky.app/profile/${parts[0]}/post/${parts[2]}`;
 }
 
+// On-site route for a post at_uri — keeps notifications inside SwapPulse.
+// /post/at/:encodedAtUri is resolved on-demand by the PostDetail page via
+// resolve-post-by-uri, so even posts not yet in the local DB are viewable
+// and interactable on-site.
+function onSitePostPath(uri: string): string {
+  return uri ? `/post/at/${encodeURIComponent(uri)}` : '';
+}
+
 // Automatic cleanup: remove stale duplicate notifications (same group_key,
 // keeping the most recent) and backfill broken target_paths so every
 // notification is clickable. Runs at the start of each ingestion cycle so
@@ -71,22 +79,32 @@ async function cleanupStaleNotifications(svc: any): Promise<number> {
       }
     }
 
-    // 2. Backfill broken target_paths on remaining notifications.
+    // 2. Backfill broken target_paths and convert existing external bsky.app
+    //    links to on-site routes so no notification ever leaves the site.
     for (const n of recent) {
       if (deletedIds.has(n.id)) continue;
       let newPath = '';
-      if (['like', 'repost', 'comment'].includes(n.action_type)) {
+      // Convert existing external bsky.app links to on-site routes.
+      if (n.target_path?.startsWith('https://bsky.app')) {
+        const postMatch = n.target_path.match(/bsky\.app\/profile\/([^/]+)\/post\/([^/?#]+)/);
+        if (postMatch) {
+          newPath = onSitePostPath(`at://${postMatch[1]}/app.bsky.feed.post/${postMatch[2]}`);
+        } else {
+          const profileMatch = n.target_path.match(/bsky\.app\/profile\/([^/?#]+)/);
+          if (profileMatch) newPath = `/profile/${profileMatch[1]}`;
+        }
+      } else if (['like', 'repost', 'comment'].includes(n.action_type)) {
         if (!n.target_path) {
           newPath = n.metadata?.postId
             ? `/post/${n.metadata.postId}`
-            : n.source_uri ? bskyPostUrl(n.source_uri) : '';
+            : n.source_uri ? onSitePostPath(n.source_uri) : '';
         }
       } else if (n.action_type === 'follow') {
         if (n.target_path?.startsWith('/u/') && n.actor_did) {
           newPath = `/profile/${n.actor_did}`;
         }
       } else if (n.action_type === 'mention') {
-        if (!n.target_path && n.source_uri) newPath = bskyPostUrl(n.source_uri);
+        if (!n.target_path && n.source_uri) newPath = onSitePostPath(n.source_uri);
       }
       if (newPath) {
         await svc.entities.Notification.update(n.id, { target_path: newPath }).catch(() => {});
@@ -223,7 +241,7 @@ export default async function(req: Request): Promise<Response> {
                 await svc.entities.Post.update(post.id, { replies: (post.replies || 0) + 1 }).catch(() => {});
               }
             } else {
-              targetPath = bskyPostUrl(m.subjectUri);
+              targetPath = onSitePostPath(m.subjectUri);
               targetLabel = 'your post on Bluesky';
             }
           } else if (m.actionType === 'quote') {
@@ -240,13 +258,13 @@ export default async function(req: Request): Promise<Response> {
                 targetLabel = 'your post on Bluesky';
               }
             }
-            targetPath = bskyPostUrl(m.n.uri) || bskyPostUrl(m.subjectUri);
+            targetPath = onSitePostPath(m.n.uri) || onSitePostPath(m.subjectUri);
           } else if (m.actionType === 'follow') {
             // Durable DID-based route — survives a future handle change.
             targetPath = m.actorDid ? `/profile/${m.actorDid}` : '';
             targetLabel = 'followed you';
           } else if (m.actionType === 'mention') {
-            targetPath = bskyPostUrl(m.subjectUri);
+            targetPath = onSitePostPath(m.subjectUri);
             targetLabel = 'mentioned you';
           }
 
@@ -254,10 +272,10 @@ export default async function(req: Request): Promise<Response> {
           // empty because the Bluesky notification lacked a parent URI),
           // deep-link to the reply itself on Bluesky so the card is clickable.
           if (!targetPath && m.actionType === 'comment' && m.n?.uri) {
-            targetPath = bskyPostUrl(m.n.uri);
+            targetPath = onSitePostPath(m.n.uri);
           }
           if (!targetPath && m.actionType === 'quote' && m.n?.uri) {
-            targetPath = bskyPostUrl(m.n.uri);
+            targetPath = onSitePostPath(m.n.uri);
           }
 
           const verb = m.actionType === 'like' ? 'liked'
