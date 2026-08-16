@@ -9,10 +9,13 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+// Follows are locally authoritative — they persist until the user explicitly
+// unfollows via their profile. Never auto-delete local follows based on PDS
+// state (the bridge account repo is not a reliable source of truth for follows
+// once users have their own did:plc repos).
 const COLLECTION_MAP = [
   { collection: 'app.bsky.feed.post', entity: 'Post' },
   { collection: 'app.bsky.feed.repost', entity: 'Repost' },
-  { collection: 'app.bsky.graph.follow', entity: 'Follow' },
   { collection: 'org.swappulse.collectionEntry', entity: 'CollectionEntry' },
   { collection: 'org.swappulse.tradeListing', entity: 'TradeListing' },
 ];
