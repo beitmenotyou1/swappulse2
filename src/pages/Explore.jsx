@@ -33,7 +33,26 @@ export default function Explore() {
   const [adding, setAdding] = useState(false);
   const [searchMode, setSearchMode] = useState('cards');
   const [latestPosts, setLatestPosts] = useState([]);
+  const [feedPosts, setFeedPosts] = useState([]);
+  const [feedLoading, setFeedLoading] = useState(false);
   const [filters, setFilters] = useState({ set: '', rarity: '', type: '', minPrice: '', maxPrice: '' });
+
+  // Everybody feed — all recent posts, for discovering collectors outside your follows.
+  const loadFeedPosts = useCallback(async () => {
+    setFeedLoading(true);
+    try {
+      const p = await base44.entities.Post.list('-created_date', 50);
+      setFeedPosts(p || []);
+    } catch {
+      setFeedPosts([]);
+    } finally {
+      setFeedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (searchMode === 'posts' && feedPosts.length === 0) loadFeedPosts();
+  }, [searchMode, feedPosts.length, loadFeedPosts]);
 
   const runSearch = useCallback(async (q, f = filters) => {
     if (q.trim().length < 2 && !f.set && !f.rarity) {
@@ -151,6 +170,12 @@ export default function Explore() {
           >
             People
           </button>
+          <button
+            onClick={() => setSearchMode('posts')}
+            className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${searchMode === 'posts' ? 'bg-background text-foreground shadow-base' : 'text-muted-foreground'}`}
+          >
+            Posts
+          </button>
         </div>
         {searchMode === 'cards' && (
           <div className="flex items-center gap-2">
@@ -171,6 +196,27 @@ export default function Explore() {
       {searchMode === 'people' && (
         <div className="p-4">
           <ExternalActorSearch />
+        </div>
+      )}
+
+      {searchMode === 'posts' && (
+        <div className="p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
+            <Flame className="h-4 w-4 text-accent" /> Everybody Feed
+          </h2>
+          {feedLoading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : feedPosts.length === 0 ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">No posts yet.</p>
+          ) : (
+            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+              {feedPosts.map((p) => (
+                <PostCard key={p.id} post={p} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
