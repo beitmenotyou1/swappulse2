@@ -1,73 +1,90 @@
-import React, { useEffect, useState } from 'react';
-import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
-import { TrendingUp, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
+import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 
-// PriceHistoryChart — a compact sparkline + stat block showing a card's price
-// trend from stored CardPricing snapshots. Since CardPricing stores the
-// current avg/avg7/avg30, we render those as a 3-point trend. If no pricing
-// record exists, we show an empty state prompting the user to sync.
+// PriceHistoryChart — a compact trend chart showing a card's price changes
+// over time using the TCGDex pricing data already loaded on the card object.
+// CardMarket provides avg30 / avg7 / avg1 (30-day, 7-day, 1-day moving averages)
+// which we render as a simple trend sparkline to help users judge market
+// direction at a glance. Falls back to TCGPlayer market/low/high if CardMarket
+// averages are unavailable. No extra network call — uses card.pricing only.
 export default function PriceHistoryChart({ card }) {
-  const [pricing, setPricing] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cm = card?.pricing?.cardmarket || {};
+  const tp = card?.pricing?.tcgplayer || {};
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!card?.id && !card?.name) { setLoading(false); return; }
-      try {
-        const filter = card.id
-          ? { card_id: card.id }
-          : { card_name: card.name };
-        const items = await base44.entities.CardPricing.filter(filter, '-updated_date', 5);
-        if (!cancelled && items.length > 0) setPricing(items[0]);
-      } catch { /* ignore */ }
-      finally { if (!cancelled) setLoading(false); }
-    })();
-    return () => { cancelled = true; };
-  }, [card?.id, card?.name]);
+  // Prefer CardMarket time-averages (avg30 → avg7 → avg1) for a real trend line.
+  const hasCardMarket = cm.avg30 != null || cm.avg7 != null || cm.avg1 != null;
+  const currency = cm.currency || tp.currency || 'EUR';
+  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '£';
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-6">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      </div>
-    );
+  let data = [];
+  let currentPrice = null;
+  let changePct = null;
+
+  if (hasCardMarket) {
+    const a30 = cm.avg30 ?? cm.avg7 ?? cm.avg1 ?? 0;
+    const a7 = cm.avg7 ?? cm.avg1 ?? a30;
+    const a1 = cm.avg1 ?? a7;
+    currentPrice = a1;
+    data = [
+      { label: '30d avg', price: a30 },
+      { label: '7d avg', price: a7 },
+      { label: '1d avg', price: a1 },
+    ];
+    if (a30 > 0) changePct = ((a1 - a30) / a30) * 100;
+  } else if (tp.market != null) {
+    // Fallback: TCGPlayer snapshot (no time series, show range as a flat trend)
+    currentPrice = tp.market;
+    data = [
+      { label: 'Low', price: tp.low ?? tp.market },
+      { label: 'Market', price: tp.market },
+      { label: 'High', price: tp.high ?? tp.market },
+    ];
   }
 
-  if (!pricing) {
+  if (data.length === 0 || currentPrice == null) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-secondary/40 p-4 text-center">
         <TrendingUp className="mx-auto h-5 w-5 text-muted-foreground/50" />
-        <p className="mt-1.5 text-xs text-muted-foreground">No price history yet. Prices sync from TCGDex periodically.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">No pricing data available for this card yet.</p>
       </div>
     );
   }
 
-  const avg = pricing.avg ?? 0;
-  const avg7 = pricing.avg7 ?? avg;
-  const avg30 = pricing.avg30 ?? avg7;
-  const currencySymbol = pricing.unit === 'EUR' ? '€' : pricing.unit === 'USD' ? '$' : '£';
-  const data = [
-    { label: '30d', price: avg30 },
-    { label: '7d', price: avg7 },
-    { label: 'now', price: avg },
-  ];
-  const change = avg30 > 0 ? ((avg - avg30) / avg30) * 100 : 0;
-  const isUp = change >= 0;
+  const isUp = changePct == null ? true : changePct >= 0;
+  const trendColor = isUp ? 'hsl(var(--success))' : 'hsl(var(--destructive))';
+  const gradientId = 'priceTrendGradient';
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-bold">Price History</h3>
-        <span className={`text-xs font-bold ${isUp ? 'text-success' : 'text-destructive'}`}>
-          {isUp ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
-        </span>
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold">Price Trend</h3>
+          <p className="text-xs text-muted-foreground">30-day direction from TCGDex</p>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-extrabold leading-none">
+            {currencySymbol}{(currentPrice || 0).toFixed(2)}
+          </p>
+          {changePct != null && (
+            <p className={`mt-1 flex items-center justify-end gap-1 text-xs font-bold ${isUp ? 'text-success' : 'text-destructive'}`}>
+              {isUp ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+              {isUp ? '+' : ''}{changePct.toFixed(1)}%
+            </p>
+          )}
+        </div>
       </div>
-      <div className="h-20">
+
+      <div className="h-28">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={trendColor} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={trendColor} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
             <YAxis domain={['dataMin', 'dataMax']} hide />
             <Tooltip
               contentStyle={{
@@ -75,25 +92,35 @@ export default function PriceHistoryChart({ card }) {
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
                 fontSize: '12px',
+                padding: '6px 10px',
               }}
-              formatter={(v) => [`${currencySymbol}${(v / 100).toFixed(2)}`, 'Price']}
-              labelFormatter={(l) => `${l} avg`}
+              formatter={(v) => [`${currencySymbol}${Number(v).toFixed(2)}`, 'Price']}
+              labelFormatter={(l) => l}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="price"
-              stroke={isUp ? 'hsl(var(--success))' : 'hsl(var(--destructive))'}
-              strokeWidth={2}
-              dot={{ r: 3, fill: 'hsl(var(--primary))' }}
+              stroke={trendColor}
+              strokeWidth={2.5}
+              fill={`url(#${gradientId})`}
+              dot={{ r: 3, fill: trendColor, strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: trendColor, strokeWidth: 0 }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
+
       <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-        <span>30d: {formatPrice(Math.round((avg30 || 0) * 100))}</span>
-        <span>7d: {formatPrice(Math.round((avg7 || 0) * 100))}</span>
-        <span className="font-semibold text-foreground">Now: {formatPrice(Math.round((avg || 0) * 100))}</span>
+        {data.map((d) => (
+          <span key={d.label}>{d.label}</span>
+        ))}
       </div>
+
+      <p className="mt-3 text-[11px] text-muted-foreground/70">
+        {hasCardMarket
+          ? 'Averages sourced from CardMarket via TCGDex. Use this trend to time trades.'
+          : 'Market snapshot from TCGPlayer via TCGDex. Limited trend data for this card.'}
+      </p>
     </div>
   );
 }
