@@ -23,7 +23,7 @@ const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 // URLs and hashtags are real, commonly-searched Pokémon TCG community tags.
 const HOOKS = [
   "Just pulled the chase card I've been hunting for weeks \u{1F389}",
-  "We've all been there \u2014 one card away from finishing a set and it's nowhere to be found.",
+  "We've all been there. One card away from finishing a set and it's nowhere to be found.",
   "My binder was a mess of spreadsheets and phone notes until I found something better.",
   "Honestly? Trading online used to stress me out. Not anymore.",
   "Remember when social media actually felt like a community? Yeah, me too.",
@@ -37,13 +37,13 @@ const HOOKS = [
 ];
 
 const VALUE_PROPS = [
-  "SwapPulse is where collectors actually talk to each other \u2014 no ads, no algorithm, just people who love the hobby.",
+  "SwapPulse is where collectors actually talk to each other. No ads, no algorithm, just people who love the hobby.",
   "It's built on the AT Protocol, so your posts show up on Bluesky too. Same account, bigger reach.",
-  "Scan a card, add it to your collection, build a binder, find a trade \u2014 all in one place, all free.",
+  "Scan a card, add it to your collection, build a binder, find a trade. All in one place, all free.",
   "Every trader gets vouched for by the community, so you know who you're dealing with before you mail anything.",
   "No paywalls. No premium tiers. No selling your data. It's just collectors helping collectors.",
-  "Your collection, your posts, your follows \u2014 they're yours. You can take them with you anytime.",
-  "Challenges, meetups, pack parties \u2014 it's the card shop vibe, but online and global.",
+  "Your collection, your posts, your follows. They're yours. You can take them with you anytime.",
+  "Challenges, meetups, pack parties. It's the card shop vibe, but online and global.",
   "The AI scanner nailed every card I threw at it, even the old base set ones.",
 ];
 
