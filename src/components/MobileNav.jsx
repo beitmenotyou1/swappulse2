@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogOut, Sparkles } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, ScanLine, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -35,6 +35,9 @@ const moreItems = [
   { to: '/notifications', icon: Bell, label: 'Alerts', authOnly: true },
   { to: '/messages', icon: MessageSquare, label: 'Messages', authOnly: true },
   { to: '/help', icon: HelpCircle, label: 'Help' },
+  { to: '/terms', icon: FileText, label: 'Terms' },
+  { to: '/privacy', icon: Lock, label: 'Privacy' },
+  { to: '/status', icon: Activity, label: 'Status' },
   { to: '/donate', icon: Heart, label: 'Donate' },
   { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
   { to: '/moderation', icon: ShieldAlert, label: 'Moderation', adminOnly: true },
@@ -159,6 +162,12 @@ export default function MobileNav() {
                 </button>
               )}
             </div>
+            <p className="mt-3 px-1 text-[11px] font-medium text-muted-foreground">
+              © SwapPulse - Built on the AT Protocol · Powered by TCGdex
+            </p>
+            <p className="mt-1.5 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
+              SwapPulse is a free, open-source platform. Pokémon and Pokémon TCG are trademarks of Nintendo, Game Freak, and The Pokémon Company. SwapPulse is not affiliated with or endorsed by them.
+            </p>
           </div>
         </div>
       )}

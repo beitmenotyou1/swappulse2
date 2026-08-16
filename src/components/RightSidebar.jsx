@@ -174,12 +174,19 @@ export default function RightSidebar({ online = [] }) {
         </section>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-2 text-xs text-muted-foreground">
-        <span>© SwapPulse - Built on the AT Protocol · Powered by TCGdex</span>
-        <span className="text-border-strong">·</span>
-        <Link to="/help" className="font-medium text-muted-foreground transition-colors hover:text-primary">Help</Link>
-        <span className="text-border-strong">·</span>
-        <Link to="/status" className="font-medium text-muted-foreground transition-colors hover:text-primary">Status</Link>
+      <div className="mt-auto rounded-2xl px-4 py-4" style={{ backgroundColor: '#0f121a', color: '#94a3b8' }}>
+        <p className="text-xs font-medium">© SwapPulse - Built on the AT Protocol · Powered by TCGdex</p>
+        <nav className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+          <Link to="/terms" className="text-xs font-medium transition-colors hover:text-white">Terms</Link>
+          <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-white">Privacy</Link>
+          <Link to="/help" className="text-xs font-medium transition-colors hover:text-white">Help</Link>
+          <Link to="/status" className="text-xs font-medium transition-colors hover:text-white">Status</Link>
+          <Link to="/explore" className="text-xs font-medium transition-colors hover:text-white">Explore</Link>
+          <Link to="/donate" className="text-xs font-medium transition-colors hover:text-white">Donate</Link>
+        </nav>
+        <p className="mt-3 text-[11px] leading-relaxed" style={{ color: '#64748b' }}>
+          SwapPulse is a free, open-source platform. Pokémon and Pokémon TCG are trademarks of Nintendo, Game Freak, and The Pokémon Company. SwapPulse is not affiliated with or endorsed by them.
+        </p>
       </div>
     </aside>
   );
