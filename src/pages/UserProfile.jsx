@@ -19,6 +19,7 @@ import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
+import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import RichText from '@/components/RichText';
 
@@ -33,6 +34,7 @@ export default function UserProfile() {
   const [friendship, setFriendship] = useState({ my: null, their: null });
   const [tab, setTab] = useState('Posts');
   const { profile: merged, loading: merging } = useMergedProfile({ did: subjectDid });
+  const { filterPosts } = usePostVisibility();
   useSEO({
     title: merged?.name ? `${merged.name} (Collector Profile)` : 'Collector Profile',
     description: merged?.description ? `${merged.description}` : `${merged?.name || 'Collector'} on SwapPulse — the decentralized Pokémon TCG collector community.`,
@@ -204,12 +206,12 @@ export default function UserProfile() {
             )
           ) : loading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-          ) : posts.length === 0 ? (
+          ) : filterPosts(posts).length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               {isExternal ? 'No posts found on Bluesky.' : 'No posts yet.'}
             </p>
           ) : (
-            posts.map((p) => <PostCard key={p.id} post={p} />)
+            filterPosts(posts).map((p) => <PostCard key={p.id} post={p} />)
           )}
         </div>
       </div>

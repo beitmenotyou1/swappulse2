@@ -12,6 +12,7 @@ import PushOnboardingPrompt from '@/components/onboarding/PushOnboardingPrompt';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 
 const TABS = [
@@ -38,6 +39,7 @@ export default function Home() {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [followedCount, setFollowedCount] = useState(0);
   const { user } = useAuth();
+  const { filterPosts } = usePostVisibility();
 
   // Only show the onboarding tour to authenticated users who haven't seen it.
   // Guests should see the platform content, not a full-screen tour modal.
@@ -137,7 +139,8 @@ export default function Home() {
     })();
   }, [posts, user?.id]);
 
-  const filtered = tab === 'all' ? posts : posts.filter((p) => p.post_type === tab);
+  const visiblePosts = filterPosts(posts);
+  const filtered = tab === 'all' ? visiblePosts : visiblePosts.filter((p) => p.post_type === tab);
 
   if (showTour) {
     return <OnboardingTour onComplete={completeTour} />;

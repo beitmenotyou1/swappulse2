@@ -18,6 +18,23 @@
       ],
       "default": "text"
     },
+    "visibility_scope": {
+      "type": "string",
+      "enum": [
+        "public",
+        "followers",
+        "mentioned"
+      ],
+      "default": "public",
+      "description": "Who can see this post. 'public' (default) is visible to everyone and federates publicly. 'followers' is visible only to accounts who follow the author. 'mentioned' is visible only to accounts whose DIDs are in mentioned_dids. Enforced on local feed and detail reads; mirrored to the PDS as an app.bsky.feed.postgate record so remote Bluesky clients enforce it. Independent of reply_policy (who can reply)."
+    },
+    "mentioned_dids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DIDs of accounts mentioned in the post. Populated from @handles in the content at compose time. Used as the viewer allowlist when visibility_scope is 'mentioned'."
+    },
     "hashtags": {
       "type": "array",
       "maxItems": 10,

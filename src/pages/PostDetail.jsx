@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PostCard from '@/components/feed/PostCard';
 import PostReplyThread from '@/components/feed/PostReplyThread';
+import { usePostVisibility } from '@/hooks/usePostVisibility';
+import { visibilityLabel } from '@/lib/postVisibility';
 import useSEO from '@/hooks/useSEO';
 
 // Dedicated post detail page: renders a single post with its full reply
@@ -20,6 +22,7 @@ export default function PostDetail() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { canView } = usePostVisibility();
   useSEO({
     title: post ? (post.content?.slice(0, 60) || 'Post') : 'Post',
     description: post ? (post.content?.slice(0, 160) || 'A post on SwapPulse') : 'A post on the SwapPulse Pokémon TCG collector community.',
@@ -72,6 +75,29 @@ export default function PostDetail() {
       <div className="flex flex-col items-center gap-3 py-20 text-center">
         <p className="text-sm font-semibold">{error || 'Post not found'}</p>
         <Link to="/" className="text-sm text-primary hover:underline">Back home</Link>
+      </div>
+    );
+  }
+
+  // Visibility gate: non-public posts are hidden from non-permitted viewers.
+  if (!canView(post)) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <div className="flex items-center gap-2 px-4 py-3">
+          <button onClick={() => navigate(-1)} className="rounded-full p-1.5 hover:bg-secondary" aria-label="Back">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-bold">Post</h1>
+        </div>
+        <div className="mx-4 mt-10 flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-secondary">
+            <Lock className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-semibold">This post is limited</p>
+          <p className="max-w-xs text-sm text-muted-foreground">
+            Only the author&apos;s {visibilityLabel(post.visibility_scope)} can see this post.
+          </p>
+        </div>
       </div>
     );
   }

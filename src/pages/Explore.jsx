@@ -12,6 +12,7 @@ import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 import FilterPanel from '@/components/explore/FilterPanel';
 import TrendingRail from '@/components/explore/TrendingRail';
+import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 
 export default function Explore() {
@@ -36,6 +37,7 @@ export default function Explore() {
   const [feedPosts, setFeedPosts] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [filters, setFilters] = useState({ set: '', rarity: '', type: '', minPrice: '', maxPrice: '' });
+  const { filterPosts } = usePostVisibility();
 
   // Everybody feed — all recent posts, for discovering collectors outside your follows.
   const loadFeedPosts = useCallback(async () => {
@@ -208,11 +210,11 @@ export default function Explore() {
             <div className="flex justify-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : feedPosts.length === 0 ? (
+          ) : filterPosts(feedPosts).length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">No posts yet.</p>
           ) : (
             <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-              {feedPosts.map((p) => (
+              {filterPosts(feedPosts).map((p) => (
                 <PostCard key={p.id} post={p} />
               ))}
             </div>
@@ -228,13 +230,13 @@ export default function Explore() {
           <div className="mb-6">
             <NetworkFeedSection limit={12} title="From the Network" />
           </div>
-          {latestPosts.length > 0 && (
+          {filterPosts(latestPosts).length > 0 && (
             <div className="mb-6">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
                 <Flame className="h-4 w-4 text-accent" /> Latest Posts
               </h2>
               <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                {latestPosts.map((p) => (
+                {filterPosts(latestPosts).map((p) => (
                   <PostCard key={p.id} post={p} />
                 ))}
               </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X } from 'lucide-react';
+import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, Globe, Users, AtSign } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -27,6 +27,19 @@ function canonicalise(tags) {
 
 const POLICY_LABELS = { everybody: 'Everyone', followers: 'Followers', mentioned: 'Mentioned', nobody: 'No one' };
 
+// Visibility scope (who can SEE the post) — independent from reply_policy.
+const SCOPES = [
+  { key: 'public', icon: Globe, label: 'Public' },
+  { key: 'followers', icon: Users, label: 'Followers' },
+  { key: 'mentioned', icon: AtSign, label: 'Mentioned' },
+];
+
+// Extract @handles from post text for the mentioned-only scope.
+function extractMentions(text) {
+  const matches = text.match(/@([\w.]+)/g) || [];
+  return Array.from(new Set(matches.map((m) => m.slice(1).toLowerCase())));
+}
+
 export default function ComposeBox({ onPosted, replyTo }) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
@@ -35,6 +48,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [posting, setPosting] = useState(false);
   const [replyPolicy, setReplyPolicy] = useState('everybody');
+  const [visibilityScope, setVisibilityScope] = useState('public');
 
   const typeButtons = [
     { key: 'pack_opening', icon: Sparkles, label: 'Pack Pull' },
@@ -56,11 +70,29 @@ export default function ComposeBox({ onPosted, replyTo }) {
       const rootUri = replyTo?.root_uri || replyTo?.at_uri || null;
       const rootCid = replyTo?.root_cid || replyTo?.cid || null;
 
+      // Resolve @handles to DIDs for the mentioned-only visibility scope.
+      let mentionedDids = [];
+      if (visibilityScope === 'mentioned') {
+        const handles = extractMentions(content);
+        if (handles.length) {
+          const results = await Promise.all(
+            handles.map((h) =>
+              base44.functions.invoke('resolve-atproto-actor', { handle: h })
+                .then((r) => r?.data?.did || r?.did || '')
+                .catch(() => '')
+            )
+          );
+          mentionedDids = results.filter(Boolean);
+        }
+      }
+
       const stamped = await stampRecord({
         content: content.trim(),
         post_type: attachedCard ? postType : 'text',
         hashtags,
         canonical_tags,
+        visibility_scope: visibilityScope,
+        mentioned_dids: mentionedDids,
         card_id: attachedCard?.id,
         card_name: attachedCard?.name,
         card_image: attachedCard?.image,
@@ -97,9 +129,17 @@ export default function ComposeBox({ onPosted, replyTo }) {
         }).then((res) => {
           if (res?.uri) {
             base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
-            // Bridge a postgate record for non-default reply policies.
-            if (replyPolicy !== 'everybody') {
-              const allowRules = replyPolicy === 'nobody'
+            // Bridge a postgate record for non-public visibility or non-default reply
+            // policy. Visibility takes precedence (a followers-only post is also
+            // reply-restricted to followers); reply_policy is used when the post is
+            // public but replies are gated.
+            const needsGate = visibilityScope !== 'public' || replyPolicy !== 'everybody';
+            if (needsGate) {
+              const allowRules = visibilityScope === 'followers'
+                ? [{ $type: 'app.bsky.feed.postgate#followersRule' }]
+                : visibilityScope === 'mentioned'
+                ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
+                : replyPolicy === 'nobody'
                 ? [{ $type: 'app.bsky.feed.postgate#disableRule' }]
                 : replyPolicy === 'mentioned'
                 ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
@@ -134,6 +174,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
       setContent('');
       setAttachedCard(null);
       setPostType('text');
+      setVisibilityScope('public');
       onPosted?.();
     } catch (e) {
       if (isBotBlockError(e)) {
@@ -199,6 +240,24 @@ export default function ComposeBox({ onPosted, replyTo }) {
                   }`}
                 >
                   {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!replyTo && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Who can see:</span>
+              {SCOPES.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setVisibilityScope(s.key)}
+                  title={s.label}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors ${
+                    visibilityScope === s.key ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  <s.icon className="h-3.5 w-3.5" /> {s.label}
                 </button>
               ))}
             </div>
