@@ -1,6 +1,7 @@
 // Content builders for all 6 SwapPulse email types.
 // Each returns { subject, html, text } — html is full branded HTML, text is plain-text alternative.
 import { buildBrandedHtml, buildPlainText, stepCard, featureCard, statRow, COLORS, esc } from './emailTemplate.ts';
+export { COLORS, esc };
 
 const APP_URL = 'https://swappulse.org';
 
@@ -237,6 +238,39 @@ export function buildDay7Email(name: string) {
       `${APP_URL}/`,
       'Explore SwapPulse',
     ),
+  };
+}
+
+// Admin alert email — urgent branded variant for admin-only notifications.
+// Reuses buildBrandedHtml with a danger/red accent, an "ADMIN ALERT" pill
+// badge, a warning-triangle icon, and a red top border on the card.
+export function buildAdminAlertEmail(opts: {
+  subject: string;
+  preheader: string;
+  heading: string;
+  bodyHtml: string;
+  ctaLink?: string;
+  ctaLabel?: string;
+  footerReason: string;
+}) {
+  const badge = `<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:${COLORS.danger}22;border:1px solid ${COLORS.danger};font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${COLORS.danger};margin-bottom:16px;">&#9888; Admin Alert</div>`;
+  const warnIcon = `<div style="margin-bottom:14px;">${icon('warning')}</div>`;
+  const headingHtml = `<h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(opts.heading)}</h1>`;
+  const bodyHtml = `${badge}${warnIcon}${headingHtml}${opts.bodyHtml}`;
+  const subject = `[ADMIN ALERT] ${opts.subject}`;
+  return {
+    subject,
+    html: buildBrandedHtml({
+      subject,
+      preheader: opts.preheader,
+      bodyHtml,
+      ctaLink: opts.ctaLink,
+      ctaLabel: opts.ctaLabel,
+      accentColor: COLORS.danger,
+      topBorderColor: COLORS.danger,
+      footerReason: opts.footerReason,
+    }),
+    text: `[ADMIN ALERT] ${opts.subject}\n\n${buildPlainText(opts.subject, [opts.heading, '', opts.preheader], opts.ctaLink, opts.ctaLabel)}`,
   };
 }
 

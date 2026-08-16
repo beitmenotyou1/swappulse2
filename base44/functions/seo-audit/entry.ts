@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { buildAdminAlertEmail, COLORS, esc } from '../../shared/emailContent.ts';
+import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
 // Weekly SEO audit. Runs as the service role (invoked by the Weekly SEO Audit
 // workflow — no user session). Audits the public surface, auto-fixes what it
@@ -110,19 +112,54 @@ export default async function(req: Request): Promise<Response> {
       trend_data: trendData,
     });
 
-    // Email every admin a summary.
+    // Email every admin a summary — urgent branded email.
     try {
       const users = await svc.entities.User.list().catch(() => []);
       const admins = (users || []).filter((u) => u.role === 'admin');
-      const subject = `SwapPulse Weekly SEO Audit — Score ${score}/100`;
-      const body = `Weekly SEO audit completed.\n\nOverall score: ${score}/100\nPages audited: ${pagesAudited}\nSitemap entries: ${sitemapEntryCount}\nIssues found: ${issuesFound}\nIssues auto-fixed: ${issuesFixed}\n\nManual action items:\n${manualActionItems.length ? manualActionItems.map((m) => `- [${m.severity}] ${m.page}: ${m.issue}`).join('\n') : 'None.'}\n\nView the admin dashboard for the full trend.`;
+      const scoreColor = score >= 80 ? COLORS.success : score >= 50 ? COLORS.warning : COLORS.danger;
+      const itemsHtml = manualActionItems.length
+        ? manualActionItems.map((m) => {
+            const sevColor = m.severity === 'critical' ? COLORS.danger : m.severity === 'warning' ? COLORS.warning : COLORS.muted;
+            return `<tr><td style="padding:10px 0;border-bottom:1px solid ${COLORS.border};">
+              <div style="font-size:12px;font-weight:700;color:${sevColor};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${esc(m.severity)}</div>
+              <div style="font-size:14px;font-weight:600;color:${COLORS.text};">${esc(m.page)}</div>
+              <div style="font-size:13px;color:${COLORS.muted};line-height:1.5;">${esc(m.issue)}</div>
+            </td></tr>`;
+          }).join('')
+        : `<tr><td style="padding:12px 0;font-size:14px;color:${COLORS.muted};">No manual action items this week.</td></tr>`;
+      const emailObj = buildAdminAlertEmail({
+        subject: `Weekly SEO Audit — Score ${score}/100`,
+        preheader: `SEO audit complete: ${issuesFound} issues found, ${issuesFixed} auto-fixed.`,
+        heading: 'Weekly SEO audit complete',
+        bodyHtml: `
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.cardHover};border-radius:10px;border:1px solid ${COLORS.border};margin-bottom:16px;">
+            <tr><td style="padding:18px;text-align:center;">
+              <div style="font-size:40px;font-weight:800;color:${scoreColor};line-height:1;">${score}<span style="font-size:18px;color:${COLORS.muted};">/100</span></div>
+              <div style="font-size:12px;color:${COLORS.muted};text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;">Overall Score</div>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+            <tr>
+              <td style="padding:0 4px;text-align:center;width:33%;"><div style="font-size:20px;font-weight:800;color:${COLORS.text};">${pagesAudited}</div><div style="font-size:11px;color:${COLORS.muted};text-transform:uppercase;letter-spacing:0.5px;">Pages</div></td>
+              <td style="padding:0 4px;text-align:center;width:33%;"><div style="font-size:20px;font-weight:800;color:${COLORS.text};">${sitemapEntryCount}</div><div style="font-size:11px;color:${COLORS.muted};text-transform:uppercase;letter-spacing:0.5px;">Sitemap</div></td>
+              <td style="padding:0 4px;text-align:center;width:33%;"><div style="font-size:20px;font-weight:800;color:${issuesFound > 0 ? COLORS.warning : COLORS.success};">${issuesFound}</div><div style="font-size:11px;color:${COLORS.muted};text-transform:uppercase;letter-spacing:0.5px;">Issues</div></td>
+            </tr>
+          </table>
+          <h2 style="margin:0 0 10px;font-size:15px;font-weight:700;color:${COLORS.text};">Manual action items</h2>
+          <table width="100%" cellpadding="0" cellspacing="0">${itemsHtml}</table>`,
+        ctaLink: 'https://swappulse.org/admin',
+        ctaLabel: 'View Full Trend',
+        footerReason: "You're receiving this admin alert because the weekly SEO audit ran automatically. View the admin dashboard for the 8-week trend.",
+      });
       for (const a of admins) {
         if (a.email) {
-          await svc.integrations.Core.SendEmail({ to: a.email, subject, body }).catch(() => {});
+          await sendBrandedEmail({ to: a.email, ...emailObj }).catch((e) => {
+            console.error('seo-audit: admin email failed', a.email, e?.message || e);
+          });
         }
       }
     } catch (e) {
-      console.error('seo-audit: admin email failed', e);
+      console.error('seo-audit: admin email failed', e?.message || e);
     }
 
     return Response.json({ ok: true, audit_id: audit?.id, score, pages_audited: pagesAudited, issues_found: issuesFound, sitemap_entries: sitemapEntryCount });

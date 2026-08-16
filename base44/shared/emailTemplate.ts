@@ -48,6 +48,7 @@ export interface BrandedEmailInput {
   ctaLink?: string;
   ctaLabel?: string;
   accentColor?: string;
+  topBorderColor?: string;
   footerReason: string;
 }
 
@@ -74,6 +75,7 @@ export function buildBrandedHtml(input: BrandedEmailInput): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.bg};padding:24px 12px;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${COLORS.card};border-radius:16px;overflow:hidden;border:1px solid ${COLORS.border};">
+        ${input.topBorderColor ? `<tr><td style="padding:0;height:5px;background:${input.topBorderColor};font-size:0;line-height:0;">&nbsp;</td></tr>` : ''}
         <!-- Header -->
         <tr>
           <td style="padding:32px 40px 0;text-align:center;">
