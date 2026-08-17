@@ -18,7 +18,7 @@ import TrendingCardsRail from '@/components/cards/TrendingCardsRail';
 import RarityFilter from '@/components/feed/RarityFilter';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const TABS = [
+const ALL_TABS = [
   { key: 'all', tKey: 'feed.forYou' },
   { key: 'pack_opening', tKey: 'feed.freshPulls' },
   { key: 'trade', tKey: 'feed.tradeFloor' },
@@ -45,12 +45,20 @@ export default function Home() {
   const { user } = useAuth();
   const { filterPosts } = usePostVisibility();
   const tr = useT();
+  // "For You" is only for logged-in users — it's populated by followed collectors.
+  // Guests see the three community feeds (Fresh Pulls, Trade Floor, Showcase).
+  const TABS = user ? ALL_TABS : ALL_TABS.filter((t) => t.key !== 'all');
 
   // Only show the onboarding tour to authenticated users who haven't seen it.
   // Guests should see the platform content, not a full-screen tour modal.
   useEffect(() => {
     if (user && !localStorage.getItem('swappulse_onboarding_done')) setShowTour(true);
   }, [user]);
+
+  // Guests can't see "For You" — default them to Fresh Pulls
+  useEffect(() => {
+    if (!user && tab === 'all') setTab('pack_opening');
+  }, [user, tab]);
 
   const completeTour = () => {
     setShowTour(false);
@@ -60,22 +68,23 @@ export default function Home() {
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const authed = await base44.auth.isAuthenticated();
-      if (authed) {
+      if (tab === 'all' && user) {
+        // "For You" — followed collectors' posts (logged-in only)
         const res = await base44.functions.invoke('get-follow-feed', { limit: 50 });
         setPosts(res.data?.items || []);
         setFollowedCount(res.data?.followed_count ?? 0);
       } else {
-        // Guests: show recent public posts so the landing page has content.
+        // Community feeds — all recent public posts, filtered by post_type
         const recent = await base44.entities.Post.list('-created_date', 50).catch(() => []);
         setPosts(recent || []);
+        setFollowedCount(0);
       }
     } catch {
       setPosts([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tab, user]);
 
   useEffect(() => {
     loadPosts();
@@ -196,7 +205,7 @@ export default function Home() {
 
       <TradeInterestBanner />
 
-      {!loading && user && followedCount === 0 && rarityFiltered.length > 0 && (
+      {!loading && user && tab === 'all' && followedCount === 0 && rarityFiltered.length > 0 && (
         <div className="mx-4 my-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <p className="font-semibold text-foreground">Follow collectors to personalize your feed</p>
           <p className="mt-0.5 text-muted-foreground">You're seeing recent posts from the community. Follow collectors to see their content first.</p>
@@ -210,12 +219,14 @@ export default function Home() {
         </div>
       ) : rarityFiltered.length === 0 ? (
         <div className="px-4 py-20 text-center">
-          {user ? (
+          {user && tab === 'all' ? (
             <>
               <p className="text-lg font-bold">Your feed is quiet</p>
               <p className="mt-1 text-sm text-muted-foreground">Follow some collectors to fill your feed.</p>
               <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Discover collectors</Link>
             </>
+          ) : user ? (
+            <p className="text-sm text-muted-foreground">No posts in this feed yet. Check back soon!</p>
           ) : (
             <>
               <p className="text-lg font-bold">Welcome to SwapPulse</p>
