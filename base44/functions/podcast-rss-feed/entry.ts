@@ -3,8 +3,11 @@
 // records, so external podcast apps can subscribe to and distribute the
 // host's show. Public endpoint (no auth): podcast apps fetch this URL.
 //
-// Usage: GET /api/functions/podcast-rss-feed?did=<hostDid>  (or ?handle=<hostHandle>)
-// Returns: application/xml
+// Params accepted from EITHER the URL query string (direct GET by podcast
+// apps) OR the JSON body (SDK invocation via base44.functions.invoke):
+//   - did: host's AT Protocol DID
+//   - handle: host's handle (fallback when did is absent)
+// Returns: application/rss+xml
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 function xmlEscape(s: string): string {
@@ -34,11 +37,21 @@ function audioMime(url: string): string {
   return 'audio/mpeg';
 }
 
-Deno.serve(async (req) => {
+export default async function(req: Request): Promise<Response> {
   try {
     const url = new URL(req.url);
-    const did = url.searchParams.get('did') || '';
-    const handle = (url.searchParams.get('handle') || '').replace(/^@/, '');
+    let did = url.searchParams.get('did') || '';
+    let handle = (url.searchParams.get('handle') || '').replace(/^@/, '');
+
+    // Also accept params from a JSON body (SDK invocation).
+    if (!did && !handle && req.method === 'POST') {
+      try {
+        const body = await req.json();
+        did = body?.did || '';
+        handle = (body?.handle || '').replace(/^@/, '');
+      } catch { /* not JSON — ignore */ }
+    }
+
     if (!did && !handle) {
       return new Response('Missing did or handle parameter', { status: 400 });
     }
@@ -65,7 +78,7 @@ Deno.serve(async (req) => {
     const showTitle = `${latest.host_name || latest.host_handle || 'Collector'}'s Podcast`;
     const showDesc = 'Recorded voice spaces and podcasts from SwapPulse collectors.';
     const hostName = latest.host_name || latest.host_handle || 'SwapPulse Collector';
-    const baseAppUrl = (url.searchParams.get('base') || `https://${url.host}`).replace(/\/$/, '');
+    const baseAppUrl = (req.headers.get('X-Base44-App-Url') || `https://${url.host}`).replace(/\/$/, '');
 
     const items = episodes.map((ep: any) => {
       const audioUrl = xmlEscape(ep.audio_url || '');
@@ -115,4 +128,4 @@ ${items}
     console.error('podcast-rss-feed error', error?.message || error);
     return new Response('Failed to generate feed', { status: 500, headers: { 'Content-Type': 'text/plain' } });
   }
-});
+}
