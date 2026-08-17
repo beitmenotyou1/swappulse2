@@ -88,7 +88,7 @@ export default function QuotedPostCard({ quoteOfId, quoteRef }) {
         <div className="mt-2 flex overflow-hidden rounded-lg border border-border bg-background">
           <img
             src={cardImageUrl(quoted.card_image)}
-            alt={quoted.card_name}
+            alt={quoted.card_alt_text || quoted.card_name}
             className="h-24 w-20 shrink-0 object-cover"
           />
           <div className="flex flex-col justify-center px-3 py-2">

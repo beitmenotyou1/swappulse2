@@ -174,7 +174,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
             <div className="mt-3 flex overflow-hidden rounded-xl border border-border bg-secondary">
               <img
                 src={cardImageUrl(post.card_image)}
-                alt={post.card_name}
+                alt={post.card_alt_text || post.card_name}
                 className="h-44 w-36 shrink-0 object-cover"
               />
               <div className="flex flex-col justify-center px-4 py-3">

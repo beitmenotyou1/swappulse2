@@ -133,6 +133,11 @@
     "card_image": {
       "type": "string"
     },
+    "card_alt_text": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "User-authored alt text describing the attached card image for screen readers and accessibility. Falls back to card_name when empty."
+    },
     "card_rarity": {
       "type": "string"
     },

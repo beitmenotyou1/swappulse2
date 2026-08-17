@@ -50,6 +50,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [posting, setPosting] = useState(false);
   const [replyPolicy, setReplyPolicy] = useState('everybody');
   const [visibilityScope, setVisibilityScope] = useState('public');
+  const [cardAltText, setCardAltText] = useState('');
 
   const typeButtons = [
     { key: 'pack_opening', icon: Sparkles, label: 'Pack Pull' },
@@ -98,6 +99,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         card_name: attachedCard?.name,
         card_image: attachedCard?.image,
         card_rarity: attachedCard?.rarity,
+        card_alt_text: cardAltText.trim() || null,
         set_name: attachedCard?.set?.name,
         author_name: user?.display_name || user?.full_name,
         author_handle: user?.username || user?.bsky_handle || '',
@@ -203,6 +205,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
       }
       setContent('');
       setAttachedCard(null);
+      setCardAltText('');
       setPostType('text');
       setVisibilityScope('public');
       onPosted?.();
@@ -241,24 +244,38 @@ export default function ComposeBox({ onPosted, replyTo }) {
           </div>
 
           {attachedCard && (
-            <div className="relative mb-3 inline-flex overflow-hidden rounded-xl border border-border bg-secondary">
-              <button
-                onClick={() => setAttachedCard(null)}
-                className="absolute right-1.5 top-1.5 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <img
-                src={cardImageUrl(attachedCard.image)}
-                alt={attachedCard.name}
-                className="h-40 w-32 object-cover"
-              />
-              <div className="flex flex-col justify-center px-3 py-2">
-                <p className="text-sm font-bold">{attachedCard.name}</p>
-                <p className="text-xs text-muted-foreground">{attachedCard.set?.name}</p>
-                <p className="text-xs text-primary">{attachedCard.rarity}</p>
+            <>
+              <div className="relative mb-2 inline-flex overflow-hidden rounded-xl border border-border bg-secondary">
+                <button
+                  onClick={() => setAttachedCard(null)}
+                  className="absolute right-1.5 top-1.5 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <img
+                  src={cardImageUrl(attachedCard.image)}
+                  alt={cardAltText || attachedCard.name}
+                  className="h-40 w-32 object-cover"
+                />
+                <div className="flex flex-col justify-center px-3 py-2">
+                  <p className="text-sm font-bold">{attachedCard.name}</p>
+                  <p className="text-xs text-muted-foreground">{attachedCard.set?.name}</p>
+                  <p className="text-xs text-primary">{attachedCard.rarity}</p>
+                </div>
               </div>
-            </div>
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Image description (alt text)
+                </label>
+                <input
+                  type="text"
+                  value={cardAltText}
+                  onChange={(e) => setCardAltText(e.target.value.slice(0, 300))}
+                  placeholder="Describe the card image for screen readers..."
+                  className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+            </>
           )}
 
           {!replyTo && (

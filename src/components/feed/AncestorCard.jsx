@@ -46,7 +46,7 @@ export default function AncestorCard({ post }) {
         <div className="mt-1.5 flex items-center gap-2 overflow-hidden rounded-md border border-border bg-background/50">
           <img
             src={cardImageUrl(post.card_image)}
-            alt={post.card_name}
+            alt={post.card_alt_text || post.card_name}
             className="h-14 w-11 shrink-0 object-cover"
           />
           <div className="min-w-0 py-1 pr-2">
