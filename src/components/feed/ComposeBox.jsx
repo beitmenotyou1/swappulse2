@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, Globe, Users, AtSign, ScanLine, FolderOpen } from 'lucide-react';
+import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, ScanLine, FolderOpen } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -12,15 +12,7 @@ import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
 import { extractHashtags, canonicalise } from '@/lib/hashtags';
-
-const POLICY_LABELS = { everybody: 'Everyone', followers: 'Followers', mentioned: 'Mentioned', nobody: 'No one' };
-
-// Visibility scope (who can SEE the post) — independent from reply_policy.
-const SCOPES = [
-  { key: 'public', icon: Globe, label: 'Public' },
-  { key: 'followers', icon: Users, label: 'Followers' },
-  { key: 'mentioned', icon: AtSign, label: 'Mentioned' },
-];
+import VisibilityControls from '@/components/feed/VisibilityControls';
 
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
@@ -268,38 +260,12 @@ export default function ComposeBox({ onPosted, replyTo }) {
           )}
 
           {!replyTo && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Who can reply:</span>
-              {Object.entries(POLICY_LABELS).map(([value, label]) => (
-                <button
-                  key={value}
-                  onClick={() => setReplyPolicy(value)}
-                  className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
-                    replyPolicy === value ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {!replyTo && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Who can see:</span>
-              {SCOPES.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setVisibilityScope(s.key)}
-                  title={s.label}
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors ${
-                    visibilityScope === s.key ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
-                  }`}
-                >
-                  <s.icon className="h-3.5 w-3.5" /> {s.label}
-                </button>
-              ))}
-            </div>
+            <VisibilityControls
+              replyPolicy={replyPolicy}
+              setReplyPolicy={setReplyPolicy}
+              visibilityScope={visibilityScope}
+              setVisibilityScope={setVisibilityScope}
+            />
           )}
 
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
