@@ -60,14 +60,28 @@
     "initiated_by"
   ],
   "rls": {
-    "read": {
-      "created_by_id": "{{user.id}}"
-    },
     "create": {
       "created_by_id": "{{user.id}}"
     },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.friend_did": "{{user.data.did}}"
+        }
+      ]
+    },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.friend_did": "{{user.data.did}}"
+        }
+      ]
     },
     "delete": {
       "created_by_id": "{{user.id}}"
