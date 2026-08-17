@@ -38,6 +38,7 @@ export default function RightSidebar({ online = [] }) {
   const [recs, setRecs] = useState([]);
   const [actorDid, setActorDid] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -53,6 +54,7 @@ export default function RightSidebar({ online = [] }) {
         setRecentTrades(trades);
         setTrending(computeTrending(pricing));
 
+        setIsAuthed(!!isAuthed);
         // Who to Follow — real trust-graph recommendations (auth only).
         if (isAuthed) {
           const res = await base44.functions.invoke('getFeedSkeleton', { limit: 3 });
@@ -86,6 +88,30 @@ export default function RightSidebar({ online = [] }) {
 
   return (
     <aside className="hidden w-80 shrink-0 flex-col gap-4 py-4 pl-2 lg:flex">
+      {isAuthed && portfolio && (
+        <section className="rounded-2xl border border-border bg-card p-4">
+          <h3 className="mb-3 text-sm font-bold">Your Portfolio</h3>
+          <p className="text-2xl font-extrabold">{formatPrice(portfolio.total)}</p>
+          <p className="text-xs text-muted-foreground">{portfolio.count} cards tracked</p>
+        </section>
+      )}
+
+      {recentTrades.length > 0 && (
+        <section className="rounded-2xl border border-border bg-card p-4">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
+            <ArrowLeftRight className="h-4 w-4 text-primary" /> Active Trades
+          </h3>
+          <div className="space-y-2">
+            {recentTrades.map((t) => (
+              <Link to="/trades" key={t.id} className="block rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary">
+                <p className="text-sm font-medium truncate">Offering {t.offer_card_names?.[0] || 'cards'}</p>
+                <p className="text-xs text-muted-foreground truncate">Wants {t.wanted_card_names?.[0] || 'cards'}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       <OnlineNow users={online} />
 
       {trending.length > 0 && (
@@ -110,32 +136,6 @@ export default function RightSidebar({ online = [] }) {
               </Link>
             ))}
           </div>
-        </section>
-      )}
-
-      <TrendingTopics />
-
-      {recentTrades.length > 0 && (
-        <section className="rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <ArrowLeftRight className="h-4 w-4 text-primary" /> Active Trades
-          </h3>
-          <div className="space-y-2">
-            {recentTrades.map((t) => (
-              <Link to="/trades" key={t.id} className="block rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary">
-                <p className="text-sm font-medium truncate">Offering {t.offer_card_names?.[0] || 'cards'}</p>
-                <p className="text-xs text-muted-foreground truncate">Wants {t.wanted_card_names?.[0] || 'cards'}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {portfolio && (
-        <section className="rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 text-sm font-bold">Your Portfolio</h3>
-          <p className="text-2xl font-extrabold">{formatPrice(portfolio.total)}</p>
-          <p className="text-xs text-muted-foreground">{portfolio.count} cards tracked</p>
         </section>
       )}
 
@@ -176,6 +176,8 @@ export default function RightSidebar({ online = [] }) {
           </div>
         </section>
       )}
+
+      <TrendingTopics />
 
       <div className="mt-auto rounded-2xl px-4 py-4 text-muted-foreground">
         <p className="text-xs font-medium">© SwapPulse - Built on the AT Protocol · Powered by TCGdex</p>
