@@ -55,7 +55,7 @@ const HOOKS = [
 ];
 
 const VALUE_PROPS = [
-  "SwapPulse is a decentralized social network for Pokémon TCG collectors, built on the AT Protocol. It's in alpha — features are still being built and refined.",
+  "SwapPulse is a decentralized social network for Pokémon TCG collectors, built on the AT Protocol. It's in alpha: features are still being built and refined.",
   "We're building a place where collectors can actually talk to each other. No ads, no algorithm. It's alpha, so things may change as we go.",
   "Scan cards, build collections, create binders, find trades, all in one place. It's free and open-source, and we're still in alpha so bear with us.",
   "Built on the AT Protocol, so your posts can show up on Bluesky too. Same account, bigger reach. Still in alpha, still improving.",
