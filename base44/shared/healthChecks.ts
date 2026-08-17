@@ -42,6 +42,21 @@ export function checkBase44() {
   return { status: 'up', latencyMs: 0 };
 }
 
+export async function checkPodcastRss(origin: string) {
+  try {
+    if (!origin) throw new Error('App origin not configured');
+    const url = `${origin.replace(/\/$/, '')}/api/functions/podcast-rss-feed?did=did:plc:healthcheck000000000000`;
+    const start = Date.now();
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    // 200 = feed generated, 404 = no episodes for the probe DID (expected).
+    // Both mean the function endpoint is alive; only 5xx/network errors are "down".
+    if (res.status === 200 || res.status === 404) return { status: 'up', latencyMs: Date.now() - start };
+    throw new Error(`HTTP ${res.status}`);
+  } catch (e) {
+    return { status: 'down', error: e?.message || String(e) };
+  }
+}
+
 export async function checkAtProtoRelay() {
   // The firehose ingestion pipeline's core dependency is our own PDS — it
   // lists records from the PDS repo for bidirectional sync. The AppView

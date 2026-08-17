@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { checkTcgdex, checkDatabase, checkSmtp, checkVapid, checkBase44, checkAtProtoRelay } from '../../shared/healthChecks.ts';
+import { checkTcgdex, checkDatabase, checkSmtp, checkVapid, checkBase44, checkAtProtoRelay, checkPodcastRss } from '../../shared/healthChecks.ts';
 
 export default async function (req) {
   try {
@@ -12,8 +12,10 @@ export default async function (req) {
     const smtp = checkSmtp();
     const vapid = checkVapid();
     const base44Status = checkBase44();
+    const origin = req.headers.get('X-Base44-App-Url') || new URL(req.url).origin;
+    const podcastRss = await checkPodcastRss(origin).catch((e) => ({ status: 'down', error: e?.message || String(e) }));
 
-    const services = { base44: base44Status, database, tcgdex, 'atproto-relay': relay, smtp, vapid };
+    const services = { base44: base44Status, database, tcgdex, 'atproto-relay': relay, smtp, vapid, 'podcast-rss': podcastRss };
     const allUp = Object.values(services).every((s) => s.status === 'up');
     const anyDown = Object.values(services).some((s) => s.status === 'down');
 

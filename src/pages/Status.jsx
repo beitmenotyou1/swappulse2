@@ -13,6 +13,9 @@ const HEALTH_TO_SLUG = {
   database: 'postgresql',
   tcgdex: 'tcgdex-api',
   'atproto-relay': 'atproto-relay',
+  smtp: 'smtp',
+  vapid: 'push-notifications',
+  'podcast-rss': 'podcast-rss',
 };
 
 const CRITICALITY_LABELS = {
