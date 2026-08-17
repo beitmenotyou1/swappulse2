@@ -24,32 +24,15 @@ const LABELER_DID = 'did:web:labeler.swappulse.org';
 // callers. Allowed callers: (1) platform-internal invocations (workflow
 // runtime, agent runtime) carrying the `base44-service-authorization`
 // internal service token, or (2) an authenticated admin/moderator user.
-function isPlatformInternalCall(req: Request): boolean {
-  const authz = req.headers.get('base44-service-authorization') || '';
-  if (!authz.startsWith('Bearer ')) return false;
-  const token = authz.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
-    return isInternal && payload?.caller === 'backend_functions';
-  } catch {
-    return false;
-  }
-}
-
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth gate: internal platform call OR authenticated admin/moderator.
-    if (!isPlatformInternalCall(req)) {
-      let caller: any;
-      try { caller = await base44.auth.me(); } catch { caller = null; }
-      if (!caller || !['admin', 'moderator'].includes(caller.role)) {
-        return Response.json({ error: 'Unauthorized' }, { status: 403 });
-      }
+    // Auth gate: authenticated admin/moderator.
+    let caller: any;
+    try { caller = await base44.auth.me(); } catch { caller = null; }
+    if (!caller || !['admin', 'moderator'].includes(caller.role)) {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await req.json().catch(() => ({}));

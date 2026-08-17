@@ -4,6 +4,10 @@ import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller) {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
     const svc = base44.asServiceRole;
     const body = await req.json();
     const { card_id, card_name, set_id, market_value, purchase_price, user_id } = body;

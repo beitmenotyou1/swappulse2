@@ -8,27 +8,14 @@ import { randomToken, HOURS_48, DAY, WARN_AFTER_DAYS, DELETE_AFTER_DAYS, REWARN_
 import { buildActivationWarningEmail } from '../../shared/emailContent.ts';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
-function isPlatformInternalCall(req: Request): boolean {
-  const authz = req.headers.get('base44-service-authorization') || '';
-  if (!authz.startsWith('Bearer ')) return false;
-  const token = authz.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
-    return isInternal && payload?.caller === 'backend_functions';
-  } catch {
-    return false;
-  }
-}
-
 Deno.serve(async (req) => {
-  if (!isPlatformInternalCall(req)) {
-    return Response.json({ error: 'Unauthorized' }, { status: 403 });
-  }
   try {
     const base44 = createClientFromRequest(req);
+    // Admin auth — workflow calls carry admin context (verified via weeklyDigest pattern).
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const svc = base44.asServiceRole;
     const appUrl = req.headers.get('X-Base44-App-Url') || 'https://swappulse.org';
     const now = Date.now();

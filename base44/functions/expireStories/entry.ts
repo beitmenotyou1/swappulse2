@@ -11,30 +11,13 @@
 // token and is rejected with 403.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-function isPlatformInternalCall(req: Request): boolean {
-  const authz = req.headers.get('base44-service-authorization') || '';
-  if (!authz.startsWith('Bearer ')) return false;
-  const token = authz.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
-    return isInternal
-      && payload?.caller === 'backend_functions'
-      && payload?.backend_function_name === 'expireStories';
-  } catch {
-    return false;
-  }
-}
-
 export default async function (req: Request): Promise<Response> {
   try {
-    if (!isPlatformInternalCall(req)) {
+    const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
-
-    const base44 = createClientFromRequest(req);
     const cutoff = new Date().toISOString();
     const viewCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     // Parallelize the two independent deleteMany calls.

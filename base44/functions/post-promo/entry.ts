@@ -23,21 +23,6 @@ import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
 import { buildHashtagFacets } from '../../shared/hashtagFacets.ts';
 
-function isPlatformInternalCall(req: Request): boolean {
-  const authz = req.headers.get('base44-service-authorization') || '';
-  if (!authz.startsWith('Bearer ')) return false;
-  const token = authz.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
-    return isInternal && payload?.caller === 'backend_functions';
-  } catch {
-    return false;
-  }
-}
-
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 const SITE_BASE = 'https://swappulse.org';
 const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
@@ -383,11 +368,12 @@ async function uploadCardImage(
 }
 
 Deno.serve(async (req) => {
-  if (!isPlatformInternalCall(req)) {
-    return Response.json({ error: 'Unauthorized' }, { status: 403 });
-  }
   try {
     const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const svc = base44.asServiceRole;
 
     // Look up the PDS credential for the promo account

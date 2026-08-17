@@ -1,29 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import webPush from 'npm:web-push@3.6.7';
 
-function isPlatformInternalCall(req: Request): boolean {
-  const authz = req.headers.get('base44-service-authorization') || '';
-  if (!authz.startsWith('Bearer ')) return false;
-  const token = authz.slice(7);
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
-    return isInternal && payload?.caller === 'backend_functions';
-  } catch {
-    return false;
-  }
-}
-
 // Sends a Web Push notification to a specific user with trade advice.
 // Called by the Collection Trade Opportunity Alert workflow after the 10-minute wait.
 export default async function(req) {
-  if (!isPlatformInternalCall(req)) {
-    return Response.json({ error: 'Unauthorized' }, { status: 403 });
-  }
   try {
     const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const svc = base44.asServiceRole;
     const body = await req.json();
     const { user_id, title, body: messageBody, url } = body;
