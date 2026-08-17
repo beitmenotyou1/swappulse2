@@ -1,14 +1,15 @@
-// get-follow-feed — personalized "For You" feed: returns only posts from
-// accounts the current user follows. Splits follows into SwapPulse-member
-// DIDs (posts fetched from the local Post table) and external Bluesky DIDs
-// (posts fetched via the public AppView getAuthorFeed), merges and time-sorts
-// them. Replaces the old global Post.list firehose on Home.
+// get-follow-feed — personalized "For You" feed: returns ONLY posts from
+// accounts the collector follows and posts using hashtags the collector
+// follows — both on SwapPulse (local Post table) and across the AT Protocol
+// (public AppView). Followed-account posts come from getAuthorFeed; followed-
+// hashtag posts come from the local DB + searchPosts on the AppView. No
+// discovery, no algorithmic surfacing — strictly the collector's graph.
 //
 // Input:  { limit?: number }
 // Output: { items: Post[], source: 'follow', authed: boolean }
 //
 // Guest/unauthenticated users get an empty feed (the UI prompts them to follow
-// accounts / log in).
+// accounts / hashtags / log in).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
@@ -101,10 +102,49 @@ export default async function(req: Request): Promise<Response> {
           items.push({ ...p, external: false });
         }
       }
+
+      // 5b. External Bluesky posts matching followed hashtags — searchPosts
+      // pulls posts from across the protocol that use any followed tag, so
+      // hashtag follows surface content beyond SwapPulse members too.
+      const tagsToSearch = followedTags.slice(0, 10);
+      const perTag = Math.max(3, Math.ceil(limit / Math.max(tagsToSearch.length, 1)));
+      const tagFetches = tagsToSearch.map((t) =>
+        fetch(`${APPVIEW}/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent('#' + t)}&limit=${perTag}`)
+          .then((r) => (r.ok ? r.json() : { posts: [] }))
+          .catch(() => ({ posts: [] }))
+      );
+      const tagResults = await Promise.all(tagFetches);
+      const seenTags = new Set(items.map((i: any) => i.at_uri || i.id).filter(Boolean));
+      for (const res of tagResults) {
+        for (const post of res.posts || []) {
+          const author = post.author || {};
+          const record = post.record || {};
+          if (record.reply) continue;
+          const key = post.uri;
+          if (key && seenTags.has(key)) continue;
+          if (key) seenTags.add(key);
+          items.push({
+            id: post.uri,
+            content: record.text || '',
+            author_name: author.displayName || author.handle || '',
+            author_handle: author.handle || '',
+            author_avatar: author.avatar || '',
+            did: author.did || '',
+            at_uri: post.uri,
+            cid: post.cid || '',
+            created_date: record.createdAt || post.indexedAt || '',
+            post_type: 'text',
+            likes: post.likeCount || 0,
+            reposts: post.repostCount || 0,
+            replies: post.replyCount || 0,
+            external: true,
+          });
+        }
+      }
     }
 
-    // 6. Merge + time-sort — For You is followed accounts + followed hashtags;
-    // discovery of new collectors happens in the Explore tab.
+    // 6. Merge + time-sort — For You is strictly followed accounts + followed
+    // hashtags (local + protocol); discovery happens in the Explore tab.
     items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     const followedCount = items.length;
 
