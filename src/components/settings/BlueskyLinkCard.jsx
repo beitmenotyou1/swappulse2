@@ -67,7 +67,7 @@ export default function BlueskyLinkCard() {
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         SwapPulse federates via the AT Protocol. Link your existing Bluesky account so your
-        posts, replies, likes, and follows are attributed to <em>you</em> across the network —
+        posts, replies, likes, and follows are attributed to <em>you</em> across the network,
         not the shared SwapPulse bridge account.
       </p>
       <p className="mt-1 text-xs text-muted-foreground">

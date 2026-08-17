@@ -80,7 +80,7 @@ export default function Privacy() {
               across the AT Protocol network. This means your data is not held in a single, centralized database, it
               is replicated across independent servers that make up the network. This design prioritizes user ownership
               and portability, but it also means that once data is published to the network, it may be difficult to
-              fully remove. Some data, such as end-to-end encrypted direct messages and your private encryption keys —
+              fully remove. Some data, such as end-to-end encrypted direct messages and your private encryption keys,
               never leaves your device in a readable form and is never federated.
             </p>
 

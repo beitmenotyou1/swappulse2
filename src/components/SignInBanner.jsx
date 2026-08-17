@@ -11,7 +11,7 @@ export default function SignInBanner() {
     <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/5 px-4 py-2 text-sm">
       <p className="text-muted-foreground">
         <LogIn className="mr-1.5 inline h-4 w-4 text-primary" aria-hidden="true" />
-        Browsing as a guest —{' '}
+        Browsing as a guest.{' '}
         <Link to="/login" className="font-semibold text-primary hover:underline">Log in</Link>
         {' '}to post, trade, and interact.
       </p>

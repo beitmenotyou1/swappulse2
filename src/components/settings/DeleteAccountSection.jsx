@@ -50,7 +50,7 @@ export default function DeleteAccountSection() {
           <div className="flex-1">
             <p className="text-sm font-bold text-destructive">Danger zone</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Permanently delete your account and all associated data. This action is irreversible —
+              Permanently delete your account and all associated data. This action is irreversible;
               your collection, trades, posts, binders, and reputation will be erased forever.
             </p>
             <Button
