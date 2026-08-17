@@ -10,10 +10,28 @@ import { reconcileAchievements, toDid } from '../../shared/achievementRunner.ts'
 import { NIGHTLY_KEYS } from '../../shared/achievementConfig.ts';
 import { buildAchievementEmailHtml, buildAchievementEmailSubject } from '../../shared/achievementNotifications.ts';
 
+function isPlatformInternalCall(req: Request): boolean {
+  const authz = req.headers.get('base44-service-authorization') || '';
+  if (!authz.startsWith('Bearer ')) return false;
+  const token = authz.slice(7);
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
+    return isInternal && payload?.caller === 'backend_functions';
+  } catch {
+    return false;
+  }
+}
+
 const MAX_USERS = 200;
 const APP_URL = 'https://swappulse.org';
 
 export default async function (req: Request): Promise<Response> {
+  if (!isPlatformInternalCall(req)) {
+    return Response.json({ error: 'Unauthorized' }, { status: 403 });
+  }
   try {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;

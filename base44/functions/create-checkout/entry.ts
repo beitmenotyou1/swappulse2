@@ -3,6 +3,29 @@
 // pending, and returns the hosted checkout redirect URL.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+// Turnstile verification — keeps create-checkout public (no login, per the
+// Base44 Payments integration) while blocking automated listing-locking abuse.
+async function verifyTurnstile(token: string): Promise<boolean> {
+  if (!token) return false;
+  const secret = Deno.env.get('TURNSTILE_SECRET_KEY');
+  if (!secret) {
+    console.error('create-checkout: TURNSTILE_SECRET_KEY not configured');
+    return false;
+  }
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret, response: token }),
+    });
+    const data = await res.json();
+    return data?.success === true;
+  } catch (e) {
+    console.error('create-checkout: Turnstile verify failed', e?.message || e);
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,6 +34,13 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const listingId = body.listingId;
     if (!listingId) return Response.json({ error: 'listingId required' }, { status: 400 });
+
+    // Verify the Turnstile token before touching the listing — blocks
+    // unauthenticated bots from locking listings via the public endpoint.
+    const turnstileOk = await verifyTurnstile(body.turnstileToken);
+    if (!turnstileOk) {
+      return Response.json({ error: 'Bot verification failed.' }, { status: 403 });
+    }
 
     const listing = await svc.entities.MarketListing.get(listingId).catch(() => null);
     if (!listing) return Response.json({ error: 'Listing not found' }, { status: 404 });
