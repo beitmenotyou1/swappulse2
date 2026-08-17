@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Mic } from 'lucide-react';
+import { Mic, Rss } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid } from '@/lib/atproto';
 import EpisodeCard from '@/components/podcast/EpisodeCard';
 import PastStreamsSection from '@/components/profile/PastStreamsSection';
@@ -11,9 +12,11 @@ import PastStreamsSection from '@/components/profile/PastStreamsSection';
 // episode list, a "Past Streams" section surfaces ended streams that can
 // be repurposed into new episodes.
 export default function PodcastsTab({ did: ownerDid }) {
+  const { user } = useAuth();
   const [eps, setEps] = useState([]);
   const [did, setDid] = useState(ownerDid || '');
   const [loading, setLoading] = useState(true);
+  const isOwner = !ownerDid || user?.did === ownerDid;
 
   const loadEps = async (d) => {
     try {
@@ -50,7 +53,21 @@ export default function PodcastsTab({ did: ownerDid }) {
           <p className="text-xs text-muted-foreground">Save a past stream as a podcast to publish your first episode.</p>
         </div>
       ) : (
-        <div className="space-y-2 p-4">{eps.map((e) => <EpisodeCard key={e.id} episode={e} />)}</div>
+        <>
+          {isOwner && eps.length > 0 && (
+            <div className="flex justify-end px-4 pt-3">
+              <a
+                href={`${window.location.origin}/api/functions/podcast-rss-feed?did=${encodeURIComponent(did)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold hover:border-primary"
+              >
+                <Rss className="h-3.5 w-3.5" /> Your RSS feed
+              </a>
+            </div>
+          )}
+          <div className="space-y-2 p-4">{eps.map((e) => <EpisodeCard key={e.id} episode={e} canEdit={isOwner} onSaved={() => loadEps(did)} />)}</div>
+        </>
       )}
       <PastStreamsSection did={did} onEpisodePublished={() => loadEps(did)} />
     </div>

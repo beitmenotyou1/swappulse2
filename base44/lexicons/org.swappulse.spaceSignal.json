@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.spaceSignal",
+  "revision": 1,
+  "description": "An ephemeral WebRTC signaling message exchanged between participants of an in-platform voice space to establish the peer mesh and coordinate stage changes.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A WebRTC signaling message for an in-platform voice space.",
+      "record": {
+        "type": "object",
+        "required": ["spaceId", "fromDid", "signalType", "createdAt"],
+        "properties": {
+          "spaceId": { "type": "string", "description": "Local id of the VoiceSpace this signal belongs to" },
+          "fromParticipantId": { "type": "string", "description": "Local id of the sending participant" },
+          "fromDid": { "type": "string", "format": "did", "description": "AT Protocol DID of the sender" },
+          "toDid": { "type": "string", "format": "did", "description": "Target participant DID (empty = broadcast)" },
+          "signalType": { "type": "string", "knownValues": ["offer", "answer", "candidate", "leave"], "description": "offer/answer = RTCSessionDescription; candidate = RTCIceCandidate; leave = peer disconnecting" },
+          "payload": { "type": "string", "description": "JSON-stringified RTCSessionDescriptionInit or RTCIceCandidateInit" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

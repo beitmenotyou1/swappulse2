@@ -1,0 +1,73 @@
+{
+  "name": "SpaceSignal",
+  "type": "object",
+  "title": "SpaceSignal",
+  "description": "org.swappulse.spaceSignal \u2014 an ephemeral WebRTC signaling message exchanged between participants of an in-platform voice space to establish the peer mesh (offers, answers, ICE candidates) and coordinate stage changes (leave). Created by a participant and addressed to a target participant DID (or broadcast). Consumed via real-time subscriptions by the target; no long-term retention needed.",
+  "properties": {
+    "space_id": {
+      "type": "string",
+      "description": "Local id of the VoiceSpace this signal belongs to"
+    },
+    "from_participant_id": {
+      "type": "string",
+      "description": "Local id of the sending SpaceParticipant"
+    },
+    "from_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the sender"
+    },
+    "to_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the target participant. Empty string means broadcast to all participants in the space."
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": [
+        "offer",
+        "answer",
+        "candidate",
+        "leave"
+      ],
+      "description": "offer/answer = RTCSessionDescription; candidate = RTCIceCandidate; leave = peer is disconnecting"
+    },
+    "payload": {
+      "type": "string",
+      "description": "JSON-stringified RTCSessionDescriptionInit or RTCIceCandidateInit"
+    }
+  },
+  "required": [
+    "space_id",
+    "from_did",
+    "signal_type"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,7 +1,8 @@
-import React from 'react';
-import { Play, Pause } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Pause, Pencil } from 'lucide-react';
 import { usePodcastPlayer } from '@/lib/podcastPlayer';
 import { timeAgo } from '@/lib/format';
+import PodcastEditorModal from '@/components/podcast/PodcastEditorModal';
 
 function fmtDur(s) {
   if (!s) return '0 min';
@@ -12,8 +13,9 @@ function fmtDur(s) {
 // Voice Spaces Recordings tab. Shows cover (or gradient + episode number),
 // title, duration + date, a partial-listen progress bar, and a play button
 // bound to the global podcast player.
-export default function EpisodeCard({ episode }) {
+export default function EpisodeCard({ episode, canEdit = false, onSaved }) {
   const { play, toggle, playing, episode: current, progress } = usePodcastPlayer();
+  const [editorOpen, setEditorOpen] = useState(false);
   const isCurrent = current?.id === episode.id;
   const isPlaying = isCurrent && playing;
   const listened = progress[episode.id] || 0;
@@ -40,13 +42,31 @@ export default function EpisodeCard({ episode }) {
           </div>
         )}
       </div>
-      <button
-        onClick={() => (isCurrent ? toggle() : play(episode))}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
-        aria-label={isPlaying ? 'Pause' : 'Play'}
-      >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
-      </button>
+      <div className="flex shrink-0 items-center gap-1">
+        {canEdit && (
+          <button
+            onClick={() => setEditorOpen(true)}
+            className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+            aria-label="Edit episode"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        )}
+        <button
+          onClick={() => (isCurrent ? toggle() : play(episode))}
+          className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
+        </button>
+      </div>
+      {editorOpen && (
+        <PodcastEditorModal
+          episode={episode}
+          onClose={() => setEditorOpen(false)}
+          onSaved={() => { setEditorOpen(false); onSaved?.(); }}
+        />
+      )}
     </div>
   );
 }

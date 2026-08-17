@@ -2,16 +2,25 @@
   "name": "VoiceSpace",
   "type": "object",
   "title": "VoiceSpace",
-  "description": "org.swappulse.voiceSpace \u2014 manual live stream declaration, mirrored to AT Protocol as a real org.swappulse.voiceSpace record so live streams are discoverable across instances. A collector goes live by pasting an external stream URL; their profile shows a red live ring until the planned duration elapses or they end the stream.",
+  "description": "org.swappulse.voiceSpace \u2014 a live audio space. Two modes: 'external' (manual Go Live declaration pointing at an external stream URL on Twitch/YouTube/etc.) and 'in_platform' (a true in-platform X-Spaces-style stage where participants hear each other via a WebRTC peer mesh). Mirrored to AT Protocol as a real org.swappulse.voiceSpace record so live spaces are discoverable across instances.",
   "properties": {
     "title": {
       "type": "string",
       "maxLength": 120,
-      "description": "Stream title (5\u2013120 chars)"
+      "description": "Space title (5\u2013120 chars)"
     },
     "description": {
       "type": "string",
       "maxLength": 1000
+    },
+    "space_mode": {
+      "type": "string",
+      "enum": [
+        "external",
+        "in_platform"
+      ],
+      "default": "external",
+      "description": "external = manual Go Live with an external stream URL (Twitch/YouTube/etc.); in_platform = a true in-platform audio stage using a WebRTC peer mesh."
     },
     "status": {
       "type": "string",
@@ -22,11 +31,11 @@
         "cancelled"
       ],
       "default": "live",
-      "description": "Lifecycle state. Manual Go Live creates records with status 'live'; auto-end sets 'ended'."
+      "description": "Lifecycle state. Go Live creates records with status 'live'; auto-end or host End sets 'ended'."
     },
     "stream_url": {
       "type": "string",
-      "description": "External stream URL on any platform (Twitch, YouTube, Kick, Facebook Gaming, Rumble, custom RTMP, etc.)"
+      "description": "External stream URL (external mode only) on any platform (Twitch, YouTube, Kick, Facebook Gaming, Rumble, custom RTMP, etc.)"
     },
     "platform": {
       "type": "string",
@@ -39,13 +48,13 @@
         "custom",
         "other"
       ],
-      "description": "Streaming platform \u2014 auto-detected from stream_url or manually selected"
+      "description": "Streaming platform \u2014 auto-detected from stream_url or manually selected (external mode only)"
     },
     "planned_duration_minutes": {
       "type": "integer",
       "minimum": 15,
       "maximum": 480,
-      "description": "Planned stream duration in minutes (user-selected, 15\u2013480)"
+      "description": "Planned duration in minutes (user-selected, 15\u2013480)"
     },
     "auto_end_at": {
       "type": "string",
@@ -55,12 +64,12 @@
     "started_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the stream went live"
+      "description": "When the space went live"
     },
     "ended_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the stream ended or was cancelled"
+      "description": "When the space ended or was cancelled"
     },
     "viewer_count_estimate": {
       "type": "integer",
@@ -88,12 +97,39 @@
       "items": {
         "type": "string"
       },
-      "description": "Cards referenced during the stream for catalog cross-linking"
+      "description": "Cards referenced during the space for catalog cross-linking"
+    },
+    "recording_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "True while the host is recording the in-platform stage audio. Toggled mid-session; drives the visible REC indicator."
     },
     "recording_available": {
       "type": "boolean",
       "default": false,
-      "description": "Whether a recording is available post-stream"
+      "description": "Whether a recording is available post-space"
+    },
+    "recording_blob_url": {
+      "type": "string",
+      "description": "Uploaded recording file URL (mixed stage audio for in-platform spaces)"
+    },
+    "recording_duration_seconds": {
+      "type": "integer",
+      "description": "Duration of the recording in seconds"
+    },
+    "peak_listener_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Peak listener count reached during the space"
+    },
+    "listener_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Final listener count at end time"
+    },
+    "podcast_episode_id": {
+      "type": "string",
+      "description": "Local id of the PodcastEpisode created from this space's recording"
     },
     "podcast_episode_uri": {
       "type": "string",
@@ -126,12 +162,12 @@
     },
     "sig": {
       "type": "string",
-      "description": "HMAC signature binding the stream to the host's signing key (simulated)"
+      "description": "HMAC signature binding the record to the host's signing key (simulated)"
     },
     "bridged": {
       "type": "boolean",
       "default": false,
-      "description": "True once the stream has been mirrored to the AT Protocol PDS as a real org.swappulse.voiceSpace record"
+      "description": "True once the space has been mirrored to the AT Protocol PDS as a real org.swappulse.voiceSpace record"
     }
   },
   "required": [

@@ -2,7 +2,7 @@
   "name": "PodcastEpisode",
   "type": "object",
   "title": "PodcastEpisode",
-  "description": "org.swappulse.podcastEpisode \u2014 a podcast episode (often derived from a voice space recording), mirrored to AT Protocol as a real org.swappulse.podcastEpisode record so episodes are portable and playable across instances.",
+  "description": "org.swappulse.podcastEpisode \u2014 a podcast episode (often derived from a voice space recording), mirrored to AT Protocol as a real org.swappulse.podcastEpisode record so episodes are portable and playable across instances. Hosts edit metadata (title, description, cover, tags, chapter marks, show notes) and set start/end trim points after recording; the trimmed audio re-encodes and replaces audio_url. Episodes are included in the host's RSS feed for external distribution.",
   "properties": {
     "title": {
       "type": "string",
@@ -14,7 +14,7 @@
     },
     "audio_url": {
       "type": "string",
-      "description": "Processed MP3/M4A/WebM audio file URL"
+      "description": "Processed MP3/M4A/WebM audio file URL (replaced with the trimmed file when the host applies start/end trim)"
     },
     "duration_seconds": {
       "type": "integer",
@@ -65,6 +65,21 @@
         "type": "string",
         "maxLength": 30
       }
+    },
+    "trim_start_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Applied start-trim offset in seconds. The published audio_url already reflects the trim; this field records the cut for display/restoration."
+    },
+    "trim_end_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Applied end-trim point in seconds (offset from the original recording start). Null/0 means no end trim."
+    },
+    "original_audio_url": {
+      "type": "string",
+      "description": "The un-trimmed original recording URL, retained so the host can re-trim or restore the full audio later."
     },
     "play_count": {
       "type": "integer",

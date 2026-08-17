@@ -2,6 +2,7 @@
   "name": "SpaceParticipant",
   "type": "object",
   "title": "SpaceParticipant",
+  "description": "org.swappulse.spaceParticipant \u2014 a participant in a voice space. Roles: host, co_host, mod, speaker, listener. The host and mods manage the stage: promote listeners to speaker, mute speakers (muted_by_host), assign mod/co_host roles, and remove participants. hand_raised marks a listener requesting to speak. Real-time updates drive the live stage UI.",
   "properties": {
     "space_ref": {
       "type": "string",
@@ -16,6 +17,7 @@
       "enum": [
         "host",
         "co_host",
+        "mod",
         "speaker",
         "listener"
       ],
@@ -28,7 +30,13 @@
     },
     "muted": {
       "type": "boolean",
-      "default": true
+      "default": true,
+      "description": "Self-mute state (participant toggled their own mic off)"
+    },
+    "muted_by_host": {
+      "type": "boolean",
+      "default": false,
+      "description": "Host/mod muted this participant's mic; their audio is not sent to the mesh while true."
     },
     "joined_at": {
       "type": "string",
