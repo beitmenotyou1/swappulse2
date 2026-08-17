@@ -33,7 +33,6 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Activate from '@/pages/Activate';
 // Add page imports here
-import Scanner from '@/pages/Scanner';
 import Grading from '@/pages/Grading';
 import Binders from '@/pages/Binders';
 import BinderEdit from '@/pages/BinderEdit';
@@ -159,7 +158,6 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/compose" element={<Compose />} />
           <Route path="/collection" element={<Collection />} />
-          <Route path="/scan" element={<Scanner />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/grading" element={<Grading />} />
           <Route path="/binders/new" element={<BinderEdit />} />

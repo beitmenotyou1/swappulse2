@@ -69,18 +69,6 @@ export async function bulkUpdateEntries(updates) {
   await queue('bulkUpdate', { updates });
 }
 
-export async function queueScannerCorrection(data) {
-  if (isOnline()) {
-    try {
-      return await base44.functions.invoke('submitScannerCorrection', data);
-    } catch {
-      /* fall through to queue */
-    }
-  }
-  await queue('scanner_correction', { data });
-  return { data: { _pending: true } };
-}
-
 export async function replayOutbox() {
   if (!isOnline()) return { replayed: 0, remaining: 0 };
   const items = await idbGetAll('outbox');
@@ -93,7 +81,6 @@ export async function replayOutbox() {
       else if (it.op === 'update') await base44.entities.CollectionEntry.update(it.id, it.data);
       else if (it.op === 'delete') await base44.entities.CollectionEntry.delete(it.id);
       else if (it.op === 'bulkUpdate') await base44.entities.CollectionEntry.bulkUpdate(it.updates);
-      else if (it.op === 'scanner_correction') await base44.functions.invoke('submitScannerCorrection', it.data);
       await idbDelete('outbox', it.key);
       ok++;
     } catch {

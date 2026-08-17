@@ -8,7 +8,7 @@ import useSEO from '@/hooks/useSEO';
 export default function Sets() {
   useSEO({
     title: 'Set Checklists',
-    description: 'Track your Pokémon TCG set completion, scan cards, and download printable PDF checklists on SwapPulse.',
+    description: 'Track your Pokémon TCG set completion and download printable PDF checklists on SwapPulse.',
     canonicalPath: '/sets',
   });
   const [user, setUser] = useState(null);
@@ -42,7 +42,7 @@ export default function Sets() {
 
   return (
     <div>
-      <PageHeader title="Set Checklists" subtitle="Track completion, scan cards, and download printable PDFs" />
+      <PageHeader title="Set Checklists" subtitle="Track completion and download printable PDFs" />
       <div className="p-4">
         <SetChecklistManager userId={user.id} />
       </div>

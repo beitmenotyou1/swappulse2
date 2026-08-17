@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Image, ScanLine, FolderOpen, X } from 'lucide-react';
+import { Image, FolderOpen, X } from 'lucide-react';
 import CardSearchModal from '@/components/cards/CardSearchModal';
-import CardScanModal from '@/components/feed/CardScanModal';
 import CollectionPickerModal from '@/components/feed/CollectionPickerModal';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 
@@ -13,7 +12,6 @@ import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 // the new card or null when cleared.
 export default function CardAttachBar({ value, onChange, searchTitle = 'Attach a card', compact = false }) {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
 
   const attach = (card) => onChange(card);
@@ -48,15 +46,11 @@ export default function CardAttachBar({ value, onChange, searchTitle = 'Attach a
         <button onClick={() => setSearchOpen(true)} className={btn}>
           <Image className="h-4 w-4" /> Card
         </button>
-        <button onClick={() => setScanOpen(true)} className={btn}>
-          <ScanLine className="h-4 w-4" /> Scan
-        </button>
         <button onClick={() => setCollectionOpen(true)} className={btn}>
           <FolderOpen className="h-4 w-4" /> Collection
         </button>
       </div>
       <CardSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={attach} title={searchTitle} />
-      <CardScanModal open={scanOpen} onClose={() => setScanOpen(false)} onAttach={attach} />
       <CollectionPickerModal open={collectionOpen} onClose={() => setCollectionOpen(false)} onAttach={attach} />
     </>
   );

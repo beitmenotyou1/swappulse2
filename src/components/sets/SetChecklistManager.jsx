@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import SetSelector from './SetSelector';
 import CompletionProgress from './CompletionProgress';
@@ -6,20 +6,13 @@ import ChecklistGrid from './ChecklistGrid';
 import MissingCardsList from './MissingCardsList';
 import PdfDownloadPanel from './PdfDownloadPanel';
 import BinderPreview from './BinderPreview';
-import ScannerBatchUpload from './ScannerBatchUpload';
 import SetBuddiesSection from './SetBuddiesSection';
 import { useSetChecklist } from '@/hooks/useSetChecklist';
 
 export default function SetChecklistManager({ userId }) {
   const [selectedSetId, setSelectedSetId] = useState(null);
-  const [recentlyScannedIds, setRecentlyScannedIds] = useState([]);
 
   const { data: checklist, isLoading, error } = useSetChecklist(selectedSetId, userId);
-
-  const handleScanComplete = useCallback((scannedIds) => {
-    setRecentlyScannedIds(scannedIds);
-    setTimeout(() => setRecentlyScannedIds([]), 5000);
-  }, []);
 
   // No set selected — show selector
   if (!selectedSetId) {
@@ -86,13 +79,8 @@ export default function SetChecklistManager({ userId }) {
 
       {/* Two-column layout on desktop */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left: Scanner + Checklist grid */}
+        {/* Left: Checklist grid */}
         <div className="space-y-6 lg:col-span-2">
-          <ScannerBatchUpload
-            setId={checklist.set_id}
-            setName={checklist.set_name}
-            onScanComplete={handleScanComplete}
-          />
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">Card Checklist</h3>
@@ -102,7 +90,6 @@ export default function SetChecklistManager({ userId }) {
               cards={checklist.cards}
               setId={checklist.set_id}
               setName={checklist.set_name}
-              recentlyScannedIds={recentlyScannedIds}
             />
           </div>
         </div>

@@ -68,26 +68,3 @@ export function recomputeWeight(confirmCount: number, wrongCount: number): numbe
   const raw = 1 + 0.05 * confirmCount - 0.1 * wrongCount;
   return Math.max(0.3, Math.min(1.5, Math.round(raw * 1000) / 1000));
 }
-
-// Upsert a ScannerModelWeights record for a card_id from a correction.
-// isConfirm = true → boost (confirm_correct); false → penalise (wrong_*).
-// Returns the new weight.
-export async function applyCorrectionToWeights(svc: any, cardId: string, isConfirm: boolean): Promise<number> {
-  if (!cardId) return 1;
-  const existing = await svc.entities.ScannerModelWeights.filter({ card_id: cardId }, '-created_date', 1).catch(() => []);
-  const rec = existing[0];
-  const confirmCount = (rec?.confirm_count || 0) + (isConfirm ? 1 : 0);
-  const wrongCount = (rec?.wrong_count || 0) + (isConfirm ? 0 : 1);
-  const weight = recomputeWeight(confirmCount, wrongCount);
-  const now = new Date().toISOString();
-  if (rec) {
-    await svc.entities.ScannerModelWeights.update(rec.id, {
-      weight, confirm_count: confirmCount, wrong_count: wrongCount, last_applied_at: now,
-    });
-  } else {
-    await svc.entities.ScannerModelWeights.create({
-      card_id: cardId, weight, confirm_count: confirmCount, wrong_count: wrongCount, last_applied_at: now,
-    });
-  }
-  return weight;
-}
