@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, Globe, Users, AtSign } from 'lucide-react';
+import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, Globe, Users, AtSign, ScanLine, FolderOpen } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import CardSearchModal from '@/components/cards/CardSearchModal';
+import CardScanModal from '@/components/feed/CardScanModal';
+import CollectionPickerModal from '@/components/feed/CollectionPickerModal';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
@@ -47,6 +49,8 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [postType, setPostType] = useState('text');
   const [attachedCard, setAttachedCard] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [collectionOpen, setCollectionOpen] = useState(false);
   const [posting, setPosting] = useState(false);
   const [replyPolicy, setReplyPolicy] = useState('everybody');
   const [visibilityScope, setVisibilityScope] = useState('public');
@@ -321,6 +325,18 @@ export default function ComposeBox({ onPosted, replyTo }) {
               >
                 <Image className="h-4 w-4" /> Card
               </button>
+              <button
+                onClick={() => setScanOpen(true)}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
+              >
+                <ScanLine className="h-4 w-4" /> Scan
+              </button>
+              <button
+                onClick={() => setCollectionOpen(true)}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
+              >
+                <FolderOpen className="h-4 w-4" /> Collection
+              </button>
               {typeButtons.map((t) => (
                 <button
                   key={t.key}
@@ -352,6 +368,16 @@ export default function ComposeBox({ onPosted, replyTo }) {
         onClose={() => setSearchOpen(false)}
         onSelect={setAttachedCard}
         title={postType === 'trade' ? 'Select card to trade' : 'Attach a card'}
+      />
+      <CardScanModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onAttach={setAttachedCard}
+      />
+      <CollectionPickerModal
+        open={collectionOpen}
+        onClose={() => setCollectionOpen(false)}
+        onAttach={setAttachedCard}
       />
     </div>
   );
