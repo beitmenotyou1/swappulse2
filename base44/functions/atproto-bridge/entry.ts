@@ -157,6 +157,40 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, emitted: true });
     }
 
+    // --- uploadBlob action (fetch a remote image and upload it to the PDS as a blob) ---
+    // Used to attach card images as app.bsky.embed.external thumbnails so posts
+    // render as rich link cards on Bluesky. Returns { blob } — the blob ref object
+    // to place directly in embed.external.thumb. Best-effort: callers fall back
+    // to a thumb-less embed or plain text if this fails.
+    if (action === 'uploadBlob') {
+      const { imageUrl, mimeType } = body;
+      if (!imageUrl || !mimeType) {
+        return Response.json({ error: 'imageUrl and mimeType are required for uploadBlob' }, { status: 400 });
+      }
+      const { pdsUrl, session } = await resolveSession(req);
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) {
+        console.error('atproto-bridge: image fetch failed', imgRes.status, imageUrl);
+        return Response.json({ error: `image fetch failed (${imgRes.status})` }, { status: 502 });
+      }
+      const bytes = new Uint8Array(await imgRes.arrayBuffer());
+      const uploadRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': mimeType,
+          'Authorization': `Bearer ${session.accessJwt}`,
+        },
+        body: bytes,
+      });
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text();
+        console.error('atproto-bridge: uploadBlob failed', uploadRes.status, text.slice(0, 300));
+        return Response.json({ error: `uploadBlob failed (${uploadRes.status})` }, { status: 502 });
+      }
+      const data = await uploadRes.json();
+      return Response.json({ blob: data.blob });
+    }
+
     // --- create action (default) ---
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });

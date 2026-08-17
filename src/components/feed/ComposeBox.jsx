@@ -6,6 +6,7 @@ import CardSearchModal from '@/components/cards/CardSearchModal';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
 
@@ -118,13 +119,42 @@ export default function ComposeBox({ onPosted, replyTo }) {
         const replyRef = parentUri && parentCid && rootUri && rootCid
           ? { root: { uri: rootUri, cid: rootCid }, parent: { uri: parentUri, cid: parentCid } }
           : undefined;
+        // Card embed — upload the card image to the PDS as a blob so the post
+        // renders as a rich link card on Bluesky (app.bsky.embed.external).
+        // Best-effort: fall back to a thumb-less embed or no embed on failure.
+        let cardEmbed = null;
+        if (attachedCard) {
+          try {
+            const imgUrl = cardImageUrl(attachedCard.image);
+            const ext = (imgUrl.split('.').pop() || '').toLowerCase();
+            const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+            const blobRes = await base44.functions.invoke('atproto-bridge', {
+              action: 'uploadBlob', imageUrl: imgUrl, mimeType: mime,
+            });
+            const thumb = blobRes?.blob || blobRes?.data?.blob;
+            if (thumb) {
+              cardEmbed = {
+                $type: 'app.bsky.embed.external',
+                external: {
+                  uri: `${window.location.origin}/card/${attachedCard.id}`,
+                  title: stamped.card_name || attachedCard.name || 'Pokémon card',
+                  description: [stamped.set_name, stamped.card_rarity].filter(Boolean).join(' · ') || 'SwapPulse card',
+                  thumb,
+                },
+              };
+            }
+          } catch (e) {
+            console.warn('card embed blob upload failed', e?.message || e);
+          }
+        }
         base44.functions.invoke('atproto-bridge', {
           collection: 'app.bsky.feed.post',
           record: {
             text: (content.trim() || stamped.card_name || 'New SwapPulse post').slice(0, 3000),
             createdAt: new Date().toISOString(),
-            langs: ['en'],
+            langs: [getCurrentTcgdexLang()],
             ...(replyRef ? { reply: replyRef } : {}),
+            ...(cardEmbed ? { embed: cardEmbed } : {}),
           },
         }).then((res) => {
           if (res?.uri) {
