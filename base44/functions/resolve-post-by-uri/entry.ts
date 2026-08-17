@@ -68,12 +68,21 @@ async function fetchAndStoreThread(svc: any, postUri: string): Promise<void> {
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    // Security: this function writes to the local DB and triggers outbound
+    // HTTP fetches, so it must not be callable by unauthenticated strangers.
+    // Require an authenticated app user — guests can still read already-local
+    // posts via /post/:postId; only the on-demand resolution path is gated.
+    try {
+      await base44.auth.me();
+    } catch {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
     const svc = base44.asServiceRole;
     const body = await req.json().catch(() => ({}));
     const { at_uri } = body;
 
-    if (!at_uri || typeof at_uri !== 'string') {
-      return Response.json({ error: 'at_uri is required' }, { status: 400 });
+    if (!at_uri || typeof at_uri !== 'string' || !at_uri.startsWith('at://')) {
+      return Response.json({ error: 'A valid at:// URI is required' }, { status: 400 });
     }
 
     // Idempotent: return the existing local post if we already have it.
