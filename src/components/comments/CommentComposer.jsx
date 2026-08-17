@@ -4,6 +4,7 @@ import { Send, X, CornerDownRight } from 'lucide-react';
 import { createReply } from '@/lib/postInteractions';
 import { withBotGuard, isBotBlockError } from '@/lib/botGuardClient';
 import CardAttachBar from '@/components/feed/CardAttachBar';
+import { hashtagsFromText } from '@/lib/hashtags';
 
 const MAX_LEN = 300;
 
@@ -45,9 +46,12 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
         }, replyToId);
       } else {
         // Top-level card comment — standalone post (no reply threading).
+        const { hashtags, canonical_tags } = hashtagsFromText(trimmed);
         const post = await withBotGuard('comment', trimmed, () => base44.entities.Post.create({
           content: trimmed,
           post_type: 'text',
+          hashtags,
+          canonical_tags,
           card_id: cId,
           card_name: cName,
           card_image: cImage,

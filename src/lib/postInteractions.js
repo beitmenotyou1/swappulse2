@@ -15,6 +15,7 @@ import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { ensureBotAllowed } from '@/lib/botGuardClient';
 import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
+import { hashtagsFromText } from '@/lib/hashtags';
 
 function actorFromUser(me) {
   return {
@@ -222,6 +223,7 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
       rootCid = resolved.rootCid;
     }
   }
+  const { hashtags, canonical_tags } = hashtagsFromText(text);
   const stamped = await stampRecord({
     content: text.trim(),
     post_type: 'text',
@@ -229,6 +231,8 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
     author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
     author_avatar: user?.avatar || '',
     likes: 0, reposts: 0, replies: 0,
+    hashtags,
+    canonical_tags,
     reply_to: ref.isLocal ? (localReplyTo || ref.id || null) : null,
     parent_uri: parentUri,
     parent_cid: parentCid,

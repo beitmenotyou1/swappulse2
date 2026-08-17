@@ -8,6 +8,7 @@ import { isBotBlockError } from '@/lib/botGuardClient';
 import QuotedPostCard from '@/components/feed/QuotedPostCard';
 import CardAttachBar from '@/components/feed/CardAttachBar';
 import { base44 } from '@/api/base44Client';
+import { extractHashtags, canonicalise } from '@/lib/hashtags';
 
 const MAX_LEN = 300;
 
@@ -18,21 +19,6 @@ const SCOPES = [
   { key: 'mentioned', icon: AtSign, label: 'Mentioned' },
 ];
 
-function extractHashtags(text) {
-  const matches = text.match(/#([\p{L}\p{N}_]+)/gu) || [];
-  return matches.map((m) => m.slice(1));
-}
-function canonicalise(tags) {
-  const seen = new Set();
-  const out = [];
-  for (const t of tags) {
-    const c = t.trim().toLowerCase();
-    if (!c || seen.has(c)) continue;
-    seen.add(c);
-    out.push(c);
-  }
-  return out;
-}
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
   return Array.from(new Set(matches.map((m) => m.slice(1).toLowerCase())));

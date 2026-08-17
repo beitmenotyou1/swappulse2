@@ -11,22 +11,7 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
-
-function extractHashtags(text) {
-  const matches = text.match(/#([\p{L}\p{N}_]+)/gu) || [];
-  return matches.map((m) => m.slice(1));
-}
-function canonicalise(tags) {
-  const seen = new Set();
-  const out = [];
-  for (const t of tags) {
-    const c = t.trim().toLowerCase();
-    if (!c || seen.has(c)) continue;
-    seen.add(c);
-    out.push(c);
-  }
-  return out;
-}
+import { extractHashtags, canonicalise } from '@/lib/hashtags';
 
 const POLICY_LABELS = { everybody: 'Everyone', followers: 'Followers', mentioned: 'Mentioned', nobody: 'No one' };
 
