@@ -14,7 +14,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
 import { MODEL_VERSION, normalizeName, canonicalizeRarity } from '../../shared/scannerLearning.ts';
-import { computePHashFromUrl, hammingDistance, buildPngUrl } from '../../shared/phash.ts';
+import { computePHashFromUrl, hammingDistance } from '../../shared/phash.ts';
 
 const SCAN_PROMPT = `You are a Pokémon TCG card identification expert. Analyze the attached card photo carefully and identify the card. The card may be in ANY language (English, French, German, Italian, Spanish, Portuguese, Japanese, Chinese, or Korean) — read the printed text in whatever language appears on the card.
 Return JSON with:

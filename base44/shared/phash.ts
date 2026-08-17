@@ -2,10 +2,12 @@
 // Compares hashes by Hamming distance. Used by the scanner fast-path to
 // identify clear card photos instantly without an LLM call.
 //
-// Algorithm: fetch image → decode → resize to 8×8 grayscale (box-average) →
-// compute mean → each pixel above mean = 1, below = 0 → 64-bit hash → hex.
-// Pure computation; no external model. JPEG and PNG decoding via dynamic
-// npm imports (graceful fallback if the packages aren't available).
+// Algorithm: fetch image → decode JPEG → resize to 8×8 grayscale (box-average)
+// → compute mean → each pixel above mean = 1, below = 0 → 64-bit hash → hex.
+// JPEG decoding via jpeg-js. TCGDex images are requested as JPEG (scan images
+// are already JPEG).
+
+import jpeg from 'npm:jpeg-js@0.4.4';
 
 interface DecodedImage {
   width: number;
@@ -13,40 +15,19 @@ interface DecodedImage {
   data: Uint8Array; // RGBA
 }
 
-async function decodeImage(buffer: ArrayBuffer): Promise<DecodedImage | null> {
+function decodeImage(buffer: ArrayBuffer): DecodedImage | null {
   const bytes = new Uint8Array(buffer);
-  if (bytes.length < 4) return null;
-
+  if (bytes.length < 2) return null;
   // JPEG: FF D8
-  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
-    try {
-      const mod: any = await import('npm:jpeg-js@0.4.4');
-      const jpeg = mod.default || mod;
-      const raw = jpeg.decode(buffer, { useTArray: true });
-      if (!raw?.width || !raw?.height) return null;
-      return { width: raw.width, height: raw.height, data: raw.data };
-    } catch (e) {
-      console.error('[phash] JPEG decode failed', e?.message || e);
-      return null;
-    }
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  try {
+    const raw = jpeg.decode(buffer, { useTArray: true });
+    if (!raw?.width || !raw?.height) return null;
+    return { width: raw.width, height: raw.height, data: raw.data };
+  } catch (e) {
+    console.error('[phash] JPEG decode failed', e?.message || e);
+    return null;
   }
-
-  // PNG: 89 50 4E 47
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
-    try {
-      const mod: any = await import('npm:upng-js@2.1.3');
-      const UPNG = mod.default || mod;
-      const png = UPNG.decode(buffer);
-      if (!png?.width || !png?.height) return null;
-      const rgba = UPNG.toRGBA8(png)[0];
-      return { width: png.width, height: png.height, data: new Uint8Array(rgba) };
-    } catch (e) {
-      console.error('[phash] PNG decode failed', e?.message || e);
-      return null;
-    }
-  }
-
-  return null;
 }
 
 function toGrayscaleAndResize(img: DecodedImage): Float32Array {
@@ -90,7 +71,7 @@ export async function computePHashFromUrl(url: string): Promise<string | null> {
     const res = await fetch(url, { redirect: 'error' });
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();
-    const img = await decodeImage(buffer);
+    const img = decodeImage(buffer);
     if (!img) return null;
     const pixels = toGrayscaleAndResize(img);
     return hashFromPixels(pixels);
@@ -117,17 +98,17 @@ export function hammingDistance(a: string, b: string): number {
   }
 }
 
-// Build a PNG URL from a TCGDex image path/URL (for pHash fetching — PNG is
-// decodable; WebP is not without a dedicated decoder).
-export function buildPngUrl(image: any): string | null {
+// Build a JPEG URL from a TCGDex image path/URL (for pHash fetching — JPEG is
+// decodable via jpeg-js; WebP is not without a dedicated decoder).
+export function buildJpgUrl(image: any): string | null {
   if (!image) return null;
   const base = typeof image === 'string' ? image : (image?.base || image?.high || '');
   if (!base) return null;
   const s = String(base);
   if (s.startsWith('http')) {
-    if (s.endsWith('.webp')) return s.replace(/\.webp$/, '.png');
-    if (/\.(png|jpg|jpeg)$/.test(s)) return s;
-    return `${s}/high.png`;
+    if (/\.(webp|png)$/i.test(s)) return s.replace(/\.(webp|png)$/i, '.jpg');
+    if (/\.jpe?g$/i.test(s)) return s;
+    return `${s}/high.jpg`;
   }
-  return `https://assets.tcgdex.net/${s}/high.png`;
+  return `https://assets.tcgdex.net/${s}/high.jpg`;
 }

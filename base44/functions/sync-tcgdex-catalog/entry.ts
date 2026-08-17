@@ -7,7 +7,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchTcgdex, TCGDEX_LANGS, RateLimiter } from '../../shared/tcgdexClient.ts';
 import { normalizeName } from '../../shared/scannerLearning.ts';
-import { computePHashFromUrl, buildPngUrl } from '../../shared/phash.ts';
+import { computePHashFromUrl, buildJpgUrl } from '../../shared/phash.ts';
 
 const SETS_PER_RUN = 20;
 
@@ -113,9 +113,9 @@ export default async function (req: Request): Promise<Response> {
       // Compute pHash for new cards (capped per run to keep sync fast).
       for (const r of toCreate) {
         if (phashComputed >= MAX_PHASH_PER_RUN) break;
-        const pngUrl = buildPngUrl(r.image);
-        if (pngUrl) {
-          const ph = await computePHashFromUrl(pngUrl).catch(() => null);
+        const jpgUrl = buildJpgUrl(r.image);
+        if (jpgUrl) {
+          const ph = await computePHashFromUrl(jpgUrl).catch(() => null);
           if (ph) { r.phash = ph; phashComputed++; }
         }
       }

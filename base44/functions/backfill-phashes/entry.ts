@@ -3,7 +3,7 @@
 // admin re-triggers until `has_more` is false. Also picks up new cards that
 // weren't hashed during sync (sync caps pHash computation per run).
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { computePHashFromUrl, buildPngUrl } from '../../shared/phash.ts';
+import { computePHashFromUrl, buildJpgUrl } from '../../shared/phash.ts';
 
 const BATCH_SIZE = 50;
 
@@ -34,9 +34,9 @@ export default async function (req: Request): Promise<Response> {
     let hashed = 0;
     let failed = 0;
     for (const card of toHash) {
-      const pngUrl = buildPngUrl(card.image);
-      if (!pngUrl) { failed++; continue; }
-      const ph = await computePHashFromUrl(pngUrl);
+      const jpgUrl = buildJpgUrl(card.image);
+      if (!jpgUrl) { failed++; continue; }
+      const ph = await computePHashFromUrl(jpgUrl);
       if (ph) {
         try {
           await svc.entities.TcgdexCard.update(card.id, { phash: ph });
