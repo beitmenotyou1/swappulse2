@@ -11,7 +11,7 @@
         "sync_catalog": {
           "call": "invoke_backend_function",
           "with": {
-            "function_name": "sync-tcgdex-catalogue",
+            "function_name": "sync-tcgdex-catalog",
             "args": {}
           },
           "then": "end",
