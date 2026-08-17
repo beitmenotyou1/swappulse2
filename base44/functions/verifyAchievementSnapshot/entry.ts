@@ -48,6 +48,14 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Provide snapshotId, or achievementId + did' }, { status: 400 });
     }
     const base44 = createClientFromRequest(req);
+    // Security: require authentication. Proof snapshots contain user
+    // achievement data and resolving records via the service role is a
+    // cost/DOS surface — unauthenticated callers must not be able to probe
+    // arbitrary snapshot ids or enumerate records.
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const svc = base44.asServiceRole;
 
     let snapshot: any = null;

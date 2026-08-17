@@ -13,8 +13,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Security: PDS migration transmits the system PDS access token to the
+    // target PDS. Restrict to admins — a regular user could otherwise point
+    // newPdsUrl at an attacker-controlled origin and exfiltrate the system
+    // token. Admins are trusted operators who configure legitimate targets.
+    if (user.role !== 'admin') {
+      return Response.json({ error: 'Admin access required for PDS migration' }, { status: 403 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const { newPdsUrl } = body;
@@ -23,6 +30,26 @@ export default async function (req: Request): Promise<Response> {
     }
     if (!newPdsUrl.startsWith('https://')) {
       return Response.json({ error: 'newPdsUrl must be a valid HTTPS URL' }, { status: 400 });
+    }
+    // SSRF guard: reject localhost / private / link-local / loopback ranges
+    // so the system token is never sent to an internal or attacker-local
+    // endpoint even by a compromised admin.
+    const parsed = (() => { try { return new URL(newPdsUrl); } catch { return null; } })();
+    if (!parsed) {
+      return Response.json({ error: 'newPdsUrl must be a valid HTTPS URL' }, { status: 400 });
+    }
+    const host = parsed.hostname.toLowerCase();
+    const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'];
+    if (blockedHosts.includes(host) || host.endsWith('.local') || host.endsWith('.internal')) {
+      return Response.json({ error: 'newPdsUrl must not point to a local or internal address' }, { status: 400 });
+    }
+    // Reject obvious private IPv4 ranges (10.x, 172.16-31.x, 192.168.x).
+    const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (ipv4Match) {
+      const [a, b] = [parseInt(ipv4Match[1]), parseInt(ipv4Match[2])];
+      if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a === 127) {
+        return Response.json({ error: 'newPdsUrl must not point to a private address' }, { status: 400 });
+      }
     }
 
     const pdsUrl = Deno.env.get('PDS_URL');

@@ -6,6 +6,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    // Security: image generation via the service role costs integration
+    // credits and is a DOS surface. Restrict to authenticated admins (pages
+    // that need OG images are built/admin-triggered, not public).
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const body = await req.json().catch(() => ({}));
     const path: string = body.path || '/';
     const label: string = body.label || 'SwapPulse';
