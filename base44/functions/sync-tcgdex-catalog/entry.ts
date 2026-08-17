@@ -7,6 +7,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchTcgdex, TCGDEX_LANGS, RateLimiter } from '../../shared/tcgdexClient.ts';
 import { normalizeName } from '../../shared/scannerLearning.ts';
+import { computePHashFromUrl, buildPngUrl } from '../../shared/phash.ts';
 
 const SETS_PER_RUN = 20;
 
@@ -49,6 +50,8 @@ export default async function (req: Request): Promise<Response> {
     const now = new Date().toISOString();
     let cardsUpserted = 0;
     let setsProcessed = 0;
+    let phashComputed = 0;
+    const MAX_PHASH_PER_RUN = 100;
 
     for (const setSummary of batch) {
       const setId = setSummary.id || setSummary.name;
@@ -105,6 +108,15 @@ export default async function (req: Request): Promise<Response> {
           toUpdate.push(update);
         } else {
           toCreate.push(r);
+        }
+      }
+      // Compute pHash for new cards (capped per run to keep sync fast).
+      for (const r of toCreate) {
+        if (phashComputed >= MAX_PHASH_PER_RUN) break;
+        const pngUrl = buildPngUrl(r.image);
+        if (pngUrl) {
+          const ph = await computePHashFromUrl(pngUrl).catch(() => null);
+          if (ph) { r.phash = ph; phashComputed++; }
         }
       }
       if (toCreate.length) await svc.entities.TcgdexCard.bulkCreate(toCreate).catch((e: any) => console.error('[sync-tcgdex-catalog] bulkCreate failed', e?.message));

@@ -11,6 +11,8 @@ export default function ScannerSection() {
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
   const [downloading, setDownloading] = useState(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState(null);
   const [error, setError] = useState('');
 
   const load = async () => {
@@ -42,6 +44,20 @@ export default function ScannerSection() {
       setError(e.response?.data?.error || e.message || 'Failed to build snapshot');
     } finally {
       setBuilding(false);
+    }
+  };
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    setError('');
+    setBackfillResult(null);
+    try {
+      const res = await base44.functions.invoke('backfill-phashes', {});
+      setBackfillResult(res.data || res);
+    } catch (e) {
+      setError(e.response?.data?.error || e.message || 'Backfill failed');
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -126,7 +142,20 @@ export default function ScannerSection() {
           </div>
         )}
 
-        {/* Build + snapshots */}
+        {/* Backfill pHashes + Build + snapshots */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" variant="outline" onClick={runBackfill} disabled={backfilling}>
+            {backfilling ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}
+            Backfill image hashes
+          </Button>
+          {backfillResult && (
+            <span className="text-xs text-muted-foreground">
+              Hashed {backfillResult.hashed ?? 0} cards
+              {backfillResult.has_more ? ' — more remaining, click again' : ' — all done'}
+            </span>
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center gap-3">
           <Button size="sm" onClick={buildSnapshot} disabled={building}>
             {building ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Database className="mr-1.5 h-4 w-4" />}

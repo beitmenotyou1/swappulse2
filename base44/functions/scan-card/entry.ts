@@ -14,6 +14,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
 import { MODEL_VERSION, normalizeName, canonicalizeRarity } from '../../shared/scannerLearning.ts';
+import { computePHashFromUrl, hammingDistance, buildPngUrl } from '../../shared/phash.ts';
 
 const SCAN_PROMPT = `You are a Pokémon TCG card identification expert. Analyze the attached card photo carefully and identify the card. The card may be in ANY language (English, French, German, Italian, Spanish, Portuguese, Japanese, Chinese, or Korean) — read the printed text in whatever language appears on the card.
 Return JSON with:
@@ -61,6 +62,39 @@ async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Load all TcgdexCard records with a pHash and rank them by Hamming distance
+// to the scan's pHash. Returns all matches sorted by distance ascending.
+// Capped at MAX_BATCHES to bound latency; the caller takes the top N.
+async function loadPHashCandidates(svc: any, scanPHash: string): Promise<{ card: any, dist: number }[]> {
+  const ranked: { card: any, dist: number }[] = [];
+  let lastDate: string | null = null;
+  let batchCount = 0;
+  const MAX_BATCHES = 40; // ~20,000 records
+  while (batchCount < MAX_BATCHES) {
+    const query: any = lastDate
+      ? { phash: { $ne: null }, created_date: { $lt: lastDate } }
+      : { phash: { $ne: null } };
+    let batch: any[] = [];
+    try {
+      batch = await svc.entities.TcgdexCard.filter(query, '-created_date', 500);
+    } catch (e: any) {
+      console.error('scan-card pHash batch load failed', e?.message || e);
+      break;
+    }
+    if (!batch || batch.length === 0) break;
+    for (const c of batch) {
+      if (!c.phash) continue;
+      const dist = hammingDistance(scanPHash, c.phash);
+      ranked.push({ card: c, dist });
+    }
+    lastDate = batch[batch.length - 1]?.created_date;
+    if (batch.length < 500) break;
+    batchCount++;
+  }
+  ranked.sort((a, b) => a.dist - b.dist);
+  return ranked;
+}
+
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -75,6 +109,50 @@ export default async function (req: Request): Promise<Response> {
     const scanId = crypto.randomUUID();
     const imageHash = await sha256(imageUrl);
     const timestamp = new Date().toISOString();
+
+    // === pHash fast-path ===
+    // Compute the scan image's perceptual hash and compare against all cached
+    // card pHashes. If a near-exact match is found (Hamming distance ≤ 3),
+    // return instantly without an LLM call. Borderline matches (4-5) inject
+    // pHash-ranked candidates into the LLM pipeline for confirmation.
+    let phashCandidates: any[] = [];
+    try {
+      const scanPHash = await computePHashFromUrl(imageUrl);
+      if (scanPHash) {
+        const ranked = await loadPHashCandidates(svc, scanPHash);
+        if (ranked.length > 0 && ranked[0].dist <= 3) {
+          // Strong match — return without LLM.
+          const best = ranked[0].card;
+          const confidence = Math.max(0.85, 1 - (ranked[0].dist / 64));
+          return Response.json({
+            scan_id: scanId, model_version: MODEL_VERSION, image_hash: imageHash, timestamp,
+            prediction: {
+              card_name: best.name,
+              set_name: best.set_name,
+              card_number: best.local_id,
+              rarity: best.rarity,
+              detected_language: 'en',
+              confidence,
+            },
+            candidates: [{
+              card_id: best.card_id, card_name: best.name, set_name: best.set_name,
+              set_id: best.set_id, local_id: best.local_id, rarity: best.rarity,
+              image: buildImage(best.image), weight: 1, confidence, rank: 1, imageMatch: true,
+            }],
+            predicted_card_id: best.card_id,
+            predicted_set_id: best.set_id,
+            image_url: imageUrl,
+            fast_path: 'phash',
+          });
+        }
+        if (ranked.length > 0 && ranked[0].dist <= 5) {
+          // Borderline — use pHash candidates as pre-filtered set.
+          phashCandidates = ranked.slice(0, 6).map((r: any) => r.card);
+        }
+      }
+    } catch (e: any) {
+      console.error('scan-card pHash fast-path failed', e?.message || e);
+    }
 
     let prediction: any = {};
     try {
@@ -117,17 +195,22 @@ export default async function (req: Request): Promise<Response> {
       });
     }
 
-    // Resolve candidates against the local TcgdexCard cache (primary path).
-    const norm = normalizeName(prediction.card_name);
-    const normField = `name_norm_${lang}`;
+    // Resolve candidates: use pHash-ranked candidates when available (borderline
+    // pHash match), otherwise fall back to the local TcgdexCard cache by name.
     let cards: any[] = [];
-    try {
-      cards = await svc.entities.TcgdexCard.filter({ [normField]: norm }, '-created_date', 50);
-      if ((!cards || cards.length === 0) && lang !== 'en') {
-        cards = await svc.entities.TcgdexCard.filter({ name_norm_en: norm }, '-created_date', 50);
+    if (phashCandidates.length > 0) {
+      cards = phashCandidates;
+    } else {
+      const norm = normalizeName(prediction.card_name);
+      const normField = `name_norm_${lang}`;
+      try {
+        cards = await svc.entities.TcgdexCard.filter({ [normField]: norm }, '-created_date', 50);
+        if ((!cards || cards.length === 0) && lang !== 'en') {
+          cards = await svc.entities.TcgdexCard.filter({ name_norm_en: norm }, '-created_date', 50);
+        }
+      } catch (e: any) {
+        console.error('scan-card local cache lookup failed', e?.message || e);
       }
-    } catch (e: any) {
-      console.error('scan-card local cache lookup failed', e?.message || e);
     }
 
     // Live TCGDex fallback when the local cache misses (not yet synced, or a
