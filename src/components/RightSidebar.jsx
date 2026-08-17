@@ -85,7 +85,7 @@ export default function RightSidebar({ online = [] }) {
   };
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-4 overflow-y-auto py-4 pl-2 lg:flex">
+    <aside className="hidden w-80 shrink-0 flex-col gap-4 py-4 pl-2 lg:flex">
       <OnlineNow users={online} />
 
       {trending.length > 0 && (
