@@ -8,10 +8,20 @@
 // upserted into the local DB by at_uri. Records that exist locally but are gone
 // from the PDS (per repo) are deleted — true bidirectional delete sync.
 //
+// Uses a persisted high-water cursor (IngestCursor entity) per repo+collection
+// so already-processed records are skipped on subsequent runs, and backs off
+// on 429/5xx from the AppView/PDS instead of failing the whole ingest.
+//
+// Also runs three AppView-direct passes to catch interactions from non-followed
+// Bluesky users: syncInboundReplies (getPostThread), syncInboundInteractions
+// (getLikes + getRepostedBy), and syncInboundDms (conversation resolution).
+//
 // Runs as a service-role function (invoked by the Firehose Ingestion workflow).
 // Writes ingested records with created_by_id = null (remote-originated).
 //
-// Output: { ingested, updated, deleted, errors, collections }
+// Output: { ingested, updated, deleted, errors, collections, repos_scanned,
+//   replies_synced, likes_synced, reposts_synced, dms_synced,
+//   search_found, search_ingested, records_scanned, records_skipped, rate_limited }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession } from '../../shared/pdsSession.ts';
@@ -30,6 +40,7 @@ async function getProfile(repoDid: string): Promise<any> {
     const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
     url.searchParams.set('actor', repoDid);
     const res = await fetch(url);
+    if (res.status === 429 || res.status >= 500) return null;
     if (res.ok) profile = await res.json();
   } catch (e) {
     console.error(`firehose-ingest: getProfile failed for ${repoDid}`, e?.message || e);
@@ -42,7 +53,13 @@ async function getProfile(repoDid: string): Promise<any> {
 // the post's counter and notify the author via notify-interaction with a
 // 'remote' origin so the notification carries a "via Bluesky" badge. Only
 // called for newly-ingested records from remote repos.
-async function maybeNotifyInteraction(base44, collection, val, repoDid, commentUri = '', commentCid = '') {
+//
+// `excludeEntityId` is the id of the entity just created by the caller (repo-
+// scan or syncInboundInteractions). It's excluded from the prior-entity dedup
+// check so the self-match doesn't wrongly suppress the counter increment —
+// the original bug where the prior check found the entity we just created and
+// skipped the increment entirely.
+async function maybeNotifyInteraction(base44: any, collection: string, val: any, repoDid: string, commentUri = '', commentCid = '', excludeEntityId = '') {
   try {
     const profile = await getProfile(repoDid);
     const actorName = profile?.displayName || '';
@@ -57,14 +74,14 @@ async function maybeNotifyInteraction(base44, collection, val, repoDid, commentU
       const post = posts?.[0];
       if (!post) return;
       // Idempotent: only increment if no prior Like/Repost entity exists for
-      // this actor + subject (the notification-inbox path may have already
-      // incremented it). The record itself is deduped by at_uri before this
-      // point, but the counter increment is a separate concern.
+      // this actor + subject, EXCLUDING the entity we just created (which would
+      // self-match and wrongly suppress the increment).
       const entityName = collection === 'app.bsky.feed.like' ? 'Like' : 'Repost';
       const prior = await svc.entities[entityName].filter(
         { did: repoDid, post_uri: subjectUri }, '-created_date', 1,
       ).catch(() => []);
-      if (!prior || prior.length === 0) {
+      const hasPrior = prior && prior.length > 0 && prior[0].id !== excludeEntityId;
+      if (!hasPrior) {
         const field = collection === 'app.bsky.feed.like' ? 'likes' : 'reposts';
         await svc.entities.Post.update(post.id, { [field]: (post[field] || 0) + 1 }).catch(() => {});
       }
@@ -104,17 +121,14 @@ async function maybeNotifyInteraction(base44, collection, val, repoDid, commentU
   }
 }
 
-// Post-centric inbound reply sync. The repo-scan loop above only ingests
-// records authored by repos the bridge account follows — so a reply from a
-// non-followed Bluesky user on a local post is never ingested and the author
-// never gets notified. This pass queries the AppView directly for replies on
-// each recent local post (getPostThread), upserts any reply posts not yet in
-// the local DB, and fires the same notify-interaction path. Idempotent: a
-// reply already present locally (from a prior run or the repo-scan) is skipped.
+// Post-centric inbound reply sync. Queries the AppView getPostThread for each
+// recent local post, upserts reply posts not yet in the local DB, and fires
+// notify-interaction. Idempotent: a reply already present locally is skipped.
+// Scans depth 3 and 50 recent posts so nested replies are captured.
 async function syncInboundReplies(base44: any, svc: any): Promise<number> {
   let synced = 0;
   try {
-    const posts = await svc.entities.Post.list('-created_date', 25).catch(() => []);
+    const posts = await svc.entities.Post.list('-created_date', 50).catch(() => []);
     const localPosts = (posts || []).filter((p: any) => p.at_uri);
     const postMapper = FIELD_MAPPERS['app.bsky.feed.post'];
     if (!postMapper) return 0;
@@ -122,9 +136,10 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
       try {
         const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getPostThread`);
         url.searchParams.set('uri', post.at_uri);
-        url.searchParams.set('depth', '1');
+        url.searchParams.set('depth', '3');
         url.searchParams.set('parentHeight', '0');
         const res = await fetch(url);
+        if (res.status === 429 || res.status >= 500) continue;
         if (!res.ok) continue;
         const data = await res.json();
         const thread = data?.thread;
@@ -139,9 +154,9 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
             if (existing && existing.length > 0) continue;
             const author = rp.author || {};
             const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
-            await svc.entities.Post.create(mapped).catch(() => {});
-            synced++;
-            await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '', rp.uri, rp.cid || '');
+            const created = await svc.entities.Post.create(mapped).catch(() => null);
+            if (created) synced++;
+            await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '', rp.uri, rp.cid || '', created?.id || '');
           } catch (e) {
             console.error('firehose-ingest: reply sync error', e?.message || e);
           }
@@ -152,6 +167,165 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
     }
   } catch (e) {
     console.error('firehose-ingest: syncInboundReplies error', e?.message || e);
+  }
+  return synced;
+}
+
+// Inbound likes + reposts sync. The repo-scan only ingests interactions from
+// repos the bridge account follows — so a like/repost from a non-followed
+// Bluesky user on a local post is never captured. This pass queries the AppView
+// getLikes and getRepostedBy endpoints for recent local bridged posts, upserts
+// Like entities not yet local (getLikes returns record URIs), and for reposts
+// (getRepostedBy returns actors only, no record URI) increments the counter
+// and notifies without creating an entity. Idempotent via at_uri dedup.
+async function syncInboundInteractions(base44: any, svc: any): Promise<{ likes_synced: number; reposts_synced: number }> {
+  let likes_synced = 0, reposts_synced = 0;
+  try {
+    const posts = await svc.entities.Post.list('-created_date', 25).catch(() => []);
+    const localPosts = (posts || []).filter((p: any) => p.at_uri && p.bridged);
+
+    for (const post of localPosts) {
+      // --- Likes ---
+      try {
+        const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getLikes`);
+        url.searchParams.set('uri', post.at_uri);
+        url.searchParams.set('limit', '50');
+        const res = await fetch(url);
+        if (res.status === 429 || res.status >= 500) continue;
+        if (res.ok) {
+          const data = await res.json();
+          for (const like of (data.likes || [])) {
+            const likeUri = like.uri;
+            if (!likeUri) continue;
+            const existing = await svc.entities.Like.filter({ at_uri: likeUri }, '-created_date', 1).catch(() => []);
+            if (existing && existing.length > 0) continue;
+            const actor = like.actor || {};
+            const mapped = {
+              post_id: post.id,
+              post_uri: post.at_uri,
+              post_cid: post.cid || '',
+              did: actor.did || '',
+              at_uri: likeUri,
+              cid: like.cid || '',
+              record_type: 'app.bsky.feed.like',
+              bridged: true,
+            };
+            const created = await svc.entities.Like.create(mapped).catch(() => null);
+            if (created) likes_synced++;
+            await maybeNotifyInteraction(base44, 'app.bsky.feed.like', { subject: { uri: post.at_uri } }, actor.did || '', '', '', created?.id || '');
+          }
+        }
+      } catch (e) {
+        console.error('firehose-ingest: getLikes error for', post.at_uri, e?.message || e);
+      }
+
+      // --- Reposts ---
+      try {
+        const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getRepostedBy`);
+        url.searchParams.set('uri', post.at_uri);
+        url.searchParams.set('limit', '50');
+        const res = await fetch(url);
+        if (res.status === 429 || res.status >= 500) continue;
+        if (res.ok) {
+          const data = await res.json();
+          for (const actor of (data.repostedBy || [])) {
+            if (!actor?.did) continue;
+            // getRepostedBy returns actors, not repost record URIs — check by
+            // actor + post_uri and only increment/notify if not already local.
+            const existing = await svc.entities.Repost.filter({ did: actor.did, post_uri: post.at_uri }, '-created_date', 1).catch(() => []);
+            if (existing && existing.length > 0) continue;
+            reposts_synced++;
+            await maybeNotifyInteraction(base44, 'app.bsky.feed.repost', { subject: { uri: post.at_uri } }, actor.did, '', '', '');
+          }
+        }
+      } catch (e) {
+        console.error('firehose-ingest: getRepostedBy error for', post.at_uri, e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.error('firehose-ingest: syncInboundInteractions error', e?.message || e);
+  }
+  return { likes_synced, reposts_synced };
+}
+
+// Inbound DM conversation resolution. When a remote SwapPulse instance sends a
+// direct message, firehose-ingest creates a DirectMessage entity with
+// conversation_id = '' (the mapper can't know the local conversation id). This
+// pass resolves each unlinked DM to its local Conversation by matching
+// conversation_ref → Conversation.at_uri, or by matching the participant pair
+// (dm.did + dm.recipient_did). It sets conversation_id, marks the DM unread,
+// updates the Conversation's last-message metadata, and notifies the recipient.
+async function syncInboundDms(base44: any, svc: any): Promise<number> {
+  let synced = 0;
+  try {
+    const allDms = await svc.entities.DirectMessage.list('-created_date', 100).catch(() => []);
+    const unlinked = (allDms || []).filter((d: any) => !d.conversation_id && d.conversation_ref);
+
+    for (const dm of unlinked) {
+      try {
+        let conversation: any = null;
+
+        // 1. Match by conversation_ref → Conversation.at_uri
+        if (dm.conversation_ref) {
+          const byRef = await svc.entities.Conversation.filter(
+            { at_uri: dm.conversation_ref }, '-created_date', 1,
+          ).catch(() => []);
+          conversation = byRef?.[0] || null;
+        }
+
+        // 2. Match by participant pair (dm.did + dm.recipient_did, both directions)
+        if (!conversation && dm.did && dm.recipient_did) {
+          const asCreator = await svc.entities.Conversation.filter(
+            { did: dm.did, recipient_did: dm.recipient_did }, '-created_date', 1,
+          ).catch(() => []);
+          conversation = asCreator?.[0] || null;
+          if (!conversation) {
+            const asRecipient = await svc.entities.Conversation.filter(
+              { did: dm.recipient_did, recipient_did: dm.did }, '-created_date', 1,
+            ).catch(() => []);
+            conversation = asRecipient?.[0] || null;
+          }
+        }
+
+        if (!conversation) continue;
+
+        // Link the DM to the conversation and mark unread
+        await svc.entities.DirectMessage.update(dm.id, {
+          conversation_id: conversation.id,
+          read: false,
+        }).catch(() => {});
+
+        // Update conversation metadata (masked preview for encrypted bodies)
+        const isEncrypted = !dm.body || dm.body.startsWith('\u{1F512}') || dm.body.length > 200;
+        const preview = isEncrypted ? '\u{1F512} Encrypted message' : (dm.body || '').slice(0, 200);
+        await svc.entities.Conversation.update(conversation.id, {
+          last_message_at: dm.created_date || new Date().toISOString(),
+          last_message_preview: preview,
+          last_message_did: dm.did,
+        }).catch(() => {});
+
+        // Notify the recipient (never leak plaintext)
+        if (dm.recipient_did && dm.recipient_did !== dm.did) {
+          await base44.functions.invoke('notify-interaction', {
+            recipientDid: dm.recipient_did,
+            actionType: 'message',
+            actorDid: dm.did,
+            actorName: dm.author_name || '',
+            actorHandle: dm.author_handle || '',
+            actorAvatar: dm.author_avatar || '',
+            post: { id: conversation.id, at_uri: conversation.at_uri, cid: conversation.cid, content: preview },
+            postUri: conversation.at_uri,
+            origin: 'remote',
+            commentText: preview,
+          }).catch(() => {});
+        }
+        synced++;
+      } catch (e) {
+        console.error('firehose-ingest: DM resolution error', e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.error('firehose-ingest: syncInboundDms error', e?.message || e);
   }
   return synced;
 }
@@ -167,12 +341,14 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
     const postMapper = FIELD_MAPPERS['app.bsky.feed.post'];
     if (!postMapper) return { found, ingested };
 
-    // searchPosts requires authentication — route through the PDS (which
-    // proxies to the AppView) using the bridge account's access JWT.
     const url = new URL(`${pdsUrl}/xrpc/app.bsky.feed.searchPosts`);
     url.searchParams.set('q', 'PokemonTCG');
     url.searchParams.set('limit', '50');
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessJwt}` } });
+    if (res.status === 429 || res.status >= 500) {
+      console.error(`firehose-ingest: searchPosts rate-limited (${res.status})`);
+      return { found, ingested };
+    }
     if (!res.ok) {
       console.error(`firehose-ingest: searchPosts failed (${res.status})`);
       return { found, ingested };
@@ -185,18 +361,14 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
     for (const post of posts) {
       try {
         if (!post?.uri) continue;
-        // Skip promotional posts — they must not appear in the local feed.
         if (promoUris.has(post.uri)) continue;
-        // Dedup: skip if already exists locally by at_uri
         const existing = await svc.entities.Post.filter({ at_uri: post.uri }, '-created_date', 1).catch(() => []);
         if (existing && existing.length > 0) continue;
 
         const author = post.author || {};
         const record = post.record || {};
-        if (record.reply) continue; // skip replies — only ingest top-level posts
+        if (record.reply) continue;
 
-        // searchPosts already includes author displayName/handle/avatar, so
-        // pass it directly as the profile argument to mapPostFields.
         const mapped = postMapper(record, post.uri, author.did || '', author);
         await svc.entities.Post.create(mapped).catch(() => {});
         ingested++;
@@ -211,7 +383,9 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
   return { found, ingested };
 }
 
-async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string) {
+// List all records for a repo+collection with pagination. Returns null on
+// 429/5xx so the caller can skip that repo+collection without failing the run.
+async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string): Promise<any[] | null> {
   const all: any[] = [];
   let cursor: string | null = null;
   do {
@@ -221,6 +395,10 @@ async function listRecords(baseUrl: string, repoDid: string, collection: string,
     url.searchParams.set('limit', '100');
     if (cursor) url.searchParams.set('cursor', cursor);
     const res = await fetch(url, { headers: accessJwt ? { Authorization: `Bearer ${accessJwt}` } : {} });
+    if (res.status === 429 || res.status >= 500) {
+      console.error(`firehose-ingest: listRecords rate-limited/error (${res.status}) for ${repoDid} ${collection}`);
+      return null;
+    }
     if (!res.ok) return all;
     const data = await res.json();
     all.push(...(data.records || []));
@@ -253,6 +431,7 @@ export default async function(req: Request): Promise<Response> {
     const reposToScan = [localDid, ...remoteDids];
 
     let ingested = 0, updated = 0, deleted = 0, errors = 0;
+    let records_scanned = 0, records_skipped = 0, rate_limited = 0;
     const collectionStats: Record<string, number> = {};
 
     for (const [collection, entityName] of Object.entries(COLLECTIONS)) {
@@ -265,10 +444,22 @@ export default async function(req: Request): Promise<Response> {
           const isLocal = repoDid === localDid;
           const listUrl = isLocal ? pdsUrl : APPVIEW;
           const records = await listRecords(listUrl, repoDid, collection, isLocal ? accessJwt : undefined);
+          if (!records) {
+            rate_limited++;
+            continue;
+          }
+          records_scanned += records.length;
           const pdsUriSet = new Set(records.map((r: any) => r.uri));
 
+          // Read the high-water cursor for this repo+collection
+          const cursorDocs = await svc.entities.IngestCursor.filter(
+            { repo_did: repoDid, collection }, '-created_date', 1,
+          ).catch(() => []);
+          const cursor = cursorDocs?.[0]?.last_rkey || '';
+          const cursorId = cursorDocs?.[0]?.id || '';
+          let maxRkey = cursor;
+
           // Resolve the remote actor's profile once per repo for post records
-          // so inbound posts carry author_name/handle/avatar for rendering.
           const profile = !isLocal && collection === 'app.bsky.feed.post'
             ? await getProfile(repoDid) : undefined;
 
@@ -278,9 +469,16 @@ export default async function(req: Request): Promise<Response> {
               const val = rec.value || {};
               if (!atUri) continue;
 
-              // Skip promotional posts — they're published to the PDS only and
-              // must not appear in the local SwapPulse feed.
+              // Skip promotional posts
               if (promoUris.has(atUri)) continue;
+
+              // High-water cursor: skip records already processed in a prior run
+              const rkey = atUri.split('/').pop() || '';
+              if (cursor && rkey && rkey <= cursor) {
+                records_skipped++;
+                continue;
+              }
+              if (rkey > maxRkey) maxRkey = rkey;
 
               // Skip records already local (authored by the local PDS account)
               if (isLocal) {
@@ -291,21 +489,33 @@ export default async function(req: Request): Promise<Response> {
               const mapped = mapper(val, atUri, repoDid, profile);
               const existing = await svc.entities[entityName].filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
               let isNew = false;
+              let createdId = '';
               if (existing && existing.length > 0) {
                 await svc.entities[entityName].update(existing[0].id, mapped).catch(() => {});
                 updated++;
               } else {
-                await svc.entities[entityName].create(mapped).catch(() => {});
+                const created = await svc.entities[entityName].create(mapped).catch(() => null);
                 ingested++;
                 isNew = true;
+                createdId = created?.id || '';
               }
               collectionStats[collection]++;
               if (isNew && !isLocal) {
-                await maybeNotifyInteraction(base44, collection, val, repoDid, atUri, rec.cid || '');
+                await maybeNotifyInteraction(base44, collection, val, repoDid, atUri, rec.cid || '', createdId);
               }
             } catch (e) {
               errors++;
               console.error(`firehose-ingest: record error for ${collection}`, e?.message || e);
+            }
+          }
+
+          // Advance the high-water cursor for this repo+collection
+          if (maxRkey > cursor) {
+            const now = new Date().toISOString();
+            if (cursorId) {
+              await svc.entities.IngestCursor.update(cursorId, { last_rkey: maxRkey, last_run_at: now }).catch(() => {});
+            } else {
+              await svc.entities.IngestCursor.create({ repo_did: repoDid, collection, last_rkey: maxRkey, last_run_at: now }).catch(() => {});
             }
           }
 
@@ -318,9 +528,7 @@ export default async function(req: Request): Promise<Response> {
               if (!local.at_uri) continue;
               if (!pdsUriSet.has(local.at_uri)) {
                 // Decrement the parent post's counter when a remote like/repost
-                // is tombstoned, so counts stay accurate over time. Idempotent:
-                // the record is deleted here, so a redelivered delete won't
-                // re-match. Guards against double-decrement below 0.
+                // is tombstoned, so counts stay accurate over time.
                 if (entityName === 'Like' || entityName === 'Repost') {
                   const subjectUri = local.post_uri;
                   if (subjectUri) {
@@ -336,7 +544,7 @@ export default async function(req: Request): Promise<Response> {
                   }
                 }
                 // Decrement the parent post's replies counter when a remote
-                // reply is tombstoned, so counts stay accurate over time.
+                // reply is tombstoned.
                 if (entityName === 'Post' && local.parent_uri) {
                   const parents = await svc.entities.Post.filter({ at_uri: local.parent_uri }, '-created_date', 1).catch(() => []);
                   const parent = parents?.[0];
@@ -361,13 +569,16 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // Catch replies from Bluesky users the bridge account doesn't follow —
-    // the repo-scan above can't see them, so query the AppView per local post.
+    // Catch replies from Bluesky users the bridge account doesn't follow
     const replies_synced = await syncInboundReplies(base44, svc);
 
-    // Broad ingestion: search the public AppView for PokemonTCG posts from
-    // non-followed Bluesky accounts so the home feed has content even when
-    // the follow graph is sparse.
+    // Catch likes/reposts from non-followed Bluesky users
+    const { likes_synced, reposts_synced } = await syncInboundInteractions(base44, svc);
+
+    // Resolve ingested DMs to their local conversations
+    const dms_synced = await syncInboundDms(base44, svc);
+
+    // Broad ingestion: search the public AppView for PokemonTCG posts
     const searchResult = await searchAppViewPosts(base44, svc, pdsUrl, accessJwt, promoUris);
 
     return Response.json({
@@ -375,8 +586,14 @@ export default async function(req: Request): Promise<Response> {
       collections: collectionStats,
       repos_scanned: reposToScan.length,
       replies_synced,
+      likes_synced,
+      reposts_synced,
+      dms_synced,
       search_found: searchResult.found,
       search_ingested: searchResult.ingested,
+      records_scanned,
+      records_skipped,
+      rate_limited,
     });
   } catch (error) {
     console.error('firehose-ingest error:', error?.message || error);

@@ -48,6 +48,25 @@ export default function CircleDetail() {
         member_profiles: profiles,
         member_count: members.length,
       });
+      if (c.at_uri) {
+        base44.functions.invoke('atproto-bridge', {
+          action: 'update',
+          uri: c.at_uri,
+          collection: NSID.CIRCLE,
+          record: {
+            name: c.name,
+            description: c.description || '',
+            memberDids: members,
+            memberCount: members.length,
+            visibility: c.visibility,
+            theme: c.theme || 'general',
+            region: c.region || '',
+            curatorDid: c.did,
+            curatorName: c.author_name || '',
+            curatorHandle: c.author_handle || '',
+          },
+        }).catch(() => {});
+      }
       await load();
     } catch {
       /* ignore */
@@ -68,6 +87,25 @@ export default function CircleDetail() {
         member_profiles: profiles,
         member_count: members.length,
       });
+      if (c.at_uri) {
+        base44.functions.invoke('atproto-bridge', {
+          action: 'update',
+          uri: c.at_uri,
+          collection: NSID.CIRCLE,
+          record: {
+            name: c.name,
+            description: c.description || '',
+            memberDids: members,
+            memberCount: members.length,
+            visibility: c.visibility,
+            theme: c.theme || 'general',
+            region: c.region || '',
+            curatorDid: c.did,
+            curatorName: c.author_name || '',
+            curatorHandle: c.author_handle || '',
+          },
+        }).catch(() => {});
+      }
       const stamped = await stampRecord(
         { circle_ref: c.at_uri, circle_id: c.id, exited_at: new Date().toISOString() },
         NSID.CIRCLE_EXIT,

@@ -1,0 +1,50 @@
+{
+  "name": "IngestCursor",
+  "type": "object",
+  "title": "IngestCursor",
+  "description": "org.swappulse.ingestCursor \u2014 a per-repo+collection high-water mark tracking the last-processed record rkey so firehose-ingest skips already-processed records on subsequent runs instead of re-listing and re-querying every record each cycle. Service-role only; written by firehose-ingest.",
+  "properties": {
+    "repo_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the repo being ingested"
+    },
+    "collection": {
+      "type": "string",
+      "description": "AT Protocol collection NSID (e.g. app.bsky.feed.post)"
+    },
+    "last_rkey": {
+      "type": "string",
+      "description": "rkey of the newest record processed in the last successful run; records with rkey <= this value are skipped on subsequent runs"
+    },
+    "last_run_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "repo_did",
+    "collection"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

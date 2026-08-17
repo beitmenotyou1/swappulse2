@@ -14,6 +14,7 @@
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { ensureBotAllowed } from '@/lib/botGuardClient';
+import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 
 function actorFromUser(me) {
   return {
@@ -247,7 +248,7 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
       record: {
         text: text.trim().slice(0, 3000),
         createdAt: new Date().toISOString(),
-        langs: ['en'],
+        langs: [getCurrentTcgdexLang()],
         reply: { root: { uri: rootUri, cid: rootCid }, parent: { uri: parentUri, cid: parentCid } },
       },
     }).then((res) => {
@@ -313,7 +314,7 @@ export async function createQuoteRepost(post, text, user, extra = {}) {
       record: {
         text: text.trim().slice(0, 3000),
         createdAt: new Date().toISOString(),
-        langs: ['en'],
+        langs: [getCurrentTcgdexLang()],
         embed: { $type: 'app.bsky.embed.record', record: { uri: ref.at_uri, cid: ref.cid } },
       },
     }).then((res) => {
