@@ -229,19 +229,29 @@ Deno.serve(async (req) => {
       if (parsedUrl.protocol !== 'https:') {
         return Response.json({ error: 'imageUrl must use HTTPS' }, { status: 400 });
       }
+      // SSRF protection: strict hostname allowlist. A denylist is bypassable via
+      // decimal/hex/octal IP encodings (e.g. 2130706433 -> 127.0.0.1) and
+      // IPv6-mapped IPv4 (::ffff:127.0.0.1), so only known public image CDNs are
+      // permitted. Combined with redirect:'error' below, this closes redirect
+      // and IP-encoding bypass paths.
       const hostname = parsedUrl.hostname.toLowerCase();
-      const blockedPatterns = [
-        /^127\./, /^10\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^192\.168\./,
-        /^169\.254\./, /^0\./, /^localhost$/i, /\.local$/i, /^::1$/, /^fe80:/, /^fc00:/, /^fd00:/,
-      ];
-      if (blockedPatterns.some(re => re.test(hostname))) {
+      const ALLOWED_IMAGE_HOSTS = new Set([
+        'assets.tcgdex.net',        // TCGDex card artwork
+        'media.base44static.com',    // Base44 uploaded / generated images
+        'static.wixstatic.com',      // Base44 static media mirror
+      ]);
+      if (!ALLOWED_IMAGE_HOSTS.has(hostname)) {
         return Response.json({ error: 'imageUrl hostname is not allowed' }, { status: 400 });
       }
       const { pdsUrl, session } = await resolveSession(req);
-      // SSRF: do NOT follow redirects — an attacker's public HTTPS URL can
-      // 302 to an internal/cloud-metadata endpoint, bypassing the hostname
-      // blocklist above. Fail the fetch on any redirect instead.
-      const imgRes = await fetch(imageUrl, { redirect: 'error' });
+      // SSRF: fetch with redirect:'manual' (the runtime does not support
+      // 'error') and reject any 3xx, so an allowlisted public URL can't 302
+      // to an internal or cloud-metadata endpoint.
+      const imgRes = await fetch(imageUrl, { redirect: 'manual' });
+      if (imgRes.status >= 300 && imgRes.status < 400) {
+        console.error('atproto-bridge: image fetch redirected (blocked)', imgRes.status, imageUrl);
+        return Response.json({ error: 'imageUrl redirected (not allowed)' }, { status: 400 });
+      }
       if (!imgRes.ok) {
         console.error('atproto-bridge: image fetch failed', imgRes.status, imageUrl);
         return Response.json({ error: `image fetch failed (${imgRes.status})` }, { status: 502 });
