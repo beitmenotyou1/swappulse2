@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Send, CornerDownRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -8,11 +8,18 @@ import { timeAgo } from '@/lib/format';
 import { createReply } from '@/lib/postInteractions';
 import CommentActions from '@/components/comments/CommentActions';
 import RichText from '@/components/RichText';
+import { getPostDetailPath, isInteractiveTarget } from '@/lib/postNav';
 
 const MAX_LEN = 300;
 
 function ReplyNode({ reply, children, onPosted }) {
   const hasChildren = React.Children.count(children) > 0;
+  const navigate = useNavigate();
+  const detailPath = getPostDetailPath(reply);
+  const handleReplyClick = (e) => {
+    if (isInteractiveTarget(e) || !detailPath) return;
+    navigate(detailPath);
+  };
   return (
     <div className="flex gap-2.5">
       {/* Avatar column with a vertical connector line dropping to children */}
@@ -21,7 +28,10 @@ function ReplyNode({ reply, children, onPosted }) {
         {hasChildren && <div className="w-0.5 flex-1 bg-border mt-1.5 mb-1" />}
       </div>
       {/* Content column */}
-      <div className="min-w-0 flex-1 pb-1">
+      <div
+        onClick={handleReplyClick}
+        className={`min-w-0 flex-1 pb-1 ${detailPath ? 'cursor-pointer' : ''}`}
+      >
         <div className="flex items-baseline gap-1.5">
           <span className="text-sm font-semibold leading-snug">{reply.author_name || 'Collector'}</span>
           <span className="text-[11px] text-muted-foreground">{timeAgo(reply.created_date)}</span>

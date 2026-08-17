@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import CommentReactions from './CommentReactions';
 import CommentActions from './CommentActions';
@@ -6,6 +7,7 @@ import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
 import { CornerDownRight } from 'lucide-react';
 import RichText from '@/components/RichText';
+import { getPostDetailPath, isInteractiveTarget } from '@/lib/postNav';
 
 function timeAgo(iso) {
   if (!iso) return '';
@@ -23,6 +25,12 @@ function timeAgo(iso) {
 export default function CommentItem({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, dimmed, reactionsByPostId }) {
   const [showReplies, setShowReplies] = useState(true);
   const { registerDid } = useMembership();
+  const navigate = useNavigate();
+  const detailPath = getPostDetailPath(comment);
+  const handleCommentClick = (e) => {
+    if (isInteractiveTarget(e) || !detailPath) return;
+    navigate(detailPath);
+  };
 
   useEffect(() => {
     if (comment?.did) registerDid(comment.did);
@@ -30,7 +38,10 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
   }, [comment?.did, replies, registerDid]);
 
   return (
-    <div className={`rounded-xl border border-border bg-card p-3 ${dimmed ? 'opacity-50' : ''}`}>
+    <div
+      onClick={handleCommentClick}
+      className={`rounded-xl border border-border bg-card p-3 ${dimmed ? 'opacity-50' : ''} ${detailPath ? 'cursor-pointer hover:border-border-strong transition-colors' : ''}`}
+    >
       <div className="flex gap-2.5">
         <Avatar name={comment.author_name} src={comment.author_avatar} size={32} />
         <div className="flex-1 min-w-0">

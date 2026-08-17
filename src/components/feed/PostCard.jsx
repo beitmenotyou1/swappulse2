@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag, Quote } from 'lucide-react';
+import { getPostDetailPath, isInteractiveTarget } from '@/lib/postNav';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
 import { useLivePresence } from '@/lib/livePresence';
@@ -41,6 +42,12 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
   const { registerDid } = useMembership();
+  const navigate = useNavigate();
+  const detailPath = getPostDetailPath(post);
+  const handleCardClick = (e) => {
+    if (isInteractiveTarget(e) || !detailPath) return;
+    navigate(detailPath);
+  };
 
   useEffect(() => {
     if (post.did) registerDid(post.did);
@@ -143,7 +150,10 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   const repostCount = post.reposts + (reposted ? 1 : 0);
 
   return (
-    <article className="relative border-b border-border p-4 transition-colors hover:bg-card/50">
+    <article
+      onClick={handleCardClick}
+      className={`relative border-b border-border p-4 transition-colors hover:bg-card/50 ${detailPath ? 'cursor-pointer' : ''}`}
+    >
       {liveInfo && <span className="absolute right-3 top-3 z-10"><LiveBadge title={liveInfo.title} /></span>}
       <div className="flex gap-3">
         <LiveAvatar did={post.did} name={post.author_name} src={post.author_avatar} size={44} />
