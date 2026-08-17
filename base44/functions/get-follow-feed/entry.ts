@@ -84,7 +84,26 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // 5. Merge + time-sort — For You is strictly followed accounts only;
+    // 5. Followed hashtags — pull local posts matching any followed tag so
+    // they appear in For You alongside followed-account posts. The SDK filter
+    // doesn't support array-contains on canonical_tags, so we fetch a broad
+    // window of recent posts and client-filter by tag membership.
+    const tagFollows = await base44.entities.HashtagFollow.filter({ did: myDid }, '-created_date', 100).catch(() => []);
+    const followedTags = Array.from(new Set((tagFollows || []).map((f: any) => f.tag).filter(Boolean).map((t: string) => t.toLowerCase())));
+    if (followedTags.length) {
+      const recent = await base44.entities.Post.list('-created_date', Math.max(limit * 4, 200)).catch(() => []);
+      const seen = new Set(items.map((i: any) => i.at_uri || i.id).filter(Boolean));
+      for (const p of recent || []) {
+        const key = p.at_uri || p.id;
+        if (key && seen.has(key)) continue;
+        if (Array.isArray(p.canonical_tags) && p.canonical_tags.some((t: string) => followedTags.includes(t))) {
+          if (key) seen.add(key);
+          items.push({ ...p, external: false });
+        }
+      }
+    }
+
+    // 6. Merge + time-sort — For You is followed accounts + followed hashtags;
     // discovery of new collectors happens in the Explore tab.
     items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     const followedCount = items.length;

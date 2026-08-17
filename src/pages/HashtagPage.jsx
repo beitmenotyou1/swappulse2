@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Hash, Loader2, ArrowLeft } from 'lucide-react';
+import { Hash, Loader2, ArrowLeft, Plus, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
 
@@ -12,8 +13,48 @@ import useSEO from '@/hooks/useSEO';
 // membership — sufficient for discovery with a generous limit.
 export default function HashtagPage() {
   const { tag } = useParams();
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+
+  const canonicalTag = (tag || '').toLowerCase();
+
+  useEffect(() => {
+    if (!user?.did || !canonicalTag) return;
+    let alive = true;
+    (async () => {
+      try {
+        const existing = await base44.entities.HashtagFollow.filter(
+          { did: user.did, tag: canonicalTag }, '-created_date', 1
+        ).catch(() => []);
+        if (alive) setFollowing(!!existing?.length);
+      } catch { /* ignore */ }
+    })();
+    return () => { alive = false; };
+  }, [user?.did, canonicalTag]);
+
+  const toggleFollow = async () => {
+    if (followBusy || !user?.did || !canonicalTag) return;
+    setFollowBusy(true);
+    try {
+      if (following) {
+        const existing = await base44.entities.HashtagFollow.filter(
+          { did: user.did, tag: canonicalTag }, '-created_date', 5
+        ).catch(() => []);
+        for (const f of existing || []) {
+          await base44.entities.HashtagFollow.delete(f.id).catch(() => {});
+        }
+        setFollowing(false);
+      } else {
+        await base44.entities.HashtagFollow.create({ did: user.did, tag: canonicalTag });
+        setFollowing(true);
+      }
+    } finally {
+      setFollowBusy(false);
+    }
+  };
 
   useSEO({
     title: `#${tag || ''} — Hashtag`,
@@ -54,6 +95,26 @@ export default function HashtagPage() {
           <Hash className="h-5 w-5 text-primary" />
           {tag || ''}
         </h1>
+        {user?.did && (
+          <button
+            onClick={toggleFollow}
+            disabled={followBusy}
+            className={`ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
+              following
+                ? 'border border-border text-foreground hover:bg-secondary'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            }`}
+          >
+            {followBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : following ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {following ? 'Following' : 'Follow tag'}
+          </button>
+        )}
       </div>
 
       {loading ? (

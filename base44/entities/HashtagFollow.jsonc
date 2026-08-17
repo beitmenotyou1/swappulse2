@@ -1,0 +1,32 @@
+{
+  "name": "HashtagFollow",
+  "type": "object",
+  "title": "HashtagFollow",
+  "description": "org.swappulse.hashtagFollow \u2014 a collector's follow of a hashtag. Posts using any followed hashtag appear in the collector's For You feed alongside posts from followed accounts. One record per (did, tag).",
+  "properties": {
+    "tag": {
+      "type": "string",
+      "description": "Canonical (lowercased, trimmed) hashtag the user follows"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the follower"
+    }
+  },
+  "required": [
+    "tag",
+    "did"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
