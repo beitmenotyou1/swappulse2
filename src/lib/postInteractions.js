@@ -280,6 +280,31 @@ export async function deleteReply(reply, parentPost) {
   }
 }
 
+// Delete a top-level post: delete the local Post and its bridged PDS record so
+// it disappears from both SwapPulse and Bluesky. Also best-effort deletes any
+// local likes/reposts pointing at this post (the PDS tombstones them
+// automatically when the parent is deleted). Callers remove the post from the
+// UI via the onDelete callback after this resolves.
+export async function deletePost(post) {
+  const ref = normalizeRef(post);
+  if (ref.id) {
+    await base44.entities.Post.delete(ref.id).catch(() => {});
+  }
+  if (ref.at_uri?.startsWith('at://did:')) {
+    base44.functions.invoke('atproto-bridge', { action: 'delete', uri: ref.at_uri }).catch(() => {});
+  }
+  // Best-effort: clean up local likes/reposts targeting this post.
+  try {
+    const filter = ref.id ? { post_id: ref.id } : { post_uri: ref.at_uri };
+    const [likes, reposts] = await Promise.all([
+      base44.entities.Like.filter(filter, '-created_date', 500).catch(() => []),
+      base44.entities.Repost.filter(filter, '-created_date', 500).catch(() => []),
+    ]);
+    for (const l of likes) base44.entities.Like.delete(l.id).catch(() => {});
+    for (const r of reposts) base44.entities.Repost.delete(r.id).catch(() => {});
+  } catch { /* best-effort */ }
+}
+
 // Create a quote-repost: a new app.bsky.feed.post with the target embedded as
 // a quote (app.bsky.embed.record). The local Post stores the quote text plus
 // quote_of_id / quote_ref so the QuotedPostCard embed renders before the PDS

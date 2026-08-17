@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Repeat2, MessageCircle, Loader2, Send, X, Quote } from 'lucide-react';
+import { Heart, Repeat2, MessageCircle, Loader2, Send, X, Quote, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import {
   createLike, deleteLike, createRepost, deleteRepost,
-  createReply, createQuoteRepost, normalizeRef,
+  createReply, createQuoteRepost, deleteReply, normalizeRef,
 } from '@/lib/postInteractions';
 import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetViewerLiked } from '@/lib/viewerLikes';
 
@@ -33,6 +33,7 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteText, setQuoteText] = useState('');
   const [quotePosting, setQuotePosting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Fetch existing like + repost state for this comment.
   useEffect(() => {
@@ -157,6 +158,21 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
     }
   };
 
+  const isAuthor = !!user?.id && comment?.created_by_id === user.id && !!comment?.id;
+
+  const handleDelete = async (e) => {
+    e?.stopPropagation();
+    if (deleting || !isAuthor) return;
+    if (!window.confirm('Delete this comment? This removes it from SwapPulse and Bluesky.')) return;
+    setDeleting(true);
+    try {
+      await deleteReply(comment, null);
+      onPosted?.();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const iconSize = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
   const btnBase = 'flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium transition-colors disabled:opacity-40';
 
@@ -207,6 +223,17 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
         >
           {busy ? <Loader2 className={`${iconSize} animate-spin`} /> : <Heart className={`${iconSize} ${liked ? 'fill-current' : ''}`} />} Like
         </button>
+
+        {isAuthor && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            aria-label="Delete comment"
+            className={`${btnBase} text-muted-foreground hover:text-destructive`}
+          >
+            {deleting ? <Loader2 className={`${iconSize} animate-spin`} /> : <Trash2 className={iconSize} />} Delete
+          </button>
+        )}
       </div>
 
       {showReply && !onReply && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag, Quote } from 'lucide-react';
+import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag, Quote, Trash2, Loader2 } from 'lucide-react';
 import { getPostDetailPath, isInteractiveTarget } from '@/lib/postNav';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
@@ -11,7 +11,7 @@ import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { timeAgo, formatNumber } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { createLike, deleteLike, createRepost, deleteRepost } from '@/lib/postInteractions';
+import { createLike, deleteLike, createRepost, deleteRepost, deletePost } from '@/lib/postInteractions';
 import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetViewerLiked } from '@/lib/viewerLikes';
 import ReportDialog from '@/components/moderation/ReportDialog';
 import QuoteComposeModal from '@/components/feed/QuoteComposeModal';
@@ -27,7 +27,7 @@ const TYPE_META = {
   showcase: { icon: ImageIcon, label: 'Showcase', color: 'text-rarity-holo' },
 };
 
-export default function PostCard({ post, reactions, myRepost, myLike }) {
+export default function PostCard({ post, reactions, myRepost, myLike, onDelete }) {
   const [liked, setLiked] = useState(false);
   const [likeId, setLikeId] = useState(null);
   const [pendingLike, setPendingLike] = useState(false);
@@ -38,6 +38,7 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [showThread, setShowThread] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const { user } = useAuth();
   const { liveByDid } = useLivePresence();
@@ -144,6 +145,20 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
     }
     setPendingRepost(false);
   };
+  const isAuthor = !!user?.id && post.created_by_id === user.id;
+
+  const handleDelete = async () => {
+    if (deleting || !isAuthor) return;
+    if (!window.confirm('Delete this post? This removes it from SwapPulse and Bluesky.')) return;
+    setDeleting(true);
+    try {
+      await deletePost(post);
+      onDelete?.(post.id);
+    } catch {
+      setDeleting(false);
+    }
+  };
+
   const liveInfo = post.did ? liveByDid.get(post.did) : null;
   const meta = TYPE_META[post.post_type];
   const likeCount = post.likes + (liked ? 1 : 0);
@@ -252,6 +267,16 @@ export default function PostCard({ post, reactions, myRepost, myLike }) {
             <button aria-label="Share" className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
               <Share2 className="h-4 w-4" />
             </button>
+            {isAuthor && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                aria-label="Delete post"
+                className="rounded-full px-2 py-1 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              </button>
+            )}
             <button
               onClick={() => setReportOpen(true)}
               aria-label="Report"
