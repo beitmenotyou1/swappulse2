@@ -338,7 +338,7 @@ export default function Status() {
             <div className="flex-1">
               <h3 className="font-bold">Subscribe to status updates</h3>
               <p className="mb-3 text-sm text-muted-foreground">
-                Get an email when a service goes down or recovers. Double-opt-in — check your inbox to confirm.
+                Get an email when a service goes down or recovers. Double-opt-in, check your inbox to confirm.
               </p>
               {subState === 'sent' ? (
                 <div className="rounded-lg bg-success/10 p-3 text-sm text-success">{subMsg}</div>

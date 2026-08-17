@@ -120,7 +120,7 @@ export function generateChecklistPDF({ setName, setId, totalCards, ownedLocalIds
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     setText(doc, C.text);
-    doc.text(`${setName} — Card Checklist`, 15, 18);
+    doc.text(`${setName}, Card Checklist`, 15, 18);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     setText(doc, C.textLight);
@@ -185,7 +185,7 @@ export function generateChecklistPDF({ setName, setId, totalCards, ownedLocalIds
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
     setText(doc, C.danger);
-    doc.text(`Still Needed — ${missing.length} Cards`, 15, 20);
+    doc.text(`Still Needed, ${missing.length} Cards`, 15, 20);
     setDraw(doc, C.border);
     doc.setLineWidth(0.5);
     doc.line(15, 24, W - 15, 24);
@@ -299,7 +299,7 @@ export function generateBinderPagesPDF({ setName, setId, totalCards, ownedLocalI
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     setText(doc, C.text);
-    doc.text(`${setName} — Page ${pi + 1} of ${pages.length}`, 25, 16);
+    doc.text(`${setName}, Page ${pi + 1} of ${pages.length}`, 25, 16);
 
     const cols = 2, rows = 3;
     const slotW = 72, slotH = 72, gapX = 10, gapY = 10;

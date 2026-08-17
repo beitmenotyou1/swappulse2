@@ -17,7 +17,7 @@ export default async function(req: Request): Promise<Response> {
     const path: string = body.path || '/';
     const label: string = body.label || 'SwapPulse';
 
-    const prompt = `A premium social share banner for a Pokémon TCG collector community called SwapPulse. Dark midnight-vault background with subtle purple and gold rarity glow accents. Bold modern sans-serif title text "${label}". Clean, elegant, award-winning editorial layout. 1200x630 aspect ratio composition. No real people, no copyrighted Pokémon artwork — abstract card-collector aesthetic only.`;
+    const prompt = `A premium social share banner for a Pokémon TCG collector community called SwapPulse. Dark midnight-vault background with subtle purple and gold rarity glow accents. Bold modern sans-serif title text "${label}". Clean, elegant, award-winning editorial layout. 1200x630 aspect ratio composition. No real people, no copyrighted Pokémon artwork, abstract card-collector aesthetic only.`;
 
     const result = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt });
     const url = result?.url || result?.data?.url || '';

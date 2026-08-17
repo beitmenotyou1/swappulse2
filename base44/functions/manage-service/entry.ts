@@ -63,7 +63,7 @@ export default async function (req) {
         );
         if (!existing) {
           await svc.entities.StatusIncident.create({
-            title: `${service.name} — Manual Status Update`,
+            title: `${service.name}, Manual Status Update`,
             slug: `${service.slug}-manual-${Date.now().toString(36)}`,
             status: 'investigating',
             severity: service.criticality === 'critical' ? 'critical' : service.criticality === 'high' ? 'major' : 'minor',

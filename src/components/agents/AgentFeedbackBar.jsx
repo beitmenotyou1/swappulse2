@@ -55,7 +55,7 @@ export default function AgentFeedbackBar({ agentName, conversationId, message })
           onClick={() => setShowCorrection(true)}
           disabled={saving}
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-          title="Not helpful — suggest improvement"
+          title="Not helpful, suggest improvement"
         >
           <ThumbsDown className="h-3 w-3" />
         </button>

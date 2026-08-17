@@ -22,7 +22,7 @@ export async function notifyStatusSubscribers(base44, incident, eventType) {
     for (const sub of confirmed) {
       const unsubscribeUrl = `${statusUrl}?unsubscribe=${sub.unsubscribe_token || ''}`;
       const html = buildIncidentEmail(incident, eventType, statusUrl, unsubscribeUrl);
-      const text = `${incident.title} — Status: ${incident.status}\n\nView: ${statusUrl}\n\nUnsubscribe: ${unsubscribeUrl}`;
+      const text = `${incident.title}, Status: ${incident.status}\n\nView: ${statusUrl}\n\nUnsubscribe: ${unsubscribeUrl}`;
       try {
         await sendBrandedEmail({ to: sub.email, subject, html, text });
         notified++;

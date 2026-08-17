@@ -67,10 +67,10 @@ Recent unprocessed feedback (${feedback.length} items):
 ${JSON.stringify(feedbackSummary)}
 
 Analyze this feedback and generate actionable insights to improve the agent's performance. Focus on:
-1. Common corrections — what users frequently correct
-2. Strengths — what users appreciate (thumbs up patterns)
-3. Weaknesses — recurring complaints or thumbs down patterns
-4. Improvement notes — specific actionable guidance
+1. Common corrections, what users frequently correct
+2. Strengths, what users appreciate (thumbs up patterns)
+3. Weaknesses, recurring complaints or thumbs down patterns
+4. Improvement notes, specific actionable guidance
 
 Return a JSON object with an "insights" array. Only include insights supported by at least 2 feedback items. Each item needs:
 - insight_type: one of "improvement_note", "common_correction", "strength", "weakness", "pattern"

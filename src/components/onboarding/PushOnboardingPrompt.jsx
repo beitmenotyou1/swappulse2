@@ -59,7 +59,7 @@ export default function PushOnboardingPrompt({ open, onClose }) {
           </div>
           <DialogTitle className="text-center text-xl">Stay in the loop</DialogTitle>
           <DialogDescription className="text-center text-sm">
-            Get instant alerts for new followers, replies, trade matches, and wishlist price drops — even when you're not in the app.
+            Get instant alerts for new followers, replies, trade matches, and wishlist price drops, even when you're not in the app.
           </DialogDescription>
         </DialogHeader>
         {!supported ? (

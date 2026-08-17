@@ -32,7 +32,7 @@ const SECTIONS = [
 export default function Privacy() {
   useSEO({
     title: 'Privacy Policy',
-    description: 'SwapPulse Privacy Policy — data collection, AT Protocol federation, E2EE messaging, cookies, and your data rights.',
+    description: 'SwapPulse Privacy Policy, data collection, AT Protocol federation, E2EE messaging, cookies, and your data rights.',
     canonicalPath: '/privacy',
   });
   return (
@@ -40,7 +40,7 @@ export default function Privacy() {
       <PageHeader title="Privacy Policy" subtitle={`Last updated: ${LAST_UPDATED}`} />
       <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="flex gap-8">
-          {/* Table of contents — sticky on desktop */}
+          {/* Table of contents, sticky on desktop */}
           <nav className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-20">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contents</p>
@@ -68,7 +68,7 @@ export default function Privacy() {
 
             <p className="text-sm text-muted-foreground">
               This Privacy Policy explains how SwapPulse collects, uses, and protects your personal data. SwapPulse is
-              built on the AT Protocol, a decentralized social network — this has important implications for your privacy
+              built on the AT Protocol, a decentralized social network, this has important implications for your privacy
               that are explained below. SwapPulse also offers end-to-end encrypted direct messages, live voice spaces,
               an AI card scanner, and ephemeral stories, each of which has its own data practices described here. By
               using SwapPulse, you consent to the practices described in this policy.
@@ -77,10 +77,10 @@ export default function Privacy() {
             <h2 id="overview" className="mt-8 scroll-mt-20 text-xl font-bold">1. Overview</h2>
             <p>
               SwapPulse is a decentralized platform. Your data is stored on a Personal Data Server (PDS) and federated
-              across the AT Protocol network. This means your data is not held in a single, centralized database — it
+              across the AT Protocol network. This means your data is not held in a single, centralized database, it
               is replicated across independent servers that make up the network. This design prioritizes user ownership
               and portability, but it also means that once data is published to the network, it may be difficult to
-              fully remove. Some data — such as end-to-end encrypted direct messages and your private encryption keys —
+              fully remove. Some data, such as end-to-end encrypted direct messages and your private encryption keys —
               never leaves your device in a readable form and is never federated.
             </p>
 
@@ -118,9 +118,9 @@ export default function Privacy() {
             </p>
             <ul>
               <li><strong>Publicly readable</strong> by anyone on the AT Protocol network, including Bluesky and other compatible apps.</li>
-              <li><strong>Replicated</strong> across the network — other servers may cache copies of your records.</li>
+              <li><strong>Replicated</strong> across the network, other servers may cache copies of your records.</li>
               <li><strong>Permanent</strong> in the sense that deleting a record on your PDS does not guarantee removal from all federated caches or third-party archives.</li>
-              <li><strong>Portable</strong> — your identity (DID) and data belong to you and can be moved to another PDS.</li>
+              <li><strong>Portable</strong>, your identity (DID) and data belong to you and can be moved to another PDS.</li>
             </ul>
             <p>
               Direct message bodies are the exception: they are end-to-end encrypted before being mirrored, so only you
@@ -155,7 +155,7 @@ export default function Privacy() {
               wider AT Protocol network counts as a "share." If you do not want your records shared, you can enable{' '}
               <strong>"Do Not Sell or Share My Personal Information"</strong> in{' '}
               <Link to="/settings" className="text-primary hover:underline">Settings → Data & Rights</Link>. This stops
-              outbound federation of your records, but note that <strong>site functions become limited</strong> — your
+              outbound federation of your records, but note that <strong>site functions become limited</strong>, your
               posts, trades, and profile will not appear on Bluesky or other federated apps. You can turn it off at any
               time to re-enable full federation.
             </p>
@@ -164,29 +164,29 @@ export default function Privacy() {
             <p>
               SwapPulse offers 1:1 direct messages with end-to-end encryption (E2EE). When you first use direct messages,
               your browser generates an ECDH (P-256) key pair. Your <strong>private key never leaves your device</strong>{' '}
-              — it is stored in your browser's IndexedDB. Your public key is published so others can encrypt messages to
+             , it is stored in your browser's IndexedDB. Your public key is published so others can encrypt messages to
               you. Messages are encrypted in your browser before they are sent; only ciphertext is stored on our
               servers and mirrored to your PDS.
             </p>
             <ul>
               <li><strong>We cannot read your messages.</strong> SwapPulse has no access to your private key and cannot decrypt your message content.</li>
               <li><strong>No backdoor.</strong> There is no way for SwapPulse to recover encrypted messages if you lose your device or clear your browser data.</li>
-              <li><strong>Message metadata</strong> — who you talk to and when — is visible to the platform (needed to route and display conversations), but the message body is not.</li>
+              <li><strong>Message metadata</strong>, who you talk to and when, is visible to the platform (needed to route and display conversations), but the message body is not.</li>
               <li><strong>Cross-device access</strong> is not currently supported; your encrypted message history is tied to the browser where your private key lives.</li>
             </ul>
 
             <h2 id="voice-podcasts" className="mt-8 scroll-mt-20 text-xl font-bold">6. Voice Spaces & Podcast Recordings</h2>
             <p>
               SwapPulse voice spaces operate in two modes. <strong>External mode</strong> is a manual Go Live declaration
-              pointing at an external stream URL (Twitch, YouTube, Kick, etc.) — we store only the URL and metadata you
+              pointing at an external stream URL (Twitch, YouTube, Kick, etc.), we store only the URL and metadata you
               provide, not the stream content. <strong>In-platform mode</strong> uses a WebRTC peer mesh so participants
               can hear each other directly in the browser.
             </p>
             <p>For in-platform voice spaces, the following data is collected:</p>
             <ul>
-              <li><strong>Participant records</strong> — your role (host, co-host, speaker, listener), hand-raised status, and join/leave times.</li>
-              <li><strong>WebRTC signaling messages</strong> — offers, answers, and ICE candidates exchanged between peers to establish the audio mesh. These are ephemeral and consumed in real time.</li>
-              <li><strong>Audio</strong> — in-platform audio is transmitted peer-to-peer between participants' browsers and is not recorded unless the host explicitly enables recording.</li>
+              <li><strong>Participant records</strong>, your role (host, co-host, speaker, listener), hand-raised status, and join/leave times.</li>
+              <li><strong>WebRTC signaling messages</strong>, offers, answers, and ICE candidates exchanged between peers to establish the audio mesh. These are ephemeral and consumed in real time.</li>
+              <li><strong>Audio</strong>, in-platform audio is transmitted peer-to-peer between participants' browsers and is not recorded unless the host explicitly enables recording.</li>
             </ul>
             <p>
               If the host enables recording, the mixed stage audio is uploaded and stored as a file. The host can then
@@ -202,13 +202,13 @@ export default function Privacy() {
             </p>
             <ul>
               <li><strong>Card photos</strong> are uploaded and processed by an AI model to identify the card. The photo is not permanently stored beyond the scanning session unless you choose to save it to a post or collection entry.</li>
-              <li><strong>Corrections</strong> — when the top match is wrong and you select the correct card or search manually — are recorded as ScannerCorrection records. These record the original match, your correction, and (if available) a hashed device identifier.</li>
+              <li><strong>Corrections</strong>, when the top match is wrong and you select the correct card or search manually, are recorded as ScannerCorrection records. These record the original match, your correction, and (if available) a hashed device identifier.</li>
               <li><strong>Model improvement:</strong> Your corrections are used to evaluate and improve the scanner model's accuracy over time. Corrections work offline too: they queue locally and sync when you reconnect.</li>
             </ul>
             <p>
               AI assistants (Trade Assistant, Market Watch Assistant, Collection Advisor, and others) process your
               collection and trade data to generate suggestions. The suggestions are generated by an LLM and are
-              advisory only — see the Terms of Service for details.
+              advisory only, see the Terms of Service for details.
             </p>
 
             <h2 id="stories" className="mt-8 scroll-mt-20 text-xl font-bold">8. Stories (Ephemeral Content)</h2>
@@ -234,7 +234,7 @@ export default function Privacy() {
             </p>
             <ul>
               <li>Compute a <strong>risk score</strong> based on signals like account age, action velocity, content diversity, and browser fingerprint.</li>
-              <li>Store a <strong>hashed version of your IP address</strong> for audit — we never store your raw IP.</li>
+              <li>Store a <strong>hashed version of your IP address</strong> for audit, we never store your raw IP.</li>
               <li>Issue a <strong>"verify you're human" challenge</strong> (captcha) for borderline-risk actions.</li>
               <li>Temporarily block subjects with repeated challenge failures.</li>
             </ul>
@@ -247,7 +247,7 @@ export default function Privacy() {
             <h2 id="how-we-use" className="mt-8 scroll-mt-20 text-xl font-bold">10. How We Use Your Data</h2>
             <p>We use your data to:</p>
             <ul>
-              <li>Operate the platform — display your profile, collection, posts, trades, binders, and voice spaces.</li>
+              <li>Operate the platform, display your profile, collection, posts, trades, binders, and voice spaces.</li>
               <li>Authenticate you and maintain your session.</li>
               <li>Send notifications about activity relevant to you (likes, replies, trade matches, price alerts, voice spaces going live).</li>
               <li>Match your wishlist against new trade listings.</li>
@@ -273,10 +273,10 @@ export default function Privacy() {
               local storage you allow. You can revisit and change your choices at any time in{' '}
               <Link to="/settings" className="text-primary hover:underline">Settings → Data & Rights</Link>.
             </p>
-            <p><strong>Essential</strong> — login, session, and security. Always on; required for the site to function.</p>
-            <p><strong>Functional</strong> — preferences (theme, language, accessibility), offline cache, E2EE private keys (IndexedDB), and PWA features.</p>
-            <p><strong>Analytics</strong> — aggregate usage insights. No individual tracking or third-party profiling.</p>
-            <p><strong>Marketing</strong> — onboarding emails and the weekly digest. Off by default.</p>
+            <p><strong>Essential</strong>, login, session, and security. Always on; required for the site to function.</p>
+            <p><strong>Functional</strong>, preferences (theme, language, accessibility), offline cache, E2EE private keys (IndexedDB), and PWA features.</p>
+            <p><strong>Analytics</strong>, aggregate usage insights. No individual tracking or third-party profiling.</p>
+            <p><strong>Marketing</strong>, onboarding emails and the weekly digest. Off by default.</p>
             <p>
               We do not use third-party tracking cookies. Your session token is stored locally on your device and is
               sent only to SwapPulse and your PDS. As a Progressive Web App (PWA), SwapPulse stores a service worker
@@ -314,15 +314,15 @@ export default function Privacy() {
               SwapPulse integrates with or relies on the following third-party services:
             </p>
             <ul>
-              <li><strong>TCGDex</strong> — Card catalog data (card names, sets, rarities, images). Your collection references TCGDex card IDs.</li>
-              <li><strong>AT Protocol / Bluesky</strong> — Federated identity and content storage. Your DID and records are visible on the AT Protocol network.</li>
-              <li><strong>AI / LLM providers</strong> — Power the card scanner, AI assistants, and automated moderation. Prompts and card photos are sent to these providers for processing.</li>
-              <li><strong>Image generation</strong> — Used for AI-generated images when you request them. Generated images are stored and linked to your account.</li>
-              <li><strong>Audio transcription</strong> — Used to transcribe voice space recordings into text for podcast show notes.</li>
-              <li><strong>Email provider (SMTP)</strong> — We use an SMTP service to send login codes, notifications, and digests to your email address.</li>
-              <li><strong>Base44 Payments</strong> — Processes donations. See Section 13.</li>
-              <li><strong>Map services</strong> — Meetup locations are displayed using Leaflet/OpenStreetMap.</li>
-              <li><strong>Podcast directories</strong> — Your public RSS feed may be indexed by Apple Podcasts, Spotify, and other podcast apps once you submit the feed URL.</li>
+              <li><strong>TCGDex</strong>, Card catalog data (card names, sets, rarities, images). Your collection references TCGDex card IDs.</li>
+              <li><strong>AT Protocol / Bluesky</strong>, Federated identity and content storage. Your DID and records are visible on the AT Protocol network.</li>
+              <li><strong>AI / LLM providers</strong>, Power the card scanner, AI assistants, and automated moderation. Prompts and card photos are sent to these providers for processing.</li>
+              <li><strong>Image generation</strong>, Used for AI-generated images when you request them. Generated images are stored and linked to your account.</li>
+              <li><strong>Audio transcription</strong>, Used to transcribe voice space recordings into text for podcast show notes.</li>
+              <li><strong>Email provider (SMTP)</strong>, We use an SMTP service to send login codes, notifications, and digests to your email address.</li>
+              <li><strong>Base44 Payments</strong>, Processes donations. See Section 13.</li>
+              <li><strong>Map services</strong>, Meetup locations are displayed using Leaflet/OpenStreetMap.</li>
+              <li><strong>Podcast directories</strong>, Your public RSS feed may be indexed by Apple Podcasts, Spotify, and other podcast apps once you submit the feed URL.</li>
             </ul>
             <p>
               Each of these services has its own privacy policy. SwapPulse is not responsible for how third parties
@@ -352,14 +352,14 @@ export default function Privacy() {
               Settings where you can exercise all of these rights directly:
             </p>
             <ul>
-              <li><strong>Access</strong> — Request a copy of your personal data. Use "Download my data" in Settings for an instant JSON archive, or submit an access request for an emailed copy.</li>
-              <li><strong>Rectification</strong> — Correct inaccurate data. Update your profile in Settings, or submit a rectification request for data you cannot edit yourself.</li>
-              <li><strong>Erasure</strong> — Delete your account through Settings → Account → Danger zone. For partial erasure, submit an erasure request and we will review it.</li>
-              <li><strong>Portability</strong> — Export your data in a machine-readable JSON format using "Download my data." The AT Protocol is designed for portability; your data is yours.</li>
-              <li><strong>Objection</strong> — Opt out of certain processing, including federation (Do Not Sell or Share), push notifications, and email digests, in Settings → Data & Rights.</li>
-              <li><strong>Restriction</strong> — Request that we limit processing of your data temporarily. Submit a restriction request in Settings → Data & Rights.</li>
-              <li><strong>Withdraw consent</strong> — Withdraw consent for marketing emails, analytics, and push notifications at any time in Settings → Data & Rights.</li>
-              <li><strong>Do Not Sell or Share (CCPA)</strong> — Opt out of having your data federated to the wider AT Protocol network. See Section 4 for details on how this limits site functions.</li>
+              <li><strong>Access</strong>, Request a copy of your personal data. Use "Download my data" in Settings for an instant JSON archive, or submit an access request for an emailed copy.</li>
+              <li><strong>Rectification</strong>, Correct inaccurate data. Update your profile in Settings, or submit a rectification request for data you cannot edit yourself.</li>
+              <li><strong>Erasure</strong>, Delete your account through Settings → Account → Danger zone. For partial erasure, submit an erasure request and we will review it.</li>
+              <li><strong>Portability</strong>, Export your data in a machine-readable JSON format using "Download my data." The AT Protocol is designed for portability; your data is yours.</li>
+              <li><strong>Objection</strong>, Opt out of certain processing, including federation (Do Not Sell or Share), push notifications, and email digests, in Settings → Data & Rights.</li>
+              <li><strong>Restriction</strong>, Request that we limit processing of your data temporarily. Submit a restriction request in Settings → Data & Rights.</li>
+              <li><strong>Withdraw consent</strong>, Withdraw consent for marketing emails, analytics, and push notifications at any time in Settings → Data & Rights.</li>
+              <li><strong>Do Not Sell or Share (CCPA)</strong>, Opt out of having your data federated to the wider AT Protocol network. See Section 4 for details on how this limits site functions.</li>
             </ul>
             <p>
               To exercise these rights, use the Data & Privacy Rights center in Settings, or contact us through the

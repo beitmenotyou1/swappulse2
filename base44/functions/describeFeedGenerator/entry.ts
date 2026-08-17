@@ -33,7 +33,7 @@ export default async function (_req: Request): Promise<Response> {
         uri: 'at://did:web:feed.swappulse.org/app.bsky.feed.generator/collection-posts',
         did: 'did:web:feed.swappulse.org',
         description:
-          'Community collection activity — card showcases and pack opening pulls from collectors across the network.',
+          'Community collection activity, card showcases and pack opening pulls from collectors across the network.',
         descriptionLang: 'en',
         author: {
           did: 'did:web:feed.swappulse.org',

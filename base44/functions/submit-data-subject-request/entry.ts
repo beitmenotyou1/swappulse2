@@ -63,7 +63,7 @@ export default async function (req: Request): Promise<Response> {
       const admins = await svc.entities.User.filter({ role: 'admin' }).catch(() => []);
       const emailObj = buildAdminAlertEmail({
         subject: `New data subject request: ${requestType}`,
-        preheader: `A collector submitted a ${requestType} request — review in the Admin dashboard.`,
+        preheader: `A collector submitted a ${requestType} request, review in the Admin dashboard.`,
         heading: 'New data subject request',
         bodyHtml: `
           <p style="margin:0 0 14px;font-size:15px;color:${COLORS.muted};line-height:1.7;">

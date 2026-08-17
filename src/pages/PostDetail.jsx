@@ -89,7 +89,7 @@ export default function PostDetail() {
             const body = res?.data ?? res;
             if (body?.post) ancestor = body.post;
           }
-        } catch { /* ignore — stop chain */ }
+        } catch { /* ignore, stop chain */ }
         if (!alive) return;
         if (!ancestor) break;
         chain.unshift(ancestor);

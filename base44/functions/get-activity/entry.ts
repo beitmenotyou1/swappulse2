@@ -23,7 +23,7 @@ export default async function(req: Request): Promise<Response> {
     try {
       const me = await base44.auth.me();
       if (me?.did) callerDid = me.did;
-    } catch { /* guest — no private data */ }
+    } catch { /* guest, no private data */ }
 
     const [posts, trades, vouches, achievements, entries, journals, binders, rsvps, stories, collection] = await Promise.all([
       svc.entities.Post.filter({ did }, '-created_date', 50).catch(() => []),

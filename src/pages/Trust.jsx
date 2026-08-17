@@ -17,7 +17,7 @@ const REL_LABEL = {
 export default function Trust() {
   useSEO({
     title: 'Trust & Vouches',
-    description: 'Build trading trust on SwapPulse — vouch for trade partners and view reputation profiles for safe peer-to-peer card exchange.',
+    description: 'Build trading trust on SwapPulse, vouch for trade partners and view reputation profiles for safe peer-to-peer card exchange.',
     canonicalPath: '/trust',
   });
   const [myDid, setMyDid] = useState('');

@@ -371,7 +371,7 @@ export default function InPlatformSpace({ space: initialSpace }) {
       <div className="flex-1 p-4">
         {tooManySpeakers && canManage && (
           <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
-            <AlertTriangle className="h-4 w-4 shrink-0" /> {speakersList.length} speakers — the peer mesh works best with ≤{MAX_SPEAKERS}. Consider demoting some.
+            <AlertTriangle className="h-4 w-4 shrink-0" /> {speakersList.length} speakers, the peer mesh works best with ≤{MAX_SPEAKERS}. Consider demoting some.
           </div>
         )}
         {/* Speakers */}
@@ -459,7 +459,7 @@ export default function InPlatformSpace({ space: initialSpace }) {
             </button>
           )}
         </div>
-        {micError && onStage && <p className="pb-2 text-center text-xs text-muted-foreground">Mic access denied — others won't hear you.</p>}
+        {micError && onStage && <p className="pb-2 text-center text-xs text-muted-foreground">Mic access denied, others won't hear you.</p>}
         {myPart?.muted_by_host && onStage && <p className="pb-2 text-center text-xs text-muted-foreground">You were muted by the host.</p>}
       </div>
 

@@ -79,7 +79,7 @@ You must distinguish between:
 Return a JSON object with:
 - **label**: The primary violation category (scam, harassment, toxic, nsfw, spam, off-topic, misgraded, impersonation) or "none" if content is appropriate
 - **severity**: "hide" (severe violation, remove from view), "warn" (borderline, flag but keep visible), "inform" (minor, log only), or "none"
-- **confidence**: 0.0 to 1.0 — how confident you are in the classification
+- **confidence**: 0.0 to 1.0, how confident you are in the classification
 - **reasoning**: Brief explanation of your decision (1-2 sentences)
 - **recommended_action**: "hide" (auto-hide, high confidence severe), "warn" (apply label, keep visible), "surface_for_review" (borderline, human review needed), or "allow" (no action needed)
 - **warning_message**: If a warning is warranted, a draft user-facing message explaining the issue (max 280 chars, friendly but firm tone)`;

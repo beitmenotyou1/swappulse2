@@ -18,7 +18,7 @@ import useSEO from '@/hooks/useSEO';
 export default function TradeThread() {
   useSEO({
     title: 'Trade Thread',
-    description: 'Negotiate a Pokémon TCG trade on SwapPulse — threaded trade chat with fairness scoring.',
+    description: 'Negotiate a Pokémon TCG trade on SwapPulse, threaded trade chat with fairness scoring.',
     canonicalPath: `/trade/${tradeId}`,
   });
   const { tradeId } = useParams();

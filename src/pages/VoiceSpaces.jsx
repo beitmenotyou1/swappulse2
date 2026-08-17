@@ -26,7 +26,7 @@ const TABS = [
 export default function VoiceSpaces() {
   useSEO({
     title: 'Voice Spaces',
-    description: 'Join live Pokémon TCG audio spaces on SwapPulse — go live with external streams or host in-platform voice rooms.',
+    description: 'Join live Pokémon TCG audio spaces on SwapPulse, go live with external streams or host in-platform voice rooms.',
     canonicalPath: '/spaces',
   });
   const [spaces, setSpaces] = useState([]);

@@ -26,7 +26,7 @@ export default function AchievementMedallion({ spec, achievement, onClick }) {
           {spec.name}
         </p>
         <p className="text-xs leading-tight text-muted-foreground">
-          {pending ? 'At risk — grace period' : unlocked ? spec.description : thresholdLabel(spec)}
+          {pending ? 'At risk, grace period' : unlocked ? spec.description : thresholdLabel(spec)}
         </p>
       </div>
     </button>

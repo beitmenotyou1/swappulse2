@@ -157,7 +157,7 @@ export default function Login() {
     <AuthLayout
       icon={Mail}
       title="Welcome back"
-      subtitle="Sign in with your email — no password needed"
+      subtitle="Sign in with your email, no password needed"
       footer={
         <>
           Don't have an account?{" "}
@@ -264,7 +264,7 @@ export default function Login() {
       {step === "setup" && (
         <div className="space-y-4 text-center">
           <p className="text-sm text-muted-foreground">
-            We've sent a sign-in link to <strong>{email}</strong>. Click the link in the email to sign in instantly — next time you'll get a 6-digit code instead.
+            We've sent a sign-in link to <strong>{email}</strong>. Click the link in the email to sign in instantly, next time you'll get a 6-digit code instead.
           </p>
           <button type="button" onClick={() => { setStep("email"); setInfo(""); setError(""); }} className="text-primary hover:underline text-sm">
             Back to login

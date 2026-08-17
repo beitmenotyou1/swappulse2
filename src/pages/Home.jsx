@@ -233,7 +233,7 @@ export default function Home() {
           ) : (
             <>
               <p className="text-lg font-bold">Welcome to SwapPulse</p>
-              <p className="mt-1 text-sm text-muted-foreground">Join the decentralized social network for Pokémon TCG collectors — track your collection, trade cards, and connect with the community.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Join the decentralized social network for Pokémon TCG collectors, track your collection, trade cards, and connect with the community.</p>
               <div className="mt-4 flex justify-center gap-3">
                 <Link to="/register" className="inline-flex items-center gap-1 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Create account</Link>
                 <Link to="/explore" className="inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-secondary">Explore cards</Link>

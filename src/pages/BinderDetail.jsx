@@ -11,7 +11,7 @@ import useSEO from '@/hooks/useSEO';
 export default function BinderDetail() {
   useSEO({
     title: 'Binder',
-    description: 'A curated Pokémon TCG collector binder on SwapPulse — showcase grids of favourite cards.',
+    description: 'A curated Pokémon TCG collector binder on SwapPulse, showcase grids of favourite cards.',
     canonicalPath: `/binder/${binderId}`,
   });
   const { binderId } = useParams();

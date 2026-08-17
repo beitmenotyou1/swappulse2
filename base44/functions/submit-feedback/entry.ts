@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
     const catLabel = CATEGORY_LABELS[cat] || 'Feedback';
     const catEmoji = CATEGORY_EMOJI[cat] || '💬';
-    const subject = `${catEmoji} SwapPulse ${catLabel}${cleanTitle ? ' — ' + cleanTitle : ''}`;
+    const subject = `${catEmoji} SwapPulse ${catLabel}${cleanTitle ? ', ' + cleanTitle : ''}`;
 
     const body = [
       `New ${catLabel.toLowerCase()} from ${user.full_name || user.email || 'a collector'}.`,

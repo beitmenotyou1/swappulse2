@@ -49,7 +49,7 @@ export default async function(req: Request): Promise<Response> {
         const body = await req.json();
         did = body?.did || '';
         handle = (body?.handle || '').replace(/^@/, '');
-      } catch { /* not JSON — ignore */ }
+      } catch { /* not JSON, ignore */ }
     }
 
     if (!did && !handle) {

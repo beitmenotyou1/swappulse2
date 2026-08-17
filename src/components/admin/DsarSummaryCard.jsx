@@ -86,7 +86,7 @@ export default function DsarSummaryCard() {
         {/* Trend chart */}
         <div className="min-w-0 flex-1">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Completion trend — last {DAYS} days
+            Completion trend, last {DAYS} days
           </p>
           {loading ? (
             <div className="flex h-[140px] items-center justify-center">

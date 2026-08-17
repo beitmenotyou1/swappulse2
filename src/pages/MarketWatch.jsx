@@ -10,7 +10,7 @@ import useSEO from '@/hooks/useSEO';
 export default function MarketWatch() {
   useSEO({
     title: 'Market Watch',
-    description: 'Track Pokémon TCG card prices, monitor your portfolio, and set price alerts on SwapPulse — the decentralized collector community.',
+    description: 'Track Pokémon TCG card prices, monitor your portfolio, and set price alerts on SwapPulse, the decentralized collector community.',
     canonicalPath: '/market',
   });
   const [portfolio, setPortfolio] = useState(null);

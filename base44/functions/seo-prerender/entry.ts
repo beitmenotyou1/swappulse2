@@ -9,7 +9,7 @@ export default async function(req: Request): Promise<Response> {
     const rawPath = body.path || url.searchParams.get('path') || '/';
     const path = sanitizePath(rawPath);
     const title = titleForPath(path);
-    const description = 'SwapPulse — the decentralized social network for Pokémon TCG collectors. Track your collection, trade cards, and build community on the AT Protocol.';
+    const description = 'SwapPulse, the decentralized social network for Pokémon TCG collectors. Track your collection, trade cards, and build community on the AT Protocol.';
 
     const jsonLd = {
       '@context': 'https://schema.org',
@@ -79,20 +79,20 @@ function sanitizePath(input: string): string {
 }
 
 function titleForPath(path: string): string {
-  if (path === '/' || path === '') return 'SwapPulse — Pokémon TCG Collector Community';
-  if (path.startsWith('/explore')) return 'Explore Cards — SwapPulse';
-  if (path.startsWith('/sets')) return 'Set Checklists — SwapPulse';
-  if (path.startsWith('/trades') || path.startsWith('/trade-board')) return 'Trade Board — SwapPulse';
-  if (path.startsWith('/packs')) return 'Pack Openings — SwapPulse';
-  if (path.startsWith('/market')) return 'Market Watch — SwapPulse';
-  if (path.startsWith('/challenges')) return 'Community Challenges — SwapPulse';
-  if (path.startsWith('/meetups')) return 'Collector Meetups — SwapPulse';
-  if (path.startsWith('/spaces')) return 'Voice Spaces — SwapPulse';
-  if (path.startsWith('/circles')) return 'Circles — SwapPulse';
-  if (path.startsWith('/help')) return 'Help Centre — SwapPulse';
-  if (path.startsWith('/status')) return 'System Status — SwapPulse';
-  if (path.startsWith('/profile/')) return 'Collector Profile — SwapPulse';
-  if (path.startsWith('/post/')) return 'Post — SwapPulse';
-  if (path.startsWith('/card/')) return 'Card Details — SwapPulse';
-  return 'SwapPulse — Pokémon TCG Collector Community';
+  if (path === '/' || path === '') return 'SwapPulse, Pokémon TCG Collector Community';
+  if (path.startsWith('/explore')) return 'Explore Cards, SwapPulse';
+  if (path.startsWith('/sets')) return 'Set Checklists, SwapPulse';
+  if (path.startsWith('/trades') || path.startsWith('/trade-board')) return 'Trade Board, SwapPulse';
+  if (path.startsWith('/packs')) return 'Pack Openings, SwapPulse';
+  if (path.startsWith('/market')) return 'Market Watch, SwapPulse';
+  if (path.startsWith('/challenges')) return 'Community Challenges, SwapPulse';
+  if (path.startsWith('/meetups')) return 'Collector Meetups, SwapPulse';
+  if (path.startsWith('/spaces')) return 'Voice Spaces, SwapPulse';
+  if (path.startsWith('/circles')) return 'Circles, SwapPulse';
+  if (path.startsWith('/help')) return 'Help Centre, SwapPulse';
+  if (path.startsWith('/status')) return 'System Status, SwapPulse';
+  if (path.startsWith('/profile/')) return 'Collector Profile, SwapPulse';
+  if (path.startsWith('/post/')) return 'Post, SwapPulse';
+  if (path.startsWith('/card/')) return 'Card Details, SwapPulse';
+  return 'SwapPulse, Pokémon TCG Collector Community';
 }

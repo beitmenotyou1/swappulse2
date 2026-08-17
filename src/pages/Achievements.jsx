@@ -51,7 +51,7 @@ export default function Achievements() {
     <div className="min-h-screen pb-20 md:pb-0">
       <PageHeader
         title="Achievements"
-        subtitle="Proof-based, network-verified credentials — not participation trophies"
+        subtitle="Proof-based, network-verified credentials, not participation trophies"
       >
         <Button variant="outline" size="sm" onClick={evaluate} disabled={evaluating || loading}>
           <RefreshCw className={`h-4 w-4 ${evaluating ? 'animate-spin' : ''}`} />
@@ -64,7 +64,7 @@ export default function Achievements() {
           <span className="font-semibold text-accent">{unlockedCount}</span>{' '}
           <span className="text-muted-foreground">
             of {total} credentials unlocked. Each is a state-dependent proof verified against your
-            on-chain activity — revoked if the underlying proof no longer holds (after a 24h grace period).
+            on-chain activity, revoked if the underlying proof no longer holds (after a 24h grace period).
           </span>
         </div>
 

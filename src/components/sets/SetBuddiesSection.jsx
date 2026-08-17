@@ -57,7 +57,7 @@ export default function SetBuddiesSection({ setId, myCardIds = [], setName }) {
         <span className="text-xs text-muted-foreground">{data.total_collectors} collector{data.total_collectors !== 1 ? 's' : ''}</span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Collectors completing {setName || 'this set'} — swap to finish together.
+        Collectors completing {setName || 'this set'}, swap to finish together.
       </p>
       <div className="mt-3 space-y-3">
         {data.buddies.map((b) => (

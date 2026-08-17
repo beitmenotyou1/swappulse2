@@ -37,7 +37,7 @@ export default function UserProfile() {
   const { filterPosts } = usePostVisibility();
   useSEO({
     title: merged?.name ? `${merged.name} (Collector Profile)` : 'Collector Profile',
-    description: merged?.description ? `${merged.description}` : `${merged?.name || 'Collector'} on SwapPulse — the decentralized Pokémon TCG collector community.`,
+    description: merged?.description ? `${merged.description}` : `${merged?.name || 'Collector'} on SwapPulse, the decentralized Pokémon TCG collector community.`,
     canonicalPath: `/profile/${subjectDid}`,
     ogImage: merged?.avatar || '',
     jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', name: merged?.name || 'Collector', url: `https://swappulse.org/profile/${subjectDid}` },
@@ -185,7 +185,7 @@ export default function UserProfile() {
           {tab === 'Activity' ? (
             isExternal ? (
               <div className="py-10 text-center text-sm text-muted-foreground">
-                <p>No on-site activity — this collector posts on Bluesky.</p>
+                <p>No on-site activity, this collector posts on Bluesky.</p>
                 <a href={`https://bsky.app/profile/${subjectDid}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
                   View on Bluesky <ExternalLink className="h-3.5 w-3.5" />
                 </a>

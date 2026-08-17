@@ -59,7 +59,7 @@ export default function Messages() {
     <div>
       <PageHeader title="Messages" subtitle="Private chats with other collectors" />
       <div className="flex h-[calc(100vh-8rem)] overflow-hidden">
-        {/* Conversation list — hidden on mobile when a thread is open */}
+        {/* Conversation list, hidden on mobile when a thread is open */}
         <div className={`w-full border-r border-border md:w-80 lg:w-96 ${conversationId ? 'hidden md:block' : 'block'}`}>
           {loading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
@@ -79,7 +79,7 @@ export default function Messages() {
           )}
         </div>
 
-        {/* Thread — hidden on mobile when no thread is selected */}
+        {/* Thread, hidden on mobile when no thread is selected */}
         <div className={`flex-1 ${conversationId ? 'block' : 'hidden md:block'}`}>
           {active ? (
             <MessageThread

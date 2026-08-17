@@ -103,7 +103,7 @@ export default function WhoCanReachYouCard() {
       <p className="flex items-center gap-2 text-sm font-bold"><Users className="h-4 w-4 text-primary" /> Who can reach you</p>
       <p className="mt-0.5 text-xs text-muted-foreground">Control which notifications reach you, based on who sends them.</p>
 
-      {/* Relationship filter — radio */}
+      {/* Relationship filter, radio */}
       <div className="mt-3 space-y-2">
         {whoOptions.map((opt) => {
           const selected = pref.who_filter === opt.value;
@@ -129,7 +129,7 @@ export default function WhoCanReachYouCard() {
         })}
       </div>
 
-      {/* Origin filter — switch */}
+      {/* Origin filter, switch */}
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-sm font-semibold"><Globe className="h-3.5 w-3.5 text-muted-foreground" /> On-site users only</p>
@@ -138,7 +138,7 @@ export default function WhoCanReachYouCard() {
         <Switch checked={pref.on_site_only} onCheckedChange={toggleOnSite} disabled={pref.paused} />
       </div>
 
-      {/* Master pause — switch */}
+      {/* Master pause, switch */}
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-sm font-semibold"><BellOff className="h-3.5 w-3.5 text-muted-foreground" /> Pause all notifications</p>

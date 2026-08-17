@@ -65,7 +65,7 @@ export default function DeleteAccountSection() {
         </div>
       </div>
 
-      {/* Step 1 — first confirmation */}
+      {/* Step 1, first confirmation */}
       <Dialog open={step === 1} onOpenChange={(o) => !o && reset()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -84,7 +84,7 @@ export default function DeleteAccountSection() {
         </DialogContent>
       </Dialog>
 
-      {/* Step 2 — second confirmation */}
+      {/* Step 2, second confirmation */}
       <Dialog open={step === 2} onOpenChange={(o) => !o && reset()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -103,7 +103,7 @@ export default function DeleteAccountSection() {
         </DialogContent>
       </Dialog>
 
-      {/* Step 3 — final confirmation with type-to-confirm */}
+      {/* Step 3, final confirmation with type-to-confirm */}
       <Dialog open={step === 3} onOpenChange={(o) => !o && reset()}>
         <DialogContent className="max-w-md">
           <DialogHeader>

@@ -17,7 +17,7 @@ const THEME_LABEL = {
 export default function CircleDetail() {
   useSEO({
     title: 'Circle',
-    description: 'A themed Pokémon TCG collector circle on SwapPulse — vintage, competitive, shiny, regional, and more.',
+    description: 'A themed Pokémon TCG collector circle on SwapPulse, vintage, competitive, shiny, regional, and more.',
     canonicalPath: `/circles/${circleId}`,
   });
   const { circleId } = useParams();

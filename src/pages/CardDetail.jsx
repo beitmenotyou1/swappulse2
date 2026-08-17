@@ -21,7 +21,7 @@ export default function CardDetail() {
   const { cardId } = useParams();
   const [card, setCard] = useState(null);
   useSEO({
-    title: card ? `${card.name} — ${card.set?.name || 'Pokémon Card'}` : 'Card Details',
+    title: card ? `${card.name}, ${card.set?.name || 'Pokémon Card'}` : 'Card Details',
     description: card ? `${card.name} from ${card.set?.name || 'Pokémon TCG'}. View stats, reviews, and community discussion on SwapPulse.` : 'Pokémon TCG card details, reviews, and community discussion on SwapPulse.',
     canonicalPath: `/card/${cardId}`,
     ogImage: card ? cardImageUrl(card.image) : '',

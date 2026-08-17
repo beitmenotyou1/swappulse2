@@ -29,7 +29,7 @@ export default function useSEO({
     const canonical = canonicalPath ? `${origin}${canonicalPath}` : window.location.href;
 
     // Title
-    const fullTitle = title ? `${title} — SwapPulse` : 'SwapPulse — Pokémon TCG Collector Community';
+    const fullTitle = title ? `${title}, SwapPulse` : 'SwapPulse, Pokémon TCG Collector Community';
     document.title = fullTitle;
 
     const setMeta = (selector, attrs) => {

@@ -21,7 +21,7 @@ function statusOf(c, now) {
 export default function Challenges() {
   useSEO({
     title: 'Challenges',
-    description: 'Join Pokémon TCG collector challenges on SwapPulse — set completion races, pack opening contests, and community goals.',
+    description: 'Join Pokémon TCG collector challenges on SwapPulse, set completion races, pack opening contests, and community goals.',
     canonicalPath: '/challenges',
   });
   const { user } = useAuth();

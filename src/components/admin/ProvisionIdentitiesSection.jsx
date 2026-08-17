@@ -43,7 +43,7 @@ export default function ProvisionIdentitiesSection() {
         Ensures every existing user has a PDS identity (did:plc + username.swappulse.org
         handle) and a stored bridge credential on the current PDS. Users with an existing
         did:plc but no credential are repaired (app password re-issued) instead of
-        recreated. Idempotent — re-run until failed is 0.
+        recreated. Idempotent, re-run until failed is 0.
       </p>
       <button
         onClick={run}

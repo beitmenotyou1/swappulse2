@@ -67,7 +67,7 @@ async function resolveThreadRoot(parentUri) {
     if (thread?.post?.uri) {
       return { rootUri: thread.post.uri, rootCid: thread.post.cid || '' };
     }
-  } catch { /* ignore — fall back to parent as root */ }
+  } catch { /* ignore, fall back to parent as root */ }
   return null;
 }
 

@@ -126,7 +126,7 @@ export default function Register() {
       <AuthLayout
         icon={Mail}
         title="Confirm your email"
-        subtitle="Re-enter your email address to make sure it's correct — this is where we'll send your verification code"
+        subtitle="Re-enter your email address to make sure it's correct, this is where we'll send your verification code"
         footer={<button onClick={() => setStep("email")} className="text-primary font-medium hover:underline">Back to edit</button>}
       >
         {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
@@ -182,7 +182,7 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Create your account"
-      subtitle="Sign up — no password needed, just your email"
+      subtitle="Sign up, no password needed, just your email"
       footer={
         <>
           Already have an account?{" "}

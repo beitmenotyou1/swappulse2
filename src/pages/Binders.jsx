@@ -10,7 +10,7 @@ import useSEO from '@/hooks/useSEO';
 export default function Binders() {
   useSEO({
     title: 'Binders',
-    description: 'Browse and share Pokémon TCG collector binders on SwapPulse — curated showcase grids of favourite cards.',
+    description: 'Browse and share Pokémon TCG collector binders on SwapPulse, curated showcase grids of favourite cards.',
     canonicalPath: '/binders',
   });
   const [tab, setTab] = useState('mine');

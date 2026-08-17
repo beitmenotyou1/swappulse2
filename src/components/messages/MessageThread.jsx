@@ -104,7 +104,7 @@ export default function MessageThread({ conversation, myDid, onBack }) {
           <div className="flex justify-center py-10 text-sm text-muted-foreground">Loading…</div>
         ) : messages.length === 0 ? (
           <div className="flex justify-center py-10 text-center text-sm text-muted-foreground">
-            Say hello — send the first message.
+            Say hello, send the first message.
           </div>
         ) : (
           messages.map((m) => {

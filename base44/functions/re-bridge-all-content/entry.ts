@@ -60,7 +60,7 @@ export default async function(req: Request): Promise<Response> {
 
     const oldPds = await getOldPdsSession();
     if (!oldPds) {
-      console.warn('re-bridge-all: OLD_PDS_* secrets not set — old records will be orphaned on the old PDS (not deleted). Set OLD_PDS_URL / OLD_PDS_IDENTIFIER / OLD_PDS_APP_PASSWORD to enable cleanup.');
+      console.warn('re-bridge-all: OLD_PDS_* secrets not set, old records will be orphaned on the old PDS (not deleted). Set OLD_PDS_URL / OLD_PDS_IDENTIFIER / OLD_PDS_APP_PASSWORD to enable cleanup.');
     }
 
     async function deleteOldFromPds(oldUri: string) {

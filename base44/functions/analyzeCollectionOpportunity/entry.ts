@@ -47,11 +47,11 @@ export default async function(req) {
       '- TCGPlayer market price: ' + (tcgplayer.normal?.marketPrice || 'N/A') + '\n' +
       '- Cardmarket trend: ' + (cardmarket.trend || 'N/A') + '\n' +
       '- Price difference from stored value: ' + priceDiffPercent.toFixed(1) + '%\n\n' +
-      'Determine if this is a high-value trade opportunity — for example, the card has significantly ' +
+      'Determine if this is a high-value trade opportunity, for example, the card has significantly ' +
       'increased in value since acquisition (good time to sell/trade), or there is a notable price ' +
       'discrepancy between stored and current market data.\n\n' +
       'Respond with JSON:\n' +
-      '- high_value_opportunity: boolean (true only if genuinely high-value — significant price increase or strong trade signal)\n' +
+      '- high_value_opportunity: boolean (true only if genuinely high-value, significant price increase or strong trade signal)\n' +
       '- advice: a concise, specific trade recommendation (1-2 sentences referencing the card name and price)\n' +
       '- confidence: number 0-1';
 

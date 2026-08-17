@@ -64,7 +64,7 @@ export default async function(req: Request): Promise<Response> {
           const post = item.post || {};
           const author = post.author || {};
           const record = post.record || {};
-          if (record.reply) continue; // skip replies — show original posts only
+          if (record.reply) continue; // skip replies, show original posts only
           items.push({
             id: post.uri,
             content: record.text || '',

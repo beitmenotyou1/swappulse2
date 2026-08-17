@@ -44,11 +44,11 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
         feedback_type: 'correction',
         original_content: `User reported ${contentType} ${contentId} by @${authorHandle || 'unknown'}: "${preview}"`,
         corrected_content: `Report reason: ${reason}. Details: ${details.trim() || 'N/A'}`,
-        context_summary: `Community report — ${reason}`,
+        context_summary: `Community report, ${reason}`,
         processed: false,
       }).catch((e) => console.error('ReportDialog: AgentFeedback log failed', e?.message));
 
-      toast({ title: 'Report submitted', description: 'Thank you — our moderation team will review it.' });
+      toast({ title: 'Report submitted', description: 'Thank you, our moderation team will review it.' });
       setReason('');
       setDetails('');
       onOpenChange(false);

@@ -132,7 +132,7 @@ export default async function(req: Request): Promise<Response> {
           }).join('')
         : `<tr><td style="padding:12px 0;font-size:14px;color:${COLORS.muted};">No manual action items this week.</td></tr>`;
       const emailObj = buildAdminAlertEmail({
-        subject: `Weekly SEO Audit — Score ${score}/100`,
+        subject: `Weekly SEO Audit, Score ${score}/100`,
         preheader: `SEO audit complete: ${issuesFound} issues found, ${issuesFixed} auto-fixed.`,
         heading: 'Weekly SEO audit complete',
         bodyHtml: `

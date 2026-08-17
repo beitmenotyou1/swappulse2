@@ -34,7 +34,7 @@ const SECTIONS = [
 export default function Terms() {
   useSEO({
     title: 'Terms of Service',
-    description: 'SwapPulse Terms of Service — account responsibilities, trading, federation, privacy, and community guidelines.',
+    description: 'SwapPulse Terms of Service, account responsibilities, trading, federation, privacy, and community guidelines.',
     canonicalPath: '/terms',
   });
   return (
@@ -42,7 +42,7 @@ export default function Terms() {
       <PageHeader title="Terms of Service" subtitle={`Last updated: ${LAST_UPDATED}`} />
       <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="flex gap-8">
-          {/* Table of contents — sticky on desktop */}
+          {/* Table of contents, sticky on desktop */}
           <nav className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-20">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contents</p>
@@ -93,15 +93,15 @@ export default function Terms() {
             </p>
             <p>SwapPulse includes the following feature areas:</p>
             <ul>
-              <li><strong>Collection management</strong> — track cards, portfolio value, set completion, duplicates, and insurance exports.</li>
-              <li><strong>Peer-to-peer trading</strong> — trade listings, threaded negotiations, trade chains, fairness scoring, and disputes.</li>
-              <li><strong>Social features</strong> — posts, comments, reactions, reposts, follows, journals, binders, card reviews, and stories.</li>
-              <li><strong>Direct messages</strong> — end-to-end encrypted 1:1 conversations.</li>
-              <li><strong>Voice spaces & podcasts</strong> — live audio spaces (external stream or in-platform WebRTC), recordings, and podcast distribution via RSS.</li>
-              <li><strong>AI tools</strong> — card scanner, trade assistant, market watch assistant, collection advisor, and other AI assistants.</li>
-              <li><strong>Community</strong> — circles, meetups, challenges, achievements, pack parties, pull of the week, and predictions.</li>
-              <li><strong>Market data</strong> — card price tracking, price alerts, and market watch.</li>
-              <li><strong>Trust & reputation</strong> — vouches, trading feedback, and trusted-trader status.</li>
+              <li><strong>Collection management</strong>, track cards, portfolio value, set completion, duplicates, and insurance exports.</li>
+              <li><strong>Peer-to-peer trading</strong>, trade listings, threaded negotiations, trade chains, fairness scoring, and disputes.</li>
+              <li><strong>Social features</strong>, posts, comments, reactions, reposts, follows, journals, binders, card reviews, and stories.</li>
+              <li><strong>Direct messages</strong>, end-to-end encrypted 1:1 conversations.</li>
+              <li><strong>Voice spaces & podcasts</strong>, live audio spaces (external stream or in-platform WebRTC), recordings, and podcast distribution via RSS.</li>
+              <li><strong>AI tools</strong>, card scanner, trade assistant, market watch assistant, collection advisor, and other AI assistants.</li>
+              <li><strong>Community</strong>, circles, meetups, challenges, achievements, pack parties, pull of the week, and predictions.</li>
+              <li><strong>Market data</strong>, card price tracking, price alerts, and market watch.</li>
+              <li><strong>Trust & reputation</strong>, vouches, trading feedback, and trusted-trader status.</li>
             </ul>
 
             <h2 id="accounts" className="mt-8 scroll-mt-20 text-xl font-bold">3. Account Registration & Responsibilities</h2>
@@ -115,7 +115,7 @@ export default function Terms() {
               <li>Not create accounts on behalf of others without their permission.</li>
               <li>Notify us promptly of any unauthorized use of your account.</li>
               <li>Use a single account; duplicate or spam accounts may be removed.</li>
-              <li>Safeguard your E2EE private key — clearing your browser data will permanently remove your access to encrypted direct messages (see Section 7).</li>
+              <li>Safeguard your E2EE private key, clearing your browser data will permanently remove your access to encrypted direct messages (see Section 7).</li>
             </ul>
 
             <h2 id="federation" className="mt-8 scroll-mt-20 text-xl font-bold">4. AT Protocol Federation & Data Portability</h2>
@@ -133,7 +133,7 @@ export default function Terms() {
               <li>Your content is stored on a federated server and is publicly readable across the AT Protocol network.</li>
               <li>You can export your data at any time and migrate it to another PDS or compatible application.</li>
               <li>Deleting content on SwapPulse does not guarantee removal from all federated caches or third-party archives.</li>
-              <li>Your AT Protocol identity (DID and handle) is yours and portable — you are not locked into SwapPulse.</li>
+              <li>Your AT Protocol identity (DID and handle) is yours and portable, you are not locked into SwapPulse.</li>
               <li>Direct message bodies are end-to-end encrypted before mirroring; only ciphertext is federated.</li>
               <li>Posts with attached cards include an app.bsky.embed.external embed (card page URL, image, localized name) so the card renders on Bluesky and deep-links back to SwapPulse.</li>
             </ul>
@@ -142,7 +142,7 @@ export default function Terms() {
             <p>
               SwapPulse facilitates peer-to-peer trading of physical Pokémon TCG cards between collectors, including
               multi-party trade chains (3–5 participants shipping cards in sequence). SwapPulse is a{' '}
-              <strong>facilitator only</strong> — we do not act as a party to any trade, hold funds, or guarantee
+              <strong>facilitator only</strong>, we do not act as a party to any trade, hold funds, or guarantee
               the condition, authenticity, or delivery of any card.
             </p>
             <p>You acknowledge that:</p>
@@ -203,7 +203,7 @@ export default function Terms() {
             </p>
             <p>
               <strong>Scanner corrections:</strong> When you submit a correction to a scan result, you grant SwapPulse a
-              license to use that correction — including the card photo and your correction — to evaluate and improve
+              license to use that correction, including the card photo and your correction, to evaluate and improve
               the scanner model's accuracy. Corrections are processed in anonymized form where possible.
             </p>
             <p>
@@ -273,7 +273,7 @@ export default function Terms() {
             <h2 id="donations" className="mt-8 scroll-mt-20 text-xl font-bold">14. Donations & Payments</h2>
             <p>
               SwapPulse is funded by voluntary donations processed by <strong>Base44 Payments</strong>. Donations are
-              voluntary and do not unlock any paid features — all features remain free regardless of whether you
+              voluntary and do not unlock any paid features, all features remain free regardless of whether you
               donate. By making a donation:
             </p>
             <ul>

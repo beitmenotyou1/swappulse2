@@ -99,7 +99,7 @@ export default async function(req) {
       target_post_id: post.id,
       target_author: post.author_handle || authorId,
       labels_affected: ['toxic', label_id],
-      notes: 'Strike ' + currentStrikes + (shouldRestrict ? ' — account restricted' : '') +
+      notes: 'Strike ' + currentStrikes + (shouldRestrict ? ', account restricted' : '') +
              '. Trade assistant review: ' + (reviewResponse.assessment || '').slice(0, 200),
       auto_generated: true
     });

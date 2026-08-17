@@ -5,10 +5,10 @@ import { Sparkles, Compass, Scan, ArrowLeftRight, Users, User, X, ArrowRight } f
 const STEPS = [
   { icon: Sparkles, title: "Welcome to SwapPulse!", body: "The decentralized social network for Pokémon TCG collectors. Let's take a quick tour of the key features.", color: "text-primary" },
   { icon: Compass, title: "Explore the catalog", body: "Browse thousands of cards from every set. Check prices, variants, and join community discussions on any card.", color: "text-accent" },
-  { icon: Scan, title: "Scan your cards", body: "Use the AI scanner to instantly identify and add cards to your collection by photo — no manual searching needed.", color: "text-success" },
+  { icon: Scan, title: "Scan your cards", body: "Use the AI scanner to instantly identify and add cards to your collection by photo, no manual searching needed.", color: "text-success" },
   { icon: ArrowLeftRight, title: "Trade with collectors", body: "List cards for trade, negotiate with others, and build your reputation in the community trust graph.", color: "text-warning" },
   { icon: Users, title: "Join the community", body: "Follow collectors, join circles, participate in challenges, and attend local meetups.", color: "text-primary" },
-  { icon: User, title: "Your profile", body: "This is your home base. Edit your bio, showcase your binder, and manage your collection — all in your control.", color: "text-accent" },
+  { icon: User, title: "Your profile", body: "This is your home base. Edit your bio, showcase your binder, and manage your collection, all in your control.", color: "text-accent" },
 ];
 
 export default function OnboardingTour({ onComplete }) {

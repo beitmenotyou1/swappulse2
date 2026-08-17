@@ -10,7 +10,7 @@ export function buildActivationEmail(name: string, link: string) {
   const bodyHtml = `
     <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">Welcome to SwapPulse!</h1>
     <p style="margin:0 0 16px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'collector')}, activate your account to join the collector community. Click the button below to verify your email — the link is valid for 48 hours.
+      Hi ${esc(name || 'collector')}, activate your account to join the collector community. Click the button below to verify your email, the link is valid for 48 hours.
     </p>
     <p style="margin:0 0 8px;font-size:14px;color:${COLORS.muted};line-height:1.7;">
       After activating, enter the 6-digit code from your verification email on the activation page.
@@ -19,7 +19,7 @@ export function buildActivationEmail(name: string, link: string) {
     subject: 'Activate your SwapPulse account',
     html: buildBrandedHtml({
       subject: 'Activate your SwapPulse account',
-      preheader: 'Welcome to SwapPulse — activate your account to join the collector community.',
+      preheader: 'Welcome to SwapPulse, activate your account to join the collector community.',
       bodyHtml,
       ctaLink: link,
       ctaLabel: 'Activate Account',
@@ -54,9 +54,9 @@ export function buildActivationWarningEmail(name: string, link: string) {
       Activate now to keep your collection, trades, and profile. After activating, enter the 6-digit code from your verification email.
     </p>`;
   return {
-    subject: 'Activate your SwapPulse account — action required',
+    subject: 'Activate your SwapPulse account, action required',
     html: buildBrandedHtml({
-      subject: 'Activate your SwapPulse account — action required',
+      subject: 'Activate your SwapPulse account, action required',
       preheader: 'Your account will be deleted if not activated. Activate now.',
       bodyHtml,
       ctaLink: link,
@@ -65,7 +65,7 @@ export function buildActivationWarningEmail(name: string, link: string) {
       footerReason: "You're receiving this because your SwapPulse account is not yet activated. If you didn't create this account, ignore this email.",
     }),
     text: buildPlainText(
-      'Activate your SwapPulse account — action required',
+      'Activate your SwapPulse account, action required',
       [
         `Hi ${name || 'there'},`,
         '',
@@ -100,7 +100,7 @@ export function buildDay1Email(name: string) {
     subject: 'Your first 3 steps on SwapPulse',
     html: buildBrandedHtml({
       subject: 'Your first 3 steps on SwapPulse',
-      preheader: 'Three things every collector does on day one — add cards, scan, check your feed.',
+      preheader: 'Three things every collector does on day one, add cards, scan, check your feed.',
       bodyHtml,
       ctaLink: `${APP_URL}/`,
       ctaLabel: 'Open SwapPulse',
@@ -169,15 +169,15 @@ export function buildDay3Email(name: string, matches: number) {
       [
         `Ready to trade, ${name || 'collector'}?`,
         '',
-        ...(matches > 0 ? [`${matches} trade match${matches === 1 ? '' : 'es'} found — someone wants what you have.`, ''] : []),
+        ...(matches > 0 ? [`${matches} trade match${matches === 1 ? '' : 'es'} found, someone wants what you have.`, ''] : []),
         'How trading works on SwapPulse:',
         '  1. List what you offer and what you want (public, wishlist-only, or circle-scoped).',
-        '  2. Smart matchmaking finds matches — both parties get notified.',
+        '  2. Smart matchmaking finds matches, both parties get notified.',
         '  3. Negotiate privately in the trade thread.',
         '  4. Check the fairness meter to balance card values and conditions.',
         '  5. Leave trading feedback to build your trust score.',
         '',
-        'Show off your binder — ten pages, six slots each, six themes.',
+        'Show off your binder, ten pages, six slots each, six themes.',
         `  -> Binders: ${APP_URL}/binders`,
         `  -> Trade Floor: ${APP_URL}/trades`,
       ],
@@ -205,12 +205,12 @@ export function buildDay7Email(name: string) {
     subject: 'Level up your SwapPulse experience',
     html: buildBrandedHtml({
       subject: 'Level up your SwapPulse experience',
-      preheader: 'Four features most collectors haven\'t discovered yet — market watch, journals, meetups, go live.',
+      preheader: 'Four features most collectors haven\'t discovered yet, market watch, journals, meetups, go live.',
       bodyHtml,
       ctaLink: `${APP_URL}/`,
       ctaLabel: 'Explore SwapPulse',
       accentColor: COLORS.gold,
-      footerReason: "You're receiving this because you joined SwapPulse. We'd love your feedback — hit the Feedback button in the app.",
+      footerReason: "You're receiving this because you joined SwapPulse. We'd love your feedback, hit the Feedback button in the app.",
     }),
     text: buildPlainText(
       'Level up your SwapPulse experience',
@@ -219,21 +219,21 @@ export function buildDay7Email(name: string) {
         '',
         "You've got the basics down. Here are four features most collectors haven't discovered yet.",
         '',
-        'Market Watch — track collection value, set price alerts, vote in sentiment polls.',
+        'Market Watch, track collection value, set price alerts, vote in sentiment polls.',
         `  -> ${APP_URL}/market`,
         '',
-        'Collector Journals — write long-form articles, embed card stats, tag your pieces.',
+        'Collector Journals, write long-form articles, embed card stats, tag your pieces.',
         `  -> ${APP_URL}/profile`,
         '',
-        'Local Meetups — find collectors near you. Trust-gated with pre-meetup trade matching.',
+        'Local Meetups, find collectors near you. Trust-gated with pre-meetup trade matching.',
         `  -> ${APP_URL}/meetups`,
         '',
-        'Go Live — paste your stream URL, set a duration, go live. Recordings become podcasts.',
+        'Go Live, paste your stream URL, set a duration, go live. Recordings become podcasts.',
         `  -> ${APP_URL}/spaces`,
         '',
         'Bonus: claim a custom domain handle like @yourbrand.com via DNS verification.',
         '',
-        "We'd love your feedback — hit the Feedback button in the app.",
+        "We'd love your feedback, hit the Feedback button in the app.",
       ],
       `${APP_URL}/`,
       'Explore SwapPulse',
@@ -318,7 +318,7 @@ export function buildWeeklyDigestEmail(name: string, stats: {
     <table width="100%" cellpadding="0" cellspacing="0">${wishHtml}</table>`;
 
   const recentText = stats.recentCards.length > 0
-    ? stats.recentCards.map((c) => `  • ${c.name} — ${c.setValue}`).join('\n')
+    ? stats.recentCards.map((c) => `  • ${c.name}, ${c.setValue}`).join('\n')
     : '  No new cards this week.';
   const wishText = stats.wishlist.length > 0
     ? stats.wishlist.map((w) => `  • ${w.name}${w.maxPrice ? ' (max ' + w.maxPrice + ')' : ''}`).join('\n')
@@ -338,7 +338,7 @@ export function buildWeeklyDigestEmail(name: string, stats: {
     text: buildPlainText(
       'Your SwapPulse Weekly Digest',
       [
-        `Hi ${name || 'collector'} — here's your week in cards.`,
+        `Hi ${name || 'collector'}, here's your week in cards.`,
         '',
         `Cards: ${stats.cardCount}`,
         `Portfolio: ${stats.portfolioValue}`,

@@ -127,8 +127,8 @@ export default function GoLiveModal({ onClose, onLive }) {
       toast({
         title: mode === 'in_platform' ? 'Your Space is live!' : 'You are live!',
         description: mode === 'in_platform'
-          ? 'Share the stage — listeners can join now.'
-          : `Streaming for ${effectiveDuration} min — your profile ring is now red.`,
+          ? 'Share the stage, listeners can join now.'
+          : `Streaming for ${effectiveDuration} min, your profile ring is now red.`,
       });
       onLive?.(space);
       onClose?.();
@@ -296,7 +296,7 @@ export default function GoLiveModal({ onClose, onLive }) {
           </div>
           <p className="rounded-xl bg-secondary px-3 py-2 text-xs text-muted-foreground">
             {mode === 'in_platform' ? 'Your Space' : 'Stream'} will auto-end in <b className="text-foreground">{effectiveDuration}</b> minutes
-            (around {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) — or end it manually.
+            (around {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}), or end it manually.
           </p>
           <button
             onClick={submit}

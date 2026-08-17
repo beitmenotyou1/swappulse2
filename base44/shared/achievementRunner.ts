@@ -139,7 +139,7 @@ export async function fetchProofDataForUser(
 
 export function buildRevocationReason(key: string): string {
   const name = ACHIEVEMENT_CONFIG[key]?.name || key;
-  return `Your ${name} achievement was revoked — the eligibility proof no longer holds. (Revocation finalized after the ${GLOBAL_SETTINGS.revocation_grace_period_hours}h grace period.)`;
+  return `Your ${name} achievement was revoked, the eligibility proof no longer holds. (Revocation finalized after the ${GLOBAL_SETTINGS.revocation_grace_period_hours}h grace period.)`;
 }
 
 // Captures an immutable proof snapshot for a freshly granted achievement and

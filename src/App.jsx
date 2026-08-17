@@ -117,7 +117,7 @@ const AuthenticatedApp = () => {
       <Route path="/robots.txt" element={<RobotsTxt />} />
       <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
-      {/* Public browsable content — no login required */}
+      {/* Public browsable content, no login required */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<Explore />} />
@@ -153,7 +153,7 @@ const AuthenticatedApp = () => {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />
       </Route>
-      {/* Auth required — login gate */}
+      {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
           <Route path="/compose" element={<Compose />} />

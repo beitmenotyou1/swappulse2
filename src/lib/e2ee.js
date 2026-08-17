@@ -112,7 +112,7 @@ export async function publishPublicKey() {
       return;
     }
     await base44.entities.DmPublicKey.create({ did, public_key });
-  } catch { /* ignore — encryption falls back to plaintext */ }
+  } catch { /* ignore, encryption falls back to plaintext */ }
 }
 
 // Fetch a user's published public key JWK by DID.

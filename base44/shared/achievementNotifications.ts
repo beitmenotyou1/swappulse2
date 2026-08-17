@@ -15,7 +15,7 @@ export function buildRestorationPath(cfg: any): string {
     case 'reputation':
       return 'Regain enough distinct vouches from trusted traders and avoid recent vouch revocations.';
     case 'contribution':
-      return 'Restore the underlying contribution — scanner corrections, binder engagement, hosted events, or card reviews.';
+      return 'Restore the underlying contribution, scanner corrections, binder engagement, hosted events, or card reviews.';
     default:
       return 'Regain the eligibility proof defined in the achievement criteria.';
   }

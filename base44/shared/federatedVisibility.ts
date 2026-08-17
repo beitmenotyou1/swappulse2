@@ -64,7 +64,7 @@ export async function canViewWishlist(svc: any, wishlistAtUri: string, viewerDid
 // member of that circle.
 export async function canViewCircleScopedListing(svc: any, listing: any, viewerDid: string): Promise<boolean> {
   if (!listing) return false;
-  if (listing.visibility !== 'circle_scoped') return true; // public or wishlist_only — not circle-scoped
-  if (!listing.circle_ref) return false; // scoped but no circle ref — fail closed
+  if (listing.visibility !== 'circle_scoped') return true; // public or wishlist_only, not circle-scoped
+  if (!listing.circle_ref) return false; // scoped but no circle ref, fail closed
   return canViewCircleContent(svc, listing.circle_ref, viewerDid);
 }

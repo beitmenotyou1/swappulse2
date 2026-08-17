@@ -134,7 +134,7 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold">Profile picture</p>
-                <p className="text-xs text-muted-foreground">Optional — you can add it later</p>
+                <p className="text-xs text-muted-foreground">Optional, you can add it later</p>
               </div>
             </div>
             <UsernameField value={username} onChange={setUsername} />

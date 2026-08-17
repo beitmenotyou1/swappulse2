@@ -103,7 +103,7 @@ export default function AtProtoSection({ settings, update }) {
         <p className="mt-1 text-xs text-muted-foreground">
           Download your full SwapPulse data as an AT Protocol-compatible repository archive.
           Includes all your posts, collection entries, trade listings, follows, achievements,
-          and more — portable to any compatible PDS.
+          and more, portable to any compatible PDS.
         </p>
         <button
           onClick={handleExport}
@@ -170,7 +170,7 @@ export default function AtProtoSection({ settings, update }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm PDS migration</AlertDialogTitle>
               <AlertDialogDescription>
-                This will transfer all your SwapPulse records to <strong className="text-foreground break-all">{newPdsUrl}</strong>. The migration is irreversible — make sure you have access to the new PDS and can update your PLC directory entry afterward.
+                This will transfer all your SwapPulse records to <strong className="text-foreground break-all">{newPdsUrl}</strong>. The migration is irreversible, make sure you have access to the new PDS and can update your PLC directory entry afterward.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -195,9 +195,9 @@ export default function AtProtoSection({ settings, update }) {
             <Globe className="h-3 w-3" />
             Feed Generator: <span className="font-medium text-foreground">did:web:feed.swappulse.org</span>
           </p>
-          <p>• Active Trade Listings feed — public</p>
-          <p>• Collection Posts feed — public</p>
-          <p>• Who to Follow feed — personalized</p>
+          <p>• Active Trade Listings feed, public</p>
+          <p>• Collection Posts feed, public</p>
+          <p>• Who to Follow feed, personalized</p>
           <p className="mt-1.5">Labeler: <span className="font-medium text-foreground">did:web:labeler.swappulse.org</span></p>
           <p>Bridge: Session auto-refresh enabled</p>
           <p>PDS Sync: Every 5 minutes (scheduled polling)</p>

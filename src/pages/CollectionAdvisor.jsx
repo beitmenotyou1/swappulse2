@@ -192,7 +192,7 @@ export default function CollectionAdvisor() {
               <div>
                 <h2 className="text-lg font-bold">Collection Advisor</h2>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Get an AI analysis of your collection — find duplicates to trade, gaps to fill, cards to showcase, and active trade opportunities.
+                  Get an AI analysis of your collection, find duplicates to trade, gaps to fill, cards to showcase, and active trade opportunities.
                 </p>
               </div>
               <Button onClick={createNew}>

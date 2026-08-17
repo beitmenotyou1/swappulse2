@@ -13,7 +13,7 @@ import useSEO from '@/hooks/useSEO';
 export default function PackParties() {
   useSEO({
     title: 'Pack Parties',
-    description: 'Join synchronised Pokémon TCG pack-opening events on SwapPulse — open together and share reactions live.',
+    description: 'Join synchronised Pokémon TCG pack-opening events on SwapPulse, open together and share reactions live.',
     canonicalPath: '/pack-parties',
   });
   const [user, setUser] = useState(null);

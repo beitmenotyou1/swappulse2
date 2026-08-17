@@ -15,7 +15,7 @@ import useSEO from '@/hooks/useSEO';
 export default function TradeBoard() {
   useSEO({
     title: 'Trade Board',
-    description: 'Browse and post open Pokémon TCG trade listings on the SwapPulse trade board — peer-to-peer card exchange.',
+    description: 'Browse and post open Pokémon TCG trade listings on the SwapPulse trade board, peer-to-peer card exchange.',
     canonicalPath: '/trades',
   });
   const [listings, setListings] = useState([]);
@@ -379,7 +379,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       } else {
         toast({
           title: '⚠️ Listing published locally',
-          description: 'PDS sync failed — your listing is live but not yet federated.',
+          description: 'PDS sync failed, your listing is live but not yet federated.',
           variant: 'destructive',
           duration: 6000,
         });

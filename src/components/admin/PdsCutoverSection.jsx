@@ -82,7 +82,7 @@ export default function PdsCutoverSection() {
         title: data.ok ? 'Federation verified' : 'Verification incomplete',
         description: data.ok
           ? `Handle @${data.handle} resolves and ${data.postsOnPds} posts found on the PDS.`
-          : 'Handle not yet resolvable and no posts found — allow time for propagation, then re-run.',
+          : 'Handle not yet resolvable and no posts found, allow time for propagation, then re-run.',
         variant: data.ok ? 'default' : 'destructive',
       });
     } catch (err) {
@@ -107,7 +107,7 @@ export default function PdsCutoverSection() {
     <section className="rounded-xl border border-border bg-card p-4 shadow-base">
       <h2 className="mb-1 flex items-center gap-2 font-bold">
         <ServerCog className="h-4 w-4 text-primary" />
-        PDS Cutover — Switch to Self-Hosted PDS
+        PDS Cutover, Switch to Self-Hosted PDS
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">
         Runs the full migration to your new self-hosted PDS. Complete the prerequisites below first, then run each step in order.
@@ -121,7 +121,7 @@ export default function PdsCutoverSection() {
           <li>Create a shared bridge account on the new PDS (the one <code className="font-mono">PDS_IDENTIFIER</code> authenticates).</li>
           <li>Set <code className="font-mono">PDS_INVITE_REQUIRED=false</code> on the new PDS (or pre-generate invite codes).</li>
           <li>Point <code className="font-mono">*.swappulse.org</code> DNS at the new PDS so handles resolve.</li>
-          <li><em>Optional:</em> set <code className="font-mono">OLD_PDS_URL</code> / <code className="font-mono">OLD_PDS_IDENTIFIER</code> / <code className="font-mono">OLD_PDS_APP_PASSWORD</code> to the <strong>old</strong> PDS values so step 2 can delete old records. If unset, old records are orphaned (not deleted) — that's safe.</li>
+          <li><em>Optional:</em> set <code className="font-mono">OLD_PDS_URL</code> / <code className="font-mono">OLD_PDS_IDENTIFIER</code> / <code className="font-mono">OLD_PDS_APP_PASSWORD</code> to the <strong>old</strong> PDS values so step 2 can delete old records. If unset, old records are orphaned (not deleted), that's safe.</li>
           <li>Then update <code className="font-mono">PDS_URL</code> / <code className="font-mono">PDS_IDENTIFIER</code> / <code className="font-mono">PDS_APP_PASSWORD</code> / <code className="font-mono">PDS_ADMIN_PASSWORD</code> to the new PDS.</li>
         </ul>
       </div>
@@ -153,7 +153,7 @@ export default function PdsCutoverSection() {
             Migrate & re-bridge content
           </p>
           <p className="mb-2 text-xs text-muted-foreground">
-            Re-creates each user's posts, reposts, likes, and follows on the new PDS under their new DID, then deletes old records from the old PDS. Processes 25 users per run — re-run until rebridged stops increasing.
+            Re-creates each user's posts, reposts, likes, and follows on the new PDS under their new DID, then deletes old records from the old PDS. Processes 25 users per run, re-run until rebridged stops increasing.
           </p>
           <StepButton id="migrate" label="Migrate Content" icon={RefreshCw} onClick={runMigrate} done={!!migrateResult} />
           {migrateResult && (
@@ -164,7 +164,7 @@ export default function PdsCutoverSection() {
                 <div className="rounded-lg bg-secondary p-2 text-center"><p className={`font-bold ${migrateResult.oldPdsConnected ? 'text-success' : 'text-warning'}`}>{migrateResult.oldPdsConnected ? 'Yes' : 'No'}</p><p className="text-xs text-muted-foreground">Old PDS cleanup</p></div>
               </div>
               {!migrateResult.oldPdsConnected && (
-                <p className="mt-1.5 text-warning">OLD_PDS_* secrets not set — old records were orphaned, not deleted.</p>
+                <p className="mt-1.5 text-warning">OLD_PDS_* secrets not set, old records were orphaned, not deleted.</p>
               )}
             </div>
           )}
@@ -177,7 +177,7 @@ export default function PdsCutoverSection() {
             Verify federation
           </p>
           <p className="mb-2 text-xs text-muted-foreground">
-            Checks that a provisioned user's handle resolves on the federated network and their posts are present on the new PDS. Handles can take a few minutes to propagate — re-run if it fails initially.
+            Checks that a provisioned user's handle resolves on the federated network and their posts are present on the new PDS. Handles can take a few minutes to propagate, re-run if it fails initially.
           </p>
           <StepButton id="verify" label="Verify Federation" icon={CheckCircle2} onClick={runVerify} done={!!verifyResult?.ok} />
           {verifyResult && (
@@ -208,7 +208,7 @@ export default function PdsCutoverSection() {
             <div className="rounded-lg bg-background p-1.5"><p className="font-bold">{blobStats.total || 0}</p><p className="text-muted-foreground">Total media</p></div>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">{blobLoading ? 'Loading…' : 'No blob data yet — run a scan to populate.'}</p>
+          <p className="text-xs text-muted-foreground">{blobLoading ? 'Loading…' : 'No blob data yet, run a scan to populate.'}</p>
         )}
         <p className="mt-1.5 text-[11px] text-muted-foreground">New uploads are stored as PDS blobs (portable & federated); legacy media stays on external storage until re-uploaded.</p>
       </div>

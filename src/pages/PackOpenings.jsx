@@ -8,7 +8,7 @@ import useSEO from '@/hooks/useSEO';
 export default function PackOpenings() {
   useSEO({
     title: 'Pack Openings',
-    description: 'See the latest pack pulls from the SwapPulse community — fresh Pokémon TCG openings shared in real time.',
+    description: 'See the latest pack pulls from the SwapPulse community, fresh Pokémon TCG openings shared in real time.',
     canonicalPath: '/packs',
   });
   const [posts, setPosts] = useState([]);

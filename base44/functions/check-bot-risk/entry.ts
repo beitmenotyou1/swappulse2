@@ -23,7 +23,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     let user: any = null;
-    try { user = await base44.auth.me(); } catch { /* no session — auth flow */ }
+    try { user = await base44.auth.me(); } catch { /* no session, auth flow */ }
 
     const verdict = await checkBotRisk(svc, {
       user, actionType, content, req, captchaToken, challengeToken, anonId,

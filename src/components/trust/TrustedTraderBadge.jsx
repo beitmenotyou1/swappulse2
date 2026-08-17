@@ -14,7 +14,7 @@ export default function TrustedTraderBadge({ did, size = 'sm', className = '' })
 
   return (
     <span
-      title="Trusted Trader — 50+ vouches"
+      title="Trusted Trader, 50+ vouches"
       className={`inline-flex items-center gap-0.5 rounded-full bg-accent/15 ${pad} text-accent ${className}`}
     >
       <ShieldCheck className={`${icon} fill-accent/20`} />

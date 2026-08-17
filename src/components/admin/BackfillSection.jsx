@@ -40,7 +40,7 @@ export default function BackfillSection() {
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">
         Bridges existing local follows to the AT Protocol as real app.bsky.graph.follow records.
-        Idempotent — run until failed is 0.
+        Idempotent, run until failed is 0.
       </p>
       <button
         onClick={run}

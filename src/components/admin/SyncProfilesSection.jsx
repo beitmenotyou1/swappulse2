@@ -44,7 +44,7 @@ export default function SyncProfilesSection() {
         Creates an app.bsky.actor.profile record on the PDS for every provisioned user from
         their local display name, avatar, and bio, so Bluesky and other AT Protocol apps show
         real profiles instead of blank accounts. Run after "Provision Federated Identities".
-        Idempotent — re-run until failed is 0.
+        Idempotent, re-run until failed is 0.
       </p>
       <button
         onClick={run}

@@ -123,7 +123,7 @@ export default function DataPrivacyRightsSection() {
         <p className="flex items-center gap-2 text-sm font-bold"><Download className="h-4 w-4 text-primary" /> Download your data</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Export a complete archive of your SwapPulse data as JSON. This includes your collection, trades, posts,
-          binders, journals, messages, and settings — your full data portability right.
+          binders, journals, messages, and settings, your full data portability right.
         </p>
         <Button className="mt-3" size="sm" onClick={handleExport} disabled={exporting}>
           {exporting ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing archive…</> : <><Download className="h-4 w-4" /> Download my data</>}
@@ -196,12 +196,12 @@ export default function DataPrivacyRightsSection() {
             onChange={(e) => setRequestType(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
           >
-            <option value="rectification">Rectification — correct inaccurate data</option>
-            <option value="objection">Objection — stop certain processing</option>
-            <option value="restriction">Restriction — limit processing temporarily</option>
-            <option value="erasure">Erasure — request data deletion</option>
-            <option value="access">Access — request a copy (via email)</option>
-            <option value="portability">Portability — data transfer request</option>
+            <option value="rectification">Rectification, correct inaccurate data</option>
+            <option value="objection">Objection, stop certain processing</option>
+            <option value="restriction">Restriction, limit processing temporarily</option>
+            <option value="erasure">Erasure, request data deletion</option>
+            <option value="access">Access, request a copy (via email)</option>
+            <option value="portability">Portability, data transfer request</option>
             <option value="consent_withdrawal">Consent withdrawal</option>
           </select>
           <Textarea

@@ -68,7 +68,7 @@ export default function PullOfTheWeek() {
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Pull of the Week" subtitle={`Week ${weekKey} — nominate your best pull and vote`}>
+      <PageHeader title="Pull of the Week" subtitle={`Week ${weekKey}, nominate your best pull and vote`}>
         {user && !showNominate && (
           <Button size="sm" onClick={() => setShowNominate(true)}>
             <Plus className="h-4 w-4" /> Nominate

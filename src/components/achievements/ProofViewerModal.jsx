@@ -53,7 +53,7 @@ export default function ProofViewerModal({ spec, achievement, onClose }) {
 
           {revoked && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-              This achievement has been revoked — the eligibility proof no longer holds.
+              This achievement has been revoked, the eligibility proof no longer holds.
             </div>
           )}
           {pending && (

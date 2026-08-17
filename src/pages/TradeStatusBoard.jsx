@@ -19,7 +19,7 @@ const COLUMNS = [
 export default function TradeStatusBoard() {
   useSEO({
     title: 'Trade Status Board',
-    description: 'Track the status of Pokémon TCG trades on SwapPulse — open, negotiating, shipping, and completed trades.',
+    description: 'Track the status of Pokémon TCG trades on SwapPulse, open, negotiating, shipping, and completed trades.',
     canonicalPath: '/trade-board',
   });
   const [allTrades, setAllTrades] = useState([]);

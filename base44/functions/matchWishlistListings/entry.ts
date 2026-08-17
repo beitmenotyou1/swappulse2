@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
                   recipientDid: listingOwner.did,
                   type: 'price_alert',
                   title: 'Cross-instance wishlist match!',
-                  body: `A remote collector wants ${listing.card_name} — you have it listed`,
+                  body: `A remote collector wants ${listing.card_name}, you have it listed`,
                   params: { cardId: listing.card_id, listingId: listing.id },
                   imageUrl: listing.card_image,
                   priority: 'standard',
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
         notifiedKeys.add(dedupKey);
 
         const priceStr = `${listing.currency} ${Number(listing.price).toFixed(2)}`;
-        const withinBudget = w.max_price != null ? ' — within your max budget' : '';
+        const withinBudget = w.max_price != null ? ', within your max budget' : '';
 
         // Send push notification via dispatcher
         try {
@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
           actor_name: listing.seller_name || '',
           target_type: 'listing',
           target_path: '/market',
-          target_label: `${listing.card_name} — ${priceStr}`,
+          target_label: `${listing.card_name}, ${priceStr}`,
           target_image: listing.card_image,
           is_read: false,
           metadata: { listing_id: listing.id, price: listing.price, currency: listing.currency },

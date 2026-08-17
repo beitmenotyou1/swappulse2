@@ -12,29 +12,29 @@ import useSEO from '@/hooks/useSEO';
 
 const FEATURES = [
   { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalog via TCGDex, by set, rarity, or illustrator.' },
-  { to: '/scan', icon: ScanLine, label: 'Scan Cards', desc: 'Photograph a card and the AI scanner identifies it — confirm or correct the match to help the model learn.' },
+  { to: '/scan', icon: ScanLine, label: 'Scan Cards', desc: 'Photograph a card and the AI scanner identifies it, confirm or correct the match to help the model learn.' },
   { to: '/collection', icon: Layers, label: 'Collection', desc: 'Track every card you own, with portfolio value, set completion, duplicates, and insurance exports.' },
   { to: '/sets', icon: Library, label: 'Sets', desc: 'Browse sets, download checklists, track set completion, and find set buddies working on the same set.' },
-  { to: '/binders', icon: BookOpen, label: 'Binders', desc: 'Curate and share showcase binders — 3×3 or 9×9 grids, drag-to-reorder, themed covers.' },
+  { to: '/binders', icon: BookOpen, label: 'Binders', desc: 'Curate and share showcase binders, 3×3 or 9×9 grids, drag-to-reorder, themed covers.' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', desc: 'List cards you have and want, negotiate in threaded trade chats with fairness scoring.' },
   { to: '/trade-dashboard', icon: LayoutDashboard, label: 'Trade Dashboard', desc: 'Manage your active trades, track shipping status, and view trade history all in one place.' },
-  { to: '/circles', icon: Users, label: 'Circles', desc: 'Join themed collector circles — vintage, competitive, shiny, regional, and more.' },
+  { to: '/circles', icon: Users, label: 'Circles', desc: 'Join themed collector circles, vintage, competitive, shiny, regional, and more.' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups', desc: 'Organise or attend in-person meetups, swaps, and live pulls near you.' },
   { to: '/spaces', icon: Radio, label: 'Live Voice Spaces', desc: 'Go live with an external stream URL or host an in-platform WebRTC audio space. Record and publish as podcasts.' },
   { to: '/packs', icon: Package, label: 'Pack Openings', desc: 'Share your pulls and follow collectors to see fresh pack openings in your feed.' },
-  { to: '/pack-parties', icon: PartyPopper, label: 'Pack Parties', desc: 'Join synchronised pack-opening events — open the same set at the same time and share reactions live.' },
+  { to: '/pack-parties', icon: PartyPopper, label: 'Pack Parties', desc: 'Join synchronised pack-opening events, open the same set at the same time and share reactions live.' },
   { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of the Week', desc: 'Nominate your best pull each week and vote on the community\'s top pulls.' },
   { to: '/market', icon: BarChart3, label: 'Market Watch', desc: 'Track card prices, set price alerts, and watch market trends over time.' },
   { to: '/predictions', icon: Vote, label: 'Predictions', desc: 'Create and vote on community sentiment polls about cards and the meta.' },
   { to: '/grading', icon: Award, label: 'Grading', desc: 'Prepare grading submissions and review condition reports for your cards.' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust', desc: 'Build reputation through vouches and trading feedback — your trusted-trader score.' },
-  { to: '/challenges', icon: Target, label: 'Challenges', desc: 'Join community challenges — set sprints, budget decks, pull contests, and community goals.' },
+  { to: '/trust', icon: ShieldCheck, label: 'Trust', desc: 'Build reputation through vouches and trading feedback, your trusted-trader score.' },
+  { to: '/challenges', icon: Target, label: 'Challenges', desc: 'Join community challenges, set sprints, budget decks, pull contests, and community goals.' },
   { to: '/achievements', icon: Medal, label: 'Achievements', desc: 'Earn badges for collection milestones, trading, accuracy, and community contributions.' },
   { to: '/messages', icon: MessageCircle, label: 'Messages', desc: 'End-to-end encrypted 1:1 direct messages with other collectors. Your keys never leave your device.' },
   { to: '/notifications', icon: Bell, label: 'Notifications', desc: 'See likes, replies, mentions, trade matches, price alerts, and follows in one feed.' },
   { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', desc: 'Discover collectors to follow based on your collection, trades, and interests.' },
   { to: '/trade-assistant', icon: Sparkles, label: 'AI Assistants', desc: 'Trade, market, collection, sentiment, achievement, and networking assistants powered by AI.' },
-  { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalog between 9+ languages — English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
+  { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalog between 9+ languages, English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
   { to: '/explore', icon: LayoutDashboard, label: 'Social Card Pages', desc: 'Every card page surfaces posts, trades, reviews, and pack openings about that card from across the community.' },
   { to: '/', icon: TrendingUp, label: 'Trending Cards', desc: 'Discover the most talked-about cards right now, ranked by community posts and activity.' },
   { to: '/compose', icon: ImageIcon, label: 'Card Embeds in Posts', desc: 'Attach a card to your post and it renders richly on both SwapPulse and Bluesky with a deep link back.' },
@@ -52,7 +52,7 @@ const FAQ = [
   },
   {
     q: 'Who owns my collection data?',
-    a: 'You do. SwapPulse is built on self-sovereign principles — records are signed to your AT Protocol DID and designed to be portable to your own data server in future.',
+    a: 'You do. SwapPulse is built on self-sovereign principles, records are signed to your AT Protocol DID and designed to be portable to your own data server in future.',
   },
   {
     q: 'How does trading work?',
@@ -60,7 +60,7 @@ const FAQ = [
   },
   {
     q: 'How do voice spaces work?',
-    a: 'There are two modes. External mode: paste a stream URL (Twitch, YouTube, Kick, etc.) to go live — your profile shows a red live ring and followers get notified. In-platform mode: host a true audio stage where participants hear each other via a WebRTC peer mesh — no external stream needed. Hosts can promote speakers, mute, and record. Recordings can be published as podcast episodes.',
+    a: 'There are two modes. External mode: paste a stream URL (Twitch, YouTube, Kick, etc.) to go live, your profile shows a red live ring and followers get notified. In-platform mode: host a true audio stage where participants hear each other via a WebRTC peer mesh, no external stream needed. Hosts can promote speakers, mute, and record. Recordings can be published as podcast episodes.',
   },
   {
     q: 'How do podcasts and the RSS feed work?',
@@ -68,7 +68,7 @@ const FAQ = [
   },
   {
     q: 'How do direct messages work?',
-    a: 'Direct messages are end-to-end encrypted (E2EE). When you first use DMs, your browser generates an encryption key pair — your private key never leaves your device (it lives in IndexedDB). Messages are encrypted before sending; only you and your recipient can read them. SwapPulse cannot read your messages. Note: clearing your browser data will remove your private key and you\'ll lose access to encrypted messages on that device.',
+    a: 'Direct messages are end-to-end encrypted (E2EE). When you first use DMs, your browser generates an encryption key pair, your private key never leaves your device (it lives in IndexedDB). Messages are encrypted before sending; only you and your recipient can read them. SwapPulse cannot read your messages. Note: clearing your browser data will remove your private key and you\'ll lose access to encrypted messages on that device.',
   },
   {
     q: 'How do stories work?',
@@ -76,7 +76,7 @@ const FAQ = [
   },
   {
     q: 'How do challenges and achievements work?',
-    a: 'Challenges are community goals — set sprints, budget decks, pull contests, and collective targets. Join a challenge and submit entries to contribute. Achievements are badges earned for collection milestones, trading, accuracy (scanner corrections), and community contributions. Each achievement is backed by an immutable proof snapshot so it\'s verifiable.',
+    a: 'Challenges are community goals, set sprints, budget decks, pull contests, and collective targets. Join a challenge and submit entries to contribute. Achievements are badges earned for collection milestones, trading, accuracy (scanner corrections), and community contributions. Each achievement is backed by an immutable proof snapshot so it\'s verifiable.',
   },
   {
     q: 'How do pack parties work?',
@@ -88,27 +88,27 @@ const FAQ = [
   },
   {
     q: 'How do AI assistants work?',
-    a: 'SwapPulse has several AI assistants — Trade, Market Watch, Collection Advisor, Sentiment, Achievement Goal Tracker, and Networking Concierge. Each analyses your data (collection, trades, market) to generate suggestions. Their outputs are advisory, not professional advice — always use your own judgement for trading decisions.',
+    a: 'SwapPulse has several AI assistants, Trade, Market Watch, Collection Advisor, Sentiment, Achievement Goal Tracker, and Networking Concierge. Each analyses your data (collection, trades, market) to generate suggestions. Their outputs are advisory, not professional advice, always use your own judgement for trading decisions.',
   },
   {
     q: 'How does the card scanner work?',
-    a: 'Take a photo of a card and the AI scanner identifies it from the TCGDex catalog, showing the top matches with confidence scores. If the top result is wrong, tap the correct card or search manually — your correction is recorded and used to improve future scans. Corrections work offline too: they queue locally and sync when you reconnect.',
+    a: 'Take a photo of a card and the AI scanner identifies it from the TCGDex catalog, showing the top matches with confidence scores. If the top result is wrong, tap the correct card or search manually, your correction is recorded and used to improve future scans. Corrections work offline too: they queue locally and sync when you reconnect.',
   },
   {
     q: 'How do I cross-post to Bluesky?',
-    a: 'SwapPulse is built on the AT Protocol, so your posts, trades, and follows are automatically mirrored to your PDS and visible on Bluesky. You can optionally configure cross-posting in Settings. Your AT Protocol identity (DID and handle) is portable — you\'re not locked in.',
+    a: 'SwapPulse is built on the AT Protocol, so your posts, trades, and follows are automatically mirrored to your PDS and visible on Bluesky. You can optionally configure cross-posting in Settings. Your AT Protocol identity (DID and handle) is portable, you\'re not locked in.',
   },
   {
     q: 'How do I change the language?',
-    a: 'Tap the globe icon in the navigation bar (desktop sidebar or mobile More menu) and pick your language. The entire interface — navigation, buttons, page headings — and all card names, set names, and flavor text switch instantly. Your choice is saved to your account and persists across sessions. SwapPulse supports English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, and 한국어.',
+    a: 'Tap the globe icon in the navigation bar (desktop sidebar or mobile More menu) and pick your language. The entire interface, navigation, buttons, page headings, and all card names, set names, and flavor text switch instantly. Your choice is saved to your account and persists across sessions. SwapPulse supports English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, and 한국어.',
   },
   {
     q: 'How do social card pages work?',
-    a: 'Every card page (e.g. /card/pikachu) is a social hub. Below the card stats, you\'ll find tabs for Posts, Trades, and Pack Openings — each showing community content about that specific card, merged from local SwapPulse posts and federated Bluesky posts that reference the card. It\'s a card-first way to discover what collectors are saying, trading, and pulling.',
+    a: 'Every card page (e.g. /card/pikachu) is a social hub. Below the card stats, you\'ll find tabs for Posts, Trades, and Pack Openings, each showing community content about that specific card, merged from local SwapPulse posts and federated Bluesky posts that reference the card. It\'s a card-first way to discover what collectors are saying, trading, and pulling.',
   },
   {
     q: 'What are Trending Cards?',
-    a: 'The Trending Cards rail on the home feed shows the cards with the most recent social activity — posts, discussions, and mentions. It\'s ranked by how much the community is talking about each card right now. Tap any card to jump to its social detail page.',
+    a: 'The Trending Cards rail on the home feed shows the cards with the most recent social activity, posts, discussions, and mentions. It\'s ranked by how much the community is talking about each card right now. Tap any card to jump to its social detail page.',
   },
   {
     q: 'How do card embeds work in posts?',
@@ -120,15 +120,15 @@ const FAQ = [
   },
   {
     q: 'How do push notifications work?',
-    a: 'Enable push in Settings → Notifications or the push toggle on your profile. SwapPulse uses web push (VAPID) — no app install required on desktop or mobile browser. You can set quiet hours and per-event-type preferences.',
+    a: 'Enable push in Settings → Notifications or the push toggle on your profile. SwapPulse uses web push (VAPID), no app install required on desktop or mobile browser. You can set quiet hours and per-event-type preferences.',
   },
   {
     q: 'What are Circles?',
-    a: 'Circles are themed collector groups — vintage, competitive, shiny, regional, and more. Join a circle to see scoped trade listings, discussions, and meetups. You can be in multiple circles.',
+    a: 'Circles are themed collector groups, vintage, competitive, shiny, regional, and more. Join a circle to see scoped trade listings, discussions, and meetups. You can be in multiple circles.',
   },
   {
     q: 'How do I get help if something is broken?',
-    a: 'Tap the Feedback button on the right edge of the screen — it captures a snapshot of the page and sends your comment straight to the team. You can also check the System Status page to see if a service is down.',
+    a: 'Tap the Feedback button on the right edge of the screen, it captures a snapshot of the page and sends your comment straight to the team. You can also check the System Status page to see if a service is down.',
   },
 ];
 
@@ -139,19 +139,19 @@ const TROUBLESHOOTING = [
   },
   {
     q: 'My direct messages show as encrypted / won\'t decrypt',
-    a: 'E2EE direct messages require your private key, which lives in your browser\'s IndexedDB. If you\'re on a new browser, cleared your data, or switched devices, you won\'t be able to read existing encrypted messages there. New conversations will work — your browser generates a fresh key pair. There is no recovery for lost keys by design.',
+    a: 'E2EE direct messages require your private key, which lives in your browser\'s IndexedDB. If you\'re on a new browser, cleared your data, or switched devices, you won\'t be able to read existing encrypted messages there. New conversations will work, your browser generates a fresh key pair. There is no recovery for lost keys by design.',
   },
   {
     q: 'My story won\'t post',
-    a: 'Stories require a photo, video, or text. Make sure your media has finished uploading (watch the progress bar). If you\'re on a slow connection, try again — large videos may take a moment. Stories expire after 24 hours, so if an old one is stuck, it may have already expired.',
+    a: 'Stories require a photo, video, or text. Make sure your media has finished uploading (watch the progress bar). If you\'re on a slow connection, try again, large videos may take a moment. Stories expire after 24 hours, so if an old one is stuck, it may have already expired.',
   },
   {
     q: 'I can\'t connect to an in-platform voice space',
-    a: 'In-platform spaces use a WebRTC peer mesh. If you can\'t hear others, check your browser\'s microphone permissions and try leaving and rejoining the space. Some networks (corporate Wi-Fi, symmetric NATs) block WebRTC connections; try a different network if available. External-stream spaces don\'t require WebRTC — they just open the stream URL.',
+    a: 'In-platform spaces use a WebRTC peer mesh. If you can\'t hear others, check your browser\'s microphone permissions and try leaving and rejoining the space. Some networks (corporate Wi-Fi, symmetric NATs) block WebRTC connections; try a different network if available. External-stream spaces don\'t require WebRTC, they just open the stream URL.',
   },
   {
     q: 'My podcast RSS feed link doesn\'t work',
-    a: 'Your RSS feed is at /api/functions/podcast-rss-feed?did=<yourDID>. Make sure you have at least one published episode — the feed returns 404 if there are no episodes for your DID. Copy the link from your profile\'s Podcasts tab to get the exact URL with your DID. Podcast apps may take a few hours to index a newly submitted feed.',
+    a: 'Your RSS feed is at /api/functions/podcast-rss-feed?did=<yourDID>. Make sure you have at least one published episode, the feed returns 404 if there are no episodes for your DID. Copy the link from your profile\'s Podcasts tab to get the exact URL with your DID. Podcast apps may take a few hours to index a newly submitted feed.',
   },
   {
     q: 'My collection isn\'t syncing',
@@ -159,7 +159,7 @@ const TROUBLESHOOTING = [
   },
   {
     q: 'I\'m not getting push notifications',
-    a: 'Make sure push is enabled in Settings → Notifications and your browser allows notifications for swappulse.org. Check that the event type (trade matches, price alerts, etc.) is toggled on. Quiet hours may be pausing non-critical alerts — check your quiet hours settings.',
+    a: 'Make sure push is enabled in Settings → Notifications and your browser allows notifications for swappulse.org. Check that the event type (trade matches, price alerts, etc.) is toggled on. Quiet hours may be pausing non-critical alerts, check your quiet hours settings.',
   },
   {
     q: 'A trade listing disappeared',
@@ -167,7 +167,7 @@ const TROUBLESHOOTING = [
   },
   {
     q: 'My email didn\'t arrive',
-    a: 'Check your spam folder. SwapPulse sends from swappulse.org via Proton Mail. If you\'re using a custom domain alias, make sure your email provider accepts it. Activation links expire after 48 hours — request a new one from the login page.',
+    a: 'Check your spam folder. SwapPulse sends from swappulse.org via Proton Mail. If you\'re using a custom domain alias, make sure your email provider accepts it. Activation links expire after 48 hours, request a new one from the login page.',
   },
 ];
 
@@ -201,7 +201,7 @@ const LEXICONS = [
 export default function Help() {
   useSEO({
     title: 'Help & FAQ',
-    description: 'Learn how SwapPulse works — scanning, trading, voice spaces, podcasts, direct messages, circles, challenges, and more.',
+    description: 'Learn how SwapPulse works, scanning, trading, voice spaces, podcasts, direct messages, circles, challenges, and more.',
     canonicalPath: '/help',
   });
   const [query, setQuery] = useState('');
@@ -279,10 +279,10 @@ export default function Help() {
           <section>
             <h2 className="mb-2 text-lg font-extrabold">About SwapPulse</h2>
             <p className="text-sm text-muted-foreground">
-              SwapPulse is a social platform for Pokémon TCG collectors — track your collection, share pulls, trade with
+              SwapPulse is a social platform for Pokémon TCG collectors, track your collection, share pulls, trade with
               trusted collectors, join circles, go live, send end-to-end encrypted messages, and follow the market. Built
               on the AT Protocol for self-sovereign identity, powered by the TCGDex open catalog, and kept free and
-              open-source by community support. Available in 9+ languages — switch anytime from the language switcher
+              open-source by community support. Available in 9+ languages, switch anytime from the language switcher
               in the navigation.
             </p>
           </section>
@@ -391,7 +391,7 @@ export default function Help() {
                 <h3 className="font-bold">Support SwapPulse</h3>
               </div>
               <p className="mb-3 text-sm text-muted-foreground">
-                Keep every feature free and open-source. Donate any amount — it all goes back into the platform.
+                Keep every feature free and open-source. Donate any amount, it all goes back into the platform.
               </p>
               <Link to="/donate" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
                 <Heart className="h-4 w-4 fill-current" /> Donate
@@ -404,7 +404,7 @@ export default function Help() {
                 <h3 className="font-bold">Send feedback</h3>
               </div>
               <p className="mb-3 text-sm text-muted-foreground">
-                Use the <b>Feedback</b> button on the right edge of any page — it captures a snapshot and sends your note to
+                Use the <b>Feedback</b> button on the right edge of any page, it captures a snapshot and sends your note to
                 the team. Or email <a href="mailto:feedback@swappulse.org" className="text-primary underline">feedback@swappulse.org</a>.
               </p>
             </div>

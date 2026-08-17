@@ -61,7 +61,7 @@ export default function QuotedPostCard({ quoteOfId, quoteRef }) {
     return (
       <div className="mt-2 flex items-center gap-2 rounded-xl border border-border bg-secondary/40 p-3 text-xs text-muted-foreground">
         <Lock className="h-3.5 w-3.5" />
-        This post is limited — only the author&apos;s {visibilityLabel(quoted.visibility_scope)} can see it.
+        This post is limited, only the author&apos;s {visibilityLabel(quoted.visibility_scope)} can see it.
       </div>
     );
   }

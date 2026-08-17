@@ -198,7 +198,7 @@ export default function NetworkingConcierge() {
               <div>
                 <h2 className="text-lg font-bold">Networking Concierge</h2>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Find collectors you've met in voice spaces, discover circles that match your interests, and jump into live community rooms — all based on your participation history.
+                  Find collectors you've met in voice spaces, discover circles that match your interests, and jump into live community rooms, all based on your participation history.
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-2">

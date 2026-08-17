@@ -77,12 +77,12 @@ const COLLECTION_ENTITY_MAP: Record<string, string> = {
 async function verifyOwnership(base44: any, caller: any, uri: string, collection: string): Promise<boolean> {
   if (caller?.role === 'admin') return true;
   const entityName = COLLECTION_ENTITY_MAP[collection];
-  if (!entityName) return false; // unknown collection — fail closed
+  if (!entityName) return false; // unknown collection, fail closed
   try {
     const matches = await base44.asServiceRole.entities[entityName]
       .filter({ at_uri: uri }, '-created_date', 1).catch(() => []);
     const rec = matches?.[0];
-    if (!rec) return false; // no local record — fail closed
+    if (!rec) return false; // no local record, fail closed
     const ownsByCreator = !!rec.created_by_id && rec.created_by_id === caller.id;
     const ownsByDid = !!rec.did && !!caller.did && rec.did === caller.did;
     return ownsByCreator || ownsByDid;

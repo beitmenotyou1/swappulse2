@@ -24,7 +24,7 @@ export default async function(req: Request): Promise<Response> {
 
     if (!user.did || !user.did.startsWith('did:plc:')) {
       return Response.json({
-        error: 'No federated identity yet. Your account is provisioned on login — try again in a moment.',
+        error: 'No federated identity yet. Your account is provisioned on login, try again in a moment.',
       }, { status: 400 });
     }
 

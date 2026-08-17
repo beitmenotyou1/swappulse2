@@ -184,7 +184,7 @@ export default function DataSubjectRequestsSection() {
               {selected.size > 0 && (
                 <div className="sticky bottom-4 z-10 mt-4 rounded-xl border border-primary/30 bg-card p-3 shadow-elevated">
                   <p className="mb-2 text-xs font-semibold text-muted-foreground">
-                    {selected.size} selected — apply to all
+                    {selected.size} selected, apply to all
                   </p>
                   <Textarea
                     value={bulkNote}

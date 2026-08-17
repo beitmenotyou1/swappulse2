@@ -58,7 +58,7 @@ export default function FederationDiagnosticsSection() {
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">
         Checks every provisioned account against the PDS, the public plc.directory, and
-        handle resolution — so you can see exactly what blocks discoverability on bsky.app.
+        handle resolution, so you can see exactly what blocks discoverability on bsky.app.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -131,13 +131,13 @@ export default function FederationDiagnosticsSection() {
           <p className="font-semibold">AppView indexing: {crawl.indexed}/{crawl.total} accounts</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Accounts not indexed won't appear on bsky.app until their DID is in the public
-            plc.directory and their handle resolves — run diagnostics to check.
+            plc.directory and their handle resolves, run diagnostics to check.
           </p>
         </div>
       )}
 
       <div className="mt-4 rounded-lg border border-dashed border-border p-3 text-sm">
-        <p className="mb-1 font-semibold">Stage 2 — server-side steps (you control the PDS &amp; DNS)</p>
+        <p className="mb-1 font-semibold">Stage 2, server-side steps (you control the PDS &amp; DNS)</p>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
           <li>Reconfigure the PDS to use the public <code className="font-mono text-xs">plc.directory</code> URL.</li>
           <li>Re-provision existing accounts so fresh DIDs are published to the public directory (use "Provision Federated Identities" above after clearing stale credentials).</li>

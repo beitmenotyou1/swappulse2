@@ -13,8 +13,8 @@ export default function AccountDeleted() {
         </div>
         <h1 className="text-xl font-bold">Your account has been permanently deleted</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          All data linked to your account — your collection, trades, posts, binders, reputation, and
-          federated records — has been irrevocably erased.
+          All data linked to your account, your collection, trades, posts, binders, reputation, and
+          federated records, has been irrevocably erased.
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
           Your username has been released and your email address can be used to register again in the

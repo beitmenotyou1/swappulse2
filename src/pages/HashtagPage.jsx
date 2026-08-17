@@ -57,8 +57,8 @@ export default function HashtagPage() {
   };
 
   useSEO({
-    title: `#${tag || ''} — Hashtag`,
-    description: `Posts tagged #${tag || ''} on SwapPulse — the decentralized Pokémon TCG collector community.`,
+    title: `#${tag || ''}, Hashtag`,
+    description: `Posts tagged #${tag || ''} on SwapPulse, the decentralized Pokémon TCG collector community.`,
     canonicalPath: `/hashtag/${tag || ''}`,
   });
 

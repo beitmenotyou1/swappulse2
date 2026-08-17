@@ -9,7 +9,7 @@ export default function Invite() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('checking'); // checking | valid | invalid
   useSEO({
-    title: 'Join SwapPulse — Pokémon TCG Collector Community',
+    title: 'Join SwapPulse, Pokémon TCG Collector Community',
     description: 'You\'re invited to join SwapPulse, the decentralized social network for Pokémon TCG collectors. Track your collection, trade cards, and connect with the community.',
     canonicalPath: '/invite',
   });
@@ -41,7 +41,7 @@ export default function Invite() {
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">
             The decentralized social network for Pokémon TCG collectors. Track your collection,
-            trade cards, and connect with a community that shares your passion — all built on the
+            trade cards, and connect with a community that shares your passion, all built on the
             AT Protocol.
           </p>
           {status === 'checking' && (
@@ -58,7 +58,7 @@ export default function Invite() {
                 Create your free account <ArrowRight className="h-5 w-5" />
               </button>
               <p className="mt-2 text-xs text-muted-foreground">
-                No password needed — just your email. Takes less than a minute.
+                No password needed, just your email. Takes less than a minute.
               </p>
             </div>
           )}
@@ -88,7 +88,7 @@ export default function Invite() {
             { icon: RefreshCw, title: 'Trade with Trust', desc: 'Trade safely with verified collectors backed by a vouch-based trust graph.' },
             { icon: BookOpen, title: 'Digital Binders', desc: 'Showcase your best pulls in beautiful, customizable digital binders.' },
             { icon: Users, title: 'Community Circles', desc: 'Join circles, meetups, and challenges with collectors who share your interests.' },
-            { icon: ShieldCheck, title: 'Your Data, Yours', desc: 'Built on the AT Protocol — your posts federate to Bluesky and beyond.' },
+            { icon: ShieldCheck, title: 'Your Data, Yours', desc: 'Built on the AT Protocol, your posts federate to Bluesky and beyond.' },
             { icon: Sparkles, title: 'Free & Open Source', desc: 'No paywalls, no ads, no tracking. Funded by voluntary donations.' },
           ].map((f) => (
             <div key={f.title} className="rounded-2xl border border-border bg-card p-5">
@@ -119,7 +119,7 @@ export default function Invite() {
                 { step: '2', title: 'Go to Settings → AT Protocol', desc: 'After logging in, open Settings and find the "Link Your Bluesky Account" section.' },
                 { step: '3', title: 'Enter your Bluesky app password', desc: 'Use a Bluesky app password (not your main password) from bsky.app/settings/app-passwords. Enter your Bluesky handle and the app password to link.' },
                 { step: '4', title: 'Your follows migrate automatically', desc: 'Once linked, your existing Bluesky follows are imported into SwapPulse so your feed is populated from day one.' },
-                { step: '5', title: 'Post as yourself', desc: 'Your posts, replies, likes, and follows now federate from your own Bluesky identity — not the shared bridge account.' },
+                { step: '5', title: 'Post as yourself', desc: 'Your posts, replies, likes, and follows now federate from your own Bluesky identity, not the shared bridge account.' },
               ].map((s) => (
                 <li key={s.step} className="flex gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -135,7 +135,7 @@ export default function Invite() {
             <div className="mt-5 flex items-center gap-2 rounded-lg bg-card p-3 text-xs text-muted-foreground">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
               <span>
-                Your Bluesky account stays fully intact — linking just lets SwapPulse read and write
+                Your Bluesky account stays fully intact, linking just lets SwapPulse read and write
                 to it on your behalf. You can unlink at any time from Settings.
               </span>
             </div>
@@ -154,7 +154,7 @@ export default function Invite() {
       {/* Footer */}
       <div className="border-t border-border py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          © SwapPulse — Built on the AT Protocol · Powered by TCGdex · Free & Open Source
+          © SwapPulse, Built on the AT Protocol · Powered by TCGdex · Free & Open Source
         </p>
       </div>
     </div>

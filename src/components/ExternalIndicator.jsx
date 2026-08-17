@@ -15,8 +15,8 @@ export default function ExternalIndicator({ did, external, className = '' }) {
   return (
     <span
       className={`inline-flex items-center ${className}`}
-      title="On Bluesky — not a SwapPulse member"
-      aria-label="On Bluesky — not a SwapPulse member"
+      title="On Bluesky, not a SwapPulse member"
+      aria-label="On Bluesky, not a SwapPulse member"
     >
       <Globe className="h-3.5 w-3.5 text-primary/70" aria-hidden="true" />
     </span>

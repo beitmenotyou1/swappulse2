@@ -102,7 +102,7 @@ export default function BotChallengeModal({ open, siteKey, challengeToken, onRes
           ) : (
             <Button onClick={handleBehaviouralConfirm} size="lg" className="w-full">
               <ShieldCheck className="h-4 w-4" />
-              I'm human — continue
+              I'm human, continue
             </Button>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -37,7 +37,7 @@ export default function BlueskyLinkPrompt() {
         <p className="font-semibold text-foreground">Post as yourself on Bluesky</p>
         <p className="mt-0.5 text-muted-foreground">
           Link your Bluesky account so your posts are attributed to you, not the shared
-          SwapPulse bridge. You can keep posting without linking — this is just a nudge.
+          SwapPulse bridge. You can keep posting without linking, this is just a nudge.
         </p>
         <button
           onClick={() => navigate('/settings')}

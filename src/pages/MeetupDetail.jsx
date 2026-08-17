@@ -18,7 +18,7 @@ const ATTENDING = [
 export default function MeetupDetail() {
   useSEO({
     title: 'Meetup',
-    description: 'A Pokémon TCG collector meetup on SwapPulse — organise, attend, and swap cards in person.',
+    description: 'A Pokémon TCG collector meetup on SwapPulse, organise, attend, and swap cards in person.',
     canonicalPath: `/meetups/${meetupId}`,
   });
   const { meetupId } = useParams();

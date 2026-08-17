@@ -13,7 +13,7 @@ import { base44 } from '@/api/base44Client';
 
 export class BotBlockError extends Error {
   constructor(actionType, reasons) {
-    super('Action blocked — please try again later.');
+    super('Action blocked, please try again later.');
     this.name = 'BotBlockError';
     this.actionType = actionType;
     this.reasons = reasons || [];

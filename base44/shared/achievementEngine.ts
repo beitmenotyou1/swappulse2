@@ -176,7 +176,7 @@ function evalWeightedVouches(cfg: any, input: EngineInput): EvalResult {
       (belowThreshold > 0 ? `${belowThreshold} vouch(es) below trust threshold. ` : '') +
       (recentlyRevoked.length === 0
         ? `No vouches revoked in the last ${req.exclude_revoked_months} months.`
-        : `${recentlyRevoked.length} vouch(es) revoked recently — disqualified.`),
+        : `${recentlyRevoked.length} vouch(es) revoked recently, disqualified.`),
   };
 }
 
@@ -219,7 +219,7 @@ function evalQualityPublication(cfg: any, input: EngineInput): EvalResult {
   return {
     key: cfg.id, qualified: !!best, metricValue: best ? best.like_count : 0,
     proofRecords: best ? [prec(best, 'binder', 'org.swappulse.binder')] : [],
-    proofSummary: best ? `Binder "${best.title}" — ${best.pages.length} pages, ${best.like_count} likes.` : `No ${req.minimum_pages_populated}-page binder with ${req.minimum_engagement}+ likes.`,
+    proofSummary: best ? `Binder "${best.title}", ${best.pages.length} pages, ${best.like_count} likes.` : `No ${req.minimum_pages_populated}-page binder with ${req.minimum_engagement}+ likes.`,
   };
 }
 

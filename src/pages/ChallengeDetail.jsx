@@ -22,7 +22,7 @@ function timeLeft(endIso) {
 export default function ChallengeDetail() {
   useSEO({
     title: 'Challenge',
-    description: 'Join a Pokémon TCG collector challenge on SwapPulse — set completion races, pack contests, and community goals.',
+    description: 'Join a Pokémon TCG collector challenge on SwapPulse, set completion races, pack contests, and community goals.',
     canonicalPath: `/challenges/${challengeId}`,
   });
   const { challengeId } = useParams();

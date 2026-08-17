@@ -11,7 +11,7 @@ export default function ExternalProfileBanner({ did, handle }) {
     <div className="flex items-center gap-2 border border-t-0 border-primary/30 bg-primary/10 px-4 py-2.5 text-sm">
       <Globe className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
       <p className="flex-1 font-semibold">
-        This collector is on Bluesky — not a SwapPulse member
+        This collector is on Bluesky, not a SwapPulse member
       </p>
     </div>
   );

@@ -74,7 +74,7 @@ export default function ExternalActorSearch() {
         <h2 className="font-bold">Find people on the AT Protocol</h2>
       </div>
       <p className="text-sm text-muted-foreground mb-3">
-        Follow collectors from Bluesky or any other AT Protocol site — their posts will appear in your feed.
+        Follow collectors from Bluesky or any other AT Protocol site, their posts will appear in your feed.
       </p>
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1">

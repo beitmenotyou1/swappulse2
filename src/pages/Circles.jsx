@@ -39,7 +39,7 @@ function CircleCard({ c, membership }) {
 export default function Circles() {
   useSEO({
     title: 'Circles',
-    description: 'Join themed Pokémon TCG collector circles on SwapPulse — vintage, competitive, shiny, regional, and more.',
+    description: 'Join themed Pokémon TCG collector circles on SwapPulse, vintage, competitive, shiny, regional, and more.',
     canonicalPath: '/circles',
   });
   const [mine, setMine] = useState([]);

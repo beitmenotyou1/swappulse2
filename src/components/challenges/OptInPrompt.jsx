@@ -11,7 +11,7 @@ export default function OptInPrompt() {
       <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
       <div className="flex-1">
         <p className="text-sm font-semibold">Competitive challenges need leaderboard opt-in</p>
-        <p className="mt-1 text-xs text-muted-foreground">Your rank will be visible to others. Choose which categories to appear on — revoke anytime.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Your rank will be visible to others. Choose which categories to appear on, revoke anytime.</p>
         <div className="mt-3 flex gap-2">
           <Link to="/settings"><Button size="sm">Manage preferences</Button></Link>
           <Button size="sm" variant="ghost" onClick={() => setDismissed(true)}>Not now</Button>

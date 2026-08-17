@@ -63,7 +63,7 @@ export default async function(req) {
 
     for (const [key, result] of Object.entries(services)) {
       const slug = SLUG_MAP[key];
-      if (!slug) continue; // Skip smtp/vapid — no StatusService mapping
+      if (!slug) continue; // Skip smtp/vapid, no StatusService mapping
 
       const serviceName = SERVICE_NAMES[slug] || slug;
       const isDown = result.status === 'down';

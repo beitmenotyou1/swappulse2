@@ -108,7 +108,7 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
         <div className="mb-4 flex gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs text-foreground">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
           <p>
-            <span className="font-bold">Please note:</span> SwapPulse is a community platform and cannot recover money or cards exchanged outside the app. We can only help with on-site matters — moderating the listing, warning or banning bad actors, and mediating through in-app messages.
+            <span className="font-bold">Please note:</span> SwapPulse is a community platform and cannot recover money or cards exchanged outside the app. We can only help with on-site matters, moderating the listing, warning or banning bad actors, and mediating through in-app messages.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value.slice(0, 2000))}
-              placeholder="Describe what happened — the condition, what was agreed, and what you received…"
+              placeholder="Describe what happened, the condition, what was agreed, and what you received…"
               rows={4}
               className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
             />
@@ -171,7 +171,7 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
                 />
               </label>
             </div>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">Optional but recommended — photos help moderators verify your claim.</p>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Optional but recommended, photos help moderators verify your claim.</p>
           </div>
         </div>
 

@@ -153,7 +153,7 @@ export default function WhoToFollow() {
             <UserPlus className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="font-semibold">No recommendations yet</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Vouch for collectors you trust and build your collection — we&apos;ll surface people you
+              Vouch for collectors you trust and build your collection, we&apos;ll surface people you
               should know from your trust graph.
             </p>
             <Button asChild className="mt-4">

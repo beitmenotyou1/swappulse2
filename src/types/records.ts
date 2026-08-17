@@ -25,14 +25,14 @@ export type CollectionEntryRecord = {
 
 export type TradeListingRecord = {
   $type: 'org.swappulse.tradeListing';
-  offerCardUris: string[]; // min 1, max 50 — TCGDex card ids offered
+  offerCardUris: string[]; // min 1, max 50, TCGDex card ids offered
   offerCardNames: string[];
   offerCardImages: string[]; // format: uri
-  wantedCardUris: string[]; // min 1, max 50 — TCGDex card ids wanted
+  wantedCardUris: string[]; // min 1, max 50, TCGDex card ids wanted
   wantedCardNames: string[];
   status: 'open' | 'negotiating' | 'pending_ship' | 'completed' | 'cancelled';
   visibility: 'public' | 'wishlist_only' | 'circle_scoped';
-  circleRef?: string; // format: at-uri — scoping Circle (required when circle_scoped)
+  circleRef?: string; // format: at-uri, scoping Circle (required when circle_scoped)
   shippingRegions: string[]; // e.g. ['UK', 'EU', 'NA']
   preferredCurrency?: 'GBP' | 'EUR' | 'USD';
   notes?: string; // max 500 chars
