@@ -5,8 +5,14 @@ import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import PageHeader from '@/components/PageHeader';
 import BinderCard from '@/components/binder/BinderCard';
+import useSEO from '@/hooks/useSEO';
 
 export default function Binders() {
+  useSEO({
+    title: 'Binders',
+    description: 'Browse and share Pokémon TCG collector binders on SwapPulse — curated showcase grids of favourite cards.',
+    canonicalPath: '/binders',
+  });
   const [tab, setTab] = useState('mine');
   const [binders, setBinders] = useState([]);
   const [myDid, setMyDid] = useState('');

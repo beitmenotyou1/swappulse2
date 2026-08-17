@@ -8,6 +8,7 @@ import {
   UserPlus, Sparkles, Globe, TrendingUp, Image as ImageIcon,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import useSEO from '@/hooks/useSEO';
 
 const FEATURES = [
   { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalog via TCGDex, by set, rarity, or illustrator.' },
@@ -198,6 +199,11 @@ const LEXICONS = [
 ];
 
 export default function Help() {
+  useSEO({
+    title: 'Help & FAQ',
+    description: 'Learn how SwapPulse works — scanning, trading, voice spaces, podcasts, direct messages, circles, challenges, and more.',
+    canonicalPath: '/help',
+  });
   const [query, setQuery] = useState('');
 
   const filteredFeatures = useMemo(() => {

@@ -6,6 +6,7 @@ import PollCard from '@/components/predictions/PollCard';
 import CreatePollModal from '@/components/predictions/CreatePollModal';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
+import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   ['active', 'Active'],
@@ -14,6 +15,11 @@ const TABS = [
 ];
 
 export default function Predictions() {
+  useSEO({
+    title: 'Predictions',
+    description: 'Vote on community sentiment polls and Pokémon TCG market predictions on SwapPulse.',
+    canonicalPath: '/predictions',
+  });
   const { user } = useAuth();
   const [polls, setPolls] = useState([]);
   const [myVotes, setMyVotes] = useState({});

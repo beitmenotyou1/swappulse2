@@ -4,6 +4,7 @@ import { Plus, Loader2, Users } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CreateCircleModal from '@/components/circles/CreateCircleModal';
+import useSEO from '@/hooks/useSEO';
 
 const THEME_LABEL = {
   general: 'General', vintage: 'Vintage', competitive: 'Competitive', shiny: 'Shiny',
@@ -36,6 +37,11 @@ function CircleCard({ c, membership }) {
 }
 
 export default function Circles() {
+  useSEO({
+    title: 'Circles',
+    description: 'Join themed Pokémon TCG collector circles on SwapPulse — vintage, competitive, shiny, regional, and more.',
+    canonicalPath: '/circles',
+  });
   const [mine, setMine] = useState([]);
   const [discover, setDiscover] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -6,12 +6,18 @@ import { Loader2, Trophy, Plus, Star, Sparkles } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import { format, getISOWeek } from 'date-fns';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import useSEO from '@/hooks/useSEO';
 
 // PullOfTheWeek — weekly community contest where collectors nominate their best
 // card pull and vote for their favourites. Nominations are federated to the AT
 // Protocol as org.swappulse.pullNomination records so the wider network can
 // participate across SwapPulse instances.
 export default function PullOfTheWeek() {
+  useSEO({
+    title: 'Pull of the Week',
+    description: 'Nominate your best Pokémon TCG pull each week and vote on the community top pulls on SwapPulse.',
+    canonicalPath: '/pull-of-the-week',
+  });
   const [user, setUser] = useState(null);
   const [nominations, setNominations] = useState([]);
   const [myVote, setMyVote] = useState(null);

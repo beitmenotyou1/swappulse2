@@ -5,11 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Calendar, Users, Plus, Radio } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import { format, formatDistanceToNow } from 'date-fns';
+import useSEO from '@/hooks/useSEO';
 
 // PackParties — synchronized pack-opening events. Collectors schedule or join
 // a party for a specific set, then open packs together in real time and share
 // reactions. Parties are federated to the AT Protocol for cross-instance discovery.
 export default function PackParties() {
+  useSEO({
+    title: 'Pack Parties',
+    description: 'Join synchronised Pokémon TCG pack-opening events on SwapPulse — open together and share reactions live.',
+    canonicalPath: '/pack-parties',
+  });
   const [user, setUser] = useState(null);
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -4,6 +4,7 @@ import { Loader2, Target } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ChallengeCard from '@/components/challenges/ChallengeCard';
 import { useAuth } from '@/lib/AuthContext';
+import useSEO from '@/hooks/useSEO';
 
 const TABS = ['active', 'upcoming', 'completed', 'mine'];
 const FILTERS = ['all', 'collective', 'competitive', 'circle'];
@@ -18,6 +19,11 @@ function statusOf(c, now) {
 }
 
 export default function Challenges() {
+  useSEO({
+    title: 'Challenges',
+    description: 'Join Pokémon TCG collector challenges on SwapPulse — set completion races, pack opening contests, and community goals.',
+    canonicalPath: '/challenges',
+  });
   const { user } = useAuth();
   const [tab, setTab] = useState('active');
   const [filter, setFilter] = useState('all');

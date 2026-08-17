@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import useSEO from '@/hooks/useSEO';
 
 const LAST_UPDATED = '17 August 2026';
 
@@ -29,6 +30,11 @@ const SECTIONS = [
 ];
 
 export default function Privacy() {
+  useSEO({
+    title: 'Privacy Policy',
+    description: 'SwapPulse Privacy Policy — data collection, AT Protocol federation, E2EE messaging, cookies, and your data rights.',
+    canonicalPath: '/privacy',
+  });
   return (
     <>
       <PageHeader title="Privacy Policy" subtitle={`Last updated: ${LAST_UPDATED}`} />

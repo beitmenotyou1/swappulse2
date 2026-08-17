@@ -1,5 +1,10 @@
 import { useEffect } from 'react';
 
+// Default site-wide social share image — used when a page doesn't provide
+// its own ogImage (e.g. card image, avatar, post image). Ensures every page
+// renders a full large-card embed when shared on social platforms.
+const DEFAULT_OG_IMAGE = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/1c0d22eac_generated_image.png';
+
 // useSEO — writes per-page <title>, meta description, Open Graph tags,
 // canonical link, and optional JSON-LD structured data into the document head.
 // Cleans up only the tags it added (tagged with data-seo-managed) on unmount or
@@ -12,7 +17,7 @@ export default function useSEO({
   description = '',
   canonicalPath = '',
   jsonLd = null,
-  ogImage = '',
+  ogImage = DEFAULT_OG_IMAGE,
 } = {}) {
   useEffect(() => {
     const TAG = 'data-seo-managed';
@@ -28,6 +33,12 @@ export default function useSEO({
     document.title = fullTitle;
 
     const setMeta = (selector, attrs) => {
+      // Remove any existing meta tag (static or managed) with the same
+      // name or property so page-specific tags override the index.html defaults.
+      const key = attrs.name ? 'name' : 'property';
+      if (key && attrs[key]) {
+        head.querySelectorAll(`meta[${key}="${attrs[key]}"]`).forEach((el) => el.remove());
+      }
       const el = document.createElement('meta');
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
       el.setAttribute(TAG, 'true');
@@ -54,7 +65,8 @@ export default function useSEO({
     if (description) setMeta('name', { name: 'twitter:description', content: description });
     if (ogImage) setMeta('name', { name: 'twitter:image', content: ogImage });
 
-    // Canonical link
+    // Canonical link — remove any existing canonical (static or managed) first
+    head.querySelectorAll('link[rel="canonical"]').forEach((el) => el.remove());
     const link = document.createElement('link');
     link.setAttribute('rel', 'canonical');
     link.setAttribute('href', canonical);

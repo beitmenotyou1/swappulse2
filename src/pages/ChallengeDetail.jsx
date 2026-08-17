@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import SubmitEntryPanel from '@/components/challenges/SubmitEntryPanel';
 import OptInPrompt from '@/components/challenges/OptInPrompt';
 import { useAuth } from '@/lib/AuthContext';
+import useSEO from '@/hooks/useSEO';
 
 function timeLeft(endIso) {
   if (!endIso) return '';
@@ -19,6 +20,11 @@ function timeLeft(endIso) {
 }
 
 export default function ChallengeDetail() {
+  useSEO({
+    title: 'Challenge',
+    description: 'Join a Pokémon TCG collector challenge on SwapPulse — set completion races, pack contests, and community goals.',
+    canonicalPath: `/challenges/${challengeId}`,
+  });
   const { challengeId } = useParams();
   const { user } = useAuth();
   const [challenge, setChallenge] = useState(null);

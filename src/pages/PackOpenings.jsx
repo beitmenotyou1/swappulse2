@@ -3,8 +3,14 @@ import { Loader2, Package } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import PostCard from '@/components/feed/PostCard';
+import useSEO from '@/hooks/useSEO';
 
 export default function PackOpenings() {
+  useSEO({
+    title: 'Pack Openings',
+    description: 'See the latest pack pulls from the SwapPulse community — fresh Pokémon TCG openings shared in real time.',
+    canonicalPath: '/packs',
+  });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 

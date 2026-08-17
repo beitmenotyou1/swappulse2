@@ -6,6 +6,7 @@ import LiveStreamCard from '@/components/spaces/LiveStreamCard';
 import GoLiveModal from '@/components/spaces/GoLiveModal';
 import EpisodeCard from '@/components/podcast/EpisodeCard';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
+import useSEO from '@/hooks/useSEO';
 
 const PLATFORM_LABEL = {
   twitch: 'Twitch',
@@ -23,6 +24,11 @@ const TABS = [
 ];
 
 export default function VoiceSpaces() {
+  useSEO({
+    title: 'Voice Spaces',
+    description: 'Join live Pokémon TCG audio spaces on SwapPulse — go live with external streams or host in-platform voice rooms.',
+    canonicalPath: '/spaces',
+  });
   const [spaces, setSpaces] = useState([]);
   const [podcasts, setPodcasts] = useState([]);
   const [loading, setLoading] = useState(true);

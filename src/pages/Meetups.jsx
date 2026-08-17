@@ -4,6 +4,7 @@ import { Plus, Loader2, CalendarDays, MapPin, Users, ShieldCheck } from 'lucide-
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CreateMeetupModal from '@/components/meetups/CreateMeetupModal';
+import useSEO from '@/hooks/useSEO';
 
 function MeetupCard({ m }) {
   const when = m.scheduled_at ? new Date(m.scheduled_at) : null;
@@ -36,6 +37,11 @@ function MeetupCard({ m }) {
 }
 
 export default function Meetups() {
+  useSEO({
+    title: 'Meetups',
+    description: 'Organise and attend local Pokémon TCG collector meetups, swaps, and live pulls on SwapPulse.',
+    canonicalPath: '/meetups',
+  });
   const [meetups, setMeetups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);

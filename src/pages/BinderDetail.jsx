@@ -6,8 +6,14 @@ import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import { BINDER_THEMES } from '@/components/binder/theme';
 import { cardImageUrl } from '@/lib/tcgdex';
+import useSEO from '@/hooks/useSEO';
 
 export default function BinderDetail() {
+  useSEO({
+    title: 'Binder',
+    description: 'A curated Pokémon TCG collector binder on SwapPulse — showcase grids of favourite cards.',
+    canonicalPath: `/binder/${binderId}`,
+  });
   const { binderId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);

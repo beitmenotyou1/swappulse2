@@ -39,6 +39,7 @@ export default function UserProfile() {
     title: merged?.name ? `${merged.name} (Collector Profile)` : 'Collector Profile',
     description: merged?.description ? `${merged.description}` : `${merged?.name || 'Collector'} on SwapPulse — the decentralized Pokémon TCG collector community.`,
     canonicalPath: `/profile/${subjectDid}`,
+    ogImage: merged?.avatar || '',
     jsonLd: { '@context': 'https://schema.org', '@type': 'ProfilePage', name: merged?.name || 'Collector', url: `https://swappulse.org/profile/${subjectDid}` },
   });
 

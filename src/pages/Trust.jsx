@@ -5,6 +5,7 @@ import { ensureUserDid } from '@/lib/atproto';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import VouchForm from '@/components/trust/VouchForm';
+import useSEO from '@/hooks/useSEO';
 
 const REL_LABEL = {
   trade_partner: 'Trade Partner',
@@ -14,6 +15,11 @@ const REL_LABEL = {
 };
 
 export default function Trust() {
+  useSEO({
+    title: 'Trust & Vouches',
+    description: 'Build trading trust on SwapPulse — vouch for trade partners and view reputation profiles for safe peer-to-peer card exchange.',
+    canonicalPath: '/trust',
+  });
   const [myDid, setMyDid] = useState('');
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { CalendarDays, MapPin, Users, ShieldCheck, Loader2, BookOpen, X } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
+import useSEO from '@/hooks/useSEO';
 
 const ATTENDING = [
   ['yes', 'Going'],
@@ -15,6 +16,11 @@ const ATTENDING = [
 ];
 
 export default function MeetupDetail() {
+  useSEO({
+    title: 'Meetup',
+    description: 'A Pokémon TCG collector meetup on SwapPulse — organise, attend, and swap cards in person.',
+    canonicalPath: `/meetups/${meetupId}`,
+  });
   const { meetupId } = useParams();
   const { user } = useAuth();
   const [data, setData] = useState(null);

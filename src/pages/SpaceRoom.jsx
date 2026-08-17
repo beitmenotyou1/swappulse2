@@ -4,10 +4,16 @@ import { Radio } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import InPlatformSpace from '@/components/spaces/InPlatformSpace';
 import ExternalStreamSpace from '@/components/spaces/ExternalStreamSpace';
+import useSEO from '@/hooks/useSEO';
 
 // SpaceRoom — loads the VoiceSpace by id and delegates to the in-platform
 // (WebRTC mesh) or external-stream experience based on space_mode.
 export default function SpaceRoom() {
+  useSEO({
+    title: 'Voice Space',
+    description: 'Join a live Pokémon TCG audio space on SwapPulse.',
+    canonicalPath: `/spaces/${spaceId}`,
+  });
   const { spaceId } = useParams();
   const [space, setSpace] = useState(null);
   const [notFound, setNotFound] = useState(false);

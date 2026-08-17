@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import useSEO from '@/hooks/useSEO';
 
 const LAST_UPDATED = '17 August 2026';
 
@@ -31,6 +32,11 @@ const SECTIONS = [
 ];
 
 export default function Terms() {
+  useSEO({
+    title: 'Terms of Service',
+    description: 'SwapPulse Terms of Service — account responsibilities, trading, federation, privacy, and community guidelines.',
+    canonicalPath: '/terms',
+  });
   return (
     <>
       <PageHeader title="Terms of Service" subtitle={`Last updated: ${LAST_UPDATED}`} />

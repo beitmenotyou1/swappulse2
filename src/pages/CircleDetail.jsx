@@ -7,6 +7,7 @@ import { Users, LogOut, LogIn, Loader2, ArrowLeftRight, Lock } from 'lucide-reac
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
+import useSEO from '@/hooks/useSEO';
 
 const THEME_LABEL = {
   general: 'General', vintage: 'Vintage', competitive: 'Competitive', shiny: 'Shiny',
@@ -14,6 +15,11 @@ const THEME_LABEL = {
 };
 
 export default function CircleDetail() {
+  useSEO({
+    title: 'Circle',
+    description: 'A themed Pokémon TCG collector circle on SwapPulse — vintage, competitive, shiny, regional, and more.',
+    canonicalPath: `/circles/${circleId}`,
+  });
   const { circleId } = useParams();
   const { user } = useAuth();
   const [data, setData] = useState(null);

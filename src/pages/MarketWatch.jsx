@@ -5,8 +5,14 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import PriceAlertModal from '@/components/market/PriceAlertModal';
 import PriceAlertsList from '@/components/market/PriceAlertsList';
+import useSEO from '@/hooks/useSEO';
 
 export default function MarketWatch() {
+  useSEO({
+    title: 'Market Watch',
+    description: 'Track Pokémon TCG card prices, monitor your portfolio, and set price alerts on SwapPulse — the decentralized collector community.',
+    canonicalPath: '/market',
+  });
   const [portfolio, setPortfolio] = useState(null);
   const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(true);

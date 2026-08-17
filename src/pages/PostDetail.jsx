@@ -8,6 +8,7 @@ import AncestorCard from '@/components/feed/AncestorCard';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import { visibilityLabel } from '@/lib/postVisibility';
 import useSEO from '@/hooks/useSEO';
+import { cardImageUrl } from '@/lib/tcgdex';
 
 // Dedicated post detail page: renders a single post with its full reply
 // thread and a composer. Handles two routes:
@@ -29,6 +30,7 @@ export default function PostDetail() {
     title: post ? (post.content?.slice(0, 60) || 'Post') : 'Post',
     description: post ? (post.content?.slice(0, 160) || 'A post on SwapPulse') : 'A post on the SwapPulse Pokémon TCG collector community.',
     canonicalPath: atUri ? `/post/at/${atUri}` : `/post/${postId}`,
+    ogImage: post?.card_image ? cardImageUrl(post.card_image) : (post?.author_avatar || ''),
     jsonLd: post ? { '@context': 'https://schema.org', '@type': 'DiscussionForumPosting', headline: post.content?.slice(0, 80) || 'Post', author: { '@type': 'Person', name: post.author_name || 'Collector' } } : null,
   });
 

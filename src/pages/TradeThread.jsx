@@ -12,9 +12,15 @@ import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator'
 import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
 import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
 import RichText from '@/components/RichText';
+import useSEO from '@/hooks/useSEO';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
+  useSEO({
+    title: 'Trade Thread',
+    description: 'Negotiate a Pokémon TCG trade on SwapPulse — threaded trade chat with fairness scoring.',
+    canonicalPath: `/trade/${tradeId}`,
+  });
   const { tradeId } = useParams();
   const [trade, setTrade] = useState(null);
   const [messages, setMessages] = useState([]);

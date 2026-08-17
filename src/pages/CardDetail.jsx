@@ -24,6 +24,7 @@ export default function CardDetail() {
     title: card ? `${card.name} — ${card.set?.name || 'Pokémon Card'}` : 'Card Details',
     description: card ? `${card.name} from ${card.set?.name || 'Pokémon TCG'}. View stats, reviews, and community discussion on SwapPulse.` : 'Pokémon TCG card details, reviews, and community discussion on SwapPulse.',
     canonicalPath: `/card/${cardId}`,
+    ogImage: card ? cardImageUrl(card.image) : '',
     jsonLd: card ? { '@context': 'https://schema.org', '@type': 'Product', name: card.name, description: `Pokémon TCG card from ${card.set?.name || ''}` } : null,
   });
   const [loading, setLoading] = useState(true);
