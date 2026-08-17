@@ -73,11 +73,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: `getRecord failed (${getRes.status})` }, { status: 502 });
     }
 
-    // Build the updated profile record, preserving existing fields and adding the bot self-label
+    // Build the updated profile record, preserving existing fields, fixing the
+    // display-name typo, and setting a bot-appropriate description.
     const record: any = {
       ...(existingRecord || {}),
       $type: PROFILE_COLLECTION,
     };
+    record.displayName = 'SwapPulse';
+    record.description =
+      'SwapPulse — the decentralized social network for Pokémon TCG collectors. ' +
+      'Scan cards, track your collection, find trades & build community. ' +
+      'Free & open-source. In alpha. https://swappulse.org';
     // Replace any existing labels with the bot self-label
     record.labels = {
       $type: 'com.atproto.label.defs#selfLabels',
