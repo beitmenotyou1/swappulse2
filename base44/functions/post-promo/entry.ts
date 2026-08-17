@@ -36,29 +36,29 @@ const POPULAR_SETS = ['sv3', 'sv3pt5', 'sv4', 'base1', 'sv5', 'sv2', 'swsh1', 's
 // URLs and hashtags are real, commonly-searched Pokémon TCG community tags.
 // {cardName} is replaced with the featured card's localized name.
 const HOOKS = [
-  "Just pulled a {cardName} and I can't stop staring at it \u{1F929}",
-  "Been chasing a {cardName} for weeks and finally landed one.",
-  "A {cardName} just came in the mail and my day is made.",
-  "Someone traded me a {cardName} on here and it was the smoothest swap ever.",
-  "My {cardName} arrived in better condition than I ever expected.",
-  "Finally found a {cardName} for my binder and it feels so good.",
-  "The {cardName} I scanned yesterday matched instantly. This app is wild.",
-  "Added a {cardName} to my collection and the progress bar jumped \u{1F4C8}",
-  "Got a {cardName} in a pack party last night and the chat lost it.",
-  "My {cardName} is the centerpiece of my binder right now.",
-  "Tracked down a {cardName} thanks to a collector on here. Community > everything.",
-  "The hunt for a {cardName} is over. Worth every trade.",
+  "{cardName} is one of those cards that stops you mid-scroll.",
+  "The artwork on {cardName} is genuinely something special.",
+  "Been admiring {cardName} and the detail is just unreal.",
+  "{cardName} is the kind of card that makes you want to build a whole binder around it.",
+  "Every time I look at {cardName} I notice something new in the art.",
+  "{cardName} has that artwork that just hits different.",
+  "{cardName} — a card that earns its spot in any collection.",
+  "The detail on {cardName} is a masterclass in TCG art.",
+  "{cardName} is a card collectors keep coming back to.",
+  "There's something about {cardName} that makes it stand out.",
+  "{cardName} is easily one of the most striking cards in its set.",
+  "The composition on {cardName} is just perfect.",
 ];
 
 const VALUE_PROPS = [
-  "SwapPulse is where collectors actually talk to each other. No ads, no algorithm, just people who love the hobby.",
-  "It's built on the AT Protocol, so your posts show up on Bluesky too. Same account, bigger reach.",
-  "Scan a card, add it to your collection, build a binder, find a trade. All in one place, all free.",
-  "Every trader gets vouched for by the community, so you know who you're dealing with before you mail anything.",
-  "No paywalls. No premium tiers. No selling your data. It's just collectors helping collectors.",
-  "Your collection, your posts, your follows. They're yours. You can take them with you anytime.",
-  "Challenges, meetups, pack parties. It's the card shop vibe, but online and global.",
-  "The AI scanner nailed every card I threw at it, even the old base set ones.",
+  "SwapPulse is a decentralized social network for Pokémon TCG collectors, built on the AT Protocol. It's in alpha — features are still being built and refined.",
+  "We're building a place where collectors can actually talk to each other. No ads, no algorithm. It's alpha, so things may change as we go.",
+  "Scan cards, build collections, create binders, find trades — all in one place. It's free and open-source, and we're still in alpha so bear with us.",
+  "Built on the AT Protocol, so your posts can show up on Bluesky too. Same account, bigger reach. Still in alpha, still improving.",
+  "No paywalls. No premium tiers. No selling your data. Just collectors helping collectors — and we're in alpha, so expect rough edges.",
+  "Your collection, your posts, your follows. They're yours. It's alpha and we're actively building, but the vision is portable, collector-owned data.",
+  "Challenges, meetups, pack parties — the card shop vibe, online. We're in alpha so some of this is still coming together.",
+  "SwapPulse is free and open-source, funded by donations. We're in alpha, testing and iterating with the community.",
 ];
 
 const CTAS = [
@@ -199,7 +199,7 @@ function cardImageUrl(imageField: string | null): string | null {
 function generateMessage(card: FeaturedCard | null): { content: string; cardUrl: string | null; tags: string[] } {
   const hook = card
     ? pick(HOOKS).replace(/\{cardName\}/g, card.name)
-    : "Just pulled the chase card I've been hunting for weeks \u{1F389}";
+    : "SwapPulse is a community built by collectors, for collectors.";
   const hashtagSet = pick(HASHTAG_SETS);
   const tags = parseTags(hashtagSet);
   const hashtags = hashtagSet;
@@ -209,16 +209,20 @@ function generateMessage(card: FeaturedCard | null): { content: string; cardUrl:
   if (card) {
     const cardUrl = `${SITE_BASE}/card/${encodeURIComponent(card.id)}`;
     const cardLine = `See this card on SwapPulse: ${cardUrl}`;
-    // Start with the essential parts: hook + card link + hashtags
-    const essential = `${hook}\n\n${cardLine}\n\n${hashtags}`;
+    // Card info line with set name and rarity when available
+    const infoParts = [card.setName, card.rarity].filter(Boolean);
+    const infoLine = infoParts.length > 0 ? infoParts.join(' · ') : null;
+    const intro = infoLine ? `${hook}\n\n${infoLine}` : hook;
+    // Start with the essential parts: intro + card link + hashtags
+    const essential = `${intro}\n\n${cardLine}\n\n${hashtags}`;
     if (countGraphemes(essential) > 300) {
-      // Hook alone is too long with the link — trim the hook to fit
+      // Intro alone is too long with the link — trim to fit
       const trimmed = essential.slice(0, 297) + '...';
       return { content: trimmed, cardUrl, tags };
     }
-    // Try to fit a value prop between the hook and the card link
+    // Try to fit a value prop between the intro and the card link
     const valueProp = pick(VALUE_PROPS);
-    const full = `${hook}\n\n${valueProp}\n\n${cardLine}\n\n${hashtags}`;
+    const full = `${intro}\n\n${valueProp}\n\n${cardLine}\n\n${hashtags}`;
     if (countGraphemes(full) <= 300) {
       return { content: full, cardUrl, tags };
     }
@@ -333,22 +337,30 @@ Deno.serve(async (req) => {
     let embed: any = null;
     if (card && cardUrl) {
       const imageUrl = cardImageUrl(card.imageField);
+      let thumb: any = null;
       if (imageUrl) {
-        const thumb = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
-        if (thumb) {
-          embed = {
-            $type: 'app.bsky.embed.external',
-            external: {
-              uri: cardUrl,
-              title: card.name,
-              description: [card.setName, card.rarity].filter(Boolean).join(' · ') || 'Pokémon TCG card',
-              thumb,
-            },
-          };
-        }
-      } else {
-        console.log('post-promo: card has no image field, publishing text-only with link');
+        thumb = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
       }
+      // Always embed the card link — with image when available, without when not
+      embed = {
+        $type: 'app.bsky.embed.external',
+        external: {
+          uri: cardUrl,
+          title: card.name,
+          description: [card.setName, card.rarity].filter(Boolean).join(' · ') || 'Pokémon TCG card',
+        },
+      };
+      if (thumb) embed.external.thumb = thumb;
+    } else if (!card) {
+      // No card — embed the home page so the CTA link renders as a rich card
+      embed = {
+        $type: 'app.bsky.embed.external',
+        external: {
+          uri: SITE_BASE,
+          title: 'SwapPulse',
+          description: 'A decentralized social network for Pokémon TCG collectors. Free, open-source, and in alpha.',
+        },
+      };
     }
 
     // Create the post directly on the PDS (no local Post record)
