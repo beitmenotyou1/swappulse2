@@ -1,15 +1,16 @@
-// scan-card — rebuilt for the ML learning loop.
+// scan-card — rebuilt for accuracy with image-based matching.
 //
-// Changes from v1:
-//  - Resolves candidates against the local TcgdexCard cache (no live per-scan
-//    TCGDex search as the primary path); falls back to a live TCGDex name
-//    search only when the local cache misses (catalog not yet synced or a
-//    partial-name match the exact-match cache can't find).
-//  - Full TCGDex rarity taxonomy: the LLM returns a rarity from the taxonomy
-//    and a detected_language tag; the prompt handles non-English card text.
-//  - Applies ScannerModelWeights (correction-derived per-card adjustments)
-//    when ranking candidates, so the scanner improves between offline
-//    retrains.
+// Pipeline:
+//  1. Vision LLM reads printed text (name, set, collector number, rarity, lang).
+//  2. Candidate set built from the local TcgdexCard cache (fast path) with a
+//     live TCGDex search fallback when the cache misses.
+//  3. Candidates scored by text similarity (name / set / collector number).
+//  4. Vision LLM compares the scan photo against the top candidate card images
+//     and pins the exact match — disambiguating same-name cards across
+//     sets/variants that text alone can't resolve.
+//  5. ScannerModelWeights (correction-derived per-card adjustments) applied;
+//     the image-pinned match ranks #1 so the frontend View-card link and
+//     correction flow always target the right card.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchTcgdex } from '../../shared/tcgdexClient.ts';
 import { MODEL_VERSION, normalizeName, canonicalizeRarity } from '../../shared/scannerLearning.ts';
@@ -148,7 +149,10 @@ export default async function (req: Request): Promise<Response> {
       }
     }
 
-    // Score candidates.
+    // Score candidates by text similarity (name / set / collector number).
+    // Always run the stored image path through buildImage so candidate.image
+    // is a full assets.tcgdex.net URL (the raw path breaks <img> and the
+    // image-comparison LLM call).
     const scored = cards.map((c: any) => ({
       card_id: c.card_id,
       card_name: c.name,
@@ -156,9 +160,41 @@ export default async function (req: Request): Promise<Response> {
       set_id: c.set_id,
       local_id: c.local_id,
       rarity: c.rarity || '',
-      image: c.image || buildImage(c.image),
+      image: buildImage(c.image),
       score: scoreCandidate(c, prediction),
     }));
+
+    // Rank by text score and take the top candidates for image comparison.
+    const topForImage = [...scored].sort((a: any, b: any) => b.score - a.score).slice(0, 6);
+
+    // Image-based matching: ask the vision LLM to compare the scan photo
+    // against the top candidate card images and pin the exact match. This
+    // disambiguates same-name cards across sets/variants that text alone can't.
+    let matchedCardId = '';
+    let imageConfidence = 0;
+    if (topForImage.length >= 2) {
+      try {
+        const idList = topForImage.map((c: any, i: number) => `${i + 1}=${c.card_id}`).join(', ');
+        const comparePrompt = `You are a Pokémon TCG card matching expert. The FIRST image is a user-submitted photo of a Pokémon card. The next ${topForImage.length} images are candidate cards from the TCGDex catalog, labeled by card_id below. Compare the user's photo to each candidate and return the card_id of the candidate that is the EXACT same card (identical artwork, set, and collector number). If none match, return an empty string.\nCandidate card_ids (in order): ${idList}\nReturn JSON: { matched_card_id: string, confidence: number 0-1 }`;
+        const cmpRes: any = await base44.integrations.Core.InvokeLLM({
+          prompt: comparePrompt,
+          file_urls: [imageUrl, ...topForImage.map((c: any) => c.image).filter(Boolean)],
+          model: 'gemini_3_flash',
+          response_json_schema: {
+            type: 'object',
+            properties: {
+              matched_card_id: { type: 'string' },
+              confidence: { type: 'number' },
+            },
+            required: ['matched_card_id', 'confidence'],
+          },
+        });
+        matchedCardId = String(cmpRes?.matched_card_id || '');
+        imageConfidence = Math.max(0, Math.min(1, Number(cmpRes?.confidence) || 0));
+      } catch (e: any) {
+        console.error('scan-card image comparison failed', e?.message || e);
+      }
+    }
 
     // Fetch model weights for all candidate card_ids and apply them.
     const cardIds = scored.map((c: any) => c.card_id).filter(Boolean);
@@ -178,14 +214,17 @@ export default async function (req: Request): Promise<Response> {
     const candidates = scored
       .map((c: any) => {
         const w = weightMap.get(c.card_id) ?? 1;
-        return { ...c, weight: w, adjustedScore: c.score * w };
+        const isMatch = !!(matchedCardId && c.card_id === matchedCardId);
+        // Image-matched candidate gets a strong boost so it ranks #1.
+        const adjustedScore = isMatch ? c.score + 1000 : c.score * w;
+        return { ...c, weight: w, adjustedScore, imageMatch: isMatch };
       })
       .sort((a: any, b: any) => b.adjustedScore - a.adjustedScore)
       .slice(0, 5)
       .map((c: any, i: number) => ({
         card_id: c.card_id, card_name: c.card_name, set_name: c.set_name, set_id: c.set_id,
         local_id: c.local_id, rarity: c.rarity, image: c.image, weight: c.weight,
-        confidence: i === 0 ? llmConfidence : Math.max(0, Math.min(1, (c.adjustedScore / (maxScore || 1)) * llmConfidence)),
+        confidence: i === 0 ? (matchedCardId ? Math.max(imageConfidence, llmConfidence) : llmConfidence) : Math.max(0, Math.min(1, (c.adjustedScore / (maxScore || 1)) * llmConfidence)),
         rank: i + 1,
       }));
 
