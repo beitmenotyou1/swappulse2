@@ -26,6 +26,10 @@ import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 const SITE_BASE = 'https://swappulse.org';
 const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
+// Branded SwapPulse promo banner used as the embed thumbnail for feature and
+// community posts (which have no card image of their own), so Bluesky renders
+// a rich image card instead of a bare text link card.
+const PROMO_BANNER_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/a22b46eb2_generated_image.png';
 
 // Curated list of popular set codes — recognizable cards collectors know.
 const POPULAR_SETS = ['sv3', 'sv3pt5', 'sv4', 'base1', 'sv5', 'sv2', 'swsh1', 'swsh4'];
@@ -438,6 +442,12 @@ Deno.serve(async (req) => {
         const thumb = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
         if (thumb) embed.external.thumb = thumb;
       }
+    } else {
+      // Feature and community posts: attach the branded SwapPulse banner as
+      // the embed thumbnail so Bluesky renders a rich image card instead of a
+      // bare text link card.
+      const thumb = await uploadCardImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL);
+      if (thumb) embed.external.thumb = thumb;
     }
 
     // Create the post directly on the PDS (no local Post record)
