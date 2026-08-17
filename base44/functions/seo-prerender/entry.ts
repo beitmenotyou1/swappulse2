@@ -51,7 +51,19 @@ export default async function(req: Request): Promise<Response> {
 
 function getAppUrl(req: Request): string {
   const custom = req.headers.get('X-Base44-App-Url');
-  if (custom) return custom.replace(/\/$/, '');
+  if (custom) {
+    // Validate the header is a well-formed http(s) URL and return only its
+    // origin — stripping any path/query and rejecting anything that isn't a
+    // clean URL prevents HTML/JS injection into the og:url/canonical attributes.
+    try {
+      const parsed = new URL(custom);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return `${parsed.protocol}//${parsed.host}`;
+      }
+    } catch {
+      // invalid URL — fall through to request-derived origin
+    }
+  }
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 }

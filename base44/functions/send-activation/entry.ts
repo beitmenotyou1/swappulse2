@@ -51,7 +51,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org';
+    // Security: never trust the client-controlled X-Base44-App-Url header for
+    // activation links — an attacker could spoof it and redirect the victim's
+    // secret token to their own server. Use only the server-side env var.
+    const appUrl = (Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org').replace(/\/$/, '');
     const link = `${appUrl}/activate?token=${record.link_token}`;
     try {
       const email = buildActivationEmail(u.full_name, link);
