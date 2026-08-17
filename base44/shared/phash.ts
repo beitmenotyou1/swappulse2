@@ -4,10 +4,22 @@
 //
 // Algorithm: fetch image → decode JPEG → resize to 8×8 grayscale (box-average)
 // → compute mean → each pixel above mean = 1, below = 0 → 64-bit hash → hex.
-// JPEG decoding via jpeg-js. TCGDex images are requested as JPEG (scan images
-// are already JPEG).
+// JPEG decoding via jpeg-js (Buffer polyfilled for Deno). TCGDex images are
+// requested as JPEG (scan images are already JPEG).
 
-import jpeg from 'npm:jpeg-js@0.4.4';
+import { Buffer } from 'node:buffer';
+
+// jpeg-js uses Buffer as a global; polyfill it before the dynamic import.
+(globalThis as any).Buffer = (globalThis as any).Buffer || Buffer;
+
+let _jpeg: any = null;
+async function getJpeg(): Promise<any> {
+  if (!_jpeg) {
+    const mod: any = await import('npm:jpeg-js@0.4.4');
+    _jpeg = mod.default || mod;
+  }
+  return _jpeg;
+}
 
 interface DecodedImage {
   width: number;
@@ -15,13 +27,14 @@ interface DecodedImage {
   data: Uint8Array; // RGBA
 }
 
-function decodeImage(buffer: ArrayBuffer): DecodedImage | null {
+async function decodeImage(buffer: ArrayBuffer): Promise<DecodedImage | null> {
   const bytes = new Uint8Array(buffer);
   if (bytes.length < 2) return null;
   // JPEG: FF D8
   if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
   try {
-    const raw = jpeg.decode(buffer, { useTArray: true });
+    const jpeg = await getJpeg();
+    const raw = jpeg.decode(Buffer.from(buffer), { useTArray: true });
     if (!raw?.width || !raw?.height) return null;
     return { width: raw.width, height: raw.height, data: raw.data };
   } catch (e) {
@@ -68,10 +81,10 @@ function hashFromPixels(pixels: Float32Array): string {
 
 export async function computePHashFromUrl(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, { redirect: 'error' });
+    const res = await fetch(url);
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();
-    const img = decodeImage(buffer);
+    const img = await decodeImage(buffer);
     if (!img) return null;
     const pixels = toGrayscaleAndResize(img);
     return hashFromPixels(pixels);

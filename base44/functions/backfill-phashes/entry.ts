@@ -33,6 +33,7 @@ export default async function (req: Request): Promise<Response> {
 
     let hashed = 0;
     let failed = 0;
+    let debug: any = null;
     for (const card of toHash) {
       const jpgUrl = buildJpgUrl(card.image);
       if (!jpgUrl) { failed++; continue; }
@@ -47,6 +48,22 @@ export default async function (req: Request): Promise<Response> {
         }
       } else {
         failed++;
+        if (!debug) {
+          // Capture debug info for the first failure.
+          try {
+            const res = await fetch(jpgUrl, { redirect: 'error' });
+            debug = {
+              card_id: card.card_id,
+              image: card.image,
+              jpgUrl,
+              fetchStatus: res.status,
+              contentType: res.headers.get('content-type'),
+              contentLength: res.headers.get('content-length'),
+            };
+          } catch (e: any) {
+            debug = { card_id: card.card_id, jpgUrl, fetchError: e?.message || String(e) };
+          }
+        }
       }
     }
 
@@ -56,6 +73,7 @@ export default async function (req: Request): Promise<Response> {
       hashed,
       failed,
       has_more: toHash.length === BATCH_SIZE,
+      debug,
     });
   } catch (error: any) {
     console.error('[backfill-phashes] error', error?.message || error);
