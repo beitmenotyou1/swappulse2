@@ -3,7 +3,7 @@ import { Search, Loader2, Flame, CheckSquare, Square, Heart, X } from 'lucide-re
 import { searchCards, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ExploreCardTile from '@/components/cards/ExploreCardTile';
@@ -23,7 +23,8 @@ export default function Explore() {
   });
   const { settings } = useSettings();
   const lang = localeToTcgdexLang(settings?.language?.preferredContent?.[0] || settings?.language?.targetLanguage);
-  const [query, setQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sets, setSets] = useState([]);

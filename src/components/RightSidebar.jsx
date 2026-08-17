@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import OnlineNow from '@/components/OnlineNow';
+import TrendingTopics from '@/components/sidebar/TrendingTopics';
 import { formatPrice } from '@/lib/format';
 import { useToast } from '@/components/ui/use-toast';
 import { createBridgedFollow } from '@/lib/followBridge';
@@ -111,6 +112,8 @@ export default function RightSidebar({ online = [] }) {
           </div>
         </section>
       )}
+
+      <TrendingTopics />
 
       {recentTrades.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-4">
