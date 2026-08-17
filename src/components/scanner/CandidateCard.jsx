@@ -11,7 +11,7 @@ export default function CandidateCard({ candidate, onSelect, isSelected }) {
     candidate.confidence >= 0.85 ? 'text-success' :
     candidate.confidence >= 0.6 ? 'text-warning' :
     'text-destructive';
-  const { text } = rarityClasses(candidate.rarity);
+  const { text, glow } = rarityClasses(candidate.rarity);
 
   return (
     <button
@@ -20,7 +20,7 @@ export default function CandidateCard({ candidate, onSelect, isSelected }) {
         isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
       }`}
     >
-      <div className="aspect-[3/4] overflow-hidden bg-muted">
+      <div className={`aspect-[3/4] overflow-hidden bg-muted ${glow || ''}`}>
         {candidate.image ? (
           <img src={candidate.image} alt={candidate.card_name} loading="lazy" className="h-full w-full object-cover" />
         ) : (

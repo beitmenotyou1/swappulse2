@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "tcgdex_catalog_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_catalog": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sync-tcgdex-catalog",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sync TCGDex catalog",
+            "description": "Incrementally sync a batch of TCGDex sets into the local card cache, rotating through languages"
+          }
+        }
+      }
+    ]
+  },
+  "name": "TCGDex Catalog Sync",
+  "description": "Daily incremental sync of the TCGDex catalog into the local TcgdexCard cache, rotating through all supported languages so the scanner resolves against current data without a live per-scan search",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 4 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

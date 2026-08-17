@@ -1,0 +1,104 @@
+{
+  "name": "TcgdexCard",
+  "type": "object",
+  "title": "TcgdexCard",
+  "description": "org.swappulse.tcgdexCard \u2014 a locally-synced TCGDex catalog card used by the scanner to resolve candidates without a live per-scan TCGDex search. One record per TCGDex card id (global across languages). name_norm_{lang} fields hold language-specific normalised names for fast exact-match lookup; names holds display names per language. Synced by the sync-tcgdex-catalog backend function.",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex global card id (same across languages)"
+    },
+    "set_id": {
+      "type": "string",
+      "description": "TCGDex set id (e.g. sv01)"
+    },
+    "set_name": {
+      "type": "string",
+      "description": "Set name in English (for display)"
+    },
+    "local_id": {
+      "type": "string",
+      "description": "Collector number printed on the card (e.g. 025/198)"
+    },
+    "rarity": {
+      "type": "string",
+      "description": "TCGDex rarity string (e.g. Common, Rare Holo, Illustration Rare, Full Art)"
+    },
+    "image": {
+      "type": "string",
+      "description": "TCGDex image path or absolute URL used to build the card image URL"
+    },
+    "name": {
+      "type": "string",
+      "description": "Card name in English (primary display name)"
+    },
+    "name_norm_en": {
+      "type": "string",
+      "description": "Normalised (lowercased, alphanumeric) English name for fast lookup"
+    },
+    "name_norm_fr": {
+      "type": "string",
+      "description": "Normalised French name"
+    },
+    "name_norm_de": {
+      "type": "string",
+      "description": "Normalised German name"
+    },
+    "name_norm_it": {
+      "type": "string",
+      "description": "Normalised Italian name"
+    },
+    "name_norm_es": {
+      "type": "string",
+      "description": "Normalised Spanish name"
+    },
+    "name_norm_pt": {
+      "type": "string",
+      "description": "Normalised Portuguese name"
+    },
+    "name_norm_jp": {
+      "type": "string",
+      "description": "Normalised Japanese name"
+    },
+    "name_norm_zh": {
+      "type": "string",
+      "description": "Normalised Chinese name"
+    },
+    "name_norm_ko": {
+      "type": "string",
+      "description": "Normalised Korean name"
+    },
+    "names": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Display names keyed by language code (en, fr, de, it, es, pt, jp, zh, ko)"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this record was last refreshed from TCGDex"
+    }
+  },
+  "required": [
+    "card_id",
+    "name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

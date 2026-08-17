@@ -1,0 +1,57 @@
+{
+  "name": "TcgdexSyncState",
+  "type": "object",
+  "title": "TcgdexSyncState",
+  "description": "org.swappulse.tcgdexSyncState \u2014 a single-row cursor tracking progress of the TCGDex catalog sync. Records the current language being synced, the index into the set list, total sets, and last-synced timestamp so sync-tcgdex-catalog resumes where it left off and rotates through all supported languages. Written by sync-tcgdex-catalog (service role).",
+  "properties": {
+    "current_lang": {
+      "type": "string",
+      "default": "en",
+      "description": "Language code currently being synced (en, fr, de, it, es, pt, jp, zh, ko)"
+    },
+    "set_index": {
+      "type": "integer",
+      "default": 0,
+      "description": "Index into the set list for the current language where the next sync run should resume"
+    },
+    "total_sets": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total sets in the current language's set list"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sets_synced": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total sets fully synced across all languages since the cursor started"
+    }
+  },
+  "required": [
+    "current_lang"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

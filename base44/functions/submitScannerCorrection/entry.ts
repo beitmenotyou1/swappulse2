@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { applyCorrectionToWeights } from '../../shared/scannerLearning.ts';
 
 export default async function (req) {
   try {
@@ -41,6 +42,23 @@ export default async function (req) {
       created_at: new Date().toISOString(),
       corrected_by: user.id,
     });
+
+    // Feed the correction back into the scanner's real-time ranking weights
+    // (service role). confirm_correct boosts the corrected card; wrong_*
+    // penalises the predicted card AND boosts the corrected card so it
+    // surfaces more readily on future scans.
+    try {
+      const svc = base44.asServiceRole;
+      const isConfirm = correctionType === 'confirm_correct';
+      if (isConfirm) {
+        await applyCorrectionToWeights(svc, body.corrected_card_id, true);
+      } else {
+        if (body.predicted_card_id) await applyCorrectionToWeights(svc, body.predicted_card_id, false);
+        await applyCorrectionToWeights(svc, body.corrected_card_id, true);
+      }
+    } catch (e) {
+      console.error('submitScannerCorrection weight update failed', e?.message || e);
+    }
 
     return Response.json({
       status: 'accepted',
