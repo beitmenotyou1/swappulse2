@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, Hash, Type, CreditCard, Loader2, Globe } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import TrendingCardPreview from '@/components/sidebar/TrendingCardPreview';
 
 // Common English stopwords filtered out of keyword extraction so the list
 // surfaces meaningful TCG/collector terms rather than "the", "this", "with".
@@ -239,21 +240,11 @@ export default function TrendingTopics() {
           </p>
           <div className="space-y-0.5">
             {cards.map((c, i) => (
-              <Link
+              <TrendingCardPreview
                 key={`card-${c.card_id || c.card_name}-${i}`}
-                to={c.card_id ? `/card/${c.card_id}` : `/explore?q=${encodeURIComponent(c.card_name)}`}
-                className="flex items-center justify-between rounded-lg px-2 py-1 transition-colors hover:bg-secondary"
-              >
-                <span className="flex items-center gap-1.5 truncate text-sm font-medium">
-                  {c.source === 'web' && <WebBadge />}
-                  {c.card_name}
-                </span>
-                {c.count > 0 && (
-                  <span className="ml-2 shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-                    {c.count}
-                  </span>
-                )}
-              </Link>
+                card={c}
+                count={c.count}
+              />
             ))}
           </div>
         </div>
