@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import TrendingCardsRail from '@/components/cards/TrendingCardsRail';
+import RarityFilter from '@/components/feed/RarityFilter';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const TABS = [
@@ -34,6 +35,7 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
+  const [rarityFilter, setRarityFilter] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
   const [repostMap, setRepostMap] = useState({});
   const [likeMap, setLikeMap] = useState({});
@@ -144,6 +146,14 @@ export default function Home() {
 
   const visiblePosts = filterPosts(posts);
   const filtered = tab === 'all' ? visiblePosts : visiblePosts.filter((p) => p.post_type === tab);
+  const rarityFiltered = rarityFilter === 'all' ? filtered : filtered.filter((p) => {
+    if (!p.card_rarity) return false;
+    const r = p.card_rarity.toLowerCase();
+    if (rarityFilter === 'holo') return r.includes('holo');
+    if (rarityFilter === 'ultra') return r.includes('ultra rare');
+    if (rarityFilter === 'secret') return r.includes('secret');
+    return true;
+  });
 
   if (showTour) {
     return <OnboardingTour onComplete={completeTour} />;
@@ -172,6 +182,8 @@ export default function Home() {
         </div>
       </div>
 
+      <RarityFilter value={rarityFilter} onChange={setRarityFilter} />
+
       <StoriesBar />
 
       <SpaceBar />
@@ -184,7 +196,7 @@ export default function Home() {
 
       <TradeInterestBanner />
 
-      {!loading && user && followedCount === 0 && filtered.length > 0 && (
+      {!loading && user && followedCount === 0 && rarityFiltered.length > 0 && (
         <div className="mx-4 my-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <p className="font-semibold text-foreground">Follow collectors to personalize your feed</p>
           <p className="mt-0.5 text-muted-foreground">You're seeing recent posts from the community. Follow collectors to see their content first.</p>
@@ -196,7 +208,7 @@ export default function Home() {
         <div className="flex justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : rarityFiltered.length === 0 ? (
         <div className="px-4 py-20 text-center">
           {user ? (
             <>
@@ -217,7 +229,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="animate-fade-in">
-          {filtered.map((post) => (
+          {rarityFiltered.map((post) => (
             <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} myRepost={repostMap[post.id]} myLike={likeMap[post.id]} />
           ))}
         </div>
