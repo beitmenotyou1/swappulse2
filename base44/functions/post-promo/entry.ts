@@ -21,6 +21,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
+import { buildHashtagFacets } from '../../shared/hashtagFacets.ts';
 
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 const SITE_BASE = 'https://swappulse.org';
@@ -103,33 +104,6 @@ function parseTags(hashtagSet: string): string[] {
     if (tags.length >= 8) break;
   }
   return tags;
-}
-
-/** Build rich-text facets for every #hashtag in the post body so Bluesky
- * renders them as clickable, searchable tag links (not plain text). Each
- * facet annotates the UTF-8 byte range of the #hashtag with a
- * `app.bsky.richtext.facet#tag` feature. Byte offsets are computed by
- * accumulating the byte length of each UTF-8 chunk between matches, since
- * Bluesky facets index bytes, not characters. */
-function buildHashtagFacets(text: string): any[] {
-  const facets: any[] = [];
-  const encoder = new TextEncoder();
-  let byteOffset = 0;
-  let lastIdx = 0;
-  const re = /#([A-Za-z0-9_]+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    // Bytes of the text between the last match and this one
-    byteOffset += encoder.encode(text.slice(lastIdx, m.index)).length;
-    const tagBytes = encoder.encode(m[0]).length;
-    facets.push({
-      index: { byteStart: byteOffset, byteEnd: byteOffset + tagBytes },
-      features: [{ $type: 'app.bsky.richtext.facet#tag', tag: m[1].toLowerCase() }],
-    });
-    byteOffset += tagBytes;
-    lastIdx = m.index + m[0].length;
-  }
-  return facets;
 }
 
 /** Count grapheme clusters (Bluesky's text limit is 300 graphemes). */

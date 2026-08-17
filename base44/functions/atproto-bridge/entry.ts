@@ -13,6 +13,7 @@
 // the call errors (non-fatal — the local record still persists).
 
 import { getPdsSession, getPdsSessionForUser, clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
+import { attachHashtagFacets } from '../../shared/hashtagFacets.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Resolve the PDS session to use for this request. If the calling user has a
@@ -194,6 +195,12 @@ Deno.serve(async (req) => {
     // --- create action (default) ---
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });
+    }
+    // Attach hashtag facets to posts so #hashtags render as clickable,
+    // searchable tag links on Bluesky (the `tags` field alone only handles
+    // search indexing). Existing caller-provided facets are preserved.
+    if (collection === 'app.bsky.feed.post') {
+      attachHashtagFacets(record);
     }
     const { pdsUrl, session } = await resolveSession(req);
     let result: any = await pdsRequest(
