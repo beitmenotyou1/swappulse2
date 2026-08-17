@@ -230,12 +230,13 @@ export default function ComposeBox({ onPosted, replyTo }) {
         <div className="flex-1">
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => setContent(e.target.value.slice(0, 300))}
             rows={2}
-            maxLength={500}
+            maxLength={300}
             placeholder={replyTo ? 'Write your reply...' : 'What did you pull today?'}
             className="w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           />
+          <div className="text-right text-xs text-muted-foreground">{content.length}/300</div>
 
           {attachedCard && (
             <div className="relative mb-3 inline-flex overflow-hidden rounded-xl border border-border bg-secondary">

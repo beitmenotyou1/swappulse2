@@ -4,7 +4,7 @@ import { Send, X, CornerDownRight } from 'lucide-react';
 import { createReply } from '@/lib/postInteractions';
 import { withBotGuard, isBotBlockError } from '@/lib/botGuardClient';
 
-const MAX_LEN = 500;
+const MAX_LEN = 300;
 
 export default function CommentComposer({ cardId, cardName, cardImage, user, replyTarget, onCancelReply, onPosted }) {
   const [text, setText] = useState('');

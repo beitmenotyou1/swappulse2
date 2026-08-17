@@ -184,6 +184,7 @@ export async function deleteRepost(repost, post) {
 // local Post parents and external strongRef parents via normalizeRef.
 export async function createReply(parentPost, text, user, extra = {}, localReplyTo = null) {
   const ref = normalizeRef(parentPost);
+  if (text && text.length > 300) throw new Error('Replies are limited to 300 characters.');
   await ensureBotAllowed('reply', text);
   const { did, signingKey } = await ensureUserDid();
 
@@ -287,6 +288,7 @@ export async function deleteReply(reply, parentPost) {
 // local and external targets via normalizeRef.
 export async function createQuoteRepost(post, text, user, extra = {}) {
   const ref = normalizeRef(post);
+  if (text && text.length > 300) throw new Error('Quote posts are limited to 300 characters.');
   await ensureBotAllowed('post', text);
   const { did, signingKey } = await ensureUserDid();
   const stamped = await stampRecord({

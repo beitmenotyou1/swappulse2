@@ -9,7 +9,7 @@ import { createReply } from '@/lib/postInteractions';
 import CommentActions from '@/components/comments/CommentActions';
 import RichText from '@/components/RichText';
 
-const MAX_LEN = 500;
+const MAX_LEN = 300;
 
 function ReplyNode({ reply, children, onPosted }) {
   return (

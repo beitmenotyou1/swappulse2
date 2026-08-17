@@ -8,7 +8,7 @@ import { isBotBlockError } from '@/lib/botGuardClient';
 import QuotedPostCard from '@/components/feed/QuotedPostCard';
 import { base44 } from '@/api/base44Client';
 
-const MAX_LEN = 500;
+const MAX_LEN = 300;
 
 const POLICY_LABELS = { everybody: 'Everyone', followers: 'Followers', mentioned: 'Mentioned', nobody: 'No one' };
 const SCOPES = [
