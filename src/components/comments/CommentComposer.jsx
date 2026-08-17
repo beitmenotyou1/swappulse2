@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Send, X, CornerDownRight } from 'lucide-react';
 import { createReply } from '@/lib/postInteractions';
 import { withBotGuard, isBotBlockError } from '@/lib/botGuardClient';
+import CardAttachBar from '@/components/feed/CardAttachBar';
 
 const MAX_LEN = 300;
 
@@ -10,6 +11,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [attachedCard, setAttachedCard] = useState(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +26,11 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
     setBusy(true);
     setError('');
     try {
+      // An attached card (via scan/search/collection) overrides the page's card
+      // context so a collector can comment about a different pull.
+      const cId = attachedCard?.id || cardId;
+      const cName = attachedCard?.name || cardName || '';
+      const cImage = attachedCard?.image || cardImage || '';
       if (replyTarget) {
         // Reply to an existing comment — federated via createReply (sets
         // parent/root refs, bridges to the PDS, increments the parent's
@@ -32,18 +39,18 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
         // stays flat, while federating with the direct parent for threading.
         const replyToId = replyTarget.reply_to || replyTarget.id;
         await createReply(replyTarget, trimmed, user, {
-          card_id: cardId,
-          card_name: cardName || '',
-          card_image: cardImage || '',
+          card_id: cId,
+          card_name: cName,
+          card_image: cImage,
         }, replyToId);
       } else {
         // Top-level card comment — standalone post (no reply threading).
         const post = await withBotGuard('comment', trimmed, () => base44.entities.Post.create({
           content: trimmed,
           post_type: 'text',
-          card_id: cardId,
-          card_name: cardName || '',
-          card_image: cardImage || '',
+          card_id: cId,
+          card_name: cName,
+          card_image: cImage,
           author_name: user?.display_name || user?.full_name || 'Collector',
           author_handle: user?.username || user?.bsky_handle || '',
           author_avatar: user?.avatar || '',
@@ -52,6 +59,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
       }
 
       setText('');
+      setAttachedCard(null);
       onCancelReply?.();
       onPosted?.();
     } catch (e) {
@@ -90,6 +98,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
         rows={2}
         className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
       />
+      <CardAttachBar value={attachedCard} onChange={setAttachedCard} compact />
       <div className="mt-2 flex items-center justify-between">
         <span className={`text-xs ${MAX_LEN - text.length < 20 ? 'text-destructive' : MAX_LEN - text.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
           {MAX_LEN - text.length} left

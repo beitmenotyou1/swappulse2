@@ -335,6 +335,11 @@ export async function createQuoteRepost(post, text, user, extra = {}) {
     hashtags: extra.hashtags || [],
     canonical_tags: extra.canonical_tags || [],
     mentioned_dids: extra.mentioned_dids || [],
+    card_id: extra.card_id || '',
+    card_name: extra.card_name || '',
+    card_image: extra.card_image || '',
+    card_rarity: extra.card_rarity || '',
+    set_name: extra.set_name || '',
   }, NSID.POST, did, signingKey);
   const created = await base44.entities.Post.create(stamped);
   if (created?.id) {

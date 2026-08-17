@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { createQuoteRepost } from '@/lib/postInteractions';
 import { isBotBlockError } from '@/lib/botGuardClient';
 import QuotedPostCard from '@/components/feed/QuotedPostCard';
+import CardAttachBar from '@/components/feed/CardAttachBar';
 import { base44 } from '@/api/base44Client';
 
 const MAX_LEN = 300;
@@ -50,6 +51,7 @@ export default function QuoteComposeModal({ open, onClose, targetPost, onPosted 
   const [error, setError] = useState('');
   const [replyPolicy, setReplyPolicy] = useState('everybody');
   const [visibilityScope, setVisibilityScope] = useState('public');
+  const [attachedCard, setAttachedCard] = useState(null);
 
   if (!open) return null;
 
@@ -81,8 +83,14 @@ export default function QuoteComposeModal({ open, onClose, targetPost, onPosted 
         hashtags,
         canonical_tags,
         mentioned_dids: mentionedDids,
+        card_id: attachedCard?.id || '',
+        card_name: attachedCard?.name || '',
+        card_image: attachedCard?.image || '',
+        card_rarity: attachedCard?.rarity || '',
+        set_name: attachedCard?.set?.name || '',
       });
       setText('');
+      setAttachedCard(null);
       onClose?.();
       if (onPosted) {
         onPosted(created);
@@ -155,6 +163,8 @@ export default function QuoteComposeModal({ open, onClose, targetPost, onPosted 
                 </button>
               ))}
             </div>
+
+            <CardAttachBar value={attachedCard} onChange={setAttachedCard} />
 
             <div className="mt-2">
               <p className="mb-1 text-xs font-medium text-muted-foreground">Quoting</p>
