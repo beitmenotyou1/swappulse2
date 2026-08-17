@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { searchCards, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { searchCardsMulti, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 
 export default function CardSearchModal({ open, onClose, onSelect, title = 'Search cards' }) {
   const [query, setQuery] = useState('');
@@ -9,14 +9,13 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
-  const runSearch = useCallback(async (q, p = 1) => {
+  const runSearch = useCallback(async (q) => {
     setLoading(true);
     try {
-      const cards = await searchCards(q, { page: p, perPage: 24 });
-      if (p === 1) setResults(cards);
-      else setResults((prev) => [...prev, ...cards]);
-      setHasMore(cards.length === 24);
-      setPage(p);
+      const cards = await searchCardsMulti(q, { perPage: 24 });
+      setResults(cards);
+      setHasMore(false);
+      setPage(1);
     } catch {
       setResults([]);
       setHasMore(false);
@@ -55,7 +54,7 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by card name e.g. Pikachu, Charizard…"
+              placeholder="Search by name, set ID, or number — e.g. M4 058, PEL, Charizard…"
               className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
             />
           </div>

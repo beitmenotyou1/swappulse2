@@ -48,6 +48,19 @@ export async function searchCards(query, { page = 1, perPage = 24, setName, rari
   });
 }
 
+/**
+ * Multi-identifier card search — matches combined tokens (set/pack ID, card
+ * number, name, rarity) against the local TcgdexCard cache with case-insensitive,
+ * multilingual matching, falling back to the live TCGDex API when the cache has
+ * no matches. Returns cards in the same shape as `searchCards`.
+ */
+export async function searchCardsMulti(query, { perPage = 24, lang = getCurrentTcgdexLang() } = {}) {
+  return cached(`searchMulti:${lang}:${query}:${perPage}`, async () => {
+    const res = await base44.functions.invoke('search-cards', { query, perPage, lang });
+    return res.data?.data ?? [];
+  });
+}
+
 export async function getCard(cardId, lang = getCurrentTcgdexLang()) {
   return cached(`card:${lang}:${cardId}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getCard', cardId, lang });
