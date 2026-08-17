@@ -121,7 +121,9 @@ export default function QuoteComposeModal({ open, onClose, targetPost, onPosted 
               placeholder="Add your commentary…"
               className="w-full resize-none bg-transparent text-base outline-none placeholder:text-muted-foreground"
             />
-            <div className="mt-1 text-right text-xs text-muted-foreground">{text.length}/{MAX_LEN}</div>
+            <div className={`mt-1 text-right text-xs ${MAX_LEN - text.length < 20 ? 'text-destructive' : MAX_LEN - text.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
+              {MAX_LEN - text.length} left
+            </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">Who can reply:</span>

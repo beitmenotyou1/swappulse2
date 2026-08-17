@@ -236,7 +236,9 @@ export default function ComposeBox({ onPosted, replyTo }) {
             placeholder={replyTo ? 'Write your reply...' : 'What did you pull today?'}
             className="w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           />
-          <div className="text-right text-xs text-muted-foreground">{content.length}/300</div>
+          <div className={`text-right text-xs ${300 - content.length < 20 ? 'text-destructive' : 300 - content.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
+            {300 - content.length} left
+          </div>
 
           {attachedCard && (
             <div className="relative mb-3 inline-flex overflow-hidden rounded-xl border border-border bg-secondary">

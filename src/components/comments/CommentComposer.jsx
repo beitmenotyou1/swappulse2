@@ -91,8 +91,8 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
         className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {text.length}/{MAX_LEN}
+        <span className={`text-xs ${MAX_LEN - text.length < 20 ? 'text-destructive' : MAX_LEN - text.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
+          {MAX_LEN - text.length} left
         </span>
         <button
           onClick={submit}

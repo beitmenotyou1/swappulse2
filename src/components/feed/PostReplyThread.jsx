@@ -157,6 +157,9 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
               rows={1}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
+            <div className={`mt-0.5 text-right text-[11px] ${MAX_LEN - text.length < 20 ? 'text-destructive' : MAX_LEN - text.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
+              {MAX_LEN - text.length} left
+            </div>
             {replyError && (
               <p className="mt-1 text-xs text-destructive">{replyError}</p>
             )}
