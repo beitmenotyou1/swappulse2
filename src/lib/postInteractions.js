@@ -270,7 +270,14 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
 // Delete a reply post: delete the local Post, decrement the parent's replies
 // counter (guarded > 0), and delete the bridged PDS record if present.
 export async function deleteReply(reply, parentPost) {
-  await base44.entities.Post.delete(reply.id).catch(() => {});
+  // Delete via the backend function so firehose-ingested replies (service-role
+  // created_by_id) can still be deleted by their true author (matched by DID).
+  if (reply?.id || reply?.at_uri) {
+    await base44.functions.invoke('delete-post', {
+      post_id: reply.id || null,
+      at_uri: reply.at_uri || null,
+    }).catch(() => {});
+  }
   const ref = normalizeRef(parentPost);
   if (ref?.isLocal) {
     await base44.entities.Post.update(ref.id, { replies: Math.max(0, (ref.replies || 0) - 1) }).catch(() => {});
@@ -287,22 +294,20 @@ export async function deleteReply(reply, parentPost) {
 // UI via the onDelete callback after this resolves.
 export async function deletePost(post) {
   const ref = normalizeRef(post);
-  if (ref.id) {
-    await base44.entities.Post.delete(ref.id).catch(() => {});
+  // Delete the local Post via the delete-post backend function, which runs as
+  // service role and bypasses RLS — needed for firehose-ingested posts where
+  // created_by_id is the service role, not the user. Ownership is verified by
+  // DID inside the function.
+  if (ref.id || ref.at_uri) {
+    await base44.functions.invoke('delete-post', {
+      post_id: ref.id || null,
+      at_uri: ref.at_uri || null,
+    }).catch((e) => { /* local delete best-effort */ });
   }
+  // Delete the bridged PDS record (uses the user's per-user PDS session).
   if (ref.at_uri?.startsWith('at://did:')) {
     base44.functions.invoke('atproto-bridge', { action: 'delete', uri: ref.at_uri }).catch(() => {});
   }
-  // Best-effort: clean up local likes/reposts targeting this post.
-  try {
-    const filter = ref.id ? { post_id: ref.id } : { post_uri: ref.at_uri };
-    const [likes, reposts] = await Promise.all([
-      base44.entities.Like.filter(filter, '-created_date', 500).catch(() => []),
-      base44.entities.Repost.filter(filter, '-created_date', 500).catch(() => []),
-    ]);
-    for (const l of likes) base44.entities.Like.delete(l.id).catch(() => {});
-    for (const r of reposts) base44.entities.Repost.delete(r.id).catch(() => {});
-  } catch { /* best-effort */ }
 }
 
 // Create a quote-repost: a new app.bsky.feed.post with the target embedded as
