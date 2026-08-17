@@ -12,17 +12,25 @@ import RichText from '@/components/RichText';
 const MAX_LEN = 300;
 
 function ReplyNode({ reply, children, onPosted }) {
+  const hasChildren = React.Children.count(children) > 0;
   return (
-    <div className="flex gap-2">
-      <LiveAvatar did={reply.did} name={reply.author_name} src={reply.author_avatar} size={28} />
-      <div className="min-w-0 flex-1">
-        <p className="text-xs leading-snug">
-          <span className="font-semibold">{reply.author_name || 'Collector'}</span>{' '}
-          <RichText as="span" text={reply.content} className="text-muted-foreground" />
+    <div className="flex gap-2.5">
+      {/* Avatar column with a vertical connector line dropping to children */}
+      <div className="flex flex-col items-center shrink-0">
+        <LiveAvatar did={reply.did} name={reply.author_name} src={reply.author_avatar} size={32} />
+        {hasChildren && <div className="w-0.5 flex-1 bg-border mt-1.5 mb-1" />}
+      </div>
+      {/* Content column */}
+      <div className="min-w-0 flex-1 pb-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-sm font-semibold leading-snug">{reply.author_name || 'Collector'}</span>
+          <span className="text-[11px] text-muted-foreground">{timeAgo(reply.created_date)}</span>
+        </div>
+        <p className="mt-0.5 text-sm leading-snug">
+          <RichText as="span" text={reply.content} />
         </p>
-        <p className="text-[11px] text-muted-foreground">{timeAgo(reply.created_date)}</p>
         <CommentActions comment={reply} onPosted={onPosted} compact />
-        {children}
+        {hasChildren && <div className="mt-1.5">{children}</div>}
       </div>
     </div>
   );
@@ -70,7 +78,18 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
   const childrenOf = (id, uriOverride) => {
     const parent = all.find((p) => p.id === id);
     const parentUri = uriOverride || parent?.at_uri || '';
-    return all.filter((r) => r.reply_to === id || (!r.reply_to && parentUri && r.parent_uri === parentUri));
+    const seen = new Set();
+    const result = [];
+    for (const r of all) {
+      if (seen.has(r.id)) continue;
+      // Match by local parent id OR federated parent URI — dedup by id so a
+      // reply that satisfies both conditions doesn't render twice.
+      if (r.reply_to === id || (parentUri && r.parent_uri === parentUri)) {
+        seen.add(r.id);
+        result.push(r);
+      }
+    }
+    return result;
   };
   const directReplies = childrenOf(parentPost.id, parentPost.at_uri);
 
@@ -94,20 +113,18 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
     const kids = childrenOf(parentId, parentUri);
     if (kids.length === 0) return null;
     return (
-      <div className={depth > 0 ? 'mt-2 border-l-2 border-border pl-2' : 'mt-2 space-y-2'}>
+      <div className={depth > 0 ? '' : 'mt-3 space-y-3'}>
         {kids.map((r) => (
-          <div key={r.id} className={depth > 0 ? 'mb-2' : ''}>
-            <ReplyNode reply={r} onPosted={load}>
-              {depth < 5 && renderTree(r.id, depth + 1, r.at_uri)}
-            </ReplyNode>
-          </div>
+          <ReplyNode key={r.id} reply={r} onPosted={load}>
+            {depth < 6 && renderTree(r.id, depth + 1, r.at_uri)}
+          </ReplyNode>
         ))}
       </div>
     );
   };
 
   return (
-    <div className="mt-3 border-l-2 border-border pl-3">
+    <div className="mt-3">
       {loading ? (
         <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
       ) : full ? (
