@@ -6,7 +6,8 @@ export default async function(req: Request): Promise<Response> {
     const origin = getAppUrl(req);
     const url = new URL(req.url);
     const body = await req.json().catch(() => ({}));
-    const path = body.path || url.searchParams.get('path') || '/';
+    const rawPath = body.path || url.searchParams.get('path') || '/';
+    const path = sanitizePath(rawPath);
     const title = titleForPath(path);
     const description = 'SwapPulse — the decentralized social network for Pokémon TCG collectors. Track your collection, trade cards, and build community on the AT Protocol.';
 
@@ -53,6 +54,16 @@ function getAppUrl(req: Request): string {
   if (custom) return custom.replace(/\/$/, '');
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
+}
+
+function sanitizePath(input: string): string {
+  // Only allow safe URL path characters: letters, digits, /, -, _, ., ~.
+  // Strip anything that could break out of an HTML attribute context (quotes,
+  // angle brackets, etc.) and ensure the result starts with a single leading slash.
+  if (typeof input !== 'string') return '/';
+  const cleaned = input.replace(/[^a-zA-Z0-9\-_/.~]/g, '');
+  const slash = cleaned.startsWith('/') ? cleaned : '/' + cleaned;
+  return slash.replace(/\/+/g, '/') || '/';
 }
 
 function titleForPath(path: string): string {
