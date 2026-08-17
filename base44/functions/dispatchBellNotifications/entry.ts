@@ -8,12 +8,21 @@ import webPush from 'npm:web-push@3.6.7';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const svc = base44.asServiceRole;
 
     const body = await req.json().catch(() => ({}));
-    const authorDid = String(body.author_did || user.did || '');
+    // Security: bind the author identity to the caller. A regular user may
+    // only dispatch push notifications to their OWN followers — the body's
+    // author_did is ignored to prevent impersonation (a stranger passing an
+    // arbitrary author_did to trigger another author's followers). Admin
+    // callers (internal/workflow calls such as provisionSpace) may specify a
+    // body author_did for cases where the author is not the caller.
+    const requestedAuthorDid = String(body.author_did || '');
+    const authorDid = user.role === 'admin' && requestedAuthorDid
+      ? requestedAuthorDid
+      : (user.did || '');
     const authorName = String(body.author_name || 'A collector');
     const category = String(body.category || '');
     const preview = String(body.preview || '').slice(0, 140);

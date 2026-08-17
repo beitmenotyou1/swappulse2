@@ -36,19 +36,30 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: `actionType must be one of like, repost, comment` }, { status: 400 });
     }
 
-    // Resolve actor from the caller's session when not provided (local case).
-    if (!actorDid) {
-      try {
-        const me = await base44.auth.me();
-        if (me) {
-          actorDid = me.did;
-          actorName = actorName || me.display_name || me.full_name;
-          actorHandle = actorHandle || me.bsky_handle || me.username || (me.email ? me.email.split('@')[0] : '');
-          actorAvatar = actorAvatar || me.avatar;
-        }
-      } catch {
-        // No session (e.g. workflow call) — actor must come from the body.
-      }
+    // Security: authenticate the caller. Unauthenticated callers must never
+    // be able to trigger notifications — previously the function fell back to
+    // taking actorDid directly from the body when auth.me() failed, letting
+    // any stranger impersonate an actor.
+    let me: any;
+    try { me = await base44.auth.me(); } catch { me = null; }
+    if (!me) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Resolve actor identity based on caller role:
+    // - Admin callers (firehose-ingest, workflows) handle remote/Bluesky-
+    //   originated interactions where the actor is NOT the caller — they may
+    //   pass actorDid in the body.
+    // - Regular user callers (frontend local interactions) are bound to their
+    //   own identity — body-provided actor fields are ignored to prevent
+    //   impersonation.
+    if (me.role === 'admin' && actorDid) {
+      // Remote interaction: trust the admin-verified body actor.
+    } else {
+      actorDid = me.did;
+      actorName = me.display_name || me.full_name;
+      actorHandle = me.bsky_handle || me.username || (me.email ? me.email.split('@')[0] : '');
+      actorAvatar = me.avatar;
     }
 
     // Don't notify people about their own interactions.
