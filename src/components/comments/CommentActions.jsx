@@ -158,7 +158,7 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
     }
   };
 
-  const isAuthor = !!user?.id && comment?.created_by_id === user.id && !!comment?.id;
+  const isAuthor = !!user?.id && !!comment?.id && (comment.created_by_id === user.id || (!!user.did && comment.did === user.did));
 
   const handleDelete = async (e) => {
     e?.stopPropagation();

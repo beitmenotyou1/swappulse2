@@ -145,7 +145,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
     }
     setPendingRepost(false);
   };
-  const isAuthor = !!user?.id && post.created_by_id === user.id;
+  const isAuthor = !!user?.id && (post.created_by_id === user.id || (!!user.did && post.did === user.did));
 
   const handleDelete = async () => {
     if (deleting || !isAuthor) return;
