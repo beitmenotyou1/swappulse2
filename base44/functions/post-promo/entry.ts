@@ -87,6 +87,24 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/** Parse a hashtag-set string (e.g. "#PokemonTCG #PTCGO #PokemonCards #TCG")
+ * into an array of canonical tag strings: strip the leading #, trim, lowercase,
+ * dedupe, and cap at the AT Protocol limit of 8 tags per post. These populate
+ * the `tags` field on app.bsky.feed.post so Bluesky indexes them for hashtag
+ * search — independent of the visible #hashtags in the post body. */
+function parseTags(hashtagSet: string): string[] {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const raw of hashtagSet.split(/\s+/)) {
+    const tag = raw.replace(/^#/, '').trim().toLowerCase();
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    tags.push(tag);
+    if (tags.length >= 8) break;
+  }
+  return tags;
+}
+
 /** Count grapheme clusters (Bluesky's text limit is 300 graphemes). */
 function countGraphemes(str: string): number {
   try {
@@ -177,11 +195,13 @@ function cardImageUrl(imageField: string | null): string | null {
   return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
 }
 
-function generateMessage(card: FeaturedCard | null): { content: string; cardUrl: string | null } {
+function generateMessage(card: FeaturedCard | null): { content: string; cardUrl: string | null; tags: string[] } {
   const hook = card
     ? pick(HOOKS).replace(/\{cardName\}/g, card.name)
     : "Just pulled the chase card I've been hunting for weeks \u{1F389}";
-  const hashtags = pick(HASHTAG_SETS);
+  const hashtagSet = pick(HASHTAG_SETS);
+  const tags = parseTags(hashtagSet);
+  const hashtags = hashtagSet;
 
   // When featuring a card, the card link serves as the CTA — include hook +
   // value prop + card link + hashtags, trimmed to 300 graphemes.
@@ -193,16 +213,16 @@ function generateMessage(card: FeaturedCard | null): { content: string; cardUrl:
     if (countGraphemes(essential) > 300) {
       // Hook alone is too long with the link — trim the hook to fit
       const trimmed = essential.slice(0, 297) + '...';
-      return { content: trimmed, cardUrl };
+      return { content: trimmed, cardUrl, tags };
     }
     // Try to fit a value prop between the hook and the card link
     const valueProp = pick(VALUE_PROPS);
     const full = `${hook}\n\n${valueProp}\n\n${cardLine}\n\n${hashtags}`;
     if (countGraphemes(full) <= 300) {
-      return { content: full, cardUrl };
+      return { content: full, cardUrl, tags };
     }
     // Value prop doesn't fit — skip it, keep the essential parts
-    return { content: essential, cardUrl };
+    return { content: essential, cardUrl, tags };
   }
 
   // No card: original structure — hook + value prop + CTA + hashtags
@@ -220,7 +240,7 @@ function generateMessage(card: FeaturedCard | null): { content: string; cardUrl:
       }
     }
   }
-  return { content, cardUrl: null };
+  return { content, cardUrl: null, tags };
 }
 
 /**
@@ -305,7 +325,7 @@ Deno.serve(async (req) => {
     const card = await fetchRandomCard();
 
     // Generate the varied promotional message (with card name + link woven in)
-    const { content, cardUrl } = generateMessage(card);
+    const { content, cardUrl, tags } = generateMessage(card);
 
     // Build the embed: upload the card image as a PDS blob and attach it as an
     // app.bsky.embed.external rich-link card pointing at the SwapPulse card page.
@@ -337,6 +357,7 @@ Deno.serve(async (req) => {
       createdAt: new Date().toISOString(),
       langs: ['en'],
     };
+    if (tags.length > 0) record.tags = tags;
     if (embed) record.embed = embed;
 
     let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
