@@ -30,6 +30,10 @@ const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 // Curated list of popular set codes — recognizable cards collectors know.
 const POPULAR_SETS = ['sv3', 'sv3pt5', 'sv4', 'base1', 'sv5', 'sv2', 'swsh1', 'swsh4'];
 
+// Current build status — referenced in Type 3 (community pitch) posts.
+// Update this one constant when the status changes (alpha → beta → live).
+const BUILD_STATUS = 'alpha';
+
 // --- Message fragment pools (composed randomly each run) ---
 // Written to sound like a real collector talking — conversational, personal,
 // relatable — not corporate marketing copy. Links are always full https://
@@ -61,6 +65,35 @@ const VALUE_PROPS = [
   "SwapPulse is free and open-source, funded by donations. We're in alpha, testing and iterating with the community.",
 ];
 
+// Type 2: feature-focused hooks. {featureName} is replaced with the feature.
+const FEATURE_HOOKS = [
+  "The {featureName} on SwapPulse is one of my favourite parts of the site.",
+  "Been using the {featureName} a lot lately — it's genuinely useful.",
+  "The {featureName} makes collecting so much easier.",
+  "If you haven't tried the {featureName} yet, you're missing out.",
+  "The {featureName} is what got me hooked on SwapPulse.",
+  "SwapPulse's {featureName} is built by collectors who actually get it.",
+];
+
+// Type 3: community pitch hooks — why Pokémon TCG collectors should join.
+const COMMUNITY_HOOKS = [
+  "If you collect Pokémon TCG cards, SwapPulse was built for you.",
+  "Pokémon TCG collectors deserve a place that's actually ours.",
+  "Tired of scattered Discord servers and Reddit threads? SwapPulse brings it all together.",
+  "SwapPulse is the social network Pokémon TCG collectors have been waiting for.",
+  "Every Pokémon TCG collector should have a place to call home — that's SwapPulse.",
+  "The Pokémon TCG community deserves a dedicated space. That's SwapPulse.",
+];
+
+// Type 3: status-aware value props — always mention the current build status.
+const STATUS_PROPS = [
+  `SwapPulse is currently in ${BUILD_STATUS} — we're actively building and improving with the community.`,
+  `We're in ${BUILD_STATUS} right now, so things are still evolving — but the core works and collectors are already using it.`,
+  `It's ${BUILD_STATUS}, which means your feedback actually shapes what we build next.`,
+  `Being in ${BUILD_STATUS} means rough edges, but also that you get in early and help shape the platform.`,
+  `SwapPulse is in ${BUILD_STATUS} — free, open-source, and built by collectors, for collectors.`,
+];
+
 const CTAS = [
   `Come hang out with us: ${SITE_BASE}`,
   `Make a free account and say hi: ${SITE_BASE}`,
@@ -82,6 +115,21 @@ const HASHTAG_SETS = [
   "#PokemonTCG #TCGCommunity #CardCollector",
   "#PokemonTCG #PokemonCards #TradingCards",
   "#PokemonTCG #PTCGO #CardCollecting #PullOfTheWeek",
+];
+
+// Site features that each get their own promo post. Each entry maps a
+// feature name to its in-app route and a short description for the embed.
+const FEATURE_POOL = [
+  { name: 'Card Scanner', path: '/scan', description: 'Scan a card with your camera and identify it instantly.' },
+  { name: 'Collection Tracker', path: '/collection', description: 'Track every card you own with set completion progress.' },
+  { name: 'Trade Board', path: '/trades', description: 'List cards you have and want, and find matches with collectors.' },
+  { name: 'Binders', path: '/binders', description: 'Build and share visual binders of your favourite cards.' },
+  { name: 'Pack Openings', path: '/packs', description: 'Share your fresh pulls and see what the community is pulling.' },
+  { name: 'Voice Spaces', path: '/spaces', description: 'Go live and talk Pokémon TCG with collectors in real time.' },
+  { name: 'Market Watch', path: '/market', description: 'Track card prices and get alerts when cards move.' },
+  { name: 'Circles', path: '/circles', description: 'Create invite-only collector groups for your favourite sets.' },
+  { name: 'Meetups', path: '/meetups', description: 'Organize and attend local collector meetups.' },
+  { name: 'Achievements', path: '/achievements', description: 'Earn badges for collection milestones and community participation.' },
 ];
 
 function pick<T>(arr: T[]): T {
@@ -196,48 +244,70 @@ function cardImageUrl(imageField: string | null): string | null {
   return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
 }
 
-function generateMessage(card: FeaturedCard | null): { content: string; cardUrl: string | null; tags: string[] } {
-  const hook = card
-    ? pick(HOOKS).replace(/\{cardName\}/g, card.name)
-    : "SwapPulse is a community built by collectors, for collectors.";
+type PromoType = 'card' | 'feature' | 'community';
+
+interface PromoResult {
+  content: string;
+  embedUrl: string;
+  embedTitle: string;
+  embedDescription: string;
+  tags: string[];
+}
+
+/** Type 1: Card-focused post — features a specific card with its page link. */
+function generateCardMessage(card: FeaturedCard): PromoResult {
+  const hook = pick(HOOKS).replace(/\{cardName\}/g, card.name);
   const hashtagSet = pick(HASHTAG_SETS);
   const tags = parseTags(hashtagSet);
   const hashtags = hashtagSet;
-
-  // When featuring a card, the card link serves as the CTA — include hook +
-  // value prop + card link + hashtags, trimmed to 300 graphemes.
-  if (card) {
-    const cardUrl = `${SITE_BASE}/card/${encodeURIComponent(card.id)}`;
-    const cardLine = `See this card on SwapPulse: ${cardUrl}`;
-    // Card info line with set name and rarity when available
-    const infoParts = [card.setName, card.rarity].filter(Boolean);
-    const infoLine = infoParts.length > 0 ? infoParts.join(' · ') : null;
-    const intro = infoLine ? `${hook}\n\n${infoLine}` : hook;
-    // Start with the essential parts: intro + card link + hashtags
-    const essential = `${intro}\n\n${cardLine}\n\n${hashtags}`;
-    if (countGraphemes(essential) > 300) {
-      // Intro alone is too long with the link — trim to fit
-      const trimmed = essential.slice(0, 297) + '...';
-      return { content: trimmed, cardUrl, tags };
-    }
-    // Try to fit a value prop between the intro and the card link
-    const valueProp = pick(VALUE_PROPS);
-    const full = `${intro}\n\n${valueProp}\n\n${cardLine}\n\n${hashtags}`;
-    if (countGraphemes(full) <= 300) {
-      return { content: full, cardUrl, tags };
-    }
-    // Value prop doesn't fit — skip it, keep the essential parts
-    return { content: essential, cardUrl, tags };
+  const cardUrl = `${SITE_BASE}/card/${encodeURIComponent(card.id)}`;
+  const cardLine = `See this card on SwapPulse: ${cardUrl}`;
+  const infoParts = [card.setName, card.rarity].filter(Boolean);
+  const infoLine = infoParts.length > 0 ? infoParts.join(' · ') : null;
+  const intro = infoLine ? `${hook}\n\n${infoLine}` : hook;
+  const essential = `${intro}\n\n${cardLine}\n\n${hashtags}`;
+  if (countGraphemes(essential) > 300) {
+    return { content: essential.slice(0, 297) + '...', embedUrl: cardUrl, embedTitle: card.name, embedDescription: infoLine || 'Pokémon TCG card', tags };
   }
-
-  // No card: original structure — hook + value prop + CTA + hashtags
   const valueProp = pick(VALUE_PROPS);
+  const full = `${intro}\n\n${valueProp}\n\n${cardLine}\n\n${hashtags}`;
+  if (countGraphemes(full) <= 300) {
+    return { content: full, embedUrl: cardUrl, embedTitle: card.name, embedDescription: infoLine || 'Pokémon TCG card', tags };
+  }
+  return { content: essential, embedUrl: cardUrl, embedTitle: card.name, embedDescription: infoLine || 'Pokémon TCG card', tags };
+}
+
+/** Type 2: Feature-focused post — highlights a specific SwapPulse feature. */
+function generateFeatureMessage(feature: { name: string; path: string; description: string }): PromoResult {
+  const hook = pick(FEATURE_HOOKS).replace(/\{featureName\}/g, feature.name);
+  const hashtagSet = pick(HASHTAG_SETS);
+  const tags = parseTags(hashtagSet);
+  const hashtags = hashtagSet;
+  const featureUrl = `${SITE_BASE}${feature.path}`;
+  const featureLine = `Try the ${feature.name}: ${featureUrl}`;
+  const essential = `${hook}\n\n${featureLine}\n\n${hashtags}`;
+  if (countGraphemes(essential) > 300) {
+    return { content: essential.slice(0, 297) + '...', embedUrl: featureUrl, embedTitle: feature.name, embedDescription: feature.description, tags };
+  }
+  const valueProp = pick(VALUE_PROPS);
+  const full = `${hook}\n\n${valueProp}\n\n${featureLine}\n\n${hashtags}`;
+  if (countGraphemes(full) <= 300) {
+    return { content: full, embedUrl: featureUrl, embedTitle: feature.name, embedDescription: feature.description, tags };
+  }
+  return { content: essential, embedUrl: featureUrl, embedTitle: feature.name, embedDescription: feature.description, tags };
+}
+
+/** Type 3: Community pitch with build status — why collectors should join. */
+function generateCommunityMessage(): PromoResult {
+  const hook = pick(COMMUNITY_HOOKS);
+  const statusProp = pick(STATUS_PROPS);
+  const hashtagSet = pick(HASHTAG_SETS);
+  const tags = parseTags(hashtagSet);
+  const hashtags = hashtagSet;
   const cta = pick(CTAS);
-  let content = `${hook}\n\n${valueProp}\n\n${cta}\n\n${hashtags}`;
-  // Safety: trim to 300 graphemes if random picks produced a long combo
+  let content = `${hook}\n\n${statusProp}\n\n${cta}\n\n${hashtags}`;
   if (countGraphemes(content) > 300) {
-    // Drop the CTA first, then the value prop, to get under the limit
-    content = `${hook}\n\n${valueProp}\n\n${hashtags}`;
+    content = `${hook}\n\n${statusProp}\n\n${hashtags}`;
     if (countGraphemes(content) > 300) {
       content = `${hook}\n\n${hashtags}`;
       if (countGraphemes(content) > 300) {
@@ -245,7 +315,7 @@ function generateMessage(card: FeaturedCard | null): { content: string; cardUrl:
       }
     }
   }
-  return { content, cardUrl: null, tags };
+  return { content, embedUrl: SITE_BASE, embedTitle: 'SwapPulse', embedDescription: `A decentralized social network for Pokémon TCG collectors. Free, open-source, and currently in ${BUILD_STATUS}.`, tags };
 }
 
 /**
@@ -326,41 +396,44 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'PDS authentication failed' }, { status: 502 });
     }
 
-    // Fetch a featured card from TCGDex (non-fatal — falls back to text-only)
-    const card = await fetchRandomCard();
+    // Pick a promo type at random: card, feature, or community pitch
+    const promoType: PromoType = pick(['card', 'feature', 'community'] as PromoType[]);
 
-    // Generate the varied promotional message (with card name + link woven in)
-    const { content, cardUrl, tags } = generateMessage(card);
+    let promo: PromoResult;
+    let card: FeaturedCard | null = null;
 
-    // Build the embed: upload the card image as a PDS blob and attach it as an
-    // app.bsky.embed.external rich-link card pointing at the SwapPulse card page.
-    let embed: any = null;
-    if (card && cardUrl) {
-      const imageUrl = cardImageUrl(card.imageField);
-      let thumb: any = null;
-      if (imageUrl) {
-        thumb = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
+    if (promoType === 'card') {
+      card = await fetchRandomCard();
+      if (card) {
+        promo = generateCardMessage(card);
+      } else {
+        // Card fetch failed — fall back to community pitch
+        promo = generateCommunityMessage();
       }
-      // Always embed the card link — with image when available, without when not
-      embed = {
-        $type: 'app.bsky.embed.external',
-        external: {
-          uri: cardUrl,
-          title: card.name,
-          description: [card.setName, card.rarity].filter(Boolean).join(' · ') || 'Pokémon TCG card',
-        },
-      };
-      if (thumb) embed.external.thumb = thumb;
-    } else if (!card) {
-      // No card — embed the home page so the CTA link renders as a rich card
-      embed = {
-        $type: 'app.bsky.embed.external',
-        external: {
-          uri: SITE_BASE,
-          title: 'SwapPulse',
-          description: 'A decentralized social network for Pokémon TCG collectors. Free, open-source, and in alpha.',
-        },
-      };
+    } else if (promoType === 'feature') {
+      promo = generateFeatureMessage(pick(FEATURE_POOL));
+    } else {
+      promo = generateCommunityMessage();
+    }
+
+    const { content, embedUrl, embedTitle, embedDescription, tags } = promo;
+
+    // Build the embed as an app.bsky.embed.external rich-link card.
+    // Card posts include the card image; feature and community posts are text-only embeds.
+    let embed: any = {
+      $type: 'app.bsky.embed.external',
+      external: {
+        uri: embedUrl,
+        title: embedTitle,
+        description: embedDescription,
+      },
+    };
+    if (card && promoType === 'card') {
+      const imageUrl = cardImageUrl(card.imageField);
+      if (imageUrl) {
+        const thumb = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
+        if (thumb) embed.external.thumb = thumb;
+      }
     }
 
     // Create the post directly on the PDS (no local Post record)
@@ -408,8 +481,8 @@ Deno.serve(async (req) => {
       posted_at: new Date().toISOString(),
     }).catch((e: any) => console.error('post-promo: failed to track PromoPost', e?.message || e));
 
-    console.log('post-promo: published promo post', result.uri, card ? `(card: ${card.name})` : '(no card)', embed ? '(with image embed)' : '(text-only)');
-    return Response.json({ ok: true, uri: result.uri, cid: result.cid, content, card: card ? { id: card.id, name: card.name } : null, hasEmbed: !!embed });
+    console.log('post-promo: published promo post', result.uri, `(type: ${promoType})`, card ? `(card: ${card.name})` : '(no card)', embed?.external?.thumb ? '(with image embed)' : '(text embed)');
+    return Response.json({ ok: true, uri: result.uri, cid: result.cid, content, promoType, card: card ? { id: card.id, name: card.name } : null, hasEmbed: !!embed });
   } catch (error) {
     console.error('post-promo error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
