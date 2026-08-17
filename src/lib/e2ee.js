@@ -66,20 +66,35 @@ function base64ToBuf(b64) {
   return bytes.buffer;
 }
 
+// In-flight singleton so concurrent first-use calls share one generation.
+// Without this, two parallel callers (e.g. publishPublicKey on mount +
+// sendDirectMessage) both see no stored key, each generates a different
+// keypair, and the second write wins — leaving the published public key
+// mismatched with the stored private key, so messages become undecryptable.
+let _keyPairPromise = null;
+
 // Get the user's ECDH keypair from IndexedDB, generating + storing a new one
 // on first use. Returns { privateKey, publicKeyJwk }.
 export async function getOrCreateKeyPair() {
-  const existing = await idbGet(KEY_ID).catch(() => null);
-  if (existing) return existing;
-  const keyPair = await crypto.subtle.generateKey(
-    { name: 'ECDH', namedCurve: 'P-256' },
-    true,
-    ['deriveKey'],
-  );
-  const publicKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
-  const entry = { privateKey: keyPair.privateKey, publicKeyJwk };
-  await idbPut(KEY_ID, entry).catch(() => {});
-  return entry;
+  if (_keyPairPromise) return _keyPairPromise;
+  _keyPairPromise = (async () => {
+    const existing = await idbGet(KEY_ID).catch(() => null);
+    if (existing) return existing;
+    const keyPair = await crypto.subtle.generateKey(
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      ['deriveKey'],
+    );
+    const publicKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+    const entry = { privateKey: keyPair.privateKey, publicKeyJwk };
+    await idbPut(KEY_ID, entry).catch(() => {});
+    return entry;
+  })();
+  try {
+    return await _keyPairPromise;
+  } finally {
+    _keyPairPromise = null;
+  }
 }
 
 // Publish the current user's public key to the DmPublicKey entity (idempotent).

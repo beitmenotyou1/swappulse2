@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PostCard from '@/components/feed/PostCard';
 import PostReplyThread from '@/components/feed/PostReplyThread';
+import AncestorCard from '@/components/feed/AncestorCard';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import { visibilityLabel } from '@/lib/postVisibility';
 import useSEO from '@/hooks/useSEO';
@@ -146,9 +147,9 @@ export default function PostDetail() {
         <h1 className="text-lg font-bold">Post</h1>
       </div>
       {ancestors.length > 0 && (
-        <div className="border-l-2 border-border pl-3 ml-4 mr-4 mb-2 space-y-1">
+        <div className="ml-4 mr-4 mb-2 space-y-1.5">
           {ancestors.map((a) => (
-            <PostCard key={a.id || a.at_uri} post={a} />
+            <AncestorCard key={a.id || a.at_uri} post={a} />
           ))}
         </div>
       )}
