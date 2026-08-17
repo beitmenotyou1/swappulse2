@@ -32,9 +32,28 @@ function mapPlatform(p) {
   return p;
 }
 
+// Security: validate Discord webhook URLs before fetching to prevent SSRF.
+// Only https URLs pointing to Discord's webhook domains are allowed; this
+// blocks internal/metadata endpoints (e.g. 169.254.169.254) and private IPs.
+function isAllowedDiscordWebhook(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    if (u.protocol !== 'https:') return false;
+    const allowedHosts = ['discord.com', 'discordapp.com', 'ptb.discord.com', 'canary.discord.com'];
+    if (!allowedHosts.includes(u.hostname)) return false;
+    if (!u.pathname.startsWith('/api/webhooks/')) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function postToPlatform(platform, credential, extra, message) {
   if (!credential) return { ok: false, simulated: false, error: 'No credential configured' };
   if (platform === 'discord_webhook') {
+    if (!isAllowedDiscordWebhook(credential)) {
+      return { ok: false, simulated: false, error: 'Invalid Discord webhook URL' };
+    }
     try {
       const r = await fetch(credential, {
         method: 'POST',

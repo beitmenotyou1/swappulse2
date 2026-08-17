@@ -19,21 +19,54 @@ import { getActiveInsights } from '../../shared/agentLearningLoop.ts';
 
 const LABELER_DID = 'did:web:labeler.swappulse.org';
 
+// Security: ai-moderation applies tiered enforcement (hide/strike/restrict) via
+// the service role, so it must not be callable by unauthenticated public
+// callers. Allowed callers: (1) platform-internal invocations (workflow
+// runtime, agent runtime) carrying the `base44-service-authorization`
+// internal service token, or (2) an authenticated admin/moderator user.
+function isPlatformInternalCall(req: Request): boolean {
+  const authz = req.headers.get('base44-service-authorization') || '';
+  if (!authz.startsWith('Bearer ')) return false;
+  const token = authz.slice(7);
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const isInternal = payload?.internal_service_token === true || payload?.internal_service_token === 'true';
+    return isInternal && payload?.caller === 'backend_functions';
+  } catch {
+    return false;
+  }
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Auth gate: internal platform call OR authenticated admin/moderator.
+    if (!isPlatformInternalCall(req)) {
+      let caller: any;
+      try { caller = await base44.auth.me(); } catch { caller = null; }
+      if (!caller || !['admin', 'moderator'].includes(caller.role)) {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
-    const { content_type, content_id, text, author_id, author_handle } = body;
+    const { content_type, content_id } = body;
 
     if (!content_type || !content_id) {
       return Response.json({ error: 'content_type and content_id are required' }, { status: 400 });
     }
 
-    // 1. Fetch the record and extract text + metadata based on content type
+    // 1. Fetch the record and extract text + metadata based on content type.
+    // Always use the immutable database record content — never accept
+    // caller-supplied text, which would let an attacker forge violation text
+    // to suppress a victim's content or increment their strikes.
     let record: any = null;
-    let contentText = text || '';
-    let authorId = author_id || '';
-    let authorHandle = author_handle || '';
+    let contentText = '';
+    let authorId = '';
+    let authorHandle = '';
     let subjectUri = '';
     let subjectCid = '';
 

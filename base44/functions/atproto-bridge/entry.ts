@@ -50,6 +50,47 @@ async function resolveSession(req: Request) {
   return getPdsSession();
 }
 
+// Security: verify the caller owns the federated record identified by `uri`
+// before deleting/updating it on the PDS. Without this, any authenticated user
+// could delete or mutate another user's records stored in the shared bridge
+// repo. Ownership is proven by a local entity record whose at_uri matches and
+// whose created_by_id/did matches the caller. Admins bypass (moderation).
+const COLLECTION_ENTITY_MAP: Record<string, string> = {
+  'app.bsky.feed.post': 'Post',
+  'app.bsky.graph.follow': 'Follow',
+  'app.bsky.feed.like': 'Like',
+  'app.bsky.feed.repost': 'Repost',
+  'org.swappulse.conversation': 'Conversation',
+  'org.swappulse.directMessage': 'DirectMessage',
+  'org.swappulse.voiceSpace': 'VoiceSpace',
+  'org.swappulse.podcastEpisode': 'PodcastEpisode',
+  'org.swappulse.tradeListing': 'TradeListing',
+  'org.swappulse.binder': 'Binder',
+  'org.swappulse.journal': 'Journal',
+  'org.swappulse.cardReview': 'CardReview',
+  'org.swappulse.meetup': 'Meetup',
+  'org.swappulse.circle': 'Circle',
+  'org.swappulse.reaction': 'Reaction',
+  'org.swappulse.vouch': 'Vouch',
+};
+
+async function verifyOwnership(base44: any, caller: any, uri: string, collection: string): Promise<boolean> {
+  if (caller?.role === 'admin') return true;
+  const entityName = COLLECTION_ENTITY_MAP[collection];
+  if (!entityName) return false; // unknown collection — fail closed
+  try {
+    const matches = await base44.asServiceRole.entities[entityName]
+      .filter({ at_uri: uri }, '-created_date', 1).catch(() => []);
+    const rec = matches?.[0];
+    if (!rec) return false; // no local record — fail closed
+    const ownsByCreator = !!rec.created_by_id && rec.created_by_id === caller.id;
+    const ownsByDid = !!rec.did && !!caller.did && rec.did === caller.did;
+    return ownsByCreator || ownsByDid;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
@@ -77,6 +118,10 @@ Deno.serve(async (req) => {
       const rkey = segs[2];
       if (!rkey || !collectionFromUri) {
         return Response.json({ error: 'could not parse rkey/collection from uri' }, { status: 400 });
+      }
+      // Verify the caller owns the target record before deleting on the PDS.
+      if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
+        return Response.json({ error: 'You can only delete your own records' }, { status: 403 });
       }
       const { pdsUrl, session } = await resolveSession(req);
       let result: any = await pdsRequest(
@@ -106,9 +151,17 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'uri, collection, and record are required for update' }, { status: 400 });
       }
       const segs = uri.replace(/^at:\/\//, '').split('/');
+      const collectionFromUri = segs[1];
       const rkey = segs[2];
-      if (!rkey) {
-        return Response.json({ error: 'could not parse rkey from uri' }, { status: 400 });
+      if (!rkey || !collectionFromUri) {
+        return Response.json({ error: 'could not parse rkey/collection from uri' }, { status: 400 });
+      }
+      if (collectionFromUri !== collection) {
+        return Response.json({ error: 'collection mismatch with uri' }, { status: 400 });
+      }
+      // Verify the caller owns the target record before updating on the PDS.
+      if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
+        return Response.json({ error: 'You can only update your own records' }, { status: 403 });
       }
       const { pdsUrl, session } = await resolveSession(req);
       let result: any = await pdsRequest(
