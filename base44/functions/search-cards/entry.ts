@@ -7,6 +7,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizeSetId, fetchTcgdex, TCGDEX_LANGS } from '../../shared/tcgdexClient.ts';
 import { canonicalizeRarity } from '../../shared/scannerLearning.ts';
+import { resolveSetAlias } from '../../shared/setCodeAliases.ts';
 
 const SUPPORTED_LANGS = TCGDEX_LANGS; // en, fr, de, it, es, pt, jp, zh, ko
 
@@ -134,17 +135,29 @@ Deno.serve(async (req) => {
     // Detect a set_id candidate token (short alphanumeric with a letter).
     const setCandidateToken = tokens.find((t) => looksLikeSetId(t) && t !== localIdToken) || null;
 
-    // Resolve the stored set_id form via the cache (raw + normalized). Null on miss.
-    let setIdToken: string | null = null;
-    if (setCandidateToken) setIdToken = await resolveSetId(svc, setCandidateToken);
+    // Resolve to a TCGDex set_id: official-code alias first (MEW→sv03.5, SSH→swsh1,
+    // …), then a cache probe (raw + normalized). Null when neither matches.
+    let effectiveSetId: string | null = null;
+    if (setCandidateToken) {
+      const alias = resolveSetAlias(setCandidateToken);
+      effectiveSetId = alias || await resolveSetId(svc, setCandidateToken);
+    }
+
+    // A set candidate is treated as an identifier (excluded from name search) only
+    // when it's a clear letter+digit code (sv01, swsh1) or a set+number lookup that
+    // resolved to a real set. Pure-letter codes like "mew" stay in the name search
+    // when there's no card number, so searching the Pokémon "mew" still works.
+    const setTokenIsLetterDigit = setCandidateToken ? /^[a-z]+\d/.test(setCandidateToken) : false;
+    const excludeSetFromName = !!setCandidateToken &&
+      (setTokenIsLetterDigit || (!!localIdToken && !!effectiveSetId));
 
     let matched: any[] = [];
 
     // Cache path: only when we resolved a stored set_id.
-    if (setIdToken) {
-      const cards = await svc.entities.TcgdexCard.filter({ set_id: setIdToken }, '-updated_date', 500).catch(() => []);
+    if (effectiveSetId) {
+      const cards = await svc.entities.TcgdexCard.filter({ set_id: effectiveSetId }, '-updated_date', 500).catch(() => []);
       const scored = cards
-        .map((c: any) => ({ card: c, score: scoreCard(c, tokens, setIdToken, localIdToken) }))
+        .map((c: any) => ({ card: c, score: scoreCard(c, tokens, effectiveSetId, localIdToken) }))
         .filter((s: any) => s.score > 0)
         .sort((a: any, b: any) => b.score - a.score);
       matched = scored.slice(0, perPage).map((s: any) => toCardShape(s.card, lang));
@@ -153,11 +166,12 @@ Deno.serve(async (req) => {
     // Fallback to the live TCGDex API when the cache has no matches.
     if (matched.length === 0) {
       try {
-        // Precise set_id + local_id lookup (works even when the cache probe missed).
+        // Precise set_id + local_id lookup (uses the alias target, the raw token,
+        // and the normalized form so coverage stays complete).
         if (setCandidateToken && localIdToken) {
           const numPart = localIdToken.split('/')[0];
           const sidForms = Array.from(new Set(
-            [setCandidateToken, normalizeSetId(setCandidateToken)].filter(Boolean)
+            [effectiveSetId, setCandidateToken, normalizeSetId(setCandidateToken)].filter(Boolean)
           ));
           for (const sid of sidForms) {
             try {
@@ -169,7 +183,7 @@ Deno.serve(async (req) => {
         if (matched.length === 0) {
           // Name search using the non-identifier, non-rarity tokens.
           const nameTokens = tokens.filter((t) =>
-            t !== localIdToken && t !== setCandidateToken && t !== setIdToken && !isRarityToken(t)
+            t !== localIdToken && !(t === setCandidateToken && excludeSetFromName) && !isRarityToken(t)
           );
           const nameQuery = nameTokens.join(' ');
           const rarityTokens = tokens.filter((t) => isRarityToken(t));

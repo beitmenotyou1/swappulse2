@@ -59,10 +59,12 @@ export function num(v: any): number | null {
 export function normalizeSetId(setId: string): string {
   if (!setId) return setId;
   let s = String(setId).toLowerCase().trim();
-  // Convert trailing 'a' suffix to '.5' (e.g., "sv4a" → "sv4.5")
-  s = s.replace(/^([a-z]+)(\d+)a$/, '$1$2.5');
-  // Pad single-digit set numbers with a leading zero (e.g., "sv4" → "sv04", "sv4.5" → "sv04.5")
-  // Only matches when the digit after the letter prefix is followed by a non-digit or end.
-  s = s.replace(/^([a-z]+)(\d)(\D|$)/, '$10$2$3');
+  // Only Scarlet & Violet sets use leading zeros and the "a" → ".5" suffix.
+  // SWSH (swsh1), SM (sm1), XY (xy1), BW (bw1) etc. do NOT pad — applying it
+  // turns "swsh1" into "swsh01" which 404s on TCGDex.
+  if (s.startsWith('sv')) {
+    s = s.replace(/^sv(\d+)a$/, 'sv$1.5');      // sv4a → sv4.5
+    s = s.replace(/^sv(\d)(\D|$)/, 'sv0$1$2');  // sv4 → sv04, sv4.5 → sv04.5
+  }
   return s;
 }
