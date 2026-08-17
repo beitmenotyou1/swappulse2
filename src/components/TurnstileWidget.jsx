@@ -17,16 +17,16 @@ function loadTurnstile() {
 }
 
 // Inline Cloudflare Turnstile widget. Calls onVerify(token) once the user
-// solves the challenge; resets when `resetKey` changes. The site key is read
-// from the global app settings (window.__TURNSTILE_SITE_KEY) or the
-// TURNSTILE_SITE_KEY env-injected meta tag.
-export default function TurnstileWidget({ onVerify, resetKey, className = '' }) {
+// solves the challenge; resets when `resetKey` changes. Pass the Cloudflare
+// site key via the `siteKey` prop (fetched from get-turnstile-site-key).
+export default function TurnstileWidget({ siteKey, onVerify, resetKey, className = '' }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const cbRef = useRef(onVerify);
   useEffect(() => { cbRef.current = onVerify; }, [onVerify]);
 
   useEffect(() => {
+    if (!siteKey) return;
     loadTurnstile();
     let cancelled = false;
     const tryRender = () => {
@@ -37,7 +37,7 @@ export default function TurnstileWidget({ onVerify, resetKey, className = '' }) 
       }
       try {
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: window.__TURNSTILE_SITE_KEY || '',
+          sitekey: siteKey,
           theme: 'light',
           callback: (token) => cbRef.current?.(token),
           'error-callback': () => cbRef.current?.(null),
@@ -55,7 +55,7 @@ export default function TurnstileWidget({ onVerify, resetKey, className = '' }) 
         widgetIdRef.current = null;
       }
     };
-  }, [resetKey]);
+  }, [siteKey, resetKey]);
 
   return <div ref={containerRef} className={className} aria-label="Human verification widget" />;
 }

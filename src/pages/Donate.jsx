@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -13,7 +13,14 @@ export default function Donate() {
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState(null);
   const [resetKey, setResetKey] = useState(0);
+  const [siteKey, setSiteKey] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    base44.functions.invoke('get-turnstile-site-key', {})
+      .then((res) => setSiteKey(res?.siteKey || ''))
+      .catch(() => setSiteKey(''));
+  }, []);
 
   const onVerify = useCallback((token) => setTurnstileToken(token), []);
 
@@ -98,7 +105,11 @@ export default function Donate() {
           </div>
 
           <div className="mt-4 flex justify-center">
-            <TurnstileWidget onVerify={onVerify} resetKey={resetKey} />
+            {siteKey ? (
+              <TurnstileWidget siteKey={siteKey} onVerify={onVerify} resetKey={resetKey} />
+            ) : (
+              <div className="h-[65px] w-full animate-pulse rounded-md bg-secondary" />
+            )}
           </div>
 
           <button
