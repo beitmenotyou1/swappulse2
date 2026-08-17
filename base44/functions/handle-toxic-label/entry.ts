@@ -3,6 +3,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || !['admin', 'moderator'].includes(caller.role)) {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const body = await req.json();
     const { subject_uri, labeler_did, note, label_id } = body;
 

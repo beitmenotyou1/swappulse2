@@ -219,6 +219,24 @@ Deno.serve(async (req) => {
       if (!imageUrl || !mimeType) {
         return Response.json({ error: 'imageUrl and mimeType are required for uploadBlob' }, { status: 400 });
       }
+      // SSRF protection: only allow https URLs to public, non-internal hosts.
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(imageUrl);
+      } catch {
+        return Response.json({ error: 'Invalid imageUrl' }, { status: 400 });
+      }
+      if (parsedUrl.protocol !== 'https:') {
+        return Response.json({ error: 'imageUrl must use HTTPS' }, { status: 400 });
+      }
+      const hostname = parsedUrl.hostname.toLowerCase();
+      const blockedPatterns = [
+        /^127\./, /^10\./, /^172\.(1[6-9]|2[0-9]|3[01])\./, /^192\.168\./,
+        /^169\.254\./, /^0\./, /^localhost$/i, /\.local$/i, /^::1$/, /^fe80:/, /^fc00:/, /^fd00:/,
+      ];
+      if (blockedPatterns.some(re => re.test(hostname))) {
+        return Response.json({ error: 'imageUrl hostname is not allowed' }, { status: 400 });
+      }
       const { pdsUrl, session } = await resolveSession(req);
       const imgRes = await fetch(imageUrl);
       if (!imgRes.ok) {

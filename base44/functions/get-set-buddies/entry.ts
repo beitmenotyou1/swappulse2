@@ -13,6 +13,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller) {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
     const body = await req.json().catch(() => ({}));
     const setId = String(body.set_id || '');
     const myCardIds: string[] = Array.isArray(body.my_card_ids) ? body.my_card_ids : [];
