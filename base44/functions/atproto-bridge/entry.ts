@@ -238,7 +238,10 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'imageUrl hostname is not allowed' }, { status: 400 });
       }
       const { pdsUrl, session } = await resolveSession(req);
-      const imgRes = await fetch(imageUrl);
+      // SSRF: do NOT follow redirects — an attacker's public HTTPS URL can
+      // 302 to an internal/cloud-metadata endpoint, bypassing the hostname
+      // blocklist above. Fail the fetch on any redirect instead.
+      const imgRes = await fetch(imageUrl, { redirect: 'error' });
       if (!imgRes.ok) {
         console.error('atproto-bridge: image fetch failed', imgRes.status, imageUrl);
         return Response.json({ error: `image fetch failed (${imgRes.status})` }, { status: 502 });
