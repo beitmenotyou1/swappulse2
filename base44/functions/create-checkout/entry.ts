@@ -2,6 +2,7 @@
 // marketplace listing. Validates the minimum charge (0.50), marks the listing
 // pending, and returns the hosted checkout redirect URL.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolveAppUrl } from '../../shared/appUrl.ts';
 
 // Turnstile verification — keeps create-checkout public (no login, per the
 // Base44 Payments integration) while blocking automated listing-locking abuse.
@@ -51,11 +52,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Minimum sale price is 0.50 in the listing currency.' }, { status: 400 });
     }
 
-    const appUrl = req.headers.get('X-Base44-App-Url') || Deno.env.get('WIX_CHECKOUT_APP_URL');
-    if (!appUrl) {
-      console.error('create-checkout: missing app URL (X-Base44-App-Url / WIX_CHECKOUT_APP_URL)');
-      return Response.json({ error: 'Checkout not configured.' }, { status: 500 });
-    }
+    // Validate the app URL against an allowlist — never trust the raw
+    // X-Base44-App-Url header for payment redirect URLs (open-redirect risk).
+    const appUrl = resolveAppUrl(req);
     const apiKey = Deno.env.get('WIX_CHECKOUT_API_KEY') || Deno.env.get('WIX_PAYMENTS_API_KEY');
     const siteId = Deno.env.get('WIX_CHECKOUT_SITE_ID') || Deno.env.get('WIX_PAYMENTS_SITE_ID');
     if (!apiKey || !siteId) {
