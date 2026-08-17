@@ -8,7 +8,9 @@
 // Returns null when there is no usable identifier.
 export function getPostDetailPath(record) {
   if (!record) return null;
-  if (record.id) return `/post/${record.id}`;
+  // Local posts have a real Base44 id. External/protocol posts set id to the
+  // at_uri (which contains slashes), so route them through the encoded at: path.
+  if (record.id && !String(record.id).startsWith('at://')) return `/post/${record.id}`;
   if (record.at_uri) return `/post/at/${encodeURIComponent(record.at_uri)}`;
   return null;
 }

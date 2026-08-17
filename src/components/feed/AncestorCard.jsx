@@ -12,7 +12,7 @@ import { timeAgo } from '@/lib/format';
 // because ancestors are context, not interactive surfaces.
 export default function AncestorCard({ post }) {
   if (!post) return null;
-  const detailPath = post.id
+  const detailPath = (post.id && !String(post.id).startsWith('at://'))
     ? `/post/${post.id}`
     : post.at_uri
       ? `/post/at/${encodeURIComponent(post.at_uri)}`

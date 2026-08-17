@@ -66,7 +66,7 @@ export default function QuotedPostCard({ quoteOfId, quoteRef }) {
     );
   }
 
-  const detailPath = quoted.id ? `/post/${quoted.id}` : (quoted.at_uri ? `/post/at/${encodeURIComponent(quoted.at_uri)}` : '#');
+  const detailPath = (quoted.id && !String(quoted.id).startsWith('at://')) ? `/post/${quoted.id}` : (quoted.at_uri ? `/post/at/${encodeURIComponent(quoted.at_uri)}` : '#');
 
   return (
     <Link
