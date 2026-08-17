@@ -71,7 +71,7 @@ export default async function(req) {
       '- Bearish: ' + bearish + ' (' + pct(bearish) + '%)\n' +
       '- Neutral: ' + neutral + ' (' + pct(neutral) + '%)\n\n' +
       'Market Watch Summary:\n' + summaryText + '\n\n' +
-      '— The SwapPulse Team';
+      'The SwapPulse Team';
 
     const htmlVersion =
       '<div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0F1117;color:#e2e8f0;">' +
@@ -87,7 +87,7 @@ export default async function(req) {
       '<h2 style="color:#6d4aff;font-size:18px;margin-bottom:12px;">Market Watch Summary</h2>' +
       '<div style="line-height:1.6;white-space:pre-wrap;">' + summaryText + '</div>' +
       '</div>' +
-      '<p style="color:#64748b;font-size:12px;margin-top:24px;text-align:center;">— The SwapPulse Team</p>' +
+      '<p style="color:#64748b;font-size:12px;margin-top:24px;text-align:center;">The SwapPulse Team</p>' +
       '</div>';
 
     // 5. Email the report to all active (non-restricted) community members

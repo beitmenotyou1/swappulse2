@@ -33,7 +33,7 @@ function TradeRow({ trade }) {
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Offering</p>
           <p className="truncate text-sm font-medium">
-            {trade.offer_card_names?.slice(0, 2).join(', ') || '—'}
+            {trade.offer_card_names?.slice(0, 2).join(', ') || '–'}
             {offerCount > 2 && <span className="text-muted-foreground"> +{offerCount - 2}</span>}
           </p>
         </div>
@@ -41,7 +41,7 @@ function TradeRow({ trade }) {
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase text-muted-foreground">Wants</p>
           <p className="truncate text-sm font-medium">
-            {trade.wanted_card_names?.slice(0, 2).join(', ') || '—'}
+            {trade.wanted_card_names?.slice(0, 2).join(', ') || '–'}
             {wantedCount > 2 && <span className="text-muted-foreground"> +{wantedCount - 2}</span>}
           </p>
         </div>

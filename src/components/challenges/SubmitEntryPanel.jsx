@@ -76,7 +76,7 @@ export default function SubmitEntryPanel({ challenge }) {
                 <label key={c.id} className="flex items-center gap-2 rounded-lg bg-secondary/40 px-2 py-1.5 text-sm">
                   <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="accent-primary" />
                   <span className="flex-1 truncate">{c.card_name}</span>
-                  <span className="text-xs capitalize text-muted-foreground">{c.rarity || '—'}</span>
+                  <span className="text-xs capitalize text-muted-foreground">{c.rarity || '–'}</span>
                 </label>
               ))}
             </div>

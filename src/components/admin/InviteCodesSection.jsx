@@ -79,7 +79,7 @@ export default function InviteCodesSection() {
                 <div className="min-w-0">
                   <p className="truncate font-mono text-sm font-semibold">{c.code}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {c.status === 'used' ? `used by ${c.used_by_did || '—'}` : c.status}
+                    {c.status === 'used' ? `used by ${c.used_by_did || '–'}` : c.status}
                     {c.batch ? ` · ${c.batch}` : ''}
                   </p>
                 </div>

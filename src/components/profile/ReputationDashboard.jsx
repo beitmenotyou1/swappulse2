@@ -47,7 +47,7 @@ export default function ReputationDashboard({ reputation, trades }) {
             <Star className="h-4 w-4 text-accent" />
             <span className="text-xs font-semibold uppercase text-muted-foreground">Avg Rating</span>
           </div>
-          <p className="mt-1.5 text-2xl font-extrabold text-accent">{stats.avg || '—'}</p>
+          <p className="mt-1.5 text-2xl font-extrabold text-accent">{stats.avg || '–'}</p>
           {reputation.length > 0 && (
             <p className="text-xs text-muted-foreground">{reputation.length} review{reputation.length !== 1 ? 's' : ''}</p>
           )}

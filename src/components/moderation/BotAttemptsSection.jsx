@@ -91,7 +91,7 @@ export default function BotAttemptsSection() {
                   <td className="px-3 py-2">{a.risk_score}</td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{(a.reasons || []).join(', ')}</td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {a.user_id ? a.user_id.slice(0, 8) : (a.anon_id || '—')}
+                    {a.user_id ? a.user_id.slice(0, 8) : (a.anon_id || '–')}
                   </td>
                 </tr>
               ))}

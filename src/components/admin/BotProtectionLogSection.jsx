@@ -110,13 +110,13 @@ export default function BotProtectionLogSection() {
                     <td className="px-3 py-2">
                       {u ? (
                         <div className="space-y-0.5">
-                          <div className="font-medium">{u.full_name || '—'}</div>
+                          <div className="font-medium">{u.full_name || '–'}</div>
                           <div className="text-xs text-muted-foreground">{u.email || ''}</div>
                           {a.did && <div className="text-xs text-muted-foreground">{a.did}</div>}
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          {a.anon_id || (a.user_id ? `user ${a.user_id.slice(0, 8)}` : '—')}
+                          {a.anon_id || (a.user_id ? `user ${a.user_id.slice(0, 8)}` : '–')}
                         </span>
                       )}
                     </td>

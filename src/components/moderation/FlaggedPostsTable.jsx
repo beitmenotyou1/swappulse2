@@ -129,7 +129,7 @@ export default function FlaggedPostsTable({ rows, loading, selectedIds, onToggle
                           <p className="mt-0.5 text-muted-foreground">{Math.round((row.aiRecommendation.confidence || 0) * 100)}%</p>
                         </div>
                       ) : (
-                        <span className="text-[11px] text-muted-foreground">—</span>
+                        <span className="text-[11px] text-muted-foreground">–</span>
                       )}
                     </td>
                     <td className="p-2 text-xs">{Math.round(maxConf)}%</td>

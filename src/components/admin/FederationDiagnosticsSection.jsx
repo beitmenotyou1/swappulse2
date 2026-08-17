@@ -107,9 +107,9 @@ export default function FederationDiagnosticsSection() {
                   return (
                     <tr key={r.userId} className="border-t border-border">
                       <td className="px-3 py-2">{r.username || r.email}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{r.handle || '—'}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{r.handle || '–'}</td>
                       <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
-                        {r.did ? `${r.did.slice(0, 18)}…` : '—'}
+                        {r.did ? `${r.did.slice(0, 18)}…` : '–'}
                       </td>
                       <td className="px-3 py-2">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${meta.chip}`}>

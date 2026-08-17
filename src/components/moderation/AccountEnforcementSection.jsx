@@ -220,7 +220,7 @@ export default function AccountEnforcementSection() {
                 <span className="text-xs text-muted-foreground">{new Date(log.created_date).toLocaleString()}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {log.moderator_name || 'System'} → {log.target_author || log.target_user_id || '—'}
+                {log.moderator_name || 'System'} → {log.target_author || log.target_user_id || '–'}
                 {log.notes ? ` · ${log.notes}` : ''}
               </p>
             </div>
