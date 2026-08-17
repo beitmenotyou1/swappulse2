@@ -14,6 +14,8 @@ import CardSetRail from '@/components/cards/CardSetRail';
 import PriceHistoryChart from '@/components/cards/PriceHistoryChart';
 import { formatPrice } from '@/lib/format';
 import useSEO from '@/hooks/useSEO';
+import { useI18n } from '@/lib/i18n/I18nProvider';
+import CardSocialTabs from '@/components/cards/CardSocialTabs';
 
 export default function CardDetail() {
   const { cardId } = useParams();
@@ -31,6 +33,7 @@ export default function CardDetail() {
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [tab, setTab] = useState('overview');
   const { toast } = useToast();
+  const { t, locale } = useI18n();
 
   useEffect(() => {
     (async () => {
@@ -43,7 +46,7 @@ export default function CardDetail() {
         setLoading(false);
       }
     })();
-  }, [cardId]);
+  }, [cardId, locale]);
 
   useEffect(() => {
     (async () => {
@@ -117,7 +120,7 @@ export default function CardDetail() {
             tab === 'overview' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Overview
+          {t('card.overview')}
         </button>
         <button
           onClick={() => setTab('discussion')}
@@ -125,7 +128,7 @@ export default function CardDetail() {
             tab === 'discussion' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Discussion
+          {t('card.discussion')}
         </button>
       </div>
 
@@ -331,6 +334,8 @@ export default function CardDetail() {
       <div className={tab !== 'overview' ? 'hidden' : ''}>
         <CardReviews card={card} />
       </div>
+
+      {tab === 'overview' && <CardSocialTabs card={card} />}
 
       {tab === 'discussion' && <DiscussionTab card={card} />}
 

@@ -129,6 +129,7 @@ export default function Terms() {
               <li>Deleting content on SwapPulse does not guarantee removal from all federated caches or third-party archives.</li>
               <li>Your AT Protocol identity (DID and handle) is yours and portable — you are not locked into SwapPulse.</li>
               <li>Direct message bodies are end-to-end encrypted before mirroring; only ciphertext is federated.</li>
+              <li>Posts with attached cards include an app.bsky.embed.external embed (card page URL, image, localized name) so the card renders on Bluesky and deep-links back to SwapPulse.</li>
             </ul>
 
             <h2 id="trading" className="mt-8 scroll-mt-20 text-xl font-bold">5. Peer-to-Peer Trading & Trade Chains</h2>

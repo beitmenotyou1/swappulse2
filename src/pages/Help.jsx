@@ -5,7 +5,7 @@ import {
   BarChart3, Vote, Award, ShieldCheck, Settings as SettingsIcon, Heart, MessageSquare,
   ChevronDown, FlaskConical, ScanLine, Search, Activity, Wrench, Code, ShieldAlert,
   Library, LayoutDashboard, PartyPopper, Trophy, Target, Medal, MessageCircle, Bell,
-  UserPlus, Sparkles,
+  UserPlus, Sparkles, Globe, TrendingUp, Image as ImageIcon,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 
@@ -33,6 +33,10 @@ const FEATURES = [
   { to: '/notifications', icon: Bell, label: 'Notifications', desc: 'See likes, replies, mentions, trade matches, price alerts, and follows in one feed.' },
   { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', desc: 'Discover collectors to follow based on your collection, trades, and interests.' },
   { to: '/trade-assistant', icon: Sparkles, label: 'AI Assistants', desc: 'Trade, market, collection, sentiment, achievement, and networking assistants powered by AI.' },
+  { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalog between 9+ languages — English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
+  { to: '/explore', icon: MessageCircle, label: 'Social Card Pages', desc: 'Every card page surfaces posts, trades, reviews, and pack openings about that card from across the community.' },
+  { to: '/', icon: TrendingUp, label: 'Trending Cards', desc: 'Discover the most talked-about cards right now, ranked by community posts and activity.' },
+  { to: '/compose', icon: ImageIcon, label: 'Card Embeds in Posts', desc: 'Attach a card to your post and it renders richly on both SwapPulse and Bluesky with a deep link back.' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings', desc: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.' },
 ];
 
@@ -92,6 +96,22 @@ const FAQ = [
   {
     q: 'How do I cross-post to Bluesky?',
     a: 'SwapPulse is built on the AT Protocol, so your posts, trades, and follows are automatically mirrored to your PDS and visible on Bluesky. You can optionally configure cross-posting in Settings. Your AT Protocol identity (DID and handle) is portable — you\'re not locked in.',
+  },
+  {
+    q: 'How do I change the language?',
+    a: 'Tap the globe icon in the navigation bar (desktop sidebar or mobile More menu) and pick your language. The entire interface — navigation, buttons, page headings — and all card names, set names, and flavor text switch instantly. Your choice is saved to your account and persists across sessions. SwapPulse supports English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, and 한국어.',
+  },
+  {
+    q: 'How do social card pages work?',
+    a: 'Every card page (e.g. /card/pikachu) is a social hub. Below the card stats, you\'ll find tabs for Posts, Trades, and Pack Openings — each showing community content about that specific card, merged from local SwapPulse posts and federated Bluesky posts that reference the card. It\'s a card-first way to discover what collectors are saying, trading, and pulling.',
+  },
+  {
+    q: 'What are Trending Cards?',
+    a: 'The Trending Cards rail on the home feed shows the cards with the most recent social activity — posts, discussions, and mentions. It\'s ranked by how much the community is talking about each card right now. Tap any card to jump to its social detail page.',
+  },
+  {
+    q: 'How do card embeds work in posts?',
+    a: 'When you compose a post and attach a card, the post is mirrored to the AT Protocol with an external embed containing the card\'s image, localized name, and a link to the SwapPulse card page. On Bluesky, the embed renders as a rich card preview; on SwapPulse, the card renders inline. Clicking the embed on Bluesky deep-links to the SwapPulse card page.',
   },
   {
     q: 'How do I verify a custom domain handle?',
@@ -256,7 +276,8 @@ export default function Help() {
               SwapPulse is a social platform for Pokémon TCG collectors — track your collection, share pulls, trade with
               trusted collectors, join circles, go live, send end-to-end encrypted messages, and follow the market. Built
               on the AT Protocol for self-sovereign identity, powered by the TCGDex open catalog, and kept free and
-              open-source by community support.
+              open-source by community support. Available in 9+ languages — switch anytime from the language switcher
+              in the navigation.
             </p>
           </section>
         )}

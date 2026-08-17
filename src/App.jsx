@@ -80,6 +80,7 @@ import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
 import HashtagPage from '@/pages/HashtagPage';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
+import { I18nProvider } from '@/lib/i18n/I18nProvider';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -191,6 +192,7 @@ function App() {
 
   return (
     <AuthProvider>
+      <I18nProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
@@ -205,6 +207,7 @@ function App() {
         <ExternalLinkConfirm />
         <Toaster />
       </QueryClientProvider>
+      </I18nProvider>
     </AuthProvider>
   )
 }

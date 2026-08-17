@@ -14,12 +14,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
+import TrendingCardsRail from '@/components/cards/TrendingCardsRail';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const TABS = [
-  { key: 'all', label: 'For You' },
-  { key: 'pack_opening', label: 'Fresh Pulls' },
-  { key: 'trade', label: 'Trade Floor' },
-  { key: 'showcase', label: 'Showcase' },
+  { key: 'all', tKey: 'feed.forYou' },
+  { key: 'pack_opening', tKey: 'feed.freshPulls' },
+  { key: 'trade', tKey: 'feed.tradeFloor' },
+  { key: 'showcase', tKey: 'feed.showcase' },
 ];
 
 export default function Home() {
@@ -40,6 +42,7 @@ export default function Home() {
   const [followedCount, setFollowedCount] = useState(0);
   const { user } = useAuth();
   const { filterPosts } = usePostVisibility();
+  const tr = useT();
 
   // Only show the onboarding tour to authenticated users who haven't seen it.
   // Guests should see the platform content, not a full-screen tour modal.
@@ -150,18 +153,18 @@ export default function Home() {
     <div>
       <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
         <div className="flex items-center px-2" role="tablist" aria-label="Feed filters">
-          {TABS.map((t) => (
+          {TABS.map((tabItem) => (
             <button
-              key={t.key}
+              key={tabItem.key}
               role="tab"
-              aria-selected={tab === t.key}
-              onClick={() => setTab(t.key)}
+              aria-selected={tab === tabItem.key}
+              onClick={() => setTab(tabItem.key)}
               className={`relative flex-1 px-4 py-3.5 text-sm font-semibold transition-colors ${
-                tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'
+                tab === tabItem.key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'
               }`}
             >
-              {t.label}
-              {tab === t.key && (
+              {tr(tabItem.tKey)}
+              {tab === tabItem.key && (
                 <span className="absolute bottom-0 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-primary" />
               )}
             </button>
@@ -174,6 +177,8 @@ export default function Home() {
       <SpaceBar />
 
       <CardOfTheDay />
+
+      <TrendingCardsRail />
 
       <ComposeBox onPosted={loadPosts} />
 

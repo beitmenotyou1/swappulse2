@@ -10,37 +10,39 @@ import { useUnreadCount } from '@/hooks/useNotifications';
 import { useUnreadDMCount } from '@/hooks/useUnreadDMCount';
 import { PopoverTrigger } from '@/components/ui/popover';
 import NotificationPopover from '@/components/notifications/NotificationPopover';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const primary = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/explore', icon: Compass, label: 'Explore' },
-  { to: '/collection', icon: Layers, label: 'Collection', authOnly: true },
-  { to: '/scan', icon: ScanLine, label: 'Scan Cards', authOnly: true },
-  { to: '/binders', icon: BookOpen, label: 'Binders' },
-  { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board' },
-  { to: '/circles', icon: Users, label: 'Circles' },
-  { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
-  { to: '/spaces', icon: Radio, label: 'Live Now' },
-  { to: '/notifications', icon: Bell, label: 'Notifications', authOnly: true },
-  { to: '/messages', icon: MessageSquare, label: 'Messages', authOnly: true },
+  { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
+  { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
+  { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
+  { to: '/scan', icon: ScanLine, label: 'Scan Cards', tKey: 'nav.scan', authOnly: true },
+  { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
+  { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', tKey: 'nav.trades' },
+  { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
+  { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },
+  { to: '/spaces', icon: Radio, label: 'Live Now', tKey: 'nav.live' },
+  { to: '/notifications', icon: Bell, label: 'Notifications', tKey: 'nav.notifications', authOnly: true },
+  { to: '/messages', icon: MessageSquare, label: 'Messages', tKey: 'nav.messages', authOnly: true },
 ];
 
 const more = [
-  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
-  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', authOnly: true },
-  { to: '/achievements', icon: Trophy, label: 'Achievements', authOnly: true },
-  { to: '/challenges', icon: Target, label: 'Challenges' },
-  { to: '/pack-parties', icon: Sparkles, label: 'Pack Parties' },
-  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of the Week' },
-  { to: '/packs', icon: Package, label: 'Pack Openings' },
-  { to: '/market', icon: BarChart3, label: 'Market Watch' },
-  { to: '/predictions', icon: Vote, label: 'Predictions' },
-  { to: '/grading', icon: Award, label: 'Grading', authOnly: true },
-  { to: '/help', icon: HelpCircle, label: 'Help & Info' },
-  { to: '/donate', icon: Heart, label: 'Donate' },
-  { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
-  { to: '/moderation', icon: ShieldAlert, label: 'Moderation', adminOnly: true },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings', authOnly: true },
+  { to: '/trust', icon: ShieldCheck, label: 'Trust', tKey: 'nav.trust' },
+  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', tKey: 'nav.whoToFollow', authOnly: true },
+  { to: '/achievements', icon: Trophy, label: 'Achievements', tKey: 'nav.achievements', authOnly: true },
+  { to: '/challenges', icon: Target, label: 'Challenges', tKey: 'nav.challenges' },
+  { to: '/pack-parties', icon: Sparkles, label: 'Pack Parties', tKey: 'nav.packParties' },
+  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of the Week', tKey: 'nav.pullOfTheWeek' },
+  { to: '/packs', icon: Package, label: 'Pack Openings', tKey: 'nav.packOpenings' },
+  { to: '/market', icon: BarChart3, label: 'Market Watch', tKey: 'nav.market' },
+  { to: '/predictions', icon: Vote, label: 'Predictions', tKey: 'nav.predictions' },
+  { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
+  { to: '/help', icon: HelpCircle, label: 'Help & Info', tKey: 'nav.help' },
+  { to: '/donate', icon: Heart, label: 'Donate', tKey: 'nav.donate' },
+  { to: '/admin', icon: Shield, label: 'Admin', tKey: 'nav.admin', adminOnly: true },
+  { to: '/moderation', icon: ShieldAlert, label: 'Moderation', tKey: 'nav.moderation', adminOnly: true },
+  { to: '/settings', icon: SettingsIcon, label: 'Settings', tKey: 'nav.settings', authOnly: true },
 ];
 
 export default function LeftNav() {
@@ -50,6 +52,7 @@ export default function LeftNav() {
   const unread = useUnreadCount();
   const unreadDMs = useUnreadDMCount();
   const [showMore, setShowMore] = useState(false);
+  const t = useT();
 
   const linkClass = ({ isActive }) =>
     `group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold transition-colors xl:pr-6 ${
@@ -73,9 +76,9 @@ export default function LeftNav() {
                 align="start"
                 trigger={
                   <PopoverTrigger asChild>
-                    <button aria-label={item.label} className={linkClass({ isActive: false })}>
+                    <button aria-label={t(item.tKey)} className={linkClass({ isActive: false })}>
                       <item.icon className="h-6 w-6 shrink-0" />
-                      <span className="hidden xl:inline">{item.label}</span>
+                      <span className="hidden xl:inline">{t(item.tKey)}</span>
                       {unread > 0 && (
                         <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white live-pulse">{unread}</span>
                       )}
@@ -86,9 +89,9 @@ export default function LeftNav() {
             );
           }
           return (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'} aria-label={item.label} className={linkClass}>
+          <NavLink key={item.to} to={item.to} end={item.to === '/'} aria-label={t(item.tKey)} className={linkClass}>
             <item.icon className="h-6 w-6 shrink-0" />
-            <span className="hidden xl:inline">{item.label}</span>
+            <span className="hidden xl:inline">{t(item.tKey)}</span>
             {item.to === '/spaces' && liveCount > 0 && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-white">{liveCount}</span>
             )}
@@ -106,15 +109,15 @@ export default function LeftNav() {
           className="group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold text-foreground transition-colors hover:bg-secondary xl:pr-6"
         >
           <ChevronDown className={`h-6 w-6 shrink-0 transition-transform ${showMore ? 'rotate-180' : ''}`} />
-          <span className="hidden xl:inline">More</span>
+          <span className="hidden xl:inline">{t('nav.more')}</span>
         </button>
 
         {showMore && (
           <div className="flex flex-col items-center gap-1 border-l border-border pl-2 xl:items-stretch xl:pl-3">
             {more.filter((i) => (!i.authOnly || isAuthenticated) && (!i.adminOnly || user?.role === 'admin')).map((item) => (
-              <NavLink key={item.to} to={item.to} aria-label={item.label} className={linkClass}>
+              <NavLink key={item.to} to={item.to} aria-label={t(item.tKey)} className={linkClass}>
                 <item.icon className="h-6 w-6 shrink-0" />
-                <span className="hidden xl:inline">{item.label}</span>
+                <span className="hidden xl:inline">{t(item.tKey)}</span>
               </NavLink>
             ))}
             {isAuthenticated && (
@@ -124,15 +127,16 @@ export default function LeftNav() {
                 className="group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold text-foreground transition-colors hover:bg-secondary xl:pr-6"
               >
                 <LogOut className="h-6 w-6 shrink-0" />
-                <span className="hidden xl:inline">Log Out</span>
+                <span className="hidden xl:inline">{t('nav.logout')}</span>
               </button>
             )}
           </div>
         )}
       </div>
       <div className="mt-auto flex flex-col items-center gap-2 pt-4 xl:items-stretch">
-        <div className="flex justify-center xl:justify-start xl:px-3">
+        <div className="flex justify-center gap-1 xl:justify-start xl:px-3">
           <ThemeToggle />
+          <LanguageSwitcher />
         </div>
         {isAuthenticated ? (
           <NavLink
@@ -143,7 +147,7 @@ export default function LeftNav() {
             <Avatar name={user?.full_name} src={user?.avatar_url} size={36} />
             <div className="hidden xl:block min-w-0">
               <p className="truncate text-sm font-semibold">{user?.full_name || 'Collector'}</p>
-              <p className="truncate text-xs text-muted-foreground">View profile</p>
+              <p className="truncate text-xs text-muted-foreground">{t('nav.profile')}</p>
             </div>
           </NavLink>
         ) : (
@@ -153,7 +157,7 @@ export default function LeftNav() {
             className="flex items-center gap-3 rounded-full bg-primary p-2 text-primary-foreground transition-colors hover:bg-primary/90 xl:px-4 xl:pr-6"
           >
             <LogIn className="h-5 w-5 shrink-0" />
-            <span className="hidden xl:inline text-sm font-semibold">Log in</span>
+            <span className="hidden xl:inline text-sm font-semibold">{t('nav.login')}</span>
           </NavLink>
         )}
       </div>

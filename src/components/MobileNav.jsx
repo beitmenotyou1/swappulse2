@@ -8,6 +8,8 @@ import { useUnreadDMCount } from '@/hooks/useUnreadDMCount';
 import { useAuth } from '@/lib/AuthContext';
 import { PopoverTrigger } from '@/components/ui/popover';
 import NotificationPopover from '@/components/notifications/NotificationPopover';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home' },
@@ -53,6 +55,7 @@ export default function MobileNav() {
   const unread = useUnreadCount();
   const unreadDMs = useUnreadDMCount();
   const { user, isAuthenticated, logout } = useAuth();
+  const t = useT();
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
   return (
@@ -89,7 +92,7 @@ export default function MobileNav() {
           }`}
         >
           <MoreHorizontal className="h-5 w-5" />
-          More
+          {t('nav.more')}
         </button>
         <ThemeToggle className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[10px] font-medium text-muted-foreground h-auto w-auto rounded-lg hover:bg-transparent" />
       </nav>
@@ -99,10 +102,13 @@ export default function MobileNav() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl border-t border-border bg-card p-3" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between px-1">
-              <p className="text-sm font-bold">More</p>
+              <p className="text-sm font-bold">{t('nav.more')}</p>
               <button onClick={() => setMoreOpen(false)} aria-label="Close" className="rounded-full p-1 hover:bg-secondary">
                 <X className="h-5 w-5" />
               </button>
+            </div>
+            <div className="mb-3">
+              <LanguageSwitcher />
             </div>
             <div className="grid grid-cols-3 gap-2">
               {moreItems.filter((i) => (!i.authOnly || isAuthenticated) && (!i.adminOnly || user?.role === 'admin')).map((item) => {
@@ -158,7 +164,7 @@ export default function MobileNav() {
                   className="flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium text-foreground transition-colors hover:bg-secondary"
                 >
                   <LogOut className="h-5 w-5" />
-                  Log Out
+                  {t('nav.logout')}
                 </button>
               )}
             </div>

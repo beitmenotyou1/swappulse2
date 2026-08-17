@@ -122,6 +122,12 @@ export default function Privacy() {
               bulletin board: once it's up, many people may see it and some may copy it. Do not post content you would
               not want to be public.
             </p>
+            <p>
+              <strong>Card embeds:</strong> When you attach a card to a post, the post is bridged to the AT Protocol
+              with an app.bsky.embed.external embed containing the SwapPulse card page URL, the card image (served
+              from TCGDex's CDN), and the localized card name. This embed is public and federates like any other post
+              content. Clicking the embed on Bluesky deep-links to the SwapPulse card page.
+            </p>
 
             <h2 id="federation" className="mt-8 scroll-mt-20 text-xl font-bold">4. Federated Data Sharing</h2>
             <p>
@@ -247,6 +253,12 @@ export default function Privacy() {
             <p>
               We do not sell your personal data to third parties. We do not use your data for targeted advertising.
               SwapPulse is funded by voluntary donations, not by data monetization.
+            </p>
+            <p>
+              <strong>Language preferences:</strong> When you choose a language via the language switcher, your
+              preference is stored in your browser's local storage and, if you are logged in, on your account. We use
+              this to display the interface and card catalog in your preferred language. Card and set names are fetched
+              from TCGDex in the language you select. Your language preference is not shared with third parties.
             </p>
 
             <h2 id="cookies" className="mt-8 scroll-mt-20 text-xl font-bold">11. Cookies & Local Storage</h2>

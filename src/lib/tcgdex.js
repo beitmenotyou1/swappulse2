@@ -1,5 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { idbGet, idbPut } from '@/lib/offlineDB';
+import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 
 const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 
@@ -38,7 +39,7 @@ async function cached(key, fetcher) {
   }
 }
 
-export async function searchCards(query, { page = 1, perPage = 24, setName, rarity, lang = 'en' } = {}) {
+export async function searchCards(query, { page = 1, perPage = 24, setName, rarity, lang = getCurrentTcgdexLang() } = {}) {
   return cached(`search:${lang}:${query}:${page}:${perPage}:${setName || ''}:${rarity || ''}`, async () => {
     const res = await base44.functions.invoke('tcgdex', {
       action: 'search', query, page, perPage, setName, rarity, lang,
@@ -47,7 +48,7 @@ export async function searchCards(query, { page = 1, perPage = 24, setName, rari
   });
 }
 
-export async function getCard(cardId, lang = 'en') {
+export async function getCard(cardId, lang = getCurrentTcgdexLang()) {
   return cached(`card:${lang}:${cardId}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getCard', cardId, lang });
     return res.data?.data ?? null;
@@ -55,7 +56,7 @@ export async function getCard(cardId, lang = 'en') {
 }
 
 /** Fetch a card by its set id + local id (TCGDex /sets/{setId}/{localId}). */
-export async function getCardBySet(setId, localId, lang = 'en') {
+export async function getCardBySet(setId, localId, lang = getCurrentTcgdexLang()) {
   const nid = normalizeSetId(setId);
   return cached(`card:${lang}:${nid}:${localId}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getCardBySet', setId: nid, localId, lang });
@@ -63,14 +64,14 @@ export async function getCardBySet(setId, localId, lang = 'en') {
   });
 }
 
-export async function getSets(lang = 'en') {
+export async function getSets(lang = getCurrentTcgdexLang()) {
   return cached(`sets:${lang}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getSets', lang });
     return res.data?.data ?? [];
   });
 }
 
-export async function getSet(setId, lang = 'en') {
+export async function getSet(setId, lang = getCurrentTcgdexLang()) {
   const nid = normalizeSetId(setId);
   return cached(`set:${lang}:${nid}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getSet', setId: nid, lang });
@@ -78,21 +79,21 @@ export async function getSet(setId, lang = 'en') {
   });
 }
 
-export async function getSeries(lang = 'en') {
+export async function getSeries(lang = getCurrentTcgdexLang()) {
   return cached(`series:${lang}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getSeries', lang });
     return res.data?.data ?? [];
   });
 }
 
-export async function getSerie(serieId, lang = 'en') {
+export async function getSerie(serieId, lang = getCurrentTcgdexLang()) {
   return cached(`serie:${lang}:${serieId}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action: 'getSerie', serieId, lang });
     return res.data?.data ?? null;
   });
 }
 
-function listEndpoint(action, cacheKey, lang = 'en') {
+function listEndpoint(action, cacheKey, lang = getCurrentTcgdexLang()) {
   return cached(`${cacheKey}:${lang}`, async () => {
     const res = await base44.functions.invoke('tcgdex', { action, lang });
     return res.data?.data ?? [];
