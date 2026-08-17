@@ -26,6 +26,10 @@ const PROFILE_RKEY = 'self';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const svc = base44.asServiceRole;
 
     // Look up the PDS credential for the promo account
