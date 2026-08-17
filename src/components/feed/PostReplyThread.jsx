@@ -45,12 +45,13 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
     try {
       // Fetch all descendants: posts whose root_uri points at this post, plus
       // direct replies (reply_to) for threads where root_uri is not set.
-      const [byRoot, byReply] = await Promise.all([
+      const [byRoot, byReply, byParent] = await Promise.all([
         base44.entities.Post.filter({ root_uri: parentPost.at_uri || '' }, '-created_date', 200).catch(() => []),
         base44.entities.Post.filter({ reply_to: parentPost.id }, '-created_date', 200).catch(() => []),
+        base44.entities.Post.filter({ parent_uri: parentPost.at_uri || '' }, '-created_date', 200).catch(() => []),
       ]);
       const merge = new Map();
-      [...byRoot, ...byReply].forEach((p) => merge.set(p.id, p));
+      [...byRoot, ...byReply, ...byParent].forEach((p) => merge.set(p.id, p));
       const list = Array.from(merge.values()).sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
       setAll(list);
     } catch {
@@ -66,8 +67,12 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
     return unsub;
   }, [load]);
 
-  const childrenOf = (id) => all.filter((r) => r.reply_to === id);
-  const directReplies = childrenOf(parentPost.id);
+  const childrenOf = (id, uriOverride) => {
+    const parent = all.find((p) => p.id === id);
+    const parentUri = uriOverride || parent?.at_uri || '';
+    return all.filter((r) => r.reply_to === id || (!r.reply_to && parentUri && r.parent_uri === parentUri));
+  };
+  const directReplies = childrenOf(parentPost.id, parentPost.at_uri);
 
   const submit = async () => {
     const trimmed = text.trim();
@@ -85,15 +90,15 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
     }
   };
 
-  const renderTree = (parentId, depth = 0) => {
-    const kids = childrenOf(parentId);
+  const renderTree = (parentId, depth = 0, parentUri) => {
+    const kids = childrenOf(parentId, parentUri);
     if (kids.length === 0) return null;
     return (
       <div className={depth > 0 ? 'mt-2 border-l-2 border-border pl-2' : 'mt-2 space-y-2'}>
         {kids.map((r) => (
           <div key={r.id} className={depth > 0 ? 'mb-2' : ''}>
             <ReplyNode reply={r} onPosted={load}>
-              {depth < 5 && renderTree(r.id, depth + 1)}
+              {depth < 5 && renderTree(r.id, depth + 1, r.at_uri)}
             </ReplyNode>
           </div>
         ))}
@@ -107,7 +112,7 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
         <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
       ) : full ? (
         <>
-          {renderTree(parentPost.id, 0)}
+          {renderTree(parentPost.id, 0, parentPost.at_uri)}
           {all.length === 0 && <p className="text-xs text-muted-foreground">No replies yet.</p>}
         </>
       ) : (

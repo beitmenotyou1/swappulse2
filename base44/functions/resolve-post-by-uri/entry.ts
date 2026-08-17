@@ -19,6 +19,52 @@ import { FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
+// Fetch the reply thread (depth 3) from the AppView and store any reply
+// posts not yet in the local DB, setting reply_to by resolving each reply's
+// parent_uri to a local post id. Idempotent via at_uri dedup.
+async function fetchAndStoreThread(svc: any, postUri: string): Promise<void> {
+  const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getPostThread`);
+  url.searchParams.set('uri', postUri);
+  url.searchParams.set('depth', '3');
+  url.searchParams.set('parentHeight', '0');
+  const res = await fetch(url);
+  if (!res.ok) return;
+  const data = await res.json();
+  const thread = data?.thread;
+  if (!thread || thread.$type !== 'app.bsky.feed.defs#threadViewPost') return;
+
+  const postMapper = FIELD_MAPPERS['app.bsky.feed.post'];
+  if (!postMapper) return;
+
+  // Recursively walk reply nodes, storing each reply post not yet local.
+  const walk = async (node: any) => {
+    const replies = node?.replies || [];
+    for (const child of replies) {
+      if (child?.$type !== 'app.bsky.feed.defs#threadViewPost') continue;
+      const rp = child.post;
+      if (!rp?.uri) continue;
+      const existing = await svc.entities.Post.filter({ at_uri: rp.uri }, '-created_date', 1).catch(() => []);
+      if (!existing || existing.length === 0) {
+        const author = rp.author || {};
+        const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
+        mapped.cid = rp.cid || '';
+        const created = await svc.entities.Post.create(mapped).catch(() => null);
+        if (created) {
+          const parentUri = rp.record?.reply?.parent?.uri || '';
+          if (parentUri) {
+            const parents = await svc.entities.Post.filter({ at_uri: parentUri }, '-created_date', 1).catch(() => []);
+            if (parents?.[0]?.id) {
+              await svc.entities.Post.update(created.id, { reply_to: parents[0].id }).catch(() => {});
+            }
+          }
+        }
+      }
+      await walk(child);
+    }
+  };
+  await walk(thread);
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -65,6 +111,13 @@ export default async function(req: Request): Promise<Response> {
 
     try {
       const created = await svc.entities.Post.create(mapped);
+      // Fetch the reply thread so replies are immediately available on the
+      // post detail page without waiting for the next firehose-ingest cycle.
+      try {
+        await fetchAndStoreThread(svc, at_uri);
+      } catch (e) {
+        console.error('resolve-post-by-uri: thread fetch failed', e?.message || e);
+      }
       return Response.json({ postId: created.id, post: created });
     } catch (e) {
       console.error('resolve-post-by-uri: create failed', e?.message || e);

@@ -155,7 +155,18 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
             const author = rp.author || {};
             const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
             const created = await svc.entities.Post.create(mapped).catch(() => null);
-            if (created) synced++;
+            if (created) {
+              synced++;
+              // Resolve the local parent's id from parent_uri so the reply
+              // nests under its immediate parent in the reply tree.
+              const parentUri = rp.record?.reply?.parent?.uri || '';
+              if (parentUri) {
+                const parents = await svc.entities.Post.filter({ at_uri: parentUri }, '-created_date', 1).catch(() => []);
+                if (parents?.[0]?.id) {
+                  await svc.entities.Post.update(created.id, { reply_to: parents[0].id }).catch(() => {});
+                }
+              }
+            }
             await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '', rp.uri, rp.cid || '', created?.id || '');
           } catch (e) {
             console.error('firehose-ingest: reply sync error', e?.message || e);
