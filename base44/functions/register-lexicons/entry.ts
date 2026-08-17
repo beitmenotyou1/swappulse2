@@ -7,11 +7,17 @@
 // updates the definition in place. Invoked by the Register Lexicons workflow
 // (one-time / on-demand after lexicon edits).
 
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession, pdsRequest, clearPdsSession } from '../../shared/pdsSession.ts';
 import { LEXICONS } from '../../shared/lexiconRegistry.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
+    const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const { pdsUrl, session } = await getPdsSession();
     const results: any[] = [];
     let ok = 0, failed = 0;
