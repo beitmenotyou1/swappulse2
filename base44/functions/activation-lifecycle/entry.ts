@@ -17,7 +17,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
     const svc = base44.asServiceRole;
-    const appUrl = req.headers.get('X-Base44-App-Url') || 'https://swappulse.org';
+    // Hardcoded canonical origin — never trust client-controlled headers for
+    // activation links emailed to users (prevents token leakage via host poisoning).
+    const appUrl = 'https://swappulse.org';
     const now = Date.now();
 
     const users = await svc.entities.User.list('-created_date', 500);
