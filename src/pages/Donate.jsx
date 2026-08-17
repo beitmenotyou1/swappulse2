@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import Logo from '@/components/Logo';
+import TurnstileWidget from '@/components/TurnstileWidget';
 
 const PRESETS = [2, 5, 10, 25];
 
 export default function Donate() {
   const [amount, setAmount] = useState(5);
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
 
+  const onVerify = useCallback((token) => setTurnstileToken(token), []);
+
   const donate = async () => {
+    if (!turnstileToken) {
+      toast({ title: 'Please complete the bot check', description: 'Verify you\'re human before donating.', variant: 'destructive' });
+      return;
+    }
     const value = Number(amount);
     if (!Number.isFinite(value) || value < 0.5) {
       toast({ title: 'Minimum donation is £0.50', description: 'Wix Payments cannot process smaller amounts.', variant: 'destructive' });
@@ -20,12 +29,14 @@ export default function Donate() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('create-donation', { amount: value });
+      const res = await base44.functions.invoke('create-donation', { amount: value, turnstileToken });
       if (!res?.redirectUrl) throw new Error(res?.error || 'No checkout URL returned.');
       window.location.href = res.redirectUrl;
     } catch (e) {
       toast({ title: 'Donation unavailable', description: e?.message || 'Please try again later.', variant: 'destructive' });
       setLoading(false);
+      setTurnstileToken(null);
+      setResetKey((k) => k + 1);
     }
   };
 
@@ -86,10 +97,14 @@ export default function Donate() {
             ))}
           </div>
 
+          <div className="mt-4 flex justify-center">
+            <TurnstileWidget onVerify={onVerify} resetKey={resetKey} />
+          </div>
+
           <button
             onClick={donate}
-            disabled={loading}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+            disabled={loading || !turnstileToken}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Heart className="h-5 w-5 fill-current" />}
             {loading ? 'Redirecting to checkout…' : `Donate £${Number(amount || 0).toFixed(2)}`}

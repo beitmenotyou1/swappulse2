@@ -1,13 +1,43 @@
 // create-donation - initiates a Wix (Base44) Payments checkout session for an
 // open amount donation. Validates the minimum charge (0.50) and returns the
-// hosted checkout redirect URL. No auth required - visitors can donate.
+// hosted checkout redirect URL. No auth required - visitors can donate, but a
+// Cloudflare Turnstile token is required to block automated session creation.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+
+async function verifyTurnstile(token: string): Promise<boolean> {
+  if (!token) return false;
+  const secret = Deno.env.get('TURNSTILE_SECRET_KEY');
+  if (!secret) {
+    console.error('create-donation: TURNSTILE_SECRET_KEY not configured');
+    return false;
+  }
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret, response: token }),
+    });
+    const data = await res.json();
+    return data?.success === true;
+  } catch (e) {
+    console.error('create-donation: Turnstile verify failed', e?.message || e);
+    return false;
+  }
+}
 
 Deno.serve(async (req) => {
   try {
     createClientFromRequest(req); // initialise context (not used for auth)
 
     const body = await req.json().catch(() => ({}));
+
+    // Verify the Turnstile token before creating a checkout session — blocks
+    // automated abuse of the public endpoint.
+    const turnstileOk = await verifyTurnstile(body.turnstileToken);
+    if (!turnstileOk) {
+      return Response.json({ error: 'Bot verification failed.' }, { status: 403 });
+    }
+
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount < 0.50) {
       return Response.json({ error: 'The minimum donation is 0.50 in your currency.' }, { status: 400 });
