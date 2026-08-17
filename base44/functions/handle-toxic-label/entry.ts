@@ -6,8 +6,18 @@ export default async function(req) {
     const body = await req.json();
     const { subject_uri, labeler_did, note, label_id } = body;
 
-    if (!subject_uri) {
-      return Response.json({ error: 'subject_uri is required' }, { status: 400 });
+    if (!subject_uri || !label_id) {
+      return Response.json({ error: 'subject_uri and label_id are required' }, { status: 400 });
+    }
+
+    // Verify the strike corresponds to a real toxic ModerationLabel record.
+    // ModerationLabel creation is admin-only (RLS), so a public caller cannot
+    // fabricate one — this ties the strike to a genuine moderation event and
+    // prevents arbitrary strike increments from unauthenticated callers.
+    let label = null;
+    try { label = await base44.asServiceRole.entities.ModerationLabel.get(label_id); } catch { label = null; }
+    if (!label || label.label_type !== 'toxic' || label.subject_uri !== subject_uri) {
+      return Response.json({ error: 'Invalid or unverified moderation label' }, { status: 403 });
     }
 
     // 1. Resolve the flagged post by subject_uri (at:// URI or record id)
@@ -26,6 +36,19 @@ export default async function(req) {
     const authorId = post.created_by_id;
     if (!authorId) {
       return Response.json({ error: 'Post author not found' }, { status: 404 });
+    }
+
+    // Idempotency: skip if this label was already processed. Prevents a public
+    // caller from replaying a real label_id to increment strikes repeatedly.
+    const priorLogs = await base44.asServiceRole.entities.ModerationLog.filter(
+      { target_post_id: post.id, action: 'auto-escalate', auto_generated: true },
+      '-created_date', 20
+    ).catch(() => []);
+    const alreadyProcessed = (priorLogs || []).some(
+      (l) => Array.isArray(l.labels_affected) && l.labels_affected.includes(label_id)
+    );
+    if (alreadyProcessed) {
+      return Response.json({ success: true, post_id: post.id, already_processed: true });
     }
 
     // 2. Trigger trade_assistant review via InvokeLLM — assess whether the toxic
@@ -71,7 +94,7 @@ export default async function(req) {
       action: 'auto-escalate',
       target_post_id: post.id,
       target_author: post.author_handle || authorId,
-      labels_affected: ['toxic'],
+      labels_affected: ['toxic', label_id],
       notes: 'Strike ' + currentStrikes + (shouldRestrict ? ' — account restricted' : '') +
              '. Trade assistant review: ' + (reviewResponse.assessment || '').slice(0, 200),
       auto_generated: true
