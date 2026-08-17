@@ -9,11 +9,6 @@ import AuthLayout from "@/components/AuthLayout";
 import { checkPasswordBreach, BREACH_WARNING } from "@/lib/hibp";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 
-function randomPassword() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-    .map((b) => b.toString(36).padStart(2, "0")).join("") + "!A1";
-}
-
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
@@ -35,11 +30,13 @@ export default function ResetPassword() {
     (async () => {
       setLoading(true);
       try {
-        const pwd = randomPassword();
-        await base44.auth.resetPassword({ resetToken, newPassword: pwd });
+        // Single server-side call: validates the reset token, generates + stores
+        // the login_key, and returns it for immediate login. No client-supplied
+        // login_key is accepted, so the token is the only way in.
+        const res = await base44.functions.invoke("store-login-key", { reset_token: resetToken, email: setupEmail });
         if (cancelled) return;
-        await base44.functions.invoke("store-login-key", { email: setupEmail, login_key: pwd });
-        if (cancelled) return;
+        const pwd = res.data?.login_key;
+        if (!pwd) throw new Error(res.data?.error || "Could not set up passwordless login.");
         localStorage.removeItem("swappulse_setup_email");
         // Auto-login: use the freshly-bound password to sign in immediately
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
