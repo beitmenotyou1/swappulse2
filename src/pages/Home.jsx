@@ -45,9 +45,10 @@ export default function Home() {
   const { user } = useAuth();
   const { filterPosts } = usePostVisibility();
   const tr = useT();
-  // "For You" is only for logged-in users — it's populated by followed collectors.
-  // Guests see the three community feeds (Fresh Pulls, Trade Floor, Showcase).
-  const TABS = user ? ALL_TABS : ALL_TABS.filter((t) => t.key !== 'all');
+  // Home is strictly followed-only. Logged-in users see "For You" plus post-type
+  // filters over that followed set. Guests see no tabs — they're directed to
+  // Explore for community discovery.
+  const TABS = user ? ALL_TABS : [];
 
   // Only show the onboarding tour to authenticated users who haven't seen it.
   // Guests should see the platform content, not a full-screen tour modal.
@@ -55,9 +56,10 @@ export default function Home() {
     if (user && !localStorage.getItem('swappulse_onboarding_done')) setShowTour(true);
   }, [user]);
 
-  // Guests can't see "For You" — default them to Fresh Pulls
+  // Guests have no feed — keep them on the (empty) For You tab so the welcome
+  // screen renders. Logged-in users stay on their chosen tab.
   useEffect(() => {
-    if (!user && tab === 'all') setTab('pack_opening');
+    if (!user && tab !== 'all') setTab('all');
   }, [user, tab]);
 
   const completeTour = () => {
@@ -68,15 +70,16 @@ export default function Home() {
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      if (tab === 'all' && user) {
-        // "For You" — followed collectors' posts (logged-in only)
+      if (user) {
+        // All Home tabs are followed-only — the post_type tabs (Fresh Pulls,
+        // Trade Floor, Showcase) just filter this followed set. Non-followed
+        // posts are discovered in Explore, not on Home.
         const res = await base44.functions.invoke('get-follow-feed', { limit: 50 });
         setPosts(res.data?.items || []);
         setFollowedCount(res.data?.followed_count ?? 0);
       } else {
-        // Community feeds — all recent public posts, filtered by post_type
-        const recent = await base44.entities.Post.list('-created_date', 50).catch(() => []);
-        setPosts(recent || []);
+        // Guests have no followed feed — direct them to Explore for discovery.
+        setPosts([]);
         setFollowedCount(0);
       }
     } catch {
@@ -84,7 +87,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [tab, user]);
+  }, [user]);
 
   useEffect(() => {
     loadPosts();
