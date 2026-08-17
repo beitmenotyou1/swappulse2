@@ -140,11 +140,13 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
             <UsernameField value={username} onChange={setUsername} />
             <div className="space-y-2">
               <Label htmlFor="name">Name <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input id="name" type="text" placeholder="Your display name" value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-12" />
+              <Input id="name" type="text" placeholder="Your display name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={64} className="h-12" />
+              <p className="text-right text-[11px] text-muted-foreground">{(fullName || '').length}/64</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="desc">Bio <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <textarea id="desc" placeholder="Tell other collectors about yourself..." value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+              <textarea id="desc" placeholder="Tell other collectors about yourself..." value={description} onChange={(e) => setDescription(e.target.value)} maxLength={256} rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+              <p className="text-right text-[11px] text-muted-foreground">{(description || '').length}/256</p>
             </div>
             <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
               {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Continue"}

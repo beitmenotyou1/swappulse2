@@ -147,9 +147,11 @@ export default function EditProfileModal({ onClose, onSaved }) {
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              maxLength={64}
               placeholder="Your display name"
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
+            <p className="mt-1 text-right text-[11px] text-muted-foreground">{(fullName || '').length}/64</p>
           </div>
 
           <div>
@@ -157,12 +159,12 @@ export default function EditProfileModal({ onClose, onSaved }) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              maxLength={250}
+              maxLength={256}
               rows={3}
               placeholder="Tell other collectors about yourself…"
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
-            <p className="mt-1 text-right text-[11px] text-muted-foreground">{(description || '').length}/250</p>
+            <p className="mt-1 text-right text-[11px] text-muted-foreground">{(description || '').length}/256</p>
           </div>
 
           <div className="flex gap-2 pt-1">
