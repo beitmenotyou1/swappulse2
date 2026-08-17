@@ -4,7 +4,7 @@ import { RateLimiter, fetchTcgdex, num } from '../../shared/tcgdexClient.ts';
 // §7.5 Pricing Sync Service - refreshes TCGDex market prices for every card
 // that is owned, wishlisted, or listed in an open trade. Runs on a 30-minute
 // schedule (see base44/workflows/Pricing Sync.jsonc).
-// Pricing is language-independent, so we fetch from the English catalog.
+// Pricing is language-independent, so we fetch from the English catalogue.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

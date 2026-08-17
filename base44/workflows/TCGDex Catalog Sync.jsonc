@@ -11,12 +11,12 @@
         "sync_catalog": {
           "call": "invoke_backend_function",
           "with": {
-            "function_name": "sync-tcgdex-catalog",
+            "function_name": "sync-tcgdex-catalogue",
             "args": {}
           },
           "then": "end",
           "x-base44": {
-            "title": "Sync TCGDex catalog",
+            "title": "Sync TCGDex catalogue",
             "description": "Incrementally sync a batch of TCGDex sets into the local card cache, rotating through languages"
           }
         }
@@ -24,7 +24,7 @@
     ]
   },
   "name": "TCGDex Catalog Sync",
-  "description": "Daily incremental sync of the TCGDex catalog into the local TcgdexCard cache, rotating through all supported languages so the scanner resolves against current data without a live per-scan search",
+  "description": "Daily incremental sync of the TCGDex catalogue into the local TcgdexCard cache, rotating through all supported languages so the scanner resolves against current data without a live per-scan search",
   "trigger": {
     "condition": null,
     "config": {

@@ -18,7 +18,7 @@ import useSEO from '@/hooks/useSEO';
 export default function Explore() {
   useSEO({
     title: 'Explore Cards',
-    description: 'Search the Pokémon TCG catalog, discover recent sets, and browse community posts on SwapPulse.',
+    description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
     canonicalPath: '/explore',
   });
   const { settings } = useSettings();
@@ -158,7 +158,7 @@ export default function Explore() {
 
   return (
     <div>
-      <PageHeader title="Explore" subtitle="Search the Pokémon TCG catalog" />
+      <PageHeader title="Explore" subtitle="Search the Pokémon TCG catalogue" />
       <div className="border-b border-border p-4 space-y-3">
         <div className="flex gap-1 rounded-full bg-secondary p-1">
           <button

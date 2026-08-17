@@ -54,7 +54,7 @@
     "processed": {
       "type": "boolean",
       "default": false,
-      "description": "Whether this feedback has been analyzed by the learning loop"
+      "description": "Whether this feedback has been analysed by the learning loop"
     },
     "processed_at": {
       "type": "string",

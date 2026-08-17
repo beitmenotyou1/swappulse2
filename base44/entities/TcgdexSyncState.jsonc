@@ -2,7 +2,7 @@
   "name": "TcgdexSyncState",
   "type": "object",
   "title": "TcgdexSyncState",
-  "description": "org.swappulse.tcgdexSyncState \u2014 a single-row cursor tracking progress of the TCGDex catalog sync. Records the current language being synced, the index into the set list, total sets, and last-synced timestamp so sync-tcgdex-catalog resumes where it left off and rotates through all supported languages. Written by sync-tcgdex-catalog (service role).",
+  "description": "org.swappulse.tcgdexSyncState \u2014 a single-row cursor tracking progress of the TCGDex catalogue sync. Records the current language being synced, the index into the set list, total sets, and last-synced timestamp so sync-tcgdex-catalogue resumes where it left off and rotates through all supported languages. Written by sync-tcgdex-catalogue (service role).",
   "properties": {
     "current_lang": {
       "type": "string",

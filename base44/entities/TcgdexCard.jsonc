@@ -2,7 +2,7 @@
   "name": "TcgdexCard",
   "type": "object",
   "title": "TcgdexCard",
-  "description": "org.swappulse.tcgdexCard \u2014 a locally-synced TCGDex catalog card used by the scanner to resolve candidates without a live per-scan TCGDex search. One record per TCGDex card id (global across languages). name_norm_{lang} fields hold language-specific normalised names for fast exact-match lookup; names holds display names per language. phash holds a 64-bit perceptual hash (8\u00d78 grayscale average hash) computed from the card image for the scanner fast-path. Synced by the sync-tcgdex-catalog backend function.",
+  "description": "org.swappulse.tcgdexCard \u2014 a locally-synced TCGDex catalogue card used by the scanner to resolve candidates without a live per-scan TCGDex search. One record per TCGDex card id (global across languages). name_norm_{lang} fields hold language-specific normalised names for fast exact-match lookup; names holds display names per language. phash holds a 64-bit perceptual hash (8\u00d78 grayscale average hash) computed from the card image for the scanner fast-path. Synced by the sync-tcgdex-catalogue backend function.",
   "properties": {
     "card_id": {
       "type": "string",

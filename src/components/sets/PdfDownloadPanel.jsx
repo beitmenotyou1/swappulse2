@@ -112,7 +112,7 @@ export default function PdfDownloadPanel({ setId, setName, cards, totalCards, ow
       {/* Fair use notice */}
       <div className="rounded-lg bg-secondary/30 p-3">
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Card images sourced from TCGDex for catalog purposes. Pokémon and all related characters are trademarks of Nintendo/Game Freak.
+          Card images sourced from TCGDex for catalogue purposes. Pokémon and all related characters are trademarks of Nintendo/Game Freak.
           SwapPulse is a community tool and is not affiliated with or endorsed by Nintendo. Generated PDFs are for personal collecting use only.
         </p>
       </div>

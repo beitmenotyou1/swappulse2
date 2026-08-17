@@ -73,7 +73,7 @@ export default function Donate() {
 
           <p className="mb-5 text-sm text-muted-foreground">
             SwapPulse is built by collectors, for collectors. Every feature stays free and open-source - your donation
-            helps cover hosting, the TCGdex catalog, and the AT Protocol infrastructure that keeps your collection
+            helps cover hosting, the TCGdex catalogue, and the AT Protocol infrastructure that keeps your collection
             self-sovereign. Give whatever feels right.
           </p>
 

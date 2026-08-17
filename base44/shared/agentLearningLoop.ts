@@ -58,7 +58,7 @@ export async function processFeedback(svc: any, agentName: string): Promise<{ pr
     corrected: (f.corrected_content || '').slice(0, 200),
   }));
 
-  const prompt = `You are analyzing user feedback for an AI agent named "${agentName}" on a Pokémon TCG collector platform called SwapPulse.
+  const prompt = `You are analysing user feedback for an AI agent named "${agentName}" on a Pokémon TCG collector platform called SwapPulse.
 
 Existing insights about this agent:
 ${JSON.stringify(existingInsights.map((i: any) => ({ type: i.insight_type, content: i.content, evidence: i.evidence_count })))}
@@ -66,7 +66,7 @@ ${JSON.stringify(existingInsights.map((i: any) => ({ type: i.insight_type, conte
 Recent unprocessed feedback (${feedback.length} items):
 ${JSON.stringify(feedbackSummary)}
 
-Analyze this feedback and generate actionable insights to improve the agent's performance. Focus on:
+Analyse this feedback and generate actionable insights to improve the agent's performance. Focus on:
 1. Common corrections, what users frequently correct
 2. Strengths, what users appreciate (thumbs up patterns)
 3. Weaknesses, recurring complaints or thumbs down patterns

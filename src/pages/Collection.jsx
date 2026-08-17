@@ -331,7 +331,7 @@ export default function Collection() {
           <div className="px-4 py-20 text-center">
             <LayoutGrid className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-lg font-bold">Your collection is empty</p>
-            <p className="mt-1 text-sm text-muted-foreground">Search the catalog and add your first card, or import a CSV.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Search the catalogue and add your first card, or import a CSV.</p>
             <div className="mt-4 flex justify-center gap-2">
               <Link to="/explore" className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white">Explore Cards</Link>
               <button onClick={() => setTab('import')} className="rounded-full border border-border px-5 py-2.5 text-sm font-bold">Import CSV</button>

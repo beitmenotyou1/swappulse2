@@ -35,7 +35,7 @@
           "then": "end",
           "x-base44": {
             "title": "Process agent feedback",
-            "description": "Analyze feedback and generate improvement insights"
+            "description": "Analyse feedback and generate improvement insights"
           }
         }
       }

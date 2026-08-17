@@ -3,7 +3,7 @@
 // local_id, name_norm_<lang> (all 9 languages), and canonicalized rarity.
 // Ranks by how many tokens each card satisfies, with exact set_id + local_id
 // combos ranking highest. Falls back to the live TCGDex API when the cache has
-// no matches so coverage stays complete. Public catalog data — no auth.
+// no matches so coverage stays complete. Public catalogue data — no auth.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizeSetId, fetchTcgdex, TCGDEX_LANGS } from '../../shared/tcgdexClient.ts';
 import { canonicalizeRarity } from '../../shared/scannerLearning.ts';

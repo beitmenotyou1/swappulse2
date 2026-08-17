@@ -11,7 +11,7 @@ import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
 
 const FEATURES = [
-  { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalog via TCGDex, by set, rarity, or illustrator.' },
+  { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalogue via TCGDex, by set, rarity, or illustrator.' },
   { to: '/scan', icon: ScanLine, label: 'Scan Cards', desc: 'Photograph a card and the AI scanner identifies it, confirm or correct the match to help the model learn.' },
   { to: '/collection', icon: Layers, label: 'Collection', desc: 'Track every card you own, with portfolio value, set completion, duplicates, and insurance exports.' },
   { to: '/sets', icon: Library, label: 'Sets', desc: 'Browse sets, download checklists, track set completion, and find set buddies working on the same set.' },
@@ -34,7 +34,7 @@ const FEATURES = [
   { to: '/notifications', icon: Bell, label: 'Notifications', desc: 'See likes, replies, mentions, trade matches, price alerts, and follows in one feed.' },
   { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', desc: 'Discover collectors to follow based on your collection, trades, and interests.' },
   { to: '/trade-assistant', icon: Sparkles, label: 'AI Assistants', desc: 'Trade, market, collection, sentiment, achievement, and networking assistants powered by AI.' },
-  { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalog between 9+ languages, English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
+  { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalogue between 9+ languages, English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
   { to: '/explore', icon: LayoutDashboard, label: 'Social Card Pages', desc: 'Every card page surfaces posts, trades, reviews, and pack openings about that card from across the community.' },
   { to: '/', icon: TrendingUp, label: 'Trending Cards', desc: 'Discover the most talked-about cards right now, ranked by community posts and activity.' },
   { to: '/compose', icon: ImageIcon, label: 'Card Embeds in Posts', desc: 'Attach a card to your post and it renders richly on both SwapPulse and Bluesky with a deep link back.' },
@@ -48,7 +48,7 @@ const FAQ = [
   },
   {
     q: 'Is SwapPulse really free?',
-    a: 'Yes. Every feature is free and the project is open-source. Donations are optional and help cover hosting, the TCGDex catalog, and AT Protocol infrastructure.',
+    a: 'Yes. Every feature is free and the project is open-source. Donations are optional and help cover hosting, the TCGDex catalogue, and AT Protocol infrastructure.',
   },
   {
     q: 'Who owns my collection data?',
@@ -92,7 +92,7 @@ const FAQ = [
   },
   {
     q: 'How does the card scanner work?',
-    a: 'Take a photo of a card and the AI scanner identifies it from the TCGDex catalog, showing the top matches with confidence scores. If the top result is wrong, tap the correct card or search manually, your correction is recorded and used to improve future scans. Corrections work offline too: they queue locally and sync when you reconnect.',
+    a: 'Take a photo of a card and the AI scanner identifies it from the TCGDex catalogue, showing the top matches with confidence scores. If the top result is wrong, tap the correct card or search manually, your correction is recorded and used to improve future scans. Corrections work offline too: they queue locally and sync when you reconnect.',
   },
   {
     q: 'How do I cross-post to Bluesky?',
@@ -100,7 +100,7 @@ const FAQ = [
   },
   {
     q: 'How do I change the language?',
-    a: 'Tap the globe icon in the navigation bar (desktop sidebar or mobile More menu) and pick your language. The entire interface, navigation, buttons, page headings, and all card names, set names, and flavor text switch instantly. Your choice is saved to your account and persists across sessions. SwapPulse supports English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, and 한국어.',
+    a: 'Tap the globe icon in the navigation bar (desktop sidebar or mobile More menu) and pick your language. The entire interface, navigation, buttons, page headings, and all card names, set names, and flavour text switch instantly. Your choice is saved to your account and persists across sessions. SwapPulse supports English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, and 한국어.',
   },
   {
     q: 'How do social card pages work?',
@@ -281,7 +281,7 @@ export default function Help() {
             <p className="text-sm text-muted-foreground">
               SwapPulse is a social platform for Pokémon TCG collectors, track your collection, share pulls, trade with
               trusted collectors, join circles, go live, send end-to-end encrypted messages, and follow the market. Built
-              on the AT Protocol for self-sovereign identity, powered by the TCGDex open catalog, and kept free and
+              on the AT Protocol for self-sovereign identity, powered by the TCGDex open catalogue, and kept free and
               open-source by community support. Available in 9+ languages, switch anytime from the language switcher
               in the navigation.
             </p>

@@ -1,4 +1,4 @@
-// sync-tcgdex-catalog — incremental TCGDex catalog sync into the local
+// sync-tcgdex-catalogue — incremental TCGDex catalogue sync into the local
 // TcgdexCard cache. Resumes from a TcgdexSyncState cursor, processes a batch
 // of sets for the current language, upserts cards, then advances/rotates the
 // cursor. Rotates through all supported languages so non-English card names
@@ -37,7 +37,7 @@ export default async function (req: Request): Promise<Response> {
       const res = await limiter.enqueue(() => fetchTcgdex('/sets', lang));
       setList = Array.isArray(res) ? res : (res?.data || []);
     } catch (e: any) {
-      console.error('[sync-tcgdex-catalog] set list fetch failed', e?.message || e);
+      console.error('[sync-tcgdex-catalogue] set list fetch failed', e?.message || e);
       return Response.json({ error: `Failed to fetch set list: ${e?.message || e}` }, { status: 502 });
     }
     const totalSets = setList.length;
@@ -59,7 +59,7 @@ export default async function (req: Request): Promise<Response> {
       try {
         setDetail = await limiter.enqueue(() => fetchTcgdex(`/sets/${encodeURIComponent(setId)}`, lang));
       } catch (e: any) {
-        console.error('[sync-tcgdex-catalog] set detail fetch failed', setId, e?.message || e);
+        console.error('[sync-tcgdex-catalogue] set detail fetch failed', setId, e?.message || e);
         continue;
       }
       setsProcessed++;
@@ -119,8 +119,8 @@ export default async function (req: Request): Promise<Response> {
           if (ph) { r.phash = ph; phashComputed++; }
         }
       }
-      if (toCreate.length) await svc.entities.TcgdexCard.bulkCreate(toCreate).catch((e: any) => console.error('[sync-tcgdex-catalog] bulkCreate failed', e?.message));
-      if (toUpdate.length) await svc.entities.TcgdexCard.bulkUpdate(toUpdate).catch((e: any) => console.error('[sync-tcgdex-catalog] bulkUpdate failed', e?.message));
+      if (toCreate.length) await svc.entities.TcgdexCard.bulkCreate(toCreate).catch((e: any) => console.error('[sync-tcgdex-catalogue] bulkCreate failed', e?.message));
+      if (toUpdate.length) await svc.entities.TcgdexCard.bulkUpdate(toUpdate).catch((e: any) => console.error('[sync-tcgdex-catalogue] bulkUpdate failed', e?.message));
       cardsUpserted += records.length;
     }
 
@@ -149,7 +149,7 @@ export default async function (req: Request): Promise<Response> {
       finished_lang: finishedLang,
     });
   } catch (error: any) {
-    console.error('[sync-tcgdex-catalog] error', error?.message || error);
+    console.error('[sync-tcgdex-catalogue] error', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
   }
 }

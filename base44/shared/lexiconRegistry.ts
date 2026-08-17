@@ -10,7 +10,7 @@ export const LEXICONS: any[] = [
     lexicon: 1, id: 'org.swappulse.collectionEntry', revision: 1,
     description: "A Pokémon TCG card held in a collector's digital binder. Mirrored from the SwapPulse CollectionEntry entity so collection state is portable across PDSs.",
     defs: { main: { type: 'record', key: 'tid', description: 'A single card entry in a collector\'s collection.', record: { type: 'object', required: ['cardUri', 'cardName', 'createdAt'], properties: {
-      cardUri: { type: 'string', description: 'TCGDex card id (canonical reference to the catalog record)' },
+      cardUri: { type: 'string', description: 'TCGDex card id (canonical reference to the catalogue record)' },
       cardName: { type: 'string' }, setName: { type: 'string' }, setCode: { type: 'string', description: 'Canonical TCGDex set id (e.g. sv04.5)' },
       cardNumber: { type: 'string', description: 'Card number within the set' }, rarity: { type: 'string' }, category: { type: 'string' },
       imageUrl: { type: 'string', format: 'uri' }, condition: { type: 'string', knownValues: ['mint', 'near_mint', 'excellent', 'good', 'damaged'] },
@@ -22,7 +22,7 @@ export const LEXICONS: any[] = [
   },
   {
     lexicon: 1, id: 'org.swappulse.tradeListing', revision: 1,
-    description: 'A peer-to-peer card trade listing published by a collector. Offer/wanted card sets reference TCGDex catalog records; status tracks the trade lifecycle.',
+    description: 'A peer-to-peer card trade listing published by a collector. Offer/wanted card sets reference TCGDex catalogue records; status tracks the trade lifecycle.',
     defs: { main: { type: 'record', key: 'tid', description: 'A trade listing offering cards in exchange for wanted cards.', record: { type: 'object', required: ['offerCardNames', 'wantedCardNames', 'status', 'visibility', 'createdAt'], properties: {
       offerCardUris: { type: 'array', items: { type: 'string' }, maxLength: 50 }, offerCardNames: { type: 'array', items: { type: 'string' } },
       offerCardImages: { type: 'array', items: { type: 'string', format: 'uri' } }, wantedCardUris: { type: 'array', items: { type: 'string' }, maxLength: 50 },

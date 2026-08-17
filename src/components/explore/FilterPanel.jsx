@@ -5,7 +5,7 @@ import { useSettings } from '@/hooks/useSettings';
 
 // FilterPanel — collapsible faceted filter UI for the Explore page. Supports
 // filtering by set, rarity, type, and price range. Fetches filter options from
-// TCGDex catalog endpoints. Calls onApply with the active filter object.
+// TCGDex catalogue endpoints. Calls onApply with the active filter object.
 export default function FilterPanel({ onApply, activeFilters }) {
   const { settings } = useSettings();
   const lang = settings?.language?.preferredContent?.[0] || 'en';

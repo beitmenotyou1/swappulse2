@@ -134,7 +134,7 @@ export default async function(req: Request): Promise<Response> {
 
     const prompt = `${MODERATION_SYSTEM_PROMPT}
 
-## Content to Analyze
+## Content to Analyse
 **Content type**: ${content_type}
 ${contentTypeContext}
 
@@ -143,7 +143,7 @@ ${authorContext}
 ${existingLabelsContext}${insightsContext}
 
 ## Classification
-Analyze this content and return your classification as JSON.`;
+Analyse this content and return your classification as JSON.`;
 
     // 6. Call InvokeLLM with structured response schema
     const llmResponse: any = await base44.asServiceRole.integrations.Core.InvokeLLM({

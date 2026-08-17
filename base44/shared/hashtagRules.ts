@@ -153,7 +153,7 @@ export function evaluateHashtagRules(post, context, config) {
     }
   }
 
-  // Rule 6: Misleading hashtags (catalog mismatch)
+  // Rule 6: Misleading hashtags (catalogue mismatch)
   if (context.canonicalMatches && tags.length > 0) {
     for (const tag of tags) {
       const match = context.canonicalMatches.find((m) => m.sourceTag === tag);

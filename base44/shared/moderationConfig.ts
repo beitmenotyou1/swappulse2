@@ -62,7 +62,7 @@ Content is INAPPROPRIATE if it contains:
 
 Content is APPROPRIATE when:
 - Collectors discuss trades passionately but respectfully
-- Humor and banter that doesn't target individuals
+- Humour and banter that doesn't target individuals
 - Constructive criticism of card conditions or trade fairness
 - Emotional expressions about pulls/collections that don't attack others
 

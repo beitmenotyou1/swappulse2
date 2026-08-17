@@ -97,7 +97,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Cards referenced during the space for catalog cross-linking"
+      "description": "Cards referenced during the space for catalogue cross-linking"
     },
     "recording_enabled": {
       "type": "boolean",

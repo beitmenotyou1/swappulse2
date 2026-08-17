@@ -2,7 +2,7 @@
   "name": "TradeListing",
   "type": "object",
   "title": "TradeListing",
-  "description": "org.swappulse.tradeListing \u2014 a peer-to-peer card trade listing published by a collector, mirrored to AT Protocol as a real org.swappulse.tradeListing record. Offer/wanted card sets reference TCGDex catalog records; status tracks the trade lifecycle.",
+  "description": "org.swappulse.tradeListing \u2014 a peer-to-peer card trade listing published by a collector, mirrored to AT Protocol as a real org.swappulse.tradeListing record. Offer/wanted card sets reference TCGDex catalogue records; status tracks the trade lifecycle.",
   "properties": {
     "offer_card_ids": {
       "type": "array",

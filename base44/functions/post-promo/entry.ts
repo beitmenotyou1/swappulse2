@@ -128,7 +128,7 @@ const FEATURE_POOL = [
   { name: 'Voice Spaces', path: '/spaces', description: 'Go live and talk Pokémon TCG with collectors in real time.' },
   { name: 'Market Watch', path: '/market', description: 'Track card prices and get alerts when cards move.' },
   { name: 'Circles', path: '/circles', description: 'Create invite-only collector groups for your favourite sets.' },
-  { name: 'Meetups', path: '/meetups', description: 'Organize and attend local collector meetups.' },
+  { name: 'Meetups', path: '/meetups', description: 'Organise and attend local collector meetups.' },
   { name: 'Achievements', path: '/achievements', description: 'Earn badges for collection milestones and community participation.' },
 ];
 

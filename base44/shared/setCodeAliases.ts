@@ -3,7 +3,7 @@
 // the official printed codes on cards (SV01, SSH, SUM, XY, BLW, …) and the
 // short codes used for special sets (MEW, PAF, SFA, PRE, …). This map lets the
 // card search resolve an official code typed by a collector to the TCGDex set
-// ID the catalog API expects. Keys are lowercase. Extend freely as new sets
+// ID the catalogue API expects. Keys are lowercase. Extend freely as new sets
 // release — the search falls back to the raw token when no alias matches.
 
 export const SET_CODE_ALIASES: Record<string, string> = {

@@ -1,5 +1,5 @@
 // SwapPulse i18n — core UI strings translated into every TCGDex-supported language.
-// Locales map to TCGDex language codes for catalog data; ar/hi/ru fall back to en
+// Locales map to TCGDex language codes for catalogue data; ar/hi/ru fall back to en
 // (not TCGDex languages) but the UI still renders English for them.
 
 export const SUPPORTED_LOCALES = [

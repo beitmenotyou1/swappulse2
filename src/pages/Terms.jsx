@@ -191,7 +191,7 @@ export default function Terms() {
               <li>Your audio may be transmitted peer-to-peer to other participants in the space.</li>
               <li>The host may <strong>record</strong> the stage audio at any time; a visible REC indicator appears while recording is active. By joining a recording-enabled space, you consent to being recorded.</li>
               <li>Recordings may be published as podcast episodes and distributed via a public RSS feed to external podcast apps.</li>
-              <li>By publishing a podcast episode, you grant SwapPulse and the AT Protocol network a license to host, distribute, and make the audio publicly playable (see Section 11).</li>
+              <li>By publishing a podcast episode, you grant SwapPulse and the AT Protocol network a licence to host, distribute, and make the audio publicly playable (see Section 11).</li>
               <li>You are responsible for ensuring you have the rights to any audio you broadcast and record.</li>
             </ul>
 
@@ -203,7 +203,7 @@ export default function Terms() {
             </p>
             <p>
               <strong>Scanner corrections:</strong> When you submit a correction to a scan result, you grant SwapPulse a
-              license to use that correction, including the card photo and your correction, to evaluate and improve
+              licence to use that correction, including the card photo and your correction, to evaluate and improve
               the scanner model's accuracy. Corrections are processed in anonymized form where possible.
             </p>
             <p>
@@ -230,7 +230,7 @@ export default function Terms() {
               You retain ownership of all content you post to SwapPulse, including posts, comments, card scans, journal
               entries, binder displays, reviews, stories, voice space recordings, and podcast episodes. By posting
               content, you grant SwapPulse and the AT Protocol network a worldwide, non-exclusive, royalty-free
-              license to store, display, reproduce, and distribute your content for the purpose of operating the
+              licence to store, display, reproduce, and distribute your content for the purpose of operating the
               service and federating it across the network.
             </p>
             <p>You represent and warrant that:</p>
@@ -241,8 +241,8 @@ export default function Terms() {
               <li>For voice space recordings and podcasts, you have the consent of all participants to record and publish.</li>
             </ul>
             <p>
-              Card scans and images sourced from TCGDex or other catalog providers are used under their respective
-              licenses and remain the property of their copyright holders.
+              Card scans and images sourced from TCGDex or other catalogue providers are used under their respective
+              licences and remain the property of their copyright holders.
             </p>
 
             <h2 id="conduct" className="mt-8 scroll-mt-20 text-xl font-bold">12. Acceptable Use & Community Guidelines</h2>
@@ -288,7 +288,7 @@ export default function Terms() {
               The SwapPulse name, logo, software, and design are owned by SwapPulse and licensed under AGPL-3.0.
               Pokémon, Pokémon TCG, and all related characters and imagery are trademarks of Nintendo, Game Freak,
               and The Pokémon Company International. SwapPulse is not affiliated with, endorsed by, or sponsored by
-              these entities. Card data is sourced from TCGDex under its open data license.
+              these entities. Card data is sourced from TCGDex under its open data licence.
             </p>
 
             <h2 id="disclaimer" className="mt-8 scroll-mt-20 text-xl font-bold">16. Disclaimers</h2>
@@ -301,9 +301,9 @@ export default function Terms() {
               your private key.
             </p>
             <p>
-              <strong>Multi-language support:</strong> SwapPulse provides interface translations and card catalog data
+              <strong>Multi-language support:</strong> SwapPulse provides interface translations and card catalogue data
               in multiple languages via TCGDex. Translations are provided as a convenience; the English version of
-              these Terms is the authoritative version. Card names, set names, and flavor text are sourced from TCGDex
+              these Terms is the authoritative version. Card names, set names, and flavour text are sourced from TCGDex
               in your selected language and may differ from official localizations. SwapPulse is not responsible for
               translation inaccuracies or differences between TCGDex data and official Pokémon TCG localizations.
             </p>

@@ -1,4 +1,4 @@
-// processAgentFeedback — analyzes unprocessed AgentFeedback for one or all agents
+// processAgentFeedback — analyses unprocessed AgentFeedback for one or all agents
 // and generates AgentInsight records via LLM. Admin-gated; runs on the daily
 // Agent Learning Loop workflow. Uses the shared agentLearningLoop module.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';

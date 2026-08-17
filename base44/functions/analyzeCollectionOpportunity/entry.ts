@@ -37,7 +37,7 @@ export default async function(req) {
     // 3. Use collection_advisor persona via InvokeLLM to assess trade opportunity
     const prompt =
       'You are the SwapPulse Collection Advisor. A collector has updated their collection. ' +
-      'Analyze whether this card represents a high-value trade opportunity right now.\n\n' +
+      'Analyse whether this card represents a high-value trade opportunity right now.\n\n' +
       'Collection entry:\n' +
       '- Card: ' + (card_name || 'Unknown') + '\n' +
       '- Set ID: ' + (set_id || 'Unknown') + '\n' +

@@ -24,7 +24,7 @@
           },
           "then": "check_opportunity",
           "x-base44": {
-            "title": "Analyze collection update",
+            "title": "Analyse collection update",
             "description": "Compare against TCGDex data"
           }
         }

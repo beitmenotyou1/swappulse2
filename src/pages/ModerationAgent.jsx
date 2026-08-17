@@ -207,7 +207,7 @@ export default function ModerationAgent() {
       alert('Start a conversation first, then select a flagged item.');
       return;
     }
-    const msg = `Please review post ${item.id} by ${item.author.displayName}. The content is: "${item.post.text?.slice(0, 300)}". Analyze it and recommend a moderation action.`;
+    const msg = `Please review post ${item.id} by ${item.author.displayName}. The content is: "${item.post.text?.slice(0, 300)}". Analyse it and recommend a moderation action.`;
     send(msg);
   };
 
@@ -216,7 +216,7 @@ export default function ModerationAgent() {
       alert('Start a conversation first, then select a report.');
       return;
     }
-    const msg = `A user reported a ${report.content_type} (id: ${report.content_id}) by @${report.author_handle || 'unknown'} for "${report.reason.replace('_', ' ')}". ${report.details ? `User details: "${report.details.slice(0, 300)}".` : ''} Content preview: "${(report.content_preview || '').slice(0, 300)}". Please analyze whether this violates our guidelines and recommend a moderation action.`;
+    const msg = `A user reported a ${report.content_type} (id: ${report.content_id}) by @${report.author_handle || 'unknown'} for "${report.reason.replace('_', ' ')}". ${report.details ? `User details: "${report.details.slice(0, 300)}".` : ''} Content preview: "${(report.content_preview || '').slice(0, 300)}". Please analyse whether this violates our guidelines and recommend a moderation action.`;
     send(msg);
   };
 

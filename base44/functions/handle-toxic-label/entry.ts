@@ -56,10 +56,10 @@ export default async function(req) {
     }
 
     // 2. Trigger trade_assistant review via InvokeLLM — assess whether the toxic
-    //    behavior impacts the user's trustworthiness as a trader
+    //    behaviour impacts the user's trustworthiness as a trader
     const reviewPrompt =
-      'You are the SwapPulse Trade Assistant reviewing a flagged post for toxic behavior. ' +
-      'Assess whether this behavior impacts the user\'s trustworthiness as a trader and recommend an action.\n\n' +
+      'You are the SwapPulse Trade Assistant reviewing a flagged post for toxic behaviour. ' +
+      'Assess whether this behaviour impacts the user\'s trustworthiness as a trader and recommend an action.\n\n' +
       'Post content: "' + (post.content || '') + '"\n' +
       'Moderation note: "' + (note || 'N/A') + '"\n' +
       'Author handle: ' + (post.author_handle || 'unknown') + '\n\n' +
@@ -72,7 +72,7 @@ export default async function(req) {
         response_json_schema: {
           type: 'object',
           properties: {
-            assessment: { type: 'string', description: 'Brief assessment of the toxic behavior' },
+            assessment: { type: 'string', description: 'Brief assessment of the toxic behaviour' },
             impacts_trust: { type: 'boolean', description: 'Whether this impacts trade trustworthiness' },
             recommendation: { type: 'string', description: 'Recommended action for the trade assistant' }
           }
