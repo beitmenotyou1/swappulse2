@@ -80,7 +80,7 @@ export default async function (req: Request): Promise<Response> {
       const llmRes: any = await base44.integrations.Core.InvokeLLM({
         prompt: SCAN_PROMPT,
         file_urls: [imageUrl],
-        model: 'gpt_5_4',
+        model: 'gemini_3_flash',
         response_json_schema: {
           type: 'object',
           properties: {
