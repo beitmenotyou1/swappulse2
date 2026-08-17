@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     };
     record.displayName = 'SwapPulse';
     record.description =
-      'SwapPulse — the decentralized social network for Pokémon TCG collectors. ' +
+      'SwapPulse: the decentralized social network for Pokémon TCG collectors. ' +
       'Scan cards, track your collection, find trades & build community. ' +
       'Free & open-source. In alpha. https://swappulse.org';
     // Replace any existing labels with the bot self-label

@@ -21,7 +21,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
-import { buildHashtagFacets } from '../../shared/hashtagFacets.ts';
+import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 const SITE_BASE = 'https://swappulse.org';
@@ -46,7 +46,7 @@ const HOOKS = [
   "{cardName} is the kind of card that makes you want to build a whole binder around it.",
   "Every time I look at {cardName} I notice something new in the art.",
   "{cardName} has that artwork that just hits different.",
-  "{cardName} — a card that earns its spot in any collection.",
+  "{cardName} is a card that earns its spot in any collection.",
   "The detail on {cardName} is a masterclass in TCG art.",
   "{cardName} is a card collectors keep coming back to.",
   "There's something about {cardName} that makes it stand out.",
@@ -57,18 +57,18 @@ const HOOKS = [
 const VALUE_PROPS = [
   "SwapPulse is a decentralized social network for Pokémon TCG collectors, built on the AT Protocol. It's in alpha — features are still being built and refined.",
   "We're building a place where collectors can actually talk to each other. No ads, no algorithm. It's alpha, so things may change as we go.",
-  "Scan cards, build collections, create binders, find trades — all in one place. It's free and open-source, and we're still in alpha so bear with us.",
+  "Scan cards, build collections, create binders, find trades, all in one place. It's free and open-source, and we're still in alpha so bear with us.",
   "Built on the AT Protocol, so your posts can show up on Bluesky too. Same account, bigger reach. Still in alpha, still improving.",
-  "No paywalls. No premium tiers. No selling your data. Just collectors helping collectors — and we're in alpha, so expect rough edges.",
+  "No paywalls. No premium tiers. No selling your data. Just collectors helping collectors, and we're in alpha, so expect rough edges.",
   "Your collection, your posts, your follows. They're yours. It's alpha and we're actively building, but the vision is portable, collector-owned data.",
-  "Challenges, meetups, pack parties — the card shop vibe, online. We're in alpha so some of this is still coming together.",
+  "Challenges, meetups, pack parties: the card shop vibe, online. We're in alpha so some of this is still coming together.",
   "SwapPulse is free and open-source, funded by donations. We're in alpha, testing and iterating with the community.",
 ];
 
 // Type 2: feature-focused hooks. {featureName} is replaced with the feature.
 const FEATURE_HOOKS = [
   "The {featureName} on SwapPulse is one of my favourite parts of the site.",
-  "Been using the {featureName} a lot lately — it's genuinely useful.",
+  "Been using the {featureName} a lot lately, and it's genuinely useful.",
   "The {featureName} makes collecting so much easier.",
   "If you haven't tried the {featureName} yet, you're missing out.",
   "The {featureName} is what got me hooked on SwapPulse.",
@@ -81,17 +81,17 @@ const COMMUNITY_HOOKS = [
   "Pokémon TCG collectors deserve a place that's actually ours.",
   "Tired of scattered Discord servers and Reddit threads? SwapPulse brings it all together.",
   "SwapPulse is the social network Pokémon TCG collectors have been waiting for.",
-  "Every Pokémon TCG collector should have a place to call home — that's SwapPulse.",
+  "Every Pokémon TCG collector should have a place to call home. That's SwapPulse.",
   "The Pokémon TCG community deserves a dedicated space. That's SwapPulse.",
 ];
 
 // Type 3: status-aware value props — always mention the current build status.
 const STATUS_PROPS = [
-  `SwapPulse is currently in ${BUILD_STATUS} — we're actively building and improving with the community.`,
-  `We're in ${BUILD_STATUS} right now, so things are still evolving — but the core works and collectors are already using it.`,
+  `SwapPulse is currently in ${BUILD_STATUS}, and we're actively building and improving with the community.`,
+  `We're in ${BUILD_STATUS} right now, so things are still evolving, but the core works and collectors are already using it.`,
   `It's ${BUILD_STATUS}, which means your feedback actually shapes what we build next.`,
   `Being in ${BUILD_STATUS} means rough edges, but also that you get in early and help shape the platform.`,
-  `SwapPulse is in ${BUILD_STATUS} — free, open-source, and built by collectors, for collectors.`,
+  `SwapPulse is in ${BUILD_STATUS}: free, open-source, and built by collectors, for collectors.`,
 ];
 
 const CTAS = [
@@ -448,7 +448,7 @@ Deno.serve(async (req) => {
       langs: ['en'],
     };
     if (tags.length > 0) record.tags = tags;
-    const facets = buildHashtagFacets(content);
+    const facets = buildRichTextFacets(content);
     if (facets.length > 0) record.facets = facets;
     if (embed) record.embed = embed;
 
