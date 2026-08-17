@@ -34,7 +34,7 @@ const FEATURES = [
   { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', desc: 'Discover collectors to follow based on your collection, trades, and interests.' },
   { to: '/trade-assistant', icon: Sparkles, label: 'AI Assistants', desc: 'Trade, market, collection, sentiment, achievement, and networking assistants powered by AI.' },
   { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalog between 9+ languages — English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
-  { to: '/explore', icon: MessageCircle, label: 'Social Card Pages', desc: 'Every card page surfaces posts, trades, reviews, and pack openings about that card from across the community.' },
+  { to: '/explore', icon: LayoutDashboard, label: 'Social Card Pages', desc: 'Every card page surfaces posts, trades, reviews, and pack openings about that card from across the community.' },
   { to: '/', icon: TrendingUp, label: 'Trending Cards', desc: 'Discover the most talked-about cards right now, ranked by community posts and activity.' },
   { to: '/compose', icon: ImageIcon, label: 'Card Embeds in Posts', desc: 'Attach a card to your post and it renders richly on both SwapPulse and Bluesky with a deep link back.' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings', desc: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.' },
@@ -289,7 +289,7 @@ export default function Help() {
             <div className="grid gap-3 sm:grid-cols-2">
               {filteredFeatures.map((f) => (
                 <Link
-                  key={f.to}
+                  key={f.label}
                   to={f.to}
                   className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary/50"
                 >

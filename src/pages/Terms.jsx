@@ -294,6 +294,13 @@ export default function Terms() {
               suggestions and not professional advice. End-to-end encrypted messages cannot be recovered if you lose
               your private key.
             </p>
+            <p>
+              <strong>Multi-language support:</strong> SwapPulse provides interface translations and card catalog data
+              in multiple languages via TCGDex. Translations are provided as a convenience; the English version of
+              these Terms is the authoritative version. Card names, set names, and flavor text are sourced from TCGDex
+              in your selected language and may differ from official localizations. SwapPulse is not responsible for
+              translation inaccuracies or differences between TCGDex data and official Pokémon TCG localizations.
+            </p>
 
             <h2 id="liability" className="mt-8 scroll-mt-20 text-xl font-bold">17. Limitation of Liability</h2>
             <p>
