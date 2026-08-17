@@ -1,7 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import LeftNav from '@/components/LeftNav';
-import RightSidebar from '@/components/RightSidebar';
 import MobileNav from '@/components/MobileNav';
 import RealtimeToaster from '@/components/RealtimeToaster';
 import BellToaster from '@/components/follow/BellToaster';
@@ -41,9 +40,6 @@ export default function Layout() {
         <Outlet />
         <StickyPlayerBar />
       </main>
-      <div className="hidden w-80 shrink-0 lg:block">
-        <RightSidebar online={online} />
-      </div>
       <MobileNav />
       <CookieConsentBanner />
       <RealtimeToaster />
