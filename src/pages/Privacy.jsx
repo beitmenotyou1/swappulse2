@@ -197,7 +197,7 @@ export default function Privacy() {
 
             <h2 id="ai-scanner" className="mt-8 scroll-mt-20 text-xl font-bold">7. AI Scanner & Corrections</h2>
             <p>
-              The SwapPulse AI scanner lets you photograph a card and identifies it from the TCGDex catalogue. When you
+              The SwapPulse AI scanner lets you photograph a card and identifies it from the TCGDex catalog. When you
               use the scanner:
             </p>
             <ul>
@@ -252,9 +252,9 @@ export default function Privacy() {
               <li>Send notifications about activity relevant to you (likes, replies, trade matches, price alerts, voice spaces going live).</li>
               <li>Match your wishlist against new trade listings.</li>
               <li>Calculate reputation, trust scores, and achievement progress.</li>
-              <li>Power AI assistants that analyse your collection and trades to generate suggestions.</li>
+              <li>Power AI assistants that analyze your collection and trades to generate suggestions.</li>
               <li>Moderate content, detect bots, and enforce community guidelines.</li>
-              <li>Analyse usage patterns to improve the platform (in aggregate, not individually identifying).</li>
+              <li>Analyze usage patterns to improve the platform (in aggregate, not individually identifying).</li>
             </ul>
             <p>
               We do not sell your personal data to third parties. We do not use your data for targeted advertising.
@@ -263,7 +263,7 @@ export default function Privacy() {
             <p>
               <strong>Language preferences:</strong> When you choose a language via the language switcher, your
               preference is stored in your browser's local storage and, if you are logged in, on your account. We use
-              this to display the interface and card catalogue in your preferred language. Card and set names are fetched
+              this to display the interface and card catalog in your preferred language. Card and set names are fetched
               from TCGDex in the language you select. Your language preference is not shared with third parties.
             </p>
 
@@ -314,7 +314,7 @@ export default function Privacy() {
               SwapPulse integrates with or relies on the following third-party services:
             </p>
             <ul>
-              <li><strong>TCGDex</strong>, Card catalogue data (card names, sets, rarities, images). Your collection references TCGDex card IDs.</li>
+              <li><strong>TCGDex</strong>, Card catalog data (card names, sets, rarities, images). Your collection references TCGDex card IDs.</li>
               <li><strong>AT Protocol / Bluesky</strong>, Federated identity and content storage. Your DID and records are visible on the AT Protocol network.</li>
               <li><strong>AI / LLM providers</strong>, Power the card scanner, AI assistants, and automated moderation. Prompts and card photos are sent to these providers for processing.</li>
               <li><strong>Image generation</strong>, Used for AI-generated images when you request them. Generated images are stored and linked to your account.</li>

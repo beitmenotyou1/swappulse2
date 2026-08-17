@@ -1,4 +1,4 @@
-// sync-tcgdex-catalogue — incremental TCGDex catalogue sync into the local
+// sync-tcgdex-catalog, incremental TCGDex catalogue sync into the local
 // TcgdexCard cache. Resumes from a TcgdexSyncState cursor, processes a batch
 // of sets for the current language, upserts cards, then advances/rotates the
 // cursor. Rotates through all supported languages so non-English card names
