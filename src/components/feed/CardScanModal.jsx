@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, RefreshCw } from 'lucide-react';
+import { X, RefreshCw, ExternalLink } from 'lucide-react';
 import LiveCameraScanner from '@/components/scanner/LiveCameraScanner';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 
@@ -52,6 +52,16 @@ export default function CardScanModal({ open, onClose, onAttach, title = 'Scan a
               <p className="mb-2 mt-3 text-sm text-muted-foreground">
                 {locked.prediction?.card_name ? `Detected: ${locked.prediction.card_name}` : 'Top matches — tap the right one'}
               </p>
+              {locked.candidates[0]?.card_id && (
+                <a
+                  href={`/card/${locked.candidates[0].card_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> View card page
+                </a>
+              )}
               <div className="grid max-h-[35vh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
                 {locked.candidates.map((c) => {
                   const { text } = rarityClasses(c.rarity);

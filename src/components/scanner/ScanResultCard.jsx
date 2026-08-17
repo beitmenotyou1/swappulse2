@@ -1,11 +1,13 @@
 import React from 'react';
 import { Image } from '@/components/ui/image';
-import { Loader2, Check, Search, AlertCircle, X, GraduationCap } from 'lucide-react';
+import { Loader2, Check, Search, AlertCircle, X, GraduationCap, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import CandidateCard from '@/components/scanner/CandidateCard';
 import CorrectionPanel from '@/components/scanner/CorrectionPanel';
 
 export default function ScanResultCard({ scan, onSelectCandidate, onManual, onDismiss, pendingCorrection, onSubmitCorrection, onCancelCorrection }) {
+  const navigate = useNavigate();
   const status = scan.status;
   const top = scan.candidates?.[0];
   const isPending = pendingCorrection?.scanId === scan.id;
@@ -51,6 +53,11 @@ export default function ScanResultCard({ scan, onSelectCandidate, onManual, onDi
               </p>
               {scan.modelVersion && (
                 <p className="text-[10px] text-muted-foreground/60">Scanner v{scan.modelVersion}</p>
+              )}
+              {top?.card_id && (
+                <Button size="sm" className="mt-2" onClick={() => navigate(`/card/${top.card_id}`)}>
+                  <ExternalLink className="mr-1.5 h-4 w-4" /> View card
+                </Button>
               )}
             </div>
           )}

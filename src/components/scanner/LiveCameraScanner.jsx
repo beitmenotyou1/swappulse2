@@ -7,7 +7,7 @@ const POLL_MS = 2500;
 const FIRST_POLL_MS = 800;
 const CONFIDENCE_THRESHOLD = 0.8;
 const CONSECUTIVE_REQUIRED = 2;
-const MAX_DIM = 1024;
+const MAX_DIM = 1600;
 
 // Shared continuous auto-scan camera view. Captures frames on a throttled
 // interval, uploads each via the reliable UploadFile path, invokes scan-card,
@@ -48,7 +48,7 @@ const LiveCameraScanner = forwardRef(function LiveCameraScanner({ onLock, onRese
     canvas.width = w;
     canvas.height = h;
     canvas.getContext('2d').drawImage(video, 0, 0, w, h);
-    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85));
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92));
   }, []);
 
   const runOneScan = useCallback(async () => {
