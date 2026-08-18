@@ -2,6 +2,44 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
+// Rate limiting for the unauthenticated TOTP verify mode — blocks brute-force
+// of 6-digit codes. Uses AuthRateLimit with a prefixed email key so it doesn't
+// collide with the login-code rate limits. 5 attempts per 15-minute window.
+const TOTP_RATE_LIMIT_MAX = 5;
+const TOTP_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const TOTP_RATE_LIMIT_KEY = (email: string) => `2fa-verify:${email}`;
+
+async function getRateLimit(svc: any, email: string) {
+  const existing = await svc.entities.AuthRateLimit
+    .filter({ email: TOTP_RATE_LIMIT_KEY(email) }, '-created_date', 1).catch(() => []);
+  return existing[0] || null;
+}
+
+async function recordFailedAttempt(svc: any, email: string): Promise<number> {
+  const key = TOTP_RATE_LIMIT_KEY(email);
+  const now = new Date().toISOString();
+  const existing = await getRateLimit(svc, email);
+  if (!existing) {
+    await svc.entities.AuthRateLimit.create({ email: key, count: 1, window_start: now, last_request_at: now });
+    return 1;
+  }
+  const elapsed = Date.now() - new Date(existing.window_start).getTime();
+  if (elapsed >= TOTP_RATE_LIMIT_WINDOW_MS) {
+    await svc.entities.AuthRateLimit.update(existing.id, { count: 1, window_start: now, last_request_at: now });
+    return 1;
+  }
+  const newCount = (existing.count || 0) + 1;
+  await svc.entities.AuthRateLimit.update(existing.id, { count: newCount, last_request_at: now });
+  return newCount;
+}
+
+async function resetRateLimit(svc: any, email: string): Promise<void> {
+  const existing = await getRateLimit(svc, email);
+  if (existing) {
+    await svc.entities.AuthRateLimit.update(existing.id, { count: 0, window_start: new Date().toISOString() });
+  }
+}
+
 function base32Decode(str: string): Uint8Array {
   const cleaned = str.replace(/=+$/, '').toUpperCase();
   const bytes: number[] = [];
@@ -65,14 +103,31 @@ export default async function (req) {
     // Default: verify TOTP for login (no auth, lookup by email)
     const { email, code } = body;
     if (!email || !code) return Response.json({ error: 'Email and code required' }, { status: 400 });
-    const users = await base44.asServiceRole.entities.User.filter({ email });
+    const svc = base44.asServiceRole;
+    const normalizedEmail = String(email).toLowerCase().trim();
+
+    // Rate limit: block brute-force of 6-digit TOTP codes.
+    const limit = await getRateLimit(svc, normalizedEmail);
+    if (limit) {
+      const elapsed = Date.now() - new Date(limit.window_start).getTime();
+      if (limit.count >= TOTP_RATE_LIMIT_MAX && elapsed < TOTP_RATE_LIMIT_WINDOW_MS) {
+        const retryAfterSec = Math.ceil((TOTP_RATE_LIMIT_WINDOW_MS - elapsed) / 1000);
+        return Response.json({ error: 'Too many attempts. Try again later.', retry_after: retryAfterSec }, { status: 429 });
+      }
+    }
+
+    const users = await svc.entities.User.filter({ email: normalizedEmail });
     if (users.length === 0) return Response.json({ verified: false, error: 'User not found' });
     const user = users[0];
     if (!user.two_factor_enabled || !user.two_factor_secret) {
       return Response.json({ verified: true });
     }
     const expected = await generateTotp(user.two_factor_secret);
-    if (code !== expected) return Response.json({ verified: false, error: 'Invalid 2FA code' });
+    if (code !== expected) {
+      await recordFailedAttempt(svc, normalizedEmail);
+      return Response.json({ verified: false, error: 'Invalid 2FA code' });
+    }
+    await resetRateLimit(svc, normalizedEmail);
     return Response.json({ verified: true });
   } catch (e) {
     console.error('verify-2fa error', e?.message || e);
