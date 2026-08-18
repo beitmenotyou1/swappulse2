@@ -101,6 +101,51 @@ function scoreCard(card: any, tokens: string[], setIdToken: string | null, local
   return score;
 }
 
+// Name search across TCGDex languages. Tries the preferred language first, and
+// when it returns no results, retries across the remaining TCGDex languages so
+// cards exclusive to another language catalog (e.g. Chinese-only sets) are
+// findable. Merges and dedupes by card id, keeping preferred-language results
+// first, capped at perPage.
+async function nameSearchAcrossLanguages(
+  nameQuery: string,
+  rarityCanon: string,
+  preferredLang: string,
+  perPage: number,
+): Promise<any[]> {
+  const seen = new Set<string>();
+  const merged: any[] = [];
+
+  const doSearch = async (l: string): Promise<any[]> => {
+    const params = new URLSearchParams();
+    params.set('name', nameQuery);
+    if (rarityCanon && rarityCanon !== 'Unknown') params.set('rarity', rarityCanon);
+    params.set('pagination:page', '1');
+    params.set('pagination:itemsPerPage', String(perPage));
+    const data = await fetchTcgdex(`/cards?${params.toString()}`, l);
+    return Array.isArray(data) ? data : [];
+  };
+
+  // Preferred language first.
+  const order = [preferredLang, ...SUPPORTED_LANGS.filter((l) => l !== preferredLang)];
+  for (const l of order) {
+    if (merged.length >= perPage) break;
+    try {
+      const list = await doSearch(l);
+      for (const card of list) {
+        const id = card.id || card.cardId;
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        merged.push(toCardShapeApi(card));
+        if (merged.length >= perPage) break;
+      }
+    } catch { /* a language catalog may 404 or be empty; try the next */ }
+    // Stop early once the preferred language yielded results — only fall back to
+    // other languages when it returned nothing.
+    if (l === preferredLang && merged.length > 0) break;
+  }
+  return merged;
+}
+
 // Probe the cache to resolve a raw token to a stored set_id (tries raw + normalized).
 async function resolveSetId(svc: any, rawToken: string): Promise<string | null> {
   const lower = rawToken.toLowerCase();
@@ -144,12 +189,13 @@ Deno.serve(async (req) => {
     }
 
     // A set candidate is treated as an identifier (excluded from name search) only
-    // when it's a clear letter+digit code (sv01, swsh1) or a set+number lookup that
-    // resolved to a real set. Pure-letter codes like "mew" stay in the name search
-    // when there's no card number, so searching the Pokémon "mew" still works.
+    // when it actually resolved to a real TCGDex set (alias or cache hit). An
+    // unresolved set-code token stays in the name search so the query yields name
+    // matches instead of zero results. Pure-letter codes like "mew" with no card
+    // number also stay in the name search so searching the Pokémon "mew" works.
     const setTokenIsLetterDigit = setCandidateToken ? /^[a-z]+\d/.test(setCandidateToken) : false;
-    const excludeSetFromName = !!setCandidateToken &&
-      (setTokenIsLetterDigit || (!!localIdToken && !!effectiveSetId));
+    const excludeSetFromName = !!setCandidateToken && !!effectiveSetId &&
+      (setTokenIsLetterDigit || !!localIdToken);
 
     let matched: any[] = [];
 
@@ -179,6 +225,21 @@ Deno.serve(async (req) => {
               if (card) { matched = [toCardShapeApi(card)]; break; }
             } catch { /* try next form */ }
           }
+          // Multi-language fallback: if the precise lookup found nothing in the
+          // preferred language, retry across the other TCGDex languages (a set may
+          // be exclusive to another language catalog, e.g. Chinese-only sets).
+          if (matched.length === 0) {
+            for (const altLang of SUPPORTED_LANGS) {
+              if (altLang === lang) continue;
+              for (const sid of sidForms) {
+                try {
+                  const card = await fetchTcgdex(`/sets/${encodeURIComponent(sid)}/${encodeURIComponent(numPart)}`, altLang);
+                  if (card) { matched = [toCardShapeApi(card)]; break; }
+                } catch { /* try next */ }
+              }
+              if (matched.length > 0) break;
+            }
+          }
         }
         if (matched.length === 0) {
           // Name search using the non-identifier, non-rarity tokens.
@@ -189,14 +250,7 @@ Deno.serve(async (req) => {
           const rarityTokens = tokens.filter((t) => isRarityToken(t));
           const rarityCanon = rarityTokens.length ? canonicalizeRarity(rarityTokens.join(' ')) : '';
           if (nameQuery) {
-            const params = new URLSearchParams();
-            params.set('name', nameQuery);
-            if (rarityCanon && rarityCanon !== 'Unknown') params.set('rarity', rarityCanon);
-            params.set('pagination:page', '1');
-            params.set('pagination:itemsPerPage', String(perPage));
-            const data = await fetchTcgdex(`/cards?${params.toString()}`, lang);
-            const list = Array.isArray(data) ? data : [];
-            matched = list.slice(0, perPage).map(toCardShapeApi);
+            matched = await nameSearchAcrossLanguages(nameQuery, rarityCanon, lang, perPage);
           }
         }
       } catch (e) {

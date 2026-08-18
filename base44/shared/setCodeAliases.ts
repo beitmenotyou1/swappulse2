@@ -13,6 +13,9 @@ export const SET_CODE_ALIASES: Record<string, string> = {
   sfa: 'sv06.5', // Shrouded Fable
   pre: 'sv08.5', // Prismatic Evolutions
 
+  // --- Chinese-exclusive / promo sets (TCGDex uses me* IDs for these) ---
+  pbl: 'me05', // Pitch Black (Chinese-exclusive)
+
   // --- Sword & Shield (TCGDex: swsh1–swsh12, no leading zero) ---
   ssh: 'swsh1',  // Sword & Shield
   rcl: 'swsh2',  // Rebel Clash

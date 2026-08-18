@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Search, Loader2, Flame, CheckSquare, Square, Heart, X } from 'lucide-react';
-import { searchCards, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
+import { searchCardsMulti, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -66,14 +66,19 @@ export default function Explore() {
     setLoading(true);
     setSearched(true);
     try {
-      const cards = await searchCards(q.trim(), {
-        page: 1, perPage: 36, lang,
-        setName: f.set || undefined,
-        rarity: f.rarity || undefined,
-      });
-      // Client-side filter for type and price range (TCGDex search doesn't
-      // support these params directly, so filter the returned results)
+      const cards = await searchCardsMulti(q.trim(), { perPage: 36, lang });
+      // Client-side filter for set, rarity, type and price range (the
+      // multi-identifier search doesn't take these as params, so filter
+      // the returned results)
       let filtered = cards;
+      if (f.set) {
+        filtered = filtered.filter((c) =>
+          (c.set?.name || '').toLowerCase() === f.set.toLowerCase() ||
+          (c.set?.id || '').toLowerCase() === f.set.toLowerCase());
+      }
+      if (f.rarity) {
+        filtered = filtered.filter((c) => (c.rarity || '').toLowerCase().includes(f.rarity.toLowerCase()));
+      }
       if (f.type) {
         filtered = filtered.filter((c) => (c.types || []).some((t) => t.toLowerCase() === f.type.toLowerCase()));
       }
@@ -188,7 +193,7 @@ export default function Explore() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search cards by name…"
+                placeholder="Search by name, set code, or number, e.g. MEW 058, SSH 1, Charizard…"
                 className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
               />
             </div>
