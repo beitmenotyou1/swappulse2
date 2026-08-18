@@ -78,7 +78,7 @@ export async function fetchProofDataForUser(
     svc.entities.Vouch.filter({ vouched_did: did }, '-created_date', 1000),
     svc.entities.TradingFeedback.filter({ rated_user_did: did }, '-created_date', 200),
     svc.entities.TradeChain.list('-created_date', 200),
-    svc.entities.ScannerCorrection.filter({ did }, '-created_date', 500),
+    svc.entities.ScannerCorrection.filter({ did }, '-created_date', 500).catch(() => []),
     svc.entities.Binder.filter({ did }, '-updated_date', 100),
     svc.entities.VoiceSpace.filter({ did }, '-created_date', 100),
     svc.entities.CardReview.filter({ did }, '-created_date', 500),

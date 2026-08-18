@@ -30,9 +30,17 @@ export function cardImageUrl(imageField, quality = 'high', extension = 'webp') {
 async function cached(key, fetcher) {
   try {
     const data = await fetcher();
-    await idbPut('catalog', key, data).catch(() => {});
+    // Don't cache empty arrays — a transient empty result (e.g. during a
+    // backend cold start or before the TcgdexCard cache is populated) would
+    // otherwise be returned as a stale fallback on future failures, masking
+    // real results from the user as "no cards found".
+    const shouldCache = Array.isArray(data) ? data.length > 0 : data != null;
+    if (shouldCache) {
+      await idbPut('catalog', key, data).catch(() => {});
+    }
     return data;
   } catch (e) {
+    console.error('[tcgdex] fetch failed, trying cache:', key, e);
     const hit = await idbGet('catalog', key).catch(() => undefined);
     if (hit) return hit;
     throw e;

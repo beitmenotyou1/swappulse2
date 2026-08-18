@@ -426,29 +426,28 @@ Deno.serve(async (req) => {
 
     const { content, embedUrl, embedTitle, embedDescription, tags } = promo;
 
-    // Build the embed as an app.bsky.embed.external rich-link card.
-    // Card posts include the card image; feature and community posts are text-only embeds.
-    let embed: any = {
-      $type: 'app.bsky.embed.external',
-      external: {
-        uri: embedUrl,
-        title: embedTitle,
-        description: embedDescription,
-      },
-    };
+    // Build the embed as app.bsky.embed.images so the image renders inline in
+    // the post (like a photo post) without depending on Bluesky's AppView
+    // scraping the external URI. The swappulse.org link stays clickable in the
+    // post text via the link facets built by buildRichTextFacets.
+    let imageBlob: { $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null = null;
+    let altText = embedTitle;
     if (card && promoType === 'card') {
       const imageUrl = cardImageUrl(card.imageField);
       if (imageUrl) {
-        const thumb = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
-        if (thumb) embed.external.thumb = thumb;
+        imageBlob = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
       }
+      altText = card.name + (card.setName ? ` (${card.setName})` : '');
     } else {
-      // Feature and community posts: attach the branded SwapPulse banner as
-      // the embed thumbnail so Bluesky renders a rich image card instead of a
-      // bare text link card.
-      const thumb = await uploadCardImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL);
-      if (thumb) embed.external.thumb = thumb;
+      // Feature and community posts: attach the branded SwapPulse banner.
+      imageBlob = await uploadCardImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL);
     }
+    const embed: any = imageBlob
+      ? {
+          $type: 'app.bsky.embed.images',
+          images: [{ alt: altText, image: imageBlob }],
+        }
+      : null;
 
     // Create the post directly on the PDS (no local Post record)
     const record: any = {
@@ -495,7 +494,7 @@ Deno.serve(async (req) => {
       posted_at: new Date().toISOString(),
     }).catch((e: any) => console.error('post-promo: failed to track PromoPost', e?.message || e));
 
-    console.log('post-promo: published promo post', result.uri, `(type: ${promoType})`, card ? `(card: ${card.name})` : '(no card)', embed?.external?.thumb ? '(with image embed)' : '(text embed)');
+    console.log('post-promo: published promo post', result.uri, `(type: ${promoType})`, card ? `(card: ${card.name})` : '(no card)', embed ? '(with image embed)' : '(text only)');
     return Response.json({ ok: true, uri: result.uri, cid: result.cid, content, promoType, card: card ? { id: card.id, name: card.name } : null, hasEmbed: !!embed });
   } catch (error) {
     console.error('post-promo error:', error?.message || error);

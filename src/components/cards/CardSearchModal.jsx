@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { searchCardsMulti, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function CardSearchModal({ open, onClose, onSelect, title = 'Search cards' }) {
   const [query, setQuery] = useState('');
@@ -8,6 +9,7 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const { toast } = useToast();
 
   const runSearch = useCallback(async (q) => {
     setLoading(true);
@@ -16,13 +18,14 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
       setResults(cards);
       setHasMore(false);
       setPage(1);
-    } catch {
+    } catch (e) {
       setResults([]);
       setHasMore(false);
+      toast({ title: 'Search failed', description: 'Could not reach the card catalogue. Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!open) return;

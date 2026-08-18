@@ -86,12 +86,13 @@ export default function Explore() {
         });
       }
       setResults(filtered);
-    } catch {
+    } catch (e) {
       setResults([]);
+      toast({ title: 'Search failed', description: 'Could not reach the card catalogue. Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [lang, filters]);
+  }, [lang, filters, toast]);
 
   useEffect(() => {
     (async () => {
