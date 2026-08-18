@@ -16,6 +16,12 @@ export default async function(req) {
       return Response.json({ error: 'card_id and user_id are required' }, { status: 400 });
     }
 
+    // Verify the caller is requesting analysis for their own collection —
+    // prevents any authenticated user from running this for another user_id.
+    if (caller.id !== user_id) {
+      return Response.json({ error: 'You can only analyse your own collection' }, { status: 403 });
+    }
+
     // 1. Fetch current TCGDex data for the card
     let tcgdexData = null;
     try {
