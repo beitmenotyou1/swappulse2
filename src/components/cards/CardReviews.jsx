@@ -6,6 +6,7 @@ import { variantLabel } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeCardReview } from '@/lib/federatedBridge';
+import RecommendButton from '@/components/standard/RecommendButton';
 
 // §4.3 Community Card Reviews - four-dimension rating (artwork, playability,
 // collectibility, investment) 1-5 each, plus optional review text + variant.
@@ -114,6 +115,31 @@ export default function CardReviews({ card }) {
       bridgeCardReview(stamped).then((res) => {
         if (res.bridged) base44.entities.CardReview.update(created.id, res).catch(() => {});
       }).catch(() => {});
+      // Publish as a site.standard.document for interoperable long-form
+      // discovery (reviews with text only — rating-only reviews are too short).
+      if (form.review_text.trim()) {
+        base44.functions.invoke('publish-standard-document', {
+          entityType: 'card_review',
+          entityId: created.id,
+          title: `${card.name} Review`,
+          path: `/card/${cardId}`,
+          description: form.review_text.trim(),
+          coverImageUrl: card.image || '',
+          tags: [card.name, card.set?.name].filter(Boolean),
+          textContent: form.review_text.trim(),
+          publishedAt: new Date().toISOString(),
+          authorName: stamped.author_name,
+          authorHandle: stamped.author_handle,
+        }).then((res) => {
+          const data = res?.data ?? res;
+          if (data?.documentUri) {
+            base44.entities.CardReview.update(created.id, {
+              standard_doc_uri: data.documentUri,
+              standard_pub_uri: data.authorPubUri,
+            }).catch(() => {});
+          }
+        }).catch((e) => console.error('standard.site review publish failed', e));
+      }
       setReviews((prev) => [created, ...prev.filter((r) => r.id !== created.id)]);
       setForm({ artwork: 5, playability: 5, collectibility: 5, investment: 5, review_text: '', variant: 'normal' });
     } catch (e) {
@@ -218,6 +244,17 @@ export default function CardReviews({ card }) {
               ))}
             </div>
             {r.review_text && <p className="mt-1.5 text-sm text-foreground/90">{r.review_text}</p>}
+            {r.standard_doc_uri && (
+              <div className="mt-2">
+                <RecommendButton
+                  documentUri={r.standard_doc_uri}
+                  entityType="card_review"
+                  entityId={r.id}
+                  authorDid={r.did || ''}
+                  initialCount={r.recommend_count || 0}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>

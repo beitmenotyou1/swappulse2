@@ -88,6 +88,31 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
           authorName: me?.full_name,
           authorHandle: me?.email?.split('@')[0],
         });
+        // Publish as a site.standard.document for interoperable long-form
+        // discovery (public journals only).
+        if (visibility === 'public') {
+          base44.functions.invoke('publish-standard-document', {
+            entityType: 'journal',
+            entityId: created.id,
+            title: stamped.title,
+            path: `/journal/${created.id}`,
+            description: stamped.subtitle,
+            coverImageUrl: stamped.cover_image_uri,
+            tags: stamped.tags,
+            textContent: stamped.body,
+            publishedAt: stamped.published_at,
+            authorName: stamped.author_name,
+            authorHandle: stamped.author_handle,
+          }).then((res) => {
+            const data = res?.data ?? res;
+            if (data?.documentUri) {
+              base44.entities.Journal.update(created.id, {
+                standard_doc_uri: data.documentUri,
+                standard_pub_uri: data.authorPubUri,
+              }).catch(() => {});
+            }
+          }).catch((e) => console.error('standard.site journal publish failed', e));
+        }
       }
       onSaved?.();
     } catch (e) {

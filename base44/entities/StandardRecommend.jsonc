@@ -1,0 +1,57 @@
+{
+  "name": "StandardRecommend",
+  "type": "object",
+  "title": "StandardRecommend",
+  "description": "org.swappulse.standardRecommend \u2014 a collector's recommendation of a site.standard.document, tracked locally so recommend counts can be surfaced on journals, card reviews, and binders. One record per (did, document_uri). Created by the toggle-standard-recommend backend function and by firehose-ingest for remote recommends.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the recommender"
+    },
+    "document_uri": {
+      "type": "string",
+      "description": "at:// URI of the site.standard.document being recommended"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "journal",
+        "card_review",
+        "binder"
+      ]
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "Local entity id of the recommended content (for count aggregation)"
+    },
+    "author_did": {
+      "type": "string",
+      "description": "DID of the document's author (for notification routing)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this recommend record (for firehose dedup)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True for records ingested from the firehose (remote-originated)"
+    }
+  },
+  "required": [
+    "did",
+    "document_uri"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -77,6 +77,7 @@ import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
+import WellKnownStandardPublication from '@/pages/WellKnownStandardPublication';
 import HashtagPage from '@/pages/HashtagPage';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
@@ -115,6 +116,7 @@ const AuthenticatedApp = () => {
       <Route path="/status" element={<Status />} />
       <Route path="/sitemap.xml" element={<SitemapXml />} />
       <Route path="/robots.txt" element={<RobotsTxt />} />
+      <Route path="/.well-known/site.standard.publication" element={<WellKnownStandardPublication />} />
       <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
       {/* Public browsable content, no login required */}

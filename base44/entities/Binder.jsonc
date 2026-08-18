@@ -2,7 +2,7 @@
   "name": "Binder",
   "type": "object",
   "title": "Binder",
-  "description": "org.swappulse.binder \u2014 a collector's digital binder (themed card display), mirrored to AT Protocol as a real org.swappulse.binder record so binders are portable and viewable across instances.",
+  "description": "org.swappulse.binder \u2014 a collector's digital binder (themed card display), mirrored to AT Protocol as a real org.swappulse.binder record so binders are portable and viewable across instances. Public binders with a description are additionally published as a site.standard.document for interoperable long-form discovery.",
   "properties": {
     "title": {
       "type": "string",
@@ -74,6 +74,19 @@
         "private"
       ],
       "default": "public"
+    },
+    "standard_doc_uri": {
+      "type": "string",
+      "description": "at:// URI of the site.standard.document record (interoperable long-form metadata wrapper). Empty until the standard.site document is published."
+    },
+    "standard_pub_uri": {
+      "type": "string",
+      "description": "at:// URI of the author's per-author site.standard.publication record"
+    },
+    "recommend_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of site.standard.graph.recommend records pointing at this binder's standard.site document"
     },
     "author_name": {
       "type": "string"

@@ -1,0 +1,41 @@
+{
+  "name": "StandardSiteConfig",
+  "type": "object",
+  "title": "StandardSiteConfig",
+  "description": "org.swappulse.standardSiteConfig \u2014 stores the SwapPulse site.standard.publication record URI and the DID that owns it, so document publishing can reference the publication without re-creating it each time. Single-row, admin-managed. Read is public so the .well-known route can resolve the URI.",
+  "properties": {
+    "publication_uri": {
+      "type": "string",
+      "description": "at:// URI of the site.standard.publication record for SwapPulse"
+    },
+    "publication_did": {
+      "type": "string",
+      "description": "DID that owns the publication record (shared bridge account DID)"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "publication_uri"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

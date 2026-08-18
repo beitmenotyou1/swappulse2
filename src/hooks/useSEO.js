@@ -18,6 +18,7 @@ export default function useSEO({
   canonicalPath = '',
   jsonLd = null,
   ogImage = DEFAULT_OG_IMAGE,
+  standardDocUri = '',
 } = {}) {
   useEffect(() => {
     const TAG = 'data-seo-managed';
@@ -73,6 +74,18 @@ export default function useSEO({
     link.setAttribute(TAG, 'true');
     head.appendChild(link);
 
+    // Standard.site document verification link — confirms the page at this
+    // URL owns the referenced site.standard.document record. External
+    // verifiers (pckt, docs.surf, Standard Search) check for this tag.
+    head.querySelectorAll('link[rel="site.standard.document"]').forEach((el) => el.remove());
+    if (standardDocUri) {
+      const stdLink = document.createElement('link');
+      stdLink.setAttribute('rel', 'site.standard.document');
+      stdLink.setAttribute('href', standardDocUri);
+      stdLink.setAttribute(TAG, 'true');
+      head.appendChild(stdLink);
+    }
+
     // JSON-LD structured data
     if (jsonLd) {
       const script = document.createElement('script');
@@ -85,5 +98,5 @@ export default function useSEO({
     return () => {
       document.querySelectorAll(`[${TAG}]`).forEach((el) => el.remove());
     };
-  }, [title, description, canonicalPath, ogImage, JSON.stringify(jsonLd)]);
+  }, [title, description, canonicalPath, ogImage, standardDocUri, JSON.stringify(jsonLd)]);
 }

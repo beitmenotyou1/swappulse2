@@ -115,6 +115,37 @@ async function maybeNotifyInteraction(base44: any, collection: string, val: any,
           commentCid,
         }).catch(() => {});
       }
+    } else if (collection === 'site.standard.graph.recommend') {
+      // Remote recommend: find the local entity whose standard_doc_uri matches
+      // the recommend's document field, increment its recommend_count, and
+      // notify the author.
+      const documentUri = val?.document;
+      if (!documentUri) return;
+      const entityTypes = [
+        { name: 'Journal', type: 'journal' },
+        { name: 'CardReview', type: 'card_review' },
+        { name: 'Binder', type: 'binder' },
+      ];
+      for (const { name: entityName, type } of entityTypes) {
+        const matches = await svc.entities[entityName].filter({ standard_doc_uri: documentUri }, '-created_date', 1).catch(() => []);
+        const target = matches?.[0];
+        if (target) {
+          await svc.entities[entityName].update(target.id, {
+            recommend_count: (target.recommend_count || 0) + 1,
+          }).catch(() => {});
+          if (target.did && target.did !== repoDid) {
+            await base44.functions.invoke('notify-interaction', {
+              recipientDid: target.did,
+              actionType: 'reaction',
+              actorDid: repoDid, actorName, actorHandle, actorAvatar,
+              target_type: type === 'card_review' ? 'card' : 'post',
+              target_label: `${type.replace('_', ' ')} recommended`,
+              origin: 'remote',
+            }).catch(() => {});
+          }
+          break;
+        }
+      }
     }
   } catch (e) {
     console.error('firehose-ingest: maybeNotifyInteraction error', e?.message || e);
@@ -567,6 +598,23 @@ export default async function(req: Request): Promise<Response> {
                     const current = parent.replies || 0;
                     if (current > 0) {
                       await svc.entities.Post.update(parent.id, { replies: current - 1 }).catch(() => {});
+                    }
+                  }
+                }
+                // Decrement the recommend_count on the target entity when a
+                // remote recommend is tombstoned.
+                if (entityName === 'StandardRecommend' && local.document_uri) {
+                  const targetEntityTypes = ['Journal', 'CardReview', 'Binder'];
+                  for (const targetName of targetEntityTypes) {
+                    const matches = await svc.entities[targetName]
+                      .filter({ standard_doc_uri: local.document_uri }, '-created_date', 1).catch(() => []);
+                    const target = matches?.[0];
+                    if (target) {
+                      const current = target.recommend_count || 0;
+                      if (current > 0) {
+                        await svc.entities[targetName].update(target.id, { recommend_count: current - 1 }).catch(() => {});
+                      }
+                      break;
                     }
                   }
                 }

@@ -7,12 +7,14 @@ import Avatar from '@/components/Avatar';
 import { BINDER_THEMES } from '@/components/binder/theme';
 import { cardImageUrl } from '@/lib/tcgdex';
 import useSEO from '@/hooks/useSEO';
+import RecommendButton from '@/components/standard/RecommendButton';
 
 export default function BinderDetail() {
   useSEO({
     title: 'Binder',
     description: 'A curated Pokémon TCG collector binder on SwapPulse, showcase grids of favourite cards.',
     canonicalPath: `/binder/${binderId}`,
+    standardDocUri: data?.binder?.standard_doc_uri || '',
   });
   const { binderId } = useParams();
   const navigate = useNavigate();
@@ -50,6 +52,11 @@ export default function BinderDetail() {
 
   const remove = async () => {
     if (!confirm('Delete this binder?')) return;
+    if (data?.binder?.standard_doc_uri) {
+      await base44.functions.invoke('publish-standard-document', {
+        action: 'delete', documentUri: data.binder.standard_doc_uri,
+      }).catch(() => {});
+    }
     await base44.entities.Binder.delete(binderId);
     navigate('/binders');
   };
@@ -117,6 +124,15 @@ export default function BinderDetail() {
         >
           <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} /> {binder.like_count}
         </button>
+        {binder.standard_doc_uri && (
+          <RecommendButton
+            documentUri={binder.standard_doc_uri}
+            entityType="binder"
+            entityId={binderId}
+            authorDid={binder.did || ''}
+            initialCount={binder.recommend_count || 0}
+          />
+        )}
       </div>
 
       <div className="flex items-center justify-center gap-3 px-4 py-2">

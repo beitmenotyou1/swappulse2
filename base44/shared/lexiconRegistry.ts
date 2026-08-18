@@ -285,4 +285,66 @@ export const LEXICONS: any[] = [
       authorAvatar: { type: 'string', format: 'uri' }, read: { type: 'boolean' }, createdAt: { type: 'string', format: 'datetime' }
     } } } }
   },
+  // ─── Standard.site community lexicons (site.standard.*) ───────────────────
+  // Interoperable long-form publishing lexicons so SwapPulse journals, card
+  // reviews, and binder descriptions are portable across the ATmosphere and
+  // render as branded enhanced link cards on Bluesky. Published IN ADDITION to
+  // the org.swappulse.* records — the org.swappulse.* record remains canonical
+  // while the site.standard.document is the interoperable metadata wrapper.
+  {
+    lexicon: 1, id: 'site.standard.publication', revision: 1,
+    description: 'A publication (collection of documents) on the Standard.site network. SwapPulse creates one per collector (lazily, on first long-form publish) and one for the SwapPulse site itself.',
+    defs: { main: { type: 'record', key: 'tid', description: 'A Standard.site publication.', record: { type: 'object', required: ['name', 'url'], properties: {
+      name: { type: 'string', maxLength: 100 }, url: { type: 'string', format: 'uri' }, description: { type: 'string', maxLength: 500 },
+      icon: { type: 'blob', accept: ['image/*'] }, basicTheme: { type: 'ref', ref: 'site.standard.theme.basic' },
+      preferences: { type: 'object', properties: { showInDiscover: { type: 'boolean' } } }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'site.standard.document', revision: 1,
+    description: 'A long-form document published under a Standard.site publication. SwapPulse publishes journals, card reviews, and binder descriptions as documents so they are portable and discoverable.',
+    defs: { main: { type: 'record', key: 'tid', description: 'A Standard.site document.', record: { type: 'object', required: ['site', 'title', 'path'], properties: {
+      site: { type: 'string', format: 'at-uri', description: 'at:// URI of the publication this document belongs to' },
+      title: { type: 'string', maxLength: 200 }, path: { type: 'string', description: 'URL path on the publication site' },
+      description: { type: 'string', maxLength: 300 }, coverImage: { type: 'blob', accept: ['image/*'] },
+      tags: { type: 'array', items: { type: 'string', maxLength: 30 }, maxLength: 10 },
+      content: { type: 'array', items: { type: 'union', refs: ['site.standard.content.text'] } },
+      contributors: { type: 'array', items: { type: 'string', format: 'did' } },
+      publishedAt: { type: 'string', format: 'datetime' }, bskyPostRef: { type: 'string', format: 'at-uri' },
+      links: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, uri: { type: 'string', format: 'at-uri' } } } }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'site.standard.graph.subscription', revision: 1,
+    description: 'A subscription to a Standard.site publication. Lets a collector follow another collector\'s long-form writing independently of their social follow.',
+    defs: { main: { type: 'record', key: 'tid', description: 'A subscription to a publication.', record: { type: 'object', required: ['publication'], properties: {
+      publication: { type: 'string', format: 'at-uri', description: 'at:// URI of the publication being subscribed to' },
+      createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'site.standard.graph.recommend', revision: 1,
+    description: 'A recommendation of a Standard.site document. A lightweight social signal distinct from a like, more appropriate for long-form content.',
+    defs: { main: { type: 'record', key: 'tid', description: 'A recommendation of a document.', record: { type: 'object', required: ['document'], properties: {
+      document: { type: 'string', format: 'at-uri', description: 'at:// URI of the document being recommended' },
+      createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'site.standard.theme.basic', revision: 1,
+    description: 'Basic RGB theme for a Standard.site publication (background, foreground, accent, accentForeground). SwapPulse maps its Midnight Vault palette to these values.',
+    defs: { main: { type: 'object', required: ['background', 'foreground', 'accent', 'accentForeground'], properties: {
+      background: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 255 }, minLength: 3, maxLength: 3 },
+      foreground: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 255 }, minLength: 3, maxLength: 3 },
+      accent: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 255 }, minLength: 3, maxLength: 3 },
+      accentForeground: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 255 }, minLength: 3, maxLength: 3 }
+    } } }
+  },
+  {
+    lexicon: 1, id: 'site.standard.content.text', revision: 1,
+    description: 'Text content block for a Standard.site document.',
+    defs: { main: { type: 'object', required: ['text'], properties: {
+      text: { type: 'object', required: ['text'], properties: { text: { type: 'string', maxLength: 100000 } } }
+    } } }
+  },
 ];

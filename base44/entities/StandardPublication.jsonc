@@ -1,0 +1,64 @@
+{
+  "name": "StandardPublication",
+  "type": "object",
+  "title": "StandardPublication",
+  "description": "org.swappulse.standardPublication \u2014 a collector's per-author site.standard.publication record, created lazily on first long-form publish. One record per DID. Used by the subscription flow so collectors can subscribe to a writer's long-form output independently of their social follow.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector this publication belongs to"
+    },
+    "publication_uri": {
+      "type": "string",
+      "description": "at:// URI of the site.standard.publication record on the collector's PDS"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name used as the publication name"
+    },
+    "handle": {
+      "type": "string"
+    },
+    "avatar": {
+      "type": "string"
+    },
+    "profile_url": {
+      "type": "string",
+      "description": "SwapPulse profile URL for this collector"
+    }
+  },
+  "required": [
+    "did",
+    "publication_uri"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

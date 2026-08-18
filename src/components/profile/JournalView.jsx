@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { formatPrice } from '@/lib/format';
 import { remarkHashtags } from '@/lib/remarkHashtags';
 import { confirmExternalLink, isExternalUrl } from '@/lib/externalLink';
+import RecommendButton from '@/components/standard/RecommendButton';
 
 export default function JournalView({ journal, onClose }) {
   if (!journal) return null;
@@ -28,6 +29,18 @@ export default function JournalView({ journal, onClose }) {
               <span key={t} className="rounded bg-secondary px-2 py-0.5">#{t}</span>
             ))}
           </div>
+
+          {journal.standard_doc_uri && (
+            <div className="mb-3">
+              <RecommendButton
+                documentUri={journal.standard_doc_uri}
+                entityType="journal"
+                entityId={journal.id}
+                authorDid={journal.did || ''}
+                initialCount={journal.recommend_count || 0}
+              />
+            </div>
+          )}
 
           {journal.embedded_stats && (
             <div className="mb-4 grid grid-cols-3 gap-2 rounded-xl border border-border bg-secondary p-3 text-center">

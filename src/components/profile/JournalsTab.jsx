@@ -22,6 +22,11 @@ export default function JournalsTab({ journals = [], collection = [], onSaved })
   const remove = async (j) => {
     if (!confirm('Delete this journal?')) return;
     try {
+      if (j.standard_doc_uri) {
+        await base44.functions.invoke('publish-standard-document', {
+          action: 'delete', documentUri: j.standard_doc_uri,
+        }).catch(() => {});
+      }
       await base44.entities.Journal.delete(j.id);
       onSaved?.();
     } catch {

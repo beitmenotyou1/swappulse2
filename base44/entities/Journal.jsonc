@@ -2,7 +2,7 @@
   "name": "Journal",
   "type": "object",
   "title": "Journal",
-  "description": "org.swappulse.journal \u2014 a collector's published journal entry, mirrored to AT Protocol as a real org.swappulse.journal record so journals are portable and discoverable across instances.",
+  "description": "org.swappulse.journal \u2014 a collector's published journal entry, mirrored to AT Protocol as a real org.swappulse.journal record so journals are portable and discoverable across instances. Additionally published as a site.standard.document for interoperable long-form discovery.",
   "properties": {
     "title": {
       "type": "string",
@@ -71,6 +71,19 @@
     "like_count": {
       "type": "integer",
       "default": 0
+    },
+    "standard_doc_uri": {
+      "type": "string",
+      "description": "at:// URI of the site.standard.document record (interoperable long-form metadata wrapper). Empty until the standard.site document is published."
+    },
+    "standard_pub_uri": {
+      "type": "string",
+      "description": "at:// URI of the author's per-author site.standard.publication record"
+    },
+    "recommend_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of site.standard.graph.recommend records pointing at this journal's standard.site document"
     },
     "author_name": {
       "type": "string"

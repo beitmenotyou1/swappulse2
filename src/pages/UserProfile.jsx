@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import PostCard from '@/components/feed/PostCard';
 import FollowBellButton from '@/components/follow/FollowBellButton';
 import MessageButton from '@/components/messages/MessageButton';
+import SubscribeToWritingButton from '@/components/standard/SubscribeToWritingButton';
 import FriendsBadge from '@/components/follow/FriendsBadge';
 import FollowsYouBadge from '@/components/follow/FollowsYouBadge';
 import AddFriendLink from '@/components/follow/AddFriendLink';
@@ -130,6 +131,7 @@ export default function UserProfile() {
               subjectHandle={profile?.bsky_handle || profile?.username}
               subjectAvatar={profile?.avatar}
             />
+            <SubscribeToWritingButton authorDid={subjectDid} />
             <MessageButton
               targetDid={subjectDid}
               targetName={profile?.name}

@@ -96,6 +96,31 @@ export default function BinderEdit() {
           authorName: me?.full_name,
           authorHandle: me?.email?.split('@')[0],
         });
+        // Publish as a site.standard.document for interoperable long-form
+        // discovery (public binders with a description only).
+        if (visibility === 'public' && description.trim()) {
+          base44.functions.invoke('publish-standard-document', {
+            entityType: 'binder',
+            entityId: created.id,
+            title: stamped.title,
+            path: `/binder/${created.id}`,
+            description: stamped.description,
+            coverImageUrl: stamped.cover_image_uri,
+            tags: [stamped.theme],
+            textContent: stamped.description,
+            publishedAt: new Date().toISOString(),
+            authorName: stamped.author_name,
+            authorHandle: stamped.author_handle,
+          }).then((res) => {
+            const data = res?.data ?? res;
+            if (data?.documentUri) {
+              base44.entities.Binder.update(created.id, {
+                standard_doc_uri: data.documentUri,
+                standard_pub_uri: data.authorPubUri,
+              }).catch(() => {});
+            }
+          }).catch((e) => console.error('standard.site binder publish failed', e));
+        }
         navigate(`/binder/${created.id}`);
       }
     } catch (e) {

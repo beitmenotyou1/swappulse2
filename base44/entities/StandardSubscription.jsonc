@@ -1,0 +1,45 @@
+{
+  "name": "StandardSubscription",
+  "type": "object",
+  "title": "StandardSubscription",
+  "description": "org.swappulse.standardSubscription \u2014 a collector's subscription to another collector's per-author site.standard.publication, tracked locally so subscribed writers' new documents appear in the subscriber's For You feed. One record per (did, publication_uri). Created by the toggle-standard-subscription backend function and by firehose-ingest for remote subscriptions.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the subscriber"
+    },
+    "publication_uri": {
+      "type": "string",
+      "description": "at:// URI of the site.standard.publication being subscribed to"
+    },
+    "author_did": {
+      "type": "string",
+      "description": "DID of the author whose writing is being subscribed to"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this subscription record (for firehose dedup)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True for records ingested from the firehose (remote-originated)"
+    }
+  },
+  "required": [
+    "did",
+    "publication_uri"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

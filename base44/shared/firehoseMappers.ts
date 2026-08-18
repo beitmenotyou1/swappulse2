@@ -35,6 +35,9 @@ export const COLLECTIONS: Record<string, string> = {
   'org.swappulse.directMessage': 'DirectMessage',
   'org.swappulse.collectionEntry': 'CollectionEntry',
   'org.swappulse.tradeListing': 'TradeListing',
+  // Standard.site community lexicon records
+  'site.standard.graph.recommend': 'StandardRecommend',
+  'site.standard.graph.subscription': 'StandardSubscription',
 };
 
 // Standard AT Protocol record mappers (app.bsky.*). These map remote
@@ -288,6 +291,18 @@ function mapTradeListingFields(val: any, atUri: string, did: string) {
     at_uri: atUri, cid: '', record_type: 'org.swappulse.tradeListing', bridged: true,
   };
 }
+function mapStandardRecommendFields(val: any, atUri: string, did: string) {
+  return {
+    did, document_uri: val.document || '', entity_type: '', entity_id: '',
+    author_did: '', at_uri: atUri, bridged: true,
+  };
+}
+function mapStandardSubscriptionFields(val: any, atUri: string, did: string) {
+  return {
+    did, publication_uri: val.publication || '', author_did: '',
+    at_uri: atUri, bridged: true,
+  };
+}
 
 export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string, profile?: any) => any> = {
   'app.bsky.feed.post': mapPostFields,
@@ -317,6 +332,8 @@ export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string
   'org.swappulse.tradingFeedback': mapTradingFeedbackFields,
   'org.swappulse.collectionEntry': mapCollectionEntryFields,
   'org.swappulse.tradeListing': mapTradeListingFields,
+  'site.standard.graph.recommend': mapStandardRecommendFields,
+  'site.standard.graph.subscription': mapStandardSubscriptionFields,
 };
 
 // Generic entity → AT Protocol record serializer (camelCase + $type). Used by
