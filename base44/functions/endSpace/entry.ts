@@ -22,7 +22,8 @@ Deno.serve(async (req) => {
       svc.entities.SpaceParticipant.filter({ space_id: spaceId }, '-joined_at', 500),
     ]);
     if (!space) return Response.json({ error: 'Space not found' }, { status: 404 });
-    if (space.did && user.did && space.did !== user.did) {
+    const isOwner = space.created_by_id === user.id || (user.did && space.did === user.did);
+    if (!isOwner) {
       return Response.json({ error: 'Only the host can end this space' }, { status: 403 });
     }
     const listenerCount = participants.filter((p) => p.role !== 'host' && !p.left_at).length;

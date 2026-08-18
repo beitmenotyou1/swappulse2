@@ -26,7 +26,8 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole;
     const space = await svc.entities.VoiceSpace.get(spaceId);
     if (!space) return Response.json({ error: 'Space not found' }, { status: 404 });
-    if (space.did && user.did && space.did !== user.did) {
+    const isOwner = space.created_by_id === user.id || (user.did && space.did === user.did);
+    if (!isOwner) {
       return Response.json({ error: 'Only the host can start this space' }, { status: 403 });
     }
 
