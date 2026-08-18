@@ -29,7 +29,16 @@ export const SWAPPULSE_THEME = {
 // SwapPulse site URL — the publication url field. Uses the configured app URL
 // so it works in preview and production.
 function getSiteUrl(): string {
-  return Deno.env.get('WIX_CHECKOUT_APP_URL') || 'https://swappulse.org';
+  const envVal = Deno.env.get('WIX_CHECKOUT_APP_URL');
+  if (envVal) {
+    try {
+      const u = new URL(envVal);
+      const origin = `${u.protocol}//${u.host}`;
+      const allowed = new Set(['https://swappulse.org', 'https://www.swappulse.org']);
+      if (allowed.has(origin)) return origin;
+    } catch { /* ignore */ }
+  }
+  return 'https://swappulse.org';
 }
 
 // ─── Publication helpers ────────────────────────────────────────────────────

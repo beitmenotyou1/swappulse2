@@ -78,6 +78,7 @@ import Privacy from '@/pages/Privacy';
 import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
 import WellKnownStandardPublication from '@/pages/WellKnownStandardPublication';
+import JournalDetail from '@/pages/JournalDetail';
 import HashtagPage from '@/pages/HashtagPage';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
@@ -134,6 +135,7 @@ const AuthenticatedApp = () => {
         <Route path="/share" element={<Share />} />
         <Route path="/post/at/:atUri" element={<PostDetail />} />
         <Route path="/post/:postId" element={<PostDetail />} />
+        <Route path="/journal/:journalId" element={<JournalDetail />} />
         <Route path="/binders" element={<Binders />} />
         <Route path="/binder/:binderId" element={<BinderDetail />} />
         <Route path="/trust" element={<Trust />} />
