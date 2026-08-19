@@ -14,6 +14,7 @@ import TradeDisputesSection from '@/components/moderation/TradeDisputesSection';
 import AccountEnforcementSection from '@/components/moderation/AccountEnforcementSection';
 import BotAttemptsSection from '@/components/moderation/BotAttemptsSection';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_FILTERS = {
   severity: [],
@@ -25,6 +26,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function Moderation() {
+  const t = useT();
   const { user } = useAuth();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
@@ -133,27 +135,27 @@ export default function Moderation() {
     return (
       <div className="mx-auto max-w-md p-8 text-center">
         <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-        <h1 className="text-xl font-bold">Staff only</h1>
-        <p className="text-sm text-muted-foreground">The moderator dashboard is restricted to staff and administrators.</p>
+        <h1 className="text-xl font-bold">{t('mod.staffOnly')}</h1>
+        <p className="text-sm text-muted-foreground">{t('mod.staffOnlyDesc')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <PageHeader title="Moderator Dashboard" subtitle="Review flagged posts and apply moderation decisions">
+      <PageHeader title={t('mod.title')} subtitle={t('mod.subtitle')}>
         <Button variant="outline" size="sm" onClick={() => { fetchList(); fetchStats(); fetchActivity(); }}>
-          <RefreshCw className="h-4 w-4" /> Refresh
+          <RefreshCw className="h-4 w-4" /> {t('mod.refresh')}
         </Button>
       </PageHeader>
 
       <div className="mx-auto max-w-7xl space-y-4 p-4">
         <div className="flex gap-2 border-b border-border">
           {[
-            ['posts', 'Flagged Posts'],
-            ['disputes', 'Trade Disputes'],
-            ['enforcement', 'Account Enforcement'],
-            ['bots', 'Bot Protection'],
+            ['posts', t('mod.tab.flagged')],
+            ['disputes', t('mod.tab.disputes')],
+            ['enforcement', t('mod.tab.enforcement')],
+            ['bots', t('mod.tab.bots')],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -184,7 +186,7 @@ export default function Moderation() {
           aria-expanded={showFilters}
         >
           <Filter className="h-4 w-4" />
-          {showFilters ? 'Hide Filters' : 'Show Filters'}
+          {showFilters ? t('mod.hideFilters') : t('mod.showFilters')}
         </Button>
 
         <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-4">

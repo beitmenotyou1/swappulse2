@@ -21,8 +21,10 @@ import StandardSiteSection from '@/components/admin/StandardSiteSection';
 import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Admin() {
+  const t = useT();
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export default function Admin() {
       const res = await base44.functions.invoke('admin-metrics', {});
       setData(res.data);
     } catch (e) {
-      setError(e.response?.data?.error || e.message || 'Failed to load metrics');
+      setError(e.response?.data?.error || e.message || t('admin.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -49,11 +51,11 @@ export default function Admin() {
   if (user?.role !== 'admin') {
     return (
       <>
-        <PageHeader title="Admin" />
+        <PageHeader title={t('admin.title')} />
         <div className="grid place-items-center py-20 text-center">
           <ShieldAlert className="h-10 w-10 text-muted-foreground" />
-          <p className="mt-3 font-semibold">Admins only</p>
-          <p className="text-sm text-muted-foreground">You don't have access to this page.</p>
+          <p className="mt-3 font-semibold">{t('admin.adminsOnly')}</p>
+          <p className="text-sm text-muted-foreground">{t('admin.noAccess')}</p>
         </div>
       </>
     );
@@ -61,7 +63,7 @@ export default function Admin() {
 
   return (
     <>
-      <PageHeader title="Admin" subtitle="Production readiness dashboard" />
+      <PageHeader title={t('admin.title')} subtitle={t('admin.subtitle')} />
       <div className="space-y-6 p-4">
         {loading && (
           <div className="flex justify-center py-12">

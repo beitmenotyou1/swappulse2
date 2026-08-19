@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export function HelpSection({ icon: Icon, title, children, variant }) {
   const cls = variant === 'warning'
@@ -32,6 +33,7 @@ export function HelpList({ children }) {
 }
 
 export default function HelpArticle({ title, subtitle, slug, children }) {
+  const t = useT();
   useSEO({
     title: `${title} Help`,
     description: subtitle,
@@ -42,7 +44,7 @@ export default function HelpArticle({ title, subtitle, slug, children }) {
       <PageHeader title={title} subtitle={subtitle} />
       <div className="mx-auto max-w-2xl space-y-6 p-4">
         <Link to="/help" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Help Centre
+          <ArrowLeft className="h-4 w-4" /> {t('help.helpCentre')}
         </Link>
         {children}
       </div>

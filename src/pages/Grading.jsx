@@ -9,12 +9,19 @@ import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const SERVICES = { psa: 'PSA', bgs: 'BGS', cgc: 'CGC', ace: 'ACE' };
-const STATUS = {
-  submitted: { label: 'Submitted', icon: Truck, color: 'text-primary' },
-  in_progress: { label: 'In Progress', icon: Clock, color: 'text-warning' },
-  graded: { label: 'Graded', icon: Award, color: 'text-accent' },
-  returned: { label: 'Returned', icon: CheckCircle2, color: 'text-success' },
-  rejected: { label: 'Rejected', icon: Ban, color: 'text-destructive' },
+const STATUS_TKEYS = {
+  submitted: 'grading.status.submitted',
+  in_progress: 'grading.status.in_progress',
+  graded: 'grading.status.graded',
+  returned: 'grading.status.returned',
+  rejected: 'grading.status.rejected',
+};
+const STATUS_META = {
+  submitted: { icon: Truck, color: 'text-primary' },
+  in_progress: { icon: Clock, color: 'text-warning' },
+  graded: { icon: Award, color: 'text-accent' },
+  returned: { icon: CheckCircle2, color: 'text-success' },
+  rejected: { icon: Ban, color: 'text-destructive' },
 };
 const STATUS_ORDER = ['submitted', 'in_progress', 'graded', 'returned'];
 

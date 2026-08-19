@@ -169,6 +169,17 @@ const LEXICONS = [
   { nsid: 'org.swappulse.pullNomination', label: 'Pull Nomination' },
 ];
 
+const CATEGORY_TKEYS = {
+  'Collection & Catalogue': 'help.cat.collection',
+  'Trading': 'help.cat.trading',
+  'Social & Community': 'help.cat.social',
+  'Voice & Podcasts': 'help.cat.voice',
+  'Challenges & Achievements': 'help.cat.challenges',
+  'AI Assistants': 'help.cat.ai',
+  'Account & Settings': 'help.cat.account',
+  'Platform': 'help.cat.platform',
+};
+
 export default function Help() {
   const t = useT();
   useSEO({
@@ -222,11 +233,8 @@ export default function Help() {
         <div className="flex items-start gap-3 rounded-2xl border border-accent/30 bg-accent/10 p-4">
           <FlaskConical className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
           <div className="text-sm">
-            <p className="font-bold">SwapPulse is in alpha.</p>
-            <p className="text-muted-foreground">
-              We're building in the open. Features may change or be removed as we improve the site. Your feedback directly
-              shapes what we build next.
-            </p>
+            <p className="font-bold">{t('help.alpha')}</p>
+            <p className="text-muted-foreground">{t('help.alphaDesc')}</p>
           </div>
         </div>
 
@@ -237,7 +245,7 @@ export default function Help() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search help articles, features, and FAQs…"
+            placeholder={t('help.searchPlaceholder')}
             className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm outline-none focus:border-primary"
           />
         </div>
@@ -249,8 +257,8 @@ export default function Help() {
         >
           <Activity className="h-5 w-5 shrink-0 text-success" />
           <div className="flex-1">
-            <p className="text-sm font-bold">System Status</p>
-            <p className="text-xs text-muted-foreground">Check if any service is down or degraded</p>
+            <p className="text-sm font-bold">{t('help.systemStatus')}</p>
+            <p className="text-xs text-muted-foreground">{t('help.systemStatusDesc')}</p>
           </div>
           <ChevronDown className="h-4 w-4 -rotate-90 text-muted-foreground" />
         </Link>
@@ -258,14 +266,8 @@ export default function Help() {
         {/* About */}
         {!query && (
           <section>
-            <h2 className="mb-2 text-lg font-extrabold">About SwapPulse</h2>
-            <p className="text-sm text-muted-foreground">
-              SwapPulse is a social platform for Pokémon TCG collectors, track your collection, share pulls, trade with
-              trusted collectors, join circles, go live, send end-to-end encrypted messages, and follow the market. Built
-              on the AT Protocol for self-sovereign identity, powered by the TCGDex open catalogue, and kept free and
-              open-source by community support. Available in 9+ languages, switch anytime from the language switcher
-              in the navigation.
-            </p>
+            <h2 className="mb-2 text-lg font-extrabold">{t('help.about')}</h2>
+            <p className="text-sm text-muted-foreground">{t('help.aboutText')}</p>
           </section>
         )}
 
@@ -274,7 +276,7 @@ export default function Help() {
           <section>
             <div className="mb-3 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-extrabold">Guides</h2>
+              <h2 className="text-lg font-extrabold">{t('help.guides')}</h2>
             </div>
             <div className="space-y-5">
               {HELP_CATEGORIES.map((category) => {
@@ -282,7 +284,7 @@ export default function Help() {
                 if (!guides || guides.length === 0) return null;
                 return (
                   <div key={category}>
-                    <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">{category}</h3>
+                    <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">{t(CATEGORY_TKEYS[category] || category)}</h3>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {guides.map((g) => (
                         <Link
@@ -310,7 +312,7 @@ export default function Help() {
         {/* FAQ */}
         {filteredFaq.length > 0 && (
           <section>
-            <h2 className="mb-3 text-lg font-extrabold">Frequently asked questions</h2>
+            <h2 className="mb-3 text-lg font-extrabold">{t('help.faq')}</h2>
             <div className="space-y-2">
               {filteredFaq.map((item) => (
                 <details key={item.q} className="group rounded-xl border border-border bg-card p-3">
@@ -330,7 +332,7 @@ export default function Help() {
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Wrench className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-extrabold">Troubleshooting</h2>
+              <h2 className="text-lg font-extrabold">{t('help.troubleshooting')}</h2>
             </div>
             <div className="space-y-2">
               {filteredTroubleshooting.map((item) => (
@@ -351,11 +353,10 @@ export default function Help() {
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Code className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-extrabold">Lexicon Reference</h2>
+              <h2 className="text-lg font-extrabold">{t('help.lexiconRef')}</h2>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
-              SwapPulse defines {LEXICONS.length} AT Protocol record types. Each lexicon specifies the schema, validation rules,
-              and permissions for a data type.
+              {t('help.lexiconDesc').replace('{n}', LEXICONS.length)}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {filteredLexicons.map((l) => (
@@ -372,8 +373,8 @@ export default function Help() {
         {!hasResults && query && (
           <div className="rounded-xl border border-border bg-card p-8 text-center">
             <ShieldAlert className="mx-auto h-10 w-10 text-muted-foreground" />
-            <p className="mt-3 text-sm font-bold">No results for "{query}"</p>
-            <p className="text-xs text-muted-foreground">Try a different search term, or send feedback if you can't find what you need.</p>
+            <p className="mt-3 text-sm font-bold">{t('help.noResults').replace('{query}', query)}</p>
+            <p className="text-xs text-muted-foreground">{t('help.noResultsDesc')}</p>
           </div>
         )}
 
@@ -383,24 +384,21 @@ export default function Help() {
             <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
               <div className="mb-2 flex items-center gap-2">
                 <Heart className="h-5 w-5 text-primary" />
-                <h3 className="font-bold">Support SwapPulse</h3>
+                <h3 className="font-bold">{t('help.support')}</h3>
               </div>
-              <p className="mb-3 text-sm text-muted-foreground">
-                Keep every feature free and open-source. Donate any amount, it all goes back into the platform.
-              </p>
+              <p className="mb-3 text-sm text-muted-foreground">{t('help.supportDesc')}</p>
               <Link to="/donate" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-                <Heart className="h-4 w-4 fill-current" /> Donate
+                <Heart className="h-4 w-4 fill-current" /> {t('help.donate')}
               </Link>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-2 flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
-                <h3 className="font-bold">Send feedback</h3>
+                <h3 className="font-bold">{t('help.sendFeedback')}</h3>
               </div>
               <p className="mb-3 text-sm text-muted-foreground">
-                Use the <b>Feedback</b> button on the right edge of any page, it captures a snapshot and sends your note to
-                the team. Or email <a href="mailto:feedback@swappulse.org" className="text-primary underline">feedback@swappulse.org</a>.
+                {t('help.feedbackDesc')} Or email <a href="mailto:feedback@swappulse.org" className="text-primary underline">feedback@swappulse.org</a>.
               </p>
             </div>
           </section>

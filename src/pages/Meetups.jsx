@@ -9,6 +9,7 @@ import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 function MeetupCard({ m }) {
+  const t = useT();
   const when = m.scheduled_at ? new Date(m.scheduled_at) : null;
   return (
     <Link to={`/meetups/${m.id}`} className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-raised">
@@ -17,7 +18,7 @@ function MeetupCard({ m }) {
           <p className="truncate font-semibold">{m.title}</p>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
             <CalendarDays className="h-3.5 w-3.5" />
-            {when ? when.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+            {when ? when.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : t('meetup.tbd')}
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" /> {m.location_name}{m.region ? ` · ${m.region}` : ''}
@@ -31,7 +32,7 @@ function MeetupCard({ m }) {
       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {m.rsvp_count || 0} / {m.capacity || '-'}</span>
         {m.required_vouches > 0 && (
-          <span className="flex items-center gap-1 text-accent"><ShieldCheck className="h-3.5 w-3.5" /> {m.required_vouches} vouches</span>
+          <span className="flex items-center gap-1 text-accent"><ShieldCheck className="h-3.5 w-3.5" /> {m.required_vouches} {t('meetup.vouches')}</span>
         )}
       </div>
     </Link>

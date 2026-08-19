@@ -14,6 +14,7 @@ import NotificationHandler from '@/components/notifications/NotificationHandler'
 import NotificationPopupListener from '@/components/notifications/NotificationPopupListener';
 import StickyPlayerBar from '@/components/podcast/StickyPlayerBar';
 import CookieConsentBanner from '@/components/consent/CookieConsentBanner';
+import ShareButton from '@/components/share/ShareButton';
 import BotChallengeProvider from '@/lib/BotChallengeProvider';
 import { usePresence } from '@/hooks/usePresence';
 import { useApplyAccessibility } from '@/hooks/useSettings';
@@ -45,6 +46,7 @@ export default function Layout() {
         <RightSidebar online={online} />
       </div>
       <MobileNav />
+      <ShareButton />
       <CookieConsentBanner />
       <RealtimeToaster />
       <BellToaster />

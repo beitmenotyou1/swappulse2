@@ -9,11 +9,11 @@ import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const REL_LABEL = {
-  trade_partner: 'Trade Partner',
-  repeat_trader: 'Repeat Trader',
-  personal_acquaintance: 'Personal',
-  community_member: 'Community',
+const REL_TKEYS = {
+  trade_partner: 'trust.rel.trade_partner',
+  repeat_trader: 'trust.rel.repeat_trader',
+  personal_acquaintance: 'trust.rel.personal',
+  community_member: 'trust.rel.community',
 };
 
 export default function Trust() {

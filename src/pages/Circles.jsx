@@ -8,12 +8,14 @@ import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const THEME_LABEL = {
-  general: 'General', vintage: 'Vintage', competitive: 'Competitive', shiny: 'Shiny',
-  investment: 'Investment', local_region: 'Local', artist: 'Artist',
+const THEME_TKEYS = {
+  general: 'circle.theme.general', vintage: 'circle.theme.vintage', competitive: 'circle.theme.competitive', shiny: 'circle.theme.shiny',
+  investment: 'circle.theme.investment', local_region: 'circle.theme.local', artist: 'circle.theme.artist',
 };
 
 function CircleCard({ c, membership }) {
+  const t = useT();
+  const count = c.member_count || 1;
   return (
     <Link to={`/circles/${c.id}`} className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-raised">
       <div className="flex items-center gap-3">
@@ -23,14 +25,14 @@ function CircleCard({ c, membership }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{c.name}</p>
           <p className="text-xs text-muted-foreground">
-            {THEME_LABEL[c.theme] || c.theme} · {c.member_count || 1} member{(c.member_count || 1) === 1 ? '' : 's'}
+            {THEME_TKEYS[c.theme] ? t(THEME_TKEYS[c.theme]) : c.theme} · {count} {t('circle.members')}
           </p>
         </div>
         {membership === 'curator' && (
-          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary">Curator</span>
+          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary">{t('circle.curator')}</span>
         )}
         {membership === 'member' && (
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">Member</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{t('circle.member')}</span>
         )}
       </div>
       {c.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{c.description}</p>}
