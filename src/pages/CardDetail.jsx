@@ -166,19 +166,19 @@ export default function CardDetail() {
 
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               {card.hp && (
-                <div><dt className="text-muted-foreground">HP</dt><dd className="font-semibold">{card.hp}</dd></div>
+                <div><dt className="text-muted-foreground">{t('card.hp')}</dt><dd className="font-semibold">{card.hp}</dd></div>
               )}
               {card.stage && (
-                <div><dt className="text-muted-foreground">Stage</dt><dd className="font-semibold">{card.stage}</dd></div>
+                <div><dt className="text-muted-foreground">{t('card.stage')}</dt><dd className="font-semibold">{card.stage}</dd></div>
               )}
               {card.evolveFrom && (
-                <div><dt className="text-muted-foreground">Evolves from</dt><dd className="font-semibold">{card.evolveFrom}</dd></div>
+                <div><dt className="text-muted-foreground">{t('card.evolvesFrom')}</dt><dd className="font-semibold">{card.evolveFrom}</dd></div>
               )}
               {card.illustrator && (
-                <div><dt className="text-muted-foreground">Illustrator</dt><dd className="font-semibold">{card.illustrator}</dd></div>
+                <div><dt className="text-muted-foreground">{t('card.illustrator')}</dt><dd className="font-semibold">{card.illustrator}</dd></div>
               )}
               {card.retreat != null && (
-                <div><dt className="text-muted-foreground">Retreat</dt><dd className="font-semibold">{card.retreat}</dd></div>
+                <div><dt className="text-muted-foreground">{t('card.retreat')}</dt><dd className="font-semibold">{card.retreat}</dd></div>
               )}
             </dl>
 
@@ -188,7 +188,7 @@ export default function CardDetail() {
 
             {card.attacks?.length > 0 && (
               <div className="mt-4 space-y-2">
-                <h3 className="text-sm font-bold">Attacks</h3>
+                <h3 className="text-sm font-bold">{t('card.attacks')}</h3>
                 {card.attacks.map((a, i) => (
                   <div key={i} className="rounded-lg border border-border bg-secondary p-3 text-sm">
                     <div className="flex items-center justify-between">
@@ -206,7 +206,7 @@ export default function CardDetail() {
 
             {card.abilities?.length > 0 && (
               <div className="mt-4 space-y-2">
-                <h3 className="text-sm font-bold">Abilities</h3>
+                <h3 className="text-sm font-bold">{t('card.abilities')}</h3>
                 {card.abilities.map((ab, i) => (
                   <div key={i} className="rounded-lg border border-border bg-secondary p-3 text-sm">
                     <p className="font-semibold text-rarity-holo">{ab.name || ab.type}</p>
@@ -223,7 +223,7 @@ export default function CardDetail() {
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90"
           >
-            <Plus className="h-4 w-4" /> Add to Collection
+            <Plus className="h-4 w-4" /> {t('card.addToCollection')}
           </button>
           <button
             onClick={toggleWishlist}
@@ -232,32 +232,32 @@ export default function CardDetail() {
               wishlisted ? 'border border-primary/40 bg-primary/15 text-primary' : 'border border-border hover:bg-secondary'
             }`}
           >
-            <Heart className={`h-4 w-4 ${wishlisted ? 'fill-primary' : ''}`} /> Wishlist
+            <Heart className={`h-4 w-4 ${wishlisted ? 'fill-primary' : ''}`} /> {t('card.wishlist')}
           </button>
           <Link
             to="/trades"
             className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary"
           >
-            <ArrowLeftRight className="h-4 w-4" /> List for Trade
+            <ArrowLeftRight className="h-4 w-4" /> {t('card.listForTrade')}
           </Link>
           <button onClick={() => setShowAlert(true)} className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
-            <Bell className="h-4 w-4" /> Price Alert
+            <Bell className="h-4 w-4" /> {t('card.priceAlert')}
           </button>
         </div>
 
         {avg != null && (
           <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-            <h3 className="text-sm font-bold">Market Price</h3>
+            <h3 className="text-sm font-bold">{t('card.marketPrice')}</h3>
             <div className="mt-1 flex items-end gap-3">
               <span className="text-3xl font-extrabold">{formatPrice(Math.round(avg * 100))}</span>
-              <span className="mb-1 text-xs text-muted-foreground">avg market</span>
+              <span className="mb-1 text-xs text-muted-foreground">{t('card.avgMarket')}</span>
             </div>
             {pricing.trend != null && (
               <p className={`text-sm font-semibold ${pricing.trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                Trend {pricing.trend >= 0 ? '↑' : '↓'} {Math.abs(pricing.trend).toFixed(2)}
+                {pricing.trend >= 0 ? '↑' : '↓'} {Math.abs(pricing.trend).toFixed(2)}
               </p>
             )}
-            <p className="mt-1 text-xs text-muted-foreground">Source: TCGPlayer / CardMarket via TCGdex</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('card.source')}: TCGPlayer / CardMarket via TCGdex</p>
           </div>
         )}
 
@@ -270,14 +270,14 @@ export default function CardDetail() {
         </div>
 
         <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 text-sm font-bold">Variants</h3>
+          <h3 className="mb-3 text-sm font-bold">{t('card.variants')}</h3>
           <div className="flex flex-wrap gap-2">
             {[
-              ['Normal', card.variants?.normal],
-              ['Holo', card.variants?.holo],
-              ['Reverse', card.variants?.reverse],
-              ['1st Edition', card.variants?.firstEdition],
-              ['Promo', card.variants?.wPromo],
+              [t('card.normal'), card.variants?.normal],
+              [t('card.holo'), card.variants?.holo],
+              [t('card.reverse'), card.variants?.reverse],
+              [t('card.firstEdition'), card.variants?.firstEdition],
+              [t('card.promo'), card.variants?.wPromo],
             ].map(([label, available]) => (
               <span
                 key={label}
@@ -293,11 +293,11 @@ export default function CardDetail() {
 
         {card.weaknesses?.length > 0 || card.resistances?.length > 0 ? (
           <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-            <h3 className="mb-3 text-sm font-bold">Weakness & Resistance</h3>
+            <h3 className="mb-3 text-sm font-bold">{t('card.weaknessResistance')}</h3>
             <div className="flex flex-wrap gap-4 text-sm">
               {card.weaknesses?.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">Weakness</p>
+                  <p className="text-xs font-semibold text-muted-foreground">{t('card.weakness')}</p>
                   {card.weaknesses.map((w, i) => (
                     <p key={i} className="font-semibold text-destructive">{w.type} {w.value}</p>
                   ))}
@@ -305,7 +305,7 @@ export default function CardDetail() {
               )}
               {card.resistances?.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">Resistance</p>
+                  <p className="text-xs font-semibold text-muted-foreground">{t('card.resistance')}</p>
                   {card.resistances.map((r, i) => (
                     <p key={i} className="font-semibold text-success">{r.type} {r.value}</p>
                   ))}
@@ -317,11 +317,11 @@ export default function CardDetail() {
 
         {card.regulationMark && (
           <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-            <h3 className="mb-1 text-sm font-bold">Legality</h3>
+            <h3 className="mb-1 text-sm font-bold">{t('card.legality')}</h3>
             <p className="text-sm text-muted-foreground">
-              Regulation Mark <span className="font-semibold text-foreground">{card.regulationMark}</span>
-              {card.legalInStandard && <span className="ml-2 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">Standard-legal</span>}
-              {card.legalInExpanded != null && !card.legalInExpanded && <span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">Not Expanded-legal</span>}
+              {t('card.regulationMark')} <span className="font-semibold text-foreground">{card.regulationMark}</span>
+              {card.legalInStandard && <span className="ml-2 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">{t('card.standardLegal')}</span>}
+              {card.legalInExpanded != null && !card.legalInExpanded && <span className="ml-2 rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">{t('card.notExpanded')}</span>}
             </p>
           </div>
         )}
