@@ -63,7 +63,7 @@ export default function MobileNav() {
         <Link
           to="/compose"
           className="fixed bottom-20 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 transition-transform active:scale-95 md:hidden"
-          aria-label="Compose"
+          aria-label={t('page.compose.newPost')}
         >
           <Plus className="h-7 w-7" />
         </Link>
@@ -102,7 +102,7 @@ export default function MobileNav() {
           <div className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl border-t border-border bg-card p-3" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between px-1">
               <p className="text-sm font-bold">{t('nav.more')}</p>
-              <button onClick={() => setMoreOpen(false)} aria-label="Close" className="rounded-full p-1 hover:bg-secondary">
+              <button onClick={() => setMoreOpen(false)} aria-label={t('common.close')} className="rounded-full p-1 hover:bg-secondary">
                 <X className="h-5 w-5" />
               </button>
             </div>

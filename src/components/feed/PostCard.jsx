@@ -20,14 +20,16 @@ import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
 import RichText from '@/components/RichText';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const TYPE_META = {
-  pack_opening: { icon: Sparkles, label: 'Pack Pull', color: 'text-accent' },
-  trade: { icon: ArrowLeftRight, label: 'Trade', color: 'text-primary' },
-  showcase: { icon: ImageIcon, label: 'Showcase', color: 'text-rarity-holo' },
+  pack_opening: { icon: Sparkles, labelKey: 'post.type.packPull', color: 'text-accent' },
+  trade: { icon: ArrowLeftRight, labelKey: 'post.type.trade', color: 'text-primary' },
+  showcase: { icon: ImageIcon, labelKey: 'post.type.showcase', color: 'text-rarity-holo' },
 };
 
 export default function PostCard({ post, reactions, myRepost, myLike, onDelete }) {
+  const t = useT();
   const [liked, setLiked] = useState(false);
   const [likeId, setLikeId] = useState(null);
   const [pendingLike, setPendingLike] = useState(false);
@@ -175,9 +177,9 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-sm">
             {post.did ? (
-              <Link to={`/profile/${post.did}`} className="font-bold truncate hover:underline">{post.author_name || 'Collector'}</Link>
+              <Link to={`/profile/${post.did}`} className="font-bold truncate hover:underline">{post.author_name || t('common.collector')}</Link>
             ) : (
-              <span className="font-bold truncate">{post.author_name || 'Collector'}</span>
+              <span className="font-bold truncate">{post.author_name || t('common.collector')}</span>
             )}
             <ExternalIndicator did={post.did} />
             <TrustedTraderBadge did={post.did} />
@@ -186,7 +188,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <span className="text-muted-foreground">{timeAgo(post.created_date)}</span>
             {meta && (
               <span className={`ml-auto flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium ${meta.color}`}>
-                <meta.icon className="h-3 w-3" /> {meta.label}
+                <meta.icon className="h-3 w-3" /> {t(meta.labelKey)}
               </span>
             )}
           </div>
@@ -221,7 +223,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
           <div className="mt-3 flex items-center justify-between max-w-md text-muted-foreground">
             <button
               onClick={() => setShowThread((v) => !v)}
-              aria-label="Reply"
+              aria-label={t('common.reply')}
               aria-pressed={showThread}
               className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary ${showThread ? 'text-primary' : ''}`}
             >
@@ -231,7 +233,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <button
               onClick={toggleRepost}
               disabled={pendingRepost}
-              aria-label="Repost"
+              aria-label={t('common.repost')}
               aria-pressed={reposted}
               className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 disabled:opacity-50 ${reposted ? 'text-emerald-400' : ''}`}
             >
@@ -241,7 +243,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <button
               onClick={() => setQuoteOpen(true)}
               disabled={!user?.id}
-              aria-label="Quote"
+              aria-label={t('common.quote')}
               className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
             >
               <Quote className="h-4 w-4" />
@@ -249,7 +251,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <button
               onClick={toggleLike}
               disabled={pendingLike}
-              aria-label="Like"
+              aria-label={t('common.like')}
               aria-pressed={liked}
               className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50 ${liked ? 'text-red-500' : ''}`}
             >
@@ -258,20 +260,20 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             </button>
             <button
               onClick={() => setSaved(!saved)}
-              aria-label="Save"
+              aria-label={t('common.save')}
               aria-pressed={saved}
               className={`rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary ${saved ? 'text-primary' : ''}`}
             >
               <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
             </button>
-            <button aria-label="Share" className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
+            <button aria-label={t('common.share')} className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
               <Share2 className="h-4 w-4" />
             </button>
             {isAuthor && (
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                aria-label="Delete post"
+                aria-label={t('common.delete')}
                 className="rounded-full px-2 py-1 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -279,7 +281,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             )}
             <button
               onClick={() => setReportOpen(true)}
-              aria-label="Report"
+              aria-label={t('common.report')}
               className="rounded-full px-2 py-1 transition-colors hover:bg-destructive/10 hover:text-destructive"
             >
               <Flag className="h-4 w-4" />

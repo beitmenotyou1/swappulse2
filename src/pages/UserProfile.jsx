@@ -23,12 +23,14 @@ import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import RichText from '@/components/RichText';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Other-user profile. Renders the merged SwapPulse + Bluesky profile. For
 // non-members (is_member=false, remote_synced=true) it shows a prominent
 // external banner strip, hides member-only sections (reputation, friendship,
 // add-friend), and pulls the Posts tab from the federated Bluesky author feed.
 export default function UserProfile() {
+  const t = useT();
   const { did: subjectDid } = useParams();
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
@@ -120,7 +122,7 @@ export default function UserProfile() {
       )}
       <div className="px-4">
         <Link to="/" className={`${isExternal ? 'mt-2' : '-mt-10'} mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary`}>
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {t('userProfile.back')}
         </Link>
         <div className={`${isExternal ? 'mt-2' : '-mt-6'} flex items-end justify-between`}>
           <Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-background" />
@@ -171,14 +173,19 @@ export default function UserProfile() {
           )}
         </div>
         <div className="mt-4 flex overflow-x-auto border-b border-border">
-          {['Posts', 'Trades', 'Collections', 'Activity'].map((t) => (
+          {[
+            { key: 'Posts', label: t('profile.tab.posts') },
+            { key: 'Trades', label: t('profile.tab.trades') },
+            { key: 'Collections', label: t('profile.tab.collections') },
+            { key: 'Activity', label: t('profile.tab.activity') },
+          ].map((tabItem) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === t ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+              key={tabItem.key}
+              onClick={() => setTab(tabItem.key)}
+              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === tabItem.key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
             >
-              {t}
-              {tab === t && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
+              {tabItem.label}
+              {tab === tabItem.key && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
             </button>
           ))}
         </div>
@@ -187,9 +194,9 @@ export default function UserProfile() {
           {tab === 'Activity' ? (
             isExternal ? (
               <div className="py-10 text-center text-sm text-muted-foreground">
-                <p>No on-site activity, this collector posts on Bluesky.</p>
+                <p>{t('userProfile.noOnSiteActivity')}</p>
                 <a href={`https://bsky.app/profile/${subjectDid}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
-                  View on Bluesky <ExternalLink className="h-3.5 w-3.5" />
+                  {t('userProfile.viewOnBluesky')} <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
             ) : (
@@ -197,13 +204,13 @@ export default function UserProfile() {
             )
           ) : tab === 'Trades' ? (
             isExternal ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">Trade history is only available for SwapPulse members.</p>
+              <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.tradeHistoryMembers')}</p>
             ) : (
               <TradeHistoryTab did={subjectDid} />
             )
           ) : tab === 'Collections' ? (
             isExternal ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">Shared collections are only available for SwapPulse members.</p>
+              <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.sharedCollectionsMembers')}</p>
             ) : (
               <SharedCollectionsTab did={subjectDid} />
             )
@@ -211,7 +218,7 @@ export default function UserProfile() {
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : filterPosts(posts).length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              {isExternal ? 'No posts found on Bluesky.' : 'No posts yet.'}
+              {isExternal ? t('userProfile.noPostsBluesky') : t('userProfile.noPostsYet')}
             </p>
           ) : (
             filterPosts(posts).map((p) => <PostCard key={p.id} post={p} />)

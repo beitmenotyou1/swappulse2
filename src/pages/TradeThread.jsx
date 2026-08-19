@@ -14,9 +14,11 @@ import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
 import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
+  const t = useT();
   useSEO({
     title: 'Trade Thread',
     description: 'Negotiate a Pokémon TCG trade on SwapPulse, threaded trade chat with fairness scoring.',
@@ -143,11 +145,11 @@ export default function TradeThread() {
   return (
     <div>
       <PageHeader
-        title="Negotiation"
+        title={t('page.tradeThread.title')}
         subtitle={trade ? `${trade.offer_card_names?.join(', ') || '-'} → ${trade.wanted_card_names?.join(', ') || '-'}` : ''}
       >
         <Link to="/trades" className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Board
+          <ArrowLeft className="h-4 w-4" /> {t('page.tradeThread.board')}
         </Link>
       </PageHeader>
 
@@ -155,8 +157,8 @@ export default function TradeThread() {
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : !trade ? (
         <div className="px-4 py-20 text-center">
-          <p className="text-lg font-bold">Trade not found</p>
-          <Link to="/trades" className="mt-2 inline-block text-sm text-primary">Back to Trade Board</Link>
+          <p className="text-lg font-bold">{t('page.tradeThread.notFound')}</p>
+          <Link to="/trades" className="mt-2 inline-block text-sm text-primary">{t('page.tradeThread.backToBoard')}</Link>
         </div>
       ) : (
         <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>

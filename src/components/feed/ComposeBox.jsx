@@ -11,20 +11,22 @@ import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
 import { extractHashtags, canonicalise } from '@/lib/hashtags';
+import { useT } from '@/lib/i18n/I18nProvider';
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
   return Array.from(new Set(matches.map((m) => m.slice(1).toLowerCase())));
 }
 
-const POLICY_LABELS = { everybody: 'Everyone', followers: 'Followers', mentioned: 'Mentioned', nobody: 'No one' };
-const SCOPES = [
-  { key: 'public', icon: Globe, label: 'Public' },
-  { key: 'followers', icon: Users, label: 'Followers' },
-  { key: 'mentioned', icon: AtSign, label: 'Mentioned' },
+const POLICY_KEYS = ['everybody', 'followers', 'mentioned', 'nobody'];
+const SCOPE_DEFS = [
+  { key: 'public', icon: Globe, labelKey: 'compose.scope.public' },
+  { key: 'followers', icon: Users, labelKey: 'compose.scope.followers' },
+  { key: 'mentioned', icon: AtSign, labelKey: 'compose.scope.mentioned' },
 ];
 
 export default function ComposeBox({ onPosted, replyTo }) {
+  const t = useT();
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState('text');
@@ -37,9 +39,9 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [cardAltText, setCardAltText] = useState('');
 
   const typeButtons = [
-    { key: 'pack_opening', icon: Sparkles, label: 'Pack Pull' },
-    { key: 'trade', icon: ArrowLeftRight, label: 'Trade' },
-    { key: 'showcase', icon: Image, label: 'Showcase' },
+    { key: 'pack_opening', icon: Sparkles, labelKey: 'post.type.packPull' },
+    { key: 'trade', icon: ArrowLeftRight, labelKey: 'post.type.trade' },
+    { key: 'showcase', icon: Image, labelKey: 'post.type.showcase' },
   ];
 
   const handlePost = async () => {
@@ -208,7 +210,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
     <div className="border-b border-border p-4">
       {replyTo && (
         <div className="mb-3 rounded-lg border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground">
-          Replying to <span className="font-semibold text-foreground">{replyTo.author_name || 'collector'}</span>
+          {t('compose.replyingTo')} <span className="font-semibold text-foreground">{replyTo.author_name || t('common.collector')}</span>
           {replyTo.content ? `: ${replyTo.content.slice(0, 80)}${replyTo.content.length > 80 ? '...' : ''}` : ''}
         </div>
       )}
@@ -220,11 +222,11 @@ export default function ComposeBox({ onPosted, replyTo }) {
             onChange={(e) => setContent(e.target.value.slice(0, 300))}
             rows={2}
             maxLength={300}
-            placeholder={replyTo ? 'Write your reply...' : 'What did you pull today?'}
+            placeholder={replyTo ? t('compose.placeholder.reply') : t('compose.placeholder.post')}
             className="w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           />
           <div className={`text-right text-xs ${300 - content.length < 20 ? 'text-destructive' : 300 - content.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
-            {300 - content.length} left
+            {300 - content.length} {t('compose.charsLeft')}
           </div>
 
           {attachedCard && (
@@ -249,13 +251,13 @@ export default function ComposeBox({ onPosted, replyTo }) {
               </div>
               <div className="mb-3">
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Image description (alt text)
-                </label>
+                   {t('compose.altTextLabel')}
+                 </label>
                 <input
                   type="text"
                   value={cardAltText}
                   onChange={(e) => setCardAltText(e.target.value.slice(0, 300))}
-                  placeholder="Describe the card image for screen readers..."
+                  placeholder={t('compose.altTextPlaceholder')}
                   className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
@@ -264,8 +266,8 @@ export default function ComposeBox({ onPosted, replyTo }) {
 
           {!replyTo && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Who can reply:</span>
-              {Object.entries(POLICY_LABELS).map(([value, label]) => (
+              <span className="text-xs font-medium text-muted-foreground">{t('compose.whoCanReply')}</span>
+              {POLICY_KEYS.map((value) => (
                 <button
                   key={value}
                   onClick={() => setReplyPolicy(value)}
@@ -273,7 +275,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
                     replyPolicy === value ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
-                  {label}
+                  {t(`compose.policy.${value}`)}
                 </button>
               ))}
             </div>
@@ -281,17 +283,17 @@ export default function ComposeBox({ onPosted, replyTo }) {
 
           {!replyTo && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Who can see:</span>
-              {SCOPES.map((s) => (
+              <span className="text-xs font-medium text-muted-foreground">{t('compose.whoCanSee')}</span>
+              {SCOPE_DEFS.map((s) => (
                 <button
                   key={s.key}
                   onClick={() => setVisibilityScope(s.key)}
-                  title={s.label}
+                  title={t(s.labelKey)}
                   className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors ${
                     visibilityScope === s.key ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
-                  <s.icon className="h-3.5 w-3.5" /> {s.label}
+                  <s.icon className="h-3.5 w-3.5" /> {t(s.labelKey)}
                 </button>
               ))}
             </div>
@@ -303,26 +305,26 @@ export default function ComposeBox({ onPosted, replyTo }) {
                 onClick={() => setSearchOpen(true)}
                 className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
               >
-                <Image className="h-4 w-4" /> Card
+                <Image className="h-4 w-4" /> {t('compose.card')}
               </button>
               <button
                 onClick={() => setCollectionOpen(true)}
                 className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
               >
-                <FolderOpen className="h-4 w-4" /> Collection
+                <FolderOpen className="h-4 w-4" /> {t('compose.collection')}
               </button>
-              {typeButtons.map((t) => (
+              {typeButtons.map((btn) => (
                 <button
-                  key={t.key}
+                  key={btn.key}
                   onClick={() => {
-                    setPostType(t.key);
+                    setPostType(btn.key);
                     setSearchOpen(true);
                   }}
                   className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs transition-colors sm:px-3 sm:text-sm ${
-                    postType === t.key ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-secondary'
+                    postType === btn.key ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
-                  <t.icon className="h-4 w-4" /> {t.label}
+                  <btn.icon className="h-4 w-4" /> {t(btn.labelKey)}
                 </button>
               ))}
             </div>
@@ -332,7 +334,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
               className="flex items-center justify-center gap-1.5 self-end rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-40 sm:self-auto"
             >
               {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Post
+              {t('compose.post')}
             </button>
           </div>
         </div>
@@ -341,7 +343,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         onSelect={setAttachedCard}
-        title={postType === 'trade' ? 'Select card to trade' : 'Attach a card'}
+        title={postType === 'trade' ? t('compose.selectTradeCard') : t('compose.attachCard')}
       />
       <CollectionPickerModal
         open={collectionOpen}

@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Public hashtag discovery page. Reads the tag from the URL, fetches posts
 // whose canonical_tags array contains the tag, and renders them with the
@@ -12,6 +13,7 @@ import useSEO from '@/hooks/useSEO';
 // for canonical_tags, so we fetch recent posts and client-filter by tag
 // membership — sufficient for discovery with a generous limit.
 export default function HashtagPage() {
+  const t = useT();
   const { tag } = useParams();
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -112,7 +114,7 @@ export default function HashtagPage() {
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            {following ? 'Following' : 'Follow tag'}
+            {following ? t('common.following') : t('hashtag.followTag')}
           </button>
         )}
       </div>
