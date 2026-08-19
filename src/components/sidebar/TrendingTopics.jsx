@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { TrendingUp, Hash, Type, CreditCard, Loader2, Globe } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import TrendingCardPreview from '@/components/sidebar/TrendingCardPreview';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 // Common English stopwords filtered out of keyword extraction so the list
 // surfaces meaningful TCG/collector terms rather than "the", "this", "with".
@@ -166,7 +166,7 @@ function mergeLists(community, web, keyFn) {
 }
 
 export default function TrendingTopics() {
-  const t = useT();
+  const { tr } = useI18n();
   const [postsLoading, setPostsLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const [webTrends, setWebTrends] = useState({ cards: [], hashtags: [], keywords: [] });
@@ -214,7 +214,7 @@ export default function TrendingTopics() {
     return (
       <section className="rounded-2xl border border-border bg-card p-4">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-          <TrendingUp className="h-4 w-4 text-primary" /> {t('sidebar.trendingTopics')}
+          <TrendingUp className="h-4 w-4 text-primary" /> {tr('sidebar.trendingTopics')}
         </h3>
         <div className="flex justify-center py-4">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -226,19 +226,19 @@ export default function TrendingTopics() {
   if (empty) return null;
 
   const WebBadge = () => (
-    <Globe className="h-3 w-3 shrink-0 text-accent" aria-label="From the web" />
+    <Globe className="h-3 w-3 shrink-0 text-accent" aria-label={tr('common.fromWeb')} />
   );
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-        <TrendingUp className="h-4 w-4 text-primary" /> {t('sidebar.trendingTopics')}
+        <TrendingUp className="h-4 w-4 text-primary" /> {tr('sidebar.trendingTopics')}
       </h3>
 
       {cards.length > 0 && (
         <div className="mb-3">
           <p className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <CreditCard className="h-3 w-3" /> {t('sidebar.cards')}
+            <CreditCard className="h-3 w-3" /> {tr('sidebar.cardsLabel')}
           </p>
           <div className="space-y-0.5">
             {cards.map((c, i) => (
@@ -255,7 +255,7 @@ export default function TrendingTopics() {
       {hashtags.length > 0 && (
         <div className="mb-3">
           <p className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <Hash className="h-3 w-3" /> {t('sidebar.hashtags')}
+            <Hash className="h-3 w-3" /> {tr('sidebar.hashtagsLabel')}
           </p>
           <div className="space-y-0.5">
             {hashtags.map((h, i) => (
@@ -282,7 +282,7 @@ export default function TrendingTopics() {
       {keywords.length > 0 && (
         <div>
           <p className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <Type className="h-3 w-3" /> {t('sidebar.keywords')}
+            <Type className="h-3 w-3" /> {tr('sidebar.keywordsLabel')}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {keywords.map((k, i) => (

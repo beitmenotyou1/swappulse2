@@ -8,7 +8,7 @@ import TrendingTopics from '@/components/sidebar/TrendingTopics';
 import { formatPrice } from '@/lib/format';
 import { useToast } from '@/components/ui/use-toast';
 import { createBridgedFollow } from '@/lib/followBridge';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 // Compute real trending cards from live CardPricing movers (public read).
 // Returns [] when there is no meaningful price movement — the section hides.
@@ -33,7 +33,7 @@ function computeTrending(pricing) {
 
 export default function RightSidebar({ online = [] }) {
   const { toast } = useToast();
-  const t = useT();
+  const { tr } = useI18n();
   const [portfolio, setPortfolio] = useState(null);
   const [recentTrades, setRecentTrades] = useState([]);
   const [trending, setTrending] = useState([]);
@@ -80,9 +80,9 @@ export default function RightSidebar({ online = [] }) {
     try {
       await createBridgedFollow(rec.did, rec.displayName, rec.handle, rec.avatarUrl);
       setRecs((rs) => rs.filter((r) => r.did !== rec.did));
-      toast({ title: t('common.following'), description: rec.displayName || rec.handle });
+      toast({ title: tr('toast.following'), description: rec.displayName || rec.handle });
     } catch (err) {
-      toast({ title: t('sidebar.couldNotFollow'), description: err.message, variant: 'destructive' });
+      toast({ title: tr('toast.couldNotFollow'), description: err.message, variant: 'destructive' });
     } finally {
       setBusyId(null);
     }
@@ -92,22 +92,22 @@ export default function RightSidebar({ online = [] }) {
     <aside className="hidden w-80 shrink-0 flex-col gap-4 py-4 pl-2 lg:flex">
       {isAuthed && portfolio && (
         <section className="rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 text-sm font-bold">{t('sidebar.yourPortfolio')}</h3>
+          <h3 className="mb-3 text-sm font-bold">{tr('sidebar.yourPortfolio')}</h3>
           <p className="text-2xl font-extrabold">{formatPrice(portfolio.total)}</p>
-          <p className="text-xs text-muted-foreground">{portfolio.count} {t('page.collection.cardsTracked')}</p>
+          <p className="text-xs text-muted-foreground">{portfolio.count} {tr('page.collection.cardsTracked')}</p>
         </section>
       )}
 
       {recentTrades.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <ArrowLeftRight className="h-4 w-4 text-primary" /> {t('sidebar.activeTrades')}
+            <ArrowLeftRight className="h-4 w-4 text-primary" /> {tr('sidebar.activeTrades')}
           </h3>
           <div className="space-y-2">
             {recentTrades.map((trade) => (
               <Link to="/trades" key={trade.id} className="block rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary">
-                <p className="text-sm font-medium truncate">{t('sidebar.offering')} {trade.offer_card_names?.[0] || t('sidebar.cards')}</p>
-                <p className="text-xs text-muted-foreground truncate">{t('sidebar.wants')} {trade.wanted_card_names?.[0] || t('sidebar.cards')}</p>
+                <p className="text-sm font-medium truncate">{tr('sidebar.offering')} {trade.offer_card_names?.[0] || tr('sidebar.cards')}</p>
+                <p className="text-xs text-muted-foreground truncate">{tr('sidebar.wants')} {trade.wanted_card_names?.[0] || tr('sidebar.cards')}</p>
               </Link>
             ))}
           </div>
@@ -119,7 +119,7 @@ export default function RightSidebar({ online = [] }) {
       {trending.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <TrendingUp className="h-4 w-4 text-primary" /> {t('trending.title')}
+            <TrendingUp className="h-4 w-4 text-primary" /> {tr('sidebar.trendingCards')}
           </h3>
           <div className="space-y-2">
             {trending.map((c) => (
@@ -145,9 +145,9 @@ export default function RightSidebar({ online = [] }) {
         <section className="rounded-2xl border border-border bg-card p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-sm font-bold">
-              <Sparkles className="h-4 w-4 text-accent" /> {t('nav.whoToFollow')}
+              <Sparkles className="h-4 w-4 text-accent" /> {tr('page.whoToFollow.title')}
             </h3>
-            <Link to="/who-to-follow" className="text-xs font-semibold text-primary hover:underline">{t('sidebar.seeAll')}</Link>
+            <Link to="/who-to-follow" className="text-xs font-semibold text-primary hover:underline">{tr('common.viewAll')}</Link>
           </div>
           <div className="space-y-3">
             {recs.map((rec) => (
@@ -157,12 +157,12 @@ export default function RightSidebar({ online = [] }) {
                 </Link>
                 <div className="min-w-0 flex-1">
                   <Link to={`/u/${rec.handle || ''}`} className="block truncate text-sm font-semibold hover:underline">
-                    {rec.displayName || rec.handle || t('common.collector')}
-                    </Link>
-                    <p className="truncate text-xs text-muted-foreground">
-                     {rec.mutualVouchCount > 0
-                       ? `${rec.mutualVouchCount} ${rec.mutualVouchCount === 1 ? t('sidebar.mutualVouch') : t('sidebar.mutualVouches')}`
-                       : `${t('sidebar.trust')} ${Math.round(rec.trustScore || 0)}/100`}
+                    {rec.displayName || rec.handle || tr('common.collector')}
+                  </Link>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {rec.mutualVouchCount > 0
+                      ? `${rec.mutualVouchCount} ${rec.mutualVouchCount === 1 ? tr('sidebar.mutualVouch') : tr('sidebar.mutualVouches')}`
+                      : `${tr('sidebar.trustScore')} ${Math.round(rec.trustScore || 0)}/100`}
                   </p>
                 </div>
                 <button
@@ -171,7 +171,7 @@ export default function RightSidebar({ online = [] }) {
                   className="flex items-center gap-1 rounded-full bg-foreground px-3 py-1 text-xs font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {busyId === rec.did ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3" />}
-                  {t('common.follow')}
+                  {tr('common.follow')}
                 </button>
               </div>
             ))}
@@ -182,17 +182,17 @@ export default function RightSidebar({ online = [] }) {
       <TrendingTopics />
 
       <div className="mt-auto rounded-2xl px-4 py-4 text-muted-foreground">
-        <p className="text-xs font-medium">{t('sidebar.copyright')}</p>
+        <p className="text-xs font-medium">{tr('sidebar.copyright')}</p>
         <nav className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
-          <Link to="/terms" className="text-xs font-medium transition-colors hover:text-foreground">{t('nav.terms')}</Link>
-          <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-foreground">{t('nav.privacy')}</Link>
-          <Link to="/help" className="text-xs font-medium transition-colors hover:text-foreground">{t('nav.help')}</Link>
-          <Link to="/status" className="text-xs font-medium transition-colors hover:text-foreground">{t('nav.status')}</Link>
-          <Link to="/explore" className="text-xs font-medium transition-colors hover:text-foreground">{t('nav.explore')}</Link>
-          <Link to="/donate" className="text-xs font-medium transition-colors hover:text-foreground">{t('nav.donate')}</Link>
+          <Link to="/terms" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.terms')}</Link>
+          <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.privacy')}</Link>
+          <Link to="/help" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.help')}</Link>
+          <Link to="/status" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.status')}</Link>
+          <Link to="/explore" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.explore')}</Link>
+          <Link to="/donate" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.donate')}</Link>
         </nav>
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
-          {t('footer.disclaimer')}
+          {tr('footer.disclaimer')}
         </p>
       </div>
     </aside>

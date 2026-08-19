@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 // §4 Card of the Day - surfaces the biggest pricing mover from the feeds service.
 export default function CardOfTheDay() {
+  const { tr } = useI18n();
   const [featured, setFeatured] = useState(null);
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,11 +51,11 @@ export default function CardOfTheDay() {
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-xs font-semibold capitalize text-accent">
-          <Sparkles className="h-3.5 w-3.5" /> Card of the Day · {featured.dayKey}
+          <Sparkles className="h-3.5 w-3.5" /> {tr('home.cardOfTheDay')} · {featured.dayKey}
         </div>
         <p className={`truncate font-bold ${text || ''}`}>{featured.cardName}</p>
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          <TrendingUp className="h-3 w-3" /> Featured for notable price movement
+          <TrendingUp className="h-3 w-3" /> {tr('home.cardOfTheDaySub')}
         </p>
       </div>
     </Link>
