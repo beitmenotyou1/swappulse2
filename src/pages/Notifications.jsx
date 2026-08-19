@@ -9,6 +9,7 @@ import NotificationFilterTabs from '@/components/notifications/NotificationFilte
 import NotificationGroup from '@/components/notifications/NotificationGroup';
 import NotificationCard from '@/components/notifications/NotificationCard';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
 
@@ -32,6 +33,7 @@ const EMPTY_MSG = {
 };
 
 export default function Notifications() {
+  const t = useT();
   const navigate = useNavigate();
   const { items, loading, unreadCount, refresh, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState('all');
@@ -82,7 +84,7 @@ export default function Notifications() {
 
   return (
     <div>
-      <PageHeader title="Notifications" subtitle="Trade matches, price drops and activity from across SwapPulse">
+      <PageHeader title={t('page.notifications.title')} subtitle={t('page.notifications.subtitle')}>
         <div className="flex items-center gap-2">
           <button
             onClick={handleRefresh}
@@ -97,7 +99,7 @@ export default function Notifications() {
               onClick={markAllRead}
               className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-secondary"
             >
-              <CheckCheck className="h-4 w-4" /> Mark all read
+              <CheckCheck className="h-4 w-4" /> {t('page.notifications.markAllRead')}
             </button>
           )}
         </div>
@@ -110,13 +112,13 @@ export default function Notifications() {
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Bell className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-semibold">{EMPTY_MSG[filter] || 'No notifications yet'}</p>
-          <p className="text-xs text-muted-foreground">Trade matches and price alerts will show up here.</p>
+          <p className="text-sm font-semibold">{t(`page.notifications.empty.${filter}`) || t('page.notifications.empty.all')}</p>
+          <p className="text-xs text-muted-foreground">{t('page.notifications.emptySub')}</p>
         </div>
       ) : (
         <div>
-          <NotificationGroup title="Today">{today.map(renderCard)}</NotificationGroup>
-          <NotificationGroup title="Earlier">{earlier.map(renderCard)}</NotificationGroup>
+          <NotificationGroup title={t('common.today')}>{today.map(renderCard)}</NotificationGroup>
+          <NotificationGroup title={t('common.earlier')}>{earlier.map(renderCard)}</NotificationGroup>
         </div>
       )}
       <GuideFooterLink slug="notifications" />

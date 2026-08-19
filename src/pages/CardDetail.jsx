@@ -68,7 +68,7 @@ export default function CardDetail() {
   }
 
   if (!card) {
-    return <div className="py-24 text-center text-muted-foreground">Card not found.</div>;
+    return <div className="py-24 text-center text-muted-foreground">{t('card.notFound')}</div>;
   }
 
   const { key, text } = rarityClasses(card.rarity);

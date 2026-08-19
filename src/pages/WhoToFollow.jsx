@@ -11,6 +11,7 @@ import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 import BlueskyMutualsSection from '@/components/follow/BlueskyMutualsSection';
 import { createBridgedFollow } from '@/lib/followBridge';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SOURCE_LABELS = {
   trust_proximity: { label: 'Trust proximity', icon: ShieldCheck, tone: 'text-success' },
@@ -20,6 +21,7 @@ const SOURCE_LABELS = {
 };
 
 export default function WhoToFollow() {
+  const t = useT();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -121,7 +123,7 @@ export default function WhoToFollow() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <PageHeader title="Who to Follow" subtitle="Trust-based collector recommendations from your vouch graph">
+      <PageHeader title={t('page.whoToFollow.title')} subtitle={t('page.whoToFollow.subtitle')}>
         <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing || loading}>
           <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const LAST_UPDATED = '17 August 2026';
 
@@ -32,6 +33,7 @@ const SECTIONS = [
 ];
 
 export default function Terms() {
+  const t = useT();
   useSEO({
     title: 'Terms of Service',
     description: 'SwapPulse Terms of Service, account responsibilities, trading, federation, privacy, and community guidelines.',
@@ -39,7 +41,7 @@ export default function Terms() {
   });
   return (
     <>
-      <PageHeader title="Terms of Service" subtitle={`Last updated: ${LAST_UPDATED}`} />
+      <PageHeader title={t('page.terms.title')} subtitle={`Last updated: ${LAST_UPDATED}`} />
       <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="flex gap-8">
           {/* Table of contents, sticky on desktop */}

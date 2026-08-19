@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import CreateMeetupModal from '@/components/meetups/CreateMeetupModal';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function MeetupCard({ m }) {
   const when = m.scheduled_at ? new Date(m.scheduled_at) : null;
@@ -38,6 +39,7 @@ function MeetupCard({ m }) {
 }
 
 export default function Meetups() {
+  const t = useT();
   useSEO({
     title: 'Meetups',
     description: 'Organise and attend local Pokémon TCG collector meetups, swaps, and live pulls on SwapPulse.',
@@ -66,9 +68,9 @@ export default function Meetups() {
 
   return (
     <div>
-      <PageHeader title="Meetups" subtitle="Vouch-gated local collector meetups">
+      <PageHeader title={t('page.meetups.title')} subtitle={t('page.meetups.subtitle')}>
         <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> New meetup
+          <Plus className="h-4 w-4" /> {t('page.meetups.new')}
         </button>
       </PageHeader>
 
@@ -78,7 +80,7 @@ export default function Meetups() {
         ) : meetups.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <CalendarDays className="h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No meetups scheduled. Organise the first one.</p>
+            <p className="text-sm text-muted-foreground">{t('page.meetups.empty')}</p>
           </div>
         ) : (
           meetups.map((m) => <MeetupCard key={m.id} m={m} />)

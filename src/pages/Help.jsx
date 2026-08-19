@@ -10,6 +10,7 @@ import {
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
 import { HELP_GUIDES, HELP_CATEGORIES } from '@/lib/helpGuides';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FAQ = [
   {
@@ -169,6 +170,7 @@ const LEXICONS = [
 ];
 
 export default function Help() {
+  const t = useT();
   useSEO({
     title: 'Help & FAQ',
     description: 'Learn how SwapPulse works, scanning, trading, voice spaces, podcasts, direct messages, circles, challenges, and more.',
@@ -213,7 +215,7 @@ export default function Help() {
 
   return (
     <div>
-      <PageHeader title="Help & Info" subtitle="What SwapPulse does, how it works, and where to get help" />
+      <PageHeader title={t('page.help.title')} subtitle={t('page.help.subtitle')} />
 
       <div className="space-y-6 p-4">
         {/* Alpha */}

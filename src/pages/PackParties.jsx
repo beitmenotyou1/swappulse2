@@ -7,11 +7,13 @@ import Avatar from '@/components/Avatar';
 import { format, formatDistanceToNow } from 'date-fns';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // PackParties — synchronized pack-opening events. Collectors schedule or join
 // a party for a specific set, then open packs together in real time and share
 // reactions. Parties are federated to the AT Protocol for cross-instance discovery.
 export default function PackParties() {
+  const t = useT();
   useSEO({
     title: 'Pack Parties',
     description: 'Join synchronised Pokémon TCG pack-opening events on SwapPulse, open together and share reactions live.',
@@ -37,7 +39,7 @@ export default function PackParties() {
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Pack Parties" subtitle="Open packs together in real time">
+      <PageHeader title={t('page.packParties.title')} subtitle={t('page.packParties.subtitle')}>
         {user && (
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" /> New Party

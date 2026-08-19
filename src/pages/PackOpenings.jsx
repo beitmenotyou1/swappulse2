@@ -5,8 +5,10 @@ import PageHeader from '@/components/PageHeader';
 import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function PackOpenings() {
+  const t = useT();
   useSEO({
     title: 'Pack Openings',
     description: 'See the latest pack pulls from the SwapPulse community, fresh Pokémon TCG openings shared in real time.',
@@ -27,14 +29,14 @@ export default function PackOpenings() {
 
   return (
     <div>
-      <PageHeader title="Pack Openings" subtitle="Live pulls from the community" />
+      <PageHeader title={t('page.packs.title')} subtitle={t('page.packs.subtitle')} />
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : posts.length === 0 ? (
         <div className="px-4 py-20 text-center">
           <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="text-lg font-bold">No pack openings yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Share a pull from the compose box to start a thread.</p>
+          <p className="text-lg font-bold">{t('page.packs.empty')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('page.packs.emptySub')}</p>
         </div>
       ) : (
         posts.map((p) => <PostCard key={p.id} post={p} />)

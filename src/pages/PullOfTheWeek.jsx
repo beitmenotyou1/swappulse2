@@ -8,12 +8,14 @@ import { format, getISOWeek } from 'date-fns';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // PullOfTheWeek — weekly community contest where collectors nominate their best
 // card pull and vote for their favourites. Nominations are federated to the AT
 // Protocol as org.swappulse.pullNomination records so the wider network can
 // participate across SwapPulse instances.
 export default function PullOfTheWeek() {
+  const t = useT();
   useSEO({
     title: 'Pull of the Week',
     description: 'Nominate your best Pokémon TCG pull each week and vote on the community top pulls on SwapPulse.',
@@ -69,7 +71,7 @@ export default function PullOfTheWeek() {
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Pull of the Week" subtitle={`Week ${weekKey}, nominate your best pull and vote`}>
+      <PageHeader title={t('page.pullOfTheWeek.title')} subtitle={t('page.pullOfTheWeek.subtitle')}>
         {user && !showNominate && (
           <Button size="sm" onClick={() => setShowNominate(true)}>
             <Plus className="h-4 w-4" /> Nominate

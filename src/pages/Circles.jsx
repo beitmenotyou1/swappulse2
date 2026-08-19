@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import CreateCircleModal from '@/components/circles/CreateCircleModal';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const THEME_LABEL = {
   general: 'General', vintage: 'Vintage', competitive: 'Competitive', shiny: 'Shiny',
@@ -38,6 +39,7 @@ function CircleCard({ c, membership }) {
 }
 
 export default function Circles() {
+  const t = useT();
   useSEO({
     title: 'Circles',
     description: 'Join themed Pokémon TCG collector circles on SwapPulse, vintage, competitive, shiny, regional, and more.',
@@ -71,9 +73,9 @@ export default function Circles() {
 
   return (
     <div>
-      <PageHeader title="Circles" subtitle="Curated member groups with scoped trades">
+      <PageHeader title={t('page.circles.title')} subtitle={t('page.circles.subtitle')}>
         <button onClick={() => setCreateOpen(true)} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> New circle
+          <Plus className="h-4 w-4" /> {t('page.circles.new')}
         </button>
       </PageHeader>
 
@@ -84,7 +86,7 @@ export default function Circles() {
           <>
             {mine.length > 0 && (
               <section>
-                <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Your circles</h2>
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('page.circles.yourCircles')}</h2>
                 <div className="space-y-3">
                   {mine.map((c) => (
                     <CircleCard key={c.id} c={c} membership={c.isCurator ? 'curator' : 'member'} />
@@ -94,7 +96,7 @@ export default function Circles() {
             )}
             {discover.length > 0 && (
               <section>
-                <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Discover</h2>
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('page.circles.discover')}</h2>
                 <div className="space-y-3">
                   {discover.map((c) => (
                     <CircleCard key={c.id} c={c} />
@@ -105,7 +107,7 @@ export default function Circles() {
             {mine.length === 0 && discover.length === 0 && (
               <div className="flex flex-col items-center gap-2 py-16 text-center">
                 <Users className="h-10 w-10 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">No circles yet. Create the first one.</p>
+                <p className="text-sm text-muted-foreground">{t('page.circles.empty')}</p>
               </div>
             )}
           </>

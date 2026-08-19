@@ -11,6 +11,7 @@ import PageHeader from '@/components/PageHeader';
 import RecommendButton from '@/components/standard/RecommendButton';
 import SubscribeToWritingButton from '@/components/standard/SubscribeToWritingButton';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // JournalDetail — public standalone page for a single journal entry.
 // Renders the full markdown body, author info, embedded stats, tags, and the
@@ -18,6 +19,7 @@ import useSEO from '@/hooks/useSEO';
 // /journal/:journalId — the same path stored in the site.standard.document's
 // `path` field, so Bluesky link cards resolve here.
 export default function JournalDetail() {
+  const t = useT();
   const { journalId } = useParams();
   const [journal, setJournal] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function JournalDetail() {
   if (loading) {
     return (
       <div>
-        <PageHeader title="Journal" />
+        <PageHeader title={t('page.journal.title')} />
         <div className="flex justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary border-t-primary" />
         </div>
@@ -62,9 +64,9 @@ export default function JournalDetail() {
   if (error || !journal) {
     return (
       <div>
-        <PageHeader title="Journal" />
+        <PageHeader title={t('page.journal.title')} />
         <div className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">{error || 'Journal not found.'}</p>
+          <p className="text-sm text-muted-foreground">{error || t('page.journal.notFound')}</p>
           <Link to="/explore" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
             Back to Explore
           </Link>

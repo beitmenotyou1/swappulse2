@@ -7,8 +7,10 @@ import MessageThread from '@/components/messages/MessageThread';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Messages() {
+  const t = useT();
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
@@ -58,7 +60,7 @@ export default function Messages() {
 
   return (
     <div>
-      <PageHeader title="Messages" subtitle="Private chats with other collectors" />
+      <PageHeader title={t('page.messages.title')} subtitle={t('page.messages.subtitle')} />
       <div className="flex h-[calc(100vh-8rem)] overflow-hidden">
         {/* Conversation list, hidden on mobile when a thread is open */}
         <div className={`w-full border-r border-border md:w-80 lg:w-96 ${conversationId ? 'hidden md:block' : 'block'}`}>
@@ -67,8 +69,8 @@ export default function Messages() {
           ) : conversations.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-sm text-muted-foreground">
               <MessageSquare className="h-10 w-10 text-muted-foreground/50" />
-              <p>No conversations yet.</p>
-              <p>Tap Message on a collector's profile to start chatting.</p>
+              <p>{t('page.messages.empty')}</p>
+              <p>{t('page.messages.emptySub')}</p>
             </div>
           ) : (
             <ConversationList
@@ -93,7 +95,7 @@ export default function Messages() {
             <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
               <div>
                 <MessageSquare className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-                <p>Select a conversation to start chatting.</p>
+                <p>{t('page.messages.select')}</p>
               </div>
             </div>
           )}

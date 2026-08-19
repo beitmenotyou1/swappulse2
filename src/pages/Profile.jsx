@@ -29,10 +29,25 @@ import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-const TABS = ['Posts', 'Activity', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
+const TABS = [
+  { label: 'Posts', tKey: 'profile.tab.posts' },
+  { label: 'Activity', tKey: 'profile.tab.activity' },
+  { label: 'Binder', tKey: 'profile.tab.binder' },
+  { label: 'Collection', tKey: 'profile.tab.collection' },
+  { label: 'Trades', tKey: 'profile.tab.trades' },
+  { label: 'Trade Activity', tKey: 'profile.tab.tradeActivity' },
+  { label: 'Reputation', tKey: 'profile.tab.reputation' },
+  { label: 'Following', tKey: 'profile.tab.following' },
+  { label: 'Journals', tKey: 'profile.tab.journals' },
+  { label: 'Podcasts', tKey: 'profile.tab.podcasts' },
+  { label: 'Cross-Posting', tKey: 'profile.tab.crossPosting' },
+  { label: 'Privacy', tKey: 'profile.tab.privacy' },
+];
 
 export default function Profile() {
+  const t = useT();
   const { user } = useAuth();
   const [tab, setTab] = useState('Posts');
   const [posts, setPosts] = useState([]);
@@ -175,16 +190,16 @@ export default function Profile() {
         </div>
 
         <div className="mt-4 flex overflow-x-auto border-b border-border">
-          {TABS.map((t) => (
+          {TABS.map((tabItem) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === t ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+              key={tabItem.label}
+              onClick={() => setTab(tabItem.label)}
+              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === tabItem.label ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
             >
-              {t === 'Podcasts' && <Mic className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
-              {t === 'Cross-Posting' && <Share2 className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
-              {t}
-              {tab === t && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
+              {tabItem.label === 'Podcasts' && <Mic className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
+              {tabItem.label === 'Cross-Posting' && <Share2 className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
+              {t(tabItem.tKey)}
+              {tab === tabItem.label && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
             </button>
           ))}
         </div>

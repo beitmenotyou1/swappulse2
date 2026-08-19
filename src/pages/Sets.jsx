@@ -5,8 +5,10 @@ import SetChecklistManager from '@/components/sets/SetChecklistManager';
 import { Loader2 } from 'lucide-react';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Sets() {
+  const t = useT();
   useSEO({
     title: 'Set Checklists',
     description: 'Track your Pokémon TCG set completion and download printable PDF checklists on SwapPulse.',
@@ -33,9 +35,9 @@ export default function Sets() {
   if (!user) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
-        <h2 className="text-xl font-bold">Sign in to track your collection</h2>
+        <h2 className="text-xl font-bold">{t('page.sets.signIn')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          You need a SwapPulse account to manage your set checklists and download PDFs.
+          {t('page.sets.signInSub')}
         </p>
       </div>
     );
@@ -43,7 +45,7 @@ export default function Sets() {
 
   return (
     <div>
-      <PageHeader title="Set Checklists" subtitle="Track completion and download printable PDFs" />
+      <PageHeader title={t('page.sets.title')} subtitle={t('page.sets.subtitle')} />
       <div className="p-4">
         <SetChecklistManager userId={user.id} />
       </div>

@@ -4,10 +4,12 @@ import { Share2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { idbGet, idbDelete } from '@/lib/offlineDB';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Receives images shared into SwapPulse from the OS share sheet (§8.1 Share Target).
 // The service worker stores the shared file in IndexedDB 'shares' and redirects here.
 export default function Share() {
+  const t = useT();
   const [share, setShare] = useState(null);
   const [url, setUrl] = useState(null);
 
@@ -33,14 +35,14 @@ export default function Share() {
 
   return (
     <div>
-      <PageHeader title="Shared Content" subtitle="Received from another app" />
+      <PageHeader title={t('page.share.title')} subtitle={t('page.share.subtitle')} />
       <div className="p-4">
         {!share ? (
           <div className="py-16 text-center">
             <Share2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-lg font-bold">Nothing shared yet</p>
+            <p className="text-lg font-bold">{t('page.share.empty')}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Share a card photo into SwapPulse from your camera or gallery to see it here.
+              {t('page.share.emptySub')}
             </p>
           </div>
         ) : (

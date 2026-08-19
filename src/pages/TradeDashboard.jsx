@@ -5,10 +5,12 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import TradeDashboardCard from '@/components/trade/TradeDashboardCard';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const ACTIVE_STATUSES = ['open', 'negotiating', 'pending_ship'];
 
 export default function TradeDashboard() {
+  const t = useT();
   const [loading, setLoading] = useState(true);
   const [myListings, setMyListings] = useState([]);
   const [watched, setWatched] = useState([]);
@@ -52,7 +54,7 @@ export default function TradeDashboard() {
 
   return (
     <div>
-      <PageHeader title="Trade Dashboard" subtitle="Your trades at a glance" />
+      <PageHeader title={t('page.tradeDashboard.title')} subtitle={t('page.tradeDashboard.subtitle')} />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>

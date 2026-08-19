@@ -6,8 +6,10 @@ import DonationToggle from '@/components/donate/DonationToggle';
 import FiatDonationForm from '@/components/donate/FiatDonationForm';
 import CryptoDonationForm from '@/components/donate/CryptoDonationForm';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Donate() {
+  const t = useT();
   useSEO({
     title: 'Support SwapPulse',
     description: 'Donate to SwapPulse by card or cryptocurrency. Every contribution keeps the platform free and open-source.',
@@ -23,7 +25,7 @@ export default function Donate() {
           <span className="font-extrabold">SwapPulse</span>
         </Link>
         <Link to="/" className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to app
+          <ArrowLeft className="h-4 w-4" /> {t('page.donate.back')}
         </Link>
       </header>
 
@@ -33,8 +35,8 @@ export default function Donate() {
             <Heart className="h-6 w-6" />
           </span>
           <div>
-            <h1 className="text-xl font-extrabold">Support SwapPulse</h1>
-            <p className="text-sm text-muted-foreground">Keep the platform free &amp; open-source</p>
+            <h1 className="text-xl font-extrabold">{t('page.donate.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('page.donate.subtitle')}</p>
           </div>
         </div>
 

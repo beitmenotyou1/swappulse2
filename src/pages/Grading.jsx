@@ -6,6 +6,7 @@ import { formatPrice } from '@/lib/format';
 import { cardImageUrl } from '@/lib/tcgdex';
 import GradingForm from '@/components/grading/GradingForm';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SERVICES = { psa: 'PSA', bgs: 'BGS', cgc: 'CGC', ace: 'ACE' };
 const STATUS = {
@@ -20,6 +21,7 @@ const STATUS_ORDER = ['submitted', 'in_progress', 'graded', 'returned'];
 // §4 Grading submission tracker - monitor PSA/BGS/CGC/ACE submissions,
 // advance status, record the received grade.
 export default function Grading() {
+  const t = useT();
   const [items, setItems] = useState([]);
   const [collection, setCollection] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function Grading() {
 
   return (
     <div>
-      <PageHeader title="Grading Tracker" subtitle={`${items.length} submissions`}>
+      <PageHeader title={t('page.grading.title')} subtitle={t('page.grading.subtitle')}>
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"

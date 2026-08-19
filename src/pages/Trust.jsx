@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import VouchForm from '@/components/trust/VouchForm';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const REL_LABEL = {
   trade_partner: 'Trade Partner',
@@ -16,6 +17,7 @@ const REL_LABEL = {
 };
 
 export default function Trust() {
+  const t = useT();
   useSEO({
     title: 'Trust & Vouches',
     description: 'Build trading trust on SwapPulse, vouch for trade partners and view reputation profiles for safe peer-to-peer card exchange.',
@@ -101,16 +103,16 @@ export default function Trust() {
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold">Your Trust Score</p>
+                <p className="text-sm font-bold">{t('page.trust.yourScore')}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Based on incoming vouches from trusted collectors.
+                  {t('page.trust.scoreSub')}
                 </p>
                 <div className="mt-3 flex gap-2">
                   <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
-                    {profile?.vouch_count || 0} vouches
+                    {profile?.vouch_count || 0} {t('page.trust.vouches')}
                   </span>
                   <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
-                    {profile?.mutual_vouches || 0} mutual
+                    {profile?.mutual_vouches || 0} {t('page.trust.mutual')}
                   </span>
                 </div>
               </div>

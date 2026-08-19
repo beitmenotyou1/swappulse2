@@ -8,14 +8,16 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const TABS = [
-  ['active', 'Active'],
-  ['closed', 'Resolved'],
-  ['all', 'All'],
+  ['active', 'predictions.tab.active'],
+  ['closed', 'predictions.tab.closed'],
+  ['all', 'predictions.tab.all'],
 ];
 
 export default function Predictions() {
+  const t = useT();
   useSEO({
     title: 'Predictions',
     description: 'Vote on community sentiment polls and Pokémon TCG market predictions on SwapPulse.',
@@ -63,7 +65,7 @@ export default function Predictions() {
 
   return (
     <div>
-      <PageHeader title="Market Predictions" subtitle="Poll the community on where card prices are heading">
+      <PageHeader title={t('page.predictions.title')} subtitle={t('page.predictions.subtitle')}>
         <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
           <Plus className="h-4 w-4" /> New poll
         </Button>
@@ -79,7 +81,7 @@ export default function Predictions() {
                 tab === k ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
               }`}
             >
-              {l}
+              {t(l)}
             </button>
           ))}
         </div>

@@ -7,6 +7,7 @@ import {
 import { base44 } from '@/api/base44Client';
 import ServiceRow from '@/components/status/ServiceRow';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Maps health-check service keys to StatusService slugs
 const HEALTH_TO_SLUG = {
@@ -42,6 +43,7 @@ const SEVERITY_BADGE = {
 };
 
 export default function Status() {
+  const t = useT();
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState(null);
@@ -184,7 +186,7 @@ export default function Status() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight">System Status</h1>
+              <h1 className="text-xl font-extrabold tracking-tight">{t('page.status.title')}</h1>
               <p className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 {lastChecked ? `Last checked ${lastChecked.toLocaleTimeString()}` : 'Checking…'}

@@ -8,6 +8,7 @@ import EpisodeCard from '@/components/podcast/EpisodeCard';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const PLATFORM_LABEL = {
   twitch: 'Twitch',
@@ -20,11 +21,12 @@ const PLATFORM_LABEL = {
 };
 
 const TABS = [
-  { key: 'live', label: 'Live Now', Icon: Radio },
-  { key: 'recordings', label: 'Recordings', Icon: Headphones },
+  { key: 'live', tKey: 'spaces.tab.live', Icon: Radio },
+  { key: 'recordings', tKey: 'spaces.tab.recordings', Icon: Headphones },
 ];
 
 export default function VoiceSpaces() {
+  const t = useT();
   useSEO({
     title: 'Voice Spaces',
     description: 'Join live Pokémon TCG audio spaces on SwapPulse, go live with external streams or host in-platform voice rooms.',
@@ -87,23 +89,23 @@ export default function VoiceSpaces() {
 
   return (
     <div>
-      <PageHeader title="Live Streams" subtitle="Collectors streaming now - tap a live ring to join">
+      <PageHeader title={t('page.spaces.title')} subtitle={t('page.spaces.subtitle')}>
         <button
           onClick={() => setShowGoLive(true)}
           className="live-go-pulse flex items-center gap-1.5 rounded-full bg-destructive px-4 py-2 text-sm font-bold text-white"
         >
-          <Radio className="h-4 w-4" /> Go Live
+          <Radio className="h-4 w-4" /> {t('page.spaces.goLive')}
         </button>
       </PageHeader>
 
       <div className="flex border-b border-border">
-        {TABS.map(({ key, label, Icon }) => (
+        {TABS.map(({ key, tKey, Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             className={`relative flex-1 py-3 text-sm font-semibold transition-colors ${tab === key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
           >
-            <span className="flex items-center justify-center gap-1.5"><Icon className="h-4 w-4" /> {label}</span>
+            <span className="flex items-center justify-center gap-1.5"><Icon className="h-4 w-4" /> {t(tKey)}</span>
             {tab === key && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
           </button>
         ))}

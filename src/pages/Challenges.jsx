@@ -6,6 +6,7 @@ import ChallengeCard from '@/components/challenges/ChallengeCard';
 import { useAuth } from '@/lib/AuthContext';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const TABS = ['active', 'upcoming', 'completed', 'mine'];
 const FILTERS = ['all', 'collective', 'competitive', 'circle'];
@@ -20,6 +21,7 @@ function statusOf(c, now) {
 }
 
 export default function Challenges() {
+  const t = useT();
   useSEO({
     title: 'Challenges',
     description: 'Join Pokémon TCG collector challenges on SwapPulse, set completion races, pack opening contests, and community goals.',
@@ -67,11 +69,11 @@ export default function Challenges() {
 
   return (
     <div>
-      <PageHeader title="Challenges" subtitle="Cooperative community goals & opt-in leaderboards" />
+      <PageHeader title={t('page.challenges.title')} subtitle={t('page.challenges.subtitle')} />
       <div className="sticky top-[57px] z-20 space-y-2 border-b border-border bg-background/90 px-4 py-2 backdrop-blur">
         <div className="flex gap-1.5 overflow-x-auto">
-          {TABS.map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${tab === t ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/70'}`}>{t === 'mine' ? 'My Entries' : t}</button>
+          {TABS.map((tabKey) => (
+            <button key={tabKey} onClick={() => setTab(tabKey)} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${tab === tabKey ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/70'}`}>{t(`challenges.tab.${tabKey}`)}</button>
           ))}
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
@@ -86,7 +88,7 @@ export default function Challenges() {
         {challenges && visible.length === 0 && (
           <div className="py-16 text-center text-muted-foreground">
             <Target className="mx-auto mb-2 h-10 w-10 opacity-50" />
-            <p>No challenges match. Try another tab or filter.</p>
+            <p>{t('page.challenges.empty')}</p>
           </div>
         )}
         {visible.map(({ c }) => <ChallengeCard key={c.id} challenge={c} />)}

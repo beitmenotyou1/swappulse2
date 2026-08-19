@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const LAST_UPDATED = '17 August 2026';
 
@@ -30,6 +31,7 @@ const SECTIONS = [
 ];
 
 export default function Privacy() {
+  const t = useT();
   useSEO({
     title: 'Privacy Policy',
     description: 'SwapPulse Privacy Policy, data collection, AT Protocol federation, E2EE messaging, cookies, and your data rights.',
@@ -37,7 +39,7 @@ export default function Privacy() {
   });
   return (
     <>
-      <PageHeader title="Privacy Policy" subtitle={`Last updated: ${LAST_UPDATED}`} />
+      <PageHeader title={t('page.privacy.title')} subtitle={`Last updated: ${LAST_UPDATED}`} />
       <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="flex gap-8">
           {/* Table of contents, sticky on desktop */}

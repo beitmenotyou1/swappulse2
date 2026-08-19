@@ -8,8 +8,10 @@ import AchievementMedallion from '@/components/achievements/AchievementMedallion
 import ProofViewerModal from '@/components/achievements/ProofViewerModal';
 import { ACHIEVEMENT_ICONS, categoryToPillar, PILLARS } from '@/lib/achievementSpecs';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Achievements() {
+  const t = useT();
   const { toast } = useToast();
   const [records, setRecords] = useState([]);
   const [specs, setSpecs] = useState([]);
@@ -51,12 +53,12 @@ export default function Achievements() {
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       <PageHeader
-        title="Achievements"
-        subtitle="Proof-based, network-verified credentials, not participation trophies"
+        title={t('page.achievements.title')}
+        subtitle={t('page.achievements.subtitle')}
       >
         <Button variant="outline" size="sm" onClick={evaluate} disabled={evaluating || loading}>
           <RefreshCw className={`h-4 w-4 ${evaluating ? 'animate-spin' : ''}`} />
-          Re-evaluate
+          {t('page.achievements.reEvaluate')}
         </Button>
       </PageHeader>
 

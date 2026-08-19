@@ -8,6 +8,7 @@ import { TRADE_STATUS_LABELS, timeAgo } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const COLUMNS = [
   { key: 'open', label: 'Open', accent: 'border-t-success', dot: 'bg-success', badge: 'bg-success/15 text-success' },
@@ -18,6 +19,7 @@ const COLUMNS = [
 ];
 
 export default function TradeStatusBoard() {
+  const t = useT();
   useSEO({
     title: 'Trade Status Board',
     description: 'Track the status of Pokémon TCG trades on SwapPulse, open, negotiating, shipping, and completed trades.',
@@ -87,7 +89,7 @@ export default function TradeStatusBoard() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Trade Status Board" subtitle="Track all active trades by status" />
+      <PageHeader title={t('page.tradeStatusBoard.title')} subtitle={t('page.tradeStatusBoard.subtitle')} />
 
       {/* Controls */}
       <div className="flex flex-col gap-3 px-4 py-3 border-b border-border bg-card/50">
