@@ -16,8 +16,10 @@ import TrendingRail from '@/components/explore/TrendingRail';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Explore() {
+  const tr = useT();
   useSEO({
     title: 'Explore Cards',
     description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
@@ -167,26 +169,26 @@ export default function Explore() {
 
   return (
     <div>
-      <PageHeader title="Explore" subtitle="Search the Pokémon TCG catalogue" />
+      <PageHeader title={tr('page.explore.title')} subtitle={tr('page.explore.subtitle')} />
       <div className="border-b border-border p-4 space-y-3">
         <div className="flex gap-1 rounded-full bg-secondary p-1">
           <button
             onClick={() => setSearchMode('cards')}
             className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${searchMode === 'cards' ? 'bg-background text-foreground shadow-base' : 'text-muted-foreground'}`}
           >
-            Cards
+            {tr('page.explore.cards')}
           </button>
           <button
             onClick={() => setSearchMode('people')}
             className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${searchMode === 'people' ? 'bg-background text-foreground shadow-base' : 'text-muted-foreground'}`}
           >
-            People
+            {tr('page.explore.people')}
           </button>
           <button
             onClick={() => setSearchMode('posts')}
             className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${searchMode === 'posts' ? 'bg-background text-foreground shadow-base' : 'text-muted-foreground'}`}
           >
-            Posts
+            {tr('page.explore.posts')}
           </button>
         </div>
         {searchMode === 'cards' && (

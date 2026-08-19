@@ -12,8 +12,10 @@ import { bridgeTradeListing, updateBridgedTradeListing } from '@/lib/atprotoReco
 import { useToast } from "@/components/ui/use-toast";
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function TradeBoard() {
+  const tr = useT();
   useSEO({
     title: 'Trade Board',
     description: 'Browse and post open Pokémon TCG trade listings on the SwapPulse trade board, peer-to-peer card exchange.',
@@ -134,9 +136,9 @@ export default function TradeBoard() {
 
   return (
     <div>
-      <PageHeader title="Trade Board" subtitle="Open trade listings">
+      <PageHeader title={tr('page.trades.title')} subtitle={tr('page.trades.subtitle')}>
         <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> New Listing
+          <Plus className="h-4 w-4" /> {tr('page.trades.newListing')}
         </button>
       </PageHeader>
 
@@ -164,8 +166,8 @@ export default function TradeBoard() {
       ) : visibleListings.length === 0 ? (
         <div className="px-4 py-20 text-center">
           <ArrowLeftRight className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="text-lg font-bold">No active trades</p>
-          <p className="mt-1 text-sm text-muted-foreground">Create a listing to start trading.</p>
+          <p className="text-lg font-bold">{tr('page.trades.empty')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{tr('page.trades.emptySub')}</p>
         </div>
       ) : (
         <div className="p-4 space-y-3">

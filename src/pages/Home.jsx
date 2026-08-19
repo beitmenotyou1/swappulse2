@@ -211,9 +211,9 @@ export default function Home() {
 
       {!loading && user && tab === 'all' && followedCount === 0 && rarityFiltered.length > 0 && (
         <div className="mx-4 my-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-          <p className="font-semibold text-foreground">Follow collectors to personalize your feed</p>
-          <p className="mt-0.5 text-muted-foreground">You're seeing recent posts from the community. Follow collectors to see their content first.</p>
-          <Link to="/explore" className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Discover collectors</Link>
+          <p className="font-semibold text-foreground">{tr('feed.followCollectors')}</p>
+          <p className="mt-0.5 text-muted-foreground">{tr('feed.followCollectorsSub')}</p>
+          <Link to="/explore" className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">{tr('feed.discoverCollectors')}</Link>
         </div>
       )}
 
@@ -225,19 +225,19 @@ export default function Home() {
         <div className="px-4 py-20 text-center">
           {user && tab === 'all' ? (
             <>
-              <p className="text-lg font-bold">Your feed is quiet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Follow some collectors to fill your feed.</p>
-              <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Discover collectors</Link>
+              <p className="text-lg font-bold">{tr('feed.quiet')}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{tr('feed.quietSub')}</p>
+              <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{tr('feed.discoverCollectors')}</Link>
             </>
           ) : user ? (
-            <p className="text-sm text-muted-foreground">No posts in this feed yet. Check back soon!</p>
+            <p className="text-sm text-muted-foreground">{tr('feed.noPosts')}</p>
           ) : (
             <>
-              <p className="text-lg font-bold">Welcome to SwapPulse</p>
-              <p className="mt-1 text-sm text-muted-foreground">Join the decentralized social network for Pokémon TCG collectors, track your collection, trade cards, and connect with the community.</p>
+              <p className="text-lg font-bold">{tr('feed.welcome')}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{tr('feed.welcomeSub')}</p>
               <div className="mt-4 flex justify-center gap-3">
-                <Link to="/register" className="inline-flex items-center gap-1 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Create account</Link>
-                <Link to="/explore" className="inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-secondary">Explore cards</Link>
+                <Link to="/register" className="inline-flex items-center gap-1 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">{tr('feed.createAccount')}</Link>
+                <Link to="/explore" className="inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-secondary">{tr('feed.exploreCards')}</Link>
               </div>
             </>
           )}

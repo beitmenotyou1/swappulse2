@@ -7,8 +7,10 @@ import PriceAlertModal from '@/components/market/PriceAlertModal';
 import PriceAlertsList from '@/components/market/PriceAlertsList';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function MarketWatch() {
+  const tr = useT();
   useSEO({
     title: 'Market Watch',
     description: 'Track Pokémon TCG card prices, monitor your portfolio, and set price alerts on SwapPulse, the decentralized collector community.',
@@ -83,14 +85,14 @@ export default function MarketWatch() {
 
   return (
     <div>
-      <PageHeader title="Market Watch" subtitle="Track prices and your portfolio">
+      <PageHeader title={tr('page.market.title')} subtitle={tr('page.market.subtitle')}>
         <button
           onClick={runSync}
           disabled={syncing}
           className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold hover:border-primary/50 disabled:opacity-60"
         >
           {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Sync now
+          {tr('page.market.sync')}
         </button>
       </PageHeader>
       <div className="p-4 space-y-4">

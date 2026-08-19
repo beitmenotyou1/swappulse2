@@ -16,18 +16,20 @@ import BulkActionsBar from '@/components/collection/BulkActionsBar';
 import CollectionCardRow from '@/components/collection/CollectionCardRow';
 import { useToast } from "@/components/ui/use-toast";
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const TABS = [
-  { id: 'cards', label: 'All Cards', icon: LayoutGrid },
-  { id: 'completion', label: 'Completion', icon: Target },
-  { id: 'duplicates', label: 'Duplicates', icon: Layers },
-  { id: 'binder', label: 'Binder', icon: Star },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'import', label: 'Import / Export', icon: ArrowUpDown },
-  { id: 'insurance', label: 'Insurance', icon: Shield },
+  { id: 'cards', tKey: 'page.collection.tabs.cards', icon: LayoutGrid },
+  { id: 'completion', tKey: 'page.collection.tabs.completion', icon: Target },
+  { id: 'duplicates', tKey: 'page.collection.tabs.duplicates', icon: Layers },
+  { id: 'binder', tKey: 'page.collection.tabs.binder', icon: Star },
+  { id: 'analytics', tKey: 'page.collection.tabs.analytics', icon: BarChart3 },
+  { id: 'import', tKey: 'page.collection.tabs.importExport', icon: ArrowUpDown },
+  { id: 'insurance', tKey: 'page.collection.tabs.insurance', icon: Shield },
 ];
 
 export default function Collection() {
+  const tr = useT();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -171,9 +173,9 @@ export default function Collection() {
 
   return (
     <div>
-      <PageHeader title="My Collection" subtitle={`${items.length} cards tracked`}>
+      <PageHeader title={tr('page.collection.title')} subtitle={`${items.length} ${tr('page.collection.cardsTracked')}`}>
         <Link to="/explore" className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Add
+          <Plus className="h-4 w-4" /> {tr('page.collection.add')}
         </Link>
       </PageHeader>
 
@@ -191,7 +193,7 @@ export default function Collection() {
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Icon className="h-4 w-4" /> {t.label}
+              <Icon className="h-4 w-4" /> {tr(t.tKey)}
             </button>
           );
         })}
@@ -200,15 +202,15 @@ export default function Collection() {
       {/* Stat strip (always visible) */}
       <div className="grid grid-cols-3 gap-3 p-4">
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Total Value</p>
+          <p className="text-xs text-muted-foreground">{tr('page.collection.stats.totalValue')}</p>
           <p className="text-lg font-extrabold">{formatPrice(totalValue)}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Cards</p>
+          <p className="text-xs text-muted-foreground">{tr('page.collection.stats.cards')}</p>
           <p className="text-lg font-extrabold">{items.length}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Showcased</p>
+          <p className="text-xs text-muted-foreground">{tr('page.collection.stats.showcased')}</p>
           <p className="text-lg font-extrabold">{showcasedItems.length}</p>
         </div>
       </div>

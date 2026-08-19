@@ -7,8 +7,10 @@ import PageHeader from '@/components/PageHeader';
 import BinderCard from '@/components/binder/BinderCard';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Binders() {
+  const tr = useT();
   useSEO({
     title: 'Binders',
     description: 'Browse and share Pokémon TCG collector binders on SwapPulse, curated showcase grids of favourite cards.',
@@ -43,19 +45,19 @@ export default function Binders() {
 
   return (
     <div>
-      <PageHeader title="Digital Binders" subtitle="Curated showcases of prized cards">
+      <PageHeader title={tr('page.binders.title')} subtitle={tr('page.binders.subtitle')}>
         <Link
           to="/binders/new"
           className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
         >
-          <Plus className="h-4 w-4" /> New
+          <Plus className="h-4 w-4" /> {tr('page.binders.new')}
         </Link>
       </PageHeader>
 
       <div className="flex gap-2 px-4 pb-2">
         {[
-          ['mine', 'My Binders'],
-          ['discover', 'Discover'],
+          ['mine', tr('page.binders.myBinders')],
+          ['discover', tr('page.binders.discover')],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -78,19 +80,19 @@ export default function Binders() {
           <div className="py-16 text-center">
             <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="font-bold">
-              {tab === 'mine' ? 'No binders yet' : 'Nothing to discover yet'}
+              {tab === 'mine' ? tr('page.binders.empty.mine') : tr('page.binders.empty.discover')}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               {tab === 'mine'
-                ? 'Create your first digital binder.'
-                : 'Public binders from the community will appear here.'}
+                ? tr('page.binders.empty.mineSub')
+                : tr('page.binders.empty.discoverSub')}
             </p>
             {tab === 'mine' && (
               <Link
                 to="/binders/new"
                 className="mt-4 inline-block rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white"
               >
-                Create Binder
+                {tr('page.binders.create')}
               </Link>
             )}
           </div>
