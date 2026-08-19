@@ -3,7 +3,20 @@ import { base44 } from '@/api/base44Client';
 import { translations, LOCALE_TO_TCGDEX, SUPPORTED_LOCALES } from './translations';
 import { setCurrentTcgdexLang } from './currentLang';
 
-const I18nContext = createContext({ locale: 'en-GB', t: (k) => k, setLocale: () => {} });
+const I18nContext = createContext({ locale: 'en-GB', t: (k) => k, setLocale: () => {}, overrides: {} });
+
+// Map TCGDex language codes to locale codes for TranslationOverride merging
+const TCGDEX_TO_LOCALES = {
+  en: ['en-GB', 'en-US'],
+  fr: ['fr-FR'],
+  de: ['de-DE'],
+  it: ['it-IT'],
+  es: ['es-ES'],
+  pt: ['pt-BR'],
+  jp: ['ja-JP'],
+  zh: ['zh-CN'],
+  ko: ['ko-KR'],
+};
 
 function getInitialLocale() {
   // A ?lang=LOCALE query param (set by promo post links) takes priority so
@@ -34,6 +47,32 @@ function getInitialLocale() {
 
 export function I18nProvider({ children }) {
   const [locale, setLocaleState] = useState(getInitialLocale);
+  const [overrides, setOverrides] = useState({});
+
+  // Load TranslationOverride records once on mount and build a map of
+  // locale → { key → value }. Only records with a non-empty value are loaded.
+  // The merge order in t() is: static translations.js (human) > overrides (AI) > English.
+  useEffect(() => {
+    (async () => {
+      try {
+        const records = await base44.entities.TranslationOverride.list('-created_date', 5000);
+        if (!records || records.length === 0) return;
+        const map = {};
+        for (const rec of records) {
+          if (!rec.value) continue;
+          const locales = TCGDEX_TO_LOCALES[rec.language] || [];
+          for (const loc of locales) {
+            if (!map[loc]) map[loc] = {};
+            map[loc][rec.translation_key] = rec.value;
+          }
+        }
+        setOverrides(map);
+      } catch (e) {
+        // Silent fail — overrides are a progressive enhancement
+        console.error('I18nProvider: failed to load TranslationOverride', e?.message || e);
+      }
+    })();
+  }, []);
 
   const setLocale = useCallback((newLocale) => {
     if (!SUPPORTED_LOCALES.includes(newLocale)) return;
@@ -74,12 +113,15 @@ export function I18nProvider({ children }) {
   }, []);
 
   const t = useCallback((key) => {
-    const dict = translations[locale] || translations['en-GB'];
-    return dict[key] ?? translations['en-GB'][key] ?? key;
-  }, [locale]);
+    const staticDict = translations[locale] || translations['en-GB'];
+    const enDict = translations['en-GB'];
+    const overrideDict = overrides[locale];
+    // Human translation (static) wins, then AI override, then English, then key
+    return staticDict[key] ?? overrideDict?.[key] ?? enDict[key] ?? key;
+  }, [locale, overrides]);
 
   return (
-    <I18nContext.Provider value={{ locale, t, setLocale }}>
+    <I18nContext.Provider value={{ locale, t, setLocale, overrides }}>
       {children}
     </I18nContext.Provider>
   );
