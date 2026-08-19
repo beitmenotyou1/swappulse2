@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import { TRADE_STATUS_LABELS, timeAgo } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const COLUMNS = [
   { key: 'open', label: 'Open', accent: 'border-t-success', dot: 'bg-success', badge: 'bg-success/15 text-success' },
@@ -164,6 +165,7 @@ export default function TradeStatusBoard() {
           </div>
         </div>
       )}
+      <GuideFooterLink slug="trade-status-board" />
     </div>
   );
 }

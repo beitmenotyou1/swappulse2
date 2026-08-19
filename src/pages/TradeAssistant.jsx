@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const AGENT_NAME = 'trade_assistant';
 
@@ -245,6 +246,7 @@ export default function TradeAssistant() {
           )}
         </div>
       </div>
+      <GuideFooterLink slug="trade-assistant" />
     </div>
   );
 }

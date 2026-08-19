@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CreateMeetupModal from '@/components/meetups/CreateMeetupModal';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 function MeetupCard({ m }) {
   const when = m.scheduled_at ? new Date(m.scheduled_at) : null;
@@ -85,6 +86,7 @@ export default function Meetups() {
       </div>
 
       <CreateMeetupModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={load} />
+      <GuideFooterLink slug="meetups" />
     </div>
   );
 }

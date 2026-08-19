@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import TradeDashboardCard from '@/components/trade/TradeDashboardCard';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const ACTIVE_STATUSES = ['open', 'negotiating', 'pending_ship'];
 
@@ -108,6 +109,7 @@ export default function TradeDashboard() {
           </section>
         </div>
       )}
+      <GuideFooterLink slug="trade-dashboard" />
     </div>
   );
 }

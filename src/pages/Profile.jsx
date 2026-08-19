@@ -28,6 +28,7 @@ import ProfileHandle from '@/components/profile/ProfileHandle';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import RichText from '@/components/RichText';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const TABS = ['Posts', 'Activity', 'Binder', 'Collection', 'Trades', 'Trade Activity', 'Reputation', 'Following', 'Journals', 'Podcasts', 'Cross-Posting', 'Privacy'];
 
@@ -244,6 +245,7 @@ export default function Profile() {
       {showEdit && (
         <EditProfileModal onClose={() => setShowEdit(false)} onSaved={load} />
       )}
+      <GuideFooterLink slug="your-profile" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Share2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { idbGet, idbDelete } from '@/lib/offlineDB';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 // Receives images shared into SwapPulse from the OS share sheet (§8.1 Share Target).
 // The service worker stores the shared file in IndexedDB 'shares' and redirects here.
@@ -55,6 +56,7 @@ export default function Share() {
           </div>
         )}
       </div>
+      <GuideFooterLink slug="share" />
     </div>
   );
 }

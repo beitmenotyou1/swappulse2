@@ -17,6 +17,7 @@ import useSEO from '@/hooks/useSEO';
 import TrendingCardsRail from '@/components/cards/TrendingCardsRail';
 import RarityFilter from '@/components/feed/RarityFilter';
 import { useT } from '@/lib/i18n/I18nProvider';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const ALL_TABS = [
   { key: 'all', tKey: 'feed.forYou' },
@@ -249,6 +250,7 @@ export default function Home() {
         </div>
       )}
       <PushOnboardingPrompt open={showPushPrompt} onClose={() => setShowPushPrompt(false)} />
+      <GuideFooterLink slug="home-feed" />
     </div>
   );
 }

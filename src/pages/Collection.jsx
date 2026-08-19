@@ -15,6 +15,7 @@ import InsuranceExport from '@/components/collection/InsuranceExport';
 import BulkActionsBar from '@/components/collection/BulkActionsBar';
 import CollectionCardRow from '@/components/collection/CollectionCardRow';
 import { useToast } from "@/components/ui/use-toast";
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const TABS = [
   { id: 'cards', label: 'All Cards', icon: LayoutGrid },
@@ -355,6 +356,7 @@ export default function Collection() {
           </div>
         )
       )}
+      <GuideFooterLink slug="collection" />
     </div>
   );
 }

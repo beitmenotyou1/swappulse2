@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import SetChecklistManager from '@/components/sets/SetChecklistManager';
 import { Loader2 } from 'lucide-react';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Sets() {
   useSEO({
@@ -46,6 +47,7 @@ export default function Sets() {
       <div className="p-4">
         <SetChecklistManager userId={user.id} />
       </div>
+      <GuideFooterLink slug="sets" />
     </div>
   );
 }

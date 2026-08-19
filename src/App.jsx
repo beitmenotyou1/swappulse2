@@ -55,6 +55,50 @@ import Donate from '@/pages/Donate';
 import DonateThanks from '@/pages/DonateThanks';
 import FiatSuccess from '@/pages/FiatSuccess';
 import HelpDonations from '@/pages/HelpDonations';
+import HelpExplore from '@/pages/help/HelpExplore';
+import HelpCardDetail from '@/pages/help/HelpCardDetail';
+import HelpSets from '@/pages/help/HelpSets';
+import HelpCollection from '@/pages/help/HelpCollection';
+import HelpGrading from '@/pages/help/HelpGrading';
+import HelpMarketWatch from '@/pages/help/HelpMarketWatch';
+import HelpTradeBoard from '@/pages/help/HelpTradeBoard';
+import HelpTradeStatusBoard from '@/pages/help/HelpTradeStatusBoard';
+import HelpTradeThread from '@/pages/help/HelpTradeThread';
+import HelpTradeDashboard from '@/pages/help/HelpTradeDashboard';
+import HelpTrust from '@/pages/help/HelpTrust';
+import HelpHomeFeed from '@/pages/help/HelpHomeFeed';
+import HelpCompose from '@/pages/help/HelpCompose';
+import HelpPostDetail from '@/pages/help/HelpPostDetail';
+import HelpHashtags from '@/pages/help/HelpHashtags';
+import HelpProfiles from '@/pages/help/HelpProfiles';
+import HelpJournals from '@/pages/help/HelpJournals';
+import HelpBinders from '@/pages/help/HelpBinders';
+import HelpCircles from '@/pages/help/HelpCircles';
+import HelpMeetups from '@/pages/help/HelpMeetups';
+import HelpPackOpenings from '@/pages/help/HelpPackOpenings';
+import HelpPackParties from '@/pages/help/HelpPackParties';
+import HelpPullOfTheWeek from '@/pages/help/HelpPullOfTheWeek';
+import HelpPredictions from '@/pages/help/HelpPredictions';
+import HelpNotifications from '@/pages/help/HelpNotifications';
+import HelpMessages from '@/pages/help/HelpMessages';
+import HelpWhoToFollow from '@/pages/help/HelpWhoToFollow';
+import HelpShare from '@/pages/help/HelpShare';
+import HelpVoiceSpaces from '@/pages/help/HelpVoiceSpaces';
+import HelpPodcasts from '@/pages/help/HelpPodcasts';
+import HelpChallenges from '@/pages/help/HelpChallenges';
+import HelpAchievements from '@/pages/help/HelpAchievements';
+import HelpTradeAssistant from '@/pages/help/HelpTradeAssistant';
+import HelpMarketWatchAssistant from '@/pages/help/HelpMarketWatchAssistant';
+import HelpCollectionAdvisor from '@/pages/help/HelpCollectionAdvisor';
+import HelpSentimentAssistant from '@/pages/help/HelpSentimentAssistant';
+import HelpAchievementGoalTracker from '@/pages/help/HelpAchievementGoalTracker';
+import HelpNetworkingConcierge from '@/pages/help/HelpNetworkingConcierge';
+import HelpSettings from '@/pages/help/HelpSettings';
+import HelpYourProfile from '@/pages/help/HelpYourProfile';
+import HelpAccount from '@/pages/help/HelpAccount';
+import HelpStatus from '@/pages/help/HelpStatus';
+import HelpAdmin from '@/pages/help/HelpAdmin';
+import HelpModeration from '@/pages/help/HelpModeration';
 import HandleProfile from '@/pages/HandleProfile';
 import Admin from '@/pages/Admin';
 import Moderation from '@/pages/Moderation';
@@ -157,6 +201,50 @@ const AuthenticatedApp = () => {
         <Route path="/pull-of-the-week" element={<PullOfTheWeek />} />
         <Route path="/help" element={<Help />} />
         <Route path="/help/donations" element={<HelpDonations />} />
+        <Route path="/help/explore" element={<HelpExplore />} />
+        <Route path="/help/card-detail" element={<HelpCardDetail />} />
+        <Route path="/help/sets" element={<HelpSets />} />
+        <Route path="/help/collection" element={<HelpCollection />} />
+        <Route path="/help/grading" element={<HelpGrading />} />
+        <Route path="/help/market-watch" element={<HelpMarketWatch />} />
+        <Route path="/help/trade-board" element={<HelpTradeBoard />} />
+        <Route path="/help/trade-status-board" element={<HelpTradeStatusBoard />} />
+        <Route path="/help/trade-threads" element={<HelpTradeThread />} />
+        <Route path="/help/trade-dashboard" element={<HelpTradeDashboard />} />
+        <Route path="/help/trust" element={<HelpTrust />} />
+        <Route path="/help/home-feed" element={<HelpHomeFeed />} />
+        <Route path="/help/compose" element={<HelpCompose />} />
+        <Route path="/help/post-detail" element={<HelpPostDetail />} />
+        <Route path="/help/hashtags" element={<HelpHashtags />} />
+        <Route path="/help/profiles" element={<HelpProfiles />} />
+        <Route path="/help/journals" element={<HelpJournals />} />
+        <Route path="/help/binders" element={<HelpBinders />} />
+        <Route path="/help/circles" element={<HelpCircles />} />
+        <Route path="/help/meetups" element={<HelpMeetups />} />
+        <Route path="/help/pack-openings" element={<HelpPackOpenings />} />
+        <Route path="/help/pack-parties" element={<HelpPackParties />} />
+        <Route path="/help/pull-of-the-week" element={<HelpPullOfTheWeek />} />
+        <Route path="/help/predictions" element={<HelpPredictions />} />
+        <Route path="/help/notifications" element={<HelpNotifications />} />
+        <Route path="/help/messages" element={<HelpMessages />} />
+        <Route path="/help/who-to-follow" element={<HelpWhoToFollow />} />
+        <Route path="/help/share" element={<HelpShare />} />
+        <Route path="/help/voice-spaces" element={<HelpVoiceSpaces />} />
+        <Route path="/help/podcasts" element={<HelpPodcasts />} />
+        <Route path="/help/challenges" element={<HelpChallenges />} />
+        <Route path="/help/achievements" element={<HelpAchievements />} />
+        <Route path="/help/trade-assistant" element={<HelpTradeAssistant />} />
+        <Route path="/help/market-watch-assistant" element={<HelpMarketWatchAssistant />} />
+        <Route path="/help/collection-advisor" element={<HelpCollectionAdvisor />} />
+        <Route path="/help/sentiment-assistant" element={<HelpSentimentAssistant />} />
+        <Route path="/help/achievement-goal-tracker" element={<HelpAchievementGoalTracker />} />
+        <Route path="/help/networking-concierge" element={<HelpNetworkingConcierge />} />
+        <Route path="/help/settings" element={<HelpSettings />} />
+        <Route path="/help/your-profile" element={<HelpYourProfile />} />
+        <Route path="/help/account" element={<HelpAccount />} />
+        <Route path="/help/status" element={<HelpStatus />} />
+        <Route path="/help/admin" element={<HelpAdmin />} />
+        <Route path="/help/moderation" element={<HelpModeration />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />

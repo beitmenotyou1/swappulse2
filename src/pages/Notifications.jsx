@@ -8,6 +8,7 @@ import AchievementNotificationCard from '@/components/notifications/AchievementN
 import NotificationFilterTabs from '@/components/notifications/NotificationFilterTabs';
 import NotificationGroup from '@/components/notifications/NotificationGroup';
 import NotificationCard from '@/components/notifications/NotificationCard';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
 
@@ -118,6 +119,7 @@ export default function Notifications() {
           <NotificationGroup title="Earlier">{earlier.map(renderCard)}</NotificationGroup>
         </div>
       )}
+      <GuideFooterLink slug="notifications" />
     </div>
   );
 }

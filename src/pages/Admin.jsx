@@ -19,6 +19,7 @@ import DsarSummaryCard from '@/components/admin/DsarSummaryCard';
 import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection';
 import StandardSiteSection from '@/components/admin/StandardSiteSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Admin() {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ export default function Admin() {
         <StandardSiteSection />
         <SeoAuditSection />
       </div>
+      <GuideFooterLink slug="admin" />
     </>
   );
 }

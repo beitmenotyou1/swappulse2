@@ -12,6 +12,7 @@ import ChallengesSection from '@/components/settings/ChallengesSection';
 import SecuritySection from '@/components/settings/SecuritySection';
 import AtProtoSection from '@/components/settings/AtProtoSection';
 import DataPrivacyRightsSection from '@/components/settings/DataPrivacyRightsSection';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const TABS = [
   { key: 'account', label: 'Account', Icon: Shield, Comp: AccountSection },
@@ -54,6 +55,7 @@ export default function Settings() {
           <Active settings={settings} update={update} />
         )}
       </div>
+      <GuideFooterLink slug="settings" />
     </div>
   );
 }

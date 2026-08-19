@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import ComposeBox from '@/components/feed/ComposeBox';
 import PageHeader from '@/components/PageHeader';
 import BlueskyLinkPrompt from '@/components/BlueskyLinkPrompt';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Compose() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function Compose() {
       <PageHeader title={replyTo ? 'Reply' : 'New Post'} />
       <BlueskyLinkPrompt />
       <ComposeBox onPosted={() => navigate('/')} replyTo={replyTo} />
+      <GuideFooterLink slug="compose" />
     </div>
   );
 }

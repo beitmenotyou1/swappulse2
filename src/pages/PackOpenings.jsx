@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function PackOpenings() {
   useSEO({
@@ -38,6 +39,7 @@ export default function PackOpenings() {
       ) : (
         posts.map((p) => <PostCard key={p.id} post={p} />)
       )}
+      <GuideFooterLink slug="pack-openings" />
     </div>
   );
 }

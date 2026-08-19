@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import { format, getISOWeek } from 'date-fns';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 // PullOfTheWeek — weekly community contest where collectors nominate their best
 // card pull and vote for their favourites. Nominations are federated to the AT
@@ -152,6 +153,7 @@ export default function PullOfTheWeek() {
           onCreated={() => { setShowNominate(false); loadData(); }}
         />
       )}
+      <GuideFooterLink slug="pull-of-the-week" />
     </div>
   );
 }

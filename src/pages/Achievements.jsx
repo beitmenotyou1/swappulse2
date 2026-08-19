@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import AchievementMedallion from '@/components/achievements/AchievementMedallion';
 import ProofViewerModal from '@/components/achievements/ProofViewerModal';
 import { ACHIEVEMENT_ICONS, categoryToPillar, PILLARS } from '@/lib/achievementSpecs';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Achievements() {
   const { toast } = useToast();
@@ -102,6 +103,7 @@ export default function Achievements() {
           onClose={() => setSelected(null)}
         />
       )}
+      <GuideFooterLink slug="achievements" />
     </div>
   );
 }

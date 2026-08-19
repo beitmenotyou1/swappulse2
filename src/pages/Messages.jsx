@@ -6,6 +6,7 @@ import ConversationList from '@/components/messages/ConversationList';
 import MessageThread from '@/components/messages/MessageThread';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Messages() {
   const { conversationId } = useParams();
@@ -98,6 +99,7 @@ export default function Messages() {
           )}
         </div>
       </div>
+      <GuideFooterLink slug="messages" />
     </div>
   );
 }

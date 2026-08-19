@@ -13,6 +13,7 @@ import BulkActions from '@/components/moderation/BulkActions';
 import TradeDisputesSection from '@/components/moderation/TradeDisputesSection';
 import AccountEnforcementSection from '@/components/moderation/AccountEnforcementSection';
 import BotAttemptsSection from '@/components/moderation/BotAttemptsSection';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const DEFAULT_FILTERS = {
   severity: [],
@@ -212,6 +213,7 @@ export default function Moderation() {
       </div>
 
       <ReviewPanel post={selectedPost} open={!!selectedPost} onClose={() => setSelectedPost(null)} onResolve={handleResolve} resolving={resolving} />
+      <GuideFooterLink slug="moderation" />
     </div>
   );
 }

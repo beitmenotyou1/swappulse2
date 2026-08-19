@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const AGENT_NAME = 'achievement_goal_tracker';
 
@@ -259,6 +260,7 @@ export default function AchievementGoalTracker() {
           )}
         </div>
       </div>
+      <GuideFooterLink slug="achievement-goal-tracker" />
     </div>
   );
 }

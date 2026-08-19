@@ -9,37 +9,7 @@ import {
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
-
-const FEATURES = [
-  { to: '/explore', icon: Compass, label: 'Explore', desc: 'Browse the full Pokémon TCG catalogue via TCGDex, by set, rarity, or illustrator.' },
-  { to: '/scan', icon: ScanLine, label: 'Scan Cards', desc: 'Photograph a card and the AI scanner identifies it, confirm or correct the match to help the model learn.' },
-  { to: '/collection', icon: Layers, label: 'Collection', desc: 'Track every card you own, with portfolio value, set completion, duplicates, and insurance exports.' },
-  { to: '/sets', icon: Library, label: 'Sets', desc: 'Browse sets, download checklists, track set completion, and find set buddies working on the same set.' },
-  { to: '/binders', icon: BookOpen, label: 'Binders', desc: 'Curate and share showcase binders, 3×3 or 9×9 grids, drag-to-reorder, themed covers.' },
-  { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', desc: 'List cards you have and want, negotiate in threaded trade chats with fairness scoring.' },
-  { to: '/trade-dashboard', icon: LayoutDashboard, label: 'Trade Dashboard', desc: 'Manage your active trades, track shipping status, and view trade history all in one place.' },
-  { to: '/circles', icon: Users, label: 'Circles', desc: 'Join themed collector circles, vintage, competitive, shiny, regional, and more.' },
-  { to: '/meetups', icon: CalendarDays, label: 'Meetups', desc: 'Organise or attend in-person meetups, swaps, and live pulls near you.' },
-  { to: '/spaces', icon: Radio, label: 'Live Voice Spaces', desc: 'Go live with an external stream URL or host an in-platform WebRTC audio space. Record and publish as podcasts.' },
-  { to: '/packs', icon: Package, label: 'Pack Openings', desc: 'Share your pulls and follow collectors to see fresh pack openings in your feed.' },
-  { to: '/pack-parties', icon: PartyPopper, label: 'Pack Parties', desc: 'Join synchronised pack-opening events, open the same set at the same time and share reactions live.' },
-  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of the Week', desc: 'Nominate your best pull each week and vote on the community\'s top pulls.' },
-  { to: '/market', icon: BarChart3, label: 'Market Watch', desc: 'Track card prices, set price alerts, and watch market trends over time.' },
-  { to: '/predictions', icon: Vote, label: 'Predictions', desc: 'Create and vote on community sentiment polls about cards and the meta.' },
-  { to: '/grading', icon: Award, label: 'Grading', desc: 'Prepare grading submissions and review condition reports for your cards.' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust', desc: 'Build reputation through vouches and trading feedback, your trusted-trader score.' },
-  { to: '/challenges', icon: Target, label: 'Challenges', desc: 'Join community challenges, set sprints, budget decks, pull contests, and community goals.' },
-  { to: '/achievements', icon: Medal, label: 'Achievements', desc: 'Earn badges for collection milestones, trading, accuracy, and community contributions.' },
-  { to: '/messages', icon: MessageCircle, label: 'Messages', desc: 'End-to-end encrypted 1:1 direct messages with other collectors. Your keys never leave your device.' },
-  { to: '/notifications', icon: Bell, label: 'Notifications', desc: 'See likes, replies, mentions, trade matches, price alerts, and follows in one feed.' },
-  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', desc: 'Discover collectors to follow based on your collection, trades, and interests.' },
-  { to: '/trade-assistant', icon: Sparkles, label: 'AI Assistants', desc: 'Trade, market, collection, sentiment, achievement, and networking assistants powered by AI.' },
-  { to: '/settings', icon: Globe, label: 'Language Switcher', desc: 'Switch the entire interface and card catalogue between 9+ languages, English, Français, Deutsch, Español, Italiano, Português, 日本語, 中文, 한국어.' },
-  { to: '/explore', icon: LayoutDashboard, label: 'Social Card Pages', desc: 'Every card page surfaces posts, trades, reviews, and pack openings about that card from across the community.' },
-  { to: '/', icon: TrendingUp, label: 'Trending Cards', desc: 'Discover the most talked-about cards right now, ranked by community posts and activity.' },
-  { to: '/compose', icon: ImageIcon, label: 'Card Embeds in Posts', desc: 'Attach a card to your post and it renders richly on both SwapPulse and Bluesky with a deep link back.' },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings', desc: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.' },
-];
+import { HELP_GUIDES, HELP_CATEGORIES } from '@/lib/helpGuides';
 
 const FAQ = [
   {
@@ -206,11 +176,20 @@ export default function Help() {
   });
   const [query, setQuery] = useState('');
 
-  const filteredFeatures = useMemo(() => {
-    if (!query.trim()) return FEATURES;
+  const filteredGuides = useMemo(() => {
+    if (!query.trim()) return HELP_GUIDES;
     const q = query.toLowerCase();
-    return FEATURES.filter((f) => f.label.toLowerCase().includes(q) || f.desc.toLowerCase().includes(q));
+    return HELP_GUIDES.filter((g) => g.title.toLowerCase().includes(q) || g.description.toLowerCase().includes(q));
   }, [query]);
+
+  const guidesByCategory = useMemo(() => {
+    const map = {};
+    HELP_CATEGORIES.forEach((c) => { map[c] = []; });
+    filteredGuides.forEach((g) => {
+      if (map[g.category]) map[g.category].push(g);
+    });
+    return map;
+  }, [filteredGuides]);
 
   const filteredFaq = useMemo(() => {
     if (!query.trim()) return FAQ;
@@ -230,7 +209,7 @@ export default function Help() {
     return LEXICONS.filter((l) => l.nsid.toLowerCase().includes(q) || l.label.toLowerCase().includes(q));
   }, [query]);
 
-  const hasResults = filteredFeatures.length > 0 || filteredFaq.length > 0 || filteredTroubleshooting.length > 0;
+  const hasResults = filteredGuides.length > 0 || filteredFaq.length > 0 || filteredTroubleshooting.length > 0;
 
   return (
     <div>
@@ -288,26 +267,40 @@ export default function Help() {
           </section>
         )}
 
-        {/* Features */}
-        {filteredFeatures.length > 0 && (
+        {/* Guides directory */}
+        {filteredGuides.length > 0 && (
           <section>
-            <h2 className="mb-3 text-lg font-extrabold">Features</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {filteredFeatures.map((f) => (
-                <Link
-                  key={f.label}
-                  to={f.to}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary/50"
-                >
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
-                    <f.icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold">{f.label}</p>
-                    <p className="text-xs text-muted-foreground">{f.desc}</p>
+            <div className="mb-3 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-extrabold">Guides</h2>
+            </div>
+            <div className="space-y-5">
+              {HELP_CATEGORIES.map((category) => {
+                const guides = guidesByCategory[category];
+                if (!guides || guides.length === 0) return null;
+                return (
+                  <div key={category}>
+                    <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">{category}</h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {guides.map((g) => (
+                        <Link
+                          key={g.slug}
+                          to={`/help/${g.slug}`}
+                          className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary/50"
+                        >
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+                            <g.icon className="h-5 w-5" />
+                          </span>
+                          <div>
+                            <p className="text-sm font-bold">{g.title}</p>
+                            <p className="text-xs text-muted-foreground">{g.description}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}

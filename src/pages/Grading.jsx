@@ -5,6 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { formatPrice } from '@/lib/format';
 import { cardImageUrl } from '@/lib/tcgdex';
 import GradingForm from '@/components/grading/GradingForm';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const SERVICES = { psa: 'PSA', bgs: 'BGS', cgc: 'CGC', ace: 'ACE' };
 const STATUS = {
@@ -159,6 +160,7 @@ export default function Grading() {
           onSaved={(s) => { setItems((prev) => [s, ...prev]); setShowForm(false); }}
         />
       )}
+      <GuideFooterLink slug="grading" />
     </div>
   );
 }

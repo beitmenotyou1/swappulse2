@@ -14,6 +14,7 @@ import FilterPanel from '@/components/explore/FilterPanel';
 import TrendingRail from '@/components/explore/TrendingRail';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Explore() {
   useSEO({
@@ -327,6 +328,7 @@ export default function Explore() {
           </div>
         </div>
       )}
+      <GuideFooterLink slug="explore" />
     </div>
   );
 }

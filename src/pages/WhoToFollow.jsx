@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 import BlueskyMutualsSection from '@/components/follow/BlueskyMutualsSection';
 import { createBridgedFollow } from '@/lib/followBridge';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const SOURCE_LABELS = {
   trust_proximity: { label: 'Trust proximity', icon: ShieldCheck, tone: 'text-success' },
@@ -240,6 +241,7 @@ export default function WhoToFollow() {
           })
         )}
       </div>
+      <GuideFooterLink slug="who-to-follow" />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
 import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
 import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
 export default function TradeThread() {
@@ -261,6 +262,7 @@ export default function TradeThread() {
           onFiled={() => setAlreadyDisputed(true)}
         />
       )}
+      <GuideFooterLink slug="trade-threads" />
     </div>
   );
 }

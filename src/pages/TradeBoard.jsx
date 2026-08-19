@@ -11,6 +11,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { bridgeTradeListing, updateBridgedTradeListing } from '@/lib/atprotoRecords';
 import { useToast } from "@/components/ui/use-toast";
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function TradeBoard() {
   useSEO({
@@ -226,6 +227,7 @@ export default function TradeBoard() {
         onCreated={load}
         initialOffers={initialOffers}
       />
+      <GuideFooterLink slug="trade-board" />
     </div>
   );
 }

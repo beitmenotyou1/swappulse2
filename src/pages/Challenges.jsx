@@ -5,6 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import ChallengeCard from '@/components/challenges/ChallengeCard';
 import { useAuth } from '@/lib/AuthContext';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const TABS = ['active', 'upcoming', 'completed', 'mine'];
 const FILTERS = ['all', 'collective', 'competitive', 'circle'];
@@ -90,6 +91,7 @@ export default function Challenges() {
         )}
         {visible.map(({ c }) => <ChallengeCard key={c.id} challenge={c} />)}
       </div>
+      <GuideFooterLink slug="challenges" />
     </div>
   );
 }

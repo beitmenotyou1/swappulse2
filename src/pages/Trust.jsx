@@ -6,6 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import VouchForm from '@/components/trust/VouchForm';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 const REL_LABEL = {
   trade_partner: 'Trade Partner',
@@ -180,6 +181,7 @@ export default function Trust() {
           </div>
         </div>
       </div>
+      <GuideFooterLink slug="trust" />
     </div>
   );
 }

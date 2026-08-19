@@ -6,6 +6,7 @@ import { ensureUserDid } from '@/lib/atproto';
 import PageHeader from '@/components/PageHeader';
 import BinderCard from '@/components/binder/BinderCard';
 import useSEO from '@/hooks/useSEO';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 export default function Binders() {
   useSEO({
@@ -101,6 +102,7 @@ export default function Binders() {
           </div>
         )}
       </div>
+      <GuideFooterLink slug="binders" />
     </div>
   );
 }

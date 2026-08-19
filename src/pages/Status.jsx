@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ServiceRow from '@/components/status/ServiceRow';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 // Maps health-check service keys to StatusService slugs
 const HEALTH_TO_SLUG = {
@@ -388,6 +389,7 @@ export default function Status() {
           </div>
         </section>
       </div>
+      <GuideFooterLink slug="status" />
     </div>
   );
 }
