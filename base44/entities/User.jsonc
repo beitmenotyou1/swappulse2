@@ -69,6 +69,11 @@
     "signing_key": {
       "type": "string",
       "description": "Local HMAC signing key for simulated AT Protocol record signatures"
+    },
+    "locale": {
+      "type": "string",
+      "description": "Preferred interface locale (e.g. en-GB, ja-JP, zh-CN, ko-KR). Used by backend functions to send localized system emails. Set by the I18nProvider on locale change.",
+      "default": "en-GB"
     }
   },
   "required": [

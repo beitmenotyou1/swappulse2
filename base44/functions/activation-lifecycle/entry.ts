@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       const token = randomToken();
       const link = `${appUrl}/activate?token=${token}`;
       try {
-        const email = buildActivationWarningEmail(u.full_name, link);
+        const email = buildActivationWarningEmail(u.full_name, link, u.locale);
         await sendBrandedEmail({ to: u.email, ...email });
         const ts = new Date(now).toISOString();
         if (record) {

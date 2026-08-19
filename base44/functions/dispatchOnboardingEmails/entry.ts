@@ -121,13 +121,13 @@ Deno.serve(async (req) => {
       const ageDays = (now - new Date(u.created_date).getTime()) / DAY_MS;
 
       if (ageDays >= 1 && !sent.has(u.id + ":day1")) {
-        if (await send(u, "day1", buildDay1Email(u.full_name))) { day1++; sent.add(u.id + ":day1"); }
+        if (await send(u, "day1", buildDay1Email(u.full_name, u.locale))) { day1++; sent.add(u.id + ":day1"); }
       }
       if (ageDays >= 3 && !sent.has(u.id + ":day3")) {
-        if (await send(u, "day3", buildDay3Email(u.full_name, 0))) { day3++; sent.add(u.id + ":day3"); }
+        if (await send(u, "day3", buildDay3Email(u.full_name, 0, u.locale))) { day3++; sent.add(u.id + ":day3"); }
       }
       if (ageDays >= 7 && !sent.has(u.id + ":day7")) {
-        if (await send(u, "day7", buildDay7Email(u.full_name))) { day7++; sent.add(u.id + ":day7"); }
+        if (await send(u, "day7", buildDay7Email(u.full_name, u.locale))) { day7++; sent.add(u.id + ":day7"); }
       }
     }
 

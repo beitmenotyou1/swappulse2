@@ -78,7 +78,14 @@ export default async function(req) {
           const donorName = session.metadata?.donor_name || pending[0].donor_name || '';
           if (donorEmail) {
             try {
-              const email = buildDonationThankYouEmail(pending[0].amount, 'GBP', 'card', donorName);
+              // Best-effort: look up the donor's saved locale if they're a registered user.
+              let donorLocale: string | undefined;
+              try {
+                const users = await svc.entities.User.list('-created_date', 500);
+                const donor = users.find((x) => (x.email || '').toLowerCase() === donorEmail.toLowerCase());
+                donorLocale = donor?.locale;
+              } catch {}
+              const email = buildDonationThankYouEmail(pending[0].amount, 'GBP', 'card', donorName, donorLocale);
               await sendBrandedEmail({ to: donorEmail, ...email });
             } catch (e) {
               console.error('stripe-webhook: confirmation email failed', e?.message || e);

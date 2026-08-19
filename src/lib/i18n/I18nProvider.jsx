@@ -28,8 +28,9 @@ export function I18nProvider({ children }) {
     setLocaleState(newLocale);
     try { localStorage.setItem('swappulse-locale', newLocale); } catch {}
     setCurrentTcgdexLang(LOCALE_TO_TCGDEX[newLocale] || 'en');
-    // Persist to the user's account so it survives sessions/devices
-    base44.auth.updateMe({ data: { locale: newLocale } }).catch(() => {});
+    // Persist to the user's account so it survives sessions/devices and is
+    // readable by backend functions (localized system emails).
+    base44.auth.updateMe({ locale: newLocale }).catch(() => {});
   }, []);
 
   // Sync module-level TCGDex lang whenever locale changes
@@ -44,7 +45,7 @@ export function I18nProvider({ children }) {
         const authed = await base44.auth.isAuthenticated();
         if (!authed) return;
         const me = await base44.auth.me();
-        const saved = me?.data?.locale;
+        const saved = me?.locale;
         if (saved && SUPPORTED_LOCALES.includes(saved) && saved !== locale) {
           setLocaleState(saved);
           try { localStorage.setItem('swappulse-locale', saved); } catch {}

@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     const appUrl = 'https://swappulse.org';
     const link = `${appUrl}/activate?token=${record.link_token}`;
     try {
-      const email = buildActivationEmail(u.full_name, link);
+      const email = buildActivationEmail(u.full_name, link, u.locale);
       await sendBrandedEmail({ to: u.email, ...email });
     } catch (e) {
       console.error('send-activation email failed', e?.message || e);

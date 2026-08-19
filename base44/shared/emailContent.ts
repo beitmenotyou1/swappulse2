@@ -158,149 +158,174 @@ export function buildDay1Email(name: string, locale?: string) {
 }
 
 // 4. Onboarding Day 3 — "Ready to trade?"
-export function buildDay3Email(name: string, matches: number) {
+export function buildDay3Email(name: string, matches: number, locale?: string) {
+  const L = normalizeEmailLocale(locale);
+  const heading = tt(L, 'day3.heading');
+  const body = tt(L, 'day3.body', { name: name || 'collector' });
+  const subject = tt(L, 'day3.subject');
+  const cta = tt(L, 'day3.cta');
+  const footer = tt(L, 'day3.footer');
+  const negotiate = tt(L, 'day3.negotiate');
+  const matchLabel = tt(L, 'day3.match_found', { count: matches, plural: matches === 1 ? '' : 'es' });
+  const matchHint = tt(L, 'day3.match_hint');
   const banner = matches > 0
     ? `<div style="margin-bottom:20px;padding:14px 18px;border-radius:10px;background:${COLORS.gold}22;border:1px solid ${COLORS.gold}55;">
-         <div style="font-size:14px;color:${COLORS.gold};font-weight:600;">${matches} trade match${matches === 1 ? '' : 'es'} found</div>
-         <div style="font-size:13px;color:${COLORS.muted};margin-top:2px;">Someone wants what you have. Check the Trade Floor now.</div>
+         <div style="font-size:14px;color:${COLORS.gold};font-weight:600;">${esc(matchLabel)}</div>
+         <div style="font-size:13px;color:${COLORS.muted};margin-top:2px;">${esc(matchHint)}</div>
        </div>`
     : '';
   const bodyHtml = `
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">Ready to trade?</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(heading)}</h1>
     <p style="margin:0 0 24px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'collector')}, here's how trading works on SwapPulse.
+      ${esc(body)}
     </p>
     ${banner}
-    ${featureCard('trade', 'List what you have and want', 'Set visibility to public, wishlist-only, or scoped to a circle. Smart matchmaking finds matches automatically.', `${APP_URL}/trades`)}
-    ${featureCard('binder', 'Show off your binder', 'Ten pages, six slots each, six themes. Drag and drop your best pulls and publish it to the community.', `${APP_URL}/binders`)}
+    ${featureCard('trade', tt(L, 'day3.f1_title'), tt(L, 'day3.f1_desc'), `${APP_URL}/trades`)}
+    ${featureCard('binder', tt(L, 'day3.f2_title'), tt(L, 'day3.f2_desc'), `${APP_URL}/binders`)}
     <p style="margin:20px 0 0;font-size:14px;color:${COLORS.muted};line-height:1.7;">
-      When your offer matches someone's want, both parties get notified. Negotiate privately, check the fairness meter, and leave trading feedback to build your trust score.
+      ${esc(negotiate)}
     </p>`;
   return {
-    subject: 'Ready to trade? Explore the Trade Floor',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Ready to trade? Explore the Trade Floor',
-      preheader: matches > 0 ? `${matches} trade matches waiting for you` : 'How trading works on SwapPulse',
+      subject,
+      preheader: matches > 0 ? matchLabel : body,
       bodyHtml,
       ctaLink: `${APP_URL}/trades`,
-      ctaLabel: 'Open Trade Floor',
+      ctaLabel: cta,
       accentColor: COLORS.primary,
-      footerReason: "You're receiving this because you joined SwapPulse. Visit your settings to manage email preferences.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Ready to trade? Explore the Trade Floor',
+      subject,
       [
-        `Ready to trade, ${name || 'collector'}?`,
+        `${heading}, ${name || 'collector'}`,
         '',
-        ...(matches > 0 ? [`${matches} trade match${matches === 1 ? '' : 'es'} found, someone wants what you have.`, ''] : []),
-        'How trading works on SwapPulse:',
-        '  1. List what you offer and what you want (public, wishlist-only, or circle-scoped).',
-        '  2. Smart matchmaking finds matches, both parties get notified.',
-        '  3. Negotiate privately in the trade thread.',
-        '  4. Check the fairness meter to balance card values and conditions.',
-        '  5. Leave trading feedback to build your trust score.',
+        body,
+        ...(matches > 0 ? ['', matchLabel, matchHint] : []),
         '',
-        'Show off your binder, ten pages, six slots each, six themes.',
-        `  -> Binders: ${APP_URL}/binders`,
-        `  -> Trade Floor: ${APP_URL}/trades`,
+        tt(L, 'day3.f1_title'),
+        `  ${tt(L, 'day3.f1_desc')}`,
+        `  -> ${APP_URL}/trades`,
+        '',
+        tt(L, 'day3.f2_title'),
+        `  ${tt(L, 'day3.f2_desc')}`,
+        `  -> ${APP_URL}/binders`,
+        '',
+        negotiate,
       ],
       `${APP_URL}/trades`,
-      'Open Trade Floor',
+      cta,
     ),
   };
 }
 
 // 5. Onboarding Day 7 — "Level up"
-export function buildDay7Email(name: string) {
+export function buildDay7Email(name: string, locale?: string) {
+  const L = normalizeEmailLocale(locale);
+  const heading = tt(L, 'day7.heading');
+  const body = tt(L, 'day7.body', { name: name || 'collector' });
+  const subject = tt(L, 'day7.subject');
+  const cta = tt(L, 'day7.cta');
+  const footer = tt(L, 'day7.footer');
+  const bonus = tt(L, 'day7.bonus');
   const bodyHtml = `
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">Level up your experience</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(heading)}</h1>
     <p style="margin:0 0 24px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'collector')}, you've got the basics down. Here are four features most collectors haven't discovered yet.
+      ${esc(body)}
     </p>
-    ${featureCard('market', 'Market Watch', 'Track your collection value in real time, set price alerts, and vote in community sentiment polls. Pricing syncs from TCGDex every 30 minutes.', `${APP_URL}/market`)}
-    ${featureCard('journal', 'Collector Journals', 'Write long-form articles about your collecting journey, embed card stats, and tag your pieces.', `${APP_URL}/profile`)}
-    ${featureCard('meetup', 'Local Meetups', 'Find collectors near you. Meetups are trust-gated, with pre-meetup trade matching to connect you with attendees who have cards you want.', `${APP_URL}/meetups`)}
-    ${featureCard('live', 'Go Live', 'Paste your stream URL, set a duration, and go live. A red ring appears around your profile picture. Recordings can become podcast episodes.', `${APP_URL}/spaces`)}
+    ${featureCard('market', tt(L, 'day7.f1_title'), tt(L, 'day7.f1_desc'), `${APP_URL}/market`)}
+    ${featureCard('journal', tt(L, 'day7.f2_title'), tt(L, 'day7.f2_desc'), `${APP_URL}/profile`)}
+    ${featureCard('meetup', tt(L, 'day7.f3_title'), tt(L, 'day7.f3_desc'), `${APP_URL}/meetups`)}
+    ${featureCard('live', tt(L, 'day7.f4_title'), tt(L, 'day7.f4_desc'), `${APP_URL}/spaces`)}
     <p style="margin:20px 0 0;font-size:14px;color:${COLORS.muted};line-height:1.7;">
-      <strong style="color:${COLORS.gold};">Bonus:</strong> Claim a custom domain handle like @yourbrand.com via DNS verification for a verification badge and portable identity.
+      <strong style="color:${COLORS.gold};">${esc(L === 'en' ? 'Bonus:' : '')}</strong> ${esc(bonus)}
     </p>`;
   return {
-    subject: 'Level up your SwapPulse experience',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Level up your SwapPulse experience',
-      preheader: 'Four features most collectors haven\'t discovered yet, market watch, journals, meetups, go live.',
+      subject,
+      preheader: body,
       bodyHtml,
       ctaLink: `${APP_URL}/`,
-      ctaLabel: 'Explore SwapPulse',
+      ctaLabel: cta,
       accentColor: COLORS.gold,
-      footerReason: "You're receiving this because you joined SwapPulse. We'd love your feedback, hit the Feedback button in the app.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Level up your SwapPulse experience',
+      subject,
       [
-        `Go deeper, ${name || 'collector'}`,
+        `${heading}, ${name || 'collector'}`,
         '',
-        "You've got the basics down. Here are four features most collectors haven't discovered yet.",
+        body,
         '',
-        'Market Watch, track collection value, set price alerts, vote in sentiment polls.',
+        tt(L, 'day7.f1_title'),
+        `  ${tt(L, 'day7.f1_desc')}`,
         `  -> ${APP_URL}/market`,
         '',
-        'Collector Journals, write long-form articles, embed card stats, tag your pieces.',
+        tt(L, 'day7.f2_title'),
+        `  ${tt(L, 'day7.f2_desc')}`,
         `  -> ${APP_URL}/profile`,
         '',
-        'Local Meetups, find collectors near you. Trust-gated with pre-meetup trade matching.',
+        tt(L, 'day7.f3_title'),
+        `  ${tt(L, 'day7.f3_desc')}`,
         `  -> ${APP_URL}/meetups`,
         '',
-        'Go Live, paste your stream URL, set a duration, go live. Recordings become podcasts.',
+        tt(L, 'day7.f4_title'),
+        `  ${tt(L, 'day7.f4_desc')}`,
         `  -> ${APP_URL}/spaces`,
         '',
-        'Bonus: claim a custom domain handle like @yourbrand.com via DNS verification.',
-        '',
-        "We'd love your feedback, hit the Feedback button in the app.",
+        bonus,
       ],
       `${APP_URL}/`,
-      'Explore SwapPulse',
+      cta,
     ),
   };
 }
 
 // 7. Donation thank-you email (stripe-webhook / nowpayments-ipn)
-export function buildDonationThankYouEmail(amount: number, currency: string, method: string, donorName: string) {
+export function buildDonationThankYouEmail(amount: number, currency: string, method: string, donorName: string, locale?: string) {
+  const L = normalizeEmailLocale(locale);
   const cur = currency.toUpperCase();
   const symbol = cur === 'GBP' ? '£' : cur === 'USD' ? '$' : '€';
   const amt = `${symbol}${Number(amount).toFixed(2)}`;
-  const methodLabel = method === 'card' ? 'card' : 'cryptocurrency';
+  const methodLabel = method === 'card' ? tt(L, 'donation.method_card') : tt(L, 'donation.method_crypto');
+  const heading = tt(L, 'donation.heading');
+  const body = tt(L, 'donation.body', { name: donorName || 'collector', method: methodLabel, amount: amt });
+  const body2 = tt(L, 'donation.body2');
+  const subject = tt(L, 'donation.subject');
+  const cta = tt(L, 'donation.cta');
+  const footer = tt(L, 'donation.footer');
   const bodyHtml = `
-    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">Thank you for supporting SwapPulse!</h1>
+    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(heading)}</h1>
     <p style="margin:0 0 16px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(donorName || 'collector')}, we've received your ${methodLabel} donation of <strong style="color:${COLORS.gold};">${esc(amt)}</strong>. Your generosity keeps SwapPulse free and open-source for every collector.
+      ${esc(body)}
     </p>
     <p style="margin:0 0 8px;font-size:14px;color:${COLORS.muted};line-height:1.7;">
-      Every contribution goes back into hosting, the TCGDex catalogue, and the AT Protocol infrastructure that keeps your collection self-sovereign.
+      ${esc(body2)}
     </p>`;
   return {
-    subject: 'Thank you for your SwapPulse donation!',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Thank you for your SwapPulse donation!',
-      preheader: `We received your ${methodLabel} donation of ${amt}. Thank you for keeping SwapPulse free.`,
+      subject,
+      preheader: `${body} ${amt}`,
       bodyHtml,
       ctaLink: `${APP_URL}/`,
-      ctaLabel: 'Back to SwapPulse',
+      ctaLabel: cta,
       accentColor: COLORS.gold,
-      footerReason: "You're receiving this because you made a donation to SwapPulse. We don't send marketing emails.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Thank you for your SwapPulse donation!',
+      subject,
       [
-        `Hi ${donorName || 'collector'},`,
+        body,
         '',
-        `Thank you for your ${methodLabel} donation of ${amt}.`,
-        'Your generosity keeps SwapPulse free and open-source for every collector.',
+        body2,
         '',
-        "We don't send marketing emails.",
+        footer,
       ],
       `${APP_URL}/`,
-      'Back to SwapPulse',
+      cta,
     ),
   };
 }
@@ -345,7 +370,17 @@ export function buildWeeklyDigestEmail(name: string, stats: {
   openTrades: number;
   recentCards: { name: string; setValue: string }[];
   wishlist: { name: string; maxPrice?: string }[];
-}) {
+}, locale?: string) {
+  const L = normalizeEmailLocale(locale);
+  const heading = tt(L, 'digest.heading');
+  const body = tt(L, 'digest.body', { name: name || 'collector' });
+  const subject = tt(L, 'digest.subject');
+  const cta = tt(L, 'digest.cta');
+  const footer = tt(L, 'digest.footer');
+  const recentHeading = tt(L, 'digest.recent_heading');
+  const wishHeading = tt(L, 'digest.wishlist_heading');
+  const noRecent = tt(L, 'digest.no_recent');
+  const noWish = tt(L, 'digest.no_wishlist');
   const recentHtml = stats.recentCards.length > 0
     ? stats.recentCards.map((c) => `
       <tr>
@@ -354,7 +389,7 @@ export function buildWeeklyDigestEmail(name: string, stats: {
           <div style="font-size:12px;color:${COLORS.muted};">${esc(c.setValue)}</div>
         </td>
       </tr>`).join('')
-    : `<tr><td style="padding:12px 0;font-size:14px;color:${COLORS.muted};">No new cards this week.</td></tr>`;
+    : `<tr><td style="padding:12px 0;font-size:14px;color:${COLORS.muted};">${esc(noRecent)}</td></tr>`;
 
   const wishHtml = stats.wishlist.length > 0
     ? stats.wishlist.map((w) => `
@@ -364,61 +399,60 @@ export function buildWeeklyDigestEmail(name: string, stats: {
           ${w.maxPrice ? `<div style="font-size:12px;color:${COLORS.muted};">Max: ${esc(w.maxPrice)}</div>` : ''}
         </td>
       </tr>`).join('')
-    : `<tr><td style="padding:12px 0;font-size:14px;color:${COLORS.muted};">Your wishlist is empty.</td></tr>`;
+    : `<tr><td style="padding:12px 0;font-size:14px;color:${COLORS.muted};">${esc(noWish)}</td></tr>`;
 
   const bodyHtml = `
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">Your week in cards</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(heading)}</h1>
     <p style="margin:0 0 24px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'collector')}, here's your SwapPulse weekly digest.
+      ${esc(body)}
     </p>
     ${statRow([
-      { label: 'Cards', value: String(stats.cardCount), icon: 'collection' },
-      { label: 'Portfolio', value: stats.portfolioValue, icon: 'market' },
-      { label: 'Open Trades', value: String(stats.openTrades), icon: 'trade' },
+      { label: tt(L, 'digest.stat_cards'), value: String(stats.cardCount), icon: 'collection' },
+      { label: tt(L, 'digest.stat_portfolio'), value: stats.portfolioValue, icon: 'market' },
+      { label: tt(L, 'digest.stat_trades'), value: String(stats.openTrades), icon: 'trade' },
     ])}
-    <h2 style="margin:28px 0 12px;font-size:16px;font-weight:700;color:${COLORS.text};">Recently added</h2>
+    <h2 style="margin:28px 0 12px;font-size:16px;font-weight:700;color:${COLORS.text};">${esc(recentHeading)}</h2>
     <table width="100%" cellpadding="0" cellspacing="0">${recentHtml}</table>
-    <h2 style="margin:24px 0 12px;font-size:16px;font-weight:700;color:${COLORS.text};">Your wishlist</h2>
+    <h2 style="margin:24px 0 12px;font-size:16px;font-weight:700;color:${COLORS.text};">${esc(wishHeading)}</h2>
     <table width="100%" cellpadding="0" cellspacing="0">${wishHtml}</table>`;
 
   const recentText = stats.recentCards.length > 0
     ? stats.recentCards.map((c) => `  • ${c.name}, ${c.setValue}`).join('\n')
-    : '  No new cards this week.';
+    : `  ${noRecent}`;
   const wishText = stats.wishlist.length > 0
     ? stats.wishlist.map((w) => `  • ${w.name}${w.maxPrice ? ' (max ' + w.maxPrice + ')' : ''}`).join('\n')
-    : '  Your wishlist is empty.';
+    : `  ${noWish}`;
 
   return {
-    subject: 'Your SwapPulse Weekly Digest',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Your SwapPulse Weekly Digest',
-      preheader: `Cards: ${stats.cardCount} · Portfolio: ${stats.portfolioValue} · Open trades: ${stats.openTrades}`,
+      subject,
+      preheader: `${tt(L, 'digest.stat_cards')}: ${stats.cardCount} · ${tt(L, 'digest.stat_portfolio')}: ${stats.portfolioValue} · ${tt(L, 'digest.stat_trades')}: ${stats.openTrades}`,
       bodyHtml,
       ctaLink: `${APP_URL}/collection`,
-      ctaLabel: 'View Collection',
+      ctaLabel: cta,
       accentColor: COLORS.primary,
-      footerReason: "You're receiving this because you enabled the weekly digest in your SwapPulse settings. Visit your profile to turn it off any time.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Your SwapPulse Weekly Digest',
+      subject,
       [
-        `Hi ${name || 'collector'}, here's your week in cards.`,
+        body,
         '',
-        `Cards: ${stats.cardCount}`,
-        `Portfolio: ${stats.portfolioValue}`,
-        `Open Trades: ${stats.openTrades}`,
+        `${tt(L, 'digest.stat_cards')}: ${stats.cardCount}`,
+        `${tt(L, 'digest.stat_portfolio')}: ${stats.portfolioValue}`,
+        `${tt(L, 'digest.stat_trades')}: ${stats.openTrades}`,
         '',
-        'Recently added cards:',
+        recentHeading,
         recentText,
         '',
-        'Your wishlist:',
+        wishHeading,
         wishText,
         '',
-        "You're receiving this because you enabled the weekly digest in your settings.",
-        'Visit your profile to turn it off any time.',
+        footer,
       ],
       `${APP_URL}/collection`,
-      'View Collection',
+      cta,
     ),
   };
 }

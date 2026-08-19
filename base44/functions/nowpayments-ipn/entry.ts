@@ -66,7 +66,14 @@ export default async function(req) {
 
     if (status === 'finished' && record.donor_email) {
       try {
-        const email = buildDonationThankYouEmail(record.price_amount, 'USD', 'crypto', record.donor_name || '');
+        // Best-effort: look up the donor's saved locale if they're a registered user.
+        let donorLocale: string | undefined;
+        try {
+          const users = await svc.entities.User.list('-created_date', 500);
+          const donor = users.find((x) => (x.email || '').toLowerCase() === record.donor_email.toLowerCase());
+          donorLocale = donor?.locale;
+        } catch {}
+        const email = buildDonationThankYouEmail(record.price_amount, 'USD', 'crypto', record.donor_name || '', donorLocale);
         await sendBrandedEmail({ to: record.donor_email, ...email });
       } catch (e) {
         console.error('nowpayments-ipn: confirmation email failed', e?.message || e);

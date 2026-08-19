@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     // Parallelize all email sends (independent SMTP calls).
     const results = await Promise.allSettled(opted.map((u) => {
       const stats = buildDigestStats(svc, u, collectionByOwner, tradesByOwner, wishlistByOwner);
-      const email = buildWeeklyDigestEmail(u.full_name, stats);
+      const email = buildWeeklyDigestEmail(u.full_name, stats, u.locale);
       return sendBrandedEmail({ to: u.email, ...email });
     }));
     const sent = results.filter((r) => r.status === 'fulfilled').length;
