@@ -53,6 +53,8 @@ import Status from '@/pages/Status';
 import IncidentDetail from '@/pages/IncidentDetail';
 import Donate from '@/pages/Donate';
 import DonateThanks from '@/pages/DonateThanks';
+import FiatSuccess from '@/pages/FiatSuccess';
+import HelpDonations from '@/pages/HelpDonations';
 import HandleProfile from '@/pages/HandleProfile';
 import Admin from '@/pages/Admin';
 import Moderation from '@/pages/Moderation';
@@ -111,6 +113,7 @@ const AuthenticatedApp = () => {
       <Route path="/activate" element={<Activate />} />
       <Route path="/donate" element={<Donate />} />
       <Route path="/donate/thanks" element={<DonateThanks />} />
+      <Route path="/donate/fiat-success" element={<FiatSuccess />} />
       <Route path="/account-deleted" element={<AccountDeleted />} />
       <Route path="/invite/:code" element={<Invite />} />
       <Route path="/order-complete" element={<OrderComplete />} />
@@ -153,6 +156,7 @@ const AuthenticatedApp = () => {
         <Route path="/pack-parties" element={<PackParties />} />
         <Route path="/pull-of-the-week" element={<PullOfTheWeek />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/help/donations" element={<HelpDonations />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />

@@ -241,6 +241,47 @@ export function buildDay7Email(name: string) {
   };
 }
 
+// 7. Donation thank-you email (stripe-webhook / nowpayments-ipn)
+export function buildDonationThankYouEmail(amount: number, currency: string, method: string, donorName: string) {
+  const cur = currency.toUpperCase();
+  const symbol = cur === 'GBP' ? '£' : cur === 'USD' ? '$' : '€';
+  const amt = `${symbol}${Number(amount).toFixed(2)}`;
+  const methodLabel = method === 'card' ? 'card' : 'cryptocurrency';
+  const bodyHtml = `
+    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">Thank you for supporting SwapPulse!</h1>
+    <p style="margin:0 0 16px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
+      Hi ${esc(donorName || 'collector')}, we've received your ${methodLabel} donation of <strong style="color:${COLORS.gold};">${esc(amt)}</strong>. Your generosity keeps SwapPulse free and open-source for every collector.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;color:${COLORS.muted};line-height:1.7;">
+      Every contribution goes back into hosting, the TCGDex catalogue, and the AT Protocol infrastructure that keeps your collection self-sovereign.
+    </p>`;
+  return {
+    subject: 'Thank you for your SwapPulse donation!',
+    html: buildBrandedHtml({
+      subject: 'Thank you for your SwapPulse donation!',
+      preheader: `We received your ${methodLabel} donation of ${amt}. Thank you for keeping SwapPulse free.`,
+      bodyHtml,
+      ctaLink: `${APP_URL}/`,
+      ctaLabel: 'Back to SwapPulse',
+      accentColor: COLORS.gold,
+      footerReason: "You're receiving this because you made a donation to SwapPulse. We don't send marketing emails.",
+    }),
+    text: buildPlainText(
+      'Thank you for your SwapPulse donation!',
+      [
+        `Hi ${donorName || 'collector'},`,
+        '',
+        `Thank you for your ${methodLabel} donation of ${amt}.`,
+        'Your generosity keeps SwapPulse free and open-source for every collector.',
+        '',
+        "We don't send marketing emails.",
+      ],
+      `${APP_URL}/`,
+      'Back to SwapPulse',
+    ),
+  };
+}
+
 // Admin alert email — urgent branded variant for admin-only notifications.
 // Reuses buildBrandedHtml with a danger/red accent, an "ADMIN ALERT" pill
 // badge, a warning-triangle icon, and a red top border on the card.

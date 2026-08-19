@@ -42,6 +42,18 @@ export function checkBase44() {
   return { status: 'up', latencyMs: 0 };
 }
 
+export function checkStripe() {
+  const key = Deno.env.get('STRIPE_SECRET_KEY');
+  if (!key) return { status: 'down', error: 'STRIPE_SECRET_KEY not configured' };
+  return { status: 'up' };
+}
+
+export function checkNowPayments() {
+  const key = Deno.env.get('NOWPAYMENTS_API_KEY');
+  if (!key) return { status: 'down', error: 'NOWPAYMENTS_API_KEY not configured' };
+  return { status: 'up' };
+}
+
 export async function checkPodcastRss(origin: string) {
   try {
     if (!origin) throw new Error('App origin not configured');

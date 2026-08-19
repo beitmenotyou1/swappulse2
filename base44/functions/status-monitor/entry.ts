@@ -3,7 +3,7 @@
 // creates StatusUpdate records on status changes, creates/resolves incidents,
 // and notifies subscribers.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { checkTcgdex, checkDatabase, checkSmtp, checkVapid, checkBase44, checkAtProtoRelay } from '../../shared/healthChecks.ts';
+import { checkTcgdex, checkDatabase, checkSmtp, checkVapid, checkBase44, checkAtProtoRelay, checkStripe, checkNowPayments } from '../../shared/healthChecks.ts';
 import { notifyStatusSubscribers } from '../../shared/statusNotifications.ts';
 
 // Maps health-check keys to StatusService slugs
@@ -12,6 +12,8 @@ const SLUG_MAP = {
   database: 'postgresql',
   tcgdex: 'tcgdex-api',
   'atproto-relay': 'atproto-relay',
+  stripe: 'stripe-api',
+  nowpayments: 'nowpayments-api',
 };
 
 const SERVICE_NAMES = {
@@ -19,6 +21,8 @@ const SERVICE_NAMES = {
   'postgresql': 'PostgreSQL Database',
   'tcgdex-api': 'TCGDex API',
   'atproto-relay': 'AT Protocol Relay (Firehose)',
+  'stripe-api': 'Stripe API',
+  'nowpayments-api': 'NowPayments API',
 };
 
 function slugify(text) {
@@ -47,6 +51,8 @@ export default async function(req) {
       'atproto-relay': relay,
       smtp: checkSmtp(),
       vapid: checkVapid(),
+      stripe: checkStripe(),
+      nowpayments: checkNowPayments(),
     };
 
     // Parallelize the two independent initial fetches.

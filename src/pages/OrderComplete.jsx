@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 
-// Public order-confirmation page — the Wix checkout thankYouPageUrl points here.
+// Public order-confirmation page — the Stripe checkout success_url points here.
 // No auth required: a buyer may not have a SwapPulse account.
 export default function OrderComplete() {
   return (

@@ -16,6 +16,8 @@ const HEALTH_TO_SLUG = {
   smtp: 'smtp',
   vapid: 'push-notifications',
   'podcast-rss': 'podcast-rss',
+  stripe: 'stripe-api',
+  nowpayments: 'nowpayments-api',
 };
 
 const CRITICALITY_LABELS = {

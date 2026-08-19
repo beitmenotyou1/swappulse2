@@ -1,51 +1,19 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
-import { useToast } from '@/components/ui/use-toast';
+import { Heart, ArrowLeft } from 'lucide-react';
 import Logo from '@/components/Logo';
-import TurnstileWidget from '@/components/TurnstileWidget';
-
-const PRESETS = [2, 5, 10, 25];
+import DonationToggle from '@/components/donate/DonationToggle';
+import FiatDonationForm from '@/components/donate/FiatDonationForm';
+import CryptoDonationForm from '@/components/donate/CryptoDonationForm';
+import useSEO from '@/hooks/useSEO';
 
 export default function Donate() {
-  const [amount, setAmount] = useState(5);
-  const [loading, setLoading] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState(null);
-  const [resetKey, setResetKey] = useState(0);
-  const [siteKey, setSiteKey] = useState('');
-  const { toast } = useToast();
-
-  useEffect(() => {
-    base44.functions.invoke('get-turnstile-site-key', {})
-      .then((res) => setSiteKey(res?.siteKey || ''))
-      .catch(() => setSiteKey(''));
-  }, []);
-
-  const onVerify = useCallback((token) => setTurnstileToken(token), []);
-
-  const donate = async () => {
-    if (!turnstileToken) {
-      toast({ title: 'Please complete the bot check', description: 'Verify you\'re human before donating.', variant: 'destructive' });
-      return;
-    }
-    const value = Number(amount);
-    if (!Number.isFinite(value) || value < 0.5) {
-      toast({ title: 'Minimum donation is £0.50', description: 'Wix Payments cannot process smaller amounts.', variant: 'destructive' });
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke('create-donation', { amount: value, turnstileToken });
-      if (!res?.redirectUrl) throw new Error(res?.error || 'No checkout URL returned.');
-      window.location.href = res.redirectUrl;
-    } catch (e) {
-      toast({ title: 'Donation unavailable', description: e?.message || 'Please try again later.', variant: 'destructive' });
-      setLoading(false);
-      setTurnstileToken(null);
-      setResetKey((k) => k + 1);
-    }
-  };
+  useSEO({
+    title: 'Support SwapPulse',
+    description: 'Donate to SwapPulse by card or cryptocurrency. Every contribution keeps the platform free and open-source.',
+    canonicalPath: '/donate',
+  });
+  const [method, setMethod] = useState('card');
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -60,75 +28,31 @@ export default function Donate() {
       </header>
 
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-10">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-raised">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary">
-              <Heart className="h-6 w-6" />
-            </span>
-            <div>
-              <h1 className="text-xl font-extrabold">Support SwapPulse</h1>
-              <p className="text-sm text-muted-foreground">Keep the platform free &amp; open-source</p>
-            </div>
+        <div className="mb-5 flex items-center gap-3">
+          <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-primary">
+            <Heart className="h-6 w-6" />
+          </span>
+          <div>
+            <h1 className="text-xl font-extrabold">Support SwapPulse</h1>
+            <p className="text-sm text-muted-foreground">Keep the platform free &amp; open-source</p>
           </div>
-
-          <p className="mb-5 text-sm text-muted-foreground">
-            SwapPulse is built by collectors, for collectors. Every feature stays free and open-source - your donation
-            helps cover hosting, the TCGdex catalogue, and the AT Protocol infrastructure that keeps your collection
-            self-sovereign. Give whatever feels right.
-          </p>
-
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">Amount (GBP)</label>
-          <div className="flex items-center rounded-xl border border-border bg-background">
-            <span className="px-3 text-lg font-bold text-muted-foreground">£</span>
-            <input
-              type="number"
-              min={0.5}
-              step={0.5}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-transparent py-3 pr-3 text-lg font-bold outline-none"
-            />
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {PRESETS.map((p) => (
-              <button
-                key={p}
-                onClick={() => setAmount(p)}
-                className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                  Number(amount) === p ? 'bg-primary text-white' : 'bg-secondary text-foreground hover:bg-secondary/70'
-                }`}
-              >
-                £{p}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4 flex justify-center">
-            {siteKey ? (
-              <TurnstileWidget siteKey={siteKey} onVerify={onVerify} resetKey={resetKey} />
-            ) : (
-              <div className="h-[65px] w-full animate-pulse rounded-md bg-secondary" />
-            )}
-          </div>
-
-          <button
-            onClick={donate}
-            disabled={loading || !turnstileToken}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
-          >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Heart className="h-5 w-5 fill-current" />}
-            {loading ? 'Redirecting to checkout…' : `Donate £${Number(amount || 0).toFixed(2)}`}
-          </button>
-
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            Minimum £0.50 · Secure checkout via Base44 Payments
-          </p>
         </div>
 
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
-          SwapPulse is in alpha - your support means the world.
+        <p className="mb-5 text-sm text-muted-foreground">
+          SwapPulse is built by collectors, for collectors. Every feature stays free and open-source. Your donation
+          helps cover hosting, the TCGDex catalogue, and the AT Protocol infrastructure that keeps your collection
+          self-sovereign.
+        </p>
+
+        <DonationToggle method={method} onChange={setMethod} />
+
+        <div className="mt-5">
+          {method === 'card' ? <FiatDonationForm /> : <CryptoDonationForm />}
+        </div>
+
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Questions about donating? Read our{' '}
+          <Link to="/help/donations" className="font-semibold text-primary hover:underline">donations help article</Link>.
         </p>
       </main>
     </div>

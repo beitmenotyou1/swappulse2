@@ -1,0 +1,67 @@
+{
+  "name": "FiatDonation",
+  "type": "object",
+  "title": "FiatDonation",
+  "description": "org.swappulse.fiatDonation \u2014 a fiat (card) donation via Stripe Checkout. Created pending by the create-fiat-donation backend function and marked completed by the stripe-webhook on checkout.session.completed. Public read; writes restricted to admins (the service role creates/updates via backend functions).",
+  "properties": {
+    "stripe_session_id": {
+      "type": "string",
+      "description": "Stripe Checkout Session id \u2014 the unique link from a payment back to the donor record"
+    },
+    "stripe_customer_id": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Donation amount in major currency units (GBP)"
+    },
+    "currency": {
+      "type": "string",
+      "default": "gbp"
+    },
+    "donor_email": {
+      "type": "string",
+      "description": "Donor email (Stripe requires it for receipts)"
+    },
+    "donor_name": {
+      "type": "string"
+    },
+    "payment_intent_id": {
+      "type": "string"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "expired",
+        "failed"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "stripe_session_id",
+    "amount",
+    "currency",
+    "payment_status"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

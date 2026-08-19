@@ -74,7 +74,7 @@
     },
     "checkout_session_id": {
       "type": "string",
-      "description": "Wix checkout session id while payment is pending"
+      "description": "Stripe checkout session id while payment is pending"
     },
     "buyer_did": {
       "type": "string"
