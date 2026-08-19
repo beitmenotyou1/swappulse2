@@ -8,7 +8,7 @@ import TrendingTopics from '@/components/sidebar/TrendingTopics';
 import { formatPrice } from '@/lib/format';
 import { useToast } from '@/components/ui/use-toast';
 import { createBridgedFollow } from '@/lib/followBridge';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Compute real trending cards from live CardPricing movers (public read).
 // Returns [] when there is no meaningful price movement — the section hides.
@@ -33,7 +33,7 @@ function computeTrending(pricing) {
 
 export default function RightSidebar({ online = [] }) {
   const { toast } = useToast();
-  const { tr } = useI18n();
+  const tr = useT();
   const [portfolio, setPortfolio] = useState(null);
   const [recentTrades, setRecentTrades] = useState([]);
   const [trending, setTrending] = useState([]);
