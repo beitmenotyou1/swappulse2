@@ -23,74 +23,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 import { HELP_ARTICLES } from '../../shared/helpArticles.ts';
+import {
+  HASHTAG_SETS,
+  pick,
+  pickPromoLocale,
+  getPoolsForLocale,
+  withLangParam,
+  parseTags,
+  countGraphemes,
+  type PromoLocale,
+} from '../../shared/promoMessages.ts';
 
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 const SITE_BASE = 'https://swappulse.org';
 const PROMO_BANNER_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/a22b46eb2_generated_image.png';
-
-// --- Message fragment pools (composed per article, varied each run) ---
-// Conversational, personal, no em dashes, UK English. {title} is replaced with
-// the article title, {description} with the article description.
-const HOOKS = [
-  "Wrote up a guide on {title} and it's worth a read.",
-  "If you've ever wondered how {title} works, we've got you covered.",
-  "New to SwapPulse? Here's how {title} works.",
-  "Been getting questions about {title}, so we put together a full guide.",
-  "The {title} guide is live and it walks you through everything.",
-  "Quick tip: {title} is one of the features that makes SwapPulse different.",
-  "We just published a deep dive on {title}.",
-  "Here's everything you need to know about {title} on SwapPulse.",
-];
-
-const VALUE_PROPS = [
-  "SwapPulse is a decentralized social network for Pokémon TCG collectors, built on the AT Protocol. It's in alpha and we're still building.",
-  "No ads, no algorithm, no paywalls. Just collectors helping collectors. Free and open-source.",
-  "Built on the AT Protocol, so your posts can show up on Bluesky too. Same account, bigger reach.",
-  "Your collection, your posts, your follows. They're yours. Portable, collector-owned data.",
-  "Scan cards, build collections, create binders, find trades, all in one place. Free and open-source.",
-];
-
-const CTAS = [
-  `Read the full guide: ${SITE_BASE}/help/{slug}`,
-  `Check it out: ${SITE_BASE}/help/{slug}`,
-  `Full guide here: ${SITE_BASE}/help/{slug}`,
-  `Learn more: ${SITE_BASE}/help/{slug}`,
-];
-
-const HASHTAG_SETS = [
-  "#PokemonTCG #PTCGO #PokemonCards #TCG",
-  "#PokemonTCG #PokemonCommunity #TCGCommunity",
-  "#PokemonTCG #CardCollecting #PokemonCards",
-  "#PokemonTCG #TCGTrading #CardCollector",
-  "#PokemonTCG #PackOpening #PullOfTheWeek",
-  "#PokemonTCG #PokemonCollection #TCG",
-];
-
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function parseTags(hashtagSet: string): string[] {
-  const seen = new Set<string>();
-  const tags: string[] = [];
-  for (const raw of hashtagSet.split(/\s+/)) {
-    const tag = raw.replace(/^#/, '').trim().toLowerCase();
-    if (!tag || seen.has(tag)) continue;
-    seen.add(tag);
-    tags.push(tag);
-    if (tags.length >= 8) break;
-  }
-  return tags;
-}
-
-function countGraphemes(str: string): number {
-  try {
-    const seg = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    return [...seg.segment(str)].length;
-  } catch {
-    return [...str].length;
-  }
-}
 
 interface Article {
   slug: string;
@@ -99,18 +45,22 @@ interface Article {
   description: string;
 }
 
-function generateMessage(article: Article): { content: string; tags: string[] } {
-  const hook = pick(HOOKS)
+function generateMessage(article: Article, locale: string): { content: string; tags: string[] } {
+  const pools = getPoolsForLocale(locale);
+  const hook = pick(pools.helpHooks)
     .replace(/\{title\}/g, article.title);
   const hashtagSet = pick(HASHTAG_SETS);
   const tags = parseTags(hashtagSet);
   const hashtags = hashtagSet;
-  const cta = pick(CTAS)
+  const helpUrl = withLangParam(`${SITE_BASE}/help/${article.slug}`, locale);
+  const cta = pick(pools.helpCtas)
+    .replace(/\{SITE_BASE\}\/help\/\{slug\}/g, withLangParam(`${SITE_BASE}/help/${article.slug}`, locale))
+    .replace(/\{SITE_BASE\}/g, SITE_BASE)
     .replace(/\{slug\}/g, article.slug);
   const descLine = article.description;
 
   // Try full message first, then trim if over 300 graphemes
-  const valueProp = pick(VALUE_PROPS);
+  const valueProp = pick(pools.helpValueProps);
   const full = `${hook}\n\n${descLine}\n\n${valueProp}\n\n${cta}\n\n${hashtags}`;
   if (countGraphemes(full) <= 300) {
     return { content: full, tags };
@@ -286,8 +236,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'PDS authentication failed' }, { status: 502 });
     }
 
+    // Pick a random language for this post — the bot publishes in different
+    // languages across runs. Links get a ?lang=LOCALE param so the site loads
+    // in the same language when a user clicks through.
+    const promoLocale: PromoLocale = pickPromoLocale();
+
     // Compose the message
-    const { content, tags } = generateMessage(article);
+    const { content, tags } = generateMessage(article, promoLocale.locale);
 
     // Upload the branded banner image
     const imageBlob = await uploadImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL);
@@ -304,7 +259,7 @@ Deno.serve(async (req) => {
       $type: 'app.bsky.feed.post',
       text: content,
       createdAt: new Date().toISOString(),
-      langs: ['en'],
+      langs: [promoLocale.bcp47],
     };
     if (tags.length > 0) record.tags = tags;
     const facets = buildRichTextFacets(content);
@@ -353,13 +308,14 @@ Deno.serve(async (req) => {
       last_posted_uri: result.uri,
     });
 
-    console.log('post-help-promo: published help article promo', article.slug, `(index ${articleIndex} → ${nextIndex})`, result.uri);
+    console.log('post-help-promo: published help article promo', article.slug, `(index ${articleIndex} → ${nextIndex}, lang: ${promoLocale.locale})`, result.uri);
     return Response.json({
       ok: true,
       uri: result.uri,
       cid: result.cid,
       article: { slug: article.slug, title: article.title, category: article.category },
       content,
+      locale: promoLocale.locale,
       next_index: nextIndex,
       hasEmbed: !!embed,
     });

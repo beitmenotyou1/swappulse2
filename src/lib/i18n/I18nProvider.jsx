@@ -6,6 +6,18 @@ import { setCurrentTcgdexLang } from './currentLang';
 const I18nContext = createContext({ locale: 'en-GB', t: (k) => k, setLocale: () => {} });
 
 function getInitialLocale() {
+  // A ?lang=LOCALE query param (set by promo post links) takes priority so
+  // the site loads in the same language as the post the user clicked.
+  try {
+    if (typeof window !== 'undefined' && window.location?.search) {
+      const params = new URLSearchParams(window.location.search);
+      const langParam = params.get('lang');
+      if (langParam && SUPPORTED_LOCALES.includes(langParam)) {
+        try { localStorage.setItem('swappulse-locale', langParam); } catch {}
+        return langParam;
+      }
+    }
+  } catch {}
   try {
     const stored = localStorage.getItem('swappulse-locale');
     if (stored && SUPPORTED_LOCALES.includes(stored)) return stored;
