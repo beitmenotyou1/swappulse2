@@ -98,6 +98,17 @@ async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null>
             // keep what we have
           }
         }
+        // Fall back to the English card for the image — many non-English
+        // TCGDex cards (especially older sets) omit the image field, but the
+        // English card always has it. The artwork is language-independent.
+        if (!imageField) {
+          try {
+            const enFull: any = await fetchTcgdex(`/cards/${encodeURIComponent(card.id)}`, 'en');
+            imageField = enFull?.image || null;
+          } catch {
+            // keep null — post will be text-only
+          }
+        }
         return {
           id: card.id,
           name: name || card.name,
@@ -109,12 +120,19 @@ async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null>
       // Fallback: return the first card with an id even without an image
       const fallback = cards.find((c: any) => c?.id && c?.name);
       if (fallback) {
+        let fallbackImage = fallback.image ?? null;
+        if (!fallbackImage) {
+          try {
+            const enFull: any = await fetchTcgdex(`/cards/${encodeURIComponent(fallback.id)}`, 'en');
+            fallbackImage = enFull?.image || null;
+          } catch { /* text-only fallback */ }
+        }
         return {
           id: fallback.id,
           name: fallback.name,
           setName: set?.name || '',
           rarity: fallback.rarity || '',
-          imageField: fallback.image ?? null,
+          imageField: fallbackImage,
         };
       }
     } catch (e) {
