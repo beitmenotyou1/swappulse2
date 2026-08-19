@@ -103,7 +103,7 @@ export default function LeftNav() {
 
         <button
           onClick={() => setShowMore((v) => !v)}
-          aria-label="More navigation"
+          aria-label={t('nav.more')}
           aria-expanded={showMore}
           className="group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold text-foreground transition-colors hover:bg-secondary xl:pr-6"
         >
@@ -122,7 +122,7 @@ export default function LeftNav() {
             {isAuthenticated && (
               <button
                 onClick={() => logout()}
-                aria-label="Log out"
+                aria-label={t('nav.logout')}
                 className="group flex items-center gap-4 rounded-full py-2.5 pl-3 pr-3 text-lg font-semibold text-foreground transition-colors hover:bg-secondary xl:pr-6"
               >
                 <LogOut className="h-6 w-6 shrink-0" />
@@ -140,19 +140,19 @@ export default function LeftNav() {
         {isAuthenticated ? (
           <NavLink
             to="/profile"
-            aria-label="View profile"
+            aria-label={t('nav.profile')}
             className="flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-secondary xl:pr-4"
           >
             <Avatar name={user?.full_name} src={user?.avatar_url} size={36} />
             <div className="hidden xl:block min-w-0">
-              <p className="truncate text-sm font-semibold">{user?.full_name || 'Collector'}</p>
+              <p className="truncate text-sm font-semibold">{user?.full_name || t('common.collector')}</p>
               <p className="truncate text-xs text-muted-foreground">{t('nav.profile')}</p>
             </div>
           </NavLink>
         ) : (
           <NavLink
             to="/login"
-            aria-label="Log in"
+            aria-label={t('nav.login')}
             className="flex items-center gap-3 rounded-full bg-primary p-2 text-primary-foreground transition-colors hover:bg-primary/90 xl:px-4 xl:pr-6"
           >
             <LogIn className="h-5 w-5 shrink-0" />

@@ -168,10 +168,10 @@ export default function MobileNav() {
               )}
             </div>
             <p className="mt-3 px-1 text-[11px] font-medium text-muted-foreground">
-              © SwapPulse - Built on the AT Protocol · Powered by TCGdex
+              {t('footer.builtOn')}
             </p>
             <p className="mt-1.5 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
-              SwapPulse is a free, open-source platform. Pokémon and Pokémon TCG are trademarks of Nintendo, Game Freak, and The Pokémon Company. SwapPulse is not affiliated with or endorsed by them.
+              {t('footer.disclaimer')}
             </p>
           </div>
         </div>
