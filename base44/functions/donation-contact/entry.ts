@@ -23,9 +23,10 @@ export default async function(req) {
       return Response.json({ error: 'Bot verification failed.' }, { status: 403 });
     }
 
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     const subject = 'Donation enquiry from ' + name;
     const text = `Name: ${name}\nEmail: ${email}\n\n${message}`;
-    const html = `<p><b>Name:</b> ${name}</p><p><b>Email:</b> ${email}</p><p>${message.replace(/\n/g, '<br>')}</p>`;
+    const html = `<p><b>Name:</b> ${esc(name)}</p><p><b>Email:</b> ${esc(email)}</p><p>${esc(message).replace(/\n/g, '<br>')}</p>`;
     await sendBrandedEmail({ to: 'contact@swappulse.org', subject, html, text });
     return Response.json({ ok: true });
   } catch (error) {
