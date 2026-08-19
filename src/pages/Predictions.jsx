@@ -67,7 +67,7 @@ export default function Predictions() {
     <div>
       <PageHeader title={t('page.predictions.title')} subtitle={t('page.predictions.subtitle')}>
         <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
-          <Plus className="h-4 w-4" /> New poll
+          <Plus className="h-4 w-4" /> {t('predictions.newPoll')}
         </Button>
       </PageHeader>
 
@@ -94,7 +94,7 @@ export default function Predictions() {
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <LineChart className="h-10 w-10 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              {tab === 'active' ? 'No active polls. Create the first market prediction.' : 'Nothing here yet.'}
+              {tab === 'active' ? t('predictions.empty.active') : t('predictions.empty.all')}
             </p>
           </div>
         ) : (

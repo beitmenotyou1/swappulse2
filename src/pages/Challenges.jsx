@@ -37,7 +37,7 @@ export default function Challenges() {
   useEffect(() => {
     base44.entities.Challenge.list('-starts_at', 100)
       .then(setChallenges)
-      .catch((e) => setError(e?.message || 'Failed to load'));
+      .catch((e) => setError(e?.message || t('challenges.loadError')));
   }, []);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function Challenges() {
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
           {FILTERS.map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize transition-colors ${filter === f ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}>{f === 'circle' ? 'Circle-Scoped' : f}</button>
+            <button key={f} onClick={() => setFilter(f)} className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize transition-colors ${filter === f ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}>{t(`challenges.filter.${f}`)}</button>
           ))}
         </div>
       </div>

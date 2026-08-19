@@ -8,20 +8,22 @@ import { BINDER_THEMES } from '@/components/binder/theme';
 import { cardImageUrl } from '@/lib/tcgdex';
 import useSEO from '@/hooks/useSEO';
 import RecommendButton from '@/components/standard/RecommendButton';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function BinderDetail() {
-  useSEO({
-    title: 'Binder',
-    description: 'A curated Pokémon TCG collector binder on SwapPulse, showcase grids of favourite cards.',
-    canonicalPath: `/binder/${binderId}`,
-    standardDocUri: data?.binder?.standard_doc_uri || '',
-  });
+  const t = useT();
   const { binderId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [liked, setLiked] = useState(false);
+  useSEO({
+    title: 'Binder',
+    description: 'A curated Pokémon TCG collector binder on SwapPulse, showcase grids of favourite cards.',
+    canonicalPath: `/binder/${binderId}`,
+    standardDocUri: data?.binder?.standard_doc_uri || '',
+  });
 
   const load = async () => {
     setLoading(true);
@@ -51,7 +53,7 @@ export default function BinderDetail() {
   };
 
   const remove = async () => {
-    if (!confirm('Delete this binder?')) return;
+    if (!confirm(t('binder.deleteConfirm'))) return;
     if (data?.binder?.standard_doc_uri) {
       await base44.functions.invoke('publish-standard-document', {
         action: 'delete', documentUri: data.binder.standard_doc_uri,
@@ -69,7 +71,7 @@ export default function BinderDetail() {
     );
   if (!data)
     return (
-      <div className="py-16 text-center text-sm text-muted-foreground">Binder not found.</div>
+      <div className="py-16 text-center text-sm text-muted-foreground">{t('binder.notFound')}</div>
     );
 
   const { binder, author, pages, isOwner } = data;
@@ -86,7 +88,7 @@ export default function BinderDetail() {
               to={`/binder/${binderId}/edit`}
               className="flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-secondary"
             >
-              <Pencil className="h-3.5 w-3.5" /> Edit
+              <Pencil className="h-3.5 w-3.5" /> {t('binder.edit')}
             </Link>
             <button
               onClick={remove}

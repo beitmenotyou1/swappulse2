@@ -9,19 +9,19 @@ import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const SERVICES = { psa: 'PSA', bgs: 'BGS', cgc: 'CGC', ace: 'ACE' };
-const STATUS_TKEYS = {
-  submitted: 'grading.status.submitted',
-  in_progress: 'grading.status.in_progress',
-  graded: 'grading.status.graded',
-  returned: 'grading.status.returned',
-  rejected: 'grading.status.rejected',
-};
 const STATUS_META = {
   submitted: { icon: Truck, color: 'text-primary' },
   in_progress: { icon: Clock, color: 'text-warning' },
   graded: { icon: Award, color: 'text-accent' },
   returned: { icon: CheckCircle2, color: 'text-success' },
   rejected: { icon: Ban, color: 'text-destructive' },
+};
+const STATUS_TKEYS = {
+  submitted: 'grading.status.submitted',
+  in_progress: 'grading.status.in_progress',
+  graded: 'grading.status.graded',
+  returned: 'grading.status.returned',
+  rejected: 'grading.status.rejected',
 };
 const STATUS_ORDER = ['submitted', 'in_progress', 'graded', 'returned'];
 
@@ -73,7 +73,7 @@ export default function Grading() {
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
         >
-          <Plus className="h-4 w-4" /> New
+          <Plus className="h-4 w-4" /> {t('grading.new')}
         </button>
       </PageHeader>
 
@@ -83,14 +83,14 @@ export default function Grading() {
         ) : items.length === 0 ? (
           <div className="py-20 text-center">
             <Award className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-lg font-bold">No grading submissions yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Track cards you've sent to PSA, BGS, CGC or ACE - status, tracking and grades.</p>
-            <button onClick={() => setShowForm(true)} className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white">Add submission</button>
+            <p className="text-lg font-bold">{t('grading.empty')}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t('grading.emptySub')}</p>
+            <button onClick={() => setShowForm(true)} className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white">{t('grading.add')}</button>
           </div>
         ) : (
           items.map((sub) => {
-            const st = STATUS[sub.status] || STATUS.submitted;
-            const Icon = st.icon;
+            const meta = STATUS_META[sub.status] || STATUS_META.submitted;
+            const Icon = meta.icon;
             const reachedIdx = STATUS_ORDER.indexOf(sub.status);
             return (
               <div key={sub.id} className="rounded-xl border border-border bg-card p-4">
@@ -103,12 +103,12 @@ export default function Grading() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-bold">{sub.card_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {SERVICES[sub.service]} · {sub.tracking_number ? `#${sub.tracking_number}` : 'no tracking'}
+                      {SERVICES[sub.service]} · {sub.tracking_number ? `#${sub.tracking_number}` : t('grading.noTracking')}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className={`inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-bold ${st.color}`}>
-                      <Icon className="h-3 w-3" /> {st.label}
+                    <span className={`inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-bold ${meta.color}`}>
+                      <Icon className="h-3 w-3" /> {t(STATUS_TKEYS[sub.status] || 'grading.status.submitted')}
                     </span>
                     {sub.received_grade && <p className="mt-1 text-sm font-extrabold text-accent">{sub.received_grade}</p>}
                   </div>
@@ -124,31 +124,31 @@ export default function Grading() {
                       ))}
                     </div>
                     <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
-                      {STATUS_ORDER.map((s) => <span key={s}>{STATUS[s].label}</span>)}
+                      {STATUS_ORDER.map((s) => <span key={s}>{t(STATUS_TKEYS[s])}</span>)}
                     </div>
                   </>
                 )}
 
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
                   {sub.declared_value != null && (
-                    <span className="text-muted-foreground">Declared: <span className="font-semibold text-foreground">{formatPrice(sub.declared_value)}</span></span>
+                    <span className="text-muted-foreground">{t('grading.declared')} <span className="font-semibold text-foreground">{formatPrice(sub.declared_value)}</span></span>
                   )}
                   {sub.expected_return && (
-                    <span className="text-muted-foreground">Expected: <span className="font-semibold text-foreground">{sub.expected_return}</span></span>
+                    <span className="text-muted-foreground">{t('grading.expected')} <span className="font-semibold text-foreground">{sub.expected_return}</span></span>
                   )}
                   {sub.submitted_at && (
-                    <span className="text-muted-foreground">Sent: <span className="font-semibold text-foreground">{new Date(sub.submitted_at).toLocaleDateString('en-GB')}</span></span>
+                    <span className="text-muted-foreground">{t('grading.sent')} <span className="font-semibold text-foreground">{new Date(sub.submitted_at).toLocaleDateString('en-GB')}</span></span>
                   )}
                 </div>
 
                 {sub.status !== 'returned' && sub.status !== 'rejected' && (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button onClick={() => advance(sub)} className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold hover:bg-border-strong">
-                      Advance status
+                      {t('grading.advance')}
                     </button>
                     {(sub.status === 'in_progress' || sub.status === 'graded') && (
                       <input
-                        placeholder="Grade e.g. PSA 10"
+                        placeholder={t('grading.gradePlaceholder')}
                         defaultValue={sub.received_grade || ''}
                         onBlur={(e) => { if (e.target.value && e.target.value !== sub.received_grade) setGrade(sub, e.target.value); }}
                         className="rounded-full border border-border bg-background px-3 py-1.5 text-xs"

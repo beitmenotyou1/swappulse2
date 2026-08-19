@@ -51,9 +51,9 @@ export default function Share() {
             {share.title && <p className="text-sm font-semibold">{share.title}</p>}
             {share.text && <p className="text-sm text-muted-foreground">{share.text}</p>}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/explore" onClick={clear} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white">Add to Collection</Link>
-              <Link to="/compose" onClick={clear} className="rounded-full border border-border px-4 py-2 text-sm font-bold">Create Post</Link>
-              <button onClick={clear} className="rounded-full border border-border px-4 py-2 text-sm font-bold">Dismiss</button>
+              <Link to="/explore" onClick={clear} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white">{t('share.addToCollection')}</Link>
+              <Link to="/compose" onClick={clear} className="rounded-full border border-border px-4 py-2 text-sm font-bold">{t('share.createPost')}</Link>
+              <button onClick={clear} className="rounded-full border border-border px-4 py-2 text-sm font-bold">{t('share.dismiss')}</button>
             </div>
           </div>
         )}

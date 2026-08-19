@@ -10,13 +10,21 @@ import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const COLUMNS = [
-  { key: 'open', label: 'Open', accent: 'border-t-success', dot: 'bg-success', badge: 'bg-success/15 text-success' },
-  { key: 'negotiating', label: 'Negotiating', accent: 'border-t-accent', dot: 'bg-accent', badge: 'bg-accent/20 text-accent' },
-  { key: 'pending_ship', label: 'Pending Ship', accent: 'border-t-primary', dot: 'bg-primary', badge: 'bg-primary/15 text-primary' },
-  { key: 'completed', label: 'Completed', accent: 'border-t-muted-foreground', dot: 'bg-muted-foreground', badge: 'bg-secondary text-muted-foreground' },
-  { key: 'cancelled', label: 'Cancelled', accent: 'border-t-destructive', dot: 'bg-destructive', badge: 'bg-destructive/15 text-destructive' },
-];
+const COLUMN_TKEYS = {
+  open: 'tradeStatus.open',
+  negotiating: 'tradeStatus.negotiating',
+  pending_ship: 'tradeStatus.pendingShip',
+  completed: 'tradeStatus.completed',
+  cancelled: 'tradeStatus.cancelled',
+};
+const COLUMN_STYLES = {
+  open: { accent: 'border-t-success', dot: 'bg-success', badge: 'bg-success/15 text-success' },
+  negotiating: { accent: 'border-t-accent', dot: 'bg-accent', badge: 'bg-accent/20 text-accent' },
+  pending_ship: { accent: 'border-t-primary', dot: 'bg-primary', badge: 'bg-primary/15 text-primary' },
+  completed: { accent: 'border-t-muted-foreground', dot: 'bg-muted-foreground', badge: 'bg-secondary text-muted-foreground' },
+  cancelled: { accent: 'border-t-destructive', dot: 'bg-destructive', badge: 'bg-destructive/15 text-destructive' },
+};
+const COLUMN_KEYS = ['open', 'negotiating', 'pending_ship', 'completed', 'cancelled'];
 
 export default function TradeStatusBoard() {
   const t = useT();
@@ -80,7 +88,7 @@ export default function TradeStatusBoard() {
 
   const byStatus = useMemo(() => {
     const map = {};
-    COLUMNS.forEach((c) => { map[c.key] = []; });
+    COLUMN_KEYS.forEach((k) => { map[k] = []; });
     filtered.forEach((t) => {
       if (map[t.status]) map[t.status].push(t);
     });
@@ -99,7 +107,7 @@ export default function TradeStatusBoard() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search cards or collector…"
+              placeholder={t('tradeStatus.searchPlaceholder')}
               className="w-full rounded-full border border-border bg-background pl-9 pr-4 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
@@ -108,24 +116,27 @@ export default function TradeStatusBoard() {
               onClick={() => setScope('all')}
               className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${scope === 'all' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
             >
-              All
+              {t('tradeStatus.all')}
             </button>
             <button
               onClick={() => setScope('mine')}
               className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${scope === 'mine' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
             >
-              Mine
+              {t('tradeStatus.mine')}
             </button>
           </div>
         </div>
         <div className="flex items-center gap-4 text-xs">
-          {COLUMNS.map((c) => (
-            <span key={c.key} className="flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${c.dot}`} />
-              <span className="font-semibold text-muted-foreground">{c.label}</span>
-              <span className="font-bold">{byStatus[c.key]?.length || 0}</span>
+          {COLUMN_KEYS.map((k) => {
+            const s = COLUMN_STYLES[k];
+            return (
+            <span key={k} className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+              <span className="font-semibold text-muted-foreground">{t(COLUMN_TKEYS[k])}</span>
+              <span className="font-bold">{byStatus[k]?.length || 0}</span>
             </span>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -134,36 +145,39 @@ export default function TradeStatusBoard() {
       ) : filtered.length === 0 ? (
         <div className="px-4 py-20 text-center">
           <ArrowLeftRight className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="text-lg font-bold">No trades found</p>
+          <p className="text-lg font-bold">{t('tradeStatus.noTradesFound')}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {scope === 'mine' ? 'You have no trades yet.' : 'No trades on the board yet.'}
+            {scope === 'mine' ? t('tradeStatus.noTradesMine') : t('tradeStatus.noTradesBoard')}
           </p>
         </div>
       ) : (
         <div className="flex-1 overflow-x-auto p-4">
           <div className="flex gap-4 min-w-max">
-            {COLUMNS.map((col) => (
-              <div key={col.key} className="w-72 shrink-0">
-                <div className={`rounded-t-xl border-t-4 ${col.accent} bg-card px-3 py-2.5`}>
+            {COLUMN_KEYS.map((k) => {
+              const s = COLUMN_STYLES[k];
+              return (
+              <div key={k} className="w-72 shrink-0">
+                <div className={`rounded-t-xl border-t-4 ${s.accent} bg-card px-3 py-2.5`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
-                      <h3 className="text-sm font-bold">{col.label}</h3>
+                      <span className={`h-2.5 w-2.5 rounded-full ${s.dot}`} />
+                      <h3 className="text-sm font-bold">{t(COLUMN_TKEYS[k])}</h3>
                     </div>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${col.badge}`}>
-                      {byStatus[col.key]?.length || 0}
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${s.badge}`}>
+                      {byStatus[k]?.length || 0}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-2 rounded-b-xl bg-secondary/50 p-2 min-h-[120px]">
-                  {(byStatus[col.key] || []).length === 0 ? (
-                    <p className="py-8 text-center text-xs text-muted-foreground">No trades</p>
+                  {(byStatus[k] || []).length === 0 ? (
+                    <p className="py-8 text-center text-xs text-muted-foreground">{t('tradeStatus.noTrades')}</p>
                   ) : (
-                    byStatus[col.key].map((t) => <KanbanCard key={t.id} trade={t} />)
+                    byStatus[k].map((tr) => <KanbanCard key={tr.id} trade={tr} t={t} />)
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -172,9 +186,9 @@ export default function TradeStatusBoard() {
   );
 }
 
-function KanbanCard({ trade }) {
-  const offer = (trade.offer_card_names || []).slice(0, 2).join(', ') || 'Cards';
-  const want = (trade.wanted_card_names || []).slice(0, 2).join(', ') || 'Cards';
+function KanbanCard({ trade, t }) {
+  const offer = (trade.offer_card_names || []).slice(0, 2).join(', ') || t('tradeStatus.cards');
+  const want = (trade.wanted_card_names || []).slice(0, 2).join(', ') || t('tradeStatus.cards');
   return (
     <Link
       to={`/trade/${trade.id}`}
@@ -182,7 +196,7 @@ function KanbanCard({ trade }) {
     >
       <div className="flex items-center gap-2">
         <Avatar name={trade.author_name} src={trade.author_avatar} size={24} />
-        <span className="flex-1 truncate text-xs font-semibold">{trade.author_name || 'Collector'}</span>
+        <span className="flex-1 truncate text-xs font-semibold">{trade.author_name || t('profile.collector')}</span>
         <span className="text-[10px] text-muted-foreground">{timeAgo(trade.updated_date || trade.created_date)}</span>
       </div>
       <div className="mt-2 flex items-center gap-1.5 text-xs">

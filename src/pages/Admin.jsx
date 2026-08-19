@@ -37,7 +37,7 @@ export default function Admin() {
       const res = await base44.functions.invoke('admin-metrics', {});
       setData(res.data);
     } catch (e) {
-      setError(e.response?.data?.error || e.message || t('admin.loadFailed'));
+      setError(e.response?.data?.error || e.message || t('admin.loadError'));
     } finally {
       setLoading(false);
     }

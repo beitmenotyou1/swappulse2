@@ -10,15 +10,7 @@ import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const PLATFORM_LABEL = {
-  twitch: 'Twitch',
-  youtube: 'YouTube',
-  kick: 'Kick',
-  facebook_gaming: 'Facebook',
-  rumble: 'Rumble',
-  custom: 'Custom',
-  other: 'Other',
-};
+// Platform names are proper nouns — no translation needed.
 
 const TABS = [
   { key: 'live', tKey: 'spaces.tab.live', Icon: Radio },
@@ -122,7 +114,7 @@ export default function VoiceSpaces() {
                   onClick={() => setPlatformFilter('all')}
                   className={`rounded-xl px-3 py-2 text-sm font-semibold ${platformFilter === 'all' ? 'bg-primary text-primary-foreground' : 'border border-border bg-background'}`}
                 >
-                  All ({live.length})
+                  {t('spaces.all')} ({live.length})
                 </button>
                 {Object.entries(platformCounts).map(([p, c]) => (
                   <button
@@ -130,7 +122,7 @@ export default function VoiceSpaces() {
                     onClick={() => setPlatformFilter(p)}
                     className={`rounded-xl px-3 py-2 text-sm font-semibold ${platformFilter === p ? 'bg-primary text-primary-foreground' : 'border border-border bg-background'}`}
                   >
-                    {PLATFORM_LABEL[p] || p} ({c})
+                    {p} ({c})
                   </button>
                 ))}
                 <div className="ml-auto flex items-center gap-1 rounded-xl border border-border bg-background p-1">
@@ -138,18 +130,18 @@ export default function VoiceSpaces() {
                     onClick={() => setSortBy('viewers')}
                     className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${sortBy === 'viewers' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                   >
-                    <Users className="h-3.5 w-3.5" /> Viewers
+                    <Users className="h-3.5 w-3.5" /> {t('spaces.sort.viewers')}
                   </button>
                   <button
                     onClick={() => setSortBy('recency')}
                     className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${sortBy === 'recency' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                   >
-                    <Clock className="h-3.5 w-3.5" /> Recent
+                    <Clock className="h-3.5 w-3.5" /> {t('spaces.sort.recent')}
                   </button>
                 </div>
               </div>
               {visible.length === 0 ? (
-                <p className="py-12 text-center text-sm text-muted-foreground">No live streams on this platform right now.</p>
+                <p className="py-12 text-center text-sm text-muted-foreground">{t('spaces.noStreamsPlatform')}</p>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {visible.map((s) => <LiveStreamCard key={s.id} space={s} />)}
@@ -160,19 +152,19 @@ export default function VoiceSpaces() {
           {live.length === 0 && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
               <span className="h-4 w-4 rounded-full bg-destructive" />
-              <p className="text-sm font-semibold">No streams live right now</p>
-              <p className="text-xs text-muted-foreground">Be the first to go live!</p>
+              <p className="text-sm font-semibold">{t('spaces.noStreamsLive')}</p>
+              <p className="text-xs text-muted-foreground">{t('spaces.beFirst')}</p>
               <button
                 onClick={() => setShowGoLive(true)}
                 className="live-go-pulse mt-1 flex items-center gap-1.5 rounded-full bg-destructive px-4 py-2 text-sm font-bold text-white"
               >
-                <Radio className="h-4 w-4" /> Go Live
+                <Radio className="h-4 w-4" /> {t('page.spaces.goLive')}
               </button>
             </div>
           )}
         </div>
       ) : podcasts.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted-foreground">No recordings yet.</p>
+        <p className="py-16 text-center text-sm text-muted-foreground">{t('spaces.noRecordings')}</p>
       ) : (
         <div className="space-y-2 p-4">{podcasts.map((ep) => <EpisodeCard key={ep.id} episode={ep} />)}</div>
       )}

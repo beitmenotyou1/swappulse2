@@ -46,10 +46,10 @@ export default function TradeDashboard() {
   const activeWatched = watched.filter((t) => ACTIVE_STATUSES.includes(t.status));
 
   const summary = [
-    { label: 'Active', count: activeMine.length, icon: ArrowLeftRight, color: 'text-primary' },
-    { label: 'Pending Ship', count: pendingMine.length, icon: Clock, color: 'text-accent' },
-    { label: 'Completed', count: completedMine.length, icon: CheckCircle2, color: 'text-success' },
-    { label: 'Cancelled', count: cancelledMine.length, icon: XCircle, color: 'text-destructive' },
+    { label: t('tradeDashboard.active'), count: activeMine.length, icon: ArrowLeftRight, color: 'text-primary' },
+    { label: t('tradeDashboard.pendingShip'), count: pendingMine.length, icon: Clock, color: 'text-accent' },
+    { label: t('tradeDashboard.completed'), count: completedMine.length, icon: CheckCircle2, color: 'text-success' },
+    { label: t('tradeDashboard.cancelled'), count: cancelledMine.length, icon: XCircle, color: 'text-destructive' },
   ];
 
   return (
@@ -60,8 +60,8 @@ export default function TradeDashboard() {
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : !me ? (
         <div className="px-4 py-20 text-center">
-          <p className="text-lg font-bold">Sign in to view your dashboard</p>
-          <Link to="/login" className="mt-2 inline-block text-sm text-primary">Go to login</Link>
+          <p className="text-lg font-bold">{t('tradeDashboard.signIn')}</p>
+          <Link to="/login" className="mt-2 inline-block text-sm text-primary">{t('tradeDashboard.goToLogin')}</Link>
         </div>
       ) : (
         <div className="space-y-6 p-4">
@@ -81,11 +81,11 @@ export default function TradeDashboard() {
           {/* My active trades */}
           <section>
             <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
-              <ArrowLeftRight className="h-4 w-4" /> My Active Trades ({activeMine.length})
+              <ArrowLeftRight className="h-4 w-4" /> {t('tradeDashboard.myActiveTrades')} ({activeMine.length})
             </h2>
             {activeMine.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                No active trades. <Link to="/trades" className="text-primary">Browse the board</Link> to start one.
+                {t('tradeDashboard.noActive')} <Link to="/trades" className="text-primary">{t('tradeDashboard.browseBoard')}</Link> {t('tradeDashboard.toStartOne')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -97,11 +97,11 @@ export default function TradeDashboard() {
           {/* Watched trades */}
           <section>
             <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase text-muted-foreground">
-              <BellRing className="h-4 w-4" /> Watching ({activeWatched.length})
+              <BellRing className="h-4 w-4" /> {t('tradeDashboard.watching')} ({activeWatched.length})
             </h2>
             {activeWatched.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                Not watching any trades. Open a trade and tap the bell to get notified.
+                {t('tradeDashboard.notWatching')}
               </p>
             ) : (
               <div className="space-y-3">

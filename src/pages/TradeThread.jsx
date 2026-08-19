@@ -81,7 +81,7 @@ export default function TradeThread() {
       const stamped = await stampRecord({
         trade_id: tradeId,
         body: text,
-        author_name: me?.display_name || me?.full_name || 'Collector',
+        author_name: me?.display_name || me?.full_name || t('profile.collector'),
         author_handle: me?.username || me?.bsky_handle || 'collector',
         author_avatar: me?.avatar || '',
         listing_author_id: trade?.created_by_id || '',
@@ -90,7 +90,7 @@ export default function TradeThread() {
       setMessages((prev) => (hasMsg(prev, created) ? prev : [...prev, created]));
       setBody('');
     } catch (e) {
-      alert('Could not send: ' + e.message);
+      alert(t('tradeThread.sendError') + ': ' + e.message);
     } finally {
       setSending(false);
     }
@@ -99,7 +99,7 @@ export default function TradeThread() {
   const isOwner = !!me && !!trade && trade.created_by_id === me.id;
   const advanceMap = { open: 'pending_ship', negotiating: 'pending_ship', pending_ship: 'completed' };
   const nextStatus = advanceMap[trade?.status];
-  const advanceLabel = { pending_ship: 'Mark Pending Ship', completed: 'Mark Completed' }[nextStatus];
+  const advanceLabel = { pending_ship: t('tradeThread.markPendingShip'), completed: t('tradeThread.markCompleted') }[nextStatus];
   const statusBadgeClass = {
     open: 'bg-secondary text-foreground',
     negotiating: 'bg-accent/20 text-accent',
@@ -118,7 +118,7 @@ export default function TradeThread() {
       const updated = await base44.entities.TradeListing.update(trade.id, { status, ...(status === 'cancelled' ? { bridged: false } : {}) });
       setTrade(updated);
     } catch (e) {
-      alert('Could not update status: ' + e.message);
+      alert(t('tradeThread.statusError') + ': ' + e.message);
     } finally {
       setStatusBusy(false);
     }
@@ -136,7 +136,7 @@ export default function TradeThread() {
         setWatching(true);
       }
     } catch (e) {
-      alert('Could not update watch status: ' + e.message);
+      alert(t('tradeThread.watchError') + ': ' + e.message);
     } finally {
       setWatchBusy(false);
     }
@@ -165,7 +165,7 @@ export default function TradeThread() {
           <div className="border-b border-border p-4">
             <div className="flex items-center gap-2">
               <Avatar name={trade.author_name} src={trade.author_avatar} size={32} />
-              <span className="text-sm font-semibold">{trade.author_name || 'Collector'}</span>
+              <span className="text-sm font-semibold">{trade.author_name || t('profile.collector')}</span>
               <span className="text-xs text-muted-foreground">· {TRADE_STATUS_LABELS[trade.status] || trade.status}</span>
             </div>
             <div className="mt-3">
@@ -175,28 +175,28 @@ export default function TradeThread() {
               <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
                 <button onClick={toggleWatch} disabled={watchBusy} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${watching ? 'bg-accent/20 text-accent' : 'bg-primary text-white hover:bg-primary/90'}`}>
                   {watching ? <BellRing className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
-                  {watching ? 'Watching' : 'Watch this trade'}
+                  {watching ? t('tradeThread.watching') : t('tradeThread.watchTrade')}
                 </button>
-                <span className="text-xs text-muted-foreground">Get notified on updates and completion.</span>
+                <span className="text-xs text-muted-foreground">{t('tradeThread.watchSub')}</span>
               </div>
             )}
             {me && ['pending_ship', 'completed'].includes(trade.status) && (
               <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
                 {alreadyDisputed ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive">
-                    <Flag className="h-3.5 w-3.5" /> Dispute filed
+                    <Flag className="h-3.5 w-3.5" /> {t('tradeThread.disputeFiled')}
                   </span>
                 ) : (
                   <button onClick={() => setShowDispute(true)} className="flex items-center gap-1.5 rounded-full border border-destructive/30 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10">
-                    <Flag className="h-3.5 w-3.5" /> Report a Dispute
+                    <Flag className="h-3.5 w-3.5" /> {t('tradeThread.reportDispute')}
                   </button>
                 )}
-                <span className="text-xs text-muted-foreground">Flag for moderation if something went wrong with the cards.</span>
+                <span className="text-xs text-muted-foreground">{t('tradeThread.disputeSub')}</span>
               </div>
             )}
             {isOwner && (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                <span className="text-xs font-semibold uppercase text-muted-foreground">Status</span>
+                <span className="text-xs font-semibold uppercase text-muted-foreground">{t('tradeThread.status')}</span>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusBadgeClass}`}>{TRADE_STATUS_LABELS[trade.status] || trade.status}</span>
                 {nextStatus && (
                   <button onClick={() => updateStatus(nextStatus)} disabled={statusBusy} className="rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-50">
@@ -205,7 +205,7 @@ export default function TradeThread() {
                 )}
                 {!['completed', 'cancelled'].includes(trade.status) && (
                   <button onClick={() => updateStatus('cancelled')} disabled={statusBusy} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50">
-                    Cancel trade
+                    {t('tradeThread.cancelTrade')}
                   </button>
                 )}
               </div>
@@ -221,7 +221,7 @@ export default function TradeThread() {
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                Start the conversation - ask about condition, shipping, or terms.
+                {t('tradeThread.startConversation')}
               </p>
             ) : messages.map((m) => {
               const mine = me && (m.did === me.did || m.author_name === me.full_name);
@@ -243,7 +243,7 @@ export default function TradeThread() {
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={1}
-                placeholder="Message…"
+                placeholder={t('tradeThread.messagePlaceholder')}
                 className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               />

@@ -135,27 +135,27 @@ export default function Moderation() {
     return (
       <div className="mx-auto max-w-md p-8 text-center">
         <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-        <h1 className="text-xl font-bold">{t('mod.staffOnly')}</h1>
-        <p className="text-sm text-muted-foreground">{t('mod.staffOnlyDesc')}</p>
+        <h1 className="text-xl font-bold">{t('moderation.staffOnly')}</h1>
+        <p className="text-sm text-muted-foreground">{t('moderation.staffOnlySub')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <PageHeader title={t('mod.title')} subtitle={t('mod.subtitle')}>
+      <PageHeader title={t('moderation.title')} subtitle={t('moderation.subtitle')}>
         <Button variant="outline" size="sm" onClick={() => { fetchList(); fetchStats(); fetchActivity(); }}>
-          <RefreshCw className="h-4 w-4" /> {t('mod.refresh')}
+          <RefreshCw className="h-4 w-4" /> {t('moderation.refresh')}
         </Button>
       </PageHeader>
 
       <div className="mx-auto max-w-7xl space-y-4 p-4">
         <div className="flex gap-2 border-b border-border">
           {[
-            ['posts', t('mod.tab.flagged')],
-            ['disputes', t('mod.tab.disputes')],
-            ['enforcement', t('mod.tab.enforcement')],
-            ['bots', t('mod.tab.bots')],
+            ['posts', t('moderation.tab.posts')],
+            ['disputes', t('moderation.tab.disputes')],
+            ['enforcement', t('moderation.tab.enforcement')],
+            ['bots', t('moderation.tab.bots')],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -186,7 +186,7 @@ export default function Moderation() {
           aria-expanded={showFilters}
         >
           <Filter className="h-4 w-4" />
-          {showFilters ? t('mod.hideFilters') : t('mod.showFilters')}
+          {showFilters ? t('moderation.hideFilters') : t('moderation.showFilters')}
         </Button>
 
         <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-4">

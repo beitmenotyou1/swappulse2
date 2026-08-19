@@ -9,13 +9,11 @@ import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const THEME_TKEYS = {
-  general: 'circle.theme.general', vintage: 'circle.theme.vintage', competitive: 'circle.theme.competitive', shiny: 'circle.theme.shiny',
-  investment: 'circle.theme.investment', local_region: 'circle.theme.local', artist: 'circle.theme.artist',
+  general: 'circles.theme.general', vintage: 'circles.theme.vintage', competitive: 'circles.theme.competitive', shiny: 'circles.theme.shiny',
+  investment: 'circles.theme.investment', local_region: 'circles.theme.local_region', artist: 'circles.theme.artist',
 };
 
-function CircleCard({ c, membership }) {
-  const t = useT();
-  const count = c.member_count || 1;
+function CircleCard({ c, membership, t }) {
   return (
     <Link to={`/circles/${c.id}`} className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-raised">
       <div className="flex items-center gap-3">
@@ -25,14 +23,14 @@ function CircleCard({ c, membership }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{c.name}</p>
           <p className="text-xs text-muted-foreground">
-            {THEME_TKEYS[c.theme] ? t(THEME_TKEYS[c.theme]) : c.theme} · {count} {t('circle.members')}
+            {t(THEME_TKEYS[c.theme] || c.theme) || c.theme} · {c.member_count || 1} {t('circles.members')}
           </p>
         </div>
         {membership === 'curator' && (
-          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary">{t('circle.curator')}</span>
+          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary">{t('circles.curator')}</span>
         )}
         {membership === 'member' && (
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{t('circle.member')}</span>
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{t('circles.member')}</span>
         )}
       </div>
       {c.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{c.description}</p>}
@@ -91,7 +89,7 @@ export default function Circles() {
                 <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('page.circles.yourCircles')}</h2>
                 <div className="space-y-3">
                   {mine.map((c) => (
-                    <CircleCard key={c.id} c={c} membership={c.isCurator ? 'curator' : 'member'} />
+                    <CircleCard key={c.id} c={c} membership={c.isCurator ? 'curator' : 'member'} t={t} />
                   ))}
                 </div>
               </section>
@@ -101,7 +99,7 @@ export default function Circles() {
                 <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('page.circles.discover')}</h2>
                 <div className="space-y-3">
                   {discover.map((c) => (
-                    <CircleCard key={c.id} c={c} />
+                    <CircleCard key={c.id} c={c} t={t} />
                   ))}
                 </div>
               </section>

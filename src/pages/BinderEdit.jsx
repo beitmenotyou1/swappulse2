@@ -9,11 +9,13 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import PageHeader from '@/components/PageHeader';
 import SlotPicker from '@/components/binder/SlotPicker';
 import { BINDER_THEMES } from '@/components/binder/theme';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const emptySlot = (i) => ({ slot_index: i + 1, collection_entry_uri: '', custom_caption: '' });
 const emptyPage = (n) => ({ page_number: n, slots: Array.from({ length: 6 }, (_, i) => emptySlot(i)) });
 
 export default function BinderEdit() {
+  const t = useT();
   const { binderId } = useParams();
   const navigate = useNavigate();
   const isEdit = !!binderId;
@@ -124,7 +126,7 @@ export default function BinderEdit() {
         navigate(`/binder/${created.id}`);
       }
     } catch (e) {
-      alert(e.message || 'Failed to save binder');
+      alert(e.message || t('binder.saveError'));
     } finally {
       setSaving(false);
     }
@@ -139,13 +141,13 @@ export default function BinderEdit() {
 
   return (
     <div>
-      <PageHeader title={isEdit ? 'Edit Binder' : 'New Binder'} subtitle="Arrange your prized cards into pages">
+      <PageHeader title={isEdit ? t('binder.editTitle') : t('binder.newTitle')} subtitle={t('binder.editSubtitle')}>
         <button
           onClick={save}
           disabled={saving}
           className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('binder.save')}
         </button>
       </PageHeader>
 
@@ -154,19 +156,19 @@ export default function BinderEdit() {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Binder title (e.g. 'My Holos')"
+            placeholder={t('binder.titlePlaceholder')}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Short description..."
+            placeholder={t('binder.descPlaceholder')}
             rows={2}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           />
           <div className="grid grid-cols-2 gap-3">
             <label className="text-xs">
-              <span className="text-muted-foreground">Theme</span>
+              <span className="text-muted-foreground">{t('binder.theme')}</span>
               <select
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
@@ -180,22 +182,22 @@ export default function BinderEdit() {
               </select>
             </label>
             <label className="text-xs">
-              <span className="text-muted-foreground">Visibility</span>
+              <span className="text-muted-foreground">{t('binder.visibility')}</span>
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-2 text-sm"
               >
-                <option value="public">Public</option>
-                <option value="followers">Followers</option>
-                <option value="private">Private</option>
+                <option value="public">{t('binder.visibilityPublic')}</option>
+                <option value="followers">{t('binder.visibilityFollowers')}</option>
+                <option value="private">{t('binder.visibilityPrivate')}</option>
               </select>
             </label>
           </div>
           <input
             value={cover}
             onChange={(e) => setCover(e.target.value)}
-            placeholder="Cover image URL (optional)"
+            placeholder={t('binder.coverPlaceholder')}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </div>
@@ -203,7 +205,7 @@ export default function BinderEdit() {
         {pages.map((page, pgIdx) => (
           <div key={pgIdx} className="rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold">Page {pgIdx + 1}</h3>
+              <h3 className="font-bold">{t('binder.page')} {pgIdx + 1}</h3>
               <button
                 onClick={() => removePage(pgIdx)}
                 className="text-muted-foreground hover:text-destructive"
@@ -252,7 +254,7 @@ export default function BinderEdit() {
                     <input
                       value={slot.custom_caption || ''}
                       onChange={(e) => setSlot(pgIdx, slIdx, { custom_caption: e.target.value })}
-                      placeholder="caption"
+                      placeholder={t('binder.captionPlaceholder')}
                       maxLength={100}
                       className="w-full rounded border border-border bg-background px-1 py-0.5 text-[10px] outline-none focus:border-primary"
                     />
@@ -268,7 +270,7 @@ export default function BinderEdit() {
             onClick={addPage}
             className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-3 text-sm font-semibold text-muted-foreground hover:border-primary hover:text-primary"
           >
-            <Plus className="h-4 w-4" /> Add page
+            <Plus className="h-4 w-4" /> {t('binder.addPage')}
           </button>
         )}
       </div>

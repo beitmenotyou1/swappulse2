@@ -35,7 +35,7 @@ export default function Achievements() {
         );
       }
     } catch (err) {
-      toast({ title: 'Could not evaluate achievements', description: err.message, variant: 'destructive' });
+      toast({ title: t('achievements.evaluateError'), description: err.message, variant: 'destructive' });
     } finally {
       setLoading(false);
       setEvaluating(false);
@@ -66,8 +66,7 @@ export default function Achievements() {
         <div className="rounded-xl border border-border bg-card p-4 text-sm">
           <span className="font-semibold text-accent">{unlockedCount}</span>{' '}
           <span className="text-muted-foreground">
-            of {total} credentials unlocked. Each is a state-dependent proof verified against your
-            on-chain activity, revoked if the underlying proof no longer holds (after a 24h grace period).
+            {t('achievements.of')} {total} {t('achievements.summary')}
           </span>
         </div>
 

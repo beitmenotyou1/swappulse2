@@ -12,8 +12,8 @@ import { useT } from '@/lib/i18n/I18nProvider';
 const REL_TKEYS = {
   trade_partner: 'trust.rel.trade_partner',
   repeat_trader: 'trust.rel.repeat_trader',
-  personal_acquaintance: 'trust.rel.personal',
-  community_member: 'trust.rel.community',
+  personal_acquaintance: 'trust.rel.personal_acquaintance',
+  community_member: 'trust.rel.community_member',
 };
 
 export default function Trust() {
@@ -60,7 +60,7 @@ export default function Trust() {
   const score = profile?.normalised_score ?? 0;
 
   const revoke = async (v) => {
-    if (!confirm('Revoke this vouch? It will no longer count towards their trust score.')) return;
+    if (!confirm(t('trust.revokeConfirm'))) return;
     setRevoking(v.id);
     try {
       await base44.entities.Vouch.update(v.id, { revoked_at: new Date().toISOString() });
@@ -74,7 +74,7 @@ export default function Trust() {
 
   return (
     <div>
-      <PageHeader title="Trust Network" subtitle="Vouch-based reputation across the community" />
+      <PageHeader title={t('page.trust.title')} subtitle={t('trust.networkSubtitle')} />
       <div className="space-y-4 p-4">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-raised">
           {loading ? (
@@ -125,10 +125,10 @@ export default function Trust() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card p-4">
             <h3 className="mb-3 flex items-center gap-1.5 font-bold">
-              <ArrowDownLeft className="h-4 w-4 text-success" /> Vouches for you
+              <ArrowDownLeft className="h-4 w-4 text-success" /> {t('trust.vouchesForYou')}
             </h3>
             {!profile?.incoming?.length ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No one has vouched for you yet.</p>
+              <p className="py-6 text-center text-sm text-muted-foreground">{t('trust.noVouchesForYou')}</p>
             ) : (
               <div className="space-y-2">
                 {profile.incoming.map((v) => (
@@ -139,7 +139,7 @@ export default function Trust() {
                         {v.voucher_name || 'Collector'}{' '}
                         <span className="font-normal text-muted-foreground">@{v.voucher_handle}</span>
                       </p>
-                      <p className="text-xs text-muted-foreground">{REL_LABEL[v.relationship] || v.relationship}</p>
+                      <p className="text-xs text-muted-foreground">{t(REL_TKEYS[v.relationship] || v.relationship) || v.relationship}</p>
                       {v.context && <p className="mt-1 text-xs">{v.context}</p>}
                     </div>
                   </div>
@@ -149,10 +149,10 @@ export default function Trust() {
           </div>
           <div className="rounded-2xl border border-border bg-card p-4">
             <h3 className="mb-3 flex items-center gap-1.5 font-bold">
-              <ArrowUpRight className="h-4 w-4 text-primary" /> You vouched for
+              <ArrowUpRight className="h-4 w-4 text-primary" /> {t('trust.youVouchedFor')}
             </h3>
             {!profile?.outgoing?.length ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">You haven't vouched for anyone yet.</p>
+              <p className="py-6 text-center text-sm text-muted-foreground">{t('trust.noOutgoingVouches')}</p>
             ) : (
               <div className="space-y-2">
                 {profile.outgoing.map((v) => (
@@ -163,9 +163,9 @@ export default function Trust() {
                         {v.vouched_name || 'Collector'}{' '}
                         <span className="font-normal text-muted-foreground">@{v.vouched_handle}</span>
                       </p>
-                      <p className="text-xs text-muted-foreground">{REL_LABEL[v.relationship] || v.relationship}</p>
+                      <p className="text-xs text-muted-foreground">{t(REL_TKEYS[v.relationship] || v.relationship) || v.relationship}</p>
                       {v.context && <p className="mt-1 text-xs">{v.context}</p>}
-                      {v.revoked_at && <p className="mt-1 text-xs font-semibold text-destructive">Revoked</p>}
+                      {v.revoked_at && <p className="mt-1 text-xs font-semibold text-destructive">{t('trust.revoked')}</p>}
                     </div>
                     {!v.revoked_at && (
                       <button
@@ -173,7 +173,7 @@ export default function Trust() {
                         disabled={revoking === v.id}
                         className="flex items-center gap-1 rounded-full border border-border px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-destructive disabled:opacity-50"
                       >
-                        <Undo2 className="h-3 w-3" /> Revoke
+                        <Undo2 className="h-3 w-3" /> {t('trust.revoke')}
                       </button>
                     )}
                   </div>
