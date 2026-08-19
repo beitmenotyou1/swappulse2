@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Share2, Copy, Check, X, MessageSquare } from 'lucide-react';
+import { Share2, Check, X, MessageSquare, Link2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -25,12 +25,12 @@ function getSeoMeta() {
 }
 
 const PLATFORMS = [
-  { id: 'whatsapp', labelKey: 'share.whatsapp', Icon: WhatsAppIcon, color: 'text-[#25D366]', bg: 'hover:bg-[#25D366]/10', hasWebIntent: true },
-  { id: 'signal', labelKey: 'share.signal', Icon: SignalIcon, color: 'text-[#3A76F0]', bg: 'hover:bg-[#3A76F0]/10', hasWebIntent: false },
-  { id: 'discord', labelKey: 'share.discord', Icon: DiscordIcon, color: 'text-[#5865F2]', bg: 'hover:bg-[#5865F2]/10', hasWebIntent: false },
-  { id: 'mastodon', labelKey: 'share.mastodon', Icon: MastodonIcon, color: 'text-[#6364FF]', bg: 'hover:bg-[#6364FF]/10', hasWebIntent: true },
-  { id: 'bluesky', labelKey: 'share.bluesky', Icon: BlueskyIcon, color: 'text-[#0EA5E9]', bg: 'hover:bg-[#0EA5E9]/10', hasWebIntent: false },
-  { id: 'nostr', labelKey: 'share.nostr', Icon: NostrIcon, color: 'text-[#9333EA]', bg: 'hover:bg-[#9333EA]/10', hasWebIntent: false },
+  { id: 'whatsapp', labelKey: 'share.whatsapp', Icon: WhatsAppIcon, color: '#25D366' },
+  { id: 'signal', labelKey: 'share.signal', Icon: SignalIcon, color: '#3A76F0' },
+  { id: 'discord', labelKey: 'share.discord', Icon: DiscordIcon, color: '#5865F2' },
+  { id: 'mastodon', labelKey: 'share.mastodon', Icon: MastodonIcon, color: '#6364FF' },
+  { id: 'bluesky', labelKey: 'share.bluesky', Icon: BlueskyIcon, color: '#0EA5E9' },
+  { id: 'nostr', labelKey: 'share.nostr', Icon: NostrIcon, color: '#9333EA' },
 ];
 
 export default function ShareDialog({ open, onOpenChange }) {
@@ -151,74 +151,95 @@ export default function ShareDialog({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-primary" />
+      <DialogContent className="max-w-md gap-0 p-0">
+        {/* Header */}
+        <DialogHeader className="border-b border-border px-5 py-4">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Share2 className="h-4 w-4 text-primary" />
             {t('share.title')}
           </DialogTitle>
-          <DialogDescription>{t('share.subtitle')}</DialogDescription>
+          <DialogDescription className="text-xs">{t('share.subtitle')}</DialogDescription>
         </DialogHeader>
 
-        {/* Editable message */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">{t('share.editMessage')}</label>
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            className="resize-none text-sm"
-            placeholder={t('share.editMessage')}
-          />
-        </div>
-
-        {/* Mastodon instance input (conditional) */}
-        {showMastodonInput && (
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              value={mastodonInstance}
-              onChange={(e) => setMastodonInstance(e.target.value)}
-              placeholder="mastodon.social"
-              className="text-sm"
-              onKeyDown={(e) => e.key === 'Enter' && handleMastodon()}
+        <div className="space-y-5 p-5">
+          {/* Editable message */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">{t('share.editMessage')}</label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
+              className="resize-none text-sm"
+              placeholder={t('share.editMessage')}
             />
-            <Button size="sm" onClick={handleMastodon} className="shrink-0">
-              {t('share.share')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowMastodonInput(false)} className="shrink-0 px-2">
-              <X className="h-4 w-4" />
+          </div>
+
+          {/* Mastodon instance input (conditional) */}
+          {showMastodonInput && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={mastodonInstance}
+                onChange={(e) => setMastodonInstance(e.target.value)}
+                placeholder="mastodon.social"
+                className="text-sm"
+                onKeyDown={(e) => e.key === 'Enter' && handleMastodon()}
+                autoFocus
+              />
+              <Button size="sm" onClick={handleMastodon} className="shrink-0">
+                {t('share.share')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowMastodonInput(false)} className="shrink-0 px-2">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* Platform buttons grid */}
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {PLATFORMS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => handlePlatform(p.id)}
+                className="group flex flex-col items-center gap-2"
+                aria-label={t(p.labelKey)}
+              >
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-card transition-all duration-200 group-hover:scale-105 group-hover:shadow-raised"
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${p.color}1a`; e.currentTarget.style.borderColor = `${p.color}55`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = ''; }}
+                >
+                  <p.Icon className="h-6 w-6" style={{ color: p.color }} />
+                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">{t(p.labelKey)}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[11px] font-medium text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Copy link + native share */}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {typeof navigator !== 'undefined' && navigator.share && (
+              <Button onClick={handleNativeButton} variant="outline" className="flex-1 gap-2">
+                <MessageSquare className="h-4 w-4" />
+                {t('share.nativeShare')}
+              </Button>
+            )}
+            <Button
+              onClick={handleCopyLink}
+              variant={copied ? 'default' : 'outline'}
+              className="flex-1 gap-2"
+            >
+              {copied ? <Check className="h-4 w-4 text-success" /> : <Link2 className="h-4 w-4" />}
+              {copied ? t('share.copied') : t('share.copyLink')}
             </Button>
           </div>
-        )}
-
-        {/* Platform buttons grid */}
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {PLATFORMS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => handlePlatform(p.id)}
-              className={`flex flex-col items-center gap-1.5 rounded-xl border border-border p-3 transition-colors ${p.bg}`}
-              aria-label={t(p.labelKey)}
-            >
-              <p.Icon className={`h-6 w-6 ${p.color}`} />
-              <span className="text-xs font-medium text-muted-foreground">{t(p.labelKey)}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Native share + copy link */}
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {typeof navigator !== 'undefined' && navigator.share && (
-            <Button onClick={handleNativeButton} variant="outline" className="flex-1 gap-2">
-              <MessageSquare className="h-4 w-4" />
-              {t('share.nativeShare')}
-            </Button>
-          )}
-          <Button onClick={handleCopyLink} variant="outline" className="flex-1 gap-2">
-            {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-            {copied ? t('share.copied') : t('share.copyLink')}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
