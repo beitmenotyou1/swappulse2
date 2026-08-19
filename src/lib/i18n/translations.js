@@ -45,6 +45,7 @@ const en = {
   'feed.createAccount': 'Create account', 'feed.exploreCards': 'Explore cards',
   'trending.title': 'Trending Cards', 'trending.subtitle': 'Most talked-about cards right now',
   'trending.posts': 'posts', 'lang.switch': 'Language', 'lang.interface': 'Interface language',
+  'nav.terms': 'Terms', 'nav.privacy': 'Privacy', 'nav.status': 'Status',
 };
 
 const fr = {
@@ -79,6 +80,7 @@ const fr = {
   'feed.createAccount': 'Créer un compte', 'feed.exploreCards': 'Explorer les cartes',
   'trending.title': 'Cartes Tendances', 'trending.subtitle': 'Les cartes les plus discutées en ce moment',
   'trending.posts': 'publications', 'lang.switch': 'Langue', 'lang.interface': 'Langue de l\'interface',
+  'nav.terms': 'Conditions', 'nav.privacy': 'Confidentialité', 'nav.status': 'Statut',
 };
 
 const es = {
@@ -113,6 +115,7 @@ const es = {
   'feed.createAccount': 'Crear cuenta', 'feed.exploreCards': 'Explorar cartas',
   'trending.title': 'Cartas en Tendencia', 'trending.subtitle': 'Las cartas más comentadas ahora mismo',
   'trending.posts': 'publicaciones', 'lang.switch': 'Idioma', 'lang.interface': 'Idioma de la interfaz',
+  'nav.terms': 'Términos', 'nav.privacy': 'Privacidad', 'nav.status': 'Estado',
 };
 
 const de = {
@@ -147,6 +150,7 @@ const de = {
   'feed.createAccount': 'Konto erstellen', 'feed.exploreCards': 'Karten entdecken',
   'trending.title': 'Trend-Karten', 'trending.subtitle': 'Die meistdiskutierten Karten im Moment',
   'trending.posts': 'Beiträge', 'lang.switch': 'Sprache', 'lang.interface': 'Oberflächensprache',
+  'nav.terms': 'AGB', 'nav.privacy': 'Datenschutz', 'nav.status': 'Status',
 };
 
 const it = {
@@ -181,6 +185,7 @@ const it = {
   'feed.createAccount': 'Crea account', 'feed.exploreCards': 'Esplora carte',
   'trending.title': 'Carte di Tendenza', 'trending.subtitle': 'Le carte più discusse in questo momento',
   'trending.posts': 'post', 'lang.switch': 'Lingua', 'lang.interface': 'Lingua interfaccia',
+  'nav.terms': 'Termini', 'nav.privacy': 'Privacy', 'nav.status': 'Stato',
 };
 
 const pt = {
@@ -215,6 +220,7 @@ const pt = {
   'feed.createAccount': 'Criar conta', 'feed.exploreCards': 'Explorar cartas',
   'trending.title': 'Cartas em Alta', 'trending.subtitle': 'As cartas mais comentadas agora',
   'trending.posts': 'publicações', 'lang.switch': 'Idioma', 'lang.interface': 'Idioma da interface',
+  'nav.terms': 'Termos', 'nav.privacy': 'Privacidade', 'nav.status': 'Status',
 };
 
 const ja = {
@@ -249,6 +255,7 @@ const ja = {
   'feed.createAccount': 'アカウント作成', 'feed.exploreCards': 'カードを探す',
   'trending.title': 'トレンドカード', 'trending.subtitle': '今話題のカード',
   'trending.posts': '投稿', 'lang.switch': '言語', 'lang.interface': 'インターフェース言語',
+  'nav.terms': '利用規約', 'nav.privacy': 'プライバシー', 'nav.status': 'ステータス',
 };
 
 const zh = {
@@ -283,6 +290,7 @@ const zh = {
   'feed.createAccount': '创建账号', 'feed.exploreCards': '探索卡片',
   'trending.title': '热门卡片', 'trending.subtitle': '当前最多人讨论的卡片',
   'trending.posts': '帖子', 'lang.switch': '语言', 'lang.interface': '界面语言',
+  'nav.terms': '条款', 'nav.privacy': '隐私', 'nav.status': '状态',
 };
 
 const ko = {
@@ -317,6 +325,7 @@ const ko = {
   'feed.createAccount': '계정 만들기', 'feed.exploreCards': '카드 탐색',
   'trending.title': '인기 카드', 'trending.subtitle': '지금 가장 많이 언급되는 카드',
   'trending.posts': '게시물', 'lang.switch': '언어', 'lang.interface': '인터페이스 언어',
+  'nav.terms': '이용약관', 'nav.privacy': '개인정보처리방침', 'nav.status': '상태',
 };
 
 export const translations = {
