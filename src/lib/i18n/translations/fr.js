@@ -162,6 +162,7 @@ const fr = {
   'moderation.title': 'Tableau de bord modérateur', 'moderation.subtitle': 'Examiner les posts signalés et appliquer les décisions de modération', 'moderation.refresh': 'Actualiser',
   'moderation.tab.posts': 'Posts signalés', 'moderation.tab.disputes': 'Litiges d\'échange', 'moderation.tab.enforcement': 'Sanctions des comptes', 'moderation.tab.bots': 'Protection anti-bot',
   'moderation.hideFilters': 'Masquer les filtres', 'moderation.showFilters': 'Afficher les filtres',
+  'share.title': 'Partager', 'share.editMessage': 'Modifier le message', 'share.copyLink': 'Copier le lien', 'share.copied': 'Copié', 'share.linkCopied': 'Lien copié', 'share.pasteHint': 'Collez votre message dans l\'application', 'share.share': 'Partager', 'share.nativeShare': 'Partager via l\'appareil', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr',
 };
 
 export default fr;

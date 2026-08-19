@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Share2, Check, X, MessageSquare, Link2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -25,12 +25,18 @@ function getSeoMeta() {
 }
 
 const PLATFORMS = [
-  { id: 'whatsapp', labelKey: 'share.whatsapp', Icon: WhatsAppIcon, color: '#25D366' },
-  { id: 'signal', labelKey: 'share.signal', Icon: SignalIcon, color: '#3A76F0' },
-  { id: 'discord', labelKey: 'share.discord', Icon: DiscordIcon, color: '#5865F2' },
-  { id: 'mastodon', labelKey: 'share.mastodon', Icon: MastodonIcon, color: '#6364FF' },
-  { id: 'bluesky', labelKey: 'share.bluesky', Icon: BlueskyIcon, color: '#0EA5E9' },
-  { id: 'nostr', labelKey: 'share.nostr', Icon: NostrIcon, color: '#9333EA' },
+  { id: 'whatsapp', labelKey: 'share.whatsapp', Icon: WhatsAppIcon, color: '#25D366',
+    shareUrl: (msg) => `https://wa.me/?text=${encodeURIComponent(msg)}` },
+  { id: 'signal', labelKey: 'share.signal', Icon: SignalIcon, color: '#3A76F0',
+    homeUrl: 'https://signal.org' },
+  { id: 'discord', labelKey: 'share.discord', Icon: DiscordIcon, color: '#5865F2',
+    homeUrl: 'https://discord.com' },
+  { id: 'mastodon', labelKey: 'share.mastodon', Icon: MastodonIcon, color: '#6364FF',
+    needsInstance: true },
+  { id: 'bluesky', labelKey: 'share.bluesky', Icon: BlueskyIcon, color: '#0EA5E9',
+    shareUrl: (msg) => `https://bsky.app/intent/compose?text=${encodeURIComponent(msg)}` },
+  { id: 'nostr', labelKey: 'share.nostr', Icon: NostrIcon, color: '#9333EA',
+    homeUrl: 'https://nostr.com' },
 ];
 
 export default function ShareDialog({ open, onOpenChange }) {
@@ -76,11 +82,6 @@ export default function ShareDialog({ open, onOpenChange }) {
     return false;
   }, [message, shareUrl]);
 
-  const handleWhatsApp = useCallback(() => {
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, [message]);
-
   const handleMastodon = useCallback(() => {
     if (!showMastodonInput) {
       setShowMastodonInput(true);
@@ -92,44 +93,31 @@ export default function ShareDialog({ open, onOpenChange }) {
     window.open(url, '_blank', 'noopener,noreferrer');
   }, [message, mastodonInstance, showMastodonInput]);
 
-  const handlePlatformWithoutIntent = useCallback(async (platformHome) => {
-    // Try native Web Share API first (lets the OS pick the app).
+  const handlePlatform = useCallback(async (platform) => {
+    // Mastodon needs the user's instance URL.
+    if (platform.needsInstance) {
+      handleMastodon();
+      return;
+    }
+    // Platforms with official share intent URLs (WhatsApp, Bluesky).
+    if (platform.shareUrl) {
+      window.open(platform.shareUrl(message), '_blank', 'noopener,noreferrer');
+      return;
+    }
+    // Platforms without web intents (Signal, Discord, Nostr):
+    // try native Web Share API, then fall back to copy + open.
     if (navigator.share) {
       const ok = await handleNativeShare();
       if (ok) return;
     }
-    // Fallback: copy message to clipboard, then open the platform.
     const copiedOk = await copyToClipboard(message);
     if (copiedOk) {
       toast({ title: t('share.copied'), description: t('share.pasteHint') });
     }
-    if (platformHome) {
-      window.open(platformHome, '_blank', 'noopener,noreferrer');
+    if (platform.homeUrl) {
+      window.open(platform.homeUrl, '_blank', 'noopener,noreferrer');
     }
-  }, [message, handleNativeShare, copyToClipboard, toast, t]);
-
-  const handlePlatform = useCallback((platformId) => {
-    switch (platformId) {
-      case 'whatsapp':
-        handleWhatsApp();
-        break;
-      case 'mastodon':
-        handleMastodon();
-        break;
-      case 'signal':
-        handlePlatformWithoutIntent('https://signal.org');
-        break;
-      case 'discord':
-        handlePlatformWithoutIntent('https://discord.com');
-        break;
-      case 'bluesky':
-        handlePlatformWithoutIntent('https://bsky.app');
-        break;
-      case 'nostr':
-        handlePlatformWithoutIntent('https://nostr.com');
-        break;
-    }
-  }, [handleWhatsApp, handleMastodon, handlePlatformWithoutIntent]);
+  }, [message, handleMastodon, handleNativeShare, copyToClipboard, toast, t]);
 
   const handleCopyLink = useCallback(async () => {
     const ok = await copyToClipboard(shareUrl);
@@ -158,7 +146,6 @@ export default function ShareDialog({ open, onOpenChange }) {
             <Share2 className="h-4 w-4 text-primary" />
             {t('share.title')}
           </DialogTitle>
-          <DialogDescription className="text-xs">{t('share.subtitle')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 p-5">
@@ -200,7 +187,7 @@ export default function ShareDialog({ open, onOpenChange }) {
             {PLATFORMS.map((p) => (
               <button
                 key={p.id}
-                onClick={() => handlePlatform(p.id)}
+                onClick={() => handlePlatform(p)}
                 className="group flex flex-col items-center gap-2"
                 aria-label={t(p.labelKey)}
               >
