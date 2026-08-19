@@ -12,38 +12,38 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const primary = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/explore', icon: Compass, label: 'Explore' },
-  { to: '/trades', icon: ArrowLeftRight, label: 'Trades' },
-  { to: '/collection', icon: Layers, label: 'Collection', authOnly: true },
+  { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
+  { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
+  { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
+  { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
 ];
 
 const moreItems = [
-  { to: '/binders', icon: BookOpen, label: 'Binders' },
-  { to: '/circles', icon: Users, label: 'Circles' },
-  { to: '/meetups', icon: CalendarDays, label: 'Meetups' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust' },
-  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', authOnly: true },
-  { to: '/achievements', icon: Trophy, label: 'Achievements', authOnly: true },
-  { to: '/challenges', icon: Target, label: 'Challenges' },
-  { to: '/pack-parties', icon: Sparkles, label: 'Parties' },
-  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of Week' },
-  { to: '/packs', icon: Package, label: 'Packs' },
-  { to: '/market', icon: BarChart3, label: 'Market' },
-  { to: '/predictions', icon: Vote, label: 'Polls' },
-  { to: '/grading', icon: Award, label: 'Grading', authOnly: true },
-  { to: '/spaces', icon: Radio, label: 'Live' },
-  { to: '/notifications', icon: Bell, label: 'Alerts', authOnly: true },
-  { to: '/messages', icon: MessageSquare, label: 'Messages', authOnly: true },
-  { to: '/help', icon: HelpCircle, label: 'Help' },
-  { to: '/terms', icon: FileText, label: 'Terms' },
-  { to: '/privacy', icon: Lock, label: 'Privacy' },
-  { to: '/status', icon: Activity, label: 'Status' },
-  { to: '/donate', icon: Heart, label: 'Donate' },
-  { to: '/admin', icon: Shield, label: 'Admin', adminOnly: true },
-  { to: '/moderation', icon: ShieldAlert, label: 'Moderation', adminOnly: true },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings', authOnly: true },
-  { to: '/profile', icon: UserIcon, label: 'Profile', authOnly: true },
+  { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
+  { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
+  { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },
+  { to: '/trust', icon: ShieldCheck, label: 'Trust', tKey: 'nav.trust' },
+  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', tKey: 'nav.whoToFollow', authOnly: true },
+  { to: '/achievements', icon: Trophy, label: 'Achievements', tKey: 'nav.achievements', authOnly: true },
+  { to: '/challenges', icon: Target, label: 'Challenges', tKey: 'nav.challenges' },
+  { to: '/pack-parties', icon: Sparkles, label: 'Parties', tKey: 'nav.packParties' },
+  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of Week', tKey: 'nav.pullOfTheWeek' },
+  { to: '/packs', icon: Package, label: 'Packs', tKey: 'nav.packOpenings' },
+  { to: '/market', icon: BarChart3, label: 'Market', tKey: 'nav.market' },
+  { to: '/predictions', icon: Vote, label: 'Polls', tKey: 'nav.predictions' },
+  { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
+  { to: '/spaces', icon: Radio, label: 'Live', tKey: 'nav.live' },
+  { to: '/notifications', icon: Bell, label: 'Alerts', tKey: 'nav.notifications', authOnly: true },
+  { to: '/messages', icon: MessageSquare, label: 'Messages', tKey: 'nav.messages', authOnly: true },
+  { to: '/help', icon: HelpCircle, label: 'Help', tKey: 'nav.help' },
+  { to: '/terms', icon: FileText, label: 'Terms', tKey: 'nav.terms' },
+  { to: '/privacy', icon: Lock, label: 'Privacy', tKey: 'nav.privacy' },
+  { to: '/status', icon: Activity, label: 'Status', tKey: 'nav.status' },
+  { to: '/donate', icon: Heart, label: 'Donate', tKey: 'nav.donate' },
+  { to: '/admin', icon: Shield, label: 'Admin', tKey: 'nav.admin', adminOnly: true },
+  { to: '/moderation', icon: ShieldAlert, label: 'Moderation', tKey: 'nav.moderation', adminOnly: true },
+  { to: '/settings', icon: SettingsIcon, label: 'Settings', tKey: 'nav.settings', authOnly: true },
+  { to: '/profile', icon: UserIcon, label: 'Profile', tKey: 'nav.profile', authOnly: true },
 ];
 
 export default function MobileNav() {
@@ -80,7 +80,7 @@ export default function MobileNav() {
               }`}
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              {t(item.tKey)}
             </Link>
           );
         })}
@@ -127,7 +127,7 @@ export default function MobileNav() {
                             }`}
                           >
                             <item.icon className="h-5 w-5" />
-                            {item.label}
+                            {t(item.tKey)}
                             {unread > 0 && (
                               <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
                             )}
@@ -147,7 +147,7 @@ export default function MobileNav() {
                     }`}
                   >
                     <item.icon className="h-5 w-5" />
-                    {item.label}
+                    {t(item.tKey)}
                     {item.to === '/spaces' && liveCount > 0 && (
                       <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{liveCount}</span>
                     )}
