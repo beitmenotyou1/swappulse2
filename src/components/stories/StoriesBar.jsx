@@ -8,6 +8,7 @@ import StoryViewer from './StoryViewer';
 import { useLivePresence } from '@/lib/livePresence';
 import StoryCamera from './StoryCamera';
 import { useAuth } from '@/lib/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Returns the set of DIDs the current user follows (outgoing follows).
 async function followedDids(me) {
@@ -23,7 +24,8 @@ export default function StoriesBar() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const { liveByDid } = useLivePresence();
   const { user } = useAuth();
-  const myDisplayName = user?.display_name || user?.full_name || 'You';
+  const t = useT();
+  const myDisplayName = user?.display_name || user?.full_name || t('common.you');
   const myAvatar = user?.avatar || '';
 
   const load = async (did) => {
@@ -101,7 +103,7 @@ export default function StoriesBar() {
             </span>
           )}
         </div>
-        <span className="max-w-[72px] truncate text-[12px] font-medium text-foreground">Your story</span>
+        <span className="max-w-[72px] truncate text-[12px] font-medium text-foreground">{t('stories.yourStory')}</span>
       </button>
 
       {others.map((u) => {
@@ -121,7 +123,7 @@ export default function StoriesBar() {
               </div>
             )}
             <span className={`max-w-[72px] truncate text-[12px] font-medium ${seenAll ? 'text-[#94a3b8]' : 'text-[#1e293b] dark:text-foreground'}`}>
-              {u.author_name || 'Collector'}
+              {u.author_name || t('common.collector')}
             </span>
           </button>
         );

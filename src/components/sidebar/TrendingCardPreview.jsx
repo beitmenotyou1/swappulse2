@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Globe, Loader2 } from 'lucide-react';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Cache fetched card data so re-hovering the same card is instant.
 const cardCache = new Map();
@@ -13,6 +14,7 @@ const cardCache = new Map();
 // the link so it doesn't overflow the right-hand sidebar. On touch devices
 // where hover isn't available, the link still navigates to the card page.
 export default function TrendingCardPreview({ card, count }) {
+  const t = useT();
   const [hovered, setHovered] = useState(false);
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +67,7 @@ export default function TrendingCardPreview({ card, count }) {
         className="flex items-center justify-between rounded-lg px-2 py-1 transition-colors hover:bg-secondary"
       >
         <span className="flex items-center gap-1.5 truncate text-sm font-medium">
-          {card.source === 'web' && <Globe className="h-3 w-3 shrink-0 text-accent" aria-label="From the web" />}
+          {card.source === 'web' && <Globe className="h-3 w-3 shrink-0 text-accent" aria-label={t('sidebar.fromWeb')} />}
           {card.card_name}
         </span>
         {count > 0 && (
@@ -112,21 +114,21 @@ export default function TrendingCardPreview({ card, count }) {
                   {avg != null ? (
                     <div className="mt-2">
                       <p className="text-lg font-extrabold leading-none">{formatPrice(Math.round(avg * 100))}</p>
-                      <p className="text-[10px] text-muted-foreground">avg market</p>
+                      <p className="text-[10px] text-muted-foreground">{t('card.avgMarket')}</p>
                       {pricing.low != null && (
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          Low {formatPrice(Math.round(pricing.low * 100))}
+                          {t('card.low')} {formatPrice(Math.round(pricing.low * 100))}
                         </p>
                       )}
                     </div>
                   ) : (
-                    <p className="mt-2 text-[11px] text-muted-foreground">No price data</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">{t('card.noPriceData')}</p>
                   )}
                 </div>
               </div>
             ) : (
               <div className="flex h-40 items-center justify-center text-center text-xs text-muted-foreground">
-                Card data unavailable
+                {t('card.dataUnavailable')}
               </div>
             )}
           </div>
