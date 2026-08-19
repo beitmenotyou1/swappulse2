@@ -41,7 +41,7 @@ export default async function(req) {
 
     // Process page-language combinations, up to 5 LLM calls per run
     let llmCalls = 0;
-    const MAX_LLM_CALLS = 5;
+    const MAX_LLM_CALLS = 20;
 
     outer: for (const page of pages) {
       const slug = page.slug;
