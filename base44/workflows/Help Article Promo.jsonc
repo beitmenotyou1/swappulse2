@@ -1,0 +1,47 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "help_article_promo",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "post_help_promo": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "post-help-promo",
+            "args": {
+              "op": "post"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Publish help article promo",
+            "description": "Posts the next help article guide to the AT Protocol from the SwapPulse bot account"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */8 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Help Article Promo",
+  "description": "Cycles through all SwapPulse help articles and posts one to the AT Protocol from the bot account every 8 hours. Each post links to the full guide on swappulse.org, tracked in PromoPost so it appears on Bluesky but not the local feed."
+}

@@ -1,0 +1,370 @@
+// post-help-promo — publishes a help article promo post to the AT Protocol from
+// the SwapPulse promo bot account, cycling through all help guides in order.
+//
+// Reads the HelpPromoCursor entity (single-row) to find the current rotation
+// index, selects the article at that index from the shared HELP_ARTICLES list,
+// composes a conversational promo message with the article's
+// https://swappulse.org/help/<slug> link, uploads the branded SwapPulse banner
+// image to the PDS as a blob, publishes an app.bsky.feed.post with the image
+// embed, tracks the post in PromoPost so firehose-ingest skips it, and advances
+// the cursor to the next article (wrapping to 0 after the last).
+//
+// Supports an `op` parameter:
+//   - "post" (default): post the next article and advance the cursor
+//   - "status": return the current cursor state without posting
+//   - "reset": reset the cursor to index 0 (admin only)
+//   - "skip": advance the cursor by one without posting (admin only)
+//
+// Reuses the same PdsCredential lookup, getPdsSessionForUser, pdsRequest,
+// uploadCardImage pattern, buildRichTextFacets, and PromoPost tracking as
+// post-promo. Invoked by the "Help Article Promo" workflow every 8 hours.
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
+import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
+import { HELP_ARTICLES } from '../../shared/helpArticles.ts';
+
+const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
+const SITE_BASE = 'https://swappulse.org';
+const PROMO_BANNER_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/a22b46eb2_generated_image.png';
+
+// --- Message fragment pools (composed per article, varied each run) ---
+// Conversational, personal, no em dashes, UK English. {title} is replaced with
+// the article title, {description} with the article description.
+const HOOKS = [
+  "Wrote up a guide on {title} and it's worth a read.",
+  "If you've ever wondered how {title} works, we've got you covered.",
+  "New to SwapPulse? Here's how {title} works.",
+  "Been getting questions about {title}, so we put together a full guide.",
+  "The {title} guide is live and it walks you through everything.",
+  "Quick tip: {title} is one of the features that makes SwapPulse different.",
+  "We just published a deep dive on {title}.",
+  "Here's everything you need to know about {title} on SwapPulse.",
+];
+
+const VALUE_PROPS = [
+  "SwapPulse is a decentralized social network for Pokémon TCG collectors, built on the AT Protocol. It's in alpha and we're still building.",
+  "No ads, no algorithm, no paywalls. Just collectors helping collectors. Free and open-source.",
+  "Built on the AT Protocol, so your posts can show up on Bluesky too. Same account, bigger reach.",
+  "Your collection, your posts, your follows. They're yours. Portable, collector-owned data.",
+  "Scan cards, build collections, create binders, find trades, all in one place. Free and open-source.",
+];
+
+const CTAS = [
+  `Read the full guide: ${SITE_BASE}/help/{slug}`,
+  `Check it out: ${SITE_BASE}/help/{slug}`,
+  `Full guide here: ${SITE_BASE}/help/{slug}`,
+  `Learn more: ${SITE_BASE}/help/{slug}`,
+];
+
+const HASHTAG_SETS = [
+  "#PokemonTCG #PTCGO #PokemonCards #TCG",
+  "#PokemonTCG #PokemonCommunity #TCGCommunity",
+  "#PokemonTCG #CardCollecting #PokemonCards",
+  "#PokemonTCG #TCGTrading #CardCollector",
+  "#PokemonTCG #PackOpening #PullOfTheWeek",
+  "#PokemonTCG #PokemonCollection #TCG",
+];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function parseTags(hashtagSet: string): string[] {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const raw of hashtagSet.split(/\s+/)) {
+    const tag = raw.replace(/^#/, '').trim().toLowerCase();
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    tags.push(tag);
+    if (tags.length >= 8) break;
+  }
+  return tags;
+}
+
+function countGraphemes(str: string): number {
+  try {
+    const seg = new Intl.Segmenter('en', { granularity: 'grapheme' });
+    return [...seg.segment(str)].length;
+  } catch {
+    return [...str].length;
+  }
+}
+
+interface Article {
+  slug: string;
+  title: string;
+  category: string;
+  description: string;
+}
+
+function generateMessage(article: Article): { content: string; tags: string[] } {
+  const hook = pick(HOOKS)
+    .replace(/\{title\}/g, article.title);
+  const hashtagSet = pick(HASHTAG_SETS);
+  const tags = parseTags(hashtagSet);
+  const hashtags = hashtagSet;
+  const cta = pick(CTAS)
+    .replace(/\{slug\}/g, article.slug);
+  const descLine = article.description;
+
+  // Try full message first, then trim if over 300 graphemes
+  const valueProp = pick(VALUE_PROPS);
+  const full = `${hook}\n\n${descLine}\n\n${valueProp}\n\n${cta}\n\n${hashtags}`;
+  if (countGraphemes(full) <= 300) {
+    return { content: full, tags };
+  }
+
+  // Drop the value prop
+  const medium = `${hook}\n\n${descLine}\n\n${cta}\n\n${hashtags}`;
+  if (countGraphemes(medium) <= 300) {
+    return { content: medium, tags };
+  }
+
+  // Drop the description too
+  const essential = `${hook}\n\n${cta}\n\n${hashtags}`;
+  if (countGraphemes(essential) <= 300) {
+    return { content: essential, tags };
+  }
+
+  return { content: essential.slice(0, 297) + '...', tags };
+}
+
+async function uploadImage(
+  pdsUrl: string,
+  accessJwt: string,
+  imageUrl: string,
+): Promise<{ $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null> {
+  try {
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) {
+      console.error('post-help-promo: image fetch failed', imgRes.status);
+      return null;
+    }
+    const mimeType = imgRes.headers.get('content-type') || 'image/png';
+    const bytes = new Uint8Array(await imgRes.arrayBuffer());
+
+    const uploadRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': mimeType,
+        'Authorization': `Bearer ${accessJwt}`,
+      },
+      body: bytes,
+    });
+    if (!uploadRes.ok) {
+      const text = await uploadRes.text();
+      console.error('post-help-promo: uploadBlob failed', uploadRes.status, text.slice(0, 300));
+      return null;
+    }
+    const data = await uploadRes.json();
+    const blob = data.blob;
+    if (!blob?.ref?.$link) return null;
+    return {
+      $type: 'blob',
+      ref: { $link: blob.ref.$link },
+      mimeType: blob.mimeType || mimeType,
+      size: blob.size ?? bytes.length,
+    };
+  } catch (e) {
+    console.error('post-help-promo: uploadImage failed', e?.message || e);
+    return null;
+  }
+}
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    const svc = base44.asServiceRole;
+
+    let body: any = {};
+    try { body = await req.json(); } catch { /* no body is fine */ }
+    const op = body.op || 'post';
+
+    // --- Read or create the cursor ---
+    let cursors = await svc.entities.HelpPromoCursor.list('-created_date', 1).catch(() => []);
+    let cursor = cursors[0] || null;
+
+    if (op === 'status') {
+      const currentArticle = cursor
+        ? HELP_ARTICLES[cursor.current_index % cursor.total_articles]
+        : HELP_ARTICLES[0];
+      const nextIndex = cursor
+        ? (cursor.current_index + 1) % cursor.total_articles
+        : 1;
+      const nextArticle = cursor
+        ? HELP_ARTICLES[nextIndex]
+        : HELP_ARTICLES[1];
+      return Response.json({
+        ok: true,
+        cursor: cursor ? {
+          current_index: cursor.current_index,
+          total_articles: cursor.total_articles,
+          last_posted_slug: cursor.last_posted_slug,
+          last_posted_at: cursor.last_posted_at,
+          last_posted_uri: cursor.last_posted_uri,
+        } : null,
+        current_article: currentArticle,
+        next_article: nextArticle,
+        total_articles: HELP_ARTICLES.length,
+      });
+    }
+
+    if (op === 'reset') {
+      if (cursor) {
+        await svc.entities.HelpPromoCursor.update(cursor.id, { current_index: 0 });
+      } else {
+        cursor = await svc.entities.HelpPromoCursor.create({
+          current_index: 0,
+          total_articles: HELP_ARTICLES.length,
+        });
+      }
+      return Response.json({ ok: true, message: 'Cursor reset to 0', current_index: 0 });
+    }
+
+    if (op === 'skip') {
+      const curIdx = cursor ? cursor.current_index : 0;
+      const total = cursor ? cursor.total_articles : HELP_ARTICLES.length;
+      const nextIdx = (curIdx + 1) % total;
+      if (cursor) {
+        await svc.entities.HelpPromoCursor.update(cursor.id, { current_index: nextIdx });
+      } else {
+        cursor = await svc.entities.HelpPromoCursor.create({
+          current_index: nextIdx,
+          total_articles: HELP_ARTICLES.length,
+        });
+      }
+      return Response.json({ ok: true, message: `Skipped to index ${nextIdx}`, current_index: nextIdx });
+    }
+
+    // --- op === "post": publish the next help article ---
+
+    // Ensure cursor exists with correct total
+    if (!cursor) {
+      cursor = await svc.entities.HelpPromoCursor.create({
+        current_index: 0,
+        total_articles: HELP_ARTICLES.length,
+      });
+    }
+    // Sync total if the article list changed
+    if (cursor.total_articles !== HELP_ARTICLES.length) {
+      await svc.entities.HelpPromoCursor.update(cursor.id, { total_articles: HELP_ARTICLES.length });
+      cursor.total_articles = HELP_ARTICLES.length;
+    }
+
+    const articleIndex = cursor.current_index % cursor.total_articles;
+    const article = HELP_ARTICLES[articleIndex];
+    if (!article) {
+      return Response.json({ error: 'No article at index ' + articleIndex }, { status: 500 });
+    }
+
+    // Look up the PDS credential for the promo account
+    const creds = await svc.entities.PdsCredential
+      .filter({ user_id: PROMO_USER_ID }, '-created_date', 1)
+      .catch(() => []);
+    if (!creds || creds.length === 0 || !creds[0].app_password) {
+      console.error('post-help-promo: no PdsCredential found for promo account', PROMO_USER_ID);
+      return Response.json({ error: 'Promo account PDS credential not found' }, { status: 500 });
+    }
+    const cred = creds[0];
+    const pdsUrl = cred.pds_url || Deno.env.get('PDS_URL');
+    if (!pdsUrl) {
+      return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
+    }
+
+    // Authenticate to the PDS as the promo account
+    let session;
+    try {
+      ({ session } = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password));
+    } catch (e) {
+      console.error('post-help-promo: PDS session failed', e?.message || e);
+      return Response.json({ error: 'PDS authentication failed' }, { status: 502 });
+    }
+
+    // Compose the message
+    const { content, tags } = generateMessage(article);
+
+    // Upload the branded banner image
+    const imageBlob = await uploadImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL);
+    const altText = `SwapPulse help guide: ${article.title}`;
+    const embed: any = imageBlob
+      ? {
+          $type: 'app.bsky.embed.images',
+          images: [{ alt: altText, image: imageBlob }],
+        }
+      : null;
+
+    // Create the post on the PDS
+    const record: any = {
+      $type: 'app.bsky.feed.post',
+      text: content,
+      createdAt: new Date().toISOString(),
+      langs: ['en'],
+    };
+    if (tags.length > 0) record.tags = tags;
+    const facets = buildRichTextFacets(content);
+    if (facets.length > 0) record.facets = facets;
+    if (embed) record.embed = embed;
+
+    let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
+      repo: session.did,
+      collection: 'app.bsky.feed.post',
+      record,
+    });
+
+    // Retry once on auth failure
+    if (result?.error && result.status === 401) {
+      try {
+        ({ session } = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password));
+        result = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
+          repo: session.did,
+          collection: 'app.bsky.feed.post',
+          record,
+        });
+      } catch (e) {
+        console.error('post-help-promo: retry failed', e?.message || e);
+      }
+    }
+
+    if (result?.error) {
+      console.error('post-help-promo: createRecord failed', result.status, result.body);
+      return Response.json({ error: `createRecord failed (${result.status})` }, { status: 502 });
+    }
+
+    // Track the promo post so firehose-ingest skips it
+    await svc.entities.PromoPost.create({
+      at_uri: result.uri,
+      content,
+      did: session.did,
+      posted_at: new Date().toISOString(),
+    }).catch((e: any) => console.error('post-help-promo: failed to track PromoPost', e?.message || e));
+
+    // Advance the cursor
+    const nextIndex = (articleIndex + 1) % cursor.total_articles;
+    await svc.entities.HelpPromoCursor.update(cursor.id, {
+      current_index: nextIndex,
+      last_posted_slug: article.slug,
+      last_posted_at: new Date().toISOString(),
+      last_posted_uri: result.uri,
+    });
+
+    console.log('post-help-promo: published help article promo', article.slug, `(index ${articleIndex} → ${nextIndex})`, result.uri);
+    return Response.json({
+      ok: true,
+      uri: result.uri,
+      cid: result.cid,
+      article: { slug: article.slug, title: article.title, category: article.category },
+      content,
+      next_index: nextIndex,
+      hasEmbed: !!embed,
+    });
+  } catch (error) {
+    console.error('post-help-promo error:', error?.message || error);
+    return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
+  }
+});

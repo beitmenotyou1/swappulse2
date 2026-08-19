@@ -18,6 +18,7 @@ import DataSubjectRequestsSection from '@/components/admin/DataSubjectRequestsSe
 import DsarSummaryCard from '@/components/admin/DsarSummaryCard';
 import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection';
 import StandardSiteSection from '@/components/admin/StandardSiteSection';
+import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 
@@ -87,6 +88,7 @@ export default function Admin() {
         <DataSubjectRequestsSection />
         <BotProtectionLogSection />
         <StandardSiteSection />
+        <HelpPromoSection />
         <SeoAuditSection />
       </div>
       <GuideFooterLink slug="admin" />

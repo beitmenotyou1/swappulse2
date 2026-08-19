@@ -1,0 +1,57 @@
+{
+  "name": "HelpPromoCursor",
+  "type": "object",
+  "title": "HelpPromoCursor",
+  "description": "org.swappulse.helpPromoCursor \u2014 a single-row cursor tracking the rotation position of the help article promo poster. Records the current article index, total article count, last-posted slug, and last-posted timestamp so post-help-promo cycles through all help guides in order and resumes where it left off. Written by post-help-promo (service role). Admin-only read/write.",
+  "properties": {
+    "current_index": {
+      "type": "integer",
+      "default": 0,
+      "description": "Index into the help articles list for the next article to post. Wraps to 0 after the last article."
+    },
+    "total_articles": {
+      "type": "integer",
+      "default": 44,
+      "description": "Total number of help articles in the rotation"
+    },
+    "last_posted_slug": {
+      "type": "string",
+      "description": "Slug of the most recently posted help article"
+    },
+    "last_posted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the last help article promo was posted"
+    },
+    "last_posted_uri": {
+      "type": "string",
+      "description": "at:// URI of the last posted help article promo"
+    }
+  },
+  "required": [
+    "current_index",
+    "total_articles"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
