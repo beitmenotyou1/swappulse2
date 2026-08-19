@@ -150,7 +150,8 @@ async function nameSearchAcrossLanguages(
 async function resolveSetId(svc: any, rawToken: string): Promise<string | null> {
   const lower = rawToken.toLowerCase();
   const norm = normalizeSetId(rawToken);
-  const candidates = Array.from(new Set([lower, norm].filter(Boolean)));
+  const upper = lower.charAt(0).toUpperCase() + lower.slice(1);
+  const candidates = Array.from(new Set([lower, norm, upper].filter(Boolean)));
   for (const c of candidates) {
     try {
       const hits = await svc.entities.TcgdexCard.filter({ set_id: c }, '-updated_date', 1);
@@ -239,6 +240,32 @@ Deno.serve(async (req) => {
               }
               if (matched.length > 0) break;
             }
+          }
+        }
+        // Set-only fallback: fetch all cards in the set from the API (for
+        // set-code searches without a card number, e.g. "M2" or "M4").
+        if (matched.length === 0 && effectiveSetId && !localIdToken) {
+          const sidForms = Array.from(new Set(
+            [effectiveSetId, setCandidateToken, normalizeSetId(setCandidateToken)].filter(Boolean)
+          ));
+          for (const sid of sidForms) {
+            for (const l of SUPPORTED_LANGS) {
+              try {
+                const setData = await fetchTcgdex(`/sets/${encodeURIComponent(sid)}`, l);
+                if (setData?.cards?.length) {
+                  matched = setData.cards.slice(0, perPage).map((c: any) => ({
+                    id: c.id || c.cardId,
+                    name: c.name,
+                    image: c.image,
+                    rarity: c.rarity,
+                    local_id: c.localId || c.local_id,
+                    set: { id: setData.id || sid, name: setData.name || sid },
+                  }));
+                  break;
+                }
+              } catch { /* try next language/form */ }
+            }
+            if (matched.length > 0) break;
           }
         }
         if (matched.length === 0) {

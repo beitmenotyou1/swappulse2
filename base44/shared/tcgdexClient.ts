@@ -4,9 +4,17 @@
 // Supported langs: en, fr, de, it, es, pt, jp, zh, ko (unknown -> en).
 export const TCGDEX_LANGS = ['en', 'fr', 'de', 'it', 'es', 'pt', 'jp', 'zh', 'ko'];
 
+// TCGDex uses 'ja' for Japanese and 'zh-tw' for Traditional Chinese, but our
+// internal labels (and entity field names like name_norm_jp / name_norm_zh)
+// use 'jp' and 'zh'. Map at the API boundary so internal labels stay unchanged.
+const TCGDEX_API_LANG_MAP: Record<string, string> = { jp: 'ja', zh: 'zh-tw' };
+function toApiLang(lang: string): string {
+  return TCGDEX_API_LANG_MAP[lang] || lang;
+}
+
 export function tcgdexBase(lang = 'en') {
   const l = TCGDEX_LANGS.includes(lang) ? lang : 'en';
-  return `https://api.tcgdex.net/v2/${l}`;
+  return `https://api.tcgdex.net/v2/${toApiLang(l)}`;
 }
 
 /**

@@ -16,6 +16,14 @@ export const SET_CODE_ALIASES: Record<string, string> = {
   // --- Chinese-exclusive / promo sets (TCGDex uses me* IDs for these) ---
   pbl: 'me05', // Pitch Black (Chinese-exclusive)
 
+  // --- Japanese MEGA-era sets (TCGDex stores these as uppercase M-series IDs) ---
+  m2: 'M2',   // Inferno X
+  m2a: 'M2a', // MEGA Dream ex (high class pack)
+  m3: 'M3',   // Nihil Zero / Munikis Zero
+  m4: 'M4',   // Ninja Spinner
+  m5: 'M5',   // Abyss Eye
+  m6: 'M6',   // Storm Emeralda
+
   // --- Sword & Shield (TCGDex: swsh1–swsh12, no leading zero) ---
   ssh: 'swsh1',  // Sword & Shield
   rcl: 'swsh2',  // Rebel Clash
