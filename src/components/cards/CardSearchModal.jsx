@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { searchCardsMulti, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import LanguageFilter from '@/components/cards/LanguageFilter';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function CardSearchModal({ open, onClose, onSelect, title = 'Search cards' }) {
@@ -9,12 +10,13 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [langFilter, setLangFilter] = useState('all');
   const { toast } = useToast();
 
   const runSearch = useCallback(async (q) => {
     setLoading(true);
     try {
-      const cards = await searchCardsMulti(q, { perPage: 24 });
+      const cards = await searchCardsMulti(q, { perPage: 24, langFilter });
       setResults(cards);
       setHasMore(false);
       setPage(1);
@@ -25,7 +27,7 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, langFilter]);
 
   useEffect(() => {
     if (!open) return;
@@ -51,15 +53,18 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
           </button>
         </div>
         <div className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, set code, or number, e.g. MEW 058, SSH 1, Charizard…"
-              className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name, set code, or number, e.g. MEW 058, SSH 1, Charizard…"
+                className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <LanguageFilter value={langFilter} onChange={setLangFilter} />
           </div>
 
           {loading && results.length === 0 && (

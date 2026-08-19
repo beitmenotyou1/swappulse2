@@ -71,6 +71,7 @@ export default async function (req: Request): Promise<Response> {
           card_id: c.id,
           set_id: setId,
           set_name: setName,
+          set_lang: lang,
           local_id: c.localId || '',
           rarity: c.rarity || '',
           image: typeof c.image === 'string' ? c.image : (c.image?.base ?? ''),
@@ -105,6 +106,9 @@ export default async function (req: Request): Promise<Response> {
             set_name: r.set_name || ex.set_name,
           };
           if (lang === 'en') update.name = r.name;
+          // Backfill set_lang on existing records that were created before the
+          // field existed. First-seen-wins: only set when missing.
+          if (!ex.set_lang) update.set_lang = lang;
           toUpdate.push(update);
         } else {
           toCreate.push(r);

@@ -49,9 +49,17 @@ function normalizeLocalId(s: string): string {
 }
 
 // Map a cached TcgdexCard record to the card shape used by the UI.
+// When lang is 'all', the card is displayed in its native set language
+// (names[set_lang]), falling back to the English name. When lang is a specific
+// code, the card is displayed in that language when available.
 function toCardShape(card: any, lang: string): any {
   const names = card.names || {};
-  const name = names[lang] || card.name || card.card_id;
+  let name: string;
+  if (lang === 'all') {
+    name = names[card.set_lang] || card.name || names['en'] || card.card_id;
+  } else {
+    name = names[lang] || card.name || card.card_id;
+  }
   return {
     id: card.card_id,
     name,
@@ -125,8 +133,11 @@ async function nameSearchAcrossLanguages(
     return Array.isArray(data) ? data : [];
   };
 
-  // Preferred language first.
-  const order = [preferredLang, ...SUPPORTED_LANGS.filter((l) => l !== preferredLang)];
+  // Preferred language first. 'all' isn't a real TCGDex catalog language, so
+  // start from English and iterate every language; the returned card.name is
+  // the native name from whichever language catalog matched.
+  const preferred = preferredLang === 'all' ? 'en' : preferredLang;
+  const order = [preferred, ...SUPPORTED_LANGS.filter((l) => l !== preferred)];
   for (const l of order) {
     if (merged.length >= perPage) break;
     try {
@@ -141,7 +152,7 @@ async function nameSearchAcrossLanguages(
     } catch { /* a language catalog may 404 or be empty; try the next */ }
     // Stop early once the preferred language yielded results — only fall back to
     // other languages when it returned nothing.
-    if (l === preferredLang && merged.length > 0) break;
+    if (l === preferred && merged.length > 0) break;
   }
   return merged;
 }
@@ -167,7 +178,7 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole;
     const body = await req.json().catch(() => ({}));
     const query = String(body.query || '').trim();
-    const lang = TCGDEX_LANGS.includes(body.lang) ? body.lang : 'en';
+    const lang = (body.lang === 'all' || TCGDEX_LANGS.includes(body.lang)) ? body.lang : 'en';
     const perPage = Math.min(50, Math.max(1, Number(body.perPage) || 24));
 
     if (!query) return Response.json({ data: [] });
@@ -220,9 +231,10 @@ Deno.serve(async (req) => {
           const sidForms = Array.from(new Set(
             [effectiveSetId, setCandidateToken, normalizeSetId(setCandidateToken)].filter(Boolean)
           ));
+          const apiLang = lang === 'all' ? 'en' : lang;
           for (const sid of sidForms) {
             try {
-              const card = await fetchTcgdex(`/sets/${encodeURIComponent(sid)}/${encodeURIComponent(numPart)}`, lang);
+              const card = await fetchTcgdex(`/sets/${encodeURIComponent(sid)}/${encodeURIComponent(numPart)}`, apiLang);
               if (card) { matched = [toCardShapeApi(card)]; break; }
             } catch { /* try next form */ }
           }
@@ -231,7 +243,7 @@ Deno.serve(async (req) => {
           // be exclusive to another language catalog, e.g. Chinese-only sets).
           if (matched.length === 0) {
             for (const altLang of SUPPORTED_LANGS) {
-              if (altLang === lang) continue;
+              if (altLang === apiLang) continue;
               for (const sid of sidForms) {
                 try {
                   const card = await fetchTcgdex(`/sets/${encodeURIComponent(sid)}/${encodeURIComponent(numPart)}`, altLang);

@@ -11,6 +11,7 @@ import PostCard from '@/components/feed/PostCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 import FilterPanel from '@/components/explore/FilterPanel';
+import LanguageFilter from '@/components/cards/LanguageFilter';
 import TrendingRail from '@/components/explore/TrendingRail';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
@@ -39,6 +40,7 @@ export default function Explore() {
   const [feedPosts, setFeedPosts] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [filters, setFilters] = useState({ set: '', rarity: '', type: '', minPrice: '', maxPrice: '' });
+  const [langFilter, setLangFilter] = useState('all');
   const { filterPosts } = usePostVisibility();
 
   // Everybody feed — all recent posts, for discovering collectors outside your follows.
@@ -67,7 +69,7 @@ export default function Explore() {
     setLoading(true);
     setSearched(true);
     try {
-      const cards = await searchCardsMulti(q.trim(), { perPage: 36, lang });
+      const cards = await searchCardsMulti(q.trim(), { perPage: 36, lang, langFilter });
       // Client-side filter for set, rarity, type and price range (the
       // multi-identifier search doesn't take these as params, so filter
       // the returned results)
@@ -98,7 +100,7 @@ export default function Explore() {
     } finally {
       setLoading(false);
     }
-  }, [lang, filters, toast]);
+  }, [lang, filters, langFilter, toast]);
 
   useEffect(() => {
     (async () => {
@@ -199,6 +201,7 @@ export default function Explore() {
               />
             </div>
             <FilterPanel onApply={setFilters} activeFilters={filters} />
+            <LanguageFilter value={langFilter} onChange={setLangFilter} />
           </div>
         )}
       </div>

@@ -1,135 +1,158 @@
 // Content builders for all 6 SwapPulse email types.
 // Each returns { subject, html, text } — html is full branded HTML, text is plain-text alternative.
+// All builders accept an optional locale so system emails render in the
+// recipient's preferred language. Card data (names, set names) is never
+// translated — cards always render in their native TCGDex language.
 import { buildBrandedHtml, buildPlainText, stepCard, featureCard, statRow, COLORS, esc } from './emailTemplate.ts';
+import { normalizeEmailLocale, t as tt } from './emailI18n.ts';
 export { COLORS, esc };
+export { normalizeEmailLocale } from './emailI18n.ts';
 
 const APP_URL = 'https://swappulse.org';
 
 // 1. Activation link email (send-activation)
-export function buildActivationEmail(name: string, link: string) {
+export function buildActivationEmail(name: string, link: string, locale?: string) {
+  const L = normalizeEmailLocale(locale);
+  const heading = tt(L, 'activation.heading');
+  const body = tt(L, 'activation.body', { name: name || 'collector' });
+  const codeHint = tt(L, 'activation.code_hint');
+  const subject = tt(L, 'activation.subject');
+  const preheader = tt(L, 'activation.preheader');
+  const cta = tt(L, 'activation.cta');
+  const footer = tt(L, 'activation.footer');
   const bodyHtml = `
-    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">Welcome to SwapPulse!</h1>
+    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(heading)}</h1>
     <p style="margin:0 0 16px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'collector')}, activate your account to join the collector community. Click the button below to verify your email, the link is valid for 48 hours.
+      ${esc(body)}
     </p>
     <p style="margin:0 0 8px;font-size:14px;color:${COLORS.muted};line-height:1.7;">
-      After activating, enter the 6-digit code from your verification email on the activation page.
+      ${esc(codeHint)}
     </p>`;
   return {
-    subject: 'Activate your SwapPulse account',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Activate your SwapPulse account',
-      preheader: 'Welcome to SwapPulse, activate your account to join the collector community.',
+      subject,
+      preheader,
       bodyHtml,
       ctaLink: link,
-      ctaLabel: 'Activate Account',
+      ctaLabel: cta,
       accentColor: COLORS.primary,
-      footerReason: "You're receiving this because you created a SwapPulse account. If you didn't, you can safely ignore this email.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Activate your SwapPulse account',
+      subject,
       [
-        `Welcome to SwapPulse, ${name || 'collector'}!`,
+        `${heading}, ${name || 'collector'}!`,
         '',
-        'Activate your account to join the collector community.',
-        'Open this link (valid for 48 hours):',
+        body,
         link,
         '',
-        'Then enter the 6-digit code from your verification email on the activation page.',
+        codeHint,
         '',
-        "If you didn't create an account, you can ignore this email.",
+        footer,
       ],
     ),
   };
 }
 
 // 2. Activation warning email (activation-lifecycle)
-export function buildActivationWarningEmail(name: string, link: string) {
+export function buildActivationWarningEmail(name: string, link: string, locale?: string) {
+  const L = normalizeEmailLocale(locale);
+  const heading = tt(L, 'activation_warning.heading');
+  const body = tt(L, 'activation_warning.body', { name: name || 'there' });
+  const codeHint = tt(L, 'activation_warning.code_hint');
+  const subject = tt(L, 'activation_warning.subject');
+  const preheader = tt(L, 'activation_warning.preheader');
+  const cta = tt(L, 'activation_warning.cta');
+  const footer = tt(L, 'activation_warning.footer');
   const bodyHtml = `
-    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.danger};">Action required: activate your account</h1>
+    <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${COLORS.danger};">${esc(heading)}</h1>
     <p style="margin:0 0 16px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'there')}, your SwapPulse account is still not activated. Accounts that remain unactivated are permanently deleted 90 days after sign-up.
+      ${esc(body)}
     </p>
     <p style="margin:0 0 8px;font-size:14px;color:${COLORS.muted};line-height:1.7;">
-      Activate now to keep your collection, trades, and profile. After activating, enter the 6-digit code from your verification email.
+      ${esc(codeHint)}
     </p>`;
   return {
-    subject: 'Activate your SwapPulse account, action required',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Activate your SwapPulse account, action required',
-      preheader: 'Your account will be deleted if not activated. Activate now.',
+      subject,
+      preheader,
       bodyHtml,
       ctaLink: link,
-      ctaLabel: 'Activate Now',
+      ctaLabel: cta,
       accentColor: COLORS.danger,
-      footerReason: "You're receiving this because your SwapPulse account is not yet activated. If you didn't create this account, ignore this email.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Activate your SwapPulse account, action required',
+      subject,
       [
-        `Hi ${name || 'there'},`,
+        body,
         '',
-        'Your SwapPulse account is still not activated.',
-        'Accounts that remain unactivated are permanently deleted 90 days after sign-up.',
-        '',
-        'Activate now:',
         link,
         '',
-        'Then enter the 6-digit code from your verification email on the activation page.',
+        codeHint,
         '',
-        "If you didn't create this account, ignore this email.",
+        footer,
       ],
     ),
   };
 }
 
 // 3. Onboarding Day 1 — "Your first 3 steps"
-export function buildDay1Email(name: string) {
+export function buildDay1Email(name: string, locale?: string) {
+  const L = normalizeEmailLocale(locale);
+  const heading = tt(L, 'day1.heading');
+  const body = tt(L, 'day1.body', { name: name || 'collector' });
+  const subject = tt(L, 'day1.subject');
+  const cta = tt(L, 'day1.cta');
+  const footer = tt(L, 'day1.footer');
+  const tip = tt(L, 'day1.tip');
   const bodyHtml = `
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">Three steps to get started</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${COLORS.text};">${esc(heading)}</h1>
     <p style="margin:0 0 24px;font-size:15px;color:${COLORS.muted};line-height:1.7;">
-      Hi ${esc(name || 'collector')}, you're in. Now let's make SwapPulse yours. Here are the three things every collector does on day one.
+      ${esc(body)}
     </p>
-    ${stepCard(1, 'collection', 'Add cards to your collection', 'Search for any Pokemon TCG card, pick the condition and variant, and add it. Your collection is stored in your AT Protocol repository, so you own it completely.', `${APP_URL}/collection`)}
-    ${stepCard(2, 'scanner', 'Scan a card with AI', 'Point your phone camera at any card and the AI scanner identifies it automatically. Corrections you submit train the model.', `${APP_URL}/scan`)}
-    ${stepCard(3, 'feed', 'Check your feed', 'The Fresh Pulls feed shows pack openings in real time. The Trade Floor surfaces active listings, with wishlist matches bumped to the top for you.', `${APP_URL}/`)}
+    ${stepCard(1, 'collection', tt(L, 'day1.step1_title'), tt(L, 'day1.step1_desc'), `${APP_URL}/collection`)}
+    ${stepCard(2, 'scanner', tt(L, 'day1.step2_title'), tt(L, 'day1.step2_desc'), `${APP_URL}/scan`)}
+    ${stepCard(3, 'feed', tt(L, 'day1.step3_title'), tt(L, 'day1.step3_desc'), `${APP_URL}/`)}
     <p style="margin:20px 0 0;font-size:14px;color:${COLORS.muted};line-height:1.7;">
-      <strong style="color:${COLORS.gold};">Tip:</strong> Install SwapPulse as a PWA on your phone's home screen for the full app experience, including offline access and push notifications.
+      <strong style="color:${COLORS.gold};">${esc(L === 'en' ? 'Tip:' : '')}</strong> ${esc(tip)}
     </p>`;
   return {
-    subject: 'Your first 3 steps on SwapPulse',
+    subject,
     html: buildBrandedHtml({
-      subject: 'Your first 3 steps on SwapPulse',
-      preheader: 'Three things every collector does on day one, add cards, scan, check your feed.',
+      subject,
+      preheader: body,
       bodyHtml,
       ctaLink: `${APP_URL}/`,
-      ctaLabel: 'Open SwapPulse',
+      ctaLabel: cta,
       accentColor: COLORS.primary,
-      footerReason: "You're receiving this because you joined SwapPulse. Visit your settings to manage email preferences.",
+      footerReason: footer,
     }),
     text: buildPlainText(
-      'Your first 3 steps on SwapPulse',
+      subject,
       [
-        `Three steps to get started, ${name || 'collector'}`,
+        heading,
         '',
-        "You're in. Now let's make SwapPulse yours.",
+        body,
         '',
-        '1. Add cards to your collection',
-        `   Search for any Pokemon TCG card, pick the condition and variant, and add it.`,
+        `1. ${tt(L, 'day1.step1_title')}`,
+        `   ${tt(L, 'day1.step1_desc')}`,
         `   -> ${APP_URL}/collection`,
         '',
-        '2. Scan a card with AI',
-        '   Point your phone camera at any card and the AI scanner identifies it automatically.',
+        `2. ${tt(L, 'day1.step2_title')}`,
+        `   ${tt(L, 'day1.step2_desc')}`,
         `   -> ${APP_URL}/scan`,
         '',
-        '3. Check your feed',
-        '   The Fresh Pulls feed shows pack openings in real time. The Trade Floor surfaces active listings.',
+        `3. ${tt(L, 'day1.step3_title')}`,
+        `   ${tt(L, 'day1.step3_desc')}`,
         `   -> ${APP_URL}/`,
         '',
-        'Tip: Install SwapPulse as a PWA for offline access and push notifications.',
+        tip,
       ],
       `${APP_URL}/`,
-      'Open SwapPulse',
+      cta,
     ),
   };
 }

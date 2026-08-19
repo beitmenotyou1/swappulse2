@@ -62,9 +62,13 @@ export async function searchCards(query, { page = 1, perPage = 24, setName, rari
  * multilingual matching, falling back to the live TCGDex API when the cache has
  * no matches. Returns cards in the same shape as `searchCards`.
  */
-export async function searchCardsMulti(query, { perPage = 24, lang = getCurrentTcgdexLang() } = {}) {
-  return cached(`searchMulti:${lang}:${query}:${perPage}`, async () => {
-    const res = await base44.functions.invoke('search-cards', { query, perPage, lang });
+export async function searchCardsMulti(query, { perPage = 24, lang = getCurrentTcgdexLang(), langFilter = 'all' } = {}) {
+  // langFilter 'all' returns cards in their native set language; a specific
+  // lang (e.g. 'en') returns cards displayed in that language. Passed through
+  // to the search-cards backend which resolves the display name.
+  const effectiveLang = langFilter && langFilter !== 'all' ? langFilter : 'all';
+  return cached(`searchMulti:${effectiveLang}:${query}:${perPage}`, async () => {
+    const res = await base44.functions.invoke('search-cards', { query, perPage, lang: effectiveLang });
     return res.data?.data ?? [];
   });
 }
