@@ -34,6 +34,29 @@ function getInitialLocale() {
 
 export function I18nProvider({ children }) {
   const [locale, setLocaleState] = useState(getInitialLocale);
+  // Per-language overrides loaded from TranslationOverride records (AI-generated
+  // or manual translations that fill gaps in the static dictionary). Structure:
+  // { en: { key: value }, fr: { key: value }, ... }
+  const [overrides, setOverrides] = useState({});
+
+  // On mount, fetch all TranslationOverride records with non-empty values and
+  // build a per-language map. This runs once and supplements the static dict.
+  useEffect(() => {
+    (async () => {
+      try {
+        const records = await base44.entities.TranslationOverride.list('-created_date', 5000);
+        const map = {};
+        for (const r of records) {
+          if (!r.value || !r.translation_key) continue;
+          // Skip help.<slug> keys — those are large JSON blobs handled by useHelpContent
+          if (r.translation_key.startsWith('help.')) continue;
+          if (!map[r.language]) map[r.language] = {};
+          map[r.language][r.translation_key] = r.value;
+        }
+        setOverrides(map);
+      } catch {}
+    })();
+  }, []);
 
   const setLocale = useCallback((newLocale) => {
     if (!SUPPORTED_LOCALES.includes(newLocale)) return;
@@ -74,9 +97,12 @@ export function I18nProvider({ children }) {
   }, []);
 
   const t = useCallback((key) => {
+    const lang = LOCALE_TO_TCGDEX[locale] || 'en';
+    const langOverrides = overrides[lang] || {};
     const dict = translations[locale] || translations['en-GB'];
-    return dict[key] ?? translations['en-GB'][key] ?? key;
-  }, [locale]);
+    // Override (AI/manual) > static dict > English fallback > key
+    return langOverrides[key] ?? dict[key] ?? translations['en-GB'][key] ?? key;
+  }, [locale, overrides]);
 
   return (
     <I18nContext.Provider value={{ locale, t, setLocale }}>

@@ -19,6 +19,7 @@ import DsarSummaryCard from '@/components/admin/DsarSummaryCard';
 import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection';
 import StandardSiteSection from '@/components/admin/StandardSiteSection';
 import HelpPromoSection from '@/components/admin/HelpPromoSection';
+import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -91,6 +92,7 @@ export default function Admin() {
         <BotProtectionLogSection />
         <StandardSiteSection />
         <HelpPromoSection />
+        <TranslationSyncSection />
         <SeoAuditSection />
       </div>
       <GuideFooterLink slug="admin" />

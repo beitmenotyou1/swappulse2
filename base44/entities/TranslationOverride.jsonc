@@ -1,0 +1,72 @@
+{
+  "name": "TranslationOverride",
+  "type": "object",
+  "title": "TranslationOverride",
+  "description": "org.swappulse.translationOverride \u2014 an AI-generated or manually-edited translation for a single translation key in a specific language. Used to fill gaps in the static translations.js file and to store translated help-page content. The I18nProvider loads all records with a non-empty value at startup and merges them over the static dictionary (static human translations always win). For help-page content, the key is 'help.<slug>' and the value is a JSON string of the translated page structure. Pending records have an empty value and a source_value containing the English text to translate.",
+  "properties": {
+    "translation_key": {
+      "type": "string",
+      "description": "Dotted key path (e.g. 'nav.home') or 'help.<slug>' for help-page content"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "en",
+        "fr",
+        "de",
+        "it",
+        "es",
+        "pt",
+        "jp",
+        "zh",
+        "ko"
+      ],
+      "description": "TCGDex language code (not locale code)"
+    },
+    "source_value": {
+      "type": "string",
+      "description": "English source value to translate. Populated when the record is created as pending; retained for re-translation."
+    },
+    "value": {
+      "type": "string",
+      "description": "Translated value. Empty when the record is pending translation."
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "ai",
+        "manual"
+      ],
+      "default": "ai",
+      "description": "'ai' for InvokeLLM-generated translations, 'manual' for human-edited overrides"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the translation was generated or last updated"
+    }
+  },
+  "required": [
+    "translation_key",
+    "language",
+    "source"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
