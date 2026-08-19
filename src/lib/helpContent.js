@@ -1,5 +1,5 @@
 // SwapPulse help-page content registry.
-// All 44 help pages' structured content is defined here, split into category
+// All 45 help pages' structured content is defined here, split into category
 // files for maintainability. The translate-help-content backend function
 // reads this data (via a shared copy in base44/shared/) to generate AI
 // translations stored as TranslationOverride records with key 'help.<slug>'.

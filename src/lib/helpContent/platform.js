@@ -518,4 +518,52 @@ export const platformPages = {
       ]},
     ],
   },
+
+  donations: {
+    title: 'Donations',
+    subtitle: 'How to support SwapPulse',
+    sections: [
+      { icon: 'Heart', title: 'Why donate?', blocks: [
+        { type: 'p', text: 'SwapPulse is free and open-source. Donations cover hosting, the TCGDex catalogue, and AT Protocol infrastructure. Every contribution keeps the platform running for the whole community.' },
+      ]},
+      { icon: 'CreditCard', title: 'Donate by card (fiat)', blocks: [
+        { type: 'steps', items: [
+          'Go to the donate page and choose "Card (Fiat)".',
+          'Enter an amount in GBP (£5, £10, £25, £50, £100, or custom) and your email.',
+          'Click Donate. You\'ll be redirected to Stripe\'s secure checkout.',
+          'Enter your card details and complete the payment.',
+          'You\'ll be redirected back to SwapPulse and receive a receipt by email.',
+        ]},
+      ]},
+      { icon: 'Bitcoin', title: 'Donate by cryptocurrency', blocks: [
+        { type: 'steps', items: [
+          'Go to the donate page and choose "Cryptocurrency".',
+          'Enter an amount in USD and select a coin (stablecoins, privacy coins, or major coins).',
+          'Click Donate. We\'ll generate a unique deposit address for your donation.',
+          'Send the exact crypto amount to the deposit address.',
+          'The page checks every 5 seconds and shows a confirmation when the payment is detected.',
+        ]},
+      ]},
+      { title: 'Accepted currencies & networks', blocks: [
+        { type: 'list', items: [
+          '<b>Stablecoins:</b> USDC and USDT on Solana, Ethereum, and Polygon.',
+          '<b>Privacy coins:</b> Monero (XMR), Zcash (ZEC), Dash (DASH).',
+          '<b>Major coins:</b> Bitcoin (BTC), Ethereum (ETH), Solana (SOL), Polygon (MATIC).',
+        ]},
+      ]},
+      { title: 'Fees', blocks: [
+        { type: 'list', items: [
+          '<b>Card (Stripe):</b> 2.9% + £0.20 per transaction (UK domestic cards). No monthly fees.',
+          '<b>Crypto (NowPayments):</b> 0.5% for same-currency, 1% for converted. Network gas fees are separate.',
+        ]},
+      ]},
+      { variant: 'warning', title: 'Known limitations', blocks: [
+        { type: 'list', items: [
+          'Cryptocurrency donations cannot be refunded once sent.',
+          'Minimum donation is £0.50 (card) or $0.50 (crypto).',
+          'Donations are not tax-deductible.',
+        ]},
+      ]},
+    ],
+  },
 };

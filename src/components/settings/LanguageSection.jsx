@@ -2,6 +2,7 @@ import React from 'react';
 import { Globe, Languages } from 'lucide-react';
 import { LANGUAGES } from '@/hooks/useSettings';
 import SettingRow from '@/components/settings/SettingRow';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
 const PROVIDERS = [
   { id: 'libre-local', name: 'Local (self-hosted)', privacy: 'High' },
@@ -25,23 +26,26 @@ function toggleArray(arr, code) {
 }
 
 export default function LanguageSection({ settings, update }) {
+  const { locale, setLocale } = useI18n();
   const lang = settings.language || {};
   const fluent = lang.fluent || [];
   const hidden = lang.hidden || [];
-  const interfaceLang = settings.locale?.interface || 'en-GB';
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="flex items-center gap-2 text-sm font-bold"><Globe className="h-4 w-4 text-primary" /> Interface language</p>
         <select
-          value={interfaceLang}
-          onChange={(e) => update({ locale: { interface: e.target.value } })}
+          value={locale}
+          onChange={(e) => {
+            setLocale(e.target.value);
+            update({ locale: { interface: e.target.value } });
+          }}
           className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
         >
           {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
         </select>
-        <p className="mt-1 text-[11px] text-muted-foreground">Client-side locale bundles switch the UI instantly.</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Switches the UI and card catalogue instantly. Saved to your account and browser for future visits.</p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-3">

@@ -27,7 +27,9 @@ export default function TranslationSyncSection() {
   const [seeding, setSeeding] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [translatingHelp, setTranslatingHelp] = useState(false);
+  const [auditing, setAuditing] = useState(false);
   const [report, setReport] = useState(null);
+  const [auditReport, setAuditReport] = useState(null);
 
   // Action 1: Seed missing UI keys as pending TranslationOverride records
   const handleSeedMissing = async () => {
@@ -133,13 +135,39 @@ export default function TranslationSyncSection() {
     }
   };
 
+  // Action 4: Audit translation coverage across all languages
+  const handleAudit = async () => {
+    setAuditing(true);
+    setAuditReport(null);
+    try {
+      const res = await base44.functions.invoke('audit-translations', {});
+      const data = res.data || res;
+      if (data.error) {
+        toast({ title: 'Audit failed', description: data.error, variant: 'destructive' });
+      } else {
+        toast({
+          title: data.summary.complete ? 'Translations complete' : 'Missing translations found',
+          description: data.summary.complete
+            ? `All ${data.uiKeysTotal} UI keys and ${data.helpPagesTotal} help pages translated into all 8 languages.`
+            : `${data.summary.totalMissing} missing: ${data.summary.totalMissingUI} UI keys, ${data.summary.totalMissingHelp} help pages.`,
+          variant: data.summary.complete ? 'default' : 'destructive',
+        });
+        setAuditReport(data);
+      }
+    } catch (e) {
+      toast({ title: 'Error', description: e?.message || 'Failed to audit translations', variant: 'destructive' });
+    } finally {
+      setAuditing(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="mb-1 font-bold">Translation Management</h3>
         <p className="mb-4 text-sm text-muted-foreground">
           Keep all nine supported languages in sync. Seed missing keys, then sync to generate AI translations via InvokeLLM.
-          Translate help page content separately (44 pages × 8 languages).
+          Translate help page content separately (45 pages × 8 languages). Run an audit to flag any missing translations.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={handleSeedMissing} disabled={seeding} variant="outline">
@@ -151,10 +179,44 @@ export default function TranslationSyncSection() {
           <Button onClick={handleTranslateHelp} disabled={translatingHelp} variant="secondary">
             {translatingHelp ? 'Translating Help…' : 'Translate Help Content'}
           </Button>
+          <Button onClick={handleAudit} disabled={auditing} variant="outline">
+            {auditing ? 'Auditing…' : 'Audit Translations'}
+          </Button>
         </div>
         {report && (
           <div className="mt-4 rounded-lg bg-muted p-3 text-sm">
             <pre className="whitespace-pre-wrap">{JSON.stringify(report, null, 2)}</pre>
+          </div>
+        )}
+        {auditReport && (
+          <div className="mt-4 rounded-lg border border-border bg-card p-3 text-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-bold">Audit Report</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${auditReport.summary.complete ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
+                {auditReport.summary.complete ? 'Complete' : `${auditReport.summary.totalMissing} missing`}
+              </span>
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              {auditReport.uiKeysTotal} UI keys · {auditReport.helpPagesTotal} help pages · {auditReport.languagesChecked} languages checked
+            </p>
+            {auditReport.summary.complete ? (
+              <p className="text-success">All translations present — no pages falling back to English.</p>
+            ) : (
+              <div className="space-y-2">
+                {Object.entries(auditReport.missingUI).map(([lang, keys]) => (
+                  <div key={`ui-${lang}`}>
+                    <p className="font-semibold text-destructive">UI ({lang}): {keys.length} missing</p>
+                    <p className="text-xs text-muted-foreground">{keys.slice(0, 10).join(', ')}{keys.length > 10 ? ` … +${keys.length - 10} more` : ''}</p>
+                  </div>
+                ))}
+                {Object.entries(auditReport.missingHelp).map(([lang, slugs]) => (
+                  <div key={`help-${lang}`}>
+                    <p className="font-semibold text-destructive">Help ({lang}): {slugs.length} missing</p>
+                    <p className="text-xs text-muted-foreground">{slugs.join(', ')}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
