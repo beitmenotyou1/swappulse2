@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, KeyRound, ArrowLeft } from "lucide-react";
 
-export default function TwoFactorChallenge({ email, onSuccess, onCancel }) {
+export default function TwoFactorChallenge({ email, emailCode, onSuccess, onCancel }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,9 +15,16 @@ export default function TwoFactorChallenge({ email, onSuccess, onCancel }) {
     if (code.length < 6) { setError("Enter the 6-digit code from your authenticator app."); return; }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("verify-2fa", { mode: "verify", email, code });
-      if (res.data?.verified) {
-        onSuccess?.();
+      // Send both the email OTP (first factor, already verified) and the TOTP
+      // (second factor) to verify-login-code. The server verifies the TOTP
+      // before releasing the login_key — 2FA is enforced server-side.
+      const res = await base44.functions.invoke("verify-login-code", {
+        email,
+        code: emailCode,
+        two_factor_code: code,
+      });
+      if (res.data?.login_key) {
+        onSuccess?.(res.data.login_key);
       } else {
         setError(res.data?.error || "Invalid 2FA code");
       }

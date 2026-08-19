@@ -1,6 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
 import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
+import {
+  generateTotp,
+  TOTP_RATE_LIMIT_MAX,
+  TOTP_RATE_LIMIT_WINDOW_MS,
+  getTotpRateLimit,
+  recordTotpFailedAttempt,
+  resetTotpRateLimit,
+} from '../../shared/totp.ts';
 
 export default async function(req) {
   try {
@@ -53,6 +61,41 @@ export default async function(req) {
     // If user has no login_key, they need a one-time setup via the reset flow
     if (!user.login_key) {
       return Response.json({ needs_setup: true });
+    }
+
+    // 2FA gate: if the user has two-factor authentication enabled, the TOTP
+    // code MUST be verified server-side before the login_key is released.
+    // Without this check, an attacker who intercepts the email OTP can call
+    // this endpoint directly and obtain login_key, bypassing the 2FA prompt
+    // that was previously only enforced in the frontend.
+    if (user.two_factor_enabled) {
+      const totpCode = (body.two_factor_code || '').trim();
+      if (!totpCode) {
+        // First factor (email OTP) verified — prompt for the second factor.
+        // Don't consume the email code yet so the user can retry with TOTP.
+        return Response.json({ requires_2fa: true });
+      }
+
+      if (!user.two_factor_secret) {
+        return Response.json({ error: '2FA is enabled but no secret is configured' }, { status: 400 });
+      }
+
+      // Rate limit TOTP brute-force attempts (same window as verify-2fa).
+      const limit = await getTotpRateLimit(svc, email);
+      if (limit) {
+        const elapsed = Date.now() - new Date(limit.window_start).getTime();
+        if (limit.count >= TOTP_RATE_LIMIT_MAX && elapsed < TOTP_RATE_LIMIT_WINDOW_MS) {
+          const retryAfterSec = Math.ceil((TOTP_RATE_LIMIT_WINDOW_MS - elapsed) / 1000);
+          return Response.json({ error: 'Too many attempts. Try again later.', retry_after: retryAfterSec }, { status: 429 });
+        }
+      }
+
+      const expectedTotp = await generateTotp(user.two_factor_secret);
+      if (!timingSafeEqual(totpCode, expectedTotp)) {
+        await recordTotpFailedAttempt(svc, email);
+        return Response.json({ error: 'Invalid 2FA code' }, { status: 400 });
+      }
+      await resetTotpRateLimit(svc, email);
     }
 
     // Mark code as used

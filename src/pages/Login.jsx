@@ -22,7 +22,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [pendingLoginKey, setPendingLoginKey] = useState(null);
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [suspension, setSuspension] = useState(null);
@@ -95,21 +94,17 @@ export default function Login() {
         setStep("setup");
         return;
       }
+      // 2FA required: server confirmed the email OTP but won't release login_key
+      // until the TOTP second factor is verified. Show the 2FA challenge; the
+      // email OTP is kept in state and re-sent with the TOTP on the next call.
+      if (res.data?.requires_2fa) {
+        setStep("twofactor");
+        return;
+      }
       const loginKey = res.data?.login_key;
       if (!loginKey) {
         setError("Verification failed. Please try again.");
         return;
-      }
-      // Check 2FA before logging in
-      try {
-        const twofaRes = await base44.functions.invoke("verify-2fa", { mode: "check", email });
-        if (twofaRes.data?.requires_2fa) {
-          setPendingLoginKey(loginKey);
-          setStep("twofactor");
-          return;
-        }
-      } catch {
-        // If check fails, proceed without 2FA
       }
       // Set session-only flag BEFORE login so it survives the SDK's hard redirect.
       // When unchecked, app-params.js will move the token to sessionStorage on next load.
@@ -131,7 +126,13 @@ export default function Login() {
     }
   };
 
-  const handleTwoFactorSuccess = async () => {
+  const handleTwoFactorSuccess = async (loginKey) => {
+    if (!loginKey) {
+      setError("Login failed. Please try again.");
+      setStep("code");
+      setOtp("");
+      return;
+    }
     setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
     // Set session-only flag BEFORE login (same as verifyCode)
     if (!stayLoggedIn) {
@@ -140,14 +141,13 @@ export default function Login() {
       sessionStorage.removeItem("swappulse_session_only");
     }
     try {
-      await base44.auth.loginViaEmailPassword(email, pendingLoginKey);
+      await base44.auth.loginViaEmailPassword(email, loginKey);
       const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
       window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
       setStep("code");
       setOtp("");
-      setPendingLoginKey(null);
     }
   };
 
@@ -296,8 +296,9 @@ export default function Login() {
       {step === "twofactor" && (
         <TwoFactorChallenge
           email={email}
+          emailCode={otp}
           onSuccess={handleTwoFactorSuccess}
-          onCancel={() => { setStep("code"); setOtp(""); setPendingLoginKey(null); }}
+          onCancel={() => { setStep("code"); setOtp(""); }}
         />
       )}
     </AuthLayout>
