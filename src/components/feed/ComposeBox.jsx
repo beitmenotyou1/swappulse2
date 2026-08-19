@@ -18,7 +18,12 @@ function extractMentions(text) {
   return Array.from(new Set(matches.map((m) => m.slice(1).toLowerCase())));
 }
 
-const POLICY_KEYS = ['everybody', 'followers', 'mentioned', 'nobody'];
+const POLICY_DEFS = [
+  { key: 'everybody', labelKey: 'compose.policy.everyone' },
+  { key: 'followers', labelKey: 'compose.policy.followers' },
+  { key: 'mentioned', labelKey: 'compose.policy.mentioned' },
+  { key: 'nobody', labelKey: 'compose.policy.nobody' },
+];
 const SCOPE_DEFS = [
   { key: 'public', icon: Globe, labelKey: 'compose.scope.public' },
   { key: 'followers', icon: Users, labelKey: 'compose.scope.followers' },
@@ -267,15 +272,15 @@ export default function ComposeBox({ onPosted, replyTo }) {
           {!replyTo && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">{t('compose.whoCanReply')}</span>
-              {POLICY_KEYS.map((value) => (
+              {POLICY_DEFS.map((p) => (
                 <button
-                  key={value}
-                  onClick={() => setReplyPolicy(value)}
+                  key={p.key}
+                  onClick={() => setReplyPolicy(p.key)}
                   className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
-                    replyPolicy === value ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
+                    replyPolicy === p.key ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
                   }`}
                 >
-                  {t(`compose.policy.${value}`)}
+                  {t(p.labelKey)}
                 </button>
               ))}
             </div>
