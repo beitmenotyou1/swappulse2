@@ -50,10 +50,16 @@ export function I18nProvider({ children }) {
     setCurrentTcgdexLang(LOCALE_TO_TCGDEX[locale] || 'en');
   }, [locale]);
 
-  // On mount, if authenticated, pick up a previously-saved locale from the user record
+  // On mount, if authenticated, pick up a previously-saved locale from the user record.
+  // Skip this if a ?lang= URL param is present — that represents an explicit choice from
+  // a promo post link and must not be overridden by the user's saved account locale.
   useEffect(() => {
     (async () => {
       try {
+        if (typeof window !== 'undefined' && window.location?.search) {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('lang')) return; // URL param wins, don't override
+        }
         const authed = await base44.auth.isAuthenticated();
         if (!authed) return;
         const me = await base44.auth.me();
