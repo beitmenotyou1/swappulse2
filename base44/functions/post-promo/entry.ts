@@ -236,44 +236,50 @@ async function uploadCardImage(
   accessJwt: string,
   imageUrl: string,
 ): Promise<{ $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null> {
-  try {
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) {
-      console.error('post-promo: card image fetch failed', imgRes.status);
-      return null;
-    }
-    const mimeType = imgRes.headers.get('content-type') || 'image/webp';
-    const bytes = new Uint8Array(await imgRes.arrayBuffer());
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) {
+        console.error('post-promo: card image fetch failed', imgRes.status);
+        if (attempt === 0) continue;
+        return null;
+      }
+      const mimeType = imgRes.headers.get('content-type') || 'image/webp';
+      const bytes = new Uint8Array(await imgRes.arrayBuffer());
 
-    const uploadRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': mimeType,
-        'Authorization': `Bearer ${accessJwt}`,
-      },
-      body: bytes,
-    });
-    if (!uploadRes.ok) {
-      const text = await uploadRes.text();
-      console.error('post-promo: uploadBlob failed', uploadRes.status, text.slice(0, 300));
-      return null;
+      const uploadRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': mimeType,
+          'Authorization': `Bearer ${accessJwt}`,
+        },
+        body: bytes,
+      });
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text();
+        console.error('post-promo: uploadBlob failed', uploadRes.status, text.slice(0, 300));
+        if (attempt === 0) continue;
+        return null;
+      }
+      const data = await uploadRes.json();
+      const blob = data.blob;
+      if (!blob?.ref?.$link) {
+        console.error('post-promo: no blob cid in uploadBlob response');
+        if (attempt === 0) continue;
+        return null;
+      }
+      return {
+        $type: 'blob',
+        ref: { $link: blob.ref.$link },
+        mimeType: blob.mimeType || mimeType,
+        size: blob.size ?? bytes.length,
+      };
+    } catch (e) {
+      console.error('post-promo: uploadCardImage failed (attempt ' + (attempt + 1) + ')', e?.message || e);
+      if (attempt === 1) return null;
     }
-    const data = await uploadRes.json();
-    const blob = data.blob;
-    if (!blob?.ref?.$link) {
-      console.error('post-promo: no blob cid in uploadBlob response');
-      return null;
-    }
-    return {
-      $type: 'blob',
-      ref: { $link: blob.ref.$link },
-      mimeType: blob.mimeType || mimeType,
-      size: blob.size ?? bytes.length,
-    };
-  } catch (e) {
-    console.error('post-promo: uploadCardImage failed', e?.message || e);
-    return null;
   }
+  return null;
 }
 
 Deno.serve(async (req) => {
