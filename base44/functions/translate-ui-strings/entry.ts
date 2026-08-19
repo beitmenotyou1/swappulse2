@@ -56,11 +56,11 @@ export default async function(req) {
         workQueue.push({ lang, keys: specificKeys });
       }
     } else {
-      // Translate ALL keys, 20 per run, cycling through languages
+      // Translate ALL keys, batchSize per run, into all 8 languages
       const allKeys = Object.keys(UI_STRINGS_EN);
-      // Determine which key index to start from based on a cursor in the body
       const startIdx = body.startIdx || 0;
-      const keysSlice = allKeys.slice(startIdx, startIdx + 20);
+      const batchSize = body.batchSize || 80;
+      const keysSlice = allKeys.slice(startIdx, startIdx + batchSize);
       for (const lang of TARGET_LANGS) {
         workQueue.push({ lang, keys: keysSlice });
       }
@@ -108,7 +108,20 @@ ${JSON.stringify(stringsToTranslate, null, 2)}`;
           continue;
         }
 
-        // Upsert each translation
+        // Fetch all existing overrides for this language in ONE call
+        const existingRecords = await base44.asServiceRole.entities.TranslationOverride.filter({
+          language: lang.code,
+        }, '-created_date', 5000);
+        const existingMap = new Map();
+        for (const r of existingRecords) {
+          if (r.translation_key && !r.translation_key.startsWith('help.')) {
+            existingMap.set(r.translation_key, r.id);
+          }
+        }
+
+        // Build bulk update and create arrays
+        const toUpdate = [];
+        const toCreate = [];
         for (const key of Object.keys(stringsToTranslate)) {
           const translatedValue = result[key];
           if (!translatedValue || typeof translatedValue !== 'string') {
@@ -116,34 +129,44 @@ ${JSON.stringify(stringsToTranslate, null, 2)}`;
             errorDetails.push({ lang: lang.code, key, error: 'Missing or invalid translation' });
             continue;
           }
-
-          try {
-            // Check if an override already exists
-            const existing = await base44.asServiceRole.entities.TranslationOverride.filter({
+          const existingId = existingMap.get(key);
+          if (existingId) {
+            toUpdate.push({
+              id: existingId,
+              value: translatedValue,
+              source_value: UI_STRINGS_EN[key],
+              generated_at: new Date().toISOString(),
+            });
+          } else {
+            toCreate.push({
               translation_key: key,
               language: lang.code,
-            }, '-created_date', 1);
+              source_value: UI_STRINGS_EN[key],
+              value: translatedValue,
+              source: 'ai',
+              generated_at: new Date().toISOString(),
+            });
+          }
+        }
 
-            if (existing && existing.length > 0) {
-              await base44.asServiceRole.entities.TranslationOverride.update(existing[0].id, {
-                value: translatedValue,
-                source_value: UI_STRINGS_EN[key],
-                generated_at: new Date().toISOString(),
-              });
-            } else {
-              await base44.asServiceRole.entities.TranslationOverride.create({
-                translation_key: key,
-                language: lang.code,
-                source_value: UI_STRINGS_EN[key],
-                value: translatedValue,
-                source: 'ai',
-                generated_at: new Date().toISOString(),
-              });
-            }
-            translated++;
+        // Bulk update existing records
+        if (toUpdate.length > 0) {
+          try {
+            await base44.asServiceRole.entities.TranslationOverride.bulkUpdate(toUpdate);
+            translated += toUpdate.length;
           } catch (e) {
-            errors++;
-            errorDetails.push({ lang: lang.code, key, error: 'Upsert failed: ' + (e.message || String(e)) });
+            errors += toUpdate.length;
+            errorDetails.push({ lang: lang.code, error: 'Bulk update failed: ' + (e.message || String(e)) });
+          }
+        }
+        // Bulk create new records
+        if (toCreate.length > 0) {
+          try {
+            await base44.asServiceRole.entities.TranslationOverride.bulkCreate(toCreate);
+            translated += toCreate.length;
+          } catch (e) {
+            errors += toCreate.length;
+            errorDetails.push({ lang: lang.code, error: 'Bulk create failed: ' + (e.message || String(e)) });
           }
         }
         llmCalls++;
