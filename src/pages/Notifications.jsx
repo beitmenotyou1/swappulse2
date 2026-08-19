@@ -90,7 +90,7 @@ export default function Notifications() {
             onClick={handleRefresh}
             disabled={refreshing}
             className="flex items-center rounded-full border border-border bg-card p-2 hover:bg-secondary disabled:opacity-50"
-            aria-label="Refresh notifications"
+            aria-label={t('notifications.refresh')}
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>

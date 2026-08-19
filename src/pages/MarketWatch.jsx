@@ -98,9 +98,9 @@ export default function MarketWatch() {
       <div className="p-4 space-y-4">
         <section className="rounded-2xl border border-border bg-card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold">Tracked Card Prices</h3>
+            <h3 className="text-sm font-bold">{tr('market.trackedPrices')}</h3>
             <span className="text-xs text-muted-foreground">
-              {prices.length} cards · synced from TCGDex
+              {tr('market.cardsSynced').replace('{count}', prices.length)}
             </span>
           </div>
           {loading ? (
@@ -109,7 +109,7 @@ export default function MarketWatch() {
             </div>
           ) : movers.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No prices yet. Add cards to your collection or wishlist, then hit “Sync now”.
+              {tr('market.noPrices')}
             </p>
           ) : (
             <div className="space-y-2">
@@ -136,15 +136,15 @@ export default function MarketWatch() {
 
         {portfolio && (
           <section className="rounded-2xl border border-border bg-card p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><TrendingUp className="h-4 w-4 text-primary" /> Your Portfolio</h3>
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><TrendingUp className="h-4 w-4 text-primary" /> {tr('market.yourPortfolio')}</h3>
             <p className="text-3xl font-extrabold">£{(portfolio.total / 100).toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">{portfolio.count} cards tracked</p>
-            <Link to="/collection" className="mt-3 inline-block rounded-full bg-primary px-4 py-2 text-xs font-bold text-white">View Collection</Link>
+            <p className="text-xs text-muted-foreground">{tr('market.cardsTracked').replace('{count}', portfolio.count)}</p>
+            <Link to="/collection" className="mt-3 inline-block rounded-full bg-primary px-4 py-2 text-xs font-bold text-white">{tr('market.viewCollection')}</Link>
           </section>
         )}
 
         <section className="rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><Bell className="h-4 w-4 text-accent" /> Price Alerts</h3>
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><Bell className="h-4 w-4 text-accent" /> {tr('market.priceAlerts')}</h3>
           <PriceAlertsList
             onCreate={() => setShowAlertModal(true)}
             refreshKey={alertRefreshKey}
@@ -153,7 +153,7 @@ export default function MarketWatch() {
 
         {movers.length > 0 && (
           <section className="rounded-2xl border border-border bg-card p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><TrendingUp className="h-4 w-4 text-success" /> Top Gainers</h3>
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><TrendingUp className="h-4 w-4 text-success" /> {tr('market.topGainers')}</h3>
             <div className="space-y-2">
               {movers.filter((m) => m.change > 0).slice(0, 4).map((m) => (
                 <Link key={m.id} to={`/card/${m.card_id}`} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-secondary">
@@ -169,7 +169,7 @@ export default function MarketWatch() {
 
         {movers.length > 0 && (
           <section className="rounded-2xl border border-border bg-card p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><TrendingDown className="h-4 w-4 text-destructive" /> Top Losers</h3>
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold"><TrendingDown className="h-4 w-4 text-destructive" /> {tr('market.topLosers')}</h3>
             <div className="space-y-2">
               {movers.filter((m) => m.change < 0).slice(0, 4).map((m) => (
                 <Link key={m.id} to={`/card/${m.card_id}`} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-secondary">

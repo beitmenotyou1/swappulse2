@@ -153,13 +153,13 @@ export default function Profile() {
               onClick={() => setShowEdit(true)}
               className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
             >
-              Edit profile
+              {t('profile.editProfile')}
             </button>
             <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
           </div>
         </div>
         <div className="mt-3">
-          <h1 className="text-xl font-extrabold">{merged?.name || user?.display_name || user?.full_name || 'Collector'}</h1>
+          <h1 className="text-xl font-extrabold">{merged?.name || user?.display_name || user?.full_name || t('profile.collector')}</h1>
           <ProfileHandle
             bskyHandle={user?.bsky_handle}
             username={user?.username}
@@ -177,15 +177,15 @@ export default function Profile() {
             {repAvg && (
               <span className="flex items-center gap-1 text-accent">
                 <Star className="h-3.5 w-3.5 fill-current" />
-                Trusted Trader · {repAvg}★ ({reputation.length})
+                {t('profile.trustedTrader')} · {repAvg}★ ({reputation.length})
               </span>
             )}
           </div>
 
           <div className="mt-3"><NotificationToggle /></div>
           <div className="mt-3 flex gap-4 text-sm">
-            <span><b>{myCollection.length}</b> <span className="text-muted-foreground">Cards</span></span>
-            <span><b>{myTrades.length}</b> <span className="text-muted-foreground">Trades</span></span>
+            <span><b>{myCollection.length}</b> <span className="text-muted-foreground">{t('page.collection.stats.cards')}</span></span>
+            <span><b>{myTrades.length}</b> <span className="text-muted-foreground">{t('profile.tab.trades')}</span></span>
           </div>
         </div>
 
@@ -208,7 +208,7 @@ export default function Profile() {
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : tab === 'Posts' ? (
           myPosts.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">No posts yet.</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.noPostsYet')}</p>
           ) : (
             myPosts.map((p) => <PostCard key={p.id} post={p} />)
           )
@@ -222,17 +222,17 @@ export default function Profile() {
                   <img src={cardImageUrl(c.card_image)} alt={c.card_name} className="aspect-[3/4] w-full rounded-lg object-cover" />
                 </Link>
               ))}
-              {binderCards.length === 0 && <p className="col-span-3 py-10 text-center text-sm text-muted-foreground">Your binder is empty. Add cards to your collection.</p>}
+              {binderCards.length === 0 && <p className="col-span-3 py-10 text-center text-sm text-muted-foreground">{t('profile.binderEmpty')}</p>}
             </div>
           </div>
         ) : tab === 'Collection' ? (
           <div className="p-4">
-            <p className="mb-3 text-sm text-muted-foreground">Portfolio value: <b className="text-foreground">{formatPrice(portfolioValue)}</b></p>
-            <NetworkFeedSection type="collections" did={did} limit={24} title="My Collection on the Network" />
+            <p className="mb-3 text-sm text-muted-foreground">{t('profile.portfolioValue')} <b className="text-foreground">{formatPrice(portfolioValue)}</b></p>
+            <NetworkFeedSection type="collections" did={did} limit={24} title={t('profile.myCollectionNetwork')} />
           </div>
         ) : tab === 'Trades' ? (
           <div className="p-4">
-            <NetworkFeedSection type="trades" did={did} limit={20} title="My Trades on the Network" />
+            <NetworkFeedSection type="trades" did={did} limit={20} title={t('profile.myTradesNetwork')} />
           </div>
         ) : tab === 'Trade Activity' ? (
           <TradeActivityTab />

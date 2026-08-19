@@ -98,7 +98,7 @@ export default function Explore() {
       setResults(filtered);
     } catch (e) {
       setResults([]);
-      toast({ title: 'Search failed', description: 'Could not reach the card catalogue. Please try again.', variant: 'destructive' });
+      toast({ title: tr('explore.searchFailed'), description: tr('explore.searchFailedDesc'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -158,10 +158,10 @@ export default function Explore() {
           rarity: c.rarity || '',
         }))
       );
-      toast({ title: 'Added to wishlist', description: `${picked.length} card${picked.length > 1 ? 's' : ''} saved to your wishlist.` });
+      toast({ title: tr('explore.addedToWishlist'), description: tr('explore.cardsSaved').replace('{count}', picked.length) });
       clearSelection();
     } catch (e) {
-      toast({ title: 'Could not add to wishlist', description: e.message, variant: 'destructive' });
+      toast({ title: tr('explore.couldNotAdd'), description: e.message, variant: 'destructive' });
     } finally {
       setAdding(false);
     }
@@ -198,7 +198,7 @@ export default function Explore() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by name, set code, or number, e.g. MEW 058, SSH 1, Charizard…"
+                placeholder={tr('explore.searchPlaceholder')}
                 className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
               />
             </div>
@@ -217,14 +217,14 @@ export default function Explore() {
       {searchMode === 'posts' && (
         <div className="p-4">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Flame className="h-4 w-4 text-accent" /> Everybody Feed
+            <Flame className="h-4 w-4 text-accent" /> {tr('explore.everybodyFeed')}
           </h2>
           {feedLoading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : filterPosts(feedPosts).length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">No posts yet.</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">{tr('explore.noPosts')}</p>
           ) : (
             <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
               {filterPosts(feedPosts).map((p) => (
@@ -241,12 +241,12 @@ export default function Explore() {
             <TrendingRail limit={10} />
           </div>
           <div className="mb-6">
-            <NetworkFeedSection limit={12} title="From the Network" />
+            <NetworkFeedSection limit={12} title={tr('explore.fromNetwork')} />
           </div>
           {filterPosts(latestPosts).length > 0 && (
             <div className="mb-6">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
-                <Flame className="h-4 w-4 text-accent" /> Latest Posts
+                <Flame className="h-4 w-4 text-accent" /> {tr('explore.latestPosts')}
               </h2>
               <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
                 {filterPosts(latestPosts).map((p) => (
@@ -256,7 +256,7 @@ export default function Explore() {
             </div>
           )}
           <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Flame className="h-4 w-4 text-accent" /> Recent Sets
+            <Flame className="h-4 w-4 text-accent" /> {tr('explore.recentSets')}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {sets.map((s) => (
@@ -272,7 +272,7 @@ export default function Explore() {
                 )}
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{s.name}</p>
-                  <p className="text-xs text-muted-foreground">{s.cardCount?.official || s.cardCount?.total || 0} cards</p>
+                  <p className="text-xs text-muted-foreground">{s.cardCount?.official || s.cardCount?.total || 0} {tr('explore.cardsCount')}</p>
                 </div>
               </Link>
             ))}
@@ -287,13 +287,13 @@ export default function Explore() {
       )}
 
       {searchMode === 'cards' && !loading && searched && results.length === 0 && (
-        <p className="py-16 text-center text-sm text-muted-foreground">No cards found for "{query}"</p>
+        <p className="py-16 text-center text-sm text-muted-foreground">{tr('explore.noCardsFound').replace('{query}', query)}</p>
       )}
 
       {searchMode === 'cards' && !loading && results.length > 0 && (
         <div className="p-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{results.length} results</p>
+            <p className="text-sm text-muted-foreground">{results.length} {tr('explore.results')}</p>
             <button
               onClick={() => {
                 setSelectMode((s) => !s);
@@ -301,19 +301,19 @@ export default function Explore() {
               }}
               className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${selectMode ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
             >
-              <CheckSquare className="h-3.5 w-3.5" /> {selectMode ? 'Done' : 'Select'}
+              <CheckSquare className="h-3.5 w-3.5" /> {selectMode ? tr('explore.done') : tr('explore.select')}
             </button>
           </div>
           {selected.size > 0 && (
             <div className="sticky top-0 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary bg-card p-3 shadow-elevated">
-              <span className="text-sm font-bold">{selected.size} selected</span>
+              <span className="text-sm font-bold">{selected.size} {tr('explore.selected')}</span>
               <button onClick={selectAll} className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80">
                 {allSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
-                {allSelected ? 'All selected' : 'Select all'}
+                {allSelected ? tr('explore.allSelected') : tr('explore.selectAll')}
               </button>
               <button onClick={addAllToWishlist} disabled={adding} className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-50">
                 {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Heart className="h-3.5 w-3.5" />}
-                Add to wishlist
+                {tr('explore.addToWishlist')}
               </button>
               <button onClick={clearSelection} className="ml-auto text-muted-foreground hover:text-foreground" aria-label="Clear selection">
                 <X className="h-4 w-4" />

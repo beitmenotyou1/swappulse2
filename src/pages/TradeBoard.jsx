@@ -78,13 +78,13 @@ export default function TradeBoard() {
         }
       }
       toast({
-        title: pdsSynced ? '✅ Marked completed & synced to AT Protocol' : 'Marked as completed',
-        description: pdsSynced ? 'The network sees the updated status.' : undefined,
+        title: pdsSynced ? tr('trade.markedCompletedSynced') : tr('trade.markedCompleted'),
+        description: pdsSynced ? tr('trade.networkSees') : undefined,
         duration: 4000,
       });
       load();
     } catch (e) {
-      toast({ title: 'Could not update status', description: e.message, variant: 'destructive' });
+      toast({ title: tr('trade.couldNotUpdate'), description: e.message, variant: 'destructive' });
     }
   };
 
@@ -151,11 +151,11 @@ export default function TradeBoard() {
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            Trusted traders only
+            {tr('trade.trustedOnly')}
           </button>
           {trustedOnly && (
             <span className="text-xs text-muted-foreground">
-              {visibleListings.length} of {listings.filter((t) => !t.expires_at || new Date(t.expires_at).getTime() >= now).length} listings
+              {visibleListings.length} of {listings.filter((t) => !t.expires_at || new Date(t.expires_at).getTime() >= now).length} {tr('trade.listings')}
             </span>
           )}
         </div>
@@ -175,7 +175,7 @@ export default function TradeBoard() {
             <div key={t.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-center gap-2">
                 <Avatar name={t.author_name} src={t.author_avatar} size={32} />
-                <span className="text-sm font-semibold">{t.author_name || 'Collector'}</span>
+                <span className="text-sm font-semibold">{t.author_name || tr('trade.collector')}</span>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                   t.status === 'open' ? 'bg-success/15 text-success' :
                   t.status === 'completed' ? 'bg-secondary text-muted-foreground' :
@@ -184,7 +184,7 @@ export default function TradeBoard() {
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-secondary p-3">
-                  <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Offering</p>
+                  <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{tr('trade.offering')}</p>
                   <div className="flex flex-wrap gap-2">
                     {t.offer_card_images?.slice(0, 4).map((img, i) => (
                       <img key={i} src={cardImageUrl(img)} alt={t.offer_card_names?.[i] || 'card'} loading="lazy" className="h-16 w-12 rounded object-cover" />
@@ -195,7 +195,7 @@ export default function TradeBoard() {
                   </div>
                 </div>
                 <div className="rounded-xl border border-border bg-secondary p-3">
-                  <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Wants</p>
+                  <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{tr('trade.wants')}</p>
                   <p className="text-sm font-medium">{t.wanted_card_names?.join(', ')}</p>
                 </div>
               </div>
@@ -212,10 +212,10 @@ export default function TradeBoard() {
                       onClick={() => handleMarkCompleted(t)}
                       className="rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary"
                     >
-                      Mark Completed
+                      {tr('trade.markCompleted')}
                     </button>
                   )}
-                  <Link to={`/trade/${t.id}`} className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90">Negotiate</Link>
+                  <Link to={`/trade/${t.id}`} className="rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90">{tr('trade.negotiate')}</Link>
                 </div>
               </div>
             </div>
@@ -253,6 +253,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [loadedTemplateId, setLoadedTemplateId] = useState('');
   const { toast } = useToast();
+  const tr = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -289,8 +290,8 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
   };
 
   const saveTemplate = async () => {
-    if (!templateName.trim()) { alert('Enter a template name.'); return; }
-    if (offers.length === 0 && wants.length === 0) { alert('Add at least one card before saving.'); return; }
+    if (!templateName.trim()) { alert(tr('trade.enterTemplateName')); return; }
+    if (offers.length === 0 && wants.length === 0) { alert(tr('trade.addOneCard')); return; }
     try {
       await base44.entities.TradeTemplate.create({
         name: templateName.trim(),
@@ -307,9 +308,9 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       setTemplateName('');
       setShowSaveTemplate(false);
       setTemplates(await base44.entities.TradeTemplate.list('-created_date', 50));
-      toast({ title: 'Template saved', duration: 3000 });
+      toast({ title: tr('trade.templateSaved'), duration: 3000 });
     } catch (e) {
-      alert('Could not save template: ' + e.message);
+      alert(tr('trade.couldNotSaveTemplate') + e.message);
     }
   };
 
@@ -319,7 +320,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       setTemplates(templates.filter((t) => t.id !== id));
       if (loadedTemplateId === id) setLoadedTemplateId('');
     } catch (e) {
-      alert('Could not delete template: ' + e.message);
+      alert(tr('trade.couldNotDeleteTemplate') + e.message);
     }
   };
 
@@ -327,15 +328,15 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
 
   const handleSave = async () => {
     if (offers.length === 0 || wants.length === 0) {
-      alert('Add at least one offered and one wanted card.');
+      alert(tr('trade.addOfferedAndWanted'));
       return;
     }
     if (offers.length > 20 || wants.length > 20) {
-      alert('Maximum 20 cards per side.');
+      alert(tr('trade.max20Cards'));
       return;
     }
     if (visibility === 'circle_scoped' && !circleRef) {
-      alert('Select a circle for this circle-scoped listing.');
+      alert(tr('trade.selectCircleForListing'));
       return;
     }
     const days = parseInt(expiresIn, 10);
@@ -376,14 +377,14 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       }
       if (bridgeOk && bridgedUri) {
         toast({
-          title: '✅ Listing published & synced to AT Protocol',
+          title: tr('trade.publishedSynced'),
           description: `PDS record: ${bridgedUri}`,
           duration: 6000,
         });
       } else {
         toast({
-          title: '⚠️ Listing published locally',
-          description: 'PDS sync failed, your listing is live but not yet federated.',
+          title: tr('trade.publishedLocal'),
+          description: tr('trade.pdsSyncFailed'),
           variant: 'destructive',
           duration: 6000,
         });
@@ -393,7 +394,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       onClose();
       onCreated();
     } catch (e) {
-      alert('Could not create listing: ' + e.message);
+      alert(tr('trade.couldNotCreate') + e.message);
     } finally {
       setSaving(false);
     }
@@ -403,7 +404,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="mt-6 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">New Trade Listing</h2>
+          <h2 className="text-lg font-bold">{tr('trade.newListingModal')}</h2>
           <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
 
@@ -415,7 +416,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
               className="flex-1 rounded border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
               defaultValue=""
             >
-              <option value="">Load a template…</option>
+              <option value="">{tr('trade.loadTemplate')}</option>
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
@@ -431,8 +432,8 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
         <div className="space-y-4">
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold">Offering</p>
-              <button onClick={() => { setSearchTarget('offers'); setSearchOpen(true); }} disabled={offers.length >= 20} className="text-xs font-bold text-primary disabled:opacity-50">+ Add card</button>
+              <p className="text-sm font-semibold">{tr('trade.offering')}</p>
+              <button onClick={() => { setSearchTarget('offers'); setSearchOpen(true); }} disabled={offers.length >= 20} className="text-xs font-bold text-primary disabled:opacity-50">{tr('trade.addCard')}</button>
               <span className="text-xs text-muted-foreground">{offers.length}/20</span>
             </div>
             <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-secondary p-2 min-h-[60px]">
@@ -444,14 +445,14 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
                   </button>
                 </div>
               ))}
-              {offers.length === 0 && <p className="self-center px-2 text-xs text-muted-foreground">No cards added</p>}
+              {offers.length === 0 && <p className="self-center px-2 text-xs text-muted-foreground">{tr('trade.noCardsAdded')}</p>}
             </div>
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold">Wants</p>
-              <button onClick={() => { setSearchTarget('wants'); setSearchOpen(true); }} disabled={wants.length >= 20} className="text-xs font-bold text-primary disabled:opacity-50">+ Add card</button>
+              <p className="text-sm font-semibold">{tr('trade.wants')}</p>
+              <button onClick={() => { setSearchTarget('wants'); setSearchOpen(true); }} disabled={wants.length >= 20} className="text-xs font-bold text-primary disabled:opacity-50">{tr('trade.addCard')}</button>
               <span className="text-xs text-muted-foreground">{wants.length}/20</span>
             </div>
             <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-secondary p-2 min-h-[60px]">
@@ -463,13 +464,13 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
                   </button>
                 </div>
               ))}
-              {wants.length === 0 && <p className="self-center px-2 text-xs text-muted-foreground">No cards added</p>}
+              {wants.length === 0 && <p className="self-center px-2 text-xs text-muted-foreground">{tr('trade.noCardsAdded')}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Shipping regions</label>
+              <label className="mb-1.5 block text-sm font-medium">{tr('trade.shippingRegions')}</label>
               <input
                 value={regions.join(', ')}
                 onChange={(e) => setRegions(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
@@ -477,7 +478,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Currency</label>
+              <label className="mb-1.5 block text-sm font-medium">{tr('trade.currency')}</label>
               <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
                 <option>GBP</option><option>EUR</option><option>USD</option>
               </select>
@@ -486,31 +487,31 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Listing expires</label>
+              <label className="mb-1.5 block text-sm font-medium">{tr('trade.listingExpires')}</label>
               <select value={expiresIn} onChange={(e) => setExpiresIn(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                <option value="7">In 7 days</option>
-                <option value="30">In 30 days</option>
-                <option value="90">In 90 days</option>
-                <option value="0">No expiry</option>
+                <option value="7">{tr('trade.in7days')}</option>
+                <option value="30">{tr('trade.in30days')}</option>
+                <option value="90">{tr('trade.in90days')}</option>
+                <option value="0">{tr('trade.noExpiry')}</option>
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Visibility</label>
+              <label className="mb-1.5 block text-sm font-medium">{tr('trade.visibility')}</label>
               <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                <option value="public">Public</option>
-                <option value="wishlist_only">Wishlist matches only</option>
-                <option value="circle_scoped">Circle only</option>
+                <option value="public">{tr('trade.public')}</option>
+                <option value="wishlist_only">{tr('trade.wishlistOnly')}</option>
+                <option value="circle_scoped">{tr('trade.circleOnly')}</option>
               </select>
             </div>
           </div>
           {visibility === 'circle_scoped' && (
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Visible to circle</label>
+              <label className="mb-1.5 block text-sm font-medium">{tr('trade.visibleToCircle')}</label>
               {circles.length === 0 ? (
-                <p className="text-xs text-muted-foreground">You have no circles to scope this listing to. Create a circle first.</p>
+                <p className="text-xs text-muted-foreground">{tr('trade.noCircles')}</p>
               ) : (
                 <select value={circleRef} onChange={(e) => setCircleRef(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                  <option value="">Select a circle…</option>
+                  <option value="">{tr('trade.selectCircle')}</option>
                   {circles.map((c) => (
                     <option key={c.at_uri} value={c.at_uri}>{c.name || 'Circle'}</option>
                   ))}
@@ -519,7 +520,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
             </div>
           )}
 
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder="Notes (optional)…" className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder={tr('trade.notesPlaceholder')} className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
         </div>
 
         {showSaveTemplate ? (
@@ -527,28 +528,28 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
             <input
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="Template name…"
+              placeholder={tr('trade.templateNamePlaceholder')}
               maxLength={100}
               className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
             />
-            <button onClick={saveTemplate} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">Save</button>
-            <button onClick={() => { setShowSaveTemplate(false); setTemplateName(''); }} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">Cancel</button>
+            <button onClick={saveTemplate} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">{tr('trade.save')}</button>
+            <button onClick={() => { setShowSaveTemplate(false); setTemplateName(''); }} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">{tr('common.cancel')}</button>
           </div>
         ) : (
           <button onClick={() => setShowSaveTemplate(true)} className="mt-4 flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
-            <Bookmark className="h-3.5 w-3.5" /> Save current details as template
+            <Bookmark className="h-3.5 w-3.5" /> {tr('trade.saveAsTemplate')}
           </button>
         )}
 
         <div className="mt-5 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-full border border-border py-2.5 text-sm font-semibold hover:bg-secondary">Cancel</button>
+          <button onClick={onClose} className="flex-1 rounded-full border border-border py-2.5 text-sm font-semibold hover:bg-secondary">{tr('common.cancel')}</button>
           <button onClick={handleSave} disabled={saving} className="flex-1 rounded-full bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
             {saving ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {bridgeStatus === 'syncing' ? 'Syncing to PDS…' : 'Publishing…'}
+                {bridgeStatus === 'syncing' ? tr('trade.syncingToPds') : tr('trade.publishing')}
               </span>
-            ) : 'Publish Listing'}
+            ) : tr('trade.publishListing')}
           </button>
         </div>
       </div>
@@ -556,7 +557,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       <CardSearchModal
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
-        title={searchTarget === 'offers' ? 'Select card to offer' : 'Select wanted card'}
+        title={searchTarget === 'offers' ? tr('trade.selectCardToOffer') : tr('trade.selectWantedCard')}
         onSelect={(card) => {
           if (searchTarget === 'offers') setOffers((prev) => prev.find((x) => x.id === card.id) ? prev : [...prev, card]);
           else setWants((prev) => prev.find((x) => x.id === card.id) ? prev : [...prev, card]);

@@ -11,14 +11,13 @@ export default function ShareButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95 md:bottom-6"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}
-        aria-label={t('share.open')}
+        aria-label={t('share.buttonLabel')}
+        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:right-6"
       >
         <Share2 className="h-5 w-5" />
-        <span className="sr-only">{t('share.open')}</span>
+        <span className="sr-only">{t('share.buttonLabel')}</span>
       </button>
-      <ShareDialog open={open} onClose={() => setOpen(false)} />
+      <ShareDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

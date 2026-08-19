@@ -68,7 +68,7 @@ export default function JournalDetail() {
         <div className="p-8 text-center">
           <p className="text-sm text-muted-foreground">{error || t('page.journal.notFound')}</p>
           <Link to="/explore" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
-            Back to Explore
+            {t('journal.backToExplore')}
           </Link>
         </div>
       </div>
@@ -80,14 +80,14 @@ export default function JournalDetail() {
       <PageHeader title={journal.title} subtitle={journal.subtitle} />
       <div className="mx-auto max-w-2xl p-4">
         <Link to={journal.did ? `/profile/${journal.did}` : '/explore'} className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to profile
+          <ArrowLeft className="h-4 w-4" /> {t('journal.backToProfile')}
         </Link>
 
         {/* Author bar */}
         <div className="mb-4 flex items-center gap-3">
           <Avatar name={journal.author_name || 'Collector'} src={journal.author_avatar} size={44} />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">{journal.author_name || 'Anonymous Collector'}</p>
+            <p className="text-sm font-bold">{journal.author_name || t('journal.anonymousAuthor')}</p>
             <p className="text-xs text-muted-foreground">
               {journal.published_at && (
                 <span className="flex items-center gap-1">
@@ -129,15 +129,15 @@ export default function JournalDetail() {
           <div className="mb-6 grid grid-cols-3 gap-2 rounded-xl border border-border bg-secondary p-3 text-center">
             <div>
               <p className="text-sm font-bold">{formatPrice(journal.embedded_stats.total_collection_value || 0)}</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Value</p>
-            </div>
-            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t('journal.stats.value')}</p>
+              </div>
+              <div>
               <p className="text-sm font-bold">{journal.embedded_stats.total_cards || 0}</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Cards</p>
-            </div>
-            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t('journal.stats.cards')}</p>
+              </div>
+              <div>
               <p className="text-sm font-bold">{journal.embedded_stats.set_completion_percent || 0}%</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Set</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t('journal.stats.set')}</p>
             </div>
           </div>
         )}
@@ -170,7 +170,7 @@ export default function JournalDetail() {
 
         {/* Footer */}
         <div className="mt-6 flex items-center gap-4 border-t border-border pt-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {journal.like_count || 0} likes</span>
+          <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {journal.like_count || 0} {t('journal.likes')}</span>
           {journal.standard_doc_uri && (
             <span className="font-mono text-[10px] break-all">{journal.standard_doc_uri}</span>
           )}

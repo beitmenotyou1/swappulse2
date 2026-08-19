@@ -82,7 +82,7 @@ export default function Collection() {
     const showcased = !item.showcased;
     const binderCount = items.filter((i) => i.showcased).length;
     if (showcased && binderCount >= (gridSize === '9x9' ? 81 : 9) && !item.showcased) {
-      alert(`Your ${gridSize} binder is full. Switch to 9×9 or remove a card.`);
+      alert(tr('collection.binderFull').replace('{gridSize}', gridSize));
       return;
     }
     await updateEntry(item.id, {
@@ -162,10 +162,10 @@ export default function Collection() {
     try {
       await bulkUpdateEntries(ids.map((id) => ({ id, condition })));
       setItems((prev) => prev.map((i) => (selected.has(i.id) ? { ...i, condition } : i)));
-      toast({ title: 'Condition updated', description: `${ids.length} card${ids.length > 1 ? 's' : ''} marked as ${conditionLabel(condition)}.` });
+      toast({ title: tr('collection.conditionUpdated'), description: tr('collection.cardsMarkedAs').replace('{count}', ids.length).replace('{condition}', conditionLabel(condition)) });
       clearSelection();
     } catch (e) {
-      toast({ title: 'Update failed', description: e.message, variant: 'destructive' });
+      toast({ title: tr('collection.updateFailed'), description: e.message, variant: 'destructive' });
     } finally {
       setBulkBusy(false);
     }
@@ -221,7 +221,7 @@ export default function Collection() {
             onClick={() => setFilter('all')}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${filter === 'all' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
           >
-            All
+            {tr('collection.all')}
           </button>
           {rarities.map((r) => (
             <button
@@ -244,7 +244,7 @@ export default function Collection() {
             }}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${selectMode ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
           >
-            <CheckSquare className="h-3.5 w-3.5" /> {selectMode ? 'Done selecting' : 'Select cards'}
+            <CheckSquare className="h-3.5 w-3.5" /> {selectMode ? tr('collection.doneSelecting') : tr('collection.selectCards')}
           </button>
         </div>
       )}
@@ -264,7 +264,7 @@ export default function Collection() {
       {tab === 'binder' && (
         <div className="p-4">
           <div className="mb-4 flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Grid:</span>
+            <span className="text-sm text-muted-foreground">{tr('collection.grid')}</span>
             <div className="flex rounded-full border border-border p-0.5">
               {['3x3', '9x9'].map((g) => (
                 <button
@@ -300,9 +300,9 @@ export default function Collection() {
       {tab === 'completion' && (
         <>
           <div className="flex items-center justify-between px-4 pt-3">
-            <p className="text-sm text-muted-foreground">Track your set progress and download printable checklists.</p>
+            <p className="text-sm text-muted-foreground">{tr('collection.completionDesc')}</p>
             <Link to="/sets" className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-              <Target className="h-4 w-4" /> Checklist Manager
+              <Target className="h-4 w-4" /> {tr('collection.checklistManager')}
             </Link>
           </div>
           {loading ? (
@@ -333,11 +333,11 @@ export default function Collection() {
         ) : items.length === 0 ? (
           <div className="px-4 py-20 text-center">
             <LayoutGrid className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-lg font-bold">Your collection is empty</p>
-            <p className="mt-1 text-sm text-muted-foreground">Search the catalogue and add your first card, or import a CSV.</p>
+            <p className="text-lg font-bold">{tr('collection.empty')}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{tr('collection.emptySub')}</p>
             <div className="mt-4 flex justify-center gap-2">
-              <Link to="/explore" className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white">Explore Cards</Link>
-              <button onClick={() => setTab('import')} className="rounded-full border border-border px-5 py-2.5 text-sm font-bold">Import CSV</button>
+              <Link to="/explore" className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-white">{tr('collection.exploreCards')}</Link>
+              <button onClick={() => setTab('import')} className="rounded-full border border-border px-5 py-2.5 text-sm font-bold">{tr('collection.importCsv')}</button>
             </div>
           </div>
         ) : (

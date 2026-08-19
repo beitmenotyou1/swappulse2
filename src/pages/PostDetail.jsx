@@ -9,6 +9,7 @@ import { usePostVisibility } from '@/hooks/usePostVisibility';
 import { visibilityLabel } from '@/lib/postVisibility';
 import useSEO from '@/hooks/useSEO';
 import { cardImageUrl } from '@/lib/tcgdex';
+import { useT } from '@/lib/i18n/I18nProvider';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 
 // Dedicated post detail page: renders a single post with its full reply
@@ -27,6 +28,7 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { canView } = usePostVisibility();
+  const t = useT();
   useSEO({
     title: post ? (post.content?.slice(0, 60) || 'Post') : 'Post',
     description: post ? (post.content?.slice(0, 160) || 'A post on SwapPulse') : 'A post on the SwapPulse Pokémon TCG collector community.',
@@ -105,15 +107,15 @@ export default function PostDetail() {
     return (
       <div className="flex flex-col items-center gap-2 py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading post…</p>
+        <p className="text-sm text-muted-foreground">{t('post.loading')}</p>
       </div>
     );
   }
   if (!post) {
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-center">
-        <p className="text-sm font-semibold">{error || 'Post not found'}</p>
-        <Link to="/" className="text-sm text-primary hover:underline">Back home</Link>
+        <p className="text-sm font-semibold">{error || t('post.notFound')}</p>
+        <Link to="/" className="text-sm text-primary hover:underline">{t('post.backHome')}</Link>
       </div>
     );
   }
@@ -126,15 +128,15 @@ export default function PostDetail() {
           <button onClick={() => navigate(-1)} className="rounded-full p-1.5 hover:bg-secondary" aria-label="Back">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-bold">Post</h1>
+          <h1 className="text-lg font-bold">{t('post.title')}</h1>
         </div>
         <div className="mx-4 mt-10 flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-8 text-center">
           <div className="grid h-12 w-12 place-items-center rounded-full bg-secondary">
             <Lock className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-sm font-semibold">This post is limited</p>
+          <p className="text-sm font-semibold">{t('post.limited')}</p>
           <p className="max-w-xs text-sm text-muted-foreground">
-            Only the author&apos;s {visibilityLabel(post.visibility_scope)} can see this post.
+            {t('post.limitedSub').replace('{audience}', visibilityLabel(post.visibility_scope))}
           </p>
         </div>
       </div>
@@ -147,7 +149,7 @@ export default function PostDetail() {
         <button onClick={() => navigate(-1)} className="rounded-full p-1.5 hover:bg-secondary" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-bold">Post</h1>
+        <h1 className="text-lg font-bold">{t('post.title')}</h1>
       </div>
       {ancestors.length > 0 && (
         <div className="ml-4 mr-4 mb-2 space-y-1.5">
@@ -159,7 +161,7 @@ export default function PostDetail() {
       <PostCard post={post} />
       <div className="px-4 pb-8">
         <h2 className="mb-2 mt-4 flex items-center gap-2 text-sm font-bold">
-          Replies <span className="text-muted-foreground">{post.replies || 0}</span>
+          {t('post.replies')} <span className="text-muted-foreground">{post.replies || 0}</span>
         </h2>
         <PostReplyThread parentPost={post} showFullThreadLink={false} full />
       </div>
