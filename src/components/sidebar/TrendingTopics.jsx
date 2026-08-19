@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { TrendingUp, Hash, Type, CreditCard, Loader2, Globe } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import TrendingCardPreview from '@/components/sidebar/TrendingCardPreview';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Common English stopwords filtered out of keyword extraction so the list
 // surfaces meaningful TCG/collector terms rather than "the", "this", "with".
@@ -166,7 +166,7 @@ function mergeLists(community, web, keyFn) {
 }
 
 export default function TrendingTopics() {
-  const { tr } = useI18n();
+  const tr = useT();
   const [postsLoading, setPostsLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const [webTrends, setWebTrends] = useState({ cards: [], hashtags: [], keywords: [] });

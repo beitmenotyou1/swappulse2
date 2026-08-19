@@ -1,9 +1,9 @@
 import React from 'react';
 import Avatar from '@/components/Avatar';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function OnlineNow({ users }) {
-  const { tr } = useI18n();
+  const tr = useT();
   if (!users?.length) return null;
   return (
     <section className="rounded-2xl border border-border bg-card p-4">

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn, X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function SignInBanner() {
   const { isAuthenticated } = useAuth();
-  const { tr } = useI18n();
+  const tr = useT();
   const [dismissed, setDismissed] = useState(false);
   if (isAuthenticated || dismissed) return null;
   return (

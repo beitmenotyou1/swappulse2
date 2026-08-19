@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // §4 Card of the Day - surfaces the biggest pricing mover from the feeds service.
 export default function CardOfTheDay() {
-  const { tr } = useI18n();
+  const tr = useT();
   const [featured, setFeatured] = useState(null);
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);

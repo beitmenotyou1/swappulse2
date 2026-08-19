@@ -8,7 +8,7 @@ import StoryViewer from './StoryViewer';
 import { useLivePresence } from '@/lib/livePresence';
 import StoryCamera from './StoryCamera';
 import { useAuth } from '@/lib/AuthContext';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Returns the set of DIDs the current user follows (outgoing follows).
 async function followedDids(me) {
@@ -24,7 +24,7 @@ export default function StoriesBar() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const { liveByDid } = useLivePresence();
   const { user } = useAuth();
-  const { tr } = useI18n();
+  const tr = useT();
   const myDisplayName = user?.display_name || user?.full_name || tr('common.you');
   const myAvatar = user?.avatar || '';
 

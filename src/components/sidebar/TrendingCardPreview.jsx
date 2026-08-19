@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Globe, Loader2 } from 'lucide-react';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
-import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Cache fetched card data so re-hovering the same card is instant.
 const cardCache = new Map();
@@ -14,7 +14,7 @@ const cardCache = new Map();
 // the link so it doesn't overflow the right-hand sidebar. On touch devices
 // where hover isn't available, the link still navigates to the card page.
 export default function TrendingCardPreview({ card, count }) {
-  const { tr } = useI18n();
+  const tr = useT();
   const [hovered, setHovered] = useState(false);
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(false);
