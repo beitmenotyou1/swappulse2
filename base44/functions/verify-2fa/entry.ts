@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
 
 const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -95,7 +96,7 @@ export default async function (req) {
       const { secret, code } = body;
       if (!secret || !code) return Response.json({ error: 'Secret and code required' }, { status: 400 });
       const expected = await generateTotp(secret);
-      if (code !== expected) return Response.json({ verified: false, error: 'Invalid code' });
+      if (!timingSafeEqual(code, expected)) return Response.json({ verified: false, error: 'Invalid code' });
       await base44.auth.updateMe({ two_factor_enabled: true, two_factor_secret: secret });
       return Response.json({ verified: true });
     }
@@ -123,7 +124,7 @@ export default async function (req) {
       return Response.json({ verified: true });
     }
     const expected = await generateTotp(user.two_factor_secret);
-    if (code !== expected) {
+    if (!timingSafeEqual(code, expected)) {
       await recordFailedAttempt(svc, normalizedEmail);
       return Response.json({ verified: false, error: 'Invalid 2FA code' });
     }

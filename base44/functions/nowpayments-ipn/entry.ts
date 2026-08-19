@@ -10,6 +10,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { buildDonationThankYouEmail } from '../../shared/emailContent.ts';
+import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
 
 function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
   const sorted: Record<string, any> = {};
@@ -25,7 +26,7 @@ async function verifyIpnSignature(rawBody: string, signature: string, ipnSecret:
     const key = await crypto.subtle.importKey('raw', enc.encode(ipnSecret), { name: 'HMAC', hash: 'SHA-512' }, false, ['sign']);
     const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(sortedJson));
     const computed = Array.from(new Uint8Array(sigBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-    return computed === signature;
+    return timingSafeEqual(computed, signature);
   } catch (e) {
     console.error('nowpayments-ipn: signature verify failed', e?.message || e);
     return false;

@@ -255,17 +255,42 @@ export default async function (req: Request): Promise<Response> {
       }
 
       case 'search_users': {
-        const query = String(body.query || '').trim().toLowerCase();
+        const query = String(body.query || '').trim();
         if (!query || query.length < 2) return Response.json({ users: [] });
+        const lowerQuery = query.toLowerCase();
+        const mapUser = (u: any) => ({ id: u.id, email: u.email, username: u.username, did: u.did, full_name: u.full_name });
         try {
-          const all = await svc.entities.User.list('-created_date', 2000);
-          const users = (all || [])
-            .filter((u: any) =>
-              (u.email && u.email.toLowerCase().includes(query)) ||
-              (u.username && u.username.toLowerCase().includes(query)))
-            .slice(0, 20)
-            .map((u: any) => ({ id: u.id, email: u.email, username: u.username, did: u.did, full_name: u.full_name }));
-          return Response.json({ users });
+          // Fast path 1: exact email match
+          const byEmail = await svc.entities.User.filter({ email: query.toLowerCase() }, '-created_date', 1).catch(() => []);
+          if (byEmail.length > 0) return Response.json({ users: byEmail.map(mapUser) });
+          // Fast path 2: exact username match
+          const byUsername = await svc.entities.User.filter({ username: query }, '-created_date', 1).catch(() => []);
+          if (byUsername.length > 0) return Response.json({ users: byUsername.map(mapUser) });
+          // Fallback: paginated substring search via created_date cursor, capped at 5000
+          const BATCH = 500;
+          const CAP = 5000;
+          const matches: any[] = [];
+          let cursor: string | null = null;
+          let scanned = 0;
+          while (scanned < CAP && matches.length < 20) {
+            const batch = cursor
+              ? await svc.entities.User.filter({ created_date: { $lt: cursor } }, '-created_date', BATCH).catch(() => [])
+              : await svc.entities.User.list('-created_date', BATCH).catch(() => []);
+            if (!batch || batch.length === 0) break;
+            for (const u of batch) {
+              if (
+                (u.email && u.email.toLowerCase().includes(lowerQuery)) ||
+                (u.username && u.username.toLowerCase().includes(lowerQuery))
+              ) {
+                matches.push(mapUser(u));
+                if (matches.length >= 20) break;
+              }
+            }
+            scanned += batch.length;
+            cursor = batch[batch.length - 1].created_date;
+            if (batch.length < BATCH) break;
+          }
+          return Response.json({ users: matches });
         } catch (e) {
           console.error('enforcement: search_users failed', e?.message);
           return Response.json({ users: [] });

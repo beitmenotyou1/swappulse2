@@ -11,6 +11,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { buildDonationThankYouEmail } from '../../shared/emailContent.ts';
+import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
 
 async function verifyStripeSignature(rawBody: string, sigHeader: string, secret: string): Promise<boolean> {
   const parts: Record<string, string> = {};
@@ -27,7 +28,7 @@ async function verifyStripeSignature(rawBody: string, sigHeader: string, secret:
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(`${timestamp}.${rawBody}`));
   const computed = Array.from(new Uint8Array(sigBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-  return computed === v1;
+  return timingSafeEqual(computed, v1);
 }
 
 export default async function(req) {

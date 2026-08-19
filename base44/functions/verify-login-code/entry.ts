@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
+import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
 
 export default async function(req) {
   try {
@@ -21,7 +22,7 @@ export default async function(req) {
     }
 
     // Wrong code: increment failed attempts, lock (delete) after 5 failures
-    if (active.code !== code) {
+    if (!timingSafeEqual(active.code, code)) {
       const attempts = (active.failed_attempts || 0) + 1;
       if (attempts >= 5) {
         await svc.entities.LoginCode.delete(active.id).catch(() => {});
