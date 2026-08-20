@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, ShieldCheck, Fingerprint, Copy, Check, Mic, Share2 } from 'lucide-react';
+import { Loader2, Star, Mic, Share2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -26,25 +26,12 @@ import FollowingTab from '@/components/profile/FollowingTab';
 import ActivityTab from '@/components/profile/ActivityTab';
 import ProfileHandle from '@/components/profile/ProfileHandle';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileTabNav from '@/components/profile/ProfileTabNav';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
-
-const TABS = [
-  { label: 'Posts', tKey: 'profile.tab.posts' },
-  { label: 'Activity', tKey: 'profile.tab.activity' },
-  { label: 'Binder', tKey: 'profile.tab.binder' },
-  { label: 'Collection', tKey: 'profile.tab.collection' },
-  { label: 'Trades', tKey: 'profile.tab.trades' },
-  { label: 'Trade Activity', tKey: 'profile.tab.tradeActivity' },
-  { label: 'Reputation', tKey: 'profile.tab.reputation' },
-  { label: 'Following', tKey: 'profile.tab.following' },
-  { label: 'Journals', tKey: 'profile.tab.journals' },
-  { label: 'Podcasts', tKey: 'profile.tab.podcasts' },
-  { label: 'Cross-Posting', tKey: 'profile.tab.crossPosting' },
-  { label: 'Privacy', tKey: 'profile.tab.privacy' },
-];
 
 export default function Profile() {
   const t = useT();
@@ -56,7 +43,6 @@ export default function Profile() {
   const [did, setDid] = useState('');
   const [reputation, setReputation] = useState([]);
   const [journals, setJournals] = useState([]);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [liveSpace, setLiveSpace] = useState(null);
   const [showGoLive, setShowGoLive] = useState(false);
@@ -122,12 +108,6 @@ export default function Profile() {
     ? (reputation.reduce((s, r) => s + (r.rating || 0), 0) / reputation.length).toFixed(1)
     : null;
 
-  const copyDid = () => {
-    navigator.clipboard?.writeText(did);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
   const myPosts = posts;
   const myCollection = collection;
   const myTrades = trades;
@@ -135,31 +115,38 @@ export default function Profile() {
   const portfolioValue = myCollection.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const binderCards = myCollection.slice(0, 9);
 
+  const tabs = [
+    { key: 'Posts', label: t('profile.tab.posts') },
+    { key: 'Activity', label: t('profile.tab.activity') },
+    { key: 'Binder', label: t('profile.tab.binder') },
+    { key: 'Collection', label: t('profile.tab.collection') },
+    { key: 'Trades', label: t('profile.tab.trades') },
+    { key: 'Trade Activity', label: t('profile.tab.tradeActivity') },
+    { key: 'Reputation', label: t('profile.tab.reputation') },
+    { key: 'Following', label: t('profile.tab.following') },
+    { key: 'Journals', label: t('profile.tab.journals') },
+    { key: 'Podcasts', label: t('profile.tab.podcasts'), icon: <Mic className="h-4 w-4" /> },
+    { key: 'Cross-Posting', label: t('profile.tab.crossPosting'), icon: <Share2 className="h-4 w-4" /> },
+    { key: 'Privacy', label: t('profile.tab.privacy') },
+  ];
+
   return (
     <div>
-      <div className="h-40 w-full overflow-hidden bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30">
-        {(merged?.header || user?.header) ? (
-          <img src={merged?.header || user.header} alt="Profile header" className="h-full w-full object-cover" />
-        ) : null}
-      </div>
-      <div className="px-4">
-        <div className="-mt-12 flex items-end justify-between">
-          <span className="relative inline-block">
-            <LiveAvatar did={did} name={merged?.name || user?.display_name || user?.full_name} src={merged?.avatar || user?.avatar} size={96} className="ring-4 ring-background" />
-            {liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowEdit(true)}
-              className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
-            >
-              {t('profile.editProfile')}
-            </button>
-            <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
-          </div>
-        </div>
-        <div className="mt-3">
-          <h1 className="text-xl font-extrabold">{merged?.name || user?.display_name || user?.full_name || t('profile.collector')}</h1>
+      <ProfileHeader
+        banner={merged?.header || user?.header}
+        bannerHeight="h-32 sm:h-40"
+        avatar={
+          <LiveAvatar
+            did={did}
+            name={merged?.name || user?.display_name || user?.full_name}
+            src={merged?.avatar || user?.avatar}
+            size={96}
+            className="ring-4 ring-background"
+          />
+        }
+        avatarBadge={liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
+        name={merged?.name || user?.display_name || user?.full_name || t('profile.collector')}
+        handleNode={
           <ProfileHandle
             bskyHandle={user?.bsky_handle}
             username={user?.username}
@@ -167,42 +154,47 @@ export default function Profile() {
             verified={user?.handle_verified}
             syncedFromBsky={!!merged?.remote_synced}
           />
+        }
+        metricsNode={
           <ProfileMetricsBar
             followers={merged?.followers_count || 0}
             following={merged?.follows_count || 0}
             posts={myPosts.length}
           />
-          {(merged?.description || user?.description) && <RichText text={merged?.description || user.description} className="mt-2 text-sm" />}
-          <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
-            {repAvg && (
-              <span className="flex items-center gap-1 text-accent">
-                <Star className="h-3.5 w-3.5 fill-current" />
-                {t('profile.trustedTrader')} · {repAvg}★ ({reputation.length})
-              </span>
-            )}
-          </div>
-
-          <div className="mt-3"><NotificationToggle /></div>
-          <div className="mt-3 flex gap-4 text-sm">
-            <span><b>{myCollection.length}</b> <span className="text-muted-foreground">{t('page.collection.stats.cards')}</span></span>
-            <span><b>{myTrades.length}</b> <span className="text-muted-foreground">{t('profile.tab.trades')}</span></span>
-          </div>
-        </div>
-
-        <div className="mt-4 flex overflow-x-auto border-b border-border">
-          {TABS.map((tabItem) => (
+        }
+        description={(merged?.description || user?.description) && (
+          <RichText text={merged?.description || user.description} className="text-sm" />
+        )}
+        reputationNode={repAvg && (
+          <span className="flex items-center gap-1 text-sm text-accent">
+            <Star className="h-3.5 w-3.5 fill-current" />
+            {t('profile.trustedTrader')} · {repAvg}★ ({reputation.length})
+          </span>
+        )}
+        actions={
+          <>
             <button
-              key={tabItem.label}
-              onClick={() => setTab(tabItem.label)}
-              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === tabItem.label ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+              onClick={() => setShowEdit(true)}
+              className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
             >
-              {tabItem.label === 'Podcasts' && <Mic className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
-              {tabItem.label === 'Cross-Posting' && <Share2 className="mr-1 inline h-5 w-5 align-text-bottom text-muted-foreground" />}
-              {t(tabItem.tKey)}
-              {tab === tabItem.label && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
+              {t('profile.editProfile')}
             </button>
-          ))}
-        </div>
+            <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
+          </>
+        }
+        extra={
+          <>
+            <div><NotificationToggle /></div>
+            <div className="flex gap-4 text-sm">
+              <span><b>{myCollection.length}</b> <span className="text-muted-foreground">{t('page.collection.stats.cards')}</span></span>
+              <span><b>{myTrades.length}</b> <span className="text-muted-foreground">{t('profile.tab.trades')}</span></span>
+            </div>
+          </>
+        }
+      />
+
+      <div className="px-4">
+        <ProfileTabNav tabs={tabs} activeTab={tab} onChange={setTab} primaryCount={5} />
 
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
@@ -254,6 +246,7 @@ export default function Profile() {
           </div>
         )}
       </div>
+
       {showGoLive && (
         <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />
       )}

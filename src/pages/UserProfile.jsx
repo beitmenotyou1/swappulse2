@@ -14,6 +14,8 @@ import AddFriendLink from '@/components/follow/AddFriendLink';
 import ReputationSummary from '@/components/profile/ReputationSummary';
 import ProfileHandle from '@/components/profile/ProfileHandle';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileTabNav from '@/components/profile/ProfileTabNav';
 import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
@@ -110,23 +112,53 @@ export default function UserProfile() {
 
   const isFriend = friendship.my?.status === 'accepted' && friendship.their?.status === 'accepted';
 
+  const tabs = [
+    { key: 'Posts', label: t('profile.tab.posts') },
+    { key: 'Trades', label: t('profile.tab.trades') },
+    { key: 'Collections', label: t('profile.tab.collections') },
+    { key: 'Activity', label: t('profile.tab.activity') },
+  ];
+
   return (
     <div>
-      <div className="h-32 w-full overflow-hidden bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30">
-        {profile?.header ? (
-          <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />
-        ) : null}
-      </div>
-      {isExternal && (
-        <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} />
-      )}
-      <div className="px-4">
-        <Link to="/" className={`${isExternal ? 'mt-2' : '-mt-10'} mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary`}>
-          <ArrowLeft className="h-4 w-4" /> {t('userProfile.back')}
-        </Link>
-        <div className={`${isExternal ? 'mt-2' : '-mt-6'} flex items-end justify-between`}>
-          <Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-background" />
-          <div className="flex items-center gap-2">
+      <ProfileHeader
+        banner={profile?.header}
+        bannerHeight="h-28 sm:h-32"
+        avatarOverlap={isExternal ? 'mt-2' : '-mt-10 sm:-mt-12'}
+        backLink={
+          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+            <ArrowLeft className="h-4 w-4" /> {t('userProfile.back')}
+          </Link>
+        }
+        externalBanner={isExternal && <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} />}
+        avatar={<Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-background" />}
+        name={profile?.name || 'Collector'}
+        badges={
+          <>
+            <TrustedTraderBadge did={subjectDid} size="md" />
+            {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
+            {!isExternal && <FriendsBadge isFriend={isFriend} />}
+          </>
+        }
+        handleNode={
+          <ProfileHandle
+            bskyHandle={profile?.bsky_handle}
+            username={profile?.username}
+            did={profile?.did}
+            verified={profile?.handle_verified}
+            syncedFromBsky={profile?.remote_synced}
+          />
+        }
+        metricsNode={
+          <ProfileMetricsBar
+            followers={profile?.followers_count || 0}
+            following={profile?.follows_count || 0}
+            posts={profile?.posts_count || posts.length}
+          />
+        }
+        description={profile?.description && <RichText text={profile.description} className="text-sm" />}
+        actions={
+          <>
             <FollowBellButton
               subjectDid={subjectDid}
               subjectName={profile?.name}
@@ -140,55 +172,20 @@ export default function UserProfile() {
               targetHandle={profile?.bsky_handle || profile?.username}
               targetAvatar={profile?.avatar}
             />
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold">{profile?.name || 'Collector'}</h1>
-            <TrustedTraderBadge did={subjectDid} size="md" />
-            {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
-            {!isExternal && <FriendsBadge isFriend={isFriend} />}
-          </div>
-          <ProfileHandle
-            bskyHandle={profile?.bsky_handle}
-            username={profile?.username}
-            did={profile?.did}
-            verified={profile?.handle_verified}
-            syncedFromBsky={profile?.remote_synced}
+          </>
+        }
+        extra={!isExternal && (
+          <AddFriendLink
+            subjectDid={subjectDid}
+            subjectName={profile?.name}
+            subjectHandle={profile?.bsky_handle || profile?.username}
           />
-          <ProfileMetricsBar
-            followers={profile?.followers_count || 0}
-            following={profile?.follows_count || 0}
-            posts={profile?.posts_count || posts.length}
-          />
-          {profile?.description && (
-            <RichText text={profile.description} className="mt-2 text-sm" />
-          )}
-          {!isExternal && (
-            <AddFriendLink
-              subjectDid={subjectDid}
-              subjectName={profile?.name}
-              subjectHandle={profile?.bsky_handle || profile?.username}
-            />
-          )}
-        </div>
-        <div className="mt-4 flex overflow-x-auto border-b border-border">
-          {[
-            { key: 'Posts', label: t('profile.tab.posts') },
-            { key: 'Trades', label: t('profile.tab.trades') },
-            { key: 'Collections', label: t('profile.tab.collections') },
-            { key: 'Activity', label: t('profile.tab.activity') },
-          ].map((tabItem) => (
-            <button
-              key={tabItem.key}
-              onClick={() => setTab(tabItem.key)}
-              className={`relative flex-1 shrink-0 whitespace-nowrap px-2 py-3 text-sm font-semibold transition-colors ${tab === tabItem.key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
-            >
-              {tabItem.label}
-              {tab === tabItem.key && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
-            </button>
-          ))}
-        </div>
+        )}
+      />
+
+      <div className="px-4">
+        <ProfileTabNav tabs={tabs} activeTab={tab} onChange={setTab} primaryCount={4} />
+
         <div className="mt-4 space-y-4">
           {!isExternal && <ReputationSummary did={subjectDid} />}
           {tab === 'Activity' ? (
