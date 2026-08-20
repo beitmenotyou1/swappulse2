@@ -15,6 +15,48 @@ import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
+// Validates a PDS service endpoint URL to prevent SSRF. Rejects non-HTTPS
+// schemes, private/loopback/link-local IP ranges, and known metadata
+// endpoints. Returns the validated origin URL or throws.
+function validatePdsUrl(rawUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error('Invalid PDS endpoint URL.');
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error('PDS endpoint must use HTTPS.');
+  }
+  const host = parsed.hostname.toLowerCase();
+
+  // Block known metadata endpoints and localhost
+  if (host === 'localhost' || host === 'metadata.google.internal' || host === 'metadata' || host === '169.254.169.254') {
+    throw new Error('PDS endpoint is not allowed.');
+  }
+
+  // Block IPv4 private/loopback/link-local ranges
+  const ipMatch = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipMatch) {
+    const a = Number(ipMatch[1]);
+    const b = Number(ipMatch[2]);
+    if (
+      a === 0 || a === 10 || a === 127 || a === 169 || a >= 224 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    ) {
+      throw new Error('PDS endpoint is not allowed.');
+    }
+  }
+
+  // Block IPv6 loopback, link-local, and unique-local prefixes
+  if (host === '::1' || host.startsWith('fe80:') || host.startsWith('fc') || host.startsWith('fd')) {
+    throw new Error('PDS endpoint is not allowed.');
+  }
+
+  return parsed.origin;
+}
+
 // --- Handle / DID resolution ---
 
 async function resolveHandle(handle: string): Promise<string> {
@@ -54,7 +96,7 @@ async function resolvePdsUrl(did: string): Promise<string> {
       (s: any) => s.type === 'AtprotoPersonalDataServer',
     );
     if (!service?.serviceEndpoint) throw new Error('DID has no PDS endpoint.');
-    return service.serviceEndpoint;
+    return validatePdsUrl(service.serviceEndpoint);
   }
   if (did.startsWith('did:web:')) {
     const domain = did.replace('did:web:', '');
@@ -65,7 +107,7 @@ async function resolvePdsUrl(did: string): Promise<string> {
       (s: any) => s.type === 'AtprotoPersonalDataServer',
     );
     if (!service?.serviceEndpoint) throw new Error('DID has no PDS endpoint.');
-    return service.serviceEndpoint;
+    return validatePdsUrl(service.serviceEndpoint);
   }
   throw new Error(`Unsupported DID method: ${did.split(':')[1]}`);
 }
@@ -85,7 +127,7 @@ async function createSession(
     if (res.status === 401) {
       throw new Error('Invalid handle or app password. Make sure you used an app password, not your main password.');
     }
-    throw new Error(`PDS authentication failed (${res.status}). ${body.slice(0, 200)}`);
+    throw new Error(`PDS authentication failed (${res.status}).`);
   }
   return await res.json();
 }
