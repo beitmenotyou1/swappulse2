@@ -143,7 +143,7 @@ export default function LeftNav() {
             aria-label={t('nav.profile')}
             className="flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-secondary xl:pr-4"
           >
-            <Avatar name={user?.full_name} src={user?.avatar_url} size={36} />
+            <Avatar name={user?.full_name} src={user?.avatar} size={36} />
             <div className="hidden xl:block min-w-0">
               <p className="truncate text-sm font-semibold">{user?.full_name || t('common.collector')}</p>
               <p className="truncate text-xs text-muted-foreground">{t('nav.profile')}</p>

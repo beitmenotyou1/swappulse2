@@ -27,9 +27,9 @@ export function usePresence() {
           const payload = {
             last_seen: new Date().toISOString(),
             did,
-            handle: (me.email || '').split('@')[0],
-            name: me.full_name || '',
-            avatar: '',
+            handle: me.username || (me.email || '').split('@')[0],
+            name: me.display_name || me.full_name || '',
+            avatar: me.avatar || '',
           };
           if (existing.length) await base44.entities.Presence.update(existing[0].id, payload);
           else await base44.entities.Presence.create(payload);
