@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { WhatsAppIcon, SignalIcon, DiscordIcon, MastodonIcon, BlueskyIcon, NostrIcon } from './PlatformIcons';
+import { WhatsAppIcon, SignalIcon, DiscordIcon, MastodonIcon, BlueskyIcon, NostrIcon, FacebookIcon, XIcon, RedditIcon, PinterestIcon, SnapchatIcon, InstagramIcon, TelegramIcon, LinkedInIcon, TumblrIcon, EmailIcon } from './PlatformIcons';
 
 // Build a language-tagged share URL for the current page.
 function buildShareUrl(locale) {
@@ -27,16 +27,36 @@ function getSeoMeta() {
 const PLATFORMS = [
   { id: 'whatsapp', labelKey: 'share.whatsapp', Icon: WhatsAppIcon, color: '#25D366',
     shareUrl: (msg) => `https://wa.me/?text=${encodeURIComponent(msg)}` },
-  { id: 'signal', labelKey: 'share.signal', Icon: SignalIcon, color: '#3A76F0',
-    homeUrl: 'https://signal.org' },
-  { id: 'discord', labelKey: 'share.discord', Icon: DiscordIcon, color: '#5865F2',
-    homeUrl: 'https://discord.com' },
-  { id: 'mastodon', labelKey: 'share.mastodon', Icon: MastodonIcon, color: '#6364FF',
-    needsInstance: true },
+  { id: 'facebook', labelKey: 'share.facebook', Icon: FacebookIcon, color: '#1877F2',
+    shareUrl: (msg, url) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}` },
+  { id: 'x', labelKey: 'share.x', Icon: XIcon, color: '#000000',
+    shareUrl: (msg, url, title) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
   { id: 'bluesky', labelKey: 'share.bluesky', Icon: BlueskyIcon, color: '#0EA5E9',
     shareUrl: (msg) => `https://bsky.app/intent/compose?text=${encodeURIComponent(msg)}` },
+  { id: 'mastodon', labelKey: 'share.mastodon', Icon: MastodonIcon, color: '#6364FF',
+    needsInstance: true },
+  { id: 'telegram', labelKey: 'share.telegram', Icon: TelegramIcon, color: '#26A5E4',
+    shareUrl: (msg, url, title) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}` },
+  { id: 'reddit', labelKey: 'share.reddit', Icon: RedditIcon, color: '#FF4500',
+    shareUrl: (msg, url, title) => `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}` },
+  { id: 'linkedin', labelKey: 'share.linkedin', Icon: LinkedInIcon, color: '#0A66C2',
+    shareUrl: (msg, url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` },
+  { id: 'pinterest', labelKey: 'share.pinterest', Icon: PinterestIcon, color: '#E60023',
+    shareUrl: (msg, url, title) => `https://www.pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(title)}` },
+  { id: 'tumblr', labelKey: 'share.tumblr', Icon: TumblrIcon, color: '#36465D',
+    shareUrl: (msg, url, title) => `https://www.tumblr.com/widgets/share/tool?posttype=link&url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}` },
+  { id: 'discord', labelKey: 'share.discord', Icon: DiscordIcon, color: '#5865F2',
+    homeUrl: 'https://discord.com' },
+  { id: 'signal', labelKey: 'share.signal', Icon: SignalIcon, color: '#3A76F0',
+    homeUrl: 'https://signal.org' },
   { id: 'nostr', labelKey: 'share.nostr', Icon: NostrIcon, color: '#9333EA',
     homeUrl: 'https://nostr.com' },
+  { id: 'snapchat', labelKey: 'share.snapchat', Icon: SnapchatIcon, color: '#FFFC00',
+    homeUrl: 'https://www.snapchat.com' },
+  { id: 'instagram', labelKey: 'share.instagram', Icon: InstagramIcon, color: '#E4405F',
+    homeUrl: 'https://www.instagram.com' },
+  { id: 'email', labelKey: 'share.email', Icon: EmailIcon, color: '#6B7280',
+    shareUrl: (msg, url, title) => `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(msg)}` },
 ];
 
 export default function ShareDialog({ open, onOpenChange }) {
@@ -99,12 +119,13 @@ export default function ShareDialog({ open, onOpenChange }) {
       handleMastodon();
       return;
     }
-    // Platforms with official share intent URLs (WhatsApp, Bluesky).
+    // Platforms with official share intent URLs.
     if (platform.shareUrl) {
-      window.open(platform.shareUrl(message), '_blank', 'noopener,noreferrer');
+      const { title } = getSeoMeta();
+      window.open(platform.shareUrl(message, shareUrl, title), '_blank', 'noopener,noreferrer');
       return;
     }
-    // Platforms without web intents (Signal, Discord, Nostr):
+    // Platforms without web intents (Signal, Discord, Nostr, Snapchat, Instagram):
     // try native Web Share API, then fall back to copy + open.
     if (navigator.share) {
       const ok = await handleNativeShare();
@@ -117,7 +138,7 @@ export default function ShareDialog({ open, onOpenChange }) {
     if (platform.homeUrl) {
       window.open(platform.homeUrl, '_blank', 'noopener,noreferrer');
     }
-  }, [message, handleMastodon, handleNativeShare, copyToClipboard, toast, t]);
+  }, [message, shareUrl, handleMastodon, handleNativeShare, copyToClipboard, toast, t]);
 
   const handleCopyLink = useCallback(async () => {
     const ok = await copyToClipboard(shareUrl);
@@ -183,7 +204,7 @@ export default function ShareDialog({ open, onOpenChange }) {
           )}
 
           {/* Platform buttons grid */}
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+          <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-6">
             {PLATFORMS.map((p) => (
               <button
                 key={p.id}

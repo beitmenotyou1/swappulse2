@@ -162,7 +162,7 @@ const zh = {
   'moderation.title': '版主仪表板', 'moderation.subtitle': '审核被举报的帖子并应用审核决定', 'moderation.refresh': '刷新',
   'moderation.tab.posts': '被举报的帖子', 'moderation.tab.disputes': '交易争议', 'moderation.tab.enforcement': '账号处罚', 'moderation.tab.bots': '机器人防护',
   'moderation.hideFilters': '隐藏筛选器', 'moderation.showFilters': '显示筛选器',
-  'share.title': '分享', 'share.editMessage': '编辑消息', 'share.copyLink': '复制链接', 'share.copied': '已复制', 'share.linkCopied': '链接已复制', 'share.pasteHint': '将您的消息粘贴到应用中', 'share.share': '分享', 'share.nativeShare': '通过设备分享', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr',
+  'share.title': '分享', 'share.editMessage': '编辑消息', 'share.copyLink': '复制链接', 'share.copied': '已复制', 'share.linkCopied': '链接已复制', 'share.pasteHint': '将您的消息粘贴到应用中', 'share.share': '分享', 'share.nativeShare': '通过设备分享', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': '电子邮件',
 };
 
 export default zh;

@@ -162,7 +162,7 @@ const it = {
   'moderation.title': 'Dashboard moderatore', 'moderation.subtitle': 'Rivedi post segnalati e applica decisioni di moderazione', 'moderation.refresh': 'Aggiorna',
   'moderation.tab.posts': 'Post segnalati', 'moderation.tab.disputes': 'Dispute scambio', 'moderation.tab.enforcement': 'Sanzioni account', 'moderation.tab.bots': 'Protezione bot',
   'moderation.hideFilters': 'Nascondi filtri', 'moderation.showFilters': 'Mostra filtri',
-  'share.title': 'Condividi', 'share.editMessage': 'Modifica messaggio', 'share.copyLink': 'Copia link', 'share.copied': 'Copiato', 'share.linkCopied': 'Link copiato', 'share.pasteHint': 'Incolla il tuo messaggio nell\'app', 'share.share': 'Condividi', 'share.nativeShare': 'Condividi tramite dispositivo', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr',
+  'share.title': 'Condividi', 'share.editMessage': 'Modifica messaggio', 'share.copyLink': 'Copia link', 'share.copied': 'Copiato', 'share.linkCopied': 'Link copiato', 'share.pasteHint': 'Incolla il tuo messaggio nell\'app', 'share.share': 'Condividi', 'share.nativeShare': 'Condividi tramite dispositivo', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': 'Email',
 };
 
 export default it;
