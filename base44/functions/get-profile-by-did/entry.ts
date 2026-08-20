@@ -14,8 +14,10 @@ export default async function(req: Request): Promise<Response> {
     if (!did) return Response.json({ error: 'did required' }, { status: 400 });
 
     const svc = base44.asServiceRole;
-    const users = await svc.entities.User.list('-created_date', 500).catch(() => []);
-    const u = (users || []).find((x: any) => x.did === did);
+    // Filter by DID directly instead of listing all users — avoids loading
+    // the entire user table and prevents data exposure when >500 users exist.
+    const users = await svc.entities.User.filter({ did }, '-created_date', 1).catch(() => []);
+    const u = users?.[0];
     if (!u) return Response.json({ found: false });
 
     // Derive a local username from the email local-part when neither a

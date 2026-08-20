@@ -16,9 +16,35 @@ export default async function (req) {
 
   try {
     if (mode === 'check') {
-      // Check if 2FA is required for an email (login flow, no auth needed)
+      // Check if 2FA is required for an email (login flow, no auth needed).
+      // Rate-limited to prevent email/2FA-status enumeration.
       const email = String(body.email || '').toLowerCase().trim();
       if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
+
+      const rlKey = `2fa-check:${email}`;
+      const rlRecords = await base44.asServiceRole.entities.AuthRateLimit
+        .filter({ email: rlKey }, '-created_date', 1).catch(() => []);
+      const rl = rlRecords?.[0];
+      const now = Date.now();
+      if (rl) {
+        const elapsed = now - new Date(rl.window_start || rl.created_date).getTime();
+        if (elapsed < 3_600_000 && (rl.count || 0) >= 20) {
+          return Response.json({ error: 'Too many requests' }, { status: 429 });
+        }
+        await base44.asServiceRole.entities.AuthRateLimit.update(rl.id, {
+          last_request_at: new Date(now).toISOString(),
+          count: elapsed < 3_600_000 ? (rl.count || 0) + 1 : 1,
+          window_start: elapsed < 3_600_000 ? rl.window_start : new Date(now).toISOString(),
+        }).catch(() => {});
+      } else {
+        await base44.asServiceRole.entities.AuthRateLimit.create({
+          email: rlKey,
+          last_request_at: new Date(now).toISOString(),
+          window_start: new Date(now).toISOString(),
+          count: 1,
+        }).catch(() => {});
+      }
+
       const users = await base44.asServiceRole.entities.User.filter({ email });
       if (users.length === 0) return Response.json({ requires_2fa: false });
       return Response.json({ requires_2fa: !!users[0].two_factor_enabled });

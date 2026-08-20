@@ -25,6 +25,7 @@ export default function Login() {
   const [countdown, setCountdown] = useState(CODE_EXPIRY_SECONDS);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [suspension, setSuspension] = useState(null);
+  const [twoFactorMethods, setTwoFactorMethods] = useState(["totp"]);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function Login() {
       // until the TOTP second factor is verified. Show the 2FA challenge; the
       // email OTP is kept in state and re-sent with the TOTP on the next call.
       if (res.data?.requires_2fa) {
+        setTwoFactorMethods(res.data.methods || ["totp"]);
         setStep("twofactor");
         return;
       }
@@ -297,6 +299,7 @@ export default function Login() {
         <TwoFactorChallenge
           email={email}
           emailCode={otp}
+          methods={twoFactorMethods}
           onSuccess={handleTwoFactorSuccess}
           onCancel={() => { setStep("code"); setOtp(""); }}
         />

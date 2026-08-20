@@ -26,6 +26,31 @@ export default async function (req) {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Rate limit: max 5 setup attempts per hour per user to prevent abuse
+  const rlKey = `2fa-setup:${user.id}`;
+  const rlRecords = await base44.asServiceRole.entities.AuthRateLimit
+    .filter({ email: rlKey }, '-created_date', 1).catch(() => []);
+  const rl = rlRecords?.[0];
+  const now = Date.now();
+  if (rl) {
+    const elapsed = now - new Date(rl.window_start || rl.created_date).getTime();
+    if (elapsed < 3_600_000 && (rl.count || 0) >= 5) {
+      return Response.json({ error: 'Too many 2FA setup attempts. Try again later.' }, { status: 429 });
+    }
+    await base44.asServiceRole.entities.AuthRateLimit.update(rl.id, {
+      last_request_at: new Date(now).toISOString(),
+      count: elapsed < 3_600_000 ? (rl.count || 0) + 1 : 1,
+      window_start: elapsed < 3_600_000 ? rl.window_start : new Date(now).toISOString(),
+    }).catch(() => {});
+  } else {
+    await base44.asServiceRole.entities.AuthRateLimit.create({
+      email: rlKey,
+      last_request_at: new Date(now).toISOString(),
+      window_start: new Date(now).toISOString(),
+      count: 1,
+    }).catch(() => {});
+  }
+
   const secretBytes = new Uint8Array(20);
   crypto.getRandomValues(secretBytes);
   const secret = base32Encode(secretBytes);

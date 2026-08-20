@@ -5,16 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Mail, Loader2 } from "lucide-react";
+import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
+import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 
-// Passwordless login: enter email -> platform emails a 6-digit code -> enter
-// code -> verifyOtp returns an access token -> hard redirect. Reuses the
-// platform's documented OTP methods (same ones used by registration).
-// NOTE: whether the platform issues a login session for an *existing verified*
-// account (vs. only post-registration) is the open behaviour we're testing.
+// Passwordless login component — routes through the verify-login-code backend
+// function (NOT base44.auth.verifyOtp) so the server-side 2FA gate is enforced.
+// This closes the bypass where 2FA-enabled users could log in without their
+// second factor by using this component instead of the main Login page.
 export default function PasswordlessLogin() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState("email"); // "email" | "code"
+  const [step, setStep] = useState("email"); // "email" | "code" | "twofactor"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -26,7 +27,16 @@ export default function PasswordlessLogin() {
     if (!email) { setError("Enter your email."); return; }
     setLoading(true);
     try {
-      await base44.auth.resendOtp(email);
+      const res = await base44.functions.invoke("send-login-code", { email });
+      if (res.data?.not_found) {
+        setError("No account found with this email.");
+        return;
+      }
+      if (res.data?.needs_setup) {
+        try { await base44.auth.resetPasswordRequest(email); } catch {}
+        setInfo("We've sent a sign-in link to your email. Click it to set up passwordless login.");
+        return;
+      }
       setStep("code");
       setInfo("We sent a 6-digit code to your email. Enter it below to log in.");
     } catch (err) {
@@ -41,13 +51,55 @@ export default function PasswordlessLogin() {
     if (otp.length < 6) { setError("Enter the 6-digit code."); return; }
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode: otp });
-      if (result?.access_token) base44.auth.setToken(result.access_token);
-      window.location.href = "/";
+      const res = await base44.functions.invoke("verify-login-code", { email, code: otp });
+      if (res.data?.suspended) {
+        setError(res.data.reason || "Your account has been suspended.");
+        return;
+      }
+      if (res.data?.needs_setup) {
+        try { await base44.auth.resetPasswordRequest(email); } catch {}
+        setInfo("We've sent a sign-in link to set up passwordless login.");
+        setStep("email");
+        return;
+      }
+      // 2FA gate: server confirmed the email OTP but won't release login_key
+      // until the second factor is verified.
+      if (res.data?.requires_2fa) {
+        setStep("twofactor");
+        return;
+      }
+      const loginKey = res.data?.login_key;
+      if (!loginKey) {
+        setError(res.data?.error || "Verification failed. Please try again.");
+        return;
+      }
+      setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+      await base44.auth.loginViaEmailPassword(email, loginKey);
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
+      window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Invalid or expired code");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTwoFactorSuccess = async (loginKey) => {
+    if (!loginKey) {
+      setError("Login failed. Please try again.");
+      setStep("code");
+      setOtp("");
+      return;
+    }
+    setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
+    try {
+      await base44.auth.loginViaEmailPassword(email, loginKey);
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
+      window.location.href = returnTo;
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+      setStep("code");
+      setOtp("");
     }
   };
 
@@ -90,7 +142,7 @@ export default function PasswordlessLogin() {
             )}
           </Button>
         </form>
-      ) : (
+      ) : step === "code" ? (
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Enter the code sent to {email}</Label>
@@ -139,7 +191,14 @@ export default function PasswordlessLogin() {
             </button>
           </div>
         </div>
-      )}
+      ) : step === "twofactor" ? (
+        <TwoFactorChallenge
+          email={email}
+          emailCode={otp}
+          onSuccess={handleTwoFactorSuccess}
+          onCancel={() => { setStep("code"); setOtp(""); }}
+        />
+      ) : null}
     </div>
   );
 }

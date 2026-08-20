@@ -44,6 +44,11 @@
       "type": "string",
       "description": "Base32-encoded TOTP secret"
     },
+    "webauthn_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has at least one registered WebAuthn/U2F security key. Kept in sync by the webauthn-verify-reg and webauthn-delete functions so verify-login-code can check without querying the WebAuthnCredential entity."
+    },
     "moderation_strikes": {
       "type": "integer",
       "default": 0,

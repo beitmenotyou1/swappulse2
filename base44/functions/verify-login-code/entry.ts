@@ -63,21 +63,29 @@ export default async function(req) {
       return Response.json({ needs_setup: true });
     }
 
-    // 2FA gate: if the user has two-factor authentication enabled, the TOTP
-    // code MUST be verified server-side before the login_key is released.
-    // Without this check, an attacker who intercepts the email OTP can call
-    // this endpoint directly and obtain login_key, bypassing the 2FA prompt
-    // that was previously only enforced in the frontend.
-    if (user.two_factor_enabled) {
+    // 2FA gate: if the user has any second factor enabled (TOTP and/or
+    // WebAuthn), the second factor MUST be verified before login_key is
+    // released. The methods array tells the frontend which challenge UIs
+    // to show. TOTP is verified here; WebAuthn is verified by the separate
+    // webauthn-verify-auth function (called by the frontend after the
+    // browser produces an assertion).
+    const hasTotp = user.two_factor_enabled && user.two_factor_secret;
+    const hasWebAuthn = user.webauthn_enabled;
+    if (hasTotp || hasWebAuthn) {
+      const methods: string[] = [];
+      if (hasTotp) methods.push('totp');
+      if (hasWebAuthn) methods.push('webauthn');
+
       const totpCode = (body.two_factor_code || '').trim();
       if (!totpCode) {
         // First factor (email OTP) verified — prompt for the second factor.
-        // Don't consume the email code yet so the user can retry with TOTP.
-        return Response.json({ requires_2fa: true });
+        // Don't consume the email code yet so the user can retry.
+        return Response.json({ requires_2fa: true, methods });
       }
 
-      if (!user.two_factor_secret) {
-        return Response.json({ error: '2FA is enabled but no secret is configured' }, { status: 400 });
+      // Only verify TOTP here; WebAuthn is handled by webauthn-verify-auth.
+      if (!hasTotp) {
+        return Response.json({ error: 'Use your security key to authenticate.' }, { status: 400 });
       }
 
       // Rate limit TOTP brute-force attempts (same window as verify-2fa).

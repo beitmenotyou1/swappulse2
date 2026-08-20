@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { Shield, Loader2, Check, QrCode } from "lucide-react";
+import WebAuthnSection from "@/components/settings/WebAuthnSection";
 
 export default function SecuritySection() {
   const [user, setUser] = useState(null);
@@ -140,6 +141,7 @@ export default function SecuritySection() {
           </div>
         )}
       </div>
+      <WebAuthnSection />
     </div>
   );
 }
