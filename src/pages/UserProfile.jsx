@@ -20,7 +20,7 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
-import PersonalInfoSection from '@/components/profile/PersonalInfoSection';
+import ProfileBlocks from '@/components/profile/ProfileBlocks';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
@@ -224,7 +224,7 @@ export default function UserProfile() {
         <div className="mt-4 space-y-4">
           {!isExternal && <ReputationSummary did={subjectDid} />}
           {tab === 'About' ? (
-            <PersonalInfoSection data={profileConfig?.personal} />
+            <ProfileBlocks data={profileConfig?.personal} blockOrder={profileConfig?.block_order} did={subjectDid} />
           ) : tab === 'Journey' ? (
             <MilestonesTimeline milestones={profileConfig?.personal?.milestones || []} />
           ) : tab === 'Hub' ? (
@@ -244,7 +244,7 @@ export default function UserProfile() {
             isExternal ? (
               <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.tradeHistoryMembers')}</p>
             ) : (
-              <TradeHistoryTab did={subjectDid} />
+              <TradeHistoryTab did={subjectDid} permittedFields={profileConfig?.tradeFields} />
             )
           ) : tab === 'Collections' ? (
             isExternal ? (

@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Globe, Users, Lock, ChevronDown } from 'lucide-react';
+import { Globe, UserCheck, Users, Lock, ChevronDown } from 'lucide-react';
 
 const OPTIONS = [
-  { value: 'public', label: 'Public', icon: Globe },
+  { value: 'public', label: 'Everyone', icon: Globe },
+  { value: 'friends', label: 'Friends', icon: UserCheck },
   { value: 'followers', label: 'Followers', icon: Users },
-  { value: 'private', label: 'Only me', icon: Lock },
+  { value: 'private', label: 'Just me', icon: Lock },
 ];
 
-// Compact visibility dropdown used beside each personal-info field in the
-// profile editor. Values: public | followers | private.
+// Compact visibility dropdown used beside each personal-info / trade-detail
+// field in the profile editor. Values: public | friends | followers | private.
 export default function FieldVisibilitySelect({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -39,7 +40,7 @@ export default function FieldVisibilitySelect({ value, onChange }) {
         <Icon className="h-3.5 w-3.5" /> {current.label} <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div role="listbox" className="absolute right-0 top-full z-30 mt-1 w-36 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-elevated">
+        <div role="listbox" className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-elevated">
           {OPTIONS.map((o) => {
             const OIcon = o.icon;
             return (

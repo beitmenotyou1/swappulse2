@@ -1,10 +1,14 @@
 // get-profile-config — returns a viewer-filtered view of a collector's
 // ProfileConfig. Reads the target's config via the service role (bypassing
-// owner-only RLS), determines whether the caller follows the target, and
-// strips any personal-info field whose visibility (public / followers / private)
-// the viewer isn't permitted to see. Layout fields (theme, section_order,
-// hidden_sections) are always returned so the visitor's profile renders in the
-// owner's chosen arrangement. Guests only see public fields.
+// owner-only RLS), determines whether the caller is a friend (mutual accepted
+// Friendship) or a follower (Follow) of the target, and strips any field whose
+// visibility (public / friends / followers / private) the viewer isn't
+// permitted to see. Trade-detail fields (trade_values, trade_partners,
+// trade_dates) are resolved into a `tradeFields` permit list so the trade
+// history components can mask withheld details without hiding the whole tab.
+// Layout fields (theme, section_order, block_order, hidden_sections) are
+// always returned so the visitor's profile renders in the owner's chosen
+// arrangement. Guests only see public fields.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
@@ -19,8 +23,16 @@ const DEFAULT_FIELD_VISIBILITY: Record<string, string> = {
   social_links: 'public',
   contact_email: 'followers',
   milestones: 'public',
+  trade_values: 'followers',
+  trade_partners: 'followers',
+  trade_dates: 'public',
 };
-const PERSONAL_FIELDS = Object.keys(DEFAULT_FIELD_VISIBILITY);
+
+const PERSONAL_FIELDS = [
+  'bio', 'pronouns', 'interests', 'favourite_pokemon', 'favourite_sets',
+  'location', 'website', 'social_links', 'contact_email', 'milestones',
+];
+const TRADE_FIELDS = ['trade_values', 'trade_partners', 'trade_dates'];
 
 function defaultFor(field: string): any {
   if (['interests', 'favourite_pokemon', 'favourite_sets', 'social_links', 'milestones'].includes(field)) return [];
@@ -55,8 +67,9 @@ export default async function (req: Request): Promise<Response> {
     );
     const raw = configs[0] || null;
 
-    // Follower check — only meaningful for authenticated non-owner viewers.
+    // Relationship checks — only meaningful for authenticated non-owner viewers.
     let isFollower = false;
+    let isFriend = false;
     if (viewerDid && !isOwner) {
       try {
         const follows = await base44.asServiceRole.entities.Follow.filter(
@@ -68,6 +81,23 @@ export default async function (req: Request): Promise<Response> {
       } catch {
         /* ignore — treat as non-follower */
       }
+      try {
+        const [mine, theirs] = await Promise.all([
+          base44.asServiceRole.entities.Friendship.filter(
+            { did: viewerDid, friend_did: targetDid, status: 'accepted' },
+            '-created_date',
+            1,
+          ),
+          base44.asServiceRole.entities.Friendship.filter(
+            { did: targetDid, friend_did: viewerDid, status: 'accepted' },
+            '-created_date',
+            1,
+          ),
+        ]);
+        isFriend = mine.length > 0 && theirs.length > 0;
+      } catch {
+        /* ignore — treat as non-friend */
+      }
     }
 
     const visibility = { ...DEFAULT_FIELD_VISIBILITY, ...(raw?.field_visibility || {}) };
@@ -75,6 +105,7 @@ export default async function (req: Request): Promise<Response> {
       if (isOwner) return true;
       const v = visibility[field] || 'public';
       if (v === 'public') return true;
+      if (v === 'friends') return isFriend;
       if (v === 'followers') return isFollower;
       return false; // private
     };
@@ -88,11 +119,14 @@ export default async function (req: Request): Promise<Response> {
       found: !!raw,
       isOwner,
       isFollower,
+      isFriend,
       theme: raw?.theme || 'default',
       section_order: raw?.section_order || null,
+      block_order: raw?.block_order || null,
       hidden_sections: raw?.hidden_sections || [],
       personal,
       visibleFields: PERSONAL_FIELDS.filter((f) => canSee(f)),
+      tradeFields: TRADE_FIELDS.filter((f) => canSee(f)),
     });
   } catch (error) {
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });

@@ -3,8 +3,14 @@ import { Plus, X } from 'lucide-react';
 import { Field } from './EditorControls';
 import FieldVisibilitySelect from './FieldVisibilitySelect';
 
-// ContactLinksTab — location, website, contact email, and a dynamic list of
-// social links, each with per-field visibility.
+const TRADE_DETAIL_ROWS = [
+  { key: 'trade_values', label: 'Card values' },
+  { key: 'trade_partners', label: 'Trade partners' },
+  { key: 'trade_dates', label: 'Trade dates' },
+];
+
+// ContactLinksTab — location, website, contact email, a dynamic list of social
+// links, and trade-history detail privacy — each with per-field visibility.
 export default function ContactLinksTab({ draft, update }) {
   const fv = draft.field_visibility || {};
   const setVis = (field, v) => update({ field_visibility: { ...fv, [field]: v } });
@@ -44,6 +50,19 @@ export default function ContactLinksTab({ draft, update }) {
           <button type="button" onClick={addLink} className="inline-flex items-center gap-1 rounded-xl border border-dashed border-border px-3 py-2 text-xs font-semibold hover:bg-secondary">
             <Plus className="h-3.5 w-3.5" /> Add link
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-secondary/40 p-3">
+        <p className="text-xs font-semibold text-muted-foreground">Trade history details</p>
+        <p className="mb-3 mt-0.5 text-[11px] text-muted-foreground">Control who sees specific details within your trade history tab. Hidden details show as ••• rather than disappearing.</p>
+        <div className="space-y-2">
+          {TRADE_DETAIL_ROWS.map((row) => (
+            <div key={row.key} className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-2">
+              <span className="text-sm font-medium">{row.label}</span>
+              <FieldVisibilitySelect value={fv[row.key] || 'followers'} onChange={(v) => setVis(row.key, v)} />
+            </div>
+          ))}
         </div>
       </div>
     </div>

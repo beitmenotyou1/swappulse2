@@ -16,7 +16,7 @@ export function themeGradient(key) {
   return (PROFILE_THEMES.find((th) => th.key === key) || PROFILE_THEMES[0]).gradient;
 }
 
-// Default per-field visibility for personal-info fields.
+// Default per-field visibility for personal-info and trade-detail fields.
 export const DEFAULT_FIELD_VISIBILITY = {
   bio: 'public',
   pronouns: 'public',
@@ -28,9 +28,28 @@ export const DEFAULT_FIELD_VISIBILITY = {
   social_links: 'public',
   contact_email: 'followers',
   milestones: 'public',
+  trade_values: 'followers',
+  trade_partners: 'followers',
+  trade_dates: 'public',
 };
 
 export const VISIBILITY_FIELDS = Object.keys(DEFAULT_FIELD_VISIBILITY);
+
+// Content blocks for the About section — drag-to-reorder keys + labels.
+export const BLOCK_LABELS = {
+  bio: 'Bio',
+  interests: 'Interests & hobbies',
+  favourite_pokemon: 'Favourite Pokémon',
+  favourite_sets: 'Favourite sets',
+  milestones: 'Journey milestones',
+  contact: 'Contact & links',
+  binder: 'Binder preview',
+  trades: 'Recent trades',
+  collections: 'Collections',
+  hub: 'Engagement hub',
+};
+
+export const DEFAULT_BLOCK_ORDER = Object.keys(BLOCK_LABELS);
 
 // Default ordered sections for the owner's own profile.
 export const DEFAULT_OWNER_SECTIONS = [
@@ -56,6 +75,7 @@ export function emptyConfig(did = '') {
     milestones: [],
     theme: DEFAULT_THEME,
     section_order: [...DEFAULT_OWNER_SECTIONS],
+    block_order: [...DEFAULT_BLOCK_ORDER],
     hidden_sections: [],
     field_visibility: { ...DEFAULT_FIELD_VISIBILITY },
   };

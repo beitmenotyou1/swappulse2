@@ -12,7 +12,7 @@ const STATUS_META = {
   cancelled: { label: 'Cancelled', icon: XCircle, cls: 'bg-destructive/10 text-destructive' },
 };
 
-function TradeRow({ trade }) {
+function TradeRow({ trade, showDates }) {
   const meta = STATUS_META[trade.status] || STATUS_META.open;
   const Icon = meta.icon;
   const offerCount = trade.offer_card_names?.length || 0;
@@ -27,7 +27,7 @@ function TradeRow({ trade }) {
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${meta.cls}`}>
           <Icon className="h-3 w-3" /> {meta.label}
         </span>
-        <span className="text-xs text-muted-foreground">{moment(trade.created_date).fromNow()}</span>
+        <span className="text-xs text-muted-foreground">{showDates ? moment(trade.created_date).fromNow() : '•••'}</span>
       </div>
       <div className="mt-2 flex items-center gap-3">
         <div className="min-w-0 flex-1">
@@ -57,7 +57,8 @@ function TradeRow({ trade }) {
   );
 }
 
-export default function TradeHistoryTab({ did }) {
+export default function TradeHistoryTab({ did, permittedFields }) {
+  const showDates = !permittedFields || permittedFields.includes('trade_dates');
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -123,7 +124,7 @@ export default function TradeHistoryTab({ did }) {
           <p className="text-[10px] uppercase text-muted-foreground">Cancelled</p>
         </div>
       </div>
-      {trades.map((t) => <TradeRow key={t.id} trade={t} />)}
+      {trades.map((t) => <TradeRow key={t.id} trade={t} showDates={showDates} />)}
     </div>
   );
 }

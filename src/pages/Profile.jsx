@@ -22,7 +22,7 @@ import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import ProfileEditorModal from '@/components/profile/ProfileEditorModal';
-import PersonalInfoSection from '@/components/profile/PersonalInfoSection';
+import ProfileBlocks from '@/components/profile/ProfileBlocks';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
@@ -228,7 +228,7 @@ export default function Profile() {
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : tab === 'About' ? (
-          <div className="py-4"><PersonalInfoSection data={config} isOwner /></div>
+          <ProfileBlocks data={config} blockOrder={config?.block_order} did={did} isOwner />
         ) : tab === 'Journey' ? (
           <div className="py-4"><MilestonesTimeline milestones={config?.milestones || []} /></div>
         ) : tab === 'Hub' ? (

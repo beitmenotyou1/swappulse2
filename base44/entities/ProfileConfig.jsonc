@@ -2,7 +2,7 @@
   "name": "ProfileConfig",
   "type": "object",
   "title": "ProfileConfig",
-  "description": "org.swappulse.profileConfig \u2014 a collector's enhanced profile configuration: richer personal info (bio, pronouns, interests, favourites, location, contact, social links), collecting-journey milestones, per-field visibility flags, profile theme, and section order/visibility. One record per collector (looked up by did). RLS restricts reads/writes to the owner; the get-profile-config backend function reads via the service role and filters fields by the viewer's relationship (public / followers / private) so private data never leaks to unauthorized viewers.",
+  "description": "org.swappulse.profileConfig \u2014 a collector's enhanced profile configuration: richer personal info (bio, pronouns, interests, favourites, location, contact, social links), collecting-journey milestones, per-field visibility flags (public / friends / followers / private, including trade-detail fields), profile theme, content-block order, and section/tab visibility. One record per collector (looked up by did). RLS restricts reads/writes to the owner; the get-profile-config backend function reads via the service role and filters fields by the viewer's relationship (public / friends / followers / private) so private data never leaks to unauthorized viewers.",
   "properties": {
     "did": {
       "type": "string",
@@ -135,6 +135,13 @@
       },
       "description": "Ordered profile section/tab keys; tabs render in this order"
     },
+    "block_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered content-block keys for the About section (bio, interests, milestones, contact, binder, trades, collections, hub); blocks render in this order for every visitor"
+    },
     "hidden_sections": {
       "type": "array",
       "items": {
@@ -144,11 +151,12 @@
     },
     "field_visibility": {
       "type": "object",
-      "description": "Per-field visibility: personal-info field name -> public | followers | private",
+      "description": "Per-field visibility: personal-info or trade-detail field name -> public | friends | followers | private. Trade-detail keys: trade_values, trade_partners, trade_dates.",
       "additionalProperties": {
         "type": "string",
         "enum": [
           "public",
+          "friends",
           "followers",
           "private"
         ]
