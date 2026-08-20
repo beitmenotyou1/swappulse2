@@ -99,7 +99,9 @@ export function I18nProvider({ children }) {
     const langOverrides = overrides[lang] || {};
     const dict = translations[locale] || translations['en-GB'];
     // Override (AI/manual) > static dict > English fallback > key
-    const result = langOverrides[key] ?? dict[key] ?? translations['en-GB'][key] ?? key;
+    // Use || (not ??) so empty strings in the static dict fall through to the
+    // English fallback instead of rendering as blank space.
+    const result = langOverrides[key] || dict[key] || translations['en-GB'][key] || key;
     if (import.meta.env.DEV && result === key) {
       console.warn('[i18n] missing key:', key, 'locale:', locale);
     }
