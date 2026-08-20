@@ -1,0 +1,47 @@
+{
+  "name": "BackupCode",
+  "type": "object",
+  "title": "BackupCode",
+  "description": "A one-time backup recovery code for 2FA. Generated when a user enables TOTP or WebAuthn, stored as a SHA-256 hash so the raw codes are never persisted. Each code can be used once to bypass a lost second factor. Admin-only RLS \u2014 users interact with backup codes exclusively through backend functions (service role), never directly.",
+  "properties": {
+    "code_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the backup code (raw code never stored)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this backup code has been consumed"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this code was consumed"
+    }
+  },
+  "required": [
+    "code_hash"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
