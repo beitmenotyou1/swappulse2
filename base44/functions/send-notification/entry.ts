@@ -9,9 +9,19 @@ import { dispatchNotification, SendNotificationInput } from '../../shared/notifi
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    // Require authentication — only logged-in users (or internal calls) can dispatch
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Security: push dispatch sends caller-supplied content to any recipient's
+    // registered devices. Restrict to internal service calls — the workflow/
+    // function runtime injects an internal service JWT that base44.auth.me()
+    // resolves to an admin caller; a public internet caller has no such
+    // token and is rejected. User-facing notifications are dispatched by
+    // dedicated backend functions (notify-interaction, notify-system-event,
+    // notifyTradeUpdate, matchWishlistListings, ingest-notifications) that
+    // call the shared dispatcher directly via the service role, not through
+    // this public endpoint.
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
 
     const body = await req.json().catch(() => ({}));
     if (!body.recipientDid || !body.type || !body.title) {

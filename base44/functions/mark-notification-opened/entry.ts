@@ -12,9 +12,13 @@ export default async function(req: Request): Promise<Response> {
     const logId = body.notificationId || body.logId;
     if (!logId) return Response.json({ error: 'notificationId required' }, { status: 400 });
 
-    // Service role — NotificationLog is admin-only, but this is an idempotent
-    // status update triggered by the recipient tapping their own notification.
+    // Service role — NotificationLog is admin-only. Fetch the record and
+    // verify the caller owns it before updating, so no user can mutate
+    // another user's notification delivery records.
     const svc = base44.asServiceRole;
+    const log = await svc.entities.NotificationLog.get(logId).catch(() => null);
+    if (!log) return Response.json({ error: 'Not found' }, { status: 404 });
+    if (log.did !== (user as any).did) return Response.json({ error: 'Forbidden' }, { status: 403 });
     try {
       await svc.entities.NotificationLog.update(logId, {
         status: 'opened',

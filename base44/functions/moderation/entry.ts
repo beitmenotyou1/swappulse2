@@ -90,8 +90,16 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = user.role === 'admin';
+    const isMod = ['admin', 'moderator'].includes(user.role);
     const body = await req.json().catch(() => ({}));
     const op = body.op || 'list';
+
+    // Security: the moderation queue and logs expose every user's flagged
+    // content across the platform. Restrict all read operations to
+    // moderators/admins — not just the mutating resolve/bulk ops.
+    if (op === 'list' || op === 'stats' || op === 'activity') {
+      if (!isMod) return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     if (op === 'list' || op === 'stats') {
       const flagged = await loadFlagged(base44, body);
@@ -221,6 +229,7 @@ Deno.serve(async (req) => {
       const logs = await base44.entities.ModerationLog.list('-created_date', 50);
       return Response.json({ logs });
     }
+    // (activity access already gated by the isMod check above)
 
     return Response.json({ error: 'Unknown op' }, { status: 400 });
   } catch (error) {
