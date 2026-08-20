@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 // MembershipProvider — batch-resolves SwapPulse membership for author DIDs so
 // the ExternalIndicator can render synchronously across feed cards, comments,
@@ -12,6 +13,7 @@ import { base44 } from '@/api/base44Client';
 const MembershipContext = createContext({ isExternal: () => false, registerDid: () => {} });
 
 export function MembershipProvider({ children }) {
+  const { user } = useAuth();
   const [members, setMembers] = useState(new Set());
   const [resolved, setResolved] = useState(new Set());
   const membersRef = useRef(new Set());
@@ -25,6 +27,14 @@ export function MembershipProvider({ children }) {
     const dids = Array.from(pendingRef.current);
     pendingRef.current = new Set();
     if (!dids.length) return;
+    // resolve-membership requires authentication. For unauthenticated users,
+    // skip the API call and mark all DIDs as resolved (but not members) so
+    // isExternal returns false and no indicators show — and no retries fire.
+    if (!user) {
+      dids.forEach((d) => resolvedRef.current.add(d));
+      setResolved(new Set(resolvedRef.current));
+      return;
+    }
     dids.forEach((d) => inflightRef.current.add(d));
     base44.functions
       .invoke('resolve-membership', { dids })
@@ -39,7 +49,7 @@ export function MembershipProvider({ children }) {
       .finally(() => {
         dids.forEach((d) => inflightRef.current.delete(d));
       });
-  }, []);
+  }, [user]);
 
   const registerDid = useCallback(
     (did) => {

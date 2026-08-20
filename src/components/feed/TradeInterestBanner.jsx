@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Handshake, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function TradeInterestBanner() {
+  const t = useT();
   const [data, setData] = useState(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -26,7 +28,7 @@ export default function TradeInterestBanner() {
     <div className="m-4 rounded-2xl border border-primary/30 bg-primary/5 p-3">
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 text-sm font-bold">
-          <Handshake className="h-4 w-4 text-primary" /> Trade Interest ({data.count})
+          <Handshake className="h-4 w-4 text-primary" /> {t('feed.tradeInterest')} ({data.count})
         </h3>
         <button onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
@@ -38,7 +40,7 @@ export default function TradeInterestBanner() {
             <Avatar name={i.reactor_name} size={24} />
             <span className="font-semibold">{i.reactor_name}</span>
             <span className="text-muted-foreground">
-              wants{i.card_name ? ` ${i.card_name}` : ' your card'}
+              {t('feed.tradeInterestWants')}{i.card_name ? ` ${i.card_name}` : ` ${t('feed.tradeInterestYourCard')}`}
             </span>
           </div>
         ))}

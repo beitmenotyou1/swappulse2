@@ -1,20 +1,22 @@
 import React from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Horizontal pill bar that lets users filter the feed by card rarity.
 // Posts without a card_rarity are excluded when a specific rarity is selected.
 // Matching is case-insensitive substring on the stored card_rarity string,
 // so "Holo" catches "Rare Holo", "Secret" catches "Secret Rare", etc.
 const RARITY_OPTIONS = [
-  { key: 'all', label: 'All' },
-  { key: 'holo', label: 'Holo' },
-  { key: 'ultra', label: 'Ultra Rare' },
-  { key: 'secret', label: 'Secret Rare' },
+  { key: 'all', labelKey: 'feed.rarityAll' },
+  { key: 'holo', labelKey: 'feed.rarityHolo' },
+  { key: 'ultra', labelKey: 'feed.rarityUltra' },
+  { key: 'secret', labelKey: 'feed.raritySecret' },
 ];
 
 export default function RarityFilter({ value, onChange }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border bg-background/60 px-4 py-2">
-      <span className="shrink-0 text-xs font-medium text-muted-foreground">Rarity:</span>
+      <span className="shrink-0 text-xs font-medium text-muted-foreground">{t('feed.rarityLabel')}</span>
       {RARITY_OPTIONS.map((opt) => (
         <button
           key={opt.key}
@@ -26,7 +28,7 @@ export default function RarityFilter({ value, onChange }) {
               : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
           }`}
         >
-          {opt.label}
+          {t(opt.labelKey)}
         </button>
       ))}
     </div>

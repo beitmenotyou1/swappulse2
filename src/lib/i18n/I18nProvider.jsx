@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { translations, LOCALE_TO_TCGDEX, SUPPORTED_LOCALES } from './translations';
 import { setCurrentTcgdexLang } from './currentLang';
@@ -120,8 +120,10 @@ export function I18nProvider({ children }) {
     return result;
   }, [locale, overrides]);
 
+  const value = useMemo(() => ({ locale, t, setLocale }), [locale, t, setLocale]);
+
   return (
-    <I18nContext.Provider value={{ locale, t, setLocale }}>
+    <I18nContext.Provider value={value}>
       {children}
     </I18nContext.Provider>
   );

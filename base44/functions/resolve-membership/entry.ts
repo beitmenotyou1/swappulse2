@@ -3,9 +3,10 @@
 // that has a local User record). Used by the MembershipProvider to annotate
 // external authors with the ExternalIndicator without per-card profile fetches.
 //
-// Works unauthenticated (service role) so guest browsing shows indicators too,
-// but verifies the caller's origin to prevent external abuse of the service
-// role query.
+// Requires authentication — only verified SwapPulse members can query the User
+// collection. Unauthenticated callers receive 401 so the service role query
+// is never exposed to anonymous traffic. The caller's origin is also verified
+// to prevent external abuse.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
@@ -38,6 +39,13 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
     const base44 = createClientFromRequest(req);
+    // Require authentication — only verified SwapPulse members can query the
+    // User collection. This prevents anonymous callers from enumerating which
+    // DIDs are registered members.
+    const user = await base44.auth.me().catch(() => null);
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await req.json().catch(() => ({}));
     const dids: string[] = Array.isArray(body.dids)
       ? Array.from(new Set(body.dids.map(String).filter(Boolean)))
