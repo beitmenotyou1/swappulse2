@@ -3,6 +3,7 @@ import { X, Loader2, Download, Scissors, Plus, Trash2, UploadCloud, Rss } from '
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgePodcastEpisode } from '@/lib/federatedBridge';
+import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { useToast } from '@/components/ui/use-toast';
 
 function parseTs(str) {
@@ -122,6 +123,11 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
         trim_start_seconds: start,
         trim_end_seconds: end,
       });
+      if (episode.bridged && episode.at_uri) {
+        updateBridgedRecord({ id: episode.id, at_uri: episode.at_uri, bridged: true }, 'PodcastEpisode').then((res) => {
+          if (res?.cid) base44.entities.PodcastEpisode.update(episode.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
+        }).catch(() => {});
+      }
       setDuration(newDuration);
       setTrimStart(0);
       setTrimEnd(newDuration);
@@ -185,14 +191,11 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
       };
       await base44.entities.PodcastEpisode.update(episode.id, patch);
       // Re-bridge so the PDS record + RSS feed reflect the edits.
-      try {
-        const { did, signingKey } = await ensureUserDid();
-        const updated = { ...episode, ...patch };
-        const stamped = await stampRecord(updated, NSID.PODCAST_EPISODE, did, signingKey);
-        bridgePodcastEpisode(stamped).then((res) => {
-          if (res.bridged) base44.entities.PodcastEpisode.update(episode.id, res).catch(() => {});
+      if (episode.bridged && episode.at_uri) {
+        updateBridgedRecord({ id: episode.id, at_uri: episode.at_uri, bridged: true }, 'PodcastEpisode').then((res) => {
+          if (res?.cid) base44.entities.PodcastEpisode.update(episode.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
         }).catch(() => {});
-      } catch { /* non-fatal */ }
+      }
       toast({ title: 'Episode updated' });
       onSaved?.();
       onClose?.();

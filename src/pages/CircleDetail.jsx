@@ -7,6 +7,7 @@ import { Users, LogOut, LogIn, Loader2, ArrowLeftRight, Lock } from 'lucide-reac
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
+import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import useSEO from '@/hooks/useSEO';
 
 const THEME_LABEL = {
@@ -55,22 +56,8 @@ export default function CircleDetail() {
         member_count: members.length,
       });
       if (c.at_uri) {
-        base44.functions.invoke('atproto-bridge', {
-          action: 'update',
-          uri: c.at_uri,
-          collection: NSID.CIRCLE,
-          record: {
-            name: c.name,
-            description: c.description || '',
-            memberDids: members,
-            memberCount: members.length,
-            visibility: c.visibility,
-            theme: c.theme || 'general',
-            region: c.region || '',
-            curatorDid: c.did,
-            curatorName: c.author_name || '',
-            curatorHandle: c.author_handle || '',
-          },
+        updateBridgedRecord({ id: c.id, at_uri: c.at_uri, bridged: true }, 'Circle').then((res) => {
+          if (res?.cid) base44.entities.Circle.update(c.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
         }).catch(() => {});
       }
       await load();
@@ -94,22 +81,8 @@ export default function CircleDetail() {
         member_count: members.length,
       });
       if (c.at_uri) {
-        base44.functions.invoke('atproto-bridge', {
-          action: 'update',
-          uri: c.at_uri,
-          collection: NSID.CIRCLE,
-          record: {
-            name: c.name,
-            description: c.description || '',
-            memberDids: members,
-            memberCount: members.length,
-            visibility: c.visibility,
-            theme: c.theme || 'general',
-            region: c.region || '',
-            curatorDid: c.did,
-            curatorName: c.author_name || '',
-            curatorHandle: c.author_handle || '',
-          },
+        updateBridgedRecord({ id: c.id, at_uri: c.at_uri, bridged: true }, 'Circle').then((res) => {
+          if (res?.cid) base44.entities.Circle.update(c.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
         }).catch(() => {});
       }
       const stamped = await stampRecord(

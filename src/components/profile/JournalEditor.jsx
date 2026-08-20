@@ -3,6 +3,7 @@ import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeJournal } from '@/lib/federatedBridge';
+import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { formatPrice } from '@/lib/format';
 
@@ -72,6 +73,12 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
           tags: payload.tags,
           visibility: payload.visibility,
         });
+        // Push the edit to the PDS so the federated copy stays in sync.
+        if (initial.bridged && initial.at_uri) {
+          updateBridgedRecord({ id: initial.id, at_uri: initial.at_uri, bridged: true }, 'Journal').then((res) => {
+            if (res?.cid) base44.entities.Journal.update(initial.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
+          }).catch(() => {});
+        }
       } else {
         const stamped = await stampRecord(
           { ...payload, published_at: new Date().toISOString(), like_count: 0 },

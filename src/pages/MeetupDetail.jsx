@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeMeetupRsvp } from '@/lib/federatedBridge';
+import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { useAuth } from '@/lib/AuthContext';
 import { CalendarDays, MapPin, Users, ShieldCheck, Loader2, BookOpen, X } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -62,6 +63,11 @@ export default function MeetupDetail() {
           bringing_trade_binder: bringingBinder,
           looking_for_cards: cards,
         });
+        if (data.myRsvp.bridged && data.myRsvp.at_uri) {
+          updateBridgedRecord({ id: data.myRsvp.id, at_uri: data.myRsvp.at_uri, bridged: true }, 'MeetupRsvp').then((res) => {
+            if (res?.cid) base44.entities.MeetupRsvp.update(data.myRsvp.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
+          }).catch(() => {});
+        }
       } else {
         const stamped = await stampRecord(
           {
@@ -97,6 +103,11 @@ export default function MeetupDetail() {
     if (!confirm('Cancel this meetup?')) return;
     try {
       await base44.entities.Meetup.update(data.meetup.id, { status: 'cancelled' });
+      if (data.meetup.bridged && data.meetup.at_uri) {
+        updateBridgedRecord({ id: data.meetup.id, at_uri: data.meetup.at_uri, bridged: true }, 'Meetup').then((res) => {
+          if (res?.cid) base44.entities.Meetup.update(data.meetup.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
+        }).catch(() => {});
+      }
       await load();
     } catch {
       /* ignore */
