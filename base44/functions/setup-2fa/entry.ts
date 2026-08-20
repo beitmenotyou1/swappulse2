@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import QRCode from 'npm:qrcode@1.5.4';
 
 const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -33,9 +34,13 @@ export default async function (req) {
   const label = encodeURIComponent(`${issuer}:${user.email}`);
   const otpauthUrl = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
 
+  // Generate the QR code locally as a base64 data URI so the TOTP secret never
+  // leaves the application boundary (avoids sending it to a third-party QR API).
+  const qrDataUri = await QRCode.toDataURL(otpauthUrl, { margin: 1, width: 200 });
+
   return Response.json({
     secret,
     otpauth_url: otpauthUrl,
-    qr_url: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`,
+    qr_data_uri: qrDataUri,
   });
 }

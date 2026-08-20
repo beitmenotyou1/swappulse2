@@ -28,7 +28,7 @@ export default function SecuritySection() {
     try {
       const res = await base44.functions.invoke("setup-2fa", {});
       setSecret(res.data.secret);
-      setQrUrl(res.data.qr_url);
+      setQrUrl(res.data.qr_data_uri);
       setEnrolling(true);
     } catch (err) {
       setError(err.message || "Failed to start 2FA setup");

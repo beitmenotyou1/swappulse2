@@ -48,6 +48,14 @@ function isAllowedDiscordWebhook(urlStr) {
   }
 }
 
+// Security: validate Telegram bot tokens before interpolating into the API
+// URL. Telegram tokens are "<bot_id>:<base64-ish hash>" — rejecting any @, /,
+// spaces, or other URL-authority characters prevents SSRF bypass where the
+// credential could redirect the fetch to an internal host.
+function isValidTelegramBotToken(token) {
+  return /^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(token || '');
+}
+
 async function postToPlatform(platform, credential, extra, message) {
   if (!credential) return { ok: false, simulated: false, error: 'No credential configured' };
   if (platform === 'discord_webhook') {
@@ -64,6 +72,9 @@ async function postToPlatform(platform, credential, extra, message) {
     } catch (e) { return { ok: false, simulated: false, error: e.message }; }
   }
   if (platform === 'telegram_bot') {
+    if (!isValidTelegramBotToken(credential)) {
+      return { ok: false, simulated: false, error: 'Invalid Telegram bot token format' };
+    }
     try {
       const r = await fetch(`https://api.telegram.org/bot${credential}/sendMessage`, {
         method: 'POST',
