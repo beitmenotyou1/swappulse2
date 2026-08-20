@@ -19,6 +19,7 @@ import { base44 } from '@/api/base44Client';
 import { cardImageUrl, rarityKey } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
 import { getSets } from '@/lib/tcgdex';
+import PortfolioValueChart from '@/components/collection/PortfolioValueChart';
 
 const RARITY_HEX = {
   common: 'hsl(220 9% 64%)',
@@ -137,6 +138,9 @@ export default function CollectionAnalytics({ items }) {
 
   return (
     <div className="space-y-4 p-4">
+      {/* Portfolio value history chart */}
+      <PortfolioValueChart />
+
       {/* Top stat row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card label="Portfolio Value">

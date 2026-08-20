@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 2 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Captures a daily portfolio value snapshot for every collector so the Collection analytics chart can plot value over time.",
+  "name": "Portfolio Snapshot Capture",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "portfolio_snapshot_capture",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "capture": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "capture-portfolio-snapshots"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Capture portfolio snapshots",
+            "description": "Daily value freeze per collector"
+          }
+        }
+      }
+    ]
+  }
+}

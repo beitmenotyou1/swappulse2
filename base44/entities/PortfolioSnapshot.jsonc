@@ -1,0 +1,52 @@
+{
+  "name": "PortfolioSnapshot",
+  "type": "object",
+  "title": "PortfolioSnapshot",
+  "description": "org.swappulse.portfolioSnapshot \u2014 a daily frozen snapshot of a collector's total portfolio value, cost basis, and card count. Written once per day by the capture-portfolio-snapshots backend function (service role) so the Collection analytics tab can chart portfolio value over time. One record per user per day.",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Calendar date this snapshot was captured (YYYY-MM-DD). One snapshot per user per day."
+    },
+    "total_value": {
+      "type": "number",
+      "description": "Total portfolio market value in pence (sum of CollectionEntry.market_value, falling back to purchase_price)"
+    },
+    "cost_basis": {
+      "type": "number",
+      "description": "Total cost basis in pence (sum of CollectionEntry.purchase_price)"
+    },
+    "card_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of cards in the collection at snapshot time"
+    }
+  },
+  "required": [
+    "date",
+    "total_value",
+    "cost_basis",
+    "card_count"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
