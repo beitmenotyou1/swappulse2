@@ -37,9 +37,15 @@ async function getOldPdsSession(): Promise<{ pdsUrl: string; did: string; access
 
 export default async function(req: Request): Promise<Response> {
   try {
+    // Caller verification: either a signed-in admin (UI trigger) or a request
+    // bearing the shared BACKEND_FUNCTION_SECRET (workflow/script trigger).
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
-    if (!user || user.role !== 'admin') {
+    const isAdmin = !!user && user.role === 'admin';
+    const sharedSecret = Deno.env.get('BACKEND_FUNCTION_SECRET');
+    const providedSecret = req.headers.get('x-backend-function-secret');
+    const isSecretCall = !!sharedSecret && !!providedSecret && providedSecret === sharedSecret;
+    if (!isAdmin && !isSecretCall) {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
