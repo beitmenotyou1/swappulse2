@@ -22,8 +22,9 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-export default function CommentItem({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, dimmed, reactionsByPostId }) {
+export default function CommentItem({ comment, replies, user, cardId, cardName, cardImage, onReply, onPosted, dimmed, reactionsByPostId, replyToAuthor, topLevelId }) {
   const [showReplies, setShowReplies] = useState(true);
+  const [highlightedId, setHighlightedId] = useState(null);
   const { registerDid } = useMembership();
   const navigate = useNavigate();
   const detailPath = getPostDetailPath(comment);
@@ -32,6 +33,16 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
     navigate(detailPath);
   };
 
+  const scrollToComment = (commentId) => {
+    const el = document.getElementById(`comment-${commentId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedId(commentId);
+    setTimeout(() => setHighlightedId(null), 2000);
+  };
+
+  const highlightClass = (id) =>
+    highlightedId === id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '';
+
   useEffect(() => {
     if (comment?.did) registerDid(comment.did);
     replies.forEach((r) => r?.did && registerDid(r.did));
@@ -39,8 +50,9 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
 
   return (
     <div
+      id={`comment-${comment.id}`}
       onClick={handleCommentClick}
-      className={`rounded-xl border border-border bg-card p-3 ${dimmed ? 'opacity-50' : ''} ${detailPath ? 'cursor-pointer hover:border-border-strong transition-colors' : ''}`}
+      className={`rounded-xl border border-border bg-card p-3 transition-shadow ${dimmed ? 'opacity-50' : ''} ${highlightClass(comment.id)} ${detailPath ? 'cursor-pointer hover:border-border-strong transition-colors' : ''}`}
     >
       <div className="flex gap-2.5">
         <Avatar name={comment.author_name} src={comment.author_avatar} size={32} />
@@ -68,8 +80,11 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
               </button>
               {showReplies && (
                 <div className="mt-2 space-y-2 border-l-2 border-border pl-3">
-                  {replies.map((reply) => (
-                    <div key={reply.id} className="flex gap-2">
+                  {replies.map((reply) => {
+                    const parent = replyToAuthor?.[reply.id];
+                    const showReplyTo = parent && reply.reply_to !== topLevelId;
+                    return (
+                    <div key={reply.id} id={`comment-${reply.id}`} className={`flex gap-2 rounded-lg transition-shadow ${highlightClass(reply.id)}`}>
                       <CornerDownRight className="mt-1 h-3 w-3 shrink-0 text-muted-foreground/50" />
                       <Avatar name={reply.author_name} src={reply.author_avatar} size={24} />
                       <div className="flex-1 min-w-0">
@@ -78,6 +93,14 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
                           <ExternalIndicator did={reply.did} />
                           <span className="text-xs text-muted-foreground">{timeAgo(reply.created_date)}</span>
                         </div>
+                        {showReplyTo && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); scrollToComment(parent.id); }}
+                            className="mt-0.5 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            replying to <span className="text-primary hover:underline">@{parent.handle || parent.name}</span>
+                          </button>
+                        )}
                         <RichText text={reply.content} className="text-sm whitespace-pre-wrap break-words" />
                         <div className="mt-1.5 space-y-1">
                           <CommentActions comment={reply} onReply={onReply} onPosted={onPosted} compact />
@@ -85,7 +108,8 @@ export default function CommentItem({ comment, replies, user, cardId, cardName, 
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

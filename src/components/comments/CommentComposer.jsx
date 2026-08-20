@@ -35,15 +35,15 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
       if (replyTarget) {
         // Reply to an existing comment — federated via createReply (sets
         // parent/root refs, bridges to the PDS, increments the parent's
-        // replies counter, notifies the parent author). Re-parent depth-2
-        // replies to the top-level comment locally so the card discussion
-        // stays flat, while federating with the direct parent for threading.
-        const replyToId = replyTarget.reply_to || replyTarget.id;
+        // replies counter, notifies the parent author). reply_to always
+        // points to the direct parent so the UI can thread replies to
+        // specific comments; the flat list + "replying to @user" label is
+        // handled by CommentThread/CommentItem.
         await createReply(replyTarget, trimmed, user, {
           card_id: cId,
           card_name: cName,
           card_image: cImage,
-        }, replyToId);
+        }, replyTarget.id);
       } else {
         // Top-level card comment — standalone post (no reply threading).
         const { hashtags, canonical_tags } = hashtagsFromText(trimmed);
