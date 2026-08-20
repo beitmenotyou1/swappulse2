@@ -44,6 +44,15 @@
       "type": "string",
       "description": "Base32-encoded TOTP secret"
     },
+    "webauthn_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has at least one WebAuthn/U2F security key registered"
+    },
+    "webauthn_challenge": {
+      "type": "string",
+      "description": "Temporary WebAuthn challenge issued during registration or login; cleared after use."
+    },
     "moderation_strikes": {
       "type": "integer",
       "default": 0,
