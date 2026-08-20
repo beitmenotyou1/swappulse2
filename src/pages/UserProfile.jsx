@@ -20,7 +20,7 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
-import ProfileBlocks from '@/components/profile/ProfileBlocks';
+import ProfileThemeView from '@/components/profile/ProfileThemeView';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
@@ -224,7 +224,14 @@ export default function UserProfile() {
         <div className="mt-4 space-y-4">
           {!isExternal && <ReputationSummary did={subjectDid} />}
           {tab === 'About' ? (
-            <ProfileBlocks data={profileConfig?.personal} blockOrder={profileConfig?.block_order} did={subjectDid} />
+            <ProfileThemeView
+              theme={profileConfig?.theme || 'default'}
+              data={profileConfig?.personal}
+              blockOrder={profileConfig?.block_order}
+              did={subjectDid}
+              profile={{ name: profile?.name, avatar: profile?.avatar, handle: profile?.bsky_handle || profile?.username, followers: profile?.followers_count || 0, following: profile?.follows_count || 0, description: profile?.description }}
+              posts={posts}
+            />
           ) : tab === 'Journey' ? (
             <MilestonesTimeline milestones={profileConfig?.personal?.milestones || []} />
           ) : tab === 'Hub' ? (

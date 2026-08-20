@@ -1,12 +1,11 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, Layout } from 'lucide-react';
 import { PROFILE_THEMES, BLOCK_LABELS, DEFAULT_BLOCK_ORDER } from '@/lib/profileThemes';
 
-// LayoutThemeTab — pick a preset profile theme (header gradient), drag-to-
-// reorder the About-section content blocks (bio, interests, milestones,
-// binder preview, trades, collections, etc.), and toggle tab visibility.
-// Posts is locked on (never hideable).
+// LayoutThemeTab — pick from the merged 11-theme picker (5 gradient + 6
+// platform layouts), drag-to-reorder the About-section content blocks, and
+// toggle tab visibility. Posts is locked on (never hideable).
 export default function LayoutThemeTab({ draft, update, sectionLabels }) {
   const blockOrder = draft.block_order?.length ? draft.block_order : DEFAULT_BLOCK_ORDER;
   const sectionOrder = draft.section_order || [];
@@ -42,10 +41,14 @@ export default function LayoutThemeTab({ draft, update, sectionLabels }) {
               className={`overflow-hidden rounded-xl border-2 text-left transition-colors ${draft.theme === th.key ? 'border-primary' : 'border-border hover:border-border-strong'}`}
             >
               <div className={`h-12 w-full bg-gradient-to-r ${th.gradient}`} />
-              <div className="px-2 py-1.5 text-xs font-semibold">{th.label}</div>
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <span className="text-xs font-semibold">{th.label}</span>
+                {th.platform && <Layout className="h-3 w-3 text-muted-foreground" />}
+              </div>
             </button>
           ))}
         </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">Gradient themes restyle the header. Platform themes restructure the About view into that platform's layout.</p>
       </div>
 
       <div>

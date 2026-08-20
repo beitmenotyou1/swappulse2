@@ -22,7 +22,7 @@ import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import ProfileEditorModal from '@/components/profile/ProfileEditorModal';
-import ProfileBlocks from '@/components/profile/ProfileBlocks';
+import ProfileThemeView from '@/components/profile/ProfileThemeView';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
@@ -228,7 +228,15 @@ export default function Profile() {
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : tab === 'About' ? (
-          <ProfileBlocks data={config} blockOrder={config?.block_order} did={did} isOwner />
+          <ProfileThemeView
+            theme={config?.theme || 'default'}
+            data={config}
+            blockOrder={config?.block_order}
+            did={did}
+            isOwner
+            profile={{ name: merged?.name || user?.full_name, avatar: merged?.avatar || user?.avatar, handle: user?.bsky_handle || user?.username, followers: merged?.followers_count || 0, following: merged?.follows_count || 0, description: merged?.description || user?.description }}
+            posts={myPosts}
+          />
         ) : tab === 'Journey' ? (
           <div className="py-4"><MilestonesTimeline milestones={config?.milestones || []} /></div>
         ) : tab === 'Hub' ? (

@@ -2,7 +2,7 @@
   "name": "ProfileConfig",
   "type": "object",
   "title": "ProfileConfig",
-  "description": "org.swappulse.profileConfig \u2014 a collector's enhanced profile configuration: richer personal info (bio, pronouns, interests, favourites, location, contact, social links), collecting-journey milestones, per-field visibility flags (public / friends / followers / private, including trade-detail fields), profile theme, content-block order, and section/tab visibility. One record per collector (looked up by did). RLS restricts reads/writes to the owner; the get-profile-config backend function reads via the service role and filters fields by the viewer's relationship (public / friends / followers / private) so private data never leaks to unauthorized viewers.",
+  "description": "org.swappulse.profileConfig \u2014 a collector's enhanced profile configuration: richer personal info (bio, pronouns, interests, favourites, location, contact, social links), collecting-journey milestones, per-field visibility flags (public / friends / followers / private, including trade-detail fields), profile theme (gradient or platform-emulating layout), content-block order, and section/tab visibility. One record per collector (looked up by did). RLS restricts reads/writes to the owner; the get-profile-config backend function reads via the service role and filters fields by the viewer's relationship (public / friends / followers / private) so private data never leaks to unauthorized viewers.",
   "properties": {
     "did": {
       "type": "string",
@@ -123,10 +123,16 @@
         "vintage",
         "competitive",
         "shiny",
-        "investment"
+        "investment",
+        "facebook",
+        "bluesky",
+        "mastodon",
+        "x",
+        "youtube",
+        "reddit"
       ],
       "default": "default",
-      "description": "Profile header theme (preset gradient)"
+      "description": "Profile theme \u2014 gradient presets (default/vintage/competitive/shiny/investment) restyle the header, or platform-emulating layouts (facebook/bluesky/mastodon/x/youtube/reddit) restructure the About view into that platform's native arrangement."
     },
     "section_order": {
       "type": "array",

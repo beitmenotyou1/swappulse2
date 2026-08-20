@@ -1,6 +1,8 @@
-// Preset profile themes (header gradient) and default visibility/section
-// configuration for the enhanced profile. Gradient class strings are written
-// as literals here so Tailwind's purge detects them.
+// Preset profile themes — a single merged list of five gradient themes and
+// six platform-emulating layout themes. Gradient themes restyle the header
+// only; platform themes restructure the About/landing view into that
+// platform's native layout. Gradient class strings are written as literals
+// so Tailwind's purge detects them.
 
 export const PROFILE_THEMES = [
   { key: 'default', label: 'SwapPulse', gradient: 'from-primary/40 via-rarity-holo/30 to-accent/30' },
@@ -8,12 +10,22 @@ export const PROFILE_THEMES = [
   { key: 'competitive', label: 'Competitive', gradient: 'from-blue-500/40 via-indigo-400/30 to-cyan-300/30' },
   { key: 'shiny', label: 'Shiny', gradient: 'from-fuchsia-500/40 via-pink-400/30 to-rose-300/30' },
   { key: 'investment', label: 'Investment', gradient: 'from-emerald-500/40 via-teal-400/30 to-green-300/30' },
+  { key: 'bluesky', label: 'Bluesky', gradient: 'from-sky-400/40 via-blue-400/30 to-indigo-300/30', platform: true },
+  { key: 'facebook', label: 'Facebook', gradient: 'from-blue-600/40 via-blue-500/30 to-blue-400/30', platform: true },
+  { key: 'mastodon', label: 'Mastodon', gradient: 'from-purple-500/40 via-violet-400/30 to-fuchsia-300/30', platform: true },
+  { key: 'x', label: 'X', gradient: 'from-slate-700/40 via-slate-600/30 to-slate-400/30', platform: true },
+  { key: 'youtube', label: 'YouTube', gradient: 'from-red-600/40 via-red-500/30 to-rose-400/30', platform: true },
+  { key: 'reddit', label: 'Reddit', gradient: 'from-orange-500/40 via-orange-400/30 to-amber-300/30', platform: true },
 ];
 
 export const DEFAULT_THEME = 'default';
 
 export function themeGradient(key) {
   return (PROFILE_THEMES.find((th) => th.key === key) || PROFILE_THEMES[0]).gradient;
+}
+
+export function isPlatformTheme(key) {
+  return !!(PROFILE_THEMES.find((th) => th.key === key)?.platform);
 }
 
 // Default per-field visibility for personal-info and trade-detail fields.
