@@ -163,6 +163,14 @@ const zh = {
   'moderation.tab.posts': '被举报的帖子', 'moderation.tab.disputes': '交易争议', 'moderation.tab.enforcement': '账号处罚', 'moderation.tab.bots': '机器人防护',
   'moderation.hideFilters': '隐藏筛选器', 'moderation.showFilters': '显示筛选器',
   'share.title': '分享', 'share.editMessage': '编辑消息', 'share.copyLink': '复制链接', 'share.copied': '已复制', 'share.linkCopied': '链接已复制', 'share.pasteHint': '将您的消息粘贴到应用中', 'share.share': '分享', 'share.nativeShare': '通过设备分享', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': '电子邮件', 'share.tiktok': 'TikTok',
+  'about.title': '关于 SwapPulse', 'about.back': '返回 SwapPulse', 'about.missionTitle': '我们的使命',
+  'about.missionBody': 'SwapPulse 的存在是为了给宝可梦卡牌收藏者一个属于自己的家园——不属于任何公司、算法或广告网络。我们相信，一个建立在社区、信任和交换之上的爱好，应该由尊重这三者的软件来驱动。每一项功能都是免费的，每一条记录都是可移植的，每一个决定都是公开透明的。',
+  'about.whatTitle': '什么是 SwapPulse？',
+  'about.whatBody1': 'SwapPulse 是一个面向宝可梦卡牌收藏者的去中心化社交网络和收藏管理工具。它将收藏追踪、点对点交易、社交动态、AI工具和社区功能整合到一个建立在 AT Protocol 上的单一平台——与 Bluesky 使用相同的开放标准。这意味着你的帖子、交易和身份是联邦化的且可移植的；你永远不会被锁定。',
+  'about.whatBody2': '卡片数据来自 TCGDex，一个开放的宝可梦卡牌目录，支持九种语言。平台完全依靠自愿捐款资助——没有付费功能，没有高级等级，没有广告。',
+  'about.feature.collection': '追踪你的收藏、投资组合价值和套装完成度', 'about.feature.trading': '通过线程谈判和交易链点对点交换卡片', 'about.feature.scanner': '用AI扫描卡片，即时匹配TCGDex目录', 'about.feature.social': '发布抽卡、写日志、创建数字卡册和评论卡片', 'about.feature.community': '加入圈子、聚会、挑战和开包派对', 'about.feature.market': '通过价格追踪和提醒关注市场', 'about.feature.voice': '主持语音空间和发布播客', 'about.feature.achievements': '获得基于证明的成就，根据你的链上活动验证',
+  'about.principlesTitle': '核心原则', 'about.principle.free.title': '免费且开源', 'about.principle.free.body': '没有付费墙，没有高级等级，没有广告。SwapPulse 完全依靠自愿捐款资助，并在 AGPL-3.0 下授权，以便社区可以自托管和审计每一行代码。', 'about.principle.decentralized.title': '去中心化设计', 'about.principle.decentralized.body': '建立在 AT Protocol 上，你的身份、帖子和收藏是可移植的。你拥有你的数据——导出它、迁移 PDS，或随时在任何兼容的应用中使用它。', 'about.principle.community.title': '社区自治', 'about.principle.community.body': '信任通过担保赢得，而非自上而下授予。审核结合了AI筛选和人工审查，声誉由与你交易的人建立。', 'about.principle.privacy.title': '隐私优先', 'about.principle.privacy.body': '私信是端到端加密的，没有后门。你的私钥保存在浏览器中。我们只收集运行平台所需的最低限度数据，仅此而已。',
+  'about.openSource': 'AGPL-3.0 下的开源', 'about.builtOn': '建立在 AT Protocol 上 · 由 TCGDex 驱动', 'about.joinTitle': '加入社区', 'about.joinBody': '创建免费账户、探索目录或立即开始交易。', 'about.cta.create': '创建账户', 'about.cta.explore': '探索卡片', 'about.cta.donate': '支持我们', 'about.seoTitle': '关于', 'about.seoDescription': 'SwapPulse 是一个面向宝可梦卡牌收藏者的免费、开源、去中心化社交网络——建立在 AT Protocol 上，由 TCGDex 驱动。',
 };
 
 export default zh;
