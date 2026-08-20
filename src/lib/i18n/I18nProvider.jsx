@@ -101,7 +101,11 @@ export function I18nProvider({ children }) {
     const langOverrides = overrides[lang] || {};
     const dict = translations[locale] || translations['en-GB'];
     // Override (AI/manual) > static dict > English fallback > key
-    return langOverrides[key] ?? dict[key] ?? translations['en-GB'][key] ?? key;
+    const result = langOverrides[key] ?? dict[key] ?? translations['en-GB'][key] ?? key;
+    if (import.meta.env.DEV && result === key) {
+      console.warn('[i18n] missing key:', key, 'locale:', locale);
+    }
+    return result;
   }, [locale, overrides]);
 
   return (
