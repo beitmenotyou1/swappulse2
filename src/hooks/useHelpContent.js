@@ -42,7 +42,24 @@ function normalizeSections(sections) {
   return sections.map((section) => {
     if (!section || typeof section !== 'object' || Array.isArray(section)) return section;
     if (!Array.isArray(section.blocks)) return section;
-    return { ...section, blocks: section.blocks.map(normalizeBlock).filter(Boolean) };
+
+    const blocks = section.blocks;
+    // The LLM sometimes flattened the entire blocks array into a single
+    // flat array: ["p", "text", "value"] instead of [{ type: "p", text: "value" }].
+    // Detect this by checking if the first two elements are strings (the type
+    // and field name) rather than objects.
+    if (
+      blocks.length >= 2 &&
+      typeof blocks[0] === 'string' &&
+      typeof blocks[1] === 'string'
+    ) {
+      const normalized = normalizeBlock(blocks);
+      return { ...section, blocks: normalized ? [normalized] : [] };
+    }
+
+    // Otherwise, normalize each block individually (handles both proper
+    // objects and any individual flattened blocks mixed in).
+    return { ...section, blocks: blocks.map(normalizeBlock).filter(Boolean) };
   });
 }
 
