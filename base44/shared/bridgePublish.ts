@@ -32,6 +32,45 @@ export function collectionForEntity(entityName: string): string | undefined {
   return ENTITY_TO_COLLECTION[entityName];
 }
 
+// ─── Content hash ─────────────────────────────────────────────────────────
+// SHA-256 of the canonical record body, used to detect silent content drift
+// between the local entity and the PDS record. Normalizes by dropping empty
+// values and sorting keys so the hash is stable regardless of which builder
+// produced the record (client buildCollectionEntryRecord vs backend buildRecord).
+// $type and createdAt are stripped (constant / set-once) so they don't affect
+// the hash. Used by publishRecord/updateBridgedRecord (to persist on push) and
+// outbound-reconcile (to detect drift from bulk edits that bypassed the bridge).
+function normalizeForHash(v: any): any {
+  if (v === null || v === undefined || v === '') return null;
+  if (Array.isArray(v)) {
+    const arr = v.map(normalizeForHash).filter((x: any) => x !== null);
+    return arr.length ? arr : null;
+  }
+  if (typeof v === 'object') {
+    const out: any = {};
+    for (const k of Object.keys(v).sort()) {
+      if (k === '$type' || k === 'createdAt') continue;
+      const nv = normalizeForHash(v[k]);
+      if (nv !== null) out[k] = nv;
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  return v;
+}
+
+export async function computeContentHash(record: any): Promise<string> {
+  try {
+    const normalized = normalizeForHash(record) ?? {};
+    const json = JSON.stringify(normalized);
+    const data = new TextEncoder().encode(json);
+    const hashBuf = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(hashBuf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    console.error('computeContentHash error', e?.message || e);
+    return '';
+  }
+}
+
 // ─── Generic publish / update / delete ───────────────────────────────────
 
 // Publish a local entity record to the PDS as a new org.swappulse.* record.
@@ -70,13 +109,15 @@ export async function publishRecord(
       record,
     });
     if (res?.uri) {
+      const content_hash = await computeContentHash(record).catch(() => '');
       await svc.entities[entityName].update(recordId, {
         at_uri: res.uri,
         cid: res.cid || '',
         bridged: true,
         did: res.did || entity.did,
+        content_hash,
       }).catch(() => {});
-      return { ok: true, at_uri: res.uri, cid: res.cid };
+      return { ok: true, at_uri: res.uri, cid: res.cid, content_hash };
     }
     console.error(`bridgePublish: atproto-bridge create failed for ${entityName}/${recordId}`, res?.error);
     return { ok: false, error: res?.error || 'createRecord returned no uri' };
@@ -117,10 +158,12 @@ export async function updateBridgedRecord(
       record,
     });
     if (res?.uri) {
+      const content_hash = await computeContentHash(record).catch(() => '');
       await svc.entities[entityName].update(recordId, {
         cid: res.cid || entity.cid || '',
+        content_hash,
       }).catch(() => {});
-      return { ok: true, at_uri: res.uri, cid: res.cid };
+      return { ok: true, at_uri: res.uri, cid: res.cid, content_hash };
     }
     console.error(`bridgePublish: atproto-bridge update failed for ${entityName}/${recordId}`, res?.error);
     return { ok: false, error: res?.error || 'putRecord returned no uri' };

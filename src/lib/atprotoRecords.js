@@ -151,7 +151,7 @@ export async function updateBridgedTradeListing(listing) {
       uri: listing.at_uri,
     });
     if (res?.uri && res?.cid) {
-      return { cid: res.cid, bridged: true };
+      return { cid: res.cid, content_hash: res.content_hash || '', bridged: true };
     }
     return null;
   } catch (err) {
@@ -184,7 +184,7 @@ export async function updateBridgedCollectionEntry(entry) {
       uri: entry.at_uri,
     });
     if (res?.uri && res?.cid) {
-      return { cid: res.cid, bridged: true };
+      return { cid: res.cid, content_hash: res.content_hash || '', bridged: true };
     }
     return null;
   } catch (err) {
@@ -202,6 +202,40 @@ export async function unbridgeRecord(entity) {
     return true;
   } catch (err) {
     console.error('atprotoRecords: unbridge failed', err);
+    return false;
+  }
+}
+
+// Generic update/delete wrappers that route through the bridge-record backend
+// function, which builds the lexicon-valid record server-side (via the shared
+// BUILDER_CONFIG) and persists content_hash. Use these for entities without a
+// dedicated client builder (Vouch, Circle, Meetup, Reaction, etc.) so every
+// edit call site can push to the PDS in one call. No-op if the record isn't
+// bridged yet. Fire-and-forget from edit sites — failures log and leave the
+// record for the next outbound-reconcile pass.
+export async function updateBridgedRecord(entity, entityName, collection) {
+  if (!entity?.at_uri || !entity?.bridged) return null;
+  try {
+    const res = await base44.functions.invoke('bridge-record', {
+      action: 'update', entityName, recordId: entity.id, collection,
+    });
+    if (res?.ok) return { cid: res.cid || '', content_hash: res.content_hash || '', bridged: true };
+    return null;
+  } catch (err) {
+    console.error('atprotoRecords: updateBridgedRecord failed', err);
+    return null;
+  }
+}
+
+export async function deleteBridgedRecord(entity, entityName, collection) {
+  if (!entity?.at_uri || !entity?.bridged) return false;
+  try {
+    const res = await base44.functions.invoke('bridge-record', {
+      action: 'delete', entityName, recordId: entity.id, collection,
+    });
+    return !!res?.ok;
+  } catch (err) {
+    console.error('atprotoRecords: deleteBridgedRecord failed', err);
     return false;
   }
 }

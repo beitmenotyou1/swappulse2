@@ -14,6 +14,7 @@
 
 import { getPdsSession, getPdsSessionForUser, clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
 import { attachRichTextFacets } from '../../shared/hashtagFacets.ts';
+import { computeContentHash } from '../../shared/bridgePublish.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Resolve the PDS session to use for this request. If the calling user has a
@@ -180,7 +181,8 @@ Deno.serve(async (req) => {
         console.error('atproto-bridge: putRecord failed', result.status, result.body);
         return Response.json({ error: `putRecord failed (${result.status})` }, { status: 502 });
       }
-      return Response.json({ uri: result.uri, cid: result.cid, did: session.did });
+      const content_hash = await computeContentHash(record).catch(() => '');
+      return Response.json({ uri: result.uri, cid: result.cid, did: session.did, content_hash });
     }
 
     // --- emitLabels action (labeler: emit moderation labels to the network) ---
@@ -302,7 +304,8 @@ Deno.serve(async (req) => {
       console.error('atproto-bridge: createRecord failed', result.status, result.body);
       return Response.json({ error: `createRecord failed (${result.status})` }, { status: 502 });
     }
-    return Response.json({ uri: result.uri, cid: result.cid, did: session.did });
+    const content_hash = await computeContentHash(record).catch(() => '');
+    return Response.json({ uri: result.uri, cid: result.cid, did: session.did, content_hash });
   } catch (error) {
     console.error('atproto-bridge error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });

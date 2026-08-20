@@ -101,7 +101,9 @@ export default function Collection() {
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, showcased, binder_index: showcased ? binderCount : 0 } : i)));
     // Push the edit to the AT Protocol PDS so the federated copy stays in sync.
     if (item.bridged && item.at_uri) {
-      updateBridgedCollectionEntry({ ...item, showcased, binder_index: showcased ? binderCount : 0 }).catch(() => {});
+      updateBridgedCollectionEntry({ ...item, showcased, binder_index: showcased ? binderCount : 0 }).then((res) => {
+        if (res?.cid) base44.entities.CollectionEntry.update(item.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
+      }).catch(() => {});
     }
   };
 
@@ -184,7 +186,9 @@ export default function Collection() {
       setItems((prev) => prev.map((i) => (selected.has(i.id) ? { ...i, condition } : i)));
       // Push the condition change to the PDS for each bridged entry (fire-and-forget).
       items.filter((i) => selected.has(i.id) && i.bridged && i.at_uri)
-        .forEach((i) => updateBridgedCollectionEntry({ ...i, condition }).catch(() => {}));
+        .forEach((i) => updateBridgedCollectionEntry({ ...i, condition }).then((res) => {
+          if (res?.cid) base44.entities.CollectionEntry.update(i.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
+        }).catch(() => {}));
       toast({ title: tr('collection.conditionUpdated'), description: tr('collection.cardsMarkedAs').replace('{count}', ids.length).replace('{condition}', conditionLabel(condition)) });
       clearSelection();
     } catch (e) {

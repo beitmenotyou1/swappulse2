@@ -74,7 +74,7 @@ export default function TradeBoard() {
         const syncResult = await updateBridgedTradeListing({ ...listing, status: 'completed' });
         pdsSynced = !!syncResult?.bridged;
         if (syncResult?.cid) {
-          await base44.entities.TradeListing.update(listing.id, { cid: syncResult.cid });
+          await base44.entities.TradeListing.update(listing.id, { cid: syncResult.cid, content_hash: syncResult.content_hash || '' });
         }
       }
       toast({

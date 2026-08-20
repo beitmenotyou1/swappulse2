@@ -12,6 +12,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
+import { computeContentHash } from '../../shared/bridgePublish.ts';
 import { getConsentMap, isDoNotSell } from '../../shared/consentCheck.ts';
 
 // bsky.* collections have strict lexicons and are bridged at create/update
@@ -93,6 +94,9 @@ export default async function (req: Request): Promise<Response> {
             if (!rec.at_uri) continue;
             const pdsCid = pdsByUri.get(rec.at_uri);
             const record = buildRecord(rec, collection);
+            const newHash = await computeContentHash(record).catch(() => '');
+            const hashDrift = rec.content_hash ? (rec.content_hash !== newHash) : false;
+            const cidDrift = rec.cid ? (pdsCid !== rec.cid) : false;
             try {
               if (!pdsCid) {
                 // Missing on PDS → re-create
@@ -104,14 +108,14 @@ export default async function (req: Request): Promise<Response> {
                 });
                 if (res.ok) {
                   const data = await res.json();
-                  await svc.entities[entityName].update(rec.id, { at_uri: data.uri, cid: data.cid, bridged: true }).catch(() => {});
+                  await svc.entities[entityName].update(rec.id, { at_uri: data.uri, cid: data.cid, bridged: true, content_hash: newHash }).catch(() => {});
                   created++; reconciled++; userReconciled++;
                 } else {
                   errors++;
                   console.error('outbound-reconcile: createRecord failed', collection, res.status);
                 }
-              } else if (rec.cid && pdsCid !== rec.cid) {
-                // CID mismatch → update in place
+              } else if (hashDrift || cidDrift) {
+                // Content-hash or CID mismatch → update in place
                 const rkey = rec.at_uri.split('/').pop();
                 const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.putRecord`, {
                   method: 'POST',
@@ -120,12 +124,15 @@ export default async function (req: Request): Promise<Response> {
                 });
                 if (res.ok) {
                   const data = await res.json();
-                  await svc.entities[entityName].update(rec.id, { cid: data.cid }).catch(() => {});
+                  await svc.entities[entityName].update(rec.id, { cid: data.cid, content_hash: newHash }).catch(() => {});
                   updated++; reconciled++; userReconciled++;
                 } else {
                   errors++;
                   console.error('outbound-reconcile: putRecord failed', collection, res.status);
                 }
+              } else if (!rec.content_hash && newHash) {
+                // No drift but content_hash missing (pre-migration) → backfill without pushing
+                await svc.entities[entityName].update(rec.id, { content_hash: newHash }).catch(() => {});
               }
             } catch (e: any) {
               errors++;

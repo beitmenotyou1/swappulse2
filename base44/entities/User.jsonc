@@ -74,6 +74,11 @@
       "type": "string",
       "description": "Preferred interface locale (e.g. en-GB, ja-JP, zh-CN, ko-KR). Used by backend functions to send localized system emails. Set by the I18nProvider on locale change.",
       "default": "en-GB"
+    },
+    "profile_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time the inbound profile sync (firehose-ingest) merged remote Bluesky profile fields into this user. Compared against updated_date to decide whether a remote profile edit should overwrite local (local wins if it was edited more recently than the last sync)."
     }
   },
   "required": [

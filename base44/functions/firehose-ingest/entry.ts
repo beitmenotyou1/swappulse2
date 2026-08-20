@@ -372,6 +372,55 @@ async function syncInboundDms(base44: any, svc: any): Promise<number> {
   return synced;
 }
 
+// Inbound profile sync (two-way identity). For each user with a PdsCredential,
+// fetch their app.bsky.actor.profile from the AppView and merge changed fields
+// (displayName, description, avatar, banner→header) into the local User
+// record. Gated by profile_synced_at vs updated_date so a remote edit never
+// clobbers a newer local edit — if the local profile changed after the last
+// sync, local wins and the remote merge is skipped until the next remote
+// change. This closes the inbound half of profile sync; the outbound half is
+// profileSync (sync-profile-records).
+async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
+  let synced = 0;
+  try {
+    const creds = await svc.entities.PdsCredential.list('-created_date', 10).catch(() => []);
+    for (const cred of creds || []) {
+      try {
+        const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
+        url.searchParams.set('actor', cred.did);
+        const res = await fetch(url);
+        if (res.status === 429 || res.status >= 500) continue;
+        if (!res.ok) continue;
+        const profile: any = await res.json();
+        const users = await svc.entities.User.filter({ id: cred.user_id }, '-created_date', 1).catch(() => []);
+        const user = users?.[0];
+        if (!user) continue;
+        // Conflict guard: if the local profile was edited after the last sync,
+        // local is authoritative — skip the remote merge.
+        const lastSync = user.profile_synced_at || '';
+        const localUpdated = user.updated_date || '';
+        if (lastSync && localUpdated > lastSync) continue;
+        const updates: any = {};
+        if (profile.displayName && profile.displayName !== user.display_name) updates.display_name = profile.displayName;
+        if ((profile.description || '') !== (user.description || '')) updates.description = profile.description || '';
+        if (profile.avatar && profile.avatar !== user.avatar) updates.avatar = profile.avatar;
+        if (profile.banner && profile.banner !== user.header) updates.header = profile.banner;
+        if (Object.keys(updates).length === 0) continue;
+        updates.profile_synced_at = new Date().toISOString();
+        await svc.entities.User.update(user.id, updates).catch((e: any) => {
+          console.error('firehose-ingest: user profile update failed', cred.did, e?.message || e);
+        });
+        synced++;
+      } catch (e) {
+        console.error('firehose-ingest: profile sync record error', e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.error('firehose-ingest: syncInboundProfiles error', e?.message || e);
+  }
+  return synced;
+}
+
 // AppView search phase: poll public.api.bsky.app for posts matching
 // SwapPulse-relevant signals (PokemonTCG keyword) so content from non-followed
 // Bluesky accounts is ingested into the local feed. Rate-limited to 1 search
@@ -641,6 +690,9 @@ export default async function(req: Request): Promise<Response> {
     // Resolve ingested DMs to their local conversations
     const dms_synced = await syncInboundDms(base44, svc);
 
+    // Two-way identity: pull remote Bluesky profile edits back into local users
+    const profiles_synced = await syncInboundProfiles(base44, svc);
+
     // Broad ingestion: search the public AppView for PokemonTCG posts
     const searchResult = await searchAppViewPosts(base44, svc, pdsUrl, accessJwt, promoUris);
 
@@ -652,6 +704,7 @@ export default async function(req: Request): Promise<Response> {
       likes_synced,
       reposts_synced,
       dms_synced,
+      profiles_synced,
       search_found: searchResult.found,
       search_ingested: searchResult.ingested,
       records_scanned,

@@ -4,6 +4,7 @@ import { Loader2, Plus, Trash2, X, Save } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeBinder } from '@/lib/federatedBridge';
+import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { cardImageUrl } from '@/lib/tcgdex';
 import PageHeader from '@/components/PageHeader';
@@ -86,7 +87,22 @@ export default function BinderEdit() {
       };
       const stamped = await stampRecord(record, NSID.BINDER, did, signingKey);
       if (isEdit) {
-        await base44.entities.Binder.update(binderId, stamped);
+        // Preserve the existing bridge metadata (at_uri/cid/bridged/did) so the
+        // edit doesn't clobber the real federated record link, then push the
+        // updated content to the PDS so the federated copy stays in sync.
+        const existing = await base44.entities.Binder.get(binderId);
+        await base44.entities.Binder.update(binderId, {
+          ...stamped,
+          at_uri: existing.at_uri,
+          cid: existing.cid,
+          bridged: existing.bridged,
+          did: existing.did,
+          record_type: existing.record_type,
+          sig: existing.sig,
+        });
+        if (existing.bridged && existing.at_uri) {
+          updateBridgedRecord({ id: binderId, at_uri: existing.at_uri, bridged: true }, 'Binder').catch(() => {});
+        }
         navigate(`/binder/${binderId}`);
       } else {
         const created = await base44.entities.Binder.create(stamped);
