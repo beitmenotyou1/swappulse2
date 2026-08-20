@@ -137,9 +137,14 @@ export default function TradeBoard() {
   return (
     <div>
       <PageHeader title={tr('page.trades.title')} subtitle={tr('page.trades.subtitle')}>
-        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> {tr('page.trades.newListing')}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link to="/trade-templates" className="flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-bold hover:bg-secondary">
+            <Bookmark className="h-4 w-4" /> {tr('trade.templates')}
+          </Link>
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> {tr('page.trades.newListing')}
+          </button>
+        </div>
       </PageHeader>
 
       {!loading && listings.length > 0 && (

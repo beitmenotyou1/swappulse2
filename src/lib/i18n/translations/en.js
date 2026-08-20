@@ -209,6 +209,17 @@ const en = {
   'trade.selectWantedCard': 'Select wanted card', 'trade.shippingRegions': 'Shipping regions', 'trade.syncingToPds': 'Syncing to PDS…',
   'trade.templateNamePlaceholder': 'Template name', 'trade.templateSaved': 'Template saved', 'trade.trustedOnly': 'Trusted only',
   'trade.visibility': 'Visibility', 'trade.visibleToCircle': 'Visible to circle', 'trade.wants': 'Wants', 'trade.wishlistOnly': 'Wishlist matches only',
+  // Collection rarity sort
+  'collection.sortRecent': 'Recent', 'collection.sortRarest': 'Rarest first', 'collection.sortCommon': 'Common first',
+  // Trade template manager
+  'page.tradeTemplates.title': 'Trade Templates', 'page.tradeTemplates.subtitle': 'Saved offer/want combos to post faster',
+  'trade.templates': 'Templates', 'trade.useTemplate': 'Use template', 'trade.editTemplate': 'Edit', 'trade.deleteTemplate': 'Delete',
+  'trade.deleteTemplateConfirm': 'Delete this template?', 'trade.templateEmpty': 'No saved templates yet',
+  'trade.templateEmptySub': 'Save a template from the New Listing modal to reuse offer/want combos.', 'trade.editTemplateTitle': 'Edit Template',
+  'trade.templateOffers': 'Offers', 'trade.templateWants': 'Wants', 'trade.newListingShort': 'New listing',
+  // Portfolio snapshot ranges
+  'portfolio.range30': '30D', 'portfolio.range90': '90D', 'portfolio.range365': '1Y', 'portfolio.rangeAll': 'All',
+  'portfolio.emptyWindow': 'Not enough history yet for this range — check back after more daily snapshots.',
 };
 
 export default en;

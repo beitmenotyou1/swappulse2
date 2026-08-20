@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -11,18 +11,28 @@ import {
 } from 'recharts';
 import { base44 } from '@/api/base44Client';
 import { formatPrice } from '@/lib/format';
+import { useT } from '@/lib/i18n/I18nProvider';
+
+const RANGES = [
+  { id: 30, tKey: 'portfolio.range30' },
+  { id: 90, tKey: 'portfolio.range90' },
+  { id: 365, tKey: 'portfolio.range365' },
+  { id: 'all', tKey: 'portfolio.rangeAll' },
+];
 
 // PortfolioValueChart — plots the collector's total portfolio value over time
-// from daily PortfolioSnapshot records. Shown as the first card in the
-// Collection analytics tab. Falls back to a friendly empty state when there
-// are fewer than 2 snapshots (the chart needs a line to draw).
+// from daily PortfolioSnapshot records. A 30D / 90D / 1Y / All segmented toggle
+// zooms the window; the summary deltas recompute against the first snapshot in
+// the selected window. Shown as the first card in the Collection analytics tab.
 export default function PortfolioValueChart() {
+  const tr = useT();
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState(90);
 
   useEffect(() => {
     let active = true;
-    base44.entities.PortfolioSnapshot.list('-date', 90)
+    base44.entities.PortfolioSnapshot.list('-date', 400)
       .then((rows) => {
         if (active) {
           // Oldest → newest for the chart x-axis
@@ -33,6 +43,15 @@ export default function PortfolioValueChart() {
       .catch(() => active && setLoading(false));
     return () => { active = false; };
   }, []);
+
+  const windowed = useMemo(() => {
+    if (range === 'all') return snapshots;
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - (range - 1));
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return snapshots.filter((s) => s.date >= cutoffStr);
+  }, [snapshots, range]);
 
   if (loading) {
     return (
@@ -54,13 +73,9 @@ export default function PortfolioValueChart() {
     );
   }
 
-  const data = snapshots.map((s) => ({
-    date: s.date,
-    value: s.total_value / 100, // pence → major units
-  }));
-
-  const latest = snapshots[snapshots.length - 1];
-  const first = snapshots[0];
+  const data = windowed.map((s) => ({ date: s.date, value: s.total_value / 100 }));
+  const latest = windowed[windowed.length - 1];
+  const first = windowed[0];
   const change = (latest.total_value - first.total_value) / 100;
   const pctChange = first.total_value > 0
     ? ((latest.total_value - first.total_value) / first.total_value) * 100
@@ -69,7 +84,20 @@ export default function PortfolioValueChart() {
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Portfolio Value History</p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Portfolio Value History</p>
+        <div className="flex rounded-full border border-border p-0.5">
+          {RANGES.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setRange(r.id)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${range === r.id ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+            >
+              {tr(r.tKey)}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Compact stat strip */}
       <div className="mb-3 flex flex-wrap items-baseline gap-x-6 gap-y-1">
@@ -77,7 +105,7 @@ export default function PortfolioValueChart() {
           <span className="text-xs text-muted-foreground">Current </span>
           <span className="text-lg font-extrabold">{formatPrice(latest.total_value)}</span>
         </div>
-        {snapshots.length > 1 && (
+        {windowed.length > 1 && (
           <div className={`flex items-center gap-1 ${up ? 'text-success' : 'text-destructive'}`}>
             {up ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
             <span className="text-sm font-bold">
@@ -89,12 +117,12 @@ export default function PortfolioValueChart() {
           </div>
         )}
         <span className="text-xs text-muted-foreground">
-          {snapshots.length} day{snapshots.length === 1 ? '' : 's'}
+          {windowed.length} day{windowed.length === 1 ? '' : 's'}
         </span>
       </div>
 
       {/* Area chart */}
-      {snapshots.length >= 2 ? (
+      {windowed.length >= 2 ? (
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={data}>
             <defs>
@@ -119,9 +147,7 @@ export default function PortfolioValueChart() {
           </AreaChart>
         </ResponsiveContainer>
       ) : (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Check back tomorrow to see your value trend.
-        </p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{tr('portfolio.emptyWindow')}</p>
       )}
     </div>
   );

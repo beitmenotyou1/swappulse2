@@ -28,11 +28,20 @@ const TABS = [
   { id: 'insurance', tKey: 'page.collection.tabs.insurance', icon: Shield },
 ];
 
+// Rarity rank for sort: higher = rarer. Unknown rarities rank mid (5).
+const RARITY_RANK = {
+  'Common': 1, 'Uncommon': 2, 'Rare': 3, 'Rare Holo': 4,
+  'Ultra Rare': 5, 'Illustration Rare': 6, 'Full Art': 7,
+  'Hyper Rare': 8, 'Secret Rare': 9, 'Rainbow Rare': 9, 'Special Illustration Rare': 9,
+};
+const rarityRank = (r) => (r && RARITY_RANK[r] != null ? RARITY_RANK[r] : 5);
+
 export default function Collection() {
   const tr = useT();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [sort, setSort] = useState('recent');
   const [tab, setTab] = useState('cards');
   const [me, setMe] = useState(null);
   const [gridSize, setGridSize] = useState('3x3');
@@ -125,7 +134,14 @@ export default function Collection() {
 
   const totalValue = items.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const rarities = [...new Set(items.map((i) => i.rarity).filter(Boolean))];
-  const filtered = filter === 'all' ? items : items.filter((i) => i.rarity === filter);
+  const filteredRaw = filter === 'all' ? items : items.filter((i) => i.rarity === filter);
+  const filtered = sort === 'recent'
+    ? filteredRaw
+    : [...filteredRaw].sort((a, b) =>
+        sort === 'rarest'
+          ? rarityRank(b.rarity) - rarityRank(a.rarity)
+          : rarityRank(a.rarity) - rarityRank(b.rarity)
+      );
   const showcasedItems = items
     .filter((i) => i.showcased)
     .sort((a, b) => (a.binder_index ?? 0) - (b.binder_index ?? 0));
@@ -216,22 +232,34 @@ export default function Collection() {
       </div>
 
       {tab === 'cards' && rarities.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto px-4 pb-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${filter === 'all' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
-          >
-            {tr('collection.all')}
-          </button>
-          {rarities.map((r) => (
+        <div className="flex items-center gap-2 px-4 pb-2">
+          <div className="flex flex-1 gap-2 overflow-x-auto">
             <button
-              key={r}
-              onClick={() => setFilter(r)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${filter === r ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
+              onClick={() => setFilter('all')}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${filter === 'all' ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
             >
-              {r}
+              {tr('collection.all')}
             </button>
-          ))}
+            {rarities.map((r) => (
+              <button
+                key={r}
+                onClick={() => setFilter(r)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${filter === r ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground'}`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label="Sort cards"
+            className="shrink-0 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold outline-none focus:border-primary"
+          >
+            <option value="recent">{tr('collection.sortRecent')}</option>
+            <option value="rarest">{tr('collection.sortRarest')}</option>
+            <option value="common">{tr('collection.sortCommon')}</option>
+          </select>
         </div>
       )}
 

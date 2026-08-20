@@ -23,6 +23,7 @@ import MarketWatch from '@/pages/MarketWatch';
 import Share from '@/pages/Share';
 import PostDetail from '@/pages/PostDetail';
 import TradeThread from '@/pages/TradeThread';
+import TradeTemplates from '@/pages/TradeTemplates';
 import TradeDashboard from '@/pages/TradeDashboard';
 import TradeStatusBoard from '@/pages/TradeStatusBoard';
 import Compose from '@/pages/Compose';
@@ -262,6 +263,7 @@ const AuthenticatedApp = () => {
           <Route path="/binder/:binderId/edit" element={<BinderEdit />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/trade-dashboard" element={<TradeDashboard />} />
+          <Route path="/trade-templates" element={<TradeTemplates />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
