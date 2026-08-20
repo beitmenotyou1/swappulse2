@@ -48,8 +48,6 @@ export function I18nProvider({ children }) {
         const map = {};
         for (const r of records) {
           if (!r.value || !r.translation_key) continue;
-          // Skip help.<slug> keys — those are large JSON blobs handled by useHelpContent
-          if (r.translation_key.startsWith('help.')) continue;
           if (!map[r.language]) map[r.language] = {};
           map[r.language][r.translation_key] = r.value;
         }
