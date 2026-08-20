@@ -19,7 +19,7 @@
 // Invoked by the "Promo Poster" workflow every 4 hours.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
+import { getPdsSessionForUser, pdsRequest, clearPdsSession } from '../../shared/pdsSession.ts';
 import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
 import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 import {
@@ -235,14 +235,16 @@ async function uploadCardImage(
   pdsUrl: string,
   accessJwt: string,
   imageUrl: string,
-): Promise<{ $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null> {
+  cred: { did: string; app_password: string },
+): Promise<{ blob: { $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null; accessJwt: string }> {
+  let currentJwt = accessJwt;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const imgRes = await fetch(imageUrl);
       if (!imgRes.ok) {
         console.error('post-promo: card image fetch failed', imgRes.status);
         if (attempt === 0) continue;
-        return null;
+        return { blob: null, accessJwt: currentJwt };
       }
       const mimeType = imgRes.headers.get('content-type') || 'image/webp';
       const bytes = new Uint8Array(await imgRes.arrayBuffer());
@@ -251,35 +253,51 @@ async function uploadCardImage(
         method: 'POST',
         headers: {
           'Content-Type': mimeType,
-          'Authorization': `Bearer ${accessJwt}`,
+          'Authorization': `Bearer ${currentJwt}`,
         },
         body: bytes,
       });
       if (!uploadRes.ok) {
         const text = await uploadRes.text();
         console.error('post-promo: uploadBlob failed', uploadRes.status, text.slice(0, 300));
+        // If 401, force a fresh PDS session and retry with the new token
+        if (uploadRes.status === 401 && attempt === 0) {
+          try {
+            clearPdsSession();
+            const refreshed = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
+            currentJwt = refreshed.session.accessJwt;
+            console.log('post-promo: refreshed PDS session after 401 on uploadBlob, retrying');
+            continue;
+          } catch (e) {
+            console.error('post-promo: session refresh failed', e?.message || e);
+            return { blob: null, accessJwt: currentJwt };
+          }
+        }
         if (attempt === 0) continue;
-        return null;
+        return { blob: null, accessJwt: currentJwt };
       }
       const data = await uploadRes.json();
       const blob = data.blob;
       if (!blob?.ref?.$link) {
         console.error('post-promo: no blob cid in uploadBlob response');
         if (attempt === 0) continue;
-        return null;
+        return { blob: null, accessJwt: currentJwt };
       }
       return {
-        $type: 'blob',
-        ref: { $link: blob.ref.$link },
-        mimeType: blob.mimeType || mimeType,
-        size: blob.size ?? bytes.length,
+        blob: {
+          $type: 'blob',
+          ref: { $link: blob.ref.$link },
+          mimeType: blob.mimeType || mimeType,
+          size: blob.size ?? bytes.length,
+        },
+        accessJwt: currentJwt,
       };
     } catch (e) {
       console.error('post-promo: uploadCardImage failed (attempt ' + (attempt + 1) + ')', e?.message || e);
-      if (attempt === 1) return null;
+      if (attempt === 1) return { blob: null, accessJwt: currentJwt };
     }
   }
-  return null;
+  return { blob: null, accessJwt: currentJwt };
 }
 
 Deno.serve(async (req) => {
@@ -351,19 +369,28 @@ Deno.serve(async (req) => {
     if (card && promoType === 'card') {
       const imageUrl = cardImageUrl(card.imageField);
       if (imageUrl) {
-        imageBlob = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl);
+        const uploadResult = await uploadCardImage(pdsUrl, session.accessJwt, imageUrl, cred);
+        imageBlob = uploadResult.blob;
+        session.accessJwt = uploadResult.accessJwt;
       }
       altText = card.name + (card.setName ? ` (${card.setName})` : '');
     } else {
       // Feature and community posts: attach the branded SwapPulse banner.
-      imageBlob = await uploadCardImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL);
+      const uploadResult = await uploadCardImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+      imageBlob = uploadResult.blob;
+      session.accessJwt = uploadResult.accessJwt;
     }
-    const embed: any = imageBlob
-      ? {
-          $type: 'app.bsky.embed.images',
-          images: [{ alt: altText, image: imageBlob }],
-        }
-      : null;
+    // Guard: never publish a text-only promo post. If the image blob upload
+    // failed, abort so the workflow retries on the next scheduled cycle
+    // instead of publishing a bare-text promo.
+    if (!imageBlob) {
+      console.error('post-promo: image blob upload failed — aborting post to prevent plain-text promo');
+      return Response.json({ error: 'Image upload failed — promo post aborted to prevent plain-text output' }, { status: 502 });
+    }
+    const embed: any = {
+      $type: 'app.bsky.embed.images',
+      images: [{ alt: altText, image: imageBlob }],
+    };
 
     // Create the post directly on the PDS (no local Post record)
     const record: any = {
