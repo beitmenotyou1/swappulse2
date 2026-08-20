@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react';
 // Grouped profile tab navigation. Renders a compact set of primary tabs inline
 // and tucks the remaining tabs into a "More" dropdown, so the row never
 // overflows horizontally — even when a profile has 12 sections.
-export default function ProfileTabNav({ tabs, activeTab, onChange, primaryCount = 5 }) {
+export default function ProfileTabNav({ tabs, activeTab, onChange, primaryCount = 5, accentHex }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -31,7 +31,7 @@ export default function ProfileTabNav({ tabs, activeTab, onChange, primaryCount 
     >
       {tab.icon}
       {tab.label}
-      {activeTab === tab.key && <span className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-primary" />}
+      {activeTab === tab.key && <span className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full" style={{ backgroundColor: accentHex || 'hsl(var(--primary))' }} />}
     </button>
   );
 
@@ -50,7 +50,7 @@ export default function ProfileTabNav({ tabs, activeTab, onChange, primaryCount 
           >
             More
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-            {overflowActive && <span className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-primary" />}
+            {overflowActive && <span className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full" style={{ backgroundColor: accentHex || 'hsl(var(--primary))' }} />}
           </button>
           {open && (
             <div role="menu" className="absolute right-0 top-full z-30 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-elevated">

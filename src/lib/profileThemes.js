@@ -28,6 +28,169 @@ export function isPlatformTheme(key) {
   return !!(PROFILE_THEMES.find((th) => th.key === key)?.platform);
 }
 
+// Per-theme immersive configuration: tab set + order, header variant, accent
+// colour, and optional container class. Each theme fully reshapes the profile
+// — header style, tab set, and content layout — via ImmersiveProfile +
+// ThemeHeader + ThemeTabContent. Owner customisation (section_order,
+// hidden_sections) applies within each theme's tab set; tabs not in the
+// theme's set are ignored.
+export const THEME_CONFIGS = {
+  default: {
+    label: 'SwapPulse',
+    accentHex: '#6d4aff',
+    headerVariant: 'default',
+    containerClass: '',
+    tabs: [
+      { key: 'About', label: 'About' },
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Journey', label: 'Journey' },
+      { key: 'Hub', label: 'Hub' },
+      { key: 'Activity', label: 'Activity' },
+      { key: 'Binder', label: 'Binder' },
+      { key: 'Collection', label: 'Collection' },
+      { key: 'Trades', label: 'Trades' },
+      { key: 'Achievements', label: 'Achievements' },
+      { key: 'Reputation', label: 'Reputation' },
+      { key: 'Following', label: 'Following' },
+      { key: 'Journals', label: 'Journals' },
+      { key: 'Podcasts', label: 'Podcasts' },
+    ],
+  },
+  vintage: {
+    label: 'Vintage',
+    accentHex: '#92400e',
+    headerVariant: 'vintage',
+    containerClass: '',
+    tabs: [
+      { key: 'About', label: 'About' },
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Binder', label: 'Binder' },
+      { key: 'Trades', label: 'Trades' },
+    ],
+  },
+  competitive: {
+    label: 'Competitive',
+    accentHex: '#3b82f6',
+    headerVariant: 'competitive',
+    containerClass: 'dark bg-slate-900',
+    tabs: [
+      { key: 'About', label: 'Stats' },
+      { key: 'Achievements', label: 'Achievements' },
+      { key: 'Leaderboard', label: 'Leaderboard' },
+      { key: 'TradeStats', label: 'Trade Stats' },
+      { key: 'Reputation', label: 'Reputation' },
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Trades', label: 'Trades' },
+    ],
+  },
+  shiny: {
+    label: 'Shiny',
+    accentHex: '#fbbf24',
+    headerVariant: 'shiny',
+    containerClass: '',
+    tabs: [
+      { key: 'About', label: 'Showcase' },
+      { key: 'Achievements', label: 'Achievements' },
+      { key: 'Rewards', label: 'Rewards' },
+      { key: 'Milestones', label: 'Milestones' },
+      { key: 'Binder', label: 'Binder' },
+      { key: 'Posts', label: 'Posts' },
+    ],
+  },
+  investment: {
+    label: 'Investment',
+    accentHex: '#059669',
+    headerVariant: 'investment',
+    containerClass: '',
+    tabs: [
+      { key: 'About', label: 'Overview' },
+      { key: 'Collection', label: 'Collection' },
+      { key: 'Binder', label: 'Binder' },
+      { key: 'Portfolio', label: 'Portfolio' },
+      { key: 'MarketWatch', label: 'Market' },
+      { key: 'Trades', label: 'Trades' },
+    ],
+  },
+  youtube: {
+    label: 'YouTube',
+    accentHex: '#FF0000',
+    headerVariant: 'youtube',
+    containerClass: '',
+    tabs: [
+      { key: 'Home', label: 'Home' },
+      { key: 'Videos', label: 'Videos' },
+      { key: 'Playlists', label: 'Playlists' },
+      { key: 'Channels', label: 'Channels' },
+      { key: 'About', label: 'About' },
+    ],
+  },
+  reddit: {
+    label: 'Reddit',
+    accentHex: '#FF4500',
+    headerVariant: 'reddit',
+    containerClass: '',
+    tabs: [
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Comments', label: 'Comments' },
+      { key: 'About', label: 'About' },
+    ],
+  },
+  x: {
+    label: 'X',
+    accentHex: '#0f172a',
+    headerVariant: 'x',
+    containerClass: '',
+    tabs: [
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Replies', label: 'Replies' },
+      { key: 'Media', label: 'Media' },
+      { key: 'Likes', label: 'Likes' },
+      { key: 'About', label: 'About' },
+    ],
+  },
+  facebook: {
+    label: 'Facebook',
+    accentHex: '#1877F2',
+    headerVariant: 'facebook',
+    containerClass: '',
+    tabs: [
+      { key: 'Posts', label: 'Posts' },
+      { key: 'About', label: 'About' },
+      { key: 'Friends', label: 'Friends' },
+      { key: 'Photos', label: 'Photos' },
+    ],
+  },
+  bluesky: {
+    label: 'Bluesky',
+    accentHex: '#0085ff',
+    headerVariant: 'bluesky',
+    containerClass: '',
+    tabs: [
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Replies', label: 'Replies' },
+      { key: 'Media', label: 'Media' },
+      { key: 'Likes', label: 'Likes' },
+      { key: 'About', label: 'About' },
+    ],
+  },
+  mastodon: {
+    label: 'Mastodon',
+    accentHex: '#6364ff',
+    headerVariant: 'mastodon',
+    containerClass: '',
+    tabs: [
+      { key: 'Posts', label: 'Posts' },
+      { key: 'Replies', label: 'Replies' },
+      { key: 'Media', label: 'Media' },
+      { key: 'About', label: 'About' },
+    ],
+  },
+};
+
+export function getThemeConfig(key) {
+  return THEME_CONFIGS[key] || THEME_CONFIGS.default;
+}
+
 // Default per-field visibility for personal-info and trade-detail fields.
 export const DEFAULT_FIELD_VISIBILITY = {
   bio: 'public',

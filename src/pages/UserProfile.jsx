@@ -20,7 +20,7 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
-import ProfileThemeView from '@/components/profile/ProfileThemeView';
+import ImmersiveProfile from '@/components/profile/ImmersiveProfile';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
@@ -155,121 +155,57 @@ export default function UserProfile() {
 
   return (
     <div>
-      <ProfileHeader
-        banner={profile?.header}
-        bannerHeight="h-28 sm:h-32"
-        bannerGradient={themeGradient(profileConfig?.theme)}
-        avatarOverlap={isExternal ? 'mt-2' : '-mt-10 sm:-mt-12'}
-        backLink={
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
-            <ArrowLeft className="h-4 w-4" /> {t('userProfile.back')}
-          </Link>
-        }
-        externalBanner={isExternal && <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} />}
-        avatar={<Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-background" />}
-        name={profile?.name || 'Collector'}
-        badges={
-          <>
-            <TrustedTraderBadge did={subjectDid} size="md" />
-            {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
-            {!isExternal && <FriendsBadge isFriend={isFriend} />}
-          </>
-        }
-        handleNode={
-          <ProfileHandle
-            bskyHandle={profile?.bsky_handle}
-            username={profile?.username}
-            did={profile?.did}
-            verified={profile?.handle_verified}
-            syncedFromBsky={profile?.remote_synced}
-          />
-        }
-        metricsNode={
-          <ProfileMetricsBar
-            followers={profile?.followers_count || 0}
-            following={profile?.follows_count || 0}
-            posts={profile?.posts_count || posts.length}
-          />
-        }
-        description={profile?.description && <RichText text={profile.description} className="text-sm" />}
-        actions={
-          <>
-            <FollowBellButton
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+      ) : (
+        <ImmersiveProfile
+          theme={profileConfig?.theme || 'default'}
+          isOwner={false}
+          did={subjectDid}
+          profile={profile}
+          config={profileConfig}
+          posts={filterPosts(posts)}
+          isExternal={isExternal}
+          actions={
+            <>
+              <FollowBellButton
+                subjectDid={subjectDid}
+                subjectName={profile?.name}
+                subjectHandle={profile?.bsky_handle || profile?.username}
+                subjectAvatar={profile?.avatar}
+              />
+              <SubscribeToWritingButton authorDid={subjectDid} />
+              <MessageButton
+                targetDid={subjectDid}
+                targetName={profile?.name}
+                targetHandle={profile?.bsky_handle || profile?.username}
+                targetAvatar={profile?.avatar}
+              />
+            </>
+          }
+          extra={!isExternal && (
+            <AddFriendLink
               subjectDid={subjectDid}
               subjectName={profile?.name}
               subjectHandle={profile?.bsky_handle || profile?.username}
-              subjectAvatar={profile?.avatar}
             />
-            <SubscribeToWritingButton authorDid={subjectDid} />
-            <MessageButton
-              targetDid={subjectDid}
-              targetName={profile?.name}
-              targetHandle={profile?.bsky_handle || profile?.username}
-              targetAvatar={profile?.avatar}
-            />
-          </>
-        }
-        extra={!isExternal && (
-          <AddFriendLink
-            subjectDid={subjectDid}
-            subjectName={profile?.name}
-            subjectHandle={profile?.bsky_handle || profile?.username}
-          />
-        )}
-      />
-
-      <div className="px-4">
-        <ProfileTabNav tabs={tabs} activeTab={tab} onChange={setTab} primaryCount={4} />
-
-        <div className="mt-4 space-y-4">
-          {!isExternal && <ReputationSummary did={subjectDid} />}
-          {tab === 'About' ? (
-            <ProfileThemeView
-              theme={profileConfig?.theme || 'default'}
-              data={profileConfig?.personal}
-              blockOrder={profileConfig?.block_order}
-              did={subjectDid}
-              profile={{ name: profile?.name, avatar: profile?.avatar, handle: profile?.bsky_handle || profile?.username, followers: profile?.followers_count || 0, following: profile?.follows_count || 0, description: profile?.description }}
-              posts={posts}
-            />
-          ) : tab === 'Journey' ? (
-            <MilestonesTimeline milestones={profileConfig?.personal?.milestones || []} />
-          ) : tab === 'Hub' ? (
-            <EngagementHub did={subjectDid} />
-          ) : tab === 'Activity' ? (
-            isExternal ? (
-              <div className="py-10 text-center text-sm text-muted-foreground">
-                <p>{t('userProfile.noOnSiteActivity')}</p>
-                <a href={`https://bsky.app/profile/${subjectDid}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
-                  {t('userProfile.viewOnBluesky')} <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            ) : (
-              <ActivityTab did={subjectDid} />
-            )
-          ) : tab === 'Trades' ? (
-            isExternal ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.tradeHistoryMembers')}</p>
-            ) : (
-              <TradeHistoryTab did={subjectDid} permittedFields={profileConfig?.tradeFields} />
-            )
-          ) : tab === 'Collections' ? (
-            isExternal ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.sharedCollectionsMembers')}</p>
-            ) : (
-              <SharedCollectionsTab did={subjectDid} />
-            )
-          ) : loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-          ) : filterPosts(posts).length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
-              {isExternal ? t('userProfile.noPostsBluesky') : t('userProfile.noPostsYet')}
-            </p>
-          ) : (
-            filterPosts(posts).map((p) => <PostCard key={p.id} post={p} />)
           )}
-        </div>
-      </div>
+          badges={
+            <>
+              <TrustedTraderBadge did={subjectDid} size="md" />
+              {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
+              {!isExternal && <FriendsBadge isFriend={isFriend} />}
+            </>
+          }
+          backLink={
+            <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+              <ArrowLeft className="h-4 w-4" /> {t('userProfile.back')}
+            </Link>
+          }
+          externalBanner={isExternal && <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} />}
+          visitorExtras={{ tradeFields: profileConfig?.tradeFields }}
+        />
+      )}
     </div>
   );
 }

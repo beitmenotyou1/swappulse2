@@ -22,7 +22,7 @@ import LiveCountdownBadge from '@/components/profile/LiveCountdownBadge';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import ProfileEditorModal from '@/components/profile/ProfileEditorModal';
-import ProfileThemeView from '@/components/profile/ProfileThemeView';
+import ImmersiveProfile from '@/components/profile/ImmersiveProfile';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
@@ -154,141 +154,59 @@ export default function Profile() {
 
   return (
     <div>
-      <ProfileHeader
-        banner={merged?.header || user?.header}
-        bannerHeight="h-32 sm:h-40"
-        bannerGradient={themeGradient(config?.theme)}
-        avatar={
-          <LiveAvatar
-            did={did}
-            name={merged?.name || user?.display_name || user?.full_name}
-            src={merged?.avatar || user?.avatar}
-            size={96}
-            className="ring-4 ring-background"
-          />
-        }
-        avatarBadge={liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
-        name={merged?.name || user?.display_name || user?.full_name || t('profile.collector')}
-        handleNode={
-          <ProfileHandle
-            bskyHandle={user?.bsky_handle}
-            username={user?.username}
-            did={did}
-            verified={user?.handle_verified}
-            syncedFromBsky={!!merged?.remote_synced}
-          />
-        }
-        metricsNode={
-          <ProfileMetricsBar
-            followers={merged?.followers_count || 0}
-            following={merged?.follows_count || 0}
-            posts={myPosts.length}
-          />
-        }
-        description={(merged?.description || user?.description) && (
-          <RichText text={merged?.description || user.description} className="text-sm" />
-        )}
-        reputationNode={repAvg && (
-          <span className="flex items-center gap-1 text-sm text-accent">
-            <Star className="h-3.5 w-3.5 fill-current" />
-            {t('profile.trustedTrader')} · {repAvg}★ ({reputation.length})
-          </span>
-        )}
-        actions={
-          <>
-            <button
-              onClick={() => setShowEdit(true)}
-              className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
-            >
-              {t('profile.editProfile')}
-            </button>
-            <button
-              onClick={() => setShowCustomize(true)}
-              className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Customize
-            </button>
-            <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
-          </>
-        }
-        extra={
-          <>
-            <div><NotificationToggle /></div>
-            <div className="flex gap-4 text-sm">
-              <span><b>{myCollection.length}</b> <span className="text-muted-foreground">{t('page.collection.stats.cards')}</span></span>
-              <span><b>{myTrades.length}</b> <span className="text-muted-foreground">{t('profile.tab.trades')}</span></span>
-            </div>
-          </>
-        }
-      />
-
-      <div className="px-4">
-        <ProfileTabNav tabs={tabs} activeTab={tab} onChange={setTab} primaryCount={5} />
-
-        {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-        ) : tab === 'About' ? (
-          <ProfileThemeView
-            theme={config?.theme || 'default'}
-            data={config}
-            blockOrder={config?.block_order}
-            did={did}
-            isOwner
-            profile={{ name: merged?.name || user?.full_name, avatar: merged?.avatar || user?.avatar, handle: user?.bsky_handle || user?.username, followers: merged?.followers_count || 0, following: merged?.follows_count || 0, description: merged?.description || user?.description }}
-            posts={myPosts}
-          />
-        ) : tab === 'Journey' ? (
-          <div className="py-4"><MilestonesTimeline milestones={config?.milestones || []} /></div>
-        ) : tab === 'Hub' ? (
-          <div className="py-4"><EngagementHub did={did} /></div>
-        ) : tab === 'Posts' ? (
-          myPosts.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.noPostsYet')}</p>
-          ) : (
-            myPosts.map((p) => <PostCard key={p.id} post={p} />)
-          )
-        ) : tab === 'Activity' ? (
-          <ActivityTab did={did} />
-        ) : tab === 'Binder' ? (
-          <div className="p-4">
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
-              {binderCards.map((c) => (
-                <Link key={c.id} to={`/card/${c.card_id}`}>
-                  <img src={cardImageUrl(c.card_image)} alt={c.card_name} className="aspect-[3/4] w-full rounded-lg object-cover" />
-                </Link>
-              ))}
-              {binderCards.length === 0 && <p className="col-span-3 py-10 text-center text-sm text-muted-foreground">{t('profile.binderEmpty')}</p>}
-            </div>
-          </div>
-        ) : tab === 'Collection' ? (
-          <div className="p-4">
-            <p className="mb-3 text-sm text-muted-foreground">{t('profile.portfolioValue')} <b className="text-foreground">{formatPrice(portfolioValue)}</b></p>
-            <NetworkFeedSection type="collections" did={did} limit={24} title={t('profile.myCollectionNetwork')} />
-          </div>
-        ) : tab === 'Trades' ? (
-          <div className="p-4">
-            <NetworkFeedSection type="trades" did={did} limit={20} title={t('profile.myTradesNetwork')} />
-          </div>
-        ) : tab === 'Trade Activity' ? (
-          <TradeActivityTab />
-        ) : tab === 'Reputation' ? (
-          <ReputationDashboard reputation={reputation} trades={myTrades} />
-        ) : tab === 'Following' ? (
-          <FollowingTab />
-        ) : tab === 'Journals' ? (
-          <JournalsTab journals={myJournals} collection={myCollection} onSaved={load} />
-        ) : tab === 'Podcasts' ? (
-          <PodcastsTab did={did} />
-        ) : tab === 'Cross-Posting' ? (
-          <CrossPostTab />
-        ) : (
-          <div className="p-4 space-y-4">
-            <DomainHandleCard />
-            <WeeklyDigestToggle />
-            <DataPrivacy />
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+      ) : (
+        <ImmersiveProfile
+          theme={config?.theme || 'default'}
+          isOwner
+          did={did}
+          profile={{
+            name: merged?.name || user?.display_name || user?.full_name,
+            avatar: merged?.avatar || user?.avatar,
+            header: merged?.header || user?.header,
+            bsky_handle: user?.bsky_handle,
+            username: user?.username,
+            handle_verified: user?.handle_verified,
+            remote_synced: !!merged?.remote_synced,
+            description: merged?.description || user?.description,
+            followers_count: merged?.followers_count || 0,
+            follows_count: merged?.follows_count || 0,
+            posts_count: myPosts.length,
+          }}
+          config={config}
+          posts={myPosts}
+          collection={myCollection}
+          trades={myTrades}
+          reputation={reputation}
+          journals={myJournals}
+          liveSpace={liveSpace}
+          actions={
+            <>
+              <button onClick={() => setShowEdit(true)} className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary">{t('profile.editProfile')}</button>
+              <button onClick={() => setShowCustomize(true)} className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"><SlidersHorizontal className="h-3.5 w-3.5" /> Customize</button>
+              <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
+            </>
+          }
+          extra={
+            <>
+              <div><NotificationToggle /></div>
+              <div className="flex gap-4 text-sm">
+                <span><b>{myCollection.length}</b> <span className="text-muted-foreground">{t('page.collection.stats.cards')}</span></span>
+                <span><b>{myTrades.length}</b> <span className="text-muted-foreground">{t('profile.tab.trades')}</span></span>
+              </div>
+            </>
+          }
+          reputationNode={repAvg && (
+            <span className="flex items-center gap-1 text-sm text-accent">
+              <Star className="h-3.5 w-3.5 fill-current" />
+              {t('profile.trustedTrader')} · {repAvg}★ ({reputation.length})
+            </span>
+          )}
+          avatarBadge={liveSpace && <LiveCountdownBadge autoEndAt={liveSpace.auto_end_at} />}
+          onReload={load}
+        />
+      )}
 
       {showGoLive && (
         <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />

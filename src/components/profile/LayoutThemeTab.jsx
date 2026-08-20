@@ -48,7 +48,7 @@ export default function LayoutThemeTab({ draft, update, sectionLabels }) {
             </button>
           ))}
         </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">Gradient themes restyle the header. Platform themes restructure the About view into that platform's layout.</p>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">Each theme fully reshapes the profile — header, tabs, and content layout. Native themes curate different sections; platform themes replicate that platform's page structure.</p>
       </div>
 
       <div>
