@@ -8,6 +8,37 @@ import {
   recordTotpFailedAttempt,
   resetTotpRateLimit,
 } from '../../shared/totp.ts';
+import { generateBackupCodes, persistBackupCodes } from '../../shared/backupCodes.ts';
+
+// Rate limit for the 'check' mode (2FA status enumeration prevention).
+// 10 checks per 15-minute window per email.
+const CHECK_RATE_LIMIT_MAX = 10;
+const CHECK_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const CHECK_RATE_LIMIT_KEY = (email: string) => `2fa-check:${email}`;
+
+async function getCheckRateLimit(svc: any, email: string) {
+  const existing = await svc.entities.AuthRateLimit
+    .filter({ email: CHECK_RATE_LIMIT_KEY(email) }, '-created_date', 1).catch(() => []);
+  return existing[0] || null;
+}
+
+async function recordCheckAttempt(svc: any, email: string): Promise<number> {
+  const key = CHECK_RATE_LIMIT_KEY(email);
+  const now = new Date().toISOString();
+  const existing = await getCheckRateLimit(svc, email);
+  if (!existing) {
+    await svc.entities.AuthRateLimit.create({ email: key, count: 1, window_start: now, last_request_at: now });
+    return 1;
+  }
+  const elapsed = Date.now() - new Date(existing.window_start).getTime();
+  if (elapsed >= CHECK_RATE_LIMIT_WINDOW_MS) {
+    await svc.entities.AuthRateLimit.update(existing.id, { count: 1, window_start: now, last_request_at: now });
+    return 1;
+  }
+  const newCount = (existing.count || 0) + 1;
+  await svc.entities.AuthRateLimit.update(existing.id, { count: newCount, last_request_at: now });
+  return newCount;
+}
 
 export default async function (req) {
   const base44 = createClientFromRequest(req);
@@ -16,16 +47,37 @@ export default async function (req) {
 
   try {
     if (mode === 'check') {
-      // Check if 2FA is required for an email (login flow, no auth needed)
+      // Check if 2FA is required for an email (login flow, no auth needed).
+      // Rate-limited to prevent 2FA-status enumeration.
       const email = String(body.email || '').toLowerCase().trim();
       if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
+
+      const limit = await getCheckRateLimit(base44.asServiceRole, email);
+      if (limit) {
+        const elapsed = Date.now() - new Date(limit.window_start).getTime();
+        if (limit.count >= CHECK_RATE_LIMIT_MAX && elapsed < CHECK_RATE_LIMIT_WINDOW_MS) {
+          const retryAfterSec = Math.ceil((CHECK_RATE_LIMIT_WINDOW_MS - elapsed) / 1000);
+          return Response.json({ error: 'Too many requests. Try again later.', retry_after: retryAfterSec }, { status: 429 });
+        }
+      }
+      await recordCheckAttempt(base44.asServiceRole, email);
+
       const users = await base44.asServiceRole.entities.User.filter({ email });
       if (users.length === 0) return Response.json({ requires_2fa: false });
-      return Response.json({ requires_2fa: !!users[0].two_factor_enabled });
+      const u = users[0];
+      return Response.json({
+        requires_2fa: !!(u.two_factor_enabled || u.webauthn_enabled),
+        available_methods: [
+          ...(u.two_factor_enabled ? ['totp'] : []),
+          ...(u.webauthn_enabled ? ['webauthn'] : []),
+          'backup_code',
+        ],
+      });
     }
 
     if (mode === 'setup') {
-      // Verify code against provided secret, then save (auth required)
+      // Verify code against provided secret, then save (auth required).
+      // Also generates one-time backup recovery codes on first enable.
       const user = await base44.auth.me();
       if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
       const { secret, code } = body;
@@ -33,7 +85,19 @@ export default async function (req) {
       const expected = await generateTotp(secret);
       if (!timingSafeEqual(code, expected)) return Response.json({ verified: false, error: 'Invalid code' });
       await base44.auth.updateMe({ two_factor_enabled: true, two_factor_secret: secret });
-      return Response.json({ verified: true });
+
+      // Generate backup codes if the user doesn't already have any
+      const existingCodes = await base44.asServiceRole.entities.BackupCode
+        .filter({ used: false }, '-created_date', 100)
+        .catch(() => []);
+      const hasOwnCodes = (existingCodes || []).some((c: any) => c.created_by_id === user.id);
+      let backup_codes: string[] = [];
+      if (!hasOwnCodes) {
+        backup_codes = generateBackupCodes();
+        await persistBackupCodes(base44.asServiceRole, user.id, backup_codes);
+      }
+
+      return Response.json({ verified: true, backup_codes });
     }
 
     // Default: verify TOTP for login (no auth, lookup by email)
