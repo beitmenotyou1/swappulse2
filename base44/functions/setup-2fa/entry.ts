@@ -3,36 +3,6 @@ import QRCode from 'npm:qrcode@1.5.4';
 
 const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
-// Rate limit for setup-2fa (secret generation spam prevention).
-// 5 requests per 15-minute window per user.
-const SETUP_RATE_LIMIT_MAX = 5;
-const SETUP_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const SETUP_RATE_LIMIT_KEY = (userId: string) => `2fa-setup:${userId}`;
-
-async function getSetupRateLimit(svc: any, userId: string) {
-  const existing = await svc.entities.AuthRateLimit
-    .filter({ email: SETUP_RATE_LIMIT_KEY(userId) }, '-created_date', 1).catch(() => []);
-  return existing[0] || null;
-}
-
-async function recordSetupAttempt(svc: any, userId: string): Promise<number> {
-  const key = SETUP_RATE_LIMIT_KEY(userId);
-  const now = new Date().toISOString();
-  const existing = await getSetupRateLimit(svc, userId);
-  if (!existing) {
-    await svc.entities.AuthRateLimit.create({ email: key, count: 1, window_start: now, last_request_at: now });
-    return 1;
-  }
-  const elapsed = Date.now() - new Date(existing.window_start).getTime();
-  if (elapsed >= SETUP_RATE_LIMIT_WINDOW_MS) {
-    await svc.entities.AuthRateLimit.update(existing.id, { count: 1, window_start: now, last_request_at: now });
-    return 1;
-  }
-  const newCount = (existing.count || 0) + 1;
-  await svc.entities.AuthRateLimit.update(existing.id, { count: newCount, last_request_at: now });
-  return newCount;
-}
-
 function base32Encode(buffer: Uint8Array): string {
   let result = '';
   let bits = 0;
