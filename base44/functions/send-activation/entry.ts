@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
     if (!targetEmail) return Response.json({ error: 'Email is required' }, { status: 400 });
 
     const svc = base44.asServiceRole;
-    const users = await svc.entities.User.list('-created_date', 500);
-    const u = users.find((x) => (x.email || '').toLowerCase() === targetEmail);
+    const matches = await svc.entities.User.filter({ email: targetEmail }, '-created_date', 1);
+    const u = matches[0];
     if (!u) return Response.json({ error: 'No account found for that email' }, { status: 404 });
     if (u.is_verified) return Response.json({ ok: true, alreadyActivated: true });
 
