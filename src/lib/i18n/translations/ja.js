@@ -162,7 +162,7 @@ const ja = {
   'moderation.title': 'モデレーターダッシュボード', 'moderation.subtitle': '報告された投稿をレビューし、モデレーション決定を適用', 'moderation.refresh': '更新',
   'moderation.tab.posts': '報告された投稿', 'moderation.tab.disputes': 'トレード紛争', 'moderation.tab.enforcement': 'アカウント制裁', 'moderation.tab.bots': 'ボット保護',
   'moderation.hideFilters': 'フィルターを隠す', 'moderation.showFilters': 'フィルターを表示',
-  'share.title': '共有', 'share.editMessage': 'メッセージを編集', 'share.copyLink': 'リンクをコピー', 'share.copied': 'コピーしました', 'share.linkCopied': 'リンクをコピーしました', 'share.pasteHint': 'アプリにメッセージを貼り付けてください', 'share.share': '共有', 'share.nativeShare': 'デバイスで共有', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': 'メール',
+  'share.title': '共有', 'share.editMessage': 'メッセージを編集', 'share.copyLink': 'リンクをコピー', 'share.copied': 'コピーしました', 'share.linkCopied': 'リンクをコピーしました', 'share.pasteHint': 'アプリにメッセージを貼り付けてください', 'share.share': '共有', 'share.nativeShare': 'デバイスで共有', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': 'メール', 'share.tiktok': 'TikTok',
 };
 
 export default ja;

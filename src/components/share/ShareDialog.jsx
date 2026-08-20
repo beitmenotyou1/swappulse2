@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { WhatsAppIcon, SignalIcon, DiscordIcon, MastodonIcon, BlueskyIcon, NostrIcon, FacebookIcon, XIcon, RedditIcon, PinterestIcon, SnapchatIcon, InstagramIcon, TelegramIcon, LinkedInIcon, TumblrIcon, EmailIcon } from './PlatformIcons';
+import { WhatsAppIcon, SignalIcon, DiscordIcon, MastodonIcon, BlueskyIcon, NostrIcon, FacebookIcon, XIcon, RedditIcon, PinterestIcon, SnapchatIcon, InstagramIcon, TikTokIcon, TelegramIcon, LinkedInIcon, TumblrIcon, EmailIcon } from './PlatformIcons';
 
 // Build a language-tagged share URL for the current page.
 function buildShareUrl(locale) {
@@ -55,6 +55,8 @@ const PLATFORMS = [
     homeUrl: 'https://www.snapchat.com' },
   { id: 'instagram', labelKey: 'share.instagram', Icon: InstagramIcon, color: '#E4405F',
     homeUrl: 'https://www.instagram.com' },
+  { id: 'tiktok', labelKey: 'share.tiktok', Icon: TikTokIcon, color: '#000000',
+    homeUrl: 'https://www.tiktok.com' },
   { id: 'email', labelKey: 'share.email', Icon: EmailIcon, color: '#6B7280',
     shareUrl: (msg, url, title) => `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(msg)}` },
 ];

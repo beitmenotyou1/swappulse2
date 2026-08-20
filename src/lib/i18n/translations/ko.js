@@ -162,7 +162,7 @@ const ko = {
   'moderation.title': '중재자 대시보드', 'moderation.subtitle': '신고된 게시물 검토 및 중재 결정 적용', 'moderation.refresh': '새로고침',
   'moderation.tab.posts': '신고된 게시물', 'moderation.tab.disputes': '거래 분쟁', 'moderation.tab.enforcement': '계정 제재', 'moderation.tab.bots': '봇 보호',
   'moderation.hideFilters': '필터 숨기기', 'moderation.showFilters': '필터 표시',
-  'share.title': '공유', 'share.editMessage': '메시지 편집', 'share.copyLink': '링크 복사', 'share.copied': '복사됨', 'share.linkCopied': '링크가 복사되었습니다', 'share.pasteHint': '앱에 메시지를 붙여넣으세요', 'share.share': '공유', 'share.nativeShare': '기기로 공유', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': '이메일',
+  'share.title': '공유', 'share.editMessage': '메시지 편집', 'share.copyLink': '링크 복사', 'share.copied': '복사됨', 'share.linkCopied': '링크가 복사되었습니다', 'share.pasteHint': '앱에 메시지를 붙여넣으세요', 'share.share': '공유', 'share.nativeShare': '기기로 공유', 'share.whatsapp': 'WhatsApp', 'share.signal': 'Signal', 'share.discord': 'Discord', 'share.mastodon': 'Mastodon', 'share.bluesky': 'Bluesky', 'share.nostr': 'Nostr', 'share.facebook': 'Facebook', 'share.x': 'X', 'share.reddit': 'Reddit', 'share.pinterest': 'Pinterest', 'share.snapchat': 'Snapchat', 'share.instagram': 'Instagram', 'share.telegram': 'Telegram', 'share.linkedin': 'LinkedIn', 'share.tumblr': 'Tumblr', 'share.email': '이메일', 'share.tiktok': 'TikTok',
 };
 
 export default ko;
