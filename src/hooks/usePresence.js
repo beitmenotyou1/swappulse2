@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 
 // A collector is "online" if their last heartbeat was within this window.
-const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
 // Single source of truth for live presence: emits a heart-beat every 30s and
 // maintains the list of currently-online collectors, refreshed on a schedule
