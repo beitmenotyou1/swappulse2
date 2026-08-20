@@ -100,7 +100,11 @@ async function resolvePdsUrl(did: string): Promise<string> {
   }
   if (did.startsWith('did:web:')) {
     const domain = did.replace('did:web:', '');
-    const res = await fetch(`https://${domain}/.well-known/did.json`, { redirect: 'follow' });
+    // Validate the did:web domain before any outbound request to prevent
+    // SSRF (internal IPs / cloud metadata endpoints). redirect: 'manual'
+    // blocks redirect-based SSRF bypasses.
+    const didWebUrl = validatePdsUrl(`https://${domain}/.well-known/did.json`);
+    const res = await fetch(didWebUrl, { redirect: 'manual' });
     if (!res.ok) throw new Error('Could not resolve did:web DID.');
     const doc = await res.json();
     const service = (doc.service || []).find(
