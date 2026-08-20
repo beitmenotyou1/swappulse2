@@ -19,22 +19,25 @@ export default async function(req: Request): Promise<Response> {
       description,
     };
 
+    const escTitle = escapeHtml(title);
+    const escPath = escapeHtml(path);
+    const escOrigin = escapeHtml(origin);
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>${title}</title>
+<title>${escTitle}</title>
 <meta name="description" content="${description}" />
-<meta property="og:title" content="${title}" />
+<meta property="og:title" content="${escTitle}" />
 <meta property="og:description" content="${description}" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="${origin}${path}" />
+<meta property="og:url" content="${escOrigin}${escPath}" />
 <meta name="twitter:card" content="summary_large_image" />
-<link rel="canonical" href="${origin}${path}" />
+<link rel="canonical" href="${escOrigin}${escPath}" />
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>
 <body>
-<h1>${title}</h1>
+<h1>${escTitle}</h1>
 <p>${description}</p>
 </body>
 </html>`;
@@ -66,6 +69,15 @@ function getAppUrl(req: Request): string {
   }
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
+}
+
+function escapeHtml(input: string): string {
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function sanitizePath(input: string): string {
