@@ -41,20 +41,18 @@ export const DEFAULT_SETTINGS = {
   },
 };
 
+// The nine SwapPulse-supported languages, aligned to TCGDex languages.
+// These are the only options offered in language selectors across the site.
 export const LANGUAGES = [
-  { code: 'en-GB', name: 'English (UK)' },
-  { code: 'en-US', name: 'English (US)' },
+  { code: 'en-GB', name: 'English' },
   { code: 'es-ES', name: 'Español' },
   { code: 'fr-FR', name: 'Français' },
   { code: 'de-DE', name: 'Deutsch' },
   { code: 'it-IT', name: 'Italiano' },
-  { code: 'pt-BR', name: 'Português (BR)' },
+  { code: 'pt-BR', name: 'Português' },
   { code: 'ja-JP', name: '日本語' },
   { code: 'zh-CN', name: '中文' },
   { code: 'ko-KR', name: '한국어' },
-  { code: 'ar-SA', name: 'العربية' },
-  { code: 'hi-IN', name: 'हिन्दी' },
-  { code: 'ru-RU', name: 'Русский' },
 ];
 
 function deepMerge(a, b) {

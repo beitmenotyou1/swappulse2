@@ -15,11 +15,17 @@ import ja from './translations/ja';
 import zh from './translations/zh';
 import ko from './translations/ko';
 
+// The nine SwapPulse-supported languages (aligned to TCGDex languages).
+// Only these appear in language selectors and are accepted as interface locales.
 export const SUPPORTED_LOCALES = [
-  'en-GB', 'en-US', 'es-ES', 'fr-FR', 'de-DE', 'it-IT', 'pt-BR',
-  'ja-JP', 'zh-CN', 'ko-KR', 'ar-SA', 'hi-IN', 'ru-RU',
+  'en-GB', 'es-ES', 'fr-FR', 'de-DE', 'it-IT', 'pt-BR',
+  'ja-JP', 'zh-CN', 'ko-KR',
 ];
 
+// LOCALE_TO_TCGDEX maps every locale (including legacy ones) to a TCGDex code.
+// Legacy locales (en-US, ar-SA, hi-IN, ru-RU) are kept here so previously-stored
+// preferences still resolve to a valid TCGDex language, but they are no longer
+// offered in selectors.
 export const LOCALE_TO_TCGDEX = {
   'en-GB': 'en', 'en-US': 'en', 'es-ES': 'es', 'fr-FR': 'fr', 'de-DE': 'de',
   'it-IT': 'it', 'pt-BR': 'pt', 'ja-JP': 'jp', 'zh-CN': 'zh', 'ko-KR': 'ko',
@@ -30,6 +36,6 @@ export const translations = {
   'en-GB': en, 'en-US': en,
   'fr-FR': fr, 'es-ES': es, 'de-DE': de, 'it-IT': it, 'pt-BR': pt,
   'ja-JP': ja, 'zh-CN': zh, 'ko-KR': ko,
-  // ar-SA, hi-IN, ru-RU fall back to en (not TCGDex languages)
+  // Legacy locales fall back to en (not TCGDex languages)
   'ar-SA': en, 'hi-IN': en, 'ru-RU': en,
 };
