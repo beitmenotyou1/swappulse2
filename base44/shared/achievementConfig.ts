@@ -5,8 +5,8 @@
 // (Base44 function bundles can't import a JSON file from outside the shared
 // module, so the config is a typed const here rather than a separate .json.)
 
-export const ACHIEVEMENT_CONFIG_VERSION = '1.0.0';
-export const ACHIEVEMENT_CONFIG_LAST_UPDATED = '2026-08-12T00:00:00Z';
+export const ACHIEVEMENT_CONFIG_VERSION = '1.1.0';
+export const ACHIEVEMENT_CONFIG_LAST_UPDATED = '2026-08-20T00:00:00Z';
 
 export const ACHIEVEMENT_ENTRIES: any[] = [
   {
@@ -40,9 +40,9 @@ export const ACHIEVEMENT_ENTRIES: any[] = [
     visual: { medallion_color: '#F5B700', glow_color: '#8B5CF6', glow_opacity: 0.35 },
   },
   {
-    id: 'trusted_trader', name: 'Trusted Trader', description: 'Received 50+ vouches from distinct traders',
+    id: 'trusted_trader', name: 'Trusted Trader', description: '50+ vouches, 25+ completed trades, and 95%+ positive feedback',
     tier: 'platinum', category: 'reputation', proof_type: 'weighted_vouches',
-    proof_requirements: { record_type: 'org.swappulse.vouch', minimum_distinct_vouchers: 50, exclude_revoked_months: 6, min_voucher_trust_score: 20, allow_self_vouch: false },
+    proof_requirements: { record_type: 'org.swappulse.vouch', minimum_distinct_vouchers: 50, exclude_revoked_months: 6, min_voucher_trust_score: 20, allow_self_vouch: false, minimum_completed_trades: 25, minimum_positive_feedback_ratio: 0.95 },
     visual: { medallion_color: '#F5B700', glow_color: '#8B5CF6', glow_opacity: 0.4 },
   },
   {

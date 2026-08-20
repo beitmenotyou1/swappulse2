@@ -164,19 +164,38 @@ function evalWeightedVouches(cfg: any, input: EngineInput): EvalResult {
   const qualifyingVouchers = minVoucherTrust > 0
     ? [...distinct].filter((d) => (trustScores[d] || 0) >= minVoucherTrust)
     : [...distinct];
-  const qualified = qualifyingVouchers.length >= (req.minimum_distinct_vouchers || 0) && recentlyRevoked.length === 0;
+  const vouchesQualified = qualifyingVouchers.length >= (req.minimum_distinct_vouchers || 0) && recentlyRevoked.length === 0;
+
+  // Merged criteria: completed trades (TradingFeedback records) + positive
+  // feedback ratio. A feedback rating >= 4 counts as positive.
+  const minTrades = req.minimum_completed_trades || 0;
+  const minPositiveRatio = req.minimum_positive_feedback_ratio || 0;
+  const feedback = input.feedback || [];
+  const tradeCount = feedback.length;
+  const positiveCount = feedback.filter((f: any) => (f.rating || 0) >= 4).length;
+  const positiveRatio = tradeCount > 0 ? positiveCount / tradeCount : 0;
+  const tradesQualified = tradeCount >= minTrades;
+  const feedbackQualified = minPositiveRatio === 0 || positiveRatio >= minPositiveRatio;
+
+  const qualified = vouchesQualified && tradesQualified && feedbackQualified;
+
   const proofRecords: ProofRecord[] = qualifyingVouchers.slice(0, 8).map((d) => ({
     uri: `at://${d}/org.swappulse.vouch`, cid: '', recordType: 'org.swappulse.vouch',
     verifiedAt: new Date().toISOString(),
   }));
   const belowThreshold = distinct.size - qualifyingVouchers.length;
+  const parts: string[] = [
+    `${qualifyingVouchers.length} distinct vouches with trust ≥ ${minVoucherTrust} (min ${req.minimum_distinct_vouchers}).`,
+  ];
+  if (belowThreshold > 0) parts.push(`${belowThreshold} vouch(es) below trust threshold.`);
+  parts.push(recentlyRevoked.length === 0
+    ? `No vouches revoked in the last ${req.exclude_revoked_months} months.`
+    : `${recentlyRevoked.length} vouch(es) revoked recently, disqualified.`);
+  if (minTrades > 0) parts.push(`${tradeCount} completed trade(s) with feedback (min ${minTrades}).`);
+  if (minPositiveRatio > 0) parts.push(`${(positiveRatio * 100).toFixed(1)}% positive feedback (${positiveCount}/${tradeCount}, min ${(minPositiveRatio * 100).toFixed(0)}%).`);
   return {
     key: cfg.id, qualified, metricValue: qualifyingVouchers.length, proofRecords,
-    proofSummary: `${qualifyingVouchers.length} distinct vouches with trust ≥ ${minVoucherTrust} (min ${req.minimum_distinct_vouchers}). ` +
-      (belowThreshold > 0 ? `${belowThreshold} vouch(es) below trust threshold. ` : '') +
-      (recentlyRevoked.length === 0
-        ? `No vouches revoked in the last ${req.exclude_revoked_months} months.`
-        : `${recentlyRevoked.length} vouch(es) revoked recently, disqualified.`),
+    proofSummary: parts.join(' '),
   };
 }
 

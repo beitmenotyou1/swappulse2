@@ -2,14 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import CommentComposer from './CommentComposer';
-import ModeratedComment from './ModeratedComment';
+import CommentNode from './CommentNode';
 import { MessageCircle, Loader2 } from 'lucide-react';
 
 export default function CommentThread({ cardId, cardName, cardImage }) {
   const { user } = useAuth();
   const [topLevel, setTopLevel] = useState([]);
-  const [repliesByParent, setRepliesByParent] = useState({});
-  const [replyToAuthor, setReplyToAuthor] = useState({});
+  const [childrenByParent, setChildrenByParent] = useState({});
   const [reactionsByPostId, setReactionsByPostId] = useState({});
   const [loading, setLoading] = useState(true);
   const [replyTarget, setReplyTarget] = useState(null);
@@ -23,52 +22,23 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
         100
       );
       const tops = posts.filter((p) => !p.reply_to);
-      // Build a children-by-parent map so we can collect ALL descendants of
-      // each top-level comment recursively (reply_to now points to the direct
-      // parent, not the top-level). The UI stays flat — all descendants render
-      // in one chronological list under the top-level comment.
-      const childrenByParent = {};
+      // Build a direct-children-by-parent map so CommentNode can render a
+      // recursively-nested tree (each reply indented under its direct parent).
+      const children = {};
       posts
         .filter((p) => p.reply_to)
         .forEach((p) => {
-          if (!childrenByParent[p.reply_to]) childrenByParent[p.reply_to] = [];
-          childrenByParent[p.reply_to].push(p);
+          if (!children[p.reply_to]) children[p.reply_to] = [];
+          children[p.reply_to].push(p);
         });
-      const collectDescendants = (parentId, acc = []) => {
-        (childrenByParent[parentId] || []).forEach((child) => {
-          acc.push(child);
-          collectDescendants(child.id, acc);
-        });
-        return acc;
-      };
-      // Lookup map for resolving the author of each reply's direct parent.
-      const postMap = {};
-      posts.forEach((p) => { postMap[p.id] = p; });
-      const replies = {};
-      const authorMap = {};
-      tops.forEach((top) => {
-        const descendants = collectDescendants(top.id).sort(
-          (a, b) => new Date(a.created_date) - new Date(b.created_date)
-        );
-        replies[top.id] = descendants;
-        descendants.forEach((d) => {
-          const parent = postMap[d.reply_to];
-          if (parent) {
-            authorMap[d.id] = {
-              name: parent.author_name || 'Collector',
-              handle: parent.author_handle || '',
-              id: parent.id,
-            };
-          }
-        });
-      });
-      // Sort: top-level oldest first (discussion order)
+      Object.values(children).forEach((arr) =>
+        arr.sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+      );
       tops.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
       setTopLevel(tops);
-      setRepliesByParent(replies);
-      setReplyToAuthor(authorMap);
+      setChildrenByParent(children);
 
-      // Batch-fetch reactions for all comments + replies (avoids N+1 per CommentReactions)
+      // Batch-fetch reactions for all comments + replies (avoids N+1)
       const allIds = posts.map((p) => p.id);
       let rxnMap = {};
       if (allIds.length > 0) {
@@ -90,8 +60,7 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
       setReactionsByPostId(rxnMap);
     } catch {
       setTopLevel([]);
-      setRepliesByParent({});
-      setReplyToAuthor({});
+      setChildrenByParent({});
       setReactionsByPostId({});
     } finally {
       setLoading(false);
@@ -110,7 +79,7 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
     return unsubscribe;
   }, [cardId, loadComments]);
 
-  const totalComments = topLevel.length + Object.values(repliesByParent).reduce((n, arr) => n + arr.length, 0);
+  const totalComments = topLevel.length + Object.values(childrenByParent).reduce((n, arr) => n + arr.length, 0);
 
   return (
     <div className="space-y-4">
@@ -141,19 +110,18 @@ export default function CommentThread({ cardId, cardName, cardImage }) {
       ) : (
         <div className="space-y-3">
           {topLevel.map((comment) => (
-            <ModeratedComment
+            <CommentNode
               key={comment.id}
               comment={comment}
-              replies={repliesByParent[comment.id] || []}
+              childrenByParent={childrenByParent}
+              depth={0}
               user={user}
               cardId={cardId}
               cardName={cardName}
               cardImage={cardImage}
-              onReply={(c) => setReplyTarget(c)}
+              onReply={setReplyTarget}
               onPosted={loadComments}
               reactionsByPostId={reactionsByPostId}
-              replyToAuthor={replyToAuthor}
-              topLevelId={comment.id}
             />
           ))}
         </div>
