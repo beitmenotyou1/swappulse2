@@ -59,7 +59,7 @@ export default async function (req: Request): Promise<Response> {
 
     const creds = await svc.entities.PdsCredential.list('-created_date', 10).catch(() => []);
     const consentMap = await getConsentMap(svc);
-    let reconciled = 0, created = 0, updated = 0, errors = 0, skipped = 0;
+    let reconciled = 0, created = 0, updated = 0, errors = 0, skipped = 0, deleted = 0;
     const perUser: any[] = [];
 
     for (const cred of creds) {
@@ -139,6 +139,25 @@ export default async function (req: Request): Promise<Response> {
               console.error('outbound-reconcile: record error', collection, e?.message || e);
             }
           }
+          // Tombstone PDS records whose local copy was deleted (delete backstop).
+          // Catches bulk deletes (e.g. expireStories) and any missed edit-site delete.
+          const localUris = new Set(local.map((r: any) => r.at_uri).filter(Boolean));
+          for (const [uri] of pdsByUri) {
+            if (localUris.has(uri)) continue;
+            const rkey = uri.split('/').pop();
+            try {
+              const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
+                body: JSON.stringify({ repo: session.did, collection, rkey }),
+              });
+              if (res.ok) { deleted++; reconciled++; userReconciled++; }
+              else { errors++; console.error('outbound-reconcile: deleteRecord failed', collection, res.status); }
+            } catch (e: any) {
+              errors++;
+              console.error('outbound-reconcile: deleteRecord error', collection, e?.message || e);
+            }
+          }
         } catch (e: any) {
           console.error('outbound-reconcile: collection error', collection, e?.message || e);
         }
@@ -146,7 +165,7 @@ export default async function (req: Request): Promise<Response> {
       perUser.push({ did: cred.did, reconciled: userReconciled });
     }
 
-    return Response.json({ reconciled, created, updated, errors, skipped, users: creds.length, perUser });
+    return Response.json({ reconciled, created, updated, deleted, errors, skipped, users: creds.length, perUser });
   } catch (error) {
     console.error('outbound-reconcile error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
