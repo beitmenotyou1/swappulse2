@@ -29,10 +29,41 @@ function atProtoTimestamp(d?: string): string {
   return iso;
 }
 
+// SSRF protection: only allow https URLs to a strict hostname allowlist of
+// public image CDNs. A denylist is bypassable via decimal/hex/octal IP
+// encodings (e.g. 2130706433 -> 127.0.0.1) and IPv6-mapped IPv4
+// (::ffff:127.0.0.1), so only known public hosts are permitted. Combined
+// with redirect:'manual' + 3xx rejection below, this closes redirect and
+// IP-encoding bypass paths that could reach internal/cloud-metadata endpoints.
+const ALLOWED_IMAGE_HOSTS = new Set([
+  'assets.tcgdex.net',        // TCGDex card artwork
+  'media.base44static.com',   // Base44 uploaded / generated images
+  'static.wixstatic.com',     // Base44 static media mirror
+]);
+
+function isAllowedImageUrl(raw: string): { ok: boolean; url?: URL; reason?: string } {
+  if (!raw) return { ok: false, reason: 'empty' };
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { ok: false, reason: 'invalid' };
+  }
+  if (parsed.protocol !== 'https:') {
+    return { ok: false, reason: 'must use HTTPS' };
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (!ALLOWED_IMAGE_HOSTS.has(hostname)) {
+    return { ok: false, reason: 'hostname not allowed' };
+  }
+  return { ok: true, url: parsed };
+}
+
 // Fetch image bytes from a stored URL and upload as a blob to the user's PDS,
 // returning the blob ref to embed in the profile record. Used for both avatar
-// and banner. Returns null if there is no image or the upload fails (non-fatal
-// — profile syncs without the image, preserving the existing one if any).
+// and banner. Returns null if there is no image, the URL is not allowlisted,
+// or the upload fails (non-fatal — profile syncs without the image, preserving
+// the existing one if any).
 async function uploadImageBlob(
   pdsUrl: string,
   accessJwt: string,
@@ -40,8 +71,20 @@ async function uploadImageBlob(
   label = 'image',
 ): Promise<any | null> {
   if (!imageUrl) return null;
+  const check = isAllowedImageUrl(imageUrl);
+  if (!check.ok) {
+    console.error(`profileSync: ${label} blocked (${check.reason})`, imageUrl);
+    return null;
+  }
   try {
-    const imgRes = await fetch(imageUrl);
+    // SSRF: fetch with redirect:'manual' and reject any 3xx, so an
+    // allowlisted public URL can't 302 to an internal or cloud-metadata
+    // endpoint.
+    const imgRes = await fetch(imageUrl, { redirect: 'manual' });
+    if (imgRes.status >= 300 && imgRes.status < 400) {
+      console.error(`profileSync: ${label} fetch redirected (blocked)`, imgRes.status, imageUrl);
+      return null;
+    }
     if (!imgRes.ok) {
       console.error(`profileSync: ${label} fetch failed`, imgRes.status);
       return null;
