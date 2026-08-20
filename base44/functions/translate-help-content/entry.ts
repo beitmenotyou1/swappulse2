@@ -79,20 +79,26 @@ Rules:
 Content to translate:
 ${JSON.stringify(content)}`;
 
-          const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt,
-            response_json_schema: {
-              type: 'object',
-              properties: {
-                title: { type: 'string' },
-                subtitle: { type: 'string' },
-                sections: { type: 'array' },
-              },
-              required: ['title', 'subtitle', 'sections'],
-            },
-          });
+          // No response_json_schema — the schema's loose `sections: { type: 'array' }`
+          // caused the LLM to flatten { type, text } objects into ["type", "text", "value"]
+          // arrays. Without a schema, InvokeLLM returns a raw string we parse ourselves,
+          // preserving the full nested structure.
+          const rawResult = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt });
 
-          if (!result || !result.sections) {
+          let result: any;
+          try {
+            const str = typeof rawResult === 'string'
+              ? rawResult.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+              : JSON.stringify(rawResult);
+            result = JSON.parse(str);
+          } catch (e) {
+            errors++;
+            errorDetails.push({ slug, lang: lang.code, error: 'Unparseable translation response' });
+            llmCalls++;
+            continue;
+          }
+
+          if (!result || !result.sections || !Array.isArray(result.sections)) {
             errors++;
             errorDetails.push({ slug, lang: lang.code, error: 'Invalid translation response' });
             llmCalls++;
