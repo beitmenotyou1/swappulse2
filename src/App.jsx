@@ -121,6 +121,7 @@ import PullOfTheWeek from '@/pages/PullOfTheWeek';
 import Messages from '@/pages/Messages';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
+import About from '@/pages/About';
 import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
 import WellKnownStandardPublication from '@/pages/WellKnownStandardPublication';
@@ -245,6 +246,7 @@ const AuthenticatedApp = () => {
         <Route path="/help/status" element={<HelpStatus />} />
         <Route path="/help/admin" element={<HelpAdmin />} />
         <Route path="/help/moderation" element={<HelpModeration />} />
+        <Route path="/about" element={<About />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />

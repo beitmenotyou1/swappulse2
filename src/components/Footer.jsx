@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const FOOTER_LINKS = [
+  { tKey: 'footer.about', to: '/about' },
   { tKey: 'footer.terms', to: '/terms' },
   { tKey: 'footer.privacy', to: '/privacy' },
   { tKey: 'footer.help', to: '/help' },
