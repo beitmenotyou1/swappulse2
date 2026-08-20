@@ -150,6 +150,65 @@ const en = {
   'about.feature.collection': 'Track your collection, portfolio value, and set completion', 'about.feature.trading': 'Trade cards peer-to-peer with threaded negotiations and trade chains', 'about.feature.scanner': 'Scan cards with AI and get instant TCGDex catalogue matches', 'about.feature.social': 'Post pulls, write journals, build digital binders, and review cards', 'about.feature.community': 'Join circles, meetups, challenges, and pack parties', 'about.feature.market': 'Watch the market with price tracking and alerts', 'about.feature.voice': 'Host voice spaces and publish podcasts', 'about.feature.achievements': 'Earn proof-based achievements verified against your on-chain activity',
   'about.principlesTitle': 'Core Principles', 'about.principle.free.title': 'Free & Open-Source', 'about.principle.free.body': 'No paywalls, no premium tiers, no ads. SwapPulse is funded entirely by voluntary donations and licensed under AGPL-3.0 so the community can self-host and audit every line.', 'about.principle.decentralized.title': 'Decentralized by Design', 'about.principle.decentralized.body': 'Built on the AT Protocol, your identity, posts, and collection are portable. You own your data — export it, migrate PDS, or use it in any compatible app at any time.', 'about.principle.community.title': 'Community-Moderated', 'about.principle.community.body': 'Trust is earned through vouches, not handed down. Moderation blends AI screening with human review, and reputation is built by the collectors who trade with you.', 'about.principle.privacy.title': 'Privacy-First', 'about.principle.privacy.body': 'Direct messages are end-to-end encrypted with no backdoor. Your private key lives in your browser. We collect the minimum needed to run the platform and nothing more.',
   'about.openSource': 'Open-source under AGPL-3.0', 'about.builtOn': 'Built on the AT Protocol · Powered by TCGDex', 'about.joinTitle': 'Join the community', 'about.joinBody': 'Create a free account, explore the catalogue, or start trading today.', 'about.cta.create': 'Create account', 'about.cta.explore': 'Explore cards', 'about.cta.donate': 'Support us', 'about.seoTitle': 'About', 'about.seoDescription': 'SwapPulse is a free, open-source, decentralized social network for Pokémon TCG collectors — built on the AT Protocol, powered by TCGDex.',
+  // Collection page strings
+  'collection.all': 'All', 'collection.binderFull': 'Your binder is full ({gridSize} grid). Remove a card to add another.',
+  'collection.cardsMarkedAs': '{count} cards marked as {condition}', 'collection.checklistManager': 'Checklist Manager',
+  'collection.completionDesc': 'Track set completion and download printable checklists.', 'collection.conditionUpdated': 'Condition updated',
+  'collection.doneSelecting': 'Done', 'collection.empty': 'Your collection is empty',
+  'collection.emptySub': 'Add cards from the catalogue or import a CSV to start tracking.', 'collection.exploreCards': 'Explore cards',
+  'collection.grid': 'Grid', 'collection.importCsv': 'Import CSV', 'collection.selectCards': 'Select', 'collection.updateFailed': 'Update failed',
+  // Explore page strings
+  'explore.addedToWishlist': 'Added to wishlist', 'explore.addToWishlist': 'Add to wishlist', 'explore.allSelected': 'All selected',
+  'explore.cardsCount': 'cards', 'explore.cardsSaved': '{count} cards saved to your wishlist', 'explore.couldNotAdd': 'Could not add',
+  'explore.done': 'Done', 'explore.everybodyFeed': 'Everybody Feed', 'explore.fromNetwork': 'From the Network',
+  'explore.latestPosts': 'Latest Posts', 'explore.noCardsFound': 'No cards found for "{query}"', 'explore.noPosts': 'No posts yet',
+  'explore.recentSets': 'Recent Sets', 'explore.results': 'results', 'explore.searchFailed': 'Search failed',
+  'explore.searchFailedDesc': 'Could not search cards. Please try again.', 'explore.searchPlaceholder': 'Search cards…',
+  'explore.select': 'Select', 'explore.selectAll': 'Select all', 'explore.selected': 'selected',
+  // Help page strings
+  'help.about': 'About SwapPulse', 'help.aboutText': 'SwapPulse is a decentralized social network and collection manager for Pokémon TCG collectors, built on the AT Protocol and powered by TCGDex. Every feature is free, your data is portable, and the community moderates itself.',
+  'help.alpha': 'Alpha Software', 'help.alphaDesc': 'SwapPulse is actively being built. Features may change, move, or be removed as we learn what collectors want.',
+  'help.donate': 'Donate', 'help.faq': 'FAQ', 'help.feedbackDesc': 'Use the Feedback button on the right edge of the screen to send a snapshot of the page and your comment to the team.',
+  'help.guides': 'Guides', 'help.helpCentre': 'Help Centre', 'help.lexiconDesc': 'SwapPulse uses {n} custom AT Protocol lexicon types for its records.',
+  'help.lexiconRef': 'Lexicon Reference', 'help.noResults': 'No results for "{query}"', 'help.noResultsDesc': 'Try a different search term or browse the guides above.',
+  'help.searchPlaceholder': 'Search help…', 'help.sendFeedback': 'Send Feedback', 'help.support': 'Support SwapPulse',
+  'help.supportDesc': 'SwapPulse is free and open-source, funded entirely by voluntary donations.', 'help.systemStatus': 'System Status',
+  'help.systemStatusDesc': 'Check if a service is down or undergoing maintenance.', 'help.troubleshooting': 'Troubleshooting',
+  'help.cat.collection': 'Collection & Catalogue', 'help.cat.trading': 'Trading', 'help.cat.social': 'Social & Community',
+  'help.cat.voice': 'Voice & Podcasts', 'help.cat.challenges': 'Challenges & Achievements', 'help.cat.ai': 'AI Assistants',
+  'help.cat.account': 'Account & Settings', 'help.cat.platform': 'Platform',
+  // Journal detail strings
+  'journal.anonymousAuthor': 'Anonymous Collector', 'journal.backToExplore': 'Back to Explore', 'journal.backToProfile': 'Back to profile',
+  'journal.likes': 'likes', 'journal.stats.cards': 'cards', 'journal.stats.set': 'set completion', 'journal.stats.value': 'value',
+  // Market watch strings
+  'market.cardsSynced': '{count} cards synced', 'market.cardsTracked': '{count} cards tracked', 'market.noPrices': 'No price data yet. Tap sync to fetch latest prices.',
+  'market.priceAlerts': 'Price Alerts', 'market.topGainers': 'Top Gainers', 'market.topLosers': 'Top Losers',
+  'market.trackedPrices': 'Tracked Prices', 'market.viewCollection': 'View Collection', 'market.yourPortfolio': 'Your Portfolio',
+  // Post detail strings
+  'post.backHome': 'Back to home', 'post.limited': 'This post has limited visibility', 'post.limitedSub': 'Only {audience} can see this post.',
+  'post.loading': 'Loading post…', 'post.notFound': 'Post not found', 'post.replies': 'Replies', 'post.title': 'Post',
+  // Profile tab
+  'profile.tab.collections': 'Collections',
+  // Share button
+  'share.buttonLabel': 'Share this page',
+  // Trade board strings
+  'trade.addCard': 'Add card', 'trade.addOfferedAndWanted': 'Add at least one offered and one wanted card.', 'trade.addOneCard': 'Add at least one card first.',
+  'trade.circleOnly': 'Circle only', 'trade.collector': 'Collector', 'trade.couldNotCreate': 'Could not create listing: ',
+  'trade.couldNotDeleteTemplate': 'Could not delete template: ', 'trade.couldNotSaveTemplate': 'Could not save template: ', 'trade.couldNotUpdate': 'Could not update listing',
+  'trade.currency': 'Currency', 'trade.enterTemplateName': 'Enter a template name', 'trade.in30days': 'In 30 days',
+  'trade.in7days': 'In 7 days', 'trade.in90days': 'In 90 days', 'trade.listingExpires': 'Listing expires', 'trade.listings': 'listings',
+  'trade.loadTemplate': 'Load template…', 'trade.markCompleted': 'Mark Completed', 'trade.markedCompleted': 'Marked as completed',
+  'trade.markedCompletedSynced': 'Marked as completed & synced to network', 'trade.max20Cards': 'You can add a maximum of 20 cards per side.',
+  'trade.negotiate': 'Negotiate', 'trade.networkSees': 'The network can see this trade is completed.', 'trade.newListingModal': 'New Trade Listing',
+  'trade.noCardsAdded': 'No cards added yet', 'trade.noCircles': "You haven't joined any circles yet.", 'trade.noExpiry': 'No expiry',
+  'trade.notesPlaceholder': 'Add notes about condition, shipping, or trade terms…', 'trade.offering': 'Offering',
+  'trade.pdsSyncFailed': 'Saved locally, but could not sync to the AT Protocol network.', 'trade.public': 'Public',
+  'trade.publishedLocal': 'Published locally', 'trade.publishedSynced': 'Published & synced to network', 'trade.publishing': 'Publishing…',
+  'trade.publishListing': 'Publish Listing', 'trade.save': 'Save', 'trade.saveAsTemplate': 'Save as template',
+  'trade.selectCardToOffer': 'Select card to offer', 'trade.selectCircle': 'Select a circle', 'trade.selectCircleForListing': 'Select a circle for this listing',
+  'trade.selectWantedCard': 'Select wanted card', 'trade.shippingRegions': 'Shipping regions', 'trade.syncingToPds': 'Syncing to PDS…',
+  'trade.templateNamePlaceholder': 'Template name', 'trade.templateSaved': 'Template saved', 'trade.trustedOnly': 'Trusted only',
+  'trade.visibility': 'Visibility', 'trade.visibleToCircle': 'Visible to circle', 'trade.wants': 'Wants', 'trade.wishlistOnly': 'Wishlist matches only',
 };
 
 export default en;
