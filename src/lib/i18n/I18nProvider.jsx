@@ -40,17 +40,29 @@ export function I18nProvider({ children }) {
   const [overrides, setOverrides] = useState({});
 
   // On mount, fetch all TranslationOverride records with non-empty values and
-  // build a per-language map. This runs once and supplements the static dict.
+  // build a per-language map. The list() method caps at 5000 records, so we
+  // fetch help translations (help.* keys) separately via a regex filter to
+  // ensure they are all loaded even when total overrides exceed 5000.
   useEffect(() => {
     (async () => {
       try {
-        const records = await base44.entities.TranslationOverride.list('-created_date', 5000);
+        const [recentRecords, helpRecords] = await Promise.all([
+          base44.entities.TranslationOverride.list('-created_date', 5000),
+          base44.entities.TranslationOverride.filter(
+            { translation_key: { $regex: '^help\\.' } },
+            '-created_date', 5000
+          ),
+        ]);
         const map = {};
-        for (const r of records) {
-          if (!r.value || !r.translation_key) continue;
-          if (!map[r.language]) map[r.language] = {};
-          map[r.language][r.translation_key] = r.value;
-        }
+        const process = (records) => {
+          for (const r of records) {
+            if (!r.value || !r.translation_key) continue;
+            if (!map[r.language]) map[r.language] = {};
+            map[r.language][r.translation_key] = r.value;
+          }
+        };
+        process(recentRecords);
+        process(helpRecords);
         setOverrides(map);
       } catch {}
     })();
