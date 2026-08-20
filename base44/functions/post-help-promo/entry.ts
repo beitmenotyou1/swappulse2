@@ -20,7 +20,8 @@
 // post-promo. Invoked by the "Help Article Promo" workflow every 8 hours.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getPdsSessionForUser, pdsRequest, clearPdsSession } from '../../shared/pdsSession.ts';
+import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
+import { uploadPromoImage } from '../../shared/promoImageUpload.ts';
 import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 import { HELP_ARTICLES } from '../../shared/helpArticles.ts';
 import {
@@ -79,74 +80,6 @@ function generateMessage(article: Article, locale: string): { content: string; t
   }
 
   return { content: essential.slice(0, 297) + '...', tags };
-}
-
-async function uploadImage(
-  pdsUrl: string,
-  accessJwt: string,
-  imageUrl: string,
-  cred: { did: string; app_password: string },
-): Promise<{ blob: { $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null; accessJwt: string }> {
-  let currentJwt = accessJwt;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const imgRes = await fetch(imageUrl);
-      if (!imgRes.ok) {
-        console.error('post-help-promo: image fetch failed', imgRes.status);
-        if (attempt === 0) continue;
-        return { blob: null, accessJwt: currentJwt };
-      }
-      const mimeType = imgRes.headers.get('content-type') || 'image/png';
-      const bytes = new Uint8Array(await imgRes.arrayBuffer());
-
-      const uploadRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': mimeType,
-          'Authorization': `Bearer ${currentJwt}`,
-        },
-        body: bytes,
-      });
-      if (!uploadRes.ok) {
-        const text = await uploadRes.text();
-        console.error('post-help-promo: uploadBlob failed', uploadRes.status, text.slice(0, 300));
-        // If 401, force a fresh PDS session and retry with the new token
-        if (uploadRes.status === 401 && attempt === 0) {
-          try {
-            clearPdsSession();
-            const refreshed = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
-            currentJwt = refreshed.session.accessJwt;
-            console.log('post-help-promo: refreshed PDS session after 401 on uploadBlob, retrying');
-            continue;
-          } catch (e) {
-            console.error('post-help-promo: session refresh failed', e?.message || e);
-            return { blob: null, accessJwt: currentJwt };
-          }
-        }
-        if (attempt === 0) continue;
-        return { blob: null, accessJwt: currentJwt };
-      }
-      const data = await uploadRes.json();
-      const blob = data.blob;
-      if (!blob?.ref?.$link) {
-        if (attempt === 0) continue;
-        return { blob: null, accessJwt: currentJwt };
-      }
-      return {
-        blob: {
-          $type: 'blob',
-          ref: { $link: blob.ref.$link },
-          mimeType: blob.mimeType || mimeType,
-          size: blob.size ?? bytes.length,
-        },
-        accessJwt: currentJwt,
-      };
-    } catch (e) {
-      console.error('post-help-promo: uploadImage failed (attempt ' + (attempt + 1) + ')', e?.message || e);
-      if (attempt === 1) return { blob: null, accessJwt: currentJwt };
-    }
-  }
-  return { blob: null, accessJwt: currentJwt };
 }
 
 Deno.serve(async (req) => {
@@ -271,7 +204,7 @@ Deno.serve(async (req) => {
     const { content, tags } = generateMessage(article, promoLocale.locale);
 
     // Upload the branded banner image
-    const uploadResult = await uploadImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+    const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
     const imageBlob = uploadResult.blob;
     session.accessJwt = uploadResult.accessJwt;
     // Guard: never publish a text-only promo post. If the image blob upload
