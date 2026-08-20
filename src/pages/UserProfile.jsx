@@ -20,9 +20,13 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
+import PersonalInfoSection from '@/components/profile/PersonalInfoSection';
+import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
+import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
+import { themeGradient, DEFAULT_VISITOR_SECTIONS } from '@/lib/profileThemes';
 import useSEO from '@/hooks/useSEO';
 import RichText from '@/components/RichText';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -31,12 +35,15 @@ import { useT } from '@/lib/i18n/I18nProvider';
 // non-members (is_member=false, remote_synced=true) it shows a prominent
 // external banner strip, hides member-only sections (reputation, friendship,
 // add-friend), and pulls the Posts tab from the federated Bluesky author feed.
+// Enhanced sections (About/Journey/Hub) are shown for members, driven by the
+// viewer-filtered get-profile-config resolver.
 export default function UserProfile() {
   const t = useT();
   const { did: subjectDid } = useParams();
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const [friendship, setFriendship] = useState({ my: null, their: null });
+  const [profileConfig, setProfileConfig] = useState(null);
   const [tab, setTab] = useState('Posts');
   const { profile: merged, loading: merging } = useMergedProfile({ did: subjectDid });
   const { filterPosts } = usePostVisibility();
@@ -94,6 +101,22 @@ export default function UserProfile() {
     return () => { active = false; };
   }, [subjectDid, isMember]);
 
+  // Viewer-filtered profile config (personal info, milestones, theme, layout).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (merging || !isMember) { if (active) setProfileConfig(null); return; }
+      try {
+        const res = await base44.functions.invoke('get-profile-config', { did: subjectDid });
+        const data = res?.data ?? res;
+        if (active) setProfileConfig(data);
+      } catch {
+        if (active) setProfileConfig(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [subjectDid, isMember, merging]);
+
   const head = posts[0];
   const profile = {
     name: merged?.name || head?.author_name || 'Collector',
@@ -112,18 +135,30 @@ export default function UserProfile() {
 
   const isFriend = friendship.my?.status === 'accepted' && friendship.their?.status === 'accepted';
 
-  const tabs = [
+  const baseTabs = [
+    { key: 'About', label: 'About' },
     { key: 'Posts', label: t('profile.tab.posts') },
+    { key: 'Journey', label: 'Journey' },
+    { key: 'Hub', label: 'Hub' },
     { key: 'Trades', label: t('profile.tab.trades') },
     { key: 'Collections', label: t('profile.tab.collections') },
     { key: 'Activity', label: t('profile.tab.activity') },
   ];
+  const enhancedTabs = isMember ? baseTabs : baseTabs.filter((b) => ['Posts', 'Trades', 'Collections', 'Activity'].includes(b.key));
+  const order = profileConfig?.section_order?.length ? profileConfig.section_order : DEFAULT_VISITOR_SECTIONS.filter((k) => enhancedTabs.some((b) => b.key === k));
+  const hidden = new Set(profileConfig?.hidden_sections || []);
+  const tabs = order
+    .map((k) => enhancedTabs.find((b) => b.key === k))
+    .filter(Boolean)
+    .concat(enhancedTabs.filter((b) => !order.includes(b.key)))
+    .filter((b) => b.key === 'Posts' || !hidden.has(b.key));
 
   return (
     <div>
       <ProfileHeader
         banner={profile?.header}
         bannerHeight="h-28 sm:h-32"
+        bannerGradient={themeGradient(profileConfig?.theme)}
         avatarOverlap={isExternal ? 'mt-2' : '-mt-10 sm:-mt-12'}
         backLink={
           <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
@@ -188,7 +223,13 @@ export default function UserProfile() {
 
         <div className="mt-4 space-y-4">
           {!isExternal && <ReputationSummary did={subjectDid} />}
-          {tab === 'Activity' ? (
+          {tab === 'About' ? (
+            <PersonalInfoSection data={profileConfig?.personal} />
+          ) : tab === 'Journey' ? (
+            <MilestonesTimeline milestones={profileConfig?.personal?.milestones || []} />
+          ) : tab === 'Hub' ? (
+            <EngagementHub did={subjectDid} />
+          ) : tab === 'Activity' ? (
             isExternal ? (
               <div className="py-10 text-center text-sm text-muted-foreground">
                 <p>{t('userProfile.noOnSiteActivity')}</p>

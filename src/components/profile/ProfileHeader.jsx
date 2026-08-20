@@ -7,6 +7,7 @@ import React from 'react';
 export default function ProfileHeader({
   banner,
   bannerHeight = 'h-32 sm:h-40',
+  bannerGradient = 'from-primary/40 via-rarity-holo/30 to-accent/30',
   avatarOverlap = '-mt-10 sm:-mt-12',
   avatar,
   avatarBadge,
@@ -23,7 +24,7 @@ export default function ProfileHeader({
 }) {
   return (
     <div>
-      <div className={`w-full overflow-hidden bg-gradient-to-r from-primary/40 via-rarity-holo/30 to-accent/30 ${bannerHeight}`}>
+      <div className={`w-full overflow-hidden bg-gradient-to-r ${bannerGradient} ${bannerHeight}`}>
         {banner ? (
           <img src={banner} alt="Profile header" className="h-full w-full object-cover" />
         ) : null}

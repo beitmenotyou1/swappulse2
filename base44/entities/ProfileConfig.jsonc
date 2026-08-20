@@ -1,0 +1,175 @@
+{
+  "name": "ProfileConfig",
+  "type": "object",
+  "title": "ProfileConfig",
+  "description": "org.swappulse.profileConfig \u2014 a collector's enhanced profile configuration: richer personal info (bio, pronouns, interests, favourites, location, contact, social links), collecting-journey milestones, per-field visibility flags, profile theme, and section order/visibility. One record per collector (looked up by did). RLS restricts reads/writes to the owner; the get-profile-config backend function reads via the service role and filters fields by the viewer's relationship (public / followers / private) so private data never leaks to unauthorized viewers.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the owner collector (lookup key)"
+    },
+    "bio": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Longer free-form bio about the collector's journey"
+    },
+    "pronouns": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "interests": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 60
+      },
+      "description": "Hobbies and interests"
+    },
+    "favourite_pokemon": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 60
+      }
+    },
+    "favourite_sets": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 60
+      }
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "website": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "social_links": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "description": "External social/profile links"
+    },
+    "contact_email": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "milestones": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "milestone_type": {
+            "type": "string",
+            "enum": [
+              "first_card",
+              "first_trade",
+              "set_completion",
+              "grading",
+              "custom"
+            ],
+            "default": "custom"
+          }
+        },
+        "required": [
+          "title",
+          "milestone_type"
+        ]
+      },
+      "description": "Collecting-journey milestones (first card, first trade, set completions, grading achievements, custom)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "default",
+        "vintage",
+        "competitive",
+        "shiny",
+        "investment"
+      ],
+      "default": "default",
+      "description": "Profile header theme (preset gradient)"
+    },
+    "section_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered profile section/tab keys; tabs render in this order"
+    },
+    "hidden_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Section keys the owner has toggled off (Posts is never hideable)"
+    },
+    "field_visibility": {
+      "type": "object",
+      "description": "Per-field visibility: personal-info field name -> public | followers | private",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "public",
+          "followers",
+          "private"
+        ]
+      }
+    }
+  },
+  "required": [
+    "did"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
