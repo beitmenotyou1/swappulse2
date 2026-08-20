@@ -1,13 +1,24 @@
 // getFeedSkeleton — AT Protocol feed generator endpoint (public).
 //
 // Serves multiple SwapPulse feeds so external Bluesky clients can discover
-// and subscribe to them from within the Bluesky app:
+// and subscribe to them from within the Bluesky app, and the internal SwapPulse
+// feed UI calls the same endpoint:
 //   - trade-listings: active public trade listings
 //   - collection-posts: pack openings and showcases
+//   - fresh-pulls: recent pack-opening posts (pull reveals)
+//   - showcase: card showcase posts + public binders
+//   - journals: public collector journal entries
+//   - card-reviews: public multi-axis card reviews
 //   - whoto-follow: trust-based collector recommendations (auth required)
 //
+// Local entity queries already include firehose-ingested remote records
+// (firehose-ingest upserts them into the same entities by at_uri), so each
+// feed automatically serves the merged local+remote dataset — no separate
+// merge step is needed. Dedup is handled at ingest time via IngestCursor.
+//
 // Query params: feed=<feed_uri>, limit=<int>, cursor=<str>
-// Public feeds (trade-listings, collection-posts) require no auth.
+// Public feeds (trade-listings, collection-posts, fresh-pulls, showcase,
+// journals, card-reviews) require no auth.
 // The whoto-follow feed requires authentication for personalization.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
@@ -26,7 +37,10 @@ function parseFeedParam(feedUri: string | null): string {
   // Accept full at:// URIs or bare feed names
   const parts = feedUri.split('/');
   const last = parts[parts.length - 1];
-  if (['trade-listings', 'collection-posts', 'whoto-follow'].includes(last)) return last;
+  if ([
+    'trade-listings', 'collection-posts', 'whoto-follow',
+    'fresh-pulls', 'showcase', 'journals', 'card-reviews',
+  ].includes(last)) return last;
   return 'trade-listings';
 }
 
@@ -71,7 +85,7 @@ export default async function (req: Request): Promise<Response> {
     // --- collection-posts feed (public) ---
     if (feedParam === 'collection-posts') {
       const posts = await svc.entities.Post.filter(
-        { post_type: { $in: ['pack_opening', 'showcase'] } },
+        { post_type: { $in: ['pack_opening', 'showcase'] }, visibility_scope: 'public' },
         '-created_date',
         200,
       );
@@ -85,6 +99,122 @@ export default async function (req: Request): Promise<Response> {
         feed: slice.map((p: any) => ({
           post: p.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${p.id}`,
           reason: { $type: 'org.swappulse.feedReason', kind: 'collection_post' },
+        })),
+      });
+    }
+
+    // --- fresh-pulls feed (public) ---
+    // Recent pack-opening reveal posts. Includes both locally-authored and
+    // firehose-ingested remote pack-opening posts (already merged in the Post
+    // entity table by firehose-ingest). Enforces public visibility and excludes
+    // enforced/suspended users.
+    if (feedParam === 'fresh-pulls') {
+      const posts = await svc.entities.Post.filter(
+        { post_type: 'pack_opening', visibility_scope: 'public' },
+        '-created_date',
+        200,
+      );
+      const enforcedIds = await getEnforcedUserIds(svc);
+      const visible = enforcedIds.size > 0
+        ? posts.filter((p: any) => !enforcedIds.has(p.created_by_id))
+        : posts;
+      const slice = visible.slice(cursor, cursor + limit);
+      return Response.json({
+        cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
+        feed: slice.map((p: any) => ({
+          post: p.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${p.id}`,
+          reason: { $type: 'org.swappulse.feedReason', kind: 'fresh_pull' },
+        })),
+      });
+    }
+
+    // --- showcase feed (public) ---
+    // Card showcase posts plus public binders. Showcase posts are app.bsky.feed
+    // records (render in Bluesky); binders are org.swappulse.binder records
+    // (discoverable via the feed, rendered natively in SwapPulse). Both are
+    // already merged with firehose-ingested remote records in their entity
+    // tables. Enforces public visibility and excludes enforced users.
+    if (feedParam === 'showcase') {
+      const [posts, binders] = await Promise.all([
+        svc.entities.Post.filter(
+          { post_type: 'showcase', visibility_scope: 'public' },
+          '-created_date',
+          200,
+        ),
+        svc.entities.Binder.filter(
+          { visibility: 'public' },
+          '-created_date',
+          200,
+        ),
+      ]);
+      const enforcedIds = await getEnforcedUserIds(svc);
+      const visiblePosts = enforcedIds.size > 0
+        ? posts.filter((p: any) => !enforcedIds.has(p.created_by_id))
+        : posts;
+      const visibleBinders = enforcedIds.size > 0
+        ? binders.filter((b: any) => !enforcedIds.has(b.created_by_id))
+        : binders;
+      // Merge and sort by created_date descending
+      const merged: any[] = [
+        ...visiblePosts.map((p: any) => ({
+          at_uri: p.at_uri || `at://${FEED_DID}/app.bsky.feed.post/${p.id}`,
+          created_date: p.created_date,
+          kind: 'showcase_post',
+        })),
+        ...visibleBinders.map((b: any) => ({
+          at_uri: b.at_uri || `at://${FEED_DID}/org.swappulse.binder/${b.id}`,
+          created_date: b.created_date,
+          kind: 'binder',
+        })),
+      ].sort((a, b) => (b.created_date || '').localeCompare(a.created_date || ''));
+      const slice = merged.slice(cursor, cursor + limit);
+      return Response.json({
+        cursor: cursor + limit < merged.length ? String(cursor + limit) : undefined,
+        feed: slice.map((r: any) => ({
+          post: r.at_uri,
+          reason: { $type: 'org.swappulse.feedReason', kind: r.kind },
+        })),
+      });
+    }
+
+    // --- journals feed (public) ---
+    // Public collector journal entries (org.swappulse.journal records). Already
+    // merged with firehose-ingested remote journals. Excludes enforced users.
+    if (feedParam === 'journals') {
+      const journals = await svc.entities.Journal.filter(
+        { visibility: 'public' },
+        '-created_date',
+        200,
+      );
+      const enforcedIds = await getEnforcedUserIds(svc);
+      const visible = enforcedIds.size > 0
+        ? journals.filter((j: any) => !enforcedIds.has(j.created_by_id))
+        : journals;
+      const slice = visible.slice(cursor, cursor + limit);
+      return Response.json({
+        cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
+        feed: slice.map((j: any) => ({
+          post: j.at_uri || `at://${FEED_DID}/org.swappulse.journal/${j.id}`,
+          reason: { $type: 'org.swappulse.feedReason', kind: 'journal' },
+        })),
+      });
+    }
+
+    // --- card-reviews feed (public) ---
+    // Public multi-axis card reviews (org.swappulse.cardReview records). Already
+    // merged with firehose-ingested remote reviews. Excludes enforced users.
+    if (feedParam === 'card-reviews') {
+      const reviews = await svc.entities.CardReview.list('-created_date', 200);
+      const enforcedIds = await getEnforcedUserIds(svc);
+      const visible = enforcedIds.size > 0
+        ? reviews.filter((r: any) => !enforcedIds.has(r.created_by_id))
+        : reviews;
+      const slice = visible.slice(cursor, cursor + limit);
+      return Response.json({
+        cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
+        feed: slice.map((r: any) => ({
+          post: r.at_uri || `at://${FEED_DID}/org.swappulse.cardReview/${r.id}`,
+          reason: { $type: 'org.swappulse.feedReason', kind: 'card_review' },
         })),
       });
     }
