@@ -38,7 +38,7 @@ export default function TradeTemplates() {
 
   useEffect(() => { load(); }, []);
 
-  const useTemplate = (tpl) => {
+  const applyTemplate = (tpl) => {
     const draftOffers = (tpl.offer_card_ids || []).map((id, i) => ({
       id,
       name: tpl.offer_card_names?.[i] || id,
@@ -93,7 +93,7 @@ export default function TradeTemplates() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  <button onClick={() => useTemplate(tpl)} className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90">
+                  <button onClick={() => applyTemplate(tpl)} className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90">
                     {tr('trade.useTemplate')} <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                   <button onClick={() => setEditing(tpl)} aria-label={tr('trade.editTemplate')} className="rounded-full border border-border p-1.5 hover:bg-secondary"><Pencil className="h-3.5 w-3.5" /></button>

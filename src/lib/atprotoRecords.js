@@ -160,6 +160,39 @@ export async function updateBridgedTradeListing(listing) {
   }
 }
 
+// Update a bridged collection entry on the PDS. Call after updating the local
+// entity (showcase toggle, condition change, binder reorder) so the federated
+// copy reflects the new state. The at_uri stays the same (putRecord replaces in
+// place); only the cid changes. Author fields are re-read from the current user
+// so the federated record keeps its author metadata. No-op if not bridged.
+export async function updateBridgedCollectionEntry(entry) {
+  if (!entry?.at_uri || !entry?.bridged) return null;
+  const { did } = await ensureUserDid().catch(() => ({ did: '' }));
+  let authorName = '', authorHandle = '', authorAvatar = '';
+  try {
+    const me = await base44.auth.me();
+    authorName = me?.full_name || '';
+    authorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    authorAvatar = me?.avatar || '';
+  } catch {}
+  const record = buildCollectionEntryRecord(entry, did, authorName, authorHandle, authorAvatar);
+  try {
+    const res = await base44.functions.invoke('atproto-bridge', {
+      action: 'update',
+      collection: NSID.COLLECTION_ENTRY,
+      record,
+      uri: entry.at_uri,
+    });
+    if (res?.uri && res?.cid) {
+      return { cid: res.cid, bridged: true };
+    }
+    return null;
+  } catch (err) {
+    console.error('atprotoRecords: update collection entry failed', err);
+    return null;
+  }
+}
+
 // Delete a bridged record from the PDS. Call before deleting the local entity
 // so the federated copy is removed too. No-op if the record was never bridged.
 export async function unbridgeRecord(entity) {
