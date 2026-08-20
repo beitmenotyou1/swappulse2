@@ -53,6 +53,22 @@ export default async function (req: Request): Promise<Response> {
     }
 
     const pdsUrl = Deno.env.get('PDS_URL');
+    // Security: PDS migration transmits the system PDS access token to the
+    // target URL. Restrict newPdsUrl to a strict allowlist of trusted PDS
+    // hosts so a compromised admin cannot exfiltrate the token to an
+    // arbitrary attacker-controlled origin. The allowlist always includes
+    // the official Bluesky PDS and this app's own PDS host; it can be
+    // extended via the TRUSTED_PDS_HOSTS env var (comma-separated).
+    const trustedHosts = new Set<string>(['bsky.social', 'pds.bsky.app']);
+    const currentPdsHost = (() => { try { return new URL(pdsUrl || '').hostname.toLowerCase(); } catch { return ''; } })();
+    if (currentPdsHost) trustedHosts.add(currentPdsHost);
+    const extra = Deno.env.get('TRUSTED_PDS_HOSTS');
+    if (extra) {
+      extra.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean).forEach((h) => trustedHosts.add(h));
+    }
+    if (!trustedHosts.has(host)) {
+      return Response.json({ error: 'newPdsUrl host is not a trusted PDS provider' }, { status: 400 });
+    }
     const identifier = Deno.env.get('PDS_IDENTIFIER');
     const password = Deno.env.get('PDS_APP_PASSWORD');
     if (!pdsUrl || !identifier || !password) {
