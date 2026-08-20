@@ -10,10 +10,10 @@ import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const REL_TKEYS = {
-  trade_partner: 'trust.rel.trade_partner',
-  repeat_trader: 'trust.rel.repeat_trader',
-  personal_acquaintance: 'trust.rel.personal_acquaintance',
-  community_member: 'trust.rel.community_member',
+  trade_partner: 'trust.relationship.tradePartner',
+  repeat_trader: 'trust.relationship.repeatTrader',
+  personal_acquaintance: 'trust.relationship.personalAcquaintance',
+  community_member: 'trust.relationship.communityMember',
 };
 
 export default function Trust() {

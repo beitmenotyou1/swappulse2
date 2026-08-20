@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 const THEME_TKEYS = {
   general: 'circles.theme.general', vintage: 'circles.theme.vintage', competitive: 'circles.theme.competitive', shiny: 'circles.theme.shiny',
-  investment: 'circles.theme.investment', local_region: 'circles.theme.local_region', artist: 'circles.theme.artist',
+  investment: 'circles.theme.investment', local_region: 'circles.theme.localRegion', artist: 'circles.theme.artist',
 };
 
 function CircleCard({ c, membership, t }) {

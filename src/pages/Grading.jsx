@@ -18,7 +18,7 @@ const STATUS_META = {
 };
 const STATUS_TKEYS = {
   submitted: 'grading.status.submitted',
-  in_progress: 'grading.status.in_progress',
+  in_progress: 'grading.status.inProgress',
   graded: 'grading.status.graded',
   returned: 'grading.status.returned',
   rejected: 'grading.status.rejected',

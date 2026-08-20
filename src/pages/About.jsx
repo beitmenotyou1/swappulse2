@@ -106,19 +106,19 @@ export default function About() {
               to="/register"
               className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              {t('about.cta.create')}
+              {t('about.callToAction.createAccount')}
             </Link>
             <Link
               to="/explore"
               className="inline-flex items-center justify-center rounded-md border border-input bg-transparent px-5 py-2 text-sm font-semibold transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              {t('about.cta.explore')}
+              {t('about.callToAction.exploreCards')}
             </Link>
             <Link
               to="/donate"
               className="inline-flex items-center justify-center rounded-md border border-input bg-transparent px-5 py-2 text-sm font-semibold transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              {t('about.cta.donate')}
+              {t('about.callToAction.supportUs')}
             </Link>
           </div>
         </section>

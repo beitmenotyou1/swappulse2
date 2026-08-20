@@ -170,14 +170,14 @@ const LEXICONS = [
 ];
 
 const CATEGORY_TKEYS = {
-  'Collection & Catalogue': 'help.cat.collection',
-  'Trading': 'help.cat.trading',
-  'Social & Community': 'help.cat.social',
-  'Voice & Podcasts': 'help.cat.voice',
-  'Challenges & Achievements': 'help.cat.challenges',
-  'AI Assistants': 'help.cat.ai',
-  'Account & Settings': 'help.cat.account',
-  'Platform': 'help.cat.platform',
+  'Collection & Catalogue': 'help.category.collection',
+  'Trading': 'help.category.trading',
+  'Social & Community': 'help.category.social',
+  'Voice & Podcasts': 'help.category.voice',
+  'Challenges & Achievements': 'help.category.challenges',
+  'AI Assistants': 'help.category.aiAssistants',
+  'Account & Settings': 'help.category.account',
+  'Platform': 'help.category.platform',
 };
 
 export default function Help() {
