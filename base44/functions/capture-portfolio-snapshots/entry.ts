@@ -17,6 +17,15 @@ const SNAPSHOT_DATE = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    // Security: this endpoint aggregates all users' collection data and bulk-creates
+    // PortfolioSnapshot records via the service role, so it must not be callable by
+    // arbitrary internet callers. The platform injects an internal service JWT on
+    // workflow/function-to-function calls; base44.auth.me() resolves that to an admin
+    // caller. A public internet caller has no such token and is rejected with 403.
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const svc = base44.asServiceRole;
 
     const today = SNAPSHOT_DATE();
