@@ -20,32 +20,14 @@ import { secrets } from 'base44:runtime';
 
 const LABELER_DID = 'did:web:labeler.swappulse.org';
 
-// Decodes the platform's `base44-service-authorization` JWT (injected on
-// internal workflow/agent calls) and verifies its payload claims — not just
-// the header presence, which any internet caller could spoof. A public
-// caller has no such token, so this gates service-role enforcement behind a
-// legitimate platform-issued credential.
-function base64UrlDecode(str: string): string {
-  const pad = str.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = pad + '==='.slice((pad.length + 3) % 4);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
-}
-function isInternalServiceCall(req: Request): boolean {
-  const header =
-    req.headers.get('base44-service-authorization') ||
-    req.headers.get('Base44-Service-Authorization');
-  if (!header) return false;
-  const parts = header.split('.');
-  if (parts.length !== 3) return false;
-  try {
-    const payload = JSON.parse(base64UrlDecode(parts[1]) || '{}');
-    return payload?.internal_service_token === true && payload?.caller === 'backend_functions';
-  } catch {
-    return false;
-  }
+// Constant-time string comparison to avoid timing side-channels when
+// checking shared secrets. Returns true only when a and b are equal-length
+// and byte-identical.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return mismatch === 0;
 }
 
 // Security: ai-moderation applies tiered enforcement (hide/strike/restrict) via
@@ -57,41 +39,43 @@ export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth gate: allow authenticated admin/moderator users (moderation agent,
-    // manual testing) OR internal platform calls (entity-trigger workflow
-    // runtime) carrying the Base44-Service-Authorization service token header.
-    // Entity-trigger workflows inject the service token but NOT a user token,
-    // so base44.auth.me() returns null for them — without this check, the AI
-    // Moderation workflows fail with 403 on every entity create event.
+    // Auth gate. Legitimate callers are (1) platform-internal invocations
+    // (entity-trigger workflows + the moderation agent runtime) and (2)
+    // authenticated admin/moderator users. We must NOT trust the
+    // base44-service-authorization header's JWT payload by decoding it
+    // ourselves — an external attacker can craft an unsigned token with
+    // arbitrary claims. Instead we verify the token through the platform
+    // itself: the platform signs it and validates it server-side on every
+    // asServiceRole API call, so a successful lightweight service-role read
+    // proves the call carries a valid platform-issued credential. A forged
+    // token is rejected by the API and the probe throws. A shared secret
+    // (BACKEND_FUNCTION_SECRET) is also accepted for manual/script internal
+    // callers, compared in constant time to avoid timing leaks.
     let caller: any;
     try { caller = await base44.auth.me(); } catch { caller = null; }
-    // Verify the platform's internal service token by decoding its JWT payload
-    // and checking the `internal_service_token` / `caller` claims — not just the
-    // header presence, which any internet caller could spoof. Also accept a
-    // shared secret (BACKEND_FUNCTION_SECRET) for server-side internal callers.
-    const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
-    const secretOk = !!sharedSecret && req.headers.get('x-backend-function-secret') === sharedSecret;
-    const isInternalCall = isInternalServiceCall(req) || secretOk;
+    let isInternalCall = false;
+    const svcHeader =
+      req.headers.get('base44-service-authorization') ||
+      req.headers.get('Base44-Service-Authorization');
+    if (svcHeader && svcHeader.startsWith('Bearer ')) {
+      try {
+        // Trivial service-role read — the platform validates the token here.
+        await base44.asServiceRole.entities.Post.list('-created_date', 1);
+        isInternalCall = true;
+      } catch { /* invalid/forged token */ }
+    }
+    if (!isInternalCall) {
+      const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
+      const provided = req.headers.get('x-backend-function-secret');
+      if (sharedSecret && provided && timingSafeEqual(provided, sharedSecret)) {
+        isInternalCall = true;
+      }
+    }
     if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await req.json().catch(() => ({}));
-    if (body && body.__diagnostic === true) {
-      const tok = (req.headers.get('base44-service-authorization') || '').replace(/^Bearer\s+/i, '');
-      const parts = tok.split('.');
-      let sigCheck = 'no-token';
-      if (parts.length === 3) {
-        const key = await crypto.subtle.importKey(
-          'raw', new TextEncoder().encode(secrets.get('BACKEND_FUNCTION_SECRET') || ''),
-          { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-        );
-        const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
-        const expected = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        sigCheck = expected === parts[2] ? 'VALID' : 'INVALID';
-      }
-      return Response.json({ sig_check: sigCheck, parts: parts.length });
-    }
     const { content_type, content_id } = body;
 
     if (!content_type || !content_id) {
