@@ -40,7 +40,8 @@ function atProtoTimestamp(d?: string): string {
 // IP-encoding bypass paths that could reach internal/cloud-metadata endpoints.
 const ALLOWED_IMAGE_HOSTS = new Set([
   'assets.tcgdex.net',        // TCGDex card artwork
-  'media.base44static.com',   // Base44 uploaded / generated images
+  'media.base44.com',         // Base44 UploadFile CDN (primary)
+  'media.base44static.com',   // Base44 uploaded / generated images (mirror)
   'static.wixstatic.com',     // Base44 static media mirror
 ]);
 

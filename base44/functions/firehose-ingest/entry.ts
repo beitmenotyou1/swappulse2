@@ -383,7 +383,7 @@ async function syncInboundDms(base44: any, svc: any): Promise<number> {
 async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
   let synced = 0;
   try {
-    const creds = await svc.entities.PdsCredential.list('-created_date', 10).catch(() => []);
+    const creds = await svc.entities.PdsCredential.list('-created_date', 100).catch(() => []);
     for (const cred of creds || []) {
       try {
         const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);

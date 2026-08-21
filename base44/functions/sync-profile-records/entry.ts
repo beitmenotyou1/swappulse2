@@ -45,9 +45,17 @@ export default async function(req: Request): Promise<Response> {
       for (const cred of (creds || [])) {
         const u = await svc.entities.User.get(cred.user_id).catch(() => null);
         if (!u) { failed++; continue; }
+        // Only push profiles for migrated users — non-migrated users' Bluesky
+        // profiles are authoritative until they migrate.
+        if (!u.migrated_from_bluesky) continue;
         const r = await syncProfileForUser(svc, pdsUrl, cred.did, cred.app_password, u);
         if (r.ok) {
           synced++;
+          // Mark the outbound sync timestamp so the inbound sync's conflict
+          // guard knows the local state has been propagated and can accept
+          // remote changes again. Without this, updated_date > profile_synced_at
+          // after every local edit, permanently disabling inbound sync.
+          await svc.entities.User.update(u.id, { profile_synced_at: new Date().toISOString() }).catch(() => {});
         } else {
           failed++;
           errors.push({ id: cred.user_id, error: r.error || 'failed' });
@@ -80,7 +88,11 @@ export default async function(req: Request): Promise<Response> {
     }
     const cred = creds[0];
     const r = await syncProfileForUser(svc, pdsUrl, cred.did, cred.app_password, user);
-    if (!r.ok) console.error('sync-profile-records: single-user failed', r.error);
+    if (r.ok) {
+      await svc.entities.User.update(user.id, { profile_synced_at: new Date().toISOString() }).catch(() => {});
+    } else {
+      console.error('sync-profile-records: single-user failed', r.error);
+    }
     return Response.json({ ok: r.ok, error: r.error });
   } catch (error) {
     console.error('sync-profile-records error:', error?.message || error);

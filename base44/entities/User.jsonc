@@ -83,7 +83,7 @@
     "profile_synced_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Last time the inbound profile sync (firehose-ingest) merged remote Bluesky profile fields into this user. Compared against updated_date to decide whether a remote profile edit should overwrite local (local wins if it was edited more recently than the last sync)."
+      "description": "Last time a profile sync completed in either direction. Set by sync-profile-records after a successful outbound push (SwapPulse \u2192 PDS) and by firehose-ingest after an inbound merge (AppView \u2192 SwapPulse). Compared against updated_date to decide whether a remote profile edit should overwrite local (local wins if it was edited more recently than the last sync)."
     },
     "migrated_from_bluesky": {
       "type": "boolean",
