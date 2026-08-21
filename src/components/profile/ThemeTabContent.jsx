@@ -20,6 +20,7 @@ import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import DataPrivacy from '@/components/profile/DataPrivacy';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { useAuth } from '@/lib/AuthContext';
 
 import FacebookTheme from '@/components/profile/themes/FacebookTheme';
 import BlueskyTheme from '@/components/profile/themes/BlueskyTheme';
@@ -84,6 +85,7 @@ function LandingView({ theme, did, isOwner, config, profile, posts, collection, 
 // to the theme's landing component.
 export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExternal, config, profile, posts, collection, trades, reputation, journals, liveSpace, onReload, visitorExtras }) {
   const t = useT();
+  const { user } = useAuth();
   const personalInfo = config?.personal || config;
 
   // Landing / About / Home — overview blocks only. Posts (including the
@@ -99,7 +101,15 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
   // reverse-chronological order, with the pinned post excluded to avoid a
   // duplicate.
   if (tabKey === 'Posts') {
-    const pinnedId = profile?.pinned_post_id;
+    // Owner: use the live pinned_post_id from the authed user so pinning or
+    // unpinning updates the feed instantly (PostCard.togglePin calls
+    // checkUserAuth, which refreshes user.pinned_post_id). Visitors see the
+    // persisted value from the merged profile. When unpinned, pinnedId is
+    // empty so PinnedPost renders nothing and all posts fall back to natural
+    // reverse-chronological order.
+    const pinnedId = isOwner
+      ? (user?.pinned_post_id || profile?.pinned_post_id || '')
+      : (profile?.pinned_post_id || '');
     const rest = (posts || []).filter((p) => p.id !== pinnedId);
     if (!pinnedId && rest.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">{isExternal ? t('userProfile.noPostsBluesky') : t('userProfile.noPostsYet')}</p>;
     return (
