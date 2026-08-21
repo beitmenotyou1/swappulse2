@@ -30,9 +30,12 @@ export default async function(req: Request): Promise<Response> {
     const follows = await base44.entities.Follow.filter({ did: myDid }, '-created_date', 200).catch(() => []);
     const subjectDids = Array.from(new Set((follows || []).map((f: any) => f.subject_did).filter(Boolean)));
 
-    // 2. Resolve which follows are SwapPulse members (local Post table) vs external
+    // 2. Resolve which follows are SwapPulse members (local Post table) vs external.
+    //    Include the viewer's own DID so their own posts appear in their Home
+    //    feed alongside posts from accounts they follow.
     const svc = base44.asServiceRole;
     const memberDids = new Set<string>();
+    if (myDid) memberDids.add(myDid);
     await Promise.all(subjectDids.map(async (d) => {
       const users = await svc.entities.User.filter({ did: d }, '-created_date', 1).catch(() => []);
       if (users && users.length) memberDids.add(d);

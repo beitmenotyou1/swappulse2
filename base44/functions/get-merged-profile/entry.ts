@@ -41,16 +41,18 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ found: false, error: 'Could not resolve handle' });
     }
 
-    // 2. Fetch the local User record first. For migrated members, the local
-    //    record is authoritative (kept in sync via direct PDS reads by
-    //    firehose-ingest) — skip the eventually-consistent AppView fetch
-    //    entirely so there's zero indexing lag on description/displayName/
-    //    avatar/header. For non-members (no local record), fetch the AppView
-    //    for remote identity and counts.
+    // 2. Fetch the local User record and the live AppView profile. For
+    //    migrated members, the local record is authoritative for identity
+    //    fields (name, bio, avatar, header — kept in sync via direct PDS
+    //    reads by firehose-ingest, zero indexing lag). The AppView is still
+    //    fetched for counts (followers, follows, posts) — these are AppView-
+    //    indexed metrics the PDS doesn't provide, and skipping them left
+    //    migrated members with 0/0/0 counts. mergeProfiles already applies
+    //    local-wins for identity fields when migrated=true, so passing the
+    //    remote object is safe.
     const localUsers = await svc.entities.User.filter({ did }, '-created_date', 1).catch(() => []);
     const local = localUsers?.[0] || null;
-    const isMigratedMember = !!(local?.migrated_from_bluesky);
-    const remote = isMigratedMember ? null : await fetchAppViewProfile(did);
+    const remote = await fetchAppViewProfile(did);
 
     // 3. Merge and return. If both are null the actor doesn't exist anywhere.
     const merged = mergeProfiles(local, remote);
