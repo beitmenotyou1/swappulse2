@@ -106,16 +106,22 @@ export function I18nProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const t = useCallback((key) => {
+  const t = useCallback((key, params) => {
     const lang = LOCALE_TO_TCGDEX[locale] || 'en';
     const langOverrides = overrides[lang] || {};
     const dict = translations[locale] || translations['en-GB'];
     // Override (AI/manual) > static dict > English fallback > key
     // Use || (not ??) so empty strings in the static dict fall through to the
     // English fallback instead of rendering as blank space.
-    const result = langOverrides[key] || dict[key] || translations['en-GB'][key] || key;
+    let result = langOverrides[key] || dict[key] || translations['en-GB'][key] || key;
     if (import.meta.env.DEV && result === key) {
       console.warn('[i18n] missing key:', key, 'locale:', locale);
+    }
+    // Interpolate {placeholder} params into the resolved string.
+    if (params && typeof result === 'string') {
+      result = result.replace(/\{(\w+)\}/g, (_, name) =>
+        (params[name] !== undefined && params[name] !== null) ? String(params[name]) : `{${name}}`
+      );
     }
     return result;
   }, [locale, overrides]);
