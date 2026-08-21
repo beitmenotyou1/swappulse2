@@ -7,6 +7,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Mail, Loader2 } from "lucide-react";
 import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
+import { safeReturnTo } from "@/lib/authReturnTo";
 
 // Passwordless login component — routes through the verify-login-code backend
 // function (NOT base44.auth.verifyOtp) so the server-side 2FA gate is enforced.
@@ -75,8 +76,7 @@ export default function PasswordlessLogin() {
       }
       setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
       await base44.auth.loginViaEmailPassword(email, loginKey);
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
-      window.location.href = returnTo;
+      window.location.href = safeReturnTo();
     } catch (err) {
       setError(err.message || "Invalid or expired code");
     } finally {
@@ -94,8 +94,7 @@ export default function PasswordlessLogin() {
     setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
     try {
       await base44.auth.loginViaEmailPassword(email, loginKey);
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
-      window.location.href = returnTo;
+      window.location.href = safeReturnTo();
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
       setStep("code");
