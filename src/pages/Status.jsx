@@ -56,6 +56,17 @@ export default function Status() {
   const [subState, setSubState] = useState(null);
   const [subMsg, setSubMsg] = useState('');
   const [confirmMsg, setConfirmMsg] = useState(null);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const [resetKey, setResetKey] = useState(0);
+  const [siteKey, setSiteKey] = useState('');
+
+  useEffect(() => {
+    base44.functions.invoke('get-turnstile-site-key', {})
+      .then((res) => setSiteKey(res?.siteKey || res?.data?.siteKey || ''))
+      .catch(() => setSiteKey(''));
+  }, []);
+
+  const onVerify = useCallback((token) => setTurnstileToken(token), []);
 
   const refreshHealth = useCallback(async () => {
     setLoading(true);
@@ -136,7 +147,7 @@ export default function Status() {
     setSubState('sending');
     setSubMsg('');
     try {
-      const res = await base44.functions.invoke('subscribe-status', { email: email.trim() });
+      const res = await base44.functions.invoke('subscribe-status', { email: email.trim(), turnstileToken });
       if (res.data?.alreadySubscribed) {
         setSubState('sent');
         setSubMsg('You\'re already subscribed!');
@@ -150,6 +161,8 @@ export default function Status() {
     } catch (err) {
       setSubState('error');
       setSubMsg(err.response?.data?.error || err.message || 'Subscription failed.');
+      setTurnstileToken(null);
+      setResetKey((k) => k + 1);
     }
   };
 
@@ -349,26 +362,31 @@ export default function Status() {
               {subState === 'sent' ? (
                 <div className="rounded-lg bg-success/10 p-3 text-sm text-success">{subMsg}</div>
               ) : (
-                <form onSubmit={handleSubscribe} className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      disabled={subState === 'sending'}
-                      className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary disabled:opacity-50"
-                    />
+                <form onSubmit={handleSubscribe} className="space-y-3">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        disabled={subState === 'sending'}
+                        className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary disabled:opacity-50"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={subState === 'sending' || !turnstileToken}
+                      className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {subState === 'sending' ? 'Sending…' : 'Subscribe'}
+                    </button>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={subState === 'sending'}
-                    className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {subState === 'sending' ? 'Sending…' : 'Subscribe'}
-                  </button>
+                  {siteKey && (
+                    <TurnstileWidget siteKey={siteKey} onVerify={onVerify} resetKey={resetKey} />
+                  )}
                 </form>
               )}
               {subState === 'error' && <p className="mt-2 text-sm text-destructive">{subMsg}</p>}
