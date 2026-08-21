@@ -2,6 +2,7 @@ import React from 'react';
 import Avatar from '@/components/Avatar';
 import RichText from '@/components/RichText';
 import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
+import ProfileInfoRow from '@/components/profile/ProfileInfoRow';
 import { themeGradient } from '@/lib/profileThemes';
 
 // ThemeHeader — dispatches to a variant-specific header layout. Each variant
@@ -44,7 +45,7 @@ function Metrics({ followers, following, posts }) {
 }
 
 // ── SwapPulse (default) ──────────────────────────────────────────────────
-function DefaultHeader({ theme, profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function DefaultHeader({ theme, profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className={`w-full overflow-hidden bg-gradient-to-r ${themeGradient('default')} h-32 sm:h-40`}>
@@ -68,6 +69,7 @@ function DefaultHeader({ theme, profile, actions, extra, badges, reputationNode,
           {profile?.bsky_handle && <p className="text-sm text-muted-foreground">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -77,7 +79,7 @@ function DefaultHeader({ theme, profile, actions, extra, badges, reputationNode,
 }
 
 // ── Vintage ──────────────────────────────────────────────────────────────
-function VintageHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function VintageHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-50 h-32 sm:h-40">
@@ -99,6 +101,7 @@ function VintageHeader({ profile, actions, extra, badges, reputationNode, backLi
           {profile?.bsky_handle && <p className="text-sm text-amber-700">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm leading-relaxed text-amber-800" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -108,7 +111,7 @@ function VintageHeader({ profile, actions, extra, badges, reputationNode, backLi
 }
 
 // ── Competitive ──────────────────────────────────────────────────────────
-function CompetitiveHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function CompetitiveHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div className="bg-slate-900 text-white">
       <div className="w-full overflow-hidden bg-gradient-to-r from-blue-600/40 via-indigo-500/30 to-cyan-400/30 h-32 sm:h-40">
@@ -136,6 +139,7 @@ function CompetitiveHeader({ profile, actions, extra, badges, reputationNode, ba
             <span><b className="text-blue-400">{profile?.posts_count || 0}</b> <span className="text-slate-400">posts</span></span>
           </div>
           {profile?.description && <RichText text={profile.description} className="text-sm text-slate-300" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -145,7 +149,7 @@ function CompetitiveHeader({ profile, actions, extra, badges, reputationNode, ba
 }
 
 // ── Shiny ────────────────────────────────────────────────────────────────
-function ShinyHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function ShinyHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-amber-300/60 via-yellow-200/50 to-orange-200/40 h-32 sm:h-40">
@@ -171,6 +175,7 @@ function ShinyHeader({ profile, actions, extra, badges, reputationNode, backLink
           {profile?.bsky_handle && <p className="text-sm text-muted-foreground">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -180,7 +185,7 @@ function ShinyHeader({ profile, actions, extra, badges, reputationNode, backLink
 }
 
 // ── Investment ────────────────────────────────────────────────────────────
-function InvestmentHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function InvestmentHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-emerald-500/40 via-teal-400/30 to-green-300/30 h-32 sm:h-40">
@@ -204,6 +209,7 @@ function InvestmentHeader({ profile, actions, extra, badges, reputationNode, bac
           {profile?.bsky_handle && <p className="text-sm text-muted-foreground">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -213,7 +219,7 @@ function InvestmentHeader({ profile, actions, extra, badges, reputationNode, bac
 }
 
 // ── YouTube ───────────────────────────────────────────────────────────────
-function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-red-600/40 via-red-500/30 to-rose-400/30 h-32 sm:h-40">
@@ -239,6 +245,7 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
         <div className="mt-4 space-y-2.5 pb-1">
           {badges}
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -248,7 +255,7 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
 }
 
 // ── X ─────────────────────────────────────────────────────────────────────
-function XHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function XHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       {externalBanner}
@@ -268,6 +275,7 @@ function XHeader({ profile, actions, extra, badges, reputationNode, backLink, ex
           {badges}
           {profile?.description && <RichText text={profile.description} className="text-center text-sm" />}
           {actions && <div className="mt-1 flex flex-wrap items-center justify-center gap-2">{actions}</div>}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -277,7 +285,7 @@ function XHeader({ profile, actions, extra, badges, reputationNode, backLink, ex
 }
 
 // ── Facebook ──────────────────────────────────────────────────────────────
-function FacebookHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function FacebookHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-blue-600/40 via-blue-500/30 to-blue-400/30 h-32 sm:h-40">
@@ -299,6 +307,7 @@ function FacebookHeader({ profile, actions, extra, badges, reputationNode, backL
           {badges}
           <p className="text-sm text-muted-foreground">{profile?.followers_count || 0} followers · {profile?.following_count || 0} following</p>
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -308,7 +317,7 @@ function FacebookHeader({ profile, actions, extra, badges, reputationNode, backL
 }
 
 // ── Bluesky ───────────────────────────────────────────────────────────────
-function BlueskyHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function BlueskyHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-sky-400/40 via-blue-400/30 to-indigo-300/30 h-32 sm:h-40">
@@ -332,6 +341,7 @@ function BlueskyHeader({ profile, actions, extra, badges, reputationNode, backLi
           {profile?.bsky_handle && <p className="text-sm text-sky-700">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>
@@ -341,7 +351,7 @@ function BlueskyHeader({ profile, actions, extra, badges, reputationNode, backLi
 }
 
 // ── Mastodon ──────────────────────────────────────────────────────────────
-function MastodonHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
+function MastodonHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge, config }) {
   return (
     <div>
       <div className="w-full overflow-hidden bg-gradient-to-r from-purple-500/40 via-violet-400/30 to-fuchsia-300/30 h-32 sm:h-40">
@@ -366,6 +376,7 @@ function MastodonHeader({ profile, actions, extra, badges, reputationNode, backL
           {profile?.bsky_handle && <p className="text-sm text-purple-700">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
+          <ProfileInfoRow config={config} />
           {reputationNode}
           {extra}
         </div>

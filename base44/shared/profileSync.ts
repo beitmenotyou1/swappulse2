@@ -150,13 +150,22 @@ async function uploadImageBlob(
     return null;
   }
   try {
-    const imgRes = await fetch(imageUrl, { redirect: 'manual' });
-    if (imgRes.status >= 300 && imgRes.status < 400) {
-      console.error(`profileSync: ${label} fetch redirected (blocked)`, imgRes.status, imageUrl);
+    // Follow redirects, then validate the FINAL resolved URL against the
+    // allowlist. CDNs (e.g. media.base44.com) commonly redirect to signed or
+    // mirrored URLs; rejecting all redirects (the old redirect:'manual' + 3xx
+    // rejection) silently dropped every avatar/header upload, so images never
+    // reached the PDS while text fields synced fine. Validating the final
+    // hostname preserves SSRF protection while allowing legitimate CDN
+    // redirects.
+    const imgRes = await fetch(imageUrl, { redirect: 'follow' });
+    if (!imgRes.ok) {
+      console.error(`profileSync: ${label} fetch failed`, imgRes.status, imageUrl);
       return null;
     }
-    if (!imgRes.ok) {
-      console.error(`profileSync: ${label} fetch failed`, imgRes.status);
+    const finalUrl = imgRes.url || imageUrl;
+    const finalCheck = isAllowedImageUrl(finalUrl);
+    if (!finalCheck.ok) {
+      console.error(`profileSync: ${label} final host not allowed (${finalCheck.reason})`, finalUrl);
       return null;
     }
     const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';

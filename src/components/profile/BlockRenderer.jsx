@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Link as LinkIcon, Mail, Globe, Sparkles, Layers } from 'lucide-react';
+import { Mail, Sparkles, Layers } from 'lucide-react';
 import RichText from '@/components/RichText';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
@@ -55,17 +55,13 @@ export default function BlockRenderer({ blockKey, data, did, isOwner }) {
     return <BlockShell title={BLOCK_LABELS.milestones}><MilestonesTimeline milestones={data.milestones} /></BlockShell>;
   }
   if (blockKey === 'contact') {
-    const hasContact = data?.location || data?.website || data?.contact_email || data?.social_links?.length;
-    if (!hasContact) return null;
+    // Location, website, and social links now render in the profile header
+    // (ProfileInfoRow). The contact block shows only the contact email.
+    if (!data?.contact_email) return null;
     return (
       <BlockShell title={BLOCK_LABELS.contact}>
         <div className="space-y-1.5 text-sm">
-          {data.location && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" /> {data.location}</p>}
-          {data.website && <a href={data.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 break-all text-primary hover:underline"><LinkIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {data.website}</a>}
-          {data.contact_email && <a href={`mailto:${data.contact_email}`} className="flex items-center gap-1.5 break-all text-primary hover:underline"><Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {data.contact_email}</a>}
-          {data.social_links?.filter((s) => s?.url).map((s, i) => (
-            <a key={i} href={s.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 break-all text-primary hover:underline"><Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {s.label || s.platform || s.url}</a>
-          ))}
+          <a href={`mailto:${data.contact_email}`} className="flex items-center gap-1.5 break-all text-primary hover:underline"><Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {data.contact_email}</a>
         </div>
       </BlockShell>
     );

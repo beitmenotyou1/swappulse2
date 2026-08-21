@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Link as LinkIcon, Mail, Heart, Sparkles, Layers } from 'lucide-react';
+import { Mail, Heart, Sparkles, Layers } from 'lucide-react';
 
 // PersonalInfoSection — read-only display of the personal-info fields a viewer
 // is permitted to see. `data` is either the owner's full config (owner view) or
@@ -12,16 +12,13 @@ export default function PersonalInfoSection({ data, isOwner }) {
   const fields = [];
   if (data.bio) fields.push({ label: 'Bio', value: data.bio, full: true });
   if (data.pronouns) fields.push({ label: 'Pronouns', value: data.pronouns });
-  if (data.location) fields.push({ label: 'Location', value: data.location, icon: MapPin });
-  if (data.website) fields.push({ label: 'Website', value: data.website, href: data.website, icon: LinkIcon });
   if (data.contact_email) fields.push({ label: 'Email', value: data.contact_email, href: `mailto:${data.contact_email}`, icon: Mail });
 
   const interests = (data.interests || []).filter(Boolean);
   const favPokemon = (data.favourite_pokemon || []).filter(Boolean);
   const favSets = (data.favourite_sets || []).filter(Boolean);
-  const socialLinks = (data.social_links || []).filter((s) => s?.url);
 
-  const hasAny = fields.length || interests.length || favPokemon.length || favSets.length || socialLinks.length;
+  const hasAny = fields.length || interests.length || favPokemon.length || favSets.length;
   if (!hasAny) {
     return (
       <div className="p-6 text-center text-sm text-muted-foreground">
@@ -54,19 +51,6 @@ export default function PersonalInfoSection({ data, isOwner }) {
       {interests.length > 0 && <ChipGroup icon={Heart} title="Interests" items={interests} />}
       {favPokemon.length > 0 && <ChipGroup icon={Sparkles} title="Favourite Pokémon" items={favPokemon} />}
       {favSets.length > 0 && <ChipGroup icon={Layers} title="Favourite sets" items={favSets} />}
-
-      {socialLinks.length > 0 && (
-        <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Links</p>
-          <div className="flex flex-wrap gap-2">
-            {socialLinks.map((s, i) => (
-              <a key={i} href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-secondary">
-                <LinkIcon className="h-3.5 w-3.5 text-primary" /> {s.label || s.platform || 'Link'}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
