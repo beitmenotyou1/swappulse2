@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock } from 'lucide-react';
+import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, Bell, FileText } from 'lucide-react';
 import AtProtoForm from '@/components/auth/AtProtoForm';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -9,21 +9,30 @@ import { useT } from '@/lib/i18n/I18nProvider';
 // BlueskyLinkCard — the primary AT Protocol onboarding surface in Settings.
 // If the user has linked a Bluesky account (bsky_handle is set), shows their
 // linked identity. If not, shows the AtProtoForm so they can link one.
-// On successful link, refreshes the user context, fires re-bridge-content to
-// migrate existing shared-bridge posts to their own DID, and automatically
-// triggers migrate-to-swappulse to post and pin a 'I've moved' announcement on
-// Bluesky, replace the Bluesky bio with a SwapPulse pointer, and update the
-// handle to username.swappulse.org (or a custom domain if the user specified
-// one). When migrated, shows a 'Move back to Bluesky' button to reverse the
-// migration. When migration_reverted (un-moved), shows a locked notice —
-// profile editing is disabled and the profile reverts to the original
-// Bluesky profile.
+//
+// On successful link, the migration flow runs:
+//   1. re-bridge-content moves existing shared-bridge posts to the user's DID.
+//   2. migrate-to-swappulse pulls the Bluesky profile (displayName, description,
+//      avatar) INTO SwapPulse, triggers the all-time post backfill (first
+//      batch), imports the notification snapshot, updates the handle to
+//      username.swappulse.org, and posts+pins a 'I've moved' announcement on
+//      Bluesky. The Bluesky bio is NOT overwritten — it stays as the two-way
+//      synced source of truth.
+//   3. The post backfill loops (backfill-author-posts) until hasMore is false
+//      so the user's full Bluesky post history renders on SwapPulse.
+//
+// When migrated, shows a sync status card (profile, posts, notifications) and
+// a 'Move back to Bluesky' button. When migration_reverted (un-moved), shows a
+// locked notice — profile editing is disabled and the profile reverts to the
+// original Bluesky profile.
 export default function BlueskyLinkCard() {
   const t = useT();
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
   const [rebridging, setRebridging] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillCount, setBackfillCount] = useState(0);
   const [unmoving, setUnmoving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showDomainInput, setShowDomainInput] = useState(false);
@@ -32,8 +41,37 @@ export default function BlueskyLinkCard() {
   const linked = !!user?.bsky_handle;
   const migrated = !!user?.migrated_from_bluesky;
   const reverted = !!user?.migration_reverted;
+  const backfillComplete = !!user?.post_backfill_complete;
+  const notificationsImported = !!user?.notifications_imported_at;
 
   const defaultHandle = user?.username || user?.email?.split('@')[0] || 'collector';
+
+  // Loop backfill-author-posts until hasMore is false so the user's full
+  // Bluesky post history is synced into SwapPulse. Each call is one page
+  // (100 records); large histories need multiple calls within timeout.
+  const runBackfillLoop = async () => {
+    setBackfilling(true);
+    setBackfillCount(0);
+    let total = 0;
+    try {
+      let hasMore = true;
+      let safety = 0; // cap at 50 pages (5000 posts) to avoid runaway loops
+      while (hasMore && safety < 50) {
+        const res = await base44.functions.invoke('backfill-author-posts', {});
+        const result = res?.data ?? res;
+        total += (result?.backfilled || 0) + (result?.updated || 0);
+        setBackfillCount(total);
+        hasMore = !!result?.hasMore;
+        safety++;
+        if (!result?.ok) break;
+      }
+      await checkUserAuth?.();
+    } catch (e) {
+      console.error('Backfill loop failed', e);
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const handleLinked = async (data) => {
     toast({
@@ -57,7 +95,8 @@ export default function BlueskyLinkCard() {
       setRebridging(false);
     }
 
-    // Auto-migrate: post announcement, pin it, replace Bluesky bio, update handle
+    // Auto-migrate: pull profile, trigger backfill + notifications, update
+    // handle, post + pin announcement.
     setMigrating(true);
     try {
       const res = await base44.functions.invoke('migrate-to-swappulse', {
@@ -74,7 +113,6 @@ export default function BlueskyLinkCard() {
         });
       }
     } catch (e) {
-      // non-fatal — migration is best-effort; linking still succeeded
       console.error('Auto-migration failed', e);
       toast({
         title: t('migration.announceFailedTitle'),
@@ -84,6 +122,10 @@ export default function BlueskyLinkCard() {
     } finally {
       setMigrating(false);
     }
+
+    // Loop the post backfill to completion (migrate-to-swappulse ran the
+    // first batch; this continues until hasMore is false).
+    await runBackfillLoop();
   };
 
   const handleUnmove = async () => {
@@ -137,6 +179,7 @@ export default function BlueskyLinkCard() {
     } finally {
       setMigrating(false);
     }
+    await runBackfillLoop();
   };
 
   if (linked && !showForm) {
@@ -160,9 +203,38 @@ export default function BlueskyLinkCard() {
             <p className="mt-1.5 text-xs text-muted-foreground">
               {t('migration.handleLabel')}: <b className="text-foreground">@{user.bsky_handle}</b>
             </p>
+
+            {/* Sync status checklist */}
+            <div className="mt-2.5 space-y-1.5">
+              <p className="flex items-center gap-1.5 text-xs text-success">
+                <CheckCircle2 className="h-3 w-3" /> {t('migration.profilePulled')}
+              </p>
+              <p className="flex items-center gap-1.5 text-xs text-success">
+                <CheckCircle2 className="h-3 w-3" /> {t('migration.notificationsImported')}
+              </p>
+              <p className={`flex items-center gap-1.5 text-xs ${backfillComplete ? 'text-success' : 'text-muted-foreground'}`}>
+                {backfillComplete ? <CheckCircle2 className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                {backfilling
+                  ? t('migration.syncingPosts', { count: backfillCount })
+                  : backfillComplete
+                    ? t('migration.postsBackfilled')
+                    : t('migration.continueSync')}
+              </p>
+            </div>
+
+            {/* Continue sync button if backfill is incomplete */}
+            {!backfillComplete && !backfilling && (
+              <button
+                onClick={runBackfillLoop}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2 text-xs font-bold text-secondary-foreground transition-colors hover:bg-secondary/80"
+              >
+                <DownloadCloud className="h-3.5 w-3.5" /> {t('migration.continueSync')}
+              </button>
+            )}
+
             <button
               onClick={handleUnmove}
-              disabled={unmoving}
+              disabled={unmoving || backfilling}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-sm font-bold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
             >
               {unmoving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
@@ -197,10 +269,14 @@ export default function BlueskyLinkCard() {
           <RefreshCw className="h-4 w-4" /> {t('migration.relink')}
         </button>
 
-        {(rebridging || migrating) && (
+        {(rebridging || migrating || backfilling) && (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
-            {migrating ? t('migration.migratingStatus') : t('migration.rebridgingStatus')}
+            {backfilling
+              ? t('migration.syncingPosts', { count: backfillCount })
+              : migrating
+                ? t('migration.migratingStatus')
+                : t('migration.rebridgingStatus')}
           </p>
         )}
       </div>
@@ -266,10 +342,14 @@ export default function BlueskyLinkCard() {
       <div className="mt-3">
         <AtProtoForm mode="link" onSuccess={handleLinked} submitLabel={t('migration.linkButton')} />
       </div>
-      {(rebridging || migrating) && (
+      {(rebridging || migrating || backfilling) && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
-          {migrating ? t('migration.migratingStatus') : t('migration.rebridgingStatus')}
+          {backfilling
+            ? t('migration.syncingPosts', { count: backfillCount })
+            : migrating
+              ? t('migration.migratingStatus')
+              : t('migration.rebridgingStatus')}
         </p>
       )}
     </div>
