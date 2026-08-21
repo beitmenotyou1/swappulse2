@@ -17,6 +17,7 @@ import {
 } from '../../shared/moderationConfig.ts';
 import { getActiveInsights } from '../../shared/agentLearningLoop.ts';
 import { isInternalServiceCall } from '../../shared/internalAuth.ts';
+import { secrets } from 'base44:runtime';
 
 const LABELER_DID = 'did:web:labeler.swappulse.org';
 
@@ -37,7 +38,13 @@ export default async function(req: Request): Promise<Response> {
     // Moderation workflows fail with 403 on every entity create event.
     let caller: any;
     try { caller = await base44.auth.me(); } catch { caller = null; }
-    const isInternalCall = isInternalServiceCall(req);
+    // Verify the platform's internal service token by decoding its JWT payload
+    // and checking the `internal_service_token` / `caller` claims — not just the
+    // header presence, which any internet caller could spoof. Also accept a
+    // shared secret (BACKEND_FUNCTION_SECRET) for server-side internal callers.
+    const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
+    const secretOk = !!sharedSecret && req.headers.get('x-backend-function-secret') === sharedSecret;
+    const isInternalCall = isInternalServiceCall(req) || secretOk;
     if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
