@@ -1,9 +1,21 @@
-// migrate-to-swappulse — auto-migrates a collector's Bluesky presence to
-// SwapPulse on link. Posts and pins a default 'I've moved' announcement to
-// their Bluesky feed, replaces their Bluesky bio with a SwapPulse pointer,
-// snapshots the full original profile for un-move restoration, updates the
-// handle to username.swappulse.org (or a custom domain if provided), and
-// stores migration state for the 'Moved from Bluesky' badge and un-move.
+// migrate-to-swappulse — syncs a collector's Bluesky presence INTO SwapPulse on
+// link, then updates the handle and posts+pins an announcement on Bluesky.
+//
+// Resequenced flow (pull-then-announce, NOT overwrite-bio):
+//   1. Pull the Bluesky profile (displayName, description, avatar, banner) from
+//      the AppView and merge it into the local User record as the synced source
+//      of truth — the Bluesky bio stays intact and two-way sync keeps it in
+//      step (no pointer overwrite).
+//   2. Trigger backfill-author-posts (first batch) so the user's full Bluesky
+//      post history renders on SwapPulse. Resumable — the UI re-invokes until
+//      hasMore is false.
+//   3. Trigger import-notification-snapshot so the user has an immediate
+//      notification snapshot on SwapPulse.
+//   4. Update the handle to username.swappulse.org (or a custom domain) on the
+//      Protocol side.
+//   5. Post and pin the 'I've moved to SwapPulse' announcement on the Bluesky
+//      feed so followers see the transition.
+//   6. Snapshot the full original Bluesky profile for un-move restoration.
 //
 // Called automatically by BlueskyLinkCard after a successful link. Idempotent:
 // if already migrated, returns success without re-posting.
@@ -11,12 +23,14 @@
 // Input: { customDomain? } — optional custom domain for the handle (e.g.
 //   'mybrand.com'). If omitted, defaults to username.swappulse.org.
 //
-// Output: { ok, migrated, pinnedUri, profileUrl, handleUpdated, handle }
+// Output: { ok, migrated, pinnedUri, profileUrl, handleUpdated, handle,
+//   profilePulled, backfillStarted, notificationsImported }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
+import { pullProfileFromAppView } from '../../shared/profileSync.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -53,12 +67,75 @@ export default async function(req: Request): Promise<Response> {
       console.error('migrate: getRecord profile failed (continuing)', e?.message);
     }
     const originalBio: string = existingProfile.description || '';
-    // Store the full profile snapshot as JSON for un-move restoration.
     const originalProfileJson: string = JSON.stringify(existingProfile);
 
-    // 2. Post the announcement to the user's Bluesky feed.
+    // 2. Pull the Bluesky profile INTO SwapPulse (displayName, description,
+    //    avatar, banner) as the synced source of truth. The Bluesky bio stays
+    //    intact — no pointer overwrite. Two-way sync (firehose-ingest
+    //    syncInboundProfiles + sync-profile-records) keeps both in step.
+    let profilePulled = false;
+    try {
+      const { ok, updates } = await pullProfileFromAppView(sess.did);
+      if (ok && Object.keys(updates).length > 0) {
+        updates.profile_synced_at = new Date().toISOString();
+        await base44.auth.updateMe(updates);
+        profilePulled = true;
+      }
+    } catch (e) {
+      console.error('migrate: profile pull failed (continuing)', e?.message);
+    }
+
+    // 3. Trigger the all-time post backfill (first batch). Resumable — the
+    //    UI re-invokes backfill-author-posts until hasMore is false.
+    let backfillStarted = false;
+    try {
+      const bfRes = await base44.functions.invoke('backfill-author-posts', {}).catch((e: any) => {
+        console.error('migrate: backfill first batch failed (continuing)', e?.message || e);
+        return null;
+      });
+      backfillStarted = !!(bfRes?.ok);
+    } catch (e) {
+      console.error('migrate: backfill trigger failed (continuing)', e?.message);
+    }
+
+    // 4. Import the one-time Bluesky notification snapshot.
+    let notificationsImported = false;
+    try {
+      const niRes = await base44.functions.invoke('import-notification-snapshot', {}).catch((e: any) => {
+        console.error('migrate: notification import failed (continuing)', e?.message || e);
+        return null;
+      });
+      notificationsImported = !!(niRes?.ok);
+    } catch (e) {
+      console.error('migrate: notification import trigger failed (continuing)', e?.message);
+    }
+
+    // 5. Update the handle to username.swappulse.org (or custom domain).
+    //    Best-effort — the PDS must verify the handle via DNS TXT or
+    //    well-known file. If verification fails, the migration still
+    //    succeeds; the user can manually update their handle later.
+    let handleUpdated = false;
+    let newHandle = '';
+    const username = user.username || user.email?.split('@')[0] || 'collector';
+    const targetHandle = customDomain || `${username}.swappulse.org`;
+    try {
+      const handleRes = await pdsRequest(
+        pdsUrl, sess.accessJwt, 'com.atproto.identity.updateHandle',
+        { handle: targetHandle },
+      );
+      if (handleRes?.error) {
+        console.error('migrate: handle update failed (best-effort)', handleRes.status, handleRes.body);
+      } else {
+        handleUpdated = true;
+        newHandle = targetHandle;
+      }
+    } catch (e) {
+      console.error('migrate: handle update failed (best-effort)', e?.message);
+    }
+
+    // 6. Post the announcement to the user's Bluesky feed.
     const appUrl = resolveAppUrl(req);
-    const profileHandle = user.username || user.bsky_handle;
+    const profileHandle = newHandle || user.username || user.bsky_handle;
     const profileUrl = `${appUrl}/u/${profileHandle}`;
     const announcementText = `I've moved to SwapPulse! 🎉 Follow me at ${profileUrl} for all my Pokémon TCG collecting, trades, and community.`;
 
@@ -87,7 +164,7 @@ export default async function(req: Request): Promise<Response> {
     }
     const pinnedUri: string = postResult.uri;
 
-    // 3. Pin the announcement post (best-effort — preference API may vary).
+    // 7. Pin the announcement post (best-effort — preference API may vary).
     try {
       const prefsRes = await fetch(`${pdsUrl}/xrpc/app.bsky.actor.getPreferences`, {
         headers: { 'Authorization': `Bearer ${sess.accessJwt}` },
@@ -105,58 +182,8 @@ export default async function(req: Request): Promise<Response> {
       console.error('migrate: pin post failed (best-effort)', e?.message);
     }
 
-    // 4. Replace the Bluesky bio with a SwapPulse pointer (merge into the
-    //    existing profile record so displayName/avatar/banner are preserved).
-    const migrationBio = `📍 Moved to SwapPulse — follow me at ${profileUrl}`;
-    try {
-      const mergedProfile = {
-        ...existingProfile,
-        $type: 'app.bsky.actor.profile',
-        description: migrationBio,
-      };
-      let bioResult: any = await pdsRequest(
-        pdsUrl, sess.accessJwt, 'com.atproto.repo.putRecord',
-        { repo: sess.did, collection: 'app.bsky.actor.profile', rkey: 'self', record: mergedProfile },
-      );
-      if (bioResult?.error && bioResult.status === 401) {
-        clearPdsSession();
-        const fresh = await resolveBridgeSession(req);
-        bioResult = await pdsRequest(
-          fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.putRecord',
-          { repo: fresh.session.did, collection: 'app.bsky.actor.profile', rkey: 'self', record: mergedProfile },
-        );
-      }
-      if (bioResult?.error) {
-        console.error('migrate: putRecord profile failed (continuing)', bioResult.status);
-      }
-    } catch (e) {
-      console.error('migrate: bio update failed (continuing)', e?.message);
-    }
-
-    // 5. Update the handle to username.swappulse.org (or custom domain).
-    //    Best-effort — the PDS must verify the handle via DNS TXT or
-    //    well-known file. If verification fails, the migration still
-    //    succeeds; the user can manually update their handle later.
-    let handleUpdated = false;
-    let newHandle = '';
-    const username = user.username || user.email?.split('@')[0] || 'collector';
-    const targetHandle = customDomain || `${username}.swappulse.org`;
-    try {
-      const handleRes = await pdsRequest(
-        pdsUrl, sess.accessJwt, 'com.atproto.identity.updateHandle',
-        { handle: targetHandle },
-      );
-      if (handleRes?.error) {
-        console.error('migrate: handle update failed (best-effort)', handleRes.status, handleRes.body);
-      } else {
-        handleUpdated = true;
-        newHandle = targetHandle;
-      }
-    } catch (e) {
-      console.error('migrate: handle update failed (best-effort)', e?.message);
-    }
-
-    // 6. Store migration state on the user.
+    // 8. Store migration state on the user. The Bluesky bio is NOT overwritten
+    //    — it stays as the two-way synced source of truth.
     await base44.auth.updateMe({
       migrated_from_bluesky: true,
       original_bluesky_bio: originalBio,
@@ -168,7 +195,7 @@ export default async function(req: Request): Promise<Response> {
       ...(handleUpdated ? { bsky_handle: newHandle } : {}),
     });
 
-    console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}${handleUpdated ? ` → @${newHandle}` : ''}`);
+    console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}${handleUpdated ? ` → @${newHandle}` : ''} (profilePulled=${profilePulled}, backfillStarted=${backfillStarted}, notificationsImported=${notificationsImported})`);
     return Response.json({
       ok: true,
       migrated: true,
@@ -176,6 +203,9 @@ export default async function(req: Request): Promise<Response> {
       profileUrl,
       handleUpdated,
       handle: newHandle || user.bsky_handle,
+      profilePulled,
+      backfillStarted,
+      notificationsImported,
     });
   } catch (error) {
     console.error('migrate-to-swappulse error:', error?.message || error);

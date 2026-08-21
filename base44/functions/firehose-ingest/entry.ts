@@ -523,6 +523,19 @@ export default async function(req: Request): Promise<Response> {
       if (f.subject_did && f.subject_did !== localDid) remoteDids.add(f.subject_did);
     }
 
+    // Migrated users have their own did:plc + PdsCredential. Their repos are
+    // the source of truth for their posts/likes/reposts after migration, so
+    // they must be scanned for two-way sync (creates, edits, deletes). The
+    // local bridge repo alone would miss them.
+    const creds = await svc.entities.PdsCredential.list('-created_date', 100).catch(() => []);
+    const migratedDids = new Set<string>();
+    for (const c of (creds || [])) {
+      if (c.did && c.did !== localDid) {
+        remoteDids.add(c.did);
+        migratedDids.add(c.did);
+      }
+    }
+
     const reposToScan = [localDid, ...remoteDids];
 
     let ingested = 0, updated = 0, deleted = 0, errors = 0;

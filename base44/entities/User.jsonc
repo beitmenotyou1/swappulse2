@@ -115,6 +115,20 @@
       "type": "boolean",
       "default": false,
       "description": "True after the user un-moves (reverts migration). While true, profile editing on SwapPulse is disabled \u2014 the profile reverts to the original Bluesky profile and changes made during migration are undone. Cleared if the user re-migrates."
+    },
+    "post_backfill_cursor": {
+      "type": "string",
+      "description": "Pagination cursor for the resumable all-time post backfill (backfill-author-posts). Stores the last-processed cursor from com.atproto.repo.listRecords so large post histories can be backfilled across multiple calls within function timeouts. Cleared on un-move."
+    },
+    "post_backfill_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the all-time post backfill has fully paged through the user's PDS repo (backfill-author-posts set this when hasMore was false). Cleared on un-move so a re-migration re-backfills."
+    },
+    "notifications_imported_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the one-time Bluesky notification snapshot was imported (import-notification-snapshot). Cleared on un-move so a re-migration re-imports."
     }
   },
   "required": [

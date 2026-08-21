@@ -1,12 +1,15 @@
-// Shared helper that syncs a user's local profile (display name, avatar, bio)
-// to their AT Protocol PDS repo as a real app.bsky.actor.profile record
-// (rkey 'self'), so the profile is resolvable from Bluesky and other AT
-// Protocol apps instead of appearing as a blank account.
+// Shared profile sync helpers for AT Protocol bidirectional identity sync.
 //
-// Used by sync-profile-records (admin backfill + single-user edit sync) so
-// both share one implementation. The avatar is fetched from its stored URL and
-// re-uploaded as a PDS blob on the user's own repo, then embedded as a blob
-// ref (app.bsky.actor.profile.avatar requires a blob ref, not a raw URL).
+// OUTBOUND (SwapPulse → PDS): syncProfileForUser pushes the local profile
+// (display name, avatar, bio) to the PDS as a real app.bsky.actor.profile
+// record (rkey 'self'). Used by sync-profile-records.
+//
+// INBOUND (PDS/AppView → SwapPulse): pullProfileFromAppView fetches the user's
+// Bluesky profile (displayName, description, avatar, banner) from the AppView
+// and returns the field updates to merge into the local User record. Used by
+// migrate-to-swappulse on link so the initial sync pulls the Bluesky identity
+// INTO SwapPulse (the inverse of the old overwrite-bio flow). The ongoing
+// inbound sync is handled by firehose-ingest's syncInboundProfiles.
 
 import { getPdsSessionForUser, pdsRequest } from './pdsSession.ts';
 
@@ -152,5 +155,43 @@ export async function syncProfileForUser(
     return { ok: true, uri: res.uri, cid: res.cid };
   } catch (e: any) {
     return { ok: false, error: `putRecord: ${e?.message || e}` };
+  }
+}
+
+// ─── Inbound profile pull (AppView → SwapPulse) ──────────────────────────
+// Fetches the user's Bluesky profile (displayName, description, avatar, banner)
+// from the public AppView and returns the field updates to merge into the local
+// User record. Used by migrate-to-swappulse on link so the initial sync pulls
+// the Bluesky identity INTO SwapPulse (the inverse of the old overwrite-bio
+// flow). The AppView returns resolved avatar/banner URLs (not blob refs), which
+// is what the local User.avatar/header fields store.
+//
+// Returns { ok, updates } where updates is a partial object of User fields
+// (display_name, description, avatar, header) ready for updateMe. Empty
+// updates means the profile was already in sync or the fetch failed.
+const APPVIEW_BASE = 'https://public.api.bsky.app';
+
+export async function pullProfileFromAppView(userDid: string): Promise<{ ok: boolean; updates: Record<string, any>; profile?: any }> {
+  try {
+    const url = new URL(`${APPVIEW_BASE}/xrpc/app.bsky.actor.getProfile`);
+    url.searchParams.set('actor', userDid);
+    const res = await fetch(url);
+    if (res.status === 429 || res.status >= 500) {
+      return { ok: false, updates: {} };
+    }
+    if (!res.ok) {
+      console.error('pullProfileFromAppView: getProfile failed', res.status);
+      return { ok: false, updates: {} };
+    }
+    const profile: any = await res.json();
+    const updates: Record<string, any> = {};
+    if (profile.displayName) updates.display_name = profile.displayName;
+    if (profile.description !== undefined) updates.description = profile.description || '';
+    if (profile.avatar) updates.avatar = profile.avatar;
+    if (profile.banner) updates.header = profile.banner;
+    return { ok: true, updates, profile };
+  } catch (e: any) {
+    console.error('pullProfileFromAppView error', e?.message || e);
+    return { ok: false, updates: {} };
   }
 }
