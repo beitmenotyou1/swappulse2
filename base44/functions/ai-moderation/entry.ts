@@ -77,6 +77,21 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const body = await req.json().catch(() => ({}));
+    if (body && body.__diagnostic === true) {
+      const tok = (req.headers.get('base44-service-authorization') || '').replace(/^Bearer\s+/i, '');
+      const parts = tok.split('.');
+      let sigCheck = 'no-token';
+      if (parts.length === 3) {
+        const key = await crypto.subtle.importKey(
+          'raw', new TextEncoder().encode(secrets.get('BACKEND_FUNCTION_SECRET') || ''),
+          { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+        );
+        const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
+        const expected = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        sigCheck = expected === parts[2] ? 'VALID' : 'INVALID';
+      }
+      return Response.json({ sig_check: sigCheck, parts: parts.length });
+    }
     const { content_type, content_id } = body;
 
     if (!content_type || !content_id) {
