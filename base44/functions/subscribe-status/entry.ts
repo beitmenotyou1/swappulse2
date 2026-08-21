@@ -4,6 +4,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
+import { verifyTurnstile } from '../../shared/payments.ts';
 
 function randomToken() {
   const bytes = new Uint8Array(32);
@@ -18,6 +19,13 @@ export default async function(req) {
     const email = String(body.email || '').trim().toLowerCase();
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       return Response.json({ error: 'Valid email required' }, { status: 400 });
+    }
+
+    // Bot verification: require a valid Cloudflare Turnstile token to prevent
+    // automated abuse of the public subscription endpoint (mail relay / spam).
+    const turnstileOk = await verifyTurnstile(String(body.turnstileToken || ''));
+    if (!turnstileOk) {
+      return Response.json({ error: 'Bot verification failed.' }, { status: 403 });
     }
 
     const svc = base44.asServiceRole;

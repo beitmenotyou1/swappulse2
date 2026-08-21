@@ -7,6 +7,7 @@ import {
 import { base44 } from '@/api/base44Client';
 import ServiceRow from '@/components/status/ServiceRow';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import TurnstileWidget from '@/components/TurnstileWidget';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // Maps health-check service keys to StatusService slugs
