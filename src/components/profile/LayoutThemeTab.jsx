@@ -7,7 +7,7 @@ import { BLOCK_LABELS, DEFAULT_BLOCK_ORDER, getThemeConfig, ALL_TAB_LABELS } fro
 // platform layouts), drag-to-reorder the About-section content blocks, and
 // toggle tab visibility. Posts is locked on (never hideable).
 export default function LayoutThemeTab({ draft, update, sectionLabels }) {
-  const blockOrder = draft.block_order?.length ? draft.block_order : DEFAULT_BLOCK_ORDER;
+  const blockOrder = (draft.block_order?.length ? draft.block_order : DEFAULT_BLOCK_ORDER).filter((k) => BLOCK_LABELS[k]);
   const currentCfg = getThemeConfig('default');
   const currentTabKeys = [...currentCfg.tabs.map((t) => t.key), 'Cross-Posting', 'Privacy'];
   const userOrder = draft.section_order || [];

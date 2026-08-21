@@ -86,20 +86,28 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
   const t = useT();
   const personalInfo = config?.personal || config;
 
-  // Landing / About / Home — pinned post is shown prominently at the top.
+  // Landing / About / Home — overview blocks only. Posts (including the
+  // pinned post) live in the Posts tab so the About view stays clean.
   if (tabKey === 'About' || tabKey === 'Home') {
     return (
-      <div className="space-y-2">
-        <PinnedPost pinnedPostId={profile?.pinned_post_id} posts={posts} />
-        <LandingView theme={theme} did={did} isOwner={isOwner} config={config} profile={profile} posts={posts} collection={collection} trades={trades} reputation={reputation} journals={journals} />
-      </div>
+      <LandingView theme={theme} did={did} isOwner={isOwner} config={config} profile={profile} posts={posts} collection={collection} trades={trades} reputation={reputation} journals={journals} />
     );
   }
 
-  // Posts
+  // Posts — the author's pinned post is surfaced at the top of the feed and
+  // stays there until unpinned or replaced; the remaining posts follow in
+  // reverse-chronological order, with the pinned post excluded to avoid a
+  // duplicate.
   if (tabKey === 'Posts') {
-    if (!posts || posts.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">{isExternal ? t('userProfile.noPostsBluesky') : t('userProfile.noPostsYet')}</p>;
-    return <div>{posts.map((p) => <PostCard key={p.id} post={p} />)}</div>;
+    const pinnedId = profile?.pinned_post_id;
+    const rest = (posts || []).filter((p) => p.id !== pinnedId);
+    if (!pinnedId && rest.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">{isExternal ? t('userProfile.noPostsBluesky') : t('userProfile.noPostsYet')}</p>;
+    return (
+      <div>
+        <PinnedPost pinnedPostId={pinnedId} posts={posts} />
+        {rest.map((p) => <PostCard key={p.id} post={p} />)}
+      </div>
+    );
   }
 
   // Replies

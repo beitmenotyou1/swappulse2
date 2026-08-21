@@ -204,7 +204,6 @@ export const VISIBILITY_FIELDS = Object.keys(DEFAULT_FIELD_VISIBILITY);
 
 // Content blocks for the About section — drag-to-reorder keys + labels.
 export const BLOCK_LABELS = {
-  bio: 'Bio',
   interests: 'Interests & hobbies',
   favourite_pokemon: 'Favourite Pokémon',
   favourite_sets: 'Favourite sets',

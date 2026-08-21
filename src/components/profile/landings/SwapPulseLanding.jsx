@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy, BookOpen, ArrowLeftRight, Sparkles } from 'lucide-react';
 import BlockRenderer from '@/components/profile/BlockRenderer';
-import PostCard from '@/components/feed/PostCard';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
 
@@ -10,7 +9,6 @@ import { formatPrice } from '@/lib/format';
 // from every section (posts, binder, trades, portfolio, milestones) into a
 // single scrollable overview so visitors get the full picture at a glance.
 export default function SwapPulseLanding({ data, blockOrder, did, isOwner, profile, posts, collection, trades, reputation, journals }) {
-  const recentPosts = (posts || []).slice(0, 3);
   const binderCards = (collection || []).slice(0, 6);
   const portfolioValue = (collection || []).reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
 
@@ -23,16 +21,9 @@ export default function SwapPulseLanding({ data, blockOrder, did, isOwner, profi
         <HighlightCard icon={Trophy} label="Value" value={formatPrice(portfolioValue)} />
       </div>
 
-      {['bio', 'interests', 'favourite_pokemon', 'favourite_sets'].map((key) => (
+      {['interests', 'favourite_pokemon', 'favourite_sets'].map((key) => (
         <BlockRenderer key={key} blockKey={key} data={data} did={did} isOwner={isOwner} />
       ))}
-
-      {recentPosts.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-bold">Recent Posts</h3>
-          <div className="space-y-2">{recentPosts.map((p) => <PostCard key={p.id} post={p} />)}</div>
-        </div>
-      )}
 
       {binderCards.length > 0 && (
         <div>

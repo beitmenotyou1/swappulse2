@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Sparkles, Layers } from 'lucide-react';
-import RichText from '@/components/RichText';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
@@ -34,10 +33,6 @@ function BadgeRow({ items, icon: Icon }) {
 // Shared by ProfileBlocks (gradient themes) and every platform theme so
 // blocks render identically regardless of where they're placed.
 export default function BlockRenderer({ blockKey, data, did, isOwner }) {
-  if (blockKey === 'bio') {
-    if (!data?.bio) return null;
-    return <BlockShell title={BLOCK_LABELS.bio}><RichText text={data.bio} className="text-sm" /></BlockShell>;
-  }
   if (blockKey === 'interests') {
     if (!data?.interests?.length) return null;
     return <BlockShell title={BLOCK_LABELS.interests}><BadgeRow items={data.interests} /></BlockShell>;
