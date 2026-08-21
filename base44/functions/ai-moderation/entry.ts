@@ -28,10 +28,16 @@ export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth gate: authenticated admin/moderator.
+    // Auth gate: allow authenticated admin/moderator users (moderation agent,
+    // manual testing) OR internal platform calls (entity-trigger workflow
+    // runtime) carrying the Base44-Service-Authorization service token header.
+    // Entity-trigger workflows inject the service token but NOT a user token,
+    // so base44.auth.me() returns null for them — without this check, the AI
+    // Moderation workflows fail with 403 on every entity create event.
     let caller: any;
     try { caller = await base44.auth.me(); } catch { caller = null; }
-    if (!caller || !['admin', 'moderator'].includes(caller.role)) {
+    const isInternalCall = !!req.headers.get('Base44-Service-Authorization');
+    if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
