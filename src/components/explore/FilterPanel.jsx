@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
-import { getRarities, getTypes, getSets } from '@/lib/tcgdex';
+import { SlidersHorizontal, X } from 'lucide-react';
+import { getTypes } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 
-// FilterPanel — collapsible faceted filter UI for the Explore page. Supports
-// filtering by set, rarity, type, and price range. Fetches filter options from
-// TCGDex catalogue endpoints. Calls onApply with the active filter object.
+// FilterPanel — collapsible filter for secondary card-search filters (type
+// and price range). Set and rarity are now quick-access controls on the
+// Explore page (SetQuickFilter + RarityFilterChips), so they're preserved
+// from activeFilters on apply rather than managed here.
 export default function FilterPanel({ onApply, activeFilters }) {
   const { settings } = useSettings();
   const lang = settings?.language?.preferredContent?.[0] || 'en';
   const [open, setOpen] = useState(false);
-  const [rarities, setRarities] = useState([]);
   const [types, setTypes] = useState([]);
-  const [sets, setSets] = useState([]);
   const [local, setLocal] = useState({
-    set: activeFilters?.set || '',
-    rarity: activeFilters?.rarity || '',
     type: activeFilters?.type || '',
     minPrice: activeFilters?.minPrice || '',
     maxPrice: activeFilters?.maxPrice || '',
@@ -24,41 +21,37 @@ export default function FilterPanel({ onApply, activeFilters }) {
   useEffect(() => {
     (async () => {
       try {
-        const [r, t, s] = await Promise.all([
-          getRarities(lang).catch(() => []),
-          getTypes(lang).catch(() => []),
-          getSets(lang).catch(() => []),
-        ]);
-        setRarities(r || []);
+        const t = await getTypes(lang).catch(() => []);
         setTypes(t || []);
-        setSets((s || []).slice(-20).reverse());
       } catch { /* ignore */ }
     })();
   }, [lang]);
 
   const apply = () => {
-    onApply(local);
+    onApply({ ...activeFilters, ...local });
     setOpen(false);
   };
 
   const clear = () => {
-    const empty = { set: '', rarity: '', type: '', minPrice: '', maxPrice: '' };
-    setLocal(empty);
-    onApply(empty);
+    const cleared = { type: '', minPrice: '', maxPrice: '' };
+    setLocal(cleared);
+    onApply({ ...activeFilters, ...cleared });
     setOpen(false);
   };
 
-  const hasActive = activeFilters && (activeFilters.set || activeFilters.rarity || activeFilters.type || activeFilters.minPrice || activeFilters.maxPrice);
+  const hasActive = activeFilters && (activeFilters.type || activeFilters.minPrice || activeFilters.maxPrice);
 
   return (
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-          hasActive ? 'bg-primary text-white' : 'border border-border bg-secondary text-muted-foreground hover:border-primary/50'
+          hasActive ? 'bg-primary text-primary-foreground' : 'border border-border bg-secondary text-muted-foreground hover:border-primary/50'
         }`}
       >
-        <SlidersHorizontal className="h-3.5 w-3.5" />
+        <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
         Filters
         {hasActive && <span className="ml-0.5 rounded-full bg-white/20 px-1.5 text-[10px]">●</span>}
       </button>
@@ -76,36 +69,9 @@ export default function FilterPanel({ onApply, activeFilters }) {
 
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Set</label>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="filter-type">Type</label>
                 <select
-                  value={local.set}
-                  onChange={(e) => setLocal((p) => ({ ...p, set: e.target.value }))}
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm outline-none focus:border-primary"
-                >
-                  <option value="">All sets</option>
-                  {sets.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Rarity</label>
-                <select
-                  value={local.rarity}
-                  onChange={(e) => setLocal((p) => ({ ...p, rarity: e.target.value }))}
-                  className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm outline-none focus:border-primary"
-                >
-                  <option value="">All rarities</option>
-                  {rarities.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Type</label>
-                <select
+                  id="filter-type"
                   value={local.type}
                   onChange={(e) => setLocal((p) => ({ ...p, type: e.target.value }))}
                   className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm outline-none focus:border-primary"
@@ -127,6 +93,7 @@ export default function FilterPanel({ onApply, activeFilters }) {
                     value={local.minPrice}
                     onChange={(e) => setLocal((p) => ({ ...p, minPrice: e.target.value }))}
                     placeholder="Min"
+                    aria-label="Minimum price"
                     className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm outline-none focus:border-primary"
                   />
                   <span className="text-muted-foreground">–</span>
@@ -137,6 +104,7 @@ export default function FilterPanel({ onApply, activeFilters }) {
                     value={local.maxPrice}
                     onChange={(e) => setLocal((p) => ({ ...p, maxPrice: e.target.value }))}
                     placeholder="Max"
+                    aria-label="Maximum price"
                     className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm outline-none focus:border-primary"
                   />
                 </div>

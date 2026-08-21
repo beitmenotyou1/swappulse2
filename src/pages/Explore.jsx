@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Search, Loader2, Flame, CheckSquare, Square, Heart, X } from 'lucide-react';
-import { searchCardsMulti, getSets, localeToTcgdexLang } from '@/lib/tcgdex';
+import { searchCardsMulti, getSets, localeToTcgdexLang, rarityKey } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ExploreCardTile from '@/components/cards/ExploreCardTile';
+import RarityFilterChips from '@/components/cards/RarityFilterChips';
+import SetQuickFilter from '@/components/cards/SetQuickFilter';
 import PostCard from '@/components/feed/PostCard';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
@@ -63,7 +65,8 @@ export default function Explore() {
   }, [searchMode, feedPosts.length, loadFeedPosts]);
 
   const runSearch = useCallback(async (q, f = filters) => {
-    if (q.trim().length < 2 && !f.set && !f.rarity) {
+    const hasQuery = q.trim().length >= 2;
+    if (!hasQuery && !f.set) {
       setResults([]);
       setSearched(false);
       return;
@@ -71,7 +74,10 @@ export default function Explore() {
     setLoading(true);
     setSearched(true);
     try {
-      const cards = await searchCardsMulti(q.trim(), { perPage: 36, lang, langFilter });
+      // When a set is selected with no text query, use the set ID as the
+      // query so the backend fetches all cards in that set.
+      const searchQuery = hasQuery ? q.trim() : f.set;
+      const cards = await searchCardsMulti(searchQuery, { perPage: 36, lang, langFilter });
       // Client-side filter for set, rarity, type and price range (the
       // multi-identifier search doesn't take these as params, so filter
       // the returned results)
@@ -82,7 +88,7 @@ export default function Explore() {
           (c.set?.id || '').toLowerCase() === f.set.toLowerCase());
       }
       if (f.rarity) {
-        filtered = filtered.filter((c) => (c.rarity || '').toLowerCase().includes(f.rarity.toLowerCase()));
+        filtered = filtered.filter((c) => rarityKey(c.rarity) === f.rarity);
       }
       if (f.type) {
         filtered = filtered.filter((c) => (c.types || []).some((t) => t.toLowerCase() === f.type.toLowerCase()));
@@ -192,18 +198,22 @@ export default function Explore() {
           </button>
         </div>
         {searchMode === 'cards' && (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={tr('explore.searchPlaceholder')}
-                className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
-              />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={tr('explore.searchPlaceholder')}
+                  className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
+                />
+              </div>
+              <SetQuickFilter value={filters.set} onChange={(s) => setFilters((f) => ({ ...f, set: s }))} />
+              <FilterPanel onApply={setFilters} activeFilters={filters} />
+              <LanguageFilter value={langFilter} onChange={setLangFilter} />
             </div>
-            <FilterPanel onApply={setFilters} activeFilters={filters} />
-            <LanguageFilter value={langFilter} onChange={setLangFilter} />
+            <RarityFilterChips value={filters.rarity} onChange={(r) => setFilters((f) => ({ ...f, rarity: r }))} />
           </div>
         )}
       </div>

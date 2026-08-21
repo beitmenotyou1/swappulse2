@@ -171,6 +171,9 @@ const en = {
   'explore.recentSets': 'Recent Sets', 'explore.results': 'results', 'explore.searchFailed': 'Search failed',
   'explore.searchFailedDesc': 'Could not search cards. Please try again.', 'explore.searchPlaceholder': 'Search cards…',
   'explore.select': 'Select', 'explore.selectAll': 'Select all', 'explore.selected': 'selected',
+  'explore.rarityAll': 'All rarities', 'explore.rarityCommon': 'Common', 'explore.rarityUncommon': 'Uncommon',
+  'explore.rarityRare': 'Rare', 'explore.rarityHolo': 'Holo', 'explore.rarityEx': 'EX / V', 'explore.raritySecret': 'Secret / Rainbow',
+  'explore.allSets': 'All sets', 'explore.searchSets': 'Search sets…', 'explore.noSets': 'No sets found.',
   // Help page strings
   'help.about': 'About SwapPulse', 'help.aboutText': 'SwapPulse is a decentralized social network and collection manager for Pokémon TCG collectors, built on the AT Protocol and powered by TCGDex. Every feature is free, your data is portable, and the community moderates itself.',
   'help.alpha': 'Alpha Software', 'help.alphaDesc': 'SwapPulse is actively being built. Features may change, move, or be removed as we learn what collectors want.',
