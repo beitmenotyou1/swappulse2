@@ -172,16 +172,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No article at index ' + articleIndex }, { status: 500 });
     }
 
-    // Look up the PDS credential for the promo account
-    const creds = await svc.entities.PdsCredential
-      .filter({ user_id: PROMO_USER_ID }, '-created_date', 1)
+    // Look up the promo account's consolidated PDS identity
+    const promoUsers = await svc.entities.User
+      .filter({ id: PROMO_USER_ID }, '-created_date', 1)
       .catch(() => []);
-    if (!creds || creds.length === 0 || !creds[0].app_password) {
-      console.error('post-help-promo: no PdsCredential found for promo account', PROMO_USER_ID);
+    const promoUser = promoUsers?.[0];
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+    const identity = promoUser ? await getUserIdentity(svc, promoUser) : null;
+    if (!identity) {
+      console.error('post-help-promo: no PDS identity found for promo account', PROMO_USER_ID);
       return Response.json({ error: 'Promo account PDS credential not found' }, { status: 500 });
     }
-    const cred = creds[0];
-    const pdsUrl = cred.pds_url || Deno.env.get('PDS_URL');
+    const pdsUrl = identity.pdsUrl;
     if (!pdsUrl) {
       return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
     }
@@ -189,7 +191,7 @@ Deno.serve(async (req) => {
     // Authenticate to the PDS as the promo account
     let session;
     try {
-      ({ session } = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password));
+      ({ session } = await getPdsSessionForUser(pdsUrl, identity.did, identity.appPassword));
     } catch (e) {
       console.error('post-help-promo: PDS session failed', e?.message || e);
       return Response.json({ error: 'PDS authentication failed' }, { status: 502 });
@@ -241,7 +243,7 @@ Deno.serve(async (req) => {
     // Retry once on auth failure
     if (result?.error && result.status === 401) {
       try {
-        ({ session } = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password));
+        ({ session } = await getPdsSessionForUser(pdsUrl, identity.did, identity.appPassword));
         result = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
           repo: session.did,
           collection: 'app.bsky.feed.post',

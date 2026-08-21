@@ -28,24 +28,17 @@ export default async function(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const singleUserId = url.searchParams.get('userId');
 
-    // Map user_id → credential on the current PDS
-    const creds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
-    const credByUser = new Map<string, any>();
-    for (const c of (creds || [])) {
-      if (c.pds_url === pdsUrl) credByUser.set(c.user_id, c);
-    }
-
     const users = await svc.entities.User.list('-created_date', 200);
     const report: any[] = [];
 
     for (const u of users) {
       if (singleUserId && u.id !== singleUserId) continue;
 
-      const cred = credByUser.get(u.id);
-      const did = u.did || cred?.did || '';
+      const hasCredential = !!(u.pds_app_password && (!u.pds_url || u.pds_url === pdsUrl));
+      const did = u.did || '';
       const handle = u.bsky_handle || '';
 
-      if (!cred || !did) {
+      if (!hasCredential || !did) {
         report.push({
           userId: u.id, email: u.email,
           username: u.username || u.full_name || '',

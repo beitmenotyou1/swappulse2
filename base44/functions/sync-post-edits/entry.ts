@@ -122,7 +122,7 @@ export default async function(req: Request): Promise<Response> {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
             body: JSON.stringify({
-              repo: cred.did,
+              repo: identity.did,
               collection: 'app.bsky.feed.post',
               rkey,
               record: existingRecord,

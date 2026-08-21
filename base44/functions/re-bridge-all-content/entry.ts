@@ -55,14 +55,15 @@ export default async function(req: Request): Promise<Response> {
     const svc = base44.asServiceRole;
 
     // Users provisioned on the current PDS (max 25 per run)
-    const creds = await svc.entities.PdsCredential
-      .filter({ pds_url: pdsUrl }, '-created_date', 25).catch(() => []);
-    if (!creds || creds.length === 0) {
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 25).catch(() => []);
+    if (!usersWithDid || usersWithDid.length === 0) {
       return Response.json({
         rebridged: 0, users: 0,
         message: 'No users provisioned on the current PDS yet. Run "Provision all identities" first.',
       });
     }
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
 
     const oldPds = await getOldPdsSession();
     if (!oldPds) {
@@ -85,15 +86,17 @@ export default async function(req: Request): Promise<Response> {
     let rebridged = 0;
     const userStats: Array<{ userId: string; did: string; rebridged: number }> = [];
 
-    for (const cred of creds) {
-      const userId = cred.user_id;
-      const userDid = cred.did;
+    for (const user of usersWithDid) {
+      const identity = await getUserIdentity(svc, user);
+      if (!identity) continue;
+      const userId = user.id;
+      const userDid = identity.did;
       const userPrefix = `at://${userDid}/`;
       let perUser = 0;
 
       let session: any;
       try {
-        const s = await getPdsSessionForUser(pdsUrl, userDid, cred.app_password);
+        const s = await getPdsSessionForUser(identity.pdsUrl, userDid, identity.appPassword);
         session = s.session;
       } catch (e) {
         console.error('re-bridge-all: session failed for', userId, e?.message || e);

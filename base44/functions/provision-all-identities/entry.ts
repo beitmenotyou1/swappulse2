@@ -33,11 +33,14 @@ export default async function(req: Request): Promise<Response> {
     const LIMIT = 50;
     const users = await svc.entities.User.list('-created_date', LIMIT);
 
-    // Path 1: users with a PdsCredential on the current PDS are fully done.
-    const allCreds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
+    // Path 1: users with a consolidated PDS identity (pds_app_password set)
+    // on the current PDS are fully done.
+    const allUsers = await svc.entities.User.list('-created_date', 500).catch(() => []);
     const credByUser = new Map<string, any>();
-    for (const c of (allCreds || [])) {
-      if (c.pds_url === currentPdsUrl) credByUser.set(c.user_id, c);
+    for (const u of (allUsers || [])) {
+      if (u.pds_app_password && (!u.pds_url || u.pds_url === currentPdsUrl)) {
+        credByUser.set(u.id, { did: u.did, pds_url: u.pds_url || currentPdsUrl });
+      }
     }
 
     let provisioned = 0, repaired = 0, skipped = 0, failed = 0;
