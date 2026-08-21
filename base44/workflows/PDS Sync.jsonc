@@ -20,7 +20,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "pds_sync",
-      "version": "1.1",
+      "version": "1.2",
       "namespace": "base44"
     },
     "do": [
@@ -47,15 +47,43 @@
               "adminBackfill": true
             }
           },
-          "then": "end",
+          "then": "retry_handles",
           "x-base44": {
             "title": "Push profiles to PDS",
-            "description": "Sync local profile updates (display name, avatar, bio) to the AT Protocol PDS so Bluesky reflects current SwapPulse data"
+            "description": "Sync local profile updates (display name, avatar, bio, banner) to the AT Protocol PDS so Bluesky reflects current SwapPulse data. Paginates through all migrated users."
+          }
+        }
+      },
+      {
+        "retry_handles": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "retry-pending-handles",
+            "args": {}
+          },
+          "then": "sync_post_edits",
+          "x-base44": {
+            "title": "Retry pending handle updates",
+            "description": "Retry handle updates to username.swappulse.org or custom domain for migrated users whose initial update failed because DNS wasn't ready yet."
+          }
+        }
+      },
+      {
+        "sync_post_edits": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sync-post-edits",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Push post edits to PDS",
+            "description": "Detect locally-edited bridged posts and push the updated text to the PDS via putRecord so post edits on SwapPulse are reflected on Bluesky."
           }
         }
       }
     ]
   },
-  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates and pushes outbound profile updates every 5 minutes.",
+  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates, pushes outbound profile updates, retries pending handle updates, and pushes post edits every 5 minutes.",
   "name": "PDS Sync"
 }

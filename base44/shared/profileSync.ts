@@ -1,15 +1,19 @@
 // Shared profile sync helpers for AT Protocol bidirectional identity sync.
 //
 // OUTBOUND (SwapPulse → PDS): syncProfileForUser pushes the local profile
-// (display name, avatar, bio) to the PDS as a real app.bsky.actor.profile
-// record (rkey 'self'). Used by sync-profile-records.
+// (display name, avatar, bio, banner) to the PDS as a real app.bsky.actor.profile
+// record (rkey 'self'). Before putRecord, it fetches the existing PDS record and
+// merges SwapPulse-tracked fields into it — preserving the original createdAt
+// and any untracked fields (labels, etc.) so nothing on the Bluesky side is
+// lost. Used by sync-profile-records.
 //
 // INBOUND (PDS/AppView → SwapPulse): pullProfileFromAppView fetches the user's
 // Bluesky profile (displayName, description, avatar, banner) from the AppView
 // and returns the field updates to merge into the local User record. Used by
 // migrate-to-swappulse on link so the initial sync pulls the Bluesky identity
-// INTO SwapPulse (the inverse of the old overwrite-bio flow). The ongoing
-// inbound sync is handled by firehose-ingest's syncInboundProfiles.
+// INTO SwapPulse. The ongoing inbound sync is handled by firehose-ingest's
+// syncInboundProfiles, which recognizes Bluesky CDN URLs and avoids the
+// avatar echo loop.
 
 import { getPdsSessionForUser, pdsRequest } from './pdsSession.ts';
 
@@ -22,9 +26,8 @@ function truncate(s: string, n: number): string {
 }
 
 // AT Protocol `datetime` lexicon format: ISO 8601 with seconds precision and
-// a trailing Z. Base44's created_date stores microsecond precision
-// (e.g. 2026-07-25T02:42:41.824000Z) which the PDS rejects as "Invalid
-// datetime", so normalize any input to seconds precision.
+// a trailing Z. Base44's created_date stores microsecond precision which the
+// PDS rejects as "Invalid datetime", so normalize to seconds precision.
 function atProtoTimestamp(d?: string): string {
   let iso = d || new Date().toISOString();
   iso = iso.replace(/\.\d+Z?$/, 'Z');
@@ -33,16 +36,25 @@ function atProtoTimestamp(d?: string): string {
 }
 
 // SSRF protection: only allow https URLs to a strict hostname allowlist of
-// public image CDNs. A denylist is bypassable via decimal/hex/octal IP
-// encodings (e.g. 2130706433 -> 127.0.0.1) and IPv6-mapped IPv4
-// (::ffff:127.0.0.1), so only known public hosts are permitted. Combined
-// with redirect:'manual' + 3xx rejection below, this closes redirect and
-// IP-encoding bypass paths that could reach internal/cloud-metadata endpoints.
+// public image CDNs for outbound fetch + re-upload. Combined with
+// redirect:'manual' + 3xx rejection, this closes redirect and IP-encoding
+// bypass paths that could reach internal/cloud-metadata endpoints.
 const ALLOWED_IMAGE_HOSTS = new Set([
   'assets.tcgdex.net',        // TCGDex card artwork
   'media.base44.com',         // Base44 UploadFile CDN (primary)
   'media.base44static.com',   // Base44 uploaded / generated images (mirror)
   'static.wixstatic.com',     // Base44 static media mirror
+]);
+
+// Bluesky CDN hosts — these are the resolved blob URLs the AppView returns for
+// avatars/banners. They are NOT in the outbound fetch allowlist (we never
+// fetch+re-upload them — the blob is already PDS-resident). They ARE used by
+// the inbound sync to recognize that a remote avatar URL is a Bluesky-resolved
+// blob (not a user-initiated remote edit), so it doesn't overwrite the local
+// Base44 CDN URL and create an echo loop.
+export const BLUESKY_CDN_HOSTS = new Set([
+  'cdn.bsky.app',
+  'cdn.bsky.app/img',
 ]);
 
 function isAllowedImageUrl(raw: string): { ok: boolean; url?: URL; reason?: string } {
@@ -63,6 +75,19 @@ function isAllowedImageUrl(raw: string): { ok: boolean; url?: URL; reason?: stri
   return { ok: true, url: parsed };
 }
 
+// Check if a URL is a Bluesky CDN resolved blob URL (not a Base44 upload).
+// Used by the inbound sync to avoid overwriting local Base44 CDN URLs with
+// Bluesky CDN URLs, which would break the outbound sync echo loop.
+export function isBlueskyCdnUrl(raw: string): boolean {
+  if (!raw) return false;
+  try {
+    const parsed = new URL(raw);
+    return BLUESKY_CDN_HOSTS.has(parsed.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 // Fetch image bytes from a stored URL and upload as a blob to the user's PDS,
 // returning the blob ref to embed in the profile record. Used for both avatar
 // and banner. Returns null if there is no image, the URL is not allowlisted,
@@ -81,9 +106,6 @@ async function uploadImageBlob(
     return null;
   }
   try {
-    // SSRF: fetch with redirect:'manual' and reject any 3xx, so an
-    // allowlisted public URL can't 302 to an internal or cloud-metadata
-    // endpoint.
     const imgRes = await fetch(imageUrl, { redirect: 'manual' });
     if (imgRes.status >= 300 && imgRes.status < 400) {
       console.error(`profileSync: ${label} fetch redirected (blocked)`, imgRes.status, imageUrl);
@@ -113,13 +135,46 @@ async function uploadImageBlob(
   }
 }
 
+// Fetch the existing app.bsky.actor.profile record from the PDS so we can
+// merge SwapPulse-tracked fields into it without losing untracked fields
+// (labels, custom fields, etc.) or overwriting the original createdAt.
+async function fetchExistingProfile(
+  pdsUrl: string,
+  accessJwt: string,
+  userDid: string,
+): Promise<any | null> {
+  try {
+    const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.getRecord`);
+    url.searchParams.set('repo', userDid);
+    url.searchParams.set('collection', PROFILE_COLLECTION);
+    url.searchParams.set('rkey', PROFILE_RKEY);
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${accessJwt}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.value || null;
+  } catch {
+    return null;
+  }
+}
+
+export interface ProfileSyncResult {
+  ok: boolean;
+  uri?: string;
+  cid?: string;
+  error?: string;
+  avatar_blob_ref?: any;
+  header_blob_ref?: any;
+}
+
 export async function syncProfileForUser(
   svc: any,
   pdsUrl: string,
   userDid: string,
   appPassword: string,
-  userRecord: { display_name?: string; full_name?: string; avatar?: string; header?: string; description?: string; created_date?: string },
-): Promise<{ ok: boolean; uri?: string; cid?: string; error?: string }> {
+  userRecord: { display_name?: string; full_name?: string; avatar?: string; header?: string; description?: string; created_date?: string; avatar_pds_ref?: string; header_pds_ref?: string },
+): Promise<ProfileSyncResult> {
   let session: any;
   try {
     const s = await getPdsSessionForUser(pdsUrl, userDid, appPassword);
@@ -128,19 +183,83 @@ export async function syncProfileForUser(
     return { ok: false, error: `session: ${e?.message || e}` };
   }
 
-  const record: any = {
-    $type: PROFILE_COLLECTION,
-    createdAt: atProtoTimestamp(userRecord.created_date),
-  };
-  const displayName = truncate(userRecord.display_name || userRecord.full_name || '', 64);
-  if (displayName) record.displayName = displayName;
-  const description = truncate(userRecord.description || '', 256);
-  if (description) record.description = description;
+  // Fetch the existing PDS record so we can merge into it, preserving
+  // untracked fields and the original createdAt.
+  const existing = await fetchExistingProfile(pdsUrl, session.accessJwt, userDid);
 
-  const avatarBlob = await uploadImageBlob(pdsUrl, session.accessJwt, userRecord.avatar || '', 'avatar');
-  if (avatarBlob) record.avatar = avatarBlob;
-  const bannerBlob = await uploadImageBlob(pdsUrl, session.accessJwt, userRecord.header || '', 'banner');
-  if (bannerBlob) record.banner = bannerBlob;
+  // Start from the existing record (preserves createdAt, labels, etc.) or
+  // build a fresh one if no profile exists yet.
+  const record: any = existing
+    ? { ...existing }
+    : {
+        $type: PROFILE_COLLECTION,
+        createdAt: atProtoTimestamp(userRecord.created_date),
+      };
+
+  // Ensure $type is always set (existing record might omit it in some PDS
+  // responses — putRecord requires it).
+  record.$type = PROFILE_COLLECTION;
+
+  // Merge SwapPulse-tracked text fields (always overwrite with local truth).
+  const displayName = truncate(userRecord.display_name || userRecord.full_name || '', 64);
+  if (displayName) {
+    record.displayName = displayName;
+  } else if (existing) {
+    // If local display name is empty but existing record has one, keep the
+    // existing one rather than deleting it.
+    if (!existing.displayName) delete record.displayName;
+  }
+
+  const description = userRecord.description || '';
+  if (description) {
+    record.description = truncate(description, 256);
+  } else {
+    // Explicitly set empty string so the PDS record reflects the local state.
+    record.description = '';
+  }
+
+  // Avatar: only re-upload if the local URL is from an allowlisted CDN (a
+  // new Base44 upload). If the local avatar is a Bluesky CDN URL (from a
+  // previous inbound sync), skip re-upload — the blob is already PDS-resident
+  // and the existing record's avatar blob ref is still valid.
+  let avatarBlobRef: any = null;
+  const localAvatar = userRecord.avatar || '';
+  if (localAvatar && isAllowedImageUrl(localAvatar).ok) {
+    // New Base44 upload — fetch and upload as a new blob.
+    avatarBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localAvatar, 'avatar');
+    if (avatarBlobRef) record.avatar = avatarBlobRef;
+  } else if (localAvatar && isBlueskyCdnUrl(localAvatar)) {
+    // Bluesky CDN URL — the blob is already on the PDS. If we have a stored
+    // blob ref from a previous sync, use it. Otherwise, preserve the existing
+    // record's avatar blob ref.
+    if (userRecord.avatar_pds_ref) {
+      try {
+        const stored = JSON.parse(userRecord.avatar_pds_ref);
+        if (stored) record.avatar = stored;
+      } catch { /* ignore parse error, keep existing */ }
+    }
+    // else: keep existing record's avatar (already in `record` from the spread)
+  } else if (!localAvatar && existing) {
+    // Local avatar was cleared — remove it from the record.
+    delete record.avatar;
+  }
+
+  // Banner: same logic as avatar.
+  let headerBlobRef: any = null;
+  const localHeader = userRecord.header || '';
+  if (localHeader && isAllowedImageUrl(localHeader).ok) {
+    headerBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localHeader, 'banner');
+    if (headerBlobRef) record.banner = headerBlobRef;
+  } else if (localHeader && isBlueskyCdnUrl(localHeader)) {
+    if (userRecord.header_pds_ref) {
+      try {
+        const stored = JSON.parse(userRecord.header_pds_ref);
+        if (stored) record.banner = stored;
+      } catch { /* ignore parse error, keep existing */ }
+    }
+  } else if (!localHeader && existing) {
+    delete record.banner;
+  }
 
   try {
     const res = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord', {
@@ -153,7 +272,13 @@ export async function syncProfileForUser(
       console.error('profileSync: putRecord failed', res.status, JSON.stringify(res.body || {}).slice(0, 200));
       return { ok: false, error: `putRecord failed (${res.status})` };
     }
-    return { ok: true, uri: res.uri, cid: res.cid };
+    return {
+      ok: true,
+      uri: res.uri,
+      cid: res.cid,
+      avatar_blob_ref: avatarBlobRef,
+      header_blob_ref: headerBlobRef,
+    };
   } catch (e: any) {
     return { ok: false, error: `putRecord: ${e?.message || e}` };
   }
@@ -163,13 +288,9 @@ export async function syncProfileForUser(
 // Fetches the user's Bluesky profile (displayName, description, avatar, banner)
 // from the public AppView and returns the field updates to merge into the local
 // User record. Used by migrate-to-swappulse on link so the initial sync pulls
-// the Bluesky identity INTO SwapPulse (the inverse of the old overwrite-bio
-// flow). The AppView returns resolved avatar/banner URLs (not blob refs), which
-// is what the local User.avatar/header fields store.
-//
-// Returns { ok, updates } where updates is a partial object of User fields
-// (display_name, description, avatar, header) ready for updateMe. Empty
-// updates means the profile was already in sync or the fetch failed.
+// the Bluesky identity INTO SwapPulse. The AppView returns resolved avatar/
+// banner URLs (not blob refs), which is what the local User.avatar/header
+// fields store.
 const APPVIEW_BASE = 'https://public.api.bsky.app';
 
 export async function pullProfileFromAppView(userDid: string): Promise<{ ok: boolean; updates: Record<string, any>; profile?: any }> {

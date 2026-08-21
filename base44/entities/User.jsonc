@@ -85,6 +85,24 @@
       "format": "date-time",
       "description": "Last time a profile sync completed in either direction. Set by sync-profile-records after a successful outbound push (SwapPulse \u2192 PDS) and by firehose-ingest after an inbound merge (AppView \u2192 SwapPulse). Compared against updated_date to decide whether a remote profile edit should overwrite local (local wins if it was edited more recently than the last sync)."
     },
+    "profile_sync_failed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time the outbound profile sync (sync-profile-records) failed for this user. Used with profile_sync_fail_count to break the inbound conflict guard deadlock: after 3 consecutive failures, the inbound sync proceeds (remote wins) so a dead outbound sync doesn't permanently block remote profile edits."
+    },
+    "profile_sync_fail_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Consecutive outbound profile sync failures. Reset to 0 on success. When it reaches 3, the inbound sync's conflict guard is bypassed so remote edits can still merge."
+    },
+    "avatar_pds_ref": {
+      "type": "string",
+      "description": "JSON-serialized PDS blob ref for the avatar, stored after a successful outbound sync. Used to detect when the avatar hasn't changed locally (skip re-upload) and to recognize that the local avatar URL is a Base44 CDN URL whose PDS blob is already resident (prevents the inbound sync from overwriting it with a Bluesky CDN URL)."
+    },
+    "header_pds_ref": {
+      "type": "string",
+      "description": "JSON-serialized PDS blob ref for the header/banner, stored after a successful outbound sync. Same purpose as avatar_pds_ref but for the banner image."
+    },
     "migrated_from_bluesky": {
       "type": "boolean",
       "default": false,
@@ -115,6 +133,15 @@
       "type": "boolean",
       "default": false,
       "description": "True after the user un-moves (reverts migration). While true, profile editing on SwapPulse is disabled \u2014 the profile reverts to the original Bluesky profile and changes made during migration are undone. Cleared if the user re-migrates."
+    },
+    "handle_update_pending": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the migration handle update to username.swappulse.org (or custom domain) failed because DNS verification wasn't ready yet. The PDS Sync workflow retries pending handle updates until DNS propagates and verification succeeds."
+    },
+    "pending_handle": {
+      "type": "string",
+      "description": "The target handle (username.swappulse.org or custom domain) that the retry-pending-handles function will attempt to set via com.atproto.identity.updateHandle. Cleared on successful handle update."
     },
     "post_backfill_cursor": {
       "type": "string",

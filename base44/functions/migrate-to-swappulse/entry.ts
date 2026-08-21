@@ -124,7 +124,7 @@ export default async function(req: Request): Promise<Response> {
         { handle: targetHandle },
       );
       if (handleRes?.error) {
-        console.error('migrate: handle update failed (best-effort)', handleRes.status, handleRes.body);
+        console.error('migrate: handle update failed (best-effort, will retry via PDS Sync workflow)', handleRes.status, handleRes.body);
       } else {
         handleUpdated = true;
         newHandle = targetHandle;
@@ -192,7 +192,12 @@ export default async function(req: Request): Promise<Response> {
       original_bluesky_handle: user.bsky_handle,
       migrated_at: new Date().toISOString(),
       migration_reverted: false,
-      ...(handleUpdated ? { bsky_handle: newHandle } : {}),
+      // On successful handle update, clear the pending flag. On failure, set
+      // handle_update_pending + pending_handle so the PDS Sync workflow retries
+      // once DNS propagates.
+      ...(handleUpdated
+        ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
+        : { handle_update_pending: true, pending_handle: targetHandle }),
     });
 
     console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}${handleUpdated ? ` → @${newHandle}` : ''} (profilePulled=${profilePulled}, backfillStarted=${backfillStarted}, notificationsImported=${notificationsImported})`);

@@ -26,6 +26,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
+import { isBlueskyCdnUrl } from '../../shared/profileSync.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -396,15 +397,53 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
         const user = users?.[0];
         if (!user) continue;
         // Conflict guard: if the local profile was edited after the last sync,
-        // local is authoritative — skip the remote merge.
+        // local is authoritative — skip the remote merge. BUT if the outbound
+        // sync has failed 3+ times consecutively (profile_sync_fail_count >= 3),
+        // the local state may never get pushed, so bypass the guard and let
+        // remote win to avoid permanently blocking inbound sync.
         const lastSync = user.profile_synced_at || '';
         const localUpdated = user.updated_date || '';
-        if (lastSync && localUpdated > lastSync) continue;
+        const failCount = user.profile_sync_fail_count || 0;
+        if (lastSync && localUpdated > lastSync && failCount < 3) continue;
+
         const updates: any = {};
-        if (profile.displayName && profile.displayName !== user.display_name) updates.display_name = profile.displayName;
-        if ((profile.description || '') !== (user.description || '')) updates.description = profile.description || '';
-        if (profile.avatar && profile.avatar !== user.avatar) updates.avatar = profile.avatar;
-        if (profile.banner && profile.banner !== user.header) updates.header = profile.banner;
+        // Text fields: always merge from remote if different.
+        if (profile.displayName && profile.displayName !== user.display_name) {
+          updates.display_name = profile.displayName;
+        }
+        if ((profile.description || '') !== (user.description || '')) {
+          updates.description = profile.description || '';
+        }
+        // Avatar/banner: only overwrite local if the remote URL is NOT a
+        // Bluesky CDN URL that would break the outbound echo loop. When the
+        // local avatar is a Base44 CDN URL (already pushed as a PDS blob),
+        // the AppView resolves it to a cdn.bsky.app URL — overwriting local
+        // with that URL would prevent future outbound syncs from re-uploading
+        // (the SSRF allowlist blocks cdn.bsky.app). So we skip avatar/header
+        // updates when the remote URL is a Bluesky CDN URL and the local URL
+        // is from an allowlisted CDN (meaning the blob is already PDS-resident
+        // and the local Base44 URL is the source of truth).
+        if (profile.avatar && profile.avatar !== user.avatar) {
+          if (isBlueskyCdnUrl(profile.avatar) && user.avatar_pds_ref) {
+            // Remote is a Bluesky-resolved blob and we have a stored PDS blob
+            // ref — the avatar hasn't actually changed, just the URL format.
+            // Skip to preserve the local Base44 CDN URL (source of truth).
+          } else if (!isBlueskyCdnUrl(profile.avatar)) {
+            // Remote avatar is from a non-Bluesky host — this is a genuine
+            // remote edit (e.g. user changed avatar on Bluesky). Merge it.
+            updates.avatar = profile.avatar;
+            // Clear the stored PDS blob ref since the avatar changed remotely.
+            updates.avatar_pds_ref = '';
+          }
+        }
+        if (profile.banner && profile.banner !== user.header) {
+          if (isBlueskyCdnUrl(profile.banner) && user.header_pds_ref) {
+            // Same echo-loop prevention as avatar.
+          } else if (!isBlueskyCdnUrl(profile.banner)) {
+            updates.header = profile.banner;
+            updates.header_pds_ref = '';
+          }
+        }
         if (Object.keys(updates).length === 0) continue;
         updates.profile_synced_at = new Date().toISOString();
         await svc.entities.User.update(user.id, updates).catch((e: any) => {
