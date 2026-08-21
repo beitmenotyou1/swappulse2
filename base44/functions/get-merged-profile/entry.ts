@@ -59,6 +59,28 @@ export default async function(req: Request): Promise<Response> {
     if (!merged.found) {
       return Response.json({ found: false });
     }
+
+    // 4. Local count fallback. For migrated members on the SwapPulse PDS, the
+    //    public Bluesky AppView may not have indexed their profile (returns
+    //    null) or may return zero/stale counts — especially after rate-limiting
+    //    from repeated profile views. When that happens, fall back to local
+    //    database counts so the profile doesn't appear empty ("new/inactive").
+    //    Uses Math.max so the higher of remote/local always wins.
+    const needsLocalCounts = !remote ||
+      !merged.followers_count ||
+      !merged.follows_count ||
+      !merged.posts_count;
+    if (needsLocalCounts && merged.is_member) {
+      const [localPosts, localFollowers, localFollowing] = await Promise.all([
+        svc.entities.Post.filter({ did }, '-created_date', 500).catch(() => []),
+        svc.entities.Follow.filter({ subject_did: did }, '-created_date', 500).catch(() => []),
+        svc.entities.Follow.filter({ did }, '-created_date', 500).catch(() => []),
+      ]);
+      merged.posts_count = Math.max(merged.posts_count, localPosts?.length || 0);
+      merged.followers_count = Math.max(merged.followers_count, localFollowers?.length || 0);
+      merged.follows_count = Math.max(merged.follows_count, localFollowing?.length || 0);
+    }
+
     return Response.json(merged);
   } catch (error: any) {
     console.error('get-merged-profile error:', error?.message || error);
