@@ -38,16 +38,6 @@ export default function YouTubeTheme({ data, did, isOwner, profile }) {
 
   return (
     <div className="py-4">
-      <div className="mb-4 h-2 rounded-full bg-[#FF0000]" />
-
-      <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
-        <Avatar name={profile?.name} src={profile?.avatar} size={64} className="rounded-full" />
-        <div className="flex-1">
-          <h2 className="text-lg font-bold">{profile?.name}</h2>
-          <p className="text-xs text-muted-foreground">{profile?.followers || 0} subscribers</p>
-        </div>
-      </div>
-
       <BlockShell className="border-[#FF0000]/20">
         <div className="mb-3 flex items-center gap-2">
           <YoutubeIcon className="h-5 w-5 text-[#FF0000]" />

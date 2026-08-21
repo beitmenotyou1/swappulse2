@@ -30,7 +30,6 @@ export default function FacebookTheme({ data, did, isOwner, posts }) {
 
   return (
     <div className="py-4">
-      <div className="mb-4 h-1.5 rounded-full bg-[#1877F2]" />
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <div className="space-y-3">
           <BlockShell title="Intro" className="bg-[#f0f2f5]">

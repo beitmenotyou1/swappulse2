@@ -9,7 +9,6 @@ import PostCard from '@/components/feed/PostCard';
 export default function MastodonTheme({ data, blockOrder, did, isOwner, profile, posts }) {
   return (
     <div className="py-4">
-      <div className="mb-4 h-1.5 rounded-full bg-[#6364FF]" />
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <div className="space-y-3">
           <BlockShell title="Profile" accent="border-[#6364FF]/30">

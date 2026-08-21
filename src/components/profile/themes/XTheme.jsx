@@ -10,8 +10,6 @@ import RichText from '@/components/RichText';
 export default function XTheme({ data, did, isOwner, profile, posts }) {
   return (
     <div className="py-4">
-      <div className="mb-4 h-1.5 rounded-full bg-slate-900 dark:bg-white" />
-
       {(data?.bio || profile?.description) && (
         <BlockShell className="border-slate-900/10 dark:border-white/10">
           <RichText text={data?.bio || profile?.description} className="text-sm leading-relaxed" />

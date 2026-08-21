@@ -45,7 +45,7 @@ export function BinderTab({ collection, did }) {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   if (!entries || entries.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No cards in binder yet.</p>;
   return (
-    <div className="p-4">
+    <div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {entries.slice(0, 60).map((c) => (
           <Link key={c.id} to={`/card/${c.card_id}`}>
@@ -72,7 +72,7 @@ export function TradeStatsTab({ trades, did }) {
   const open = listings.filter((t) => t.status === 'open' || t.status === 'active').length;
   const winRate = listings.length ? Math.round((completed / listings.length) * 100) : 0;
   return (
-    <div className="p-4 space-y-3">
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard icon={Trophy} label="Win Rate" value={`${winRate}%`} color="text-blue-400" />
         <StatCard icon={BarChart3} label="Completed" value={completed} color="text-green-400" />
@@ -114,7 +114,7 @@ export function AchievementsTab({ did, isOwner }) {
     </div>
   );
   return (
-    <div className="p-4">
+    <div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {achievements.map((a) => (
           <div key={a.id} className="flex flex-col items-center rounded-xl border border-border bg-card p-3 text-center">
@@ -144,7 +144,7 @@ export function RewardsTab({ did }) {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-amber-500" /></div>;
   if (achievements.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No rewards earned yet.</p>;
   return (
-    <div className="p-4">
+    <div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {achievements.map((a) => (
           <div key={a.id} className="flex flex-col items-center rounded-xl border border-amber-200 bg-gradient-to-b from-amber-50 to-yellow-50 p-4 text-center rarity-glow-holo">
@@ -170,7 +170,7 @@ export function LeaderboardTab({ did }) {
     return () => { active = false; };
   }, []);
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-blue-400" /></div>;
-  if (challenges.length === 0) return <p className="py-16 text-center text-sm text-slate-400">No active leaderboards.</p>;
+  if (challenges.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No active leaderboards.</p>;
   return (
     <div className="p-4 space-y-2">
       {challenges.map((c) => (
@@ -203,7 +203,7 @@ export function PortfolioTab({ collection, did }) {
   const total = entries.reduce((s, c) => s + (c.market_value || c.purchase_price || 0), 0);
   const avg = entries.length ? total / entries.length : 0;
   return (
-    <div className="p-4 space-y-3">
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="flex flex-col rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
           <TrendingUp className="h-5 w-5 text-emerald-600" />
@@ -251,7 +251,7 @@ export function VideosTab({ did }) {
   ];
   if (videos.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No videos yet.</p>;
   return (
-    <div className="p-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {videos.map((v) => (
         <Link key={v.id} to={v.to} className="group">
           <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary">
@@ -289,7 +289,7 @@ export function PlaylistsTab({ did }) {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-red-500" /></div>;
   if (binders.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No playlists yet.</p>;
   return (
-    <div className="p-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {binders.map((b) => (
         <Link key={b.id} to={`/binder/${b.id}`} className="rounded-xl border border-border bg-card p-3 hover:bg-secondary">
           <div className="mb-2 aspect-video rounded-lg bg-secondary" />
@@ -317,7 +317,7 @@ export function ChannelsTab({ did }) {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-red-500" /></div>;
   if (follows.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No subscriptions yet.</p>;
   return (
-    <div className="p-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
       {follows.map((f) => (
         <Link key={f.id} to={`/profile/${f.subject_did}`} className="flex flex-col items-center gap-1">
           <Avatar name={f.subject_name} src={f.subject_avatar} size={64} />
@@ -344,7 +344,7 @@ export function FriendsTab({ did }) {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>;
   if (friends.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No friends yet.</p>;
   return (
-    <div className="p-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
       {friends.map((f) => (
         <Link key={f.id} to={`/profile/${f.friend_did}`} className="flex flex-col items-center gap-1">
           <Avatar name={f.friend_name} size={64} />
@@ -371,7 +371,7 @@ export function PhotosTab({ collection, did }) {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>;
   if (entries.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No photos yet.</p>;
   return (
-    <div className="p-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
       {entries.slice(0, 50).map((c) => (
         <Link key={c.id} to={`/card/${c.card_id}`}>
           <img src={cardImageUrl(c.card_image)} alt={c.card_name} className="aspect-square w-full rounded-lg object-cover" />

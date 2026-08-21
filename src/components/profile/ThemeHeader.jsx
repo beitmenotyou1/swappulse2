@@ -81,7 +81,7 @@ function DefaultHeader({ theme, profile, actions, extra, badges, reputationNode,
 function VintageHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
   return (
     <div>
-      <div className="w-full overflow-hidden bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-50 h-24 sm:h-32">
+      <div className="w-full overflow-hidden bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-50 h-28 sm:h-36">
         {profile?.header && <img src={profile.header} alt="Profile header" className="h-full w-full object-cover opacity-80" />}
       </div>
       {externalBanner}
@@ -217,7 +217,7 @@ function InvestmentHeader({ profile, actions, extra, badges, reputationNode, bac
 function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
   return (
     <div>
-      <div className="w-full overflow-hidden bg-gradient-to-r from-red-600/40 via-red-500/30 to-rose-400/30 h-36 sm:h-44">
+      <div className="w-full overflow-hidden bg-gradient-to-r from-red-600/40 via-red-500/30 to-rose-400/30 h-32 sm:h-40">
         {profile?.header && <img src={profile.header} alt="Channel art" className="h-full w-full object-cover" />}
       </div>
       <div className="h-1 bg-red-600" />
@@ -252,7 +252,7 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
 function RedditHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
   return (
     <div>
-      <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500/40 via-orange-400/30 to-amber-300/30 h-24 sm:h-28">
+      <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500/40 via-orange-400/30 to-amber-300/30 h-28 sm:h-36">
         {profile?.header && <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />}
       </div>
       <div className="h-1 bg-orange-500" />

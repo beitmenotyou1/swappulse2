@@ -121,14 +121,14 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
   // Collection
   if (tabKey === 'Collection') {
     if (!isOwner) return <SharedCollectionsTab did={did} />;
-    return <div className="p-4"><NetworkFeedSection type="collections" did={did} limit={24} title={t('profile.myCollectionNetwork')} /></div>;
+    return <NetworkFeedSection type="collections" did={did} limit={24} title={t('profile.myCollectionNetwork')} />;
   }
 
   // Trades
   if (tabKey === 'Trades') {
     if (isExternal) return <p className="py-16 text-center text-sm text-muted-foreground">{t('userProfile.tradeHistoryMembers')}</p>;
     if (!isOwner) return <TradeHistoryTab did={did} permittedFields={visitorExtras?.tradeFields} />;
-    return <div className="p-4"><NetworkFeedSection type="trades" did={did} limit={20} title={t('profile.myTradesNetwork')} /></div>;
+    return <NetworkFeedSection type="trades" did={did} limit={20} title={t('profile.myTradesNetwork')} />;
   }
 
   // Trade Stats (Competitive)
@@ -216,7 +216,7 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
   // Privacy (owner only)
   if (tabKey === 'Privacy') {
     return (
-      <div className="p-4 space-y-4">
+      <div className="space-y-4">
         <DomainHandleCard />
         <WeeklyDigestToggle />
         <DataPrivacy />

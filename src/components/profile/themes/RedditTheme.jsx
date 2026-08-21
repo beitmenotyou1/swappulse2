@@ -25,8 +25,6 @@ export default function RedditTheme({ data, did, isOwner, profile, posts }) {
 
   return (
     <div className="py-4">
-      <div className="mb-4 h-1.5 rounded-full bg-[#FF4500]" />
-
       {(data?.bio || profile?.description) && (
         <BlockShell className="mb-3 border-[#FF4500]/30 bg-[#FFF3E0] dark:bg-[#FF4500]/5">
           <div className="flex items-center gap-2">
