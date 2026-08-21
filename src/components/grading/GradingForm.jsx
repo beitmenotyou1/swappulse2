@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cardImageUrl } from '@/lib/tcgdex';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SERVICES = [
   { id: 'psa', label: 'PSA' },
@@ -12,6 +13,7 @@ const SERVICES = [
 
 // §4 Grading submission form - creates a GradingSubmission from a collection card.
 export default function GradingForm({ collection, onClose, onSaved }) {
+  const t = useT();
   const [selId, setSelId] = useState('');
   const [service, setService] = useState('psa');
   const [tracking, setTracking] = useState('');
@@ -23,7 +25,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
   const selected = collection.find((c) => c.id === selId);
 
   const submit = async () => {
-    if (!selected) { setErr('Pick a card from your collection'); return; }
+    if (!selected) { setErr(t('grading.pickCard')); return; }
     setSaving(true);
     setErr('');
     try {
@@ -39,7 +41,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
       });
       onSaved(rec);
     } catch (e) {
-      setErr(e.message || 'Could not save');
+      setErr(e.message || t('grading.couldNotSave'));
     } finally {
       setSaving(false);
     }
@@ -52,17 +54,17 @@ export default function GradingForm({ collection, onClose, onSaved }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-bold">New grading submission</h2>
+          <h2 className="font-bold">{t('grading.new')}</h2>
           <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
         </div>
 
-        <label className="text-xs font-semibold text-muted-foreground">Card from your collection</label>
+        <label className="text-xs font-semibold text-muted-foreground">{t('grading.cardFromCollection')}</label>
         <select
           value={selId}
           onChange={(e) => setSelId(e.target.value)}
           className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
         >
-          <option value="">Select a card…</option>
+          <option value="">{t('grading.selectCard')}</option>
           {collection.map((c) => (
             <option key={c.id} value={c.id}>{c.card_name} · {c.set_name || '-'}</option>
           ))}
@@ -81,7 +83,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
         )}
 
         <div className="mt-4">
-          <label className="text-xs font-semibold text-muted-foreground">Grading service</label>
+          <label className="text-xs font-semibold text-muted-foreground">{t('grading.gradingService')}</label>
           <div className="mt-1 grid grid-cols-4 gap-2">
             {SERVICES.map((s) => (
               <button
@@ -99,7 +101,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Tracking number</label>
+            <label className="text-xs font-semibold text-muted-foreground">{t('grading.trackingNumber')}</label>
             <input
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
@@ -108,7 +110,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Declared value (£)</label>
+            <label className="text-xs font-semibold text-muted-foreground">{t('grading.declaredValue')}</label>
             <input
               type="number"
               step="0.01"
@@ -121,7 +123,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
         </div>
 
         <div className="mt-3">
-          <label className="text-xs font-semibold text-muted-foreground">Expected return date</label>
+          <label className="text-xs font-semibold text-muted-foreground">{t('grading.expectedReturn')}</label>
           <input
             type="date"
             value={expected}
@@ -133,13 +135,13 @@ export default function GradingForm({ collection, onClose, onSaved }) {
         {err && <p className="mt-3 text-xs text-destructive">{err}</p>}
 
         <div className="mt-5 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-full border border-border px-4 py-2.5 text-sm font-semibold">Cancel</button>
+          <button onClick={onClose} className="flex-1 rounded-full border border-border px-4 py-2.5 text-sm font-semibold">{t('common.cancel')}</button>
           <button
             onClick={submit}
             disabled={saving}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Submit
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t('grading.submit')}
           </button>
         </div>
       </div>

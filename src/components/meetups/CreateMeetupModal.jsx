@@ -3,8 +3,10 @@ import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeMeetup } from '@/lib/federatedBridge';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function CreateMeetupModal({ open, onClose, onCreated }) {
+  const t = useT();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
@@ -20,7 +22,7 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
 
   const submit = async () => {
     if (!title.trim() || !description.trim() || !scheduledAt || !locationName.trim()) {
-      return setError('Title, description, date/time and location are required');
+      return setError(t('meetup.errorRequired'));
     }
     setSaving(true);
     setError('');
@@ -48,7 +50,6 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
         signingKey,
       );
       const created = await base44.entities.Meetup.create(stamped);
-      // Bridge to AT Protocol PDS as a real org.swappulse.meetup record
       bridgeMeetup(stamped).then((res) => {
         if (res.bridged) base44.entities.Meetup.update(created.id, res).catch(() => {});
       }).catch(() => {});
@@ -56,7 +57,7 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
       onCreated?.();
       onClose();
     } catch (e) {
-      setError(e.message || 'Failed to create meetup');
+      setError(e.message || t('meetup.errorFailed'));
     } finally {
       setSaving(false);
     }
@@ -68,54 +69,54 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="mt-8 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-lg font-bold">New Meetup</h2>
+          <h2 className="text-lg font-bold">{t('meetup.new')}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Title</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.titleLabel')}</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} className={field} placeholder="e.g. South London Trade Night" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.descLabel')}</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} rows={3} className={`resize-none ${field}`} placeholder="What to bring, format, etc." />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date & time</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.dateTime')}</label>
               <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className={field} />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Duration (min)</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.duration')}</label>
               <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} min={15} className={field} />
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Venue / location</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.venue')}</label>
             <input value={locationName} onChange={(e) => setLocationName(e.target.value)} maxLength={200} className={field} placeholder="e.g. The Hood Arms, Sutton" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Region</label>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.region')}</label>
             <input value={region} onChange={(e) => setRegion(e.target.value)} className={field} placeholder="e.g. London" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Capacity</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.capacity')}</label>
               <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} min={2} max={50} className={field} />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Required vouches</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.requiredVouches')}</label>
               <input type="number" value={requiredVouches} onChange={(e) => setRequiredVouches(e.target.value)} min={0} className={field} />
-              <p className="mt-1 text-[11px] text-muted-foreground">Min incoming vouches to view attendees.</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t('meetup.requiredVouchesHint')}</p>
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">Cancel</button>
+          <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">{t('common.cancel')}</button>
           <button onClick={submit} disabled={saving} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Create meetup
+            {t('meetup.create')}
           </button>
         </div>
       </div>

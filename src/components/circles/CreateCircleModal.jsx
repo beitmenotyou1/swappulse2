@@ -5,24 +5,26 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeCircle } from '@/lib/federatedBridge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const THEMES = [
-  ['general', 'General'],
-  ['vintage', 'Vintage'],
-  ['competitive', 'Competitive'],
-  ['shiny', 'Shiny'],
-  ['investment', 'Investment'],
-  ['local_region', 'Local Region'],
-  ['artist', 'Artist'],
+  ['general', 'circle.theme.general'],
+  ['vintage', 'circle.theme.vintage'],
+  ['competitive', 'circle.theme.competitive'],
+  ['shiny', 'circle.theme.shiny'],
+  ['investment', 'circle.theme.investment'],
+  ['local_region', 'circle.theme.localRegion'],
+  ['artist', 'circle.theme.artist'],
 ];
 
 const VIS = [
-  ['private', 'Private'],
-  ['members_visible', 'Members visible'],
-  ['public', 'Public'],
+  ['private', 'circle.vis.private'],
+  ['members_visible', 'circle.vis.membersVisible'],
+  ['public', 'circle.vis.public'],
 ];
 
 export default function CreateCircleModal({ open, onClose, onCreated }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [theme, setTheme] = useState('general');
@@ -32,7 +34,7 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
   const [error, setError] = useState('');
 
   const submit = async () => {
-    if (!name.trim()) return setError('Name required');
+    if (!name.trim()) return setError(t('circle.create.nameRequired'));
     setSubmitting(true);
     setError('');
     try {
@@ -68,7 +70,7 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
       setVisibility('public');
       onClose();
     } catch (e) {
-      setError(e.message || 'Failed to create circle');
+      setError(e.message || t('circle.create.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -85,12 +87,12 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="mt-8 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-lg font-bold">New Circle</h2>
+          <h2 className="text-lg font-bold">{t('circle.create.new')}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-4">
           <div>
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</Label>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.name')}</Label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -100,7 +102,7 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
             />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description</Label>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.description')}</Label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -111,24 +113,24 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
             />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Theme</Label>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.theme')}</Label>
             <div className="flex flex-wrap gap-2">
-              {THEMES.map(([k, l]) => (
-                <button key={k} onClick={() => setTheme(k)} className={pill(theme === k)}>{l}</button>
+              {THEMES.map(([k, key]) => (
+                <button key={k} onClick={() => setTheme(k)} className={pill(theme === k)}>{t(key)}</button>
               ))}
             </div>
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Visibility</Label>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.visibility')}</Label>
             <div className="grid grid-cols-3 gap-2">
-              {VIS.map(([k, l]) => (
-                <button key={k} onClick={() => setVisibility(k)} className={pill(visibility === k)}>{l}</button>
+              {VIS.map(([k, key]) => (
+                <button key={k} onClick={() => setVisibility(k)} className={pill(visibility === k)}>{t(key)}</button>
               ))}
             </div>
           </div>
           {theme === 'local_region' && (
             <div>
-              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Region</Label>
+              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.region')}</Label>
               <input
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
@@ -139,10 +141,10 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
             <Button onClick={submit} disabled={submitting} className="gap-1.5">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Create circle
+              {t('circle.create.createBtn')}
             </Button>
           </div>
         </div>
