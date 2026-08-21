@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, Bell, FileText } from 'lucide-react';
+import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, FileText } from 'lucide-react';
 import AtProtoForm from '@/components/auth/AtProtoForm';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
