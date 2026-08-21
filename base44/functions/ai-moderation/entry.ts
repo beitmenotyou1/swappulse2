@@ -16,6 +16,7 @@ import {
   MODERATION_SYSTEM_PROMPT,
 } from '../../shared/moderationConfig.ts';
 import { getActiveInsights } from '../../shared/agentLearningLoop.ts';
+import { isInternalServiceCall } from '../../shared/internalAuth.ts';
 
 const LABELER_DID = 'did:web:labeler.swappulse.org';
 
@@ -36,7 +37,7 @@ export default async function(req: Request): Promise<Response> {
     // Moderation workflows fail with 403 on every entity create event.
     let caller: any;
     try { caller = await base44.auth.me(); } catch { caller = null; }
-    const isInternalCall = !!req.headers.get('Base44-Service-Authorization');
+    const isInternalCall = isInternalServiceCall(req);
     if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
