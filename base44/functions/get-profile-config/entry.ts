@@ -120,7 +120,7 @@ export default async function (req: Request): Promise<Response> {
       isOwner,
       isFollower,
       isFriend,
-      theme: raw?.theme || 'default',
+      theme: raw?.theme === 'reddit' ? 'default' : (raw?.theme || 'default'),
       section_order: raw?.section_order || null,
       block_order: raw?.block_order || null,
       hidden_sections: raw?.hidden_sections || [],

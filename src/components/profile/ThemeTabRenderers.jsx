@@ -225,48 +225,39 @@ export function PortfolioTab({ collection, did }) {
   );
 }
 
-// ── Videos Tab (YouTube) ──────────────────────────────────────────────────
-export function VideosTab({ did }) {
+// ── Episodes Tab (YouTube → Podcasts) ──────────────────────────────────────
+export function EpisodesTab({ did }) {
   const [podcasts, setPodcasts] = useState([]);
-  const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!did) return;
     let active = true;
-    Promise.all([
-      base44.entities.PodcastEpisode.filter({ did }, '-published_at', 24).catch(() => []),
-      base44.entities.VoiceSpace.filter({ did }, '-created_date', 12).catch(() => []),
-    ]).then(([p, s]) => {
-      if (!active) return;
-      setPodcasts(p || []);
-      setSpaces(s || []);
-      setLoading(false);
-    });
+    base44.entities.PodcastEpisode.filter({ did }, '-published_at', 24)
+      .then((p) => { if (active) setPodcasts(p || []); })
+      .catch(() => {})
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [did]);
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-red-500" /></div>;
-  const videos = [
-    ...podcasts.map((p) => ({ id: p.id, title: p.title, thumb: p.cover_image_url, to: '/spaces', kind: 'podcast' })),
-    ...spaces.map((s) => ({ id: s.id, title: s.title, thumb: '', to: `/spaces/${s.id}`, kind: 'space' })),
-  ];
-  if (videos.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No videos yet.</p>;
+  if (podcasts.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No episodes yet.</p>;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      {videos.map((v) => (
-        <Link key={v.id} to={v.to} className="group">
-          <div className="relative aspect-video overflow-hidden rounded-xl bg-secondary">
-            {v.thumb ? (
-              <img src={v.thumb} alt={v.title} className="h-full w-full object-cover" />
+    <div className="space-y-2">
+      {podcasts.map((p) => (
+        <Link key={p.id} to="/spaces" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary">
+          <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-red-500/10 text-red-500">
+            {p.cover_image_url ? (
+              <img src={p.cover_image_url} alt={p.title} className="h-full w-full object-cover" />
             ) : (
-              <div className="grid h-full place-items-center text-muted-foreground">
-                {v.kind === 'space' ? <Radio className="h-8 w-8" /> : <Play className="h-8 w-8" />}
-              </div>
+              <Play className="h-6 w-6 fill-current" />
             )}
-            <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1 text-[10px] font-medium text-white">
-              {v.kind === 'space' ? 'SPACE' : 'POD'}
-            </span>
           </div>
-          <p className="mt-1 line-clamp-2 text-xs font-medium">{v.title}</p>
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-1 text-sm font-bold">{p.title}</p>
+            {p.description && <p className="line-clamp-1 text-xs text-muted-foreground">{p.description}</p>}
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {p.published_at ? new Date(p.published_at).toLocaleDateString() : ''} · {Math.floor((p.duration_seconds || 0) / 60)} min
+            </p>
+          </div>
         </Link>
       ))}
     </div>
@@ -301,29 +292,55 @@ export function PlaylistsTab({ did }) {
   );
 }
 
-// ── Channels Tab (YouTube → Follows) ──────────────────────────────────────
-export function ChannelsTab({ did }) {
-  const [follows, setFollows] = useState([]);
+// ── Live Tab (YouTube → Live Spaces) ──────────────────────────────────────
+export function LiveTab({ did }) {
+  const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!did) return;
     let active = true;
-    base44.entities.Follow.filter({ did }, '-created_date', 24)
-      .then((f) => { if (active) setFollows(f || []); })
+    base44.entities.VoiceSpace.filter({ did }, '-created_date', 12)
+      .then((s) => { if (active) setSpaces(s || []); })
       .catch(() => {})
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [did]);
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-red-500" /></div>;
-  if (follows.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No subscriptions yet.</p>;
+  if (spaces.length === 0) return <p className="py-16 text-center text-sm text-muted-foreground">No live spaces yet.</p>;
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-      {follows.map((f) => (
-        <Link key={f.id} to={`/profile/${f.subject_did}`} className="flex flex-col items-center gap-1">
-          <Avatar name={f.subject_name} src={f.subject_avatar} size={64} />
-          <span className="max-w-[80px] truncate text-xs font-medium">{f.subject_name}</span>
-        </Link>
-      ))}
+    <div className="space-y-2">
+      {spaces.map((s) => {
+        const isLive = s.status === 'live';
+        return (
+          <Link key={s.id} to={`/spaces/${s.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary">
+            <div className={`relative grid h-14 w-14 shrink-0 place-items-center rounded-lg ${isLive ? 'bg-red-500/10 text-red-500' : 'bg-secondary text-muted-foreground'}`}>
+              <Radio className="h-6 w-6" />
+              {isLive && (
+                <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-1 text-sm font-bold">{s.title}</p>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                {isLive ? (
+                  <>
+                    <span className="flex items-center gap-1 font-semibold text-red-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-500 live-ring" /> LIVE
+                    </span>
+                    {s.recording_enabled && <span className="flex items-center gap-0.5 text-red-400"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /> REC</span>}
+                    <span>· {s.listener_count || 0} listening</span>
+                  </>
+                ) : (
+                  <span>{s.status === 'ended' ? 'Ended' : 'Scheduled'} · {s.started_at ? new Date(s.started_at).toLocaleDateString() : ''}</span>
+                )}
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

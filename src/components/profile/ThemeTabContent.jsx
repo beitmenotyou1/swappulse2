@@ -25,7 +25,6 @@ import BlueskyTheme from '@/components/profile/themes/BlueskyTheme';
 import MastodonTheme from '@/components/profile/themes/MastodonTheme';
 import XTheme from '@/components/profile/themes/XTheme';
 import YouTubeTheme from '@/components/profile/themes/YouTubeTheme';
-import RedditTheme from '@/components/profile/themes/RedditTheme';
 
 import SwapPulseLanding from '@/components/profile/landings/SwapPulseLanding';
 import VintageLanding from '@/components/profile/landings/VintageLanding';
@@ -35,7 +34,7 @@ import InvestmentLanding from '@/components/profile/landings/InvestmentLanding';
 
 import {
   LikesTab, BinderTab, TradeStatsTab, AchievementsTab, RewardsTab,
-  LeaderboardTab, PortfolioTab, VideosTab, PlaylistsTab, ChannelsTab,
+  LeaderboardTab, PortfolioTab, EpisodesTab, PlaylistsTab, LiveTab,
   FriendsTab, PhotosTab,
 } from '@/components/profile/ThemeTabRenderers';
 
@@ -45,7 +44,6 @@ const PLATFORM_LANDINGS = {
   mastodon: MastodonTheme,
   x: XTheme,
   youtube: YouTubeTheme,
-  reddit: RedditTheme,
 };
 
 const NATIVE_LANDINGS = {
@@ -195,14 +193,14 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
     );
   }
 
-  // Videos (YouTube)
-  if (tabKey === 'Videos') return <VideosTab did={did} />;
+  // Episodes (YouTube → Podcasts)
+  if (tabKey === 'Episodes' || tabKey === 'Videos') return <EpisodesTab did={did} />;
 
-  // Playlists (YouTube)
-  if (tabKey === 'Playlists') return <PlaylistsTab did={did} />;
+  // Live Now (YouTube → Live Spaces)
+  if (tabKey === 'Live Now' || tabKey === 'Channels') return <LiveTab did={did} />;
 
-  // Channels (YouTube)
-  if (tabKey === 'Channels') return <ChannelsTab did={did} />;
+  // Shows (YouTube → Binder collections)
+  if (tabKey === 'Shows' || tabKey === 'Playlists') return <PlaylistsTab did={did} />;
 
   // Friends (Facebook)
   if (tabKey === 'Friends') return <FriendsTab did={did} />;

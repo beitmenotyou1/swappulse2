@@ -5,7 +5,6 @@ import BlueskyTheme from '@/components/profile/themes/BlueskyTheme';
 import MastodonTheme from '@/components/profile/themes/MastodonTheme';
 import XTheme from '@/components/profile/themes/XTheme';
 import YouTubeTheme from '@/components/profile/themes/YouTubeTheme';
-import RedditTheme from '@/components/profile/themes/RedditTheme';
 
 const PLATFORM_THEMES = {
   facebook: FacebookTheme,
@@ -13,7 +12,6 @@ const PLATFORM_THEMES = {
   mastodon: MastodonTheme,
   x: XTheme,
   youtube: YouTubeTheme,
-  reddit: RedditTheme,
 };
 
 // ProfileThemeView — dispatches the About/landing view to the platform-

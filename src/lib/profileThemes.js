@@ -1,5 +1,5 @@
 // Preset profile themes — a single merged list of five gradient themes and
-// six platform-emulating layout themes. Gradient themes restyle the header
+// five platform-emulating layout themes. Gradient themes restyle the header
 // only; platform themes restructure the About/landing view into that
 // platform's native layout. Gradient class strings are written as literals
 // so Tailwind's purge detects them.
@@ -15,7 +15,6 @@ export const PROFILE_THEMES = [
   { key: 'mastodon', label: 'Mastodon', gradient: 'from-purple-500/40 via-violet-400/30 to-fuchsia-300/30', platform: true },
   { key: 'x', label: 'X', gradient: 'from-slate-700/40 via-slate-600/30 to-slate-400/30', platform: true },
   { key: 'youtube', label: 'YouTube', gradient: 'from-red-600/40 via-red-500/30 to-rose-400/30', platform: true },
-  { key: 'reddit', label: 'Reddit', gradient: 'from-orange-500/40 via-orange-400/30 to-amber-300/30', platform: true },
 ];
 
 export const DEFAULT_THEME = 'default';
@@ -118,20 +117,9 @@ export const THEME_CONFIGS = {
     containerClass: '',
     tabs: [
       { key: 'Home', label: 'Home' },
-      { key: 'Videos', label: 'Videos' },
-      { key: 'Playlists', label: 'Playlists' },
-      { key: 'Channels', label: 'Channels' },
-      { key: 'About', label: 'About' },
-    ],
-  },
-  reddit: {
-    label: 'Reddit',
-    accentHex: '#FF4500',
-    headerVariant: 'reddit',
-    containerClass: '',
-    tabs: [
-      { key: 'Posts', label: 'Posts' },
-      { key: 'Comments', label: 'Comments' },
+      { key: 'Episodes', label: 'Episodes' },
+      { key: 'Live Now', label: 'Live Now' },
+      { key: 'Shows', label: 'Shows' },
       { key: 'About', label: 'About' },
     ],
   },
@@ -168,8 +156,6 @@ export const THEME_CONFIGS = {
     tabs: [
       { key: 'Posts', label: 'Posts' },
       { key: 'Replies', label: 'Replies' },
-      { key: 'Media', label: 'Media' },
-      { key: 'Likes', label: 'Likes' },
       { key: 'About', label: 'About' },
     ],
   },

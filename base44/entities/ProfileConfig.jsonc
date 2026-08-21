@@ -128,11 +128,10 @@
         "bluesky",
         "mastodon",
         "x",
-        "youtube",
-        "reddit"
+        "youtube"
       ],
       "default": "default",
-      "description": "Profile theme \u2014 gradient presets (default/vintage/competitive/shiny/investment) restyle the header, or platform-emulating layouts (facebook/bluesky/mastodon/x/youtube/reddit) restructure the About view into that platform's native arrangement."
+      "description": "Profile theme \u2014 gradient presets (default/vintage/competitive/shiny/investment) restyle the header, or platform-emulating layouts (facebook/bluesky/mastodon/x/youtube) restructure the About view into that platform's native arrangement."
     },
     "section_order": {
       "type": "array",

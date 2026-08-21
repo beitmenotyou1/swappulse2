@@ -15,7 +15,6 @@ export default function ThemeHeader({ variant, theme, accentHex, profile, action
     shiny: ShinyHeader,
     investment: InvestmentHeader,
     youtube: YouTubeHeader,
-    reddit: RedditHeader,
     x: XHeader,
     facebook: FacebookHeader,
     bluesky: BlueskyHeader,
@@ -233,41 +232,6 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
             <div>
               <h1 className="text-xl font-bold">{profile?.name}</h1>
               <p className="text-sm text-muted-foreground">{profile?.followers_count || 0} subscribers</p>
-            </div>
-          </div>
-          {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
-        </div>
-        <div className="mt-4 space-y-2.5 pb-1">
-          {badges}
-          {profile?.description && <RichText text={profile.description} className="text-sm" />}
-          {reputationNode}
-          {extra}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Reddit ────────────────────────────────────────────────────────────────
-function RedditHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
-  return (
-    <div>
-      <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500/40 via-orange-400/30 to-amber-300/30 h-32 sm:h-40">
-        {profile?.header && <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />}
-      </div>
-      <div className="h-1 bg-orange-500" />
-      {externalBanner}
-      <div className="px-4">
-        {backLink && <div className="mt-2 mb-2">{backLink}</div>}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between -mt-8 sm:-mt-10">
-          <div className="flex items-center gap-3">
-            <span className="relative inline-block w-fit">
-              <Avatar name={profile?.name} src={profile?.avatar} size={80} className="ring-4 ring-background" />
-              {avatarBadge}
-            </span>
-            <div>
-              <h1 className="text-lg font-bold">u/{profile?.bsky_handle || profile?.name}</h1>
-              <p className="text-xs text-muted-foreground">{profile?.followers_count || 0} followers · {profile?.posts_count || 0} posts</p>
             </div>
           </div>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
