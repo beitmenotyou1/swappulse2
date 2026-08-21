@@ -43,10 +43,79 @@ export const COLLECTIONS: Record<string, string> = {
 // Standard AT Protocol record mappers (app.bsky.*). These map remote
 // Bluesky records into local entities so interactions from other instances
 // surface in SwapPulse feeds and profiles.
+// Build a displayable CDN URL for a Bluesky blob reference. The public
+// cdn.bsky.app CDN serves blobs from any PDS the AppView has crawled.
+function blobUrl(did: string, blob: any): string {
+  const cid = blob?.ref?.$link || blob?.cid || '';
+  if (!cid) return '';
+  return `https://cdn.bsky.app/img/feed_fullsize/plain/${did}/${cid}`;
+}
+
 function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
+  // Extract media from embeds. Bluesky supports:
+  //   app.bsky.embed.images          — up to 4 images
+  //   app.bsky.embed.external        — link card with thumbnail
+  //   app.bsky.embed.record          — quote post
+  //   app.bsky.embed.recordWithMedia — quote + images/external
+  let embedImages: string[] = [];
+  let embedExternal: any = null;
+  let quoteRef = '';
+
+  const embed = val.embed;
+  if (embed) {
+    if (embed.$type === 'app.bsky.embed.images' && Array.isArray(embed.images)) {
+      embedImages = embed.images.map((img: any) => blobUrl(did, img?.image)).filter(Boolean);
+    } else if (embed.$type === 'app.bsky.embed.external' && embed.external) {
+      const ext = embed.external;
+      embedExternal = {
+        uri: ext.uri || '',
+        title: ext.title || '',
+        description: ext.description || '',
+        thumb: ext.thumb ? blobUrl(did, ext.thumb) : '',
+      };
+    } else if (embed.$type === 'app.bsky.embed.record' && embed.record) {
+      quoteRef = embed.record.uri || '';
+    } else if (embed.$type === 'app.bsky.embed.recordWithMedia') {
+      if (embed.record?.record) quoteRef = embed.record.record.uri || '';
+      const media = embed.media;
+      if (media?.$type === 'app.bsky.embed.images' && Array.isArray(media.images)) {
+        embedImages = media.images.map((img: any) => blobUrl(did, img?.image)).filter(Boolean);
+      } else if (media?.$type === 'app.bsky.embed.external' && media.external) {
+        const ext = media.external;
+        embedExternal = {
+          uri: ext.uri || '',
+          title: ext.title || '',
+          description: ext.description || '',
+          thumb: ext.thumb ? blobUrl(did, ext.thumb) : '',
+        };
+      }
+    }
+  }
+
+  // Extract hashtags from facets (Bluesky stores tags as richtext facets,
+  // not inline — but the text still contains the #tag literal).
+  let hashtags: string[] = [];
+  if (Array.isArray(val.facets)) {
+    for (const facet of val.facets) {
+      if (Array.isArray(facet.features)) {
+        for (const feature of facet.features) {
+          if (feature.$type === 'app.bsky.richtext.facet#tag' && feature.tag) {
+            hashtags.push(feature.tag);
+          }
+        }
+      }
+    }
+  }
+  hashtags = hashtags.slice(0, 10);
+
   return {
     content: val.text || '',
     post_type: 'text',
+    hashtags,
+    canonical_tags: hashtags.map((h: string) => h.toLowerCase().trim()),
+    embed_images: embedImages,
+    embed_external: embedExternal || undefined,
+    quote_ref: quoteRef,
     author_name: profile?.displayName || '',
     author_handle: profile?.handle || '',
     author_avatar: profile?.avatar || '',

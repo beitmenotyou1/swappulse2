@@ -59,6 +59,31 @@
       "type": "string",
       "description": "at:// URI of the quoted post (the embedded original). For local quotes this is the target's at_uri; for quotes of external posts it is the remote at:// URI. Used to render the embed and to bridge app.bsky.embed.record."
     },
+    "embed_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Image URLs from Bluesky app.bsky.embed.images attachments. Populated by backfill/ingest for bridged posts so media renders in feeds."
+    },
+    "embed_external": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "thumb": {
+          "type": "string"
+        }
+      },
+      "description": "External link card from Bluesky app.bsky.embed.external. Populated by backfill/ingest for bridged posts."
+    },
     "moderation_labels": {
       "type": "array",
       "description": "Hashtag abuse / moderation labels applied by the labeler at creation time",
@@ -174,7 +199,7 @@
         "followers"
       ],
       "default": "everybody",
-      "description": "Who can reply to this post (postGate). Mirrored to the PDS as an app.bsky.feed.postgate record. Enforced client-side on createReply; the bridged postgate is the source of truth for remote enforcement."
+      "description": "Who can reply to this post (postGate). Mirrored to the PDS as an.bsky.feed.postgate record. Enforced client-side on createReply; the bridged postgate is the source of truth for remote enforcement."
     },
     "reply_to": {
       "type": "string",

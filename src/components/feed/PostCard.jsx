@@ -16,6 +16,7 @@ import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetV
 import ReportDialog from '@/components/moderation/ReportDialog';
 import QuoteComposeModal from '@/components/feed/QuoteComposeModal';
 import QuotedPostCard from '@/components/feed/QuotedPostCard';
+import PostEmbeds from '@/components/feed/PostEmbeds';
 import ExternalIndicator from '@/components/ExternalIndicator';
 import { useMembership } from '@/lib/membershipContext';
 import RichText from '@/components/RichText';
@@ -196,6 +197,8 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
           {post.content && (
             <RichText text={post.content} className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed" />
           )}
+
+          <PostEmbeds post={post} />
 
           {post.card_id && (
             <div className="mt-3 flex overflow-hidden rounded-xl border border-border bg-secondary">
