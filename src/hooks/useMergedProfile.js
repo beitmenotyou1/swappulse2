@@ -10,7 +10,7 @@ import { base44 } from '@/api/base44Client';
 // Usage: const { profile, loading, error } = useMergedProfile({ did });
 //        const { profile } = useMergedProfile({ handle: 'alice.bsky.social' });
 
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 15_000;
 const cache = new Map(); // key -> { data, expires }
 
 export function useMergedProfile({ did, handle } = {}) {

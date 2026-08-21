@@ -71,7 +71,7 @@ export default function Profile() {
       const { did: myDid } = await ensureUserDid();
       setDid(myDid);
       const [p, c, t, r, j, vs] = await Promise.all([
-        base44.entities.Post.filter({ created_by_id: user.id }, '-created_date', 50),
+        base44.entities.Post.filter({ did: myDid }, '-created_date', 50),
         base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100),
         base44.entities.TradeListing.filter({ created_by_id: user.id }, '-created_date', 20),
         base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),

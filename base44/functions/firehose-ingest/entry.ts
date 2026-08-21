@@ -415,7 +415,13 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
         // the guard so remote wins (prevents a dead outbound sync from
         // permanently blocking inbound). The 10-minute AppView grace period
         // is removed — the PDS read is lag-free.
-        const lastSync = user.profile_synced_at || '';
+        // Last-write-wins conflict guard. Falls back to migrated_at when
+        // profile_synced_at is empty (first sync or after a reset) so a local
+        // edit made after migration is never overwritten by a stale remote
+        // PDS description. After 3 consecutive outbound failures, bypass the
+        // guard so remote edits can still merge (prevents a dead outbound
+        // sync from permanently blocking inbound).
+        const lastSync = user.profile_synced_at || user.migrated_at || '';
         const localUpdated = user.updated_date || '';
         const failCount = user.profile_sync_fail_count || 0;
         if (lastSync && localUpdated > lastSync && failCount < 3) continue;
