@@ -1,36 +1,42 @@
 // migrate-to-swappulse — syncs a collector's Bluesky presence INTO SwapPulse on
 // link, then updates the handle and posts+pins an announcement on Bluesky.
 //
-// Resequenced flow (pull-then-announce, NOT overwrite-bio):
-//   1. Pull the Bluesky profile (displayName, description, avatar, banner) from
-//      the AppView and merge it into the local User record as the synced source
-//      of truth — the Bluesky bio stays intact and two-way sync keeps it in
-//      step (no pointer overwrite).
-//   2. Trigger backfill-author-posts (first batch) so the user's full Bluesky
-//      post history renders on SwapPulse. Resumable — the UI re-invokes until
-//      hasMore is false.
-//   3. Trigger import-notification-snapshot so the user has an immediate
-//      notification snapshot on SwapPulse.
-//   4. Update the handle to username.swappulse.org (or a custom domain) on the
-//      Protocol side.
-//   5. Post and pin the 'I've moved to SwapPulse' announcement on the Bluesky
-//      feed so followers see the transition.
-//   6. Snapshot the full original Bluesky profile for un-move restoration.
+// Reliability-first flow (announcement gated on critical step success):
+//   1. Snapshot the full original Bluesky profile (for un-move restoration).
+//   2. Pull the Bluesky profile INTO SwapPulse (displayName, description, avatar,
+//      banner). Tracks step status. FAILURE → step marked failed, announcement
+//      skipped.
+//   3. Trigger backfill-author-posts (first batch). Tracks step status. FAILURE →
+//      step marked failed, announcement skipped.
+//   4. Import the one-time notification snapshot. Tracks step status. FAILURE →
+//      step marked failed, announcement skipped.
+//   5. Update the handle to username.swappulse.org (or custom domain). Best-
+//      effort — failure doesn't block the announcement (retry-pending-handles
+//      will retry via the PDS Sync workflow).
+//   6. ONLY if steps 2+3+4 all succeeded → post and pin the 'I've moved'
+//      announcement on Bluesky. If any critical step failed, the announcement
+//      is skipped and the user sees a clear error + per-step retry in the
+//      BlueskyLinkCard dashboard.
+//   7. Store migration state + per-step status on the User record.
 //
 // Called automatically by BlueskyLinkCard after a successful link. Idempotent:
 // if already migrated, returns success without re-posting.
 //
-// Input: { customDomain? } — optional custom domain for the handle (e.g.
-//   'mybrand.com'). If omitted, defaults to username.swappulse.org.
-//
-// Output: { ok, migrated, pinnedUri, profileUrl, handleUpdated, handle,
-//   profilePulled, backfillStarted, notificationsImported }
+// Input: { customDomain? } — optional custom domain for the handle.
+// Output: { ok, migrated, steps, pinnedUri, profileUrl, handleUpdated, handle }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
 import { pullProfileFromAppView } from '../../shared/profileSync.ts';
+
+type StepStatus = 'pending' | 'running' | 'success' | 'failed';
+interface StepState { status: StepStatus; error: string; completed_at: string }
+
+function makeStep(status: StepStatus, error = '', completed_at = ''): StepState {
+  return { status, error, completed_at };
+}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -51,6 +57,21 @@ export default async function(req: Request): Promise<Response> {
 
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
 
+    // Initialize per-step tracking on the User record.
+    const steps: Record<string, StepState> = {
+      profile_pull: makeStep('pending'),
+      post_backfill: makeStep('pending'),
+      notification_import: makeStep('pending'),
+      handle_update: makeStep('pending'),
+      announcement: makeStep('pending'),
+    };
+
+    const updateSteps = async (overrides: Record<string, StepState>) => {
+      const merged = { ...steps, ...overrides };
+      Object.assign(steps, overrides);
+      await base44.auth.updateMe({ migration_steps: merged }).catch(() => {});
+    };
+
     // 1. Snapshot the full current Bluesky profile record (for un-move
     //    restoration of displayName, avatar, banner — not just the bio).
     let existingProfile: any = {};
@@ -69,10 +90,8 @@ export default async function(req: Request): Promise<Response> {
     const originalBio: string = existingProfile.description || '';
     const originalProfileJson: string = JSON.stringify(existingProfile);
 
-    // 2. Pull the Bluesky profile INTO SwapPulse (displayName, description,
-    //    avatar, banner) as the synced source of truth. The Bluesky bio stays
-    //    intact — no pointer overwrite. Two-way sync (firehose-ingest
-    //    syncInboundProfiles + sync-profile-records) keeps both in step.
+    // 2. Pull the Bluesky profile INTO SwapPulse.
+    await updateSteps({ profile_pull: makeStep('running') });
     let profilePulled = false;
     try {
       const { ok, updates } = await pullProfileFromAppView(sess.did);
@@ -80,40 +99,62 @@ export default async function(req: Request): Promise<Response> {
         updates.profile_synced_at = new Date().toISOString();
         await base44.auth.updateMe(updates);
         profilePulled = true;
+        await updateSteps({ profile_pull: makeStep('success', '', new Date().toISOString()) });
+      } else if (ok) {
+        // No updates needed (profile already in sync) — still counts as success
+        profilePulled = true;
+        await updateSteps({ profile_pull: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        await updateSteps({ profile_pull: makeStep('failed', 'AppView profile fetch returned no data', new Date().toISOString()) });
       }
-    } catch (e) {
-      console.error('migrate: profile pull failed (continuing)', e?.message);
+    } catch (e: any) {
+      console.error('migrate: profile pull failed', e?.message);
+      await updateSteps({ profile_pull: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
-    // 3. Trigger the all-time post backfill (first batch). Resumable — the
-    //    UI re-invokes backfill-author-posts until hasMore is false.
+    // 3. Trigger the all-time post backfill (first batch).
+    await updateSteps({ post_backfill: makeStep('running') });
     let backfillStarted = false;
     try {
       const bfRes = await base44.functions.invoke('backfill-author-posts', {}).catch((e: any) => {
-        console.error('migrate: backfill first batch failed (continuing)', e?.message || e);
+        console.error('migrate: backfill first batch failed', e?.message || e);
         return null;
       });
-      backfillStarted = !!(bfRes?.ok);
-    } catch (e) {
-      console.error('migrate: backfill trigger failed (continuing)', e?.message);
+      if (bfRes?.ok) {
+        backfillStarted = true;
+        await updateSteps({ post_backfill: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        const errMsg = bfRes?.error || 'Backfill returned non-ok response';
+        await updateSteps({ post_backfill: makeStep('failed', errMsg, new Date().toISOString()) });
+      }
+    } catch (e: any) {
+      console.error('migrate: backfill trigger failed', e?.message);
+      await updateSteps({ post_backfill: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
     // 4. Import the one-time Bluesky notification snapshot.
+    await updateSteps({ notification_import: makeStep('running') });
     let notificationsImported = false;
     try {
       const niRes = await base44.functions.invoke('import-notification-snapshot', {}).catch((e: any) => {
-        console.error('migrate: notification import failed (continuing)', e?.message || e);
+        console.error('migrate: notification import failed', e?.message || e);
         return null;
       });
-      notificationsImported = !!(niRes?.ok);
-    } catch (e) {
-      console.error('migrate: notification import trigger failed (continuing)', e?.message);
+      if (niRes?.ok) {
+        notificationsImported = true;
+        await updateSteps({ notification_import: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        const errMsg = niRes?.error || 'Notification import returned non-ok response';
+        await updateSteps({ notification_import: makeStep('failed', errMsg, new Date().toISOString()) });
+      }
+    } catch (e: any) {
+      console.error('migrate: notification import trigger failed', e?.message);
+      await updateSteps({ notification_import: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
     // 5. Update the handle to username.swappulse.org (or custom domain).
-    //    Best-effort — the PDS must verify the handle via DNS TXT or
-    //    well-known file. If verification fails, the migration still
-    //    succeeds; the user can manually update their handle later.
+    //    Best-effort — failure doesn't block the announcement.
+    await updateSteps({ handle_update: makeStep('running') });
     let handleUpdated = false;
     let newHandle = '';
     const username = user.username || user.email?.split('@')[0] || 'collector';
@@ -125,18 +166,61 @@ export default async function(req: Request): Promise<Response> {
       );
       if (handleRes?.error) {
         console.error('migrate: handle update failed (best-effort, will retry via PDS Sync workflow)', handleRes.status, handleRes.body);
+        await updateSteps({ handle_update: makeStep('failed', `PDS rejected (${handleRes.status})`, new Date().toISOString()) });
       } else {
         handleUpdated = true;
         newHandle = targetHandle;
+        await updateSteps({ handle_update: makeStep('success', '', new Date().toISOString()) });
       }
     } catch (e) {
       console.error('migrate: handle update failed (best-effort)', e?.message);
+      await updateSteps({ handle_update: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
-    // 6. Post the announcement to the user's Bluesky feed.
+    // 6. GATE: Only post the announcement if ALL critical steps succeeded.
+    //    Critical = profile_pull, post_backfill, notification_import.
+    const criticalStepsOk = profilePulled && backfillStarted && notificationsImported;
+
+    let pinnedUri = '';
+    let profileUrl = '';
     const appUrl = resolveAppUrl(req);
     const profileHandle = newHandle || user.username || user.bsky_handle;
-    const profileUrl = `${appUrl}/u/${profileHandle}`;
+    profileUrl = `${appUrl}/u/${profileHandle}`;
+
+    if (!criticalStepsOk) {
+      // Announcement skipped — at least one critical step failed. Store
+      // migration state so the dashboard shows the failures, but do NOT
+      // mark as migrated (the user needs to retry the failed steps).
+      await updateSteps({ announcement: makeStep('failed', 'Skipped — critical step(s) failed', new Date().toISOString()) });
+      await base44.auth.updateMe({
+        original_bluesky_bio: originalBio,
+        original_bluesky_profile: originalProfileJson,
+        original_bluesky_handle: user.bsky_handle,
+        // NOT setting migrated_from_bluesky=true — the user must retry
+        ...(handleUpdated
+          ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
+          : { handle_update_pending: true, pending_handle: targetHandle }),
+      });
+
+      const failedSteps = Object.entries(steps)
+        .filter(([, s]) => s.status === 'failed')
+        .map(([name, s]) => ({ step: name, error: s.error }));
+
+      console.log(`[migrate-to-swappulse] user ${user.id} migration INCOMPLETE — announcement skipped. Failed: ${failedSteps.map(f => f.step).join(', ')}`);
+      return Response.json({
+        ok: false,
+        migrated: false,
+        incomplete: true,
+        steps,
+        failedSteps,
+        handleUpdated,
+        handle: newHandle || user.bsky_handle,
+        profileUrl,
+      });
+    }
+
+    // All critical steps succeeded → post the announcement.
+    await updateSteps({ announcement: makeStep('running') });
     const announcementText = `I've moved to SwapPulse! 🎉 Follow me at ${profileUrl} for all my Pokémon TCG collecting, trades, and community.`;
 
     const postRecord = {
@@ -160,11 +244,33 @@ export default async function(req: Request): Promise<Response> {
     }
     if (postResult?.error) {
       console.error('migrate: createRecord post failed', postResult.status, postResult.body);
-      return Response.json({ error: `Failed to post announcement (${postResult.status})` }, { status: 502 });
+      await updateSteps({ announcement: makeStep('failed', `Post failed (${postResult.status})`, new Date().toISOString()) });
+      // Still mark as migrated since the critical content sync succeeded —
+      // the announcement is the last step and can be retried via re-migrate.
+      await base44.auth.updateMe({
+        migrated_from_bluesky: true,
+        original_bluesky_bio: originalBio,
+        original_bluesky_profile: originalProfileJson,
+        original_bluesky_handle: user.bsky_handle,
+        migrated_at: new Date().toISOString(),
+        migration_reverted: false,
+        ...(handleUpdated
+          ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
+          : { handle_update_pending: true, pending_handle: targetHandle }),
+      });
+      return Response.json({
+        ok: true,
+        migrated: true,
+        announcementFailed: true,
+        steps,
+        handleUpdated,
+        handle: newHandle || user.bsky_handle,
+        profileUrl,
+      });
     }
-    const pinnedUri: string = postResult.uri;
+    pinnedUri = postResult.uri;
 
-    // 7. Pin the announcement post (best-effort — preference API may vary).
+    // 7. Pin the announcement post (best-effort).
     try {
       const prefsRes = await fetch(`${pdsUrl}/xrpc/app.bsky.actor.getPreferences`, {
         headers: { 'Authorization': `Bearer ${sess.accessJwt}` },
@@ -174,7 +280,6 @@ export default async function(req: Request): Promise<Response> {
         const prefsData = await prefsRes.json();
         preferences = prefsData.preferences || [];
       }
-      // Remove existing pinnedPost entries, then add the new one.
       preferences = preferences.filter((p: any) => p.$type !== 'app.bsky.actor.defs#pinnedPost');
       preferences.push({ $type: 'app.bsky.actor.defs#pinnedPost', post: pinnedUri });
       await pdsRequest(pdsUrl, sess.accessJwt, 'app.bsky.actor.putPreferences', { preferences });
@@ -182,8 +287,9 @@ export default async function(req: Request): Promise<Response> {
       console.error('migrate: pin post failed (best-effort)', e?.message);
     }
 
-    // 8. Store migration state on the user. The Bluesky bio is NOT overwritten
-    //    — it stays as the two-way synced source of truth.
+    await updateSteps({ announcement: makeStep('success', '', new Date().toISOString()) });
+
+    // 8. Store migration state on the user.
     await base44.auth.updateMe({
       migrated_from_bluesky: true,
       original_bluesky_bio: originalBio,
@@ -192,18 +298,16 @@ export default async function(req: Request): Promise<Response> {
       original_bluesky_handle: user.bsky_handle,
       migrated_at: new Date().toISOString(),
       migration_reverted: false,
-      // On successful handle update, clear the pending flag. On failure, set
-      // handle_update_pending + pending_handle so the PDS Sync workflow retries
-      // once DNS propagates.
       ...(handleUpdated
         ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
         : { handle_update_pending: true, pending_handle: targetHandle }),
     });
 
-    console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}${handleUpdated ? ` → @${newHandle}` : ''} (profilePulled=${profilePulled}, backfillStarted=${backfillStarted}, notificationsImported=${notificationsImported})`);
+    console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}${handleUpdated ? ` → @${newHandle}` : ''} (all critical steps succeeded)`);
     return Response.json({
       ok: true,
       migrated: true,
+      steps,
       pinnedUri,
       profileUrl,
       handleUpdated,

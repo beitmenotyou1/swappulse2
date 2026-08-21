@@ -28,14 +28,13 @@ export default async function(req: Request): Promise<Response> {
       }, { status: 400 });
     }
 
-    const creds = await base44.asServiceRole.entities.PdsCredential
-      .filter({ user_id: user.id }).catch(() => []);
-    if (!creds || creds.length === 0) {
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+    const identity = await getUserIdentity(base44.asServiceRole, user);
+    if (!identity) {
       return Response.json({ error: 'No PDS credential found. Re-link your Bluesky account.' }, { status: 400 });
     }
-    const cred = creds[0];
 
-    const { session } = await getPdsSessionForUser(pdsUrl, user.did, cred.app_password);
+    const { session } = await getPdsSessionForUser(identity.pdsUrl, user.did, identity.appPassword);
 
     // The PDS verifies the new handle resolves to the user's DID (DNS TXT or
     // well-known), then updates the PLC directory entry.

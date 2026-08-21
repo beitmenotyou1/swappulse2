@@ -24,18 +24,17 @@ export default async function(req: Request): Promise<Response> {
     const svc = base44.asServiceRole;
 
     // Find the first user provisioned on the current PDS
-    const creds = await svc.entities.PdsCredential
-      .filter({ pds_url: pdsUrl }, '-created_date', 1).catch(() => []);
-    if (!creds || creds.length === 0) {
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 1).catch(() => []);
+    if (!usersWithDid || usersWithDid.length === 0) {
       return Response.json({
         ok: false,
         message: 'No users provisioned on the current PDS yet. Run "Provision all identities" first.',
       });
     }
-    const cred = creds[0];
-    const u = await svc.entities.User.get(cred.user_id).catch(() => null);
-    const handle = u?.bsky_handle || '';
-    const did = cred.did;
+    const u = usersWithDid[0];
+    const handle = u.bsky_handle || '';
+    const did = u.did || '';
 
     // 1. Resolve handle via the public AppView
     let handleResolved = false;

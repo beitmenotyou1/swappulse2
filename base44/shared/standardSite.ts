@@ -181,11 +181,11 @@ export async function resolvePdsSession(base44: any): Promise<{ pdsUrl: string; 
   try {
     const user = await base44.auth.me();
     if (user?.did?.startsWith('did:plc:')) {
-      const creds = await base44.asServiceRole.entities.PdsCredential
-        .filter({ user_id: user.id }).catch(() => []);
-      if (creds?.length > 0 && creds[0].app_password) {
+      const { getUserIdentity } = await import('./userIdentity.ts');
+      const identity = await getUserIdentity(base44.asServiceRole, user);
+      if (identity) {
         try {
-          return await getPdsSessionForUser(pdsUrl, user.did, creds[0].app_password);
+          return await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
         } catch (e) {
           console.error('standardSite: per-user session failed, falling back to shared', e?.message || e);
         }
