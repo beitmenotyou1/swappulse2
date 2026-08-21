@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, FileText } from 'lucide-react';
+import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, FileText, XCircle, AlertCircle, Server, User, Bell, Megaphone } from 'lucide-react';
 import AtProtoForm from '@/components/auth/AtProtoForm';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,24 +7,65 @@ import { useToast } from '@/components/ui/use-toast';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // BlueskyLinkCard — the primary AT Protocol onboarding surface in Settings.
-// If the user has linked a Bluesky account (bsky_handle is set), shows their
-// linked identity. If not, shows the AtProtoForm so they can link one.
+// Shows the user's consolidated identity (did:plc, handle, PDS connection) and
+// a per-step migration dashboard with success/failure status, error details,
+// and retry controls — no more silent failures or manual 'continue sync'
+// guessing.
 //
-// On successful link, the migration flow runs:
-//   1. re-bridge-content moves existing shared-bridge posts to the user's DID.
-//   2. migrate-to-swappulse pulls the Bluesky profile (displayName, description,
-//      avatar) INTO SwapPulse, triggers the all-time post backfill (first
-//      batch), imports the notification snapshot, updates the handle to
-//      username.swappulse.org, and posts+pins a 'I've moved' announcement on
-//      Bluesky. The Bluesky bio is NOT overwritten — it stays as the two-way
-//      synced source of truth.
-//   3. The post backfill loops (backfill-author-posts) until hasMore is false
-//      so the user's full Bluesky post history renders on SwapPulse.
-//
-// When migrated, shows a sync status card (profile, posts, notifications) and
-// a 'Move back to Bluesky' button. When migration_reverted (un-moved), shows a
-// locked notice — profile editing is disabled and the profile reverts to the
-// original Bluesky profile.
+// Migration steps tracked on User.migration_steps:
+//   profile_pull, post_backfill, notification_import, handle_update, announcement
+// Each step has { status: pending|running|success|failed, error, completed_at }.
+
+const STEP_META = {
+  profile_pull: { icon: User, label: 'Profile sync' },
+  post_backfill: { icon: FileText, label: 'Post history' },
+  notification_import: { icon: Bell, label: 'Notifications' },
+  handle_update: { icon: Globe, label: 'Handle update' },
+  announcement: { icon: Megaphone, label: 'Announcement' },
+};
+
+function StepRow({ stepKey, step, onRetry, retrying }) {
+  const meta = STEP_META[stepKey];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  const status = step?.status || 'pending';
+
+  return (
+    <div className="flex items-start gap-2 py-1">
+      <div className="mt-0.5 shrink-0">
+        {status === 'success' ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+        ) : status === 'failed' ? (
+          <XCircle className="h-3.5 w-3.5 text-destructive" />
+        ) : status === 'running' ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+        ) : (
+          <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/30" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <Icon className="h-3 w-3 text-muted-foreground" />
+          <span className="text-xs font-medium text-foreground">{meta.label}</span>
+        </div>
+        {status === 'failed' && step?.error && (
+          <p className="mt-0.5 text-[11px] text-destructive/80 break-words">{step.error}</p>
+        )}
+        {status === 'failed' && onRetry && (
+          <button
+            onClick={onRetry}
+            disabled={retrying}
+            className="mt-1 inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50"
+          >
+            {retrying ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <RefreshCw className="h-2.5 w-2.5" />}
+            Retry
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function BlueskyLinkCard() {
   const t = useT();
   const { user, checkUserAuth } = useAuth();
@@ -37,25 +78,26 @@ export default function BlueskyLinkCard() {
   const [showForm, setShowForm] = useState(false);
   const [showDomainInput, setShowDomainInput] = useState(false);
   const [customDomain, setCustomDomain] = useState('');
+  const [retryingStep, setRetryingStep] = useState('');
 
   const linked = !!user?.bsky_handle;
   const migrated = !!user?.migrated_from_bluesky;
   const reverted = !!user?.migration_reverted;
   const backfillComplete = !!user?.post_backfill_complete;
-  const notificationsImported = !!user?.notifications_imported_at;
+  const steps = user?.migration_steps || {};
+  const hasFailedSteps = Object.values(steps).some((s) => s?.status === 'failed');
 
   const defaultHandle = user?.username || user?.email?.split('@')[0] || 'collector';
 
   // Loop backfill-author-posts until hasMore is false so the user's full
-  // Bluesky post history is synced into SwapPulse. Each call is one page
-  // (100 records); large histories need multiple calls within timeout.
+  // Bluesky post history is synced into SwapPulse.
   const runBackfillLoop = async () => {
     setBackfilling(true);
     setBackfillCount(0);
     let total = 0;
     try {
       let hasMore = true;
-      let safety = 0; // cap at 50 pages (5000 posts) to avoid runaway loops
+      let safety = 0;
       while (hasMore && safety < 50) {
         const res = await base44.functions.invoke('backfill-author-posts', {});
         const result = res?.data ?? res;
@@ -96,20 +138,27 @@ export default function BlueskyLinkCard() {
     }
 
     // Auto-migrate: pull profile, trigger backfill + notifications, update
-    // handle, post + pin announcement.
+    // handle, post + pin announcement (gated on critical step success).
     setMigrating(true);
     try {
       const res = await base44.functions.invoke('migrate-to-swappulse', {
         customDomain: customDomain || undefined,
       });
       const result = res?.data ?? res;
-      if (result?.ok || result?.alreadyMigrated) {
-        await checkUserAuth?.();
+      await checkUserAuth?.();
+      if (result?.ok && result?.migrated) {
         toast({
           title: t('migration.announceTitle'),
           description: result?.handleUpdated
             ? t('migration.handleUpdatedDesc', { handle: result.handle })
             : t('migration.announceDesc'),
+        });
+      } else if (result?.incomplete) {
+        // Critical steps failed — announcement was skipped
+        toast({
+          title: 'Migration incomplete',
+          description: 'Some steps failed. Check the dashboard below and retry.',
+          variant: 'destructive',
         });
       }
     } catch (e) {
@@ -123,9 +172,67 @@ export default function BlueskyLinkCard() {
       setMigrating(false);
     }
 
-    // Loop the post backfill to completion (migrate-to-swappulse ran the
-    // first batch; this continues until hasMore is false).
+    // Loop the post backfill to completion.
     await runBackfillLoop();
+  };
+
+  // Retry the full migration (re-runs all failed steps).
+  const handleRetryMigration = async () => {
+    if (migrating) return;
+    setMigrating(true);
+    try {
+      const res = await base44.functions.invoke('migrate-to-swappulse', {
+        customDomain: customDomain || undefined,
+      });
+      const result = res?.data ?? res;
+      await checkUserAuth?.();
+      if (result?.ok && result?.migrated) {
+        toast({ title: t('migration.announceTitle'), description: t('migration.announceDesc') });
+      } else if (result?.incomplete) {
+        toast({
+          title: 'Still incomplete',
+          description: 'Some steps are still failing. Check the errors below.',
+          variant: 'destructive',
+        });
+      }
+    } catch (e) {
+      console.error('Retry migration failed', e);
+      toast({
+        title: t('migration.announceFailedTitle'),
+        description: t('migration.announceFailedDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setMigrating(false);
+    }
+    await runBackfillLoop();
+  };
+
+  // Retry a single step.
+  const handleRetryStep = async (stepKey) => {
+    setRetryingStep(stepKey);
+    try {
+      if (stepKey === 'post_backfill') {
+        await runBackfillLoop();
+      } else if (stepKey === 'notification_import') {
+        const res = await base44.functions.invoke('import-notification-snapshot', {});
+        const result = res?.data ?? res;
+        await checkUserAuth?.();
+        if (result?.ok) {
+          toast({ title: 'Notifications imported' });
+        } else {
+          toast({ title: 'Import failed', description: result?.error || '', variant: 'destructive' });
+        }
+      } else {
+        // profile_pull, handle_update, announcement → re-run migrate
+        await handleRetryMigration();
+      }
+    } catch (e) {
+      console.error('Step retry failed', e);
+      toast({ title: 'Retry failed', description: e?.message || '', variant: 'destructive' });
+    } finally {
+      setRetryingStep('');
+    }
   };
 
   const handleUnmove = async () => {
@@ -137,49 +244,14 @@ export default function BlueskyLinkCard() {
       const result = res?.data ?? res;
       if (result?.ok || result?.notMigrated) {
         await checkUserAuth?.();
-        toast({
-          title: t('migration.unmovedTitle'),
-          description: t('migration.unmovedDesc'),
-        });
+        toast({ title: t('migration.unmovedTitle'), description: t('migration.unmovedDesc') });
       }
     } catch (e) {
       console.error('Un-move failed', e);
-      toast({
-        title: t('migration.unmoveFailedTitle'),
-        description: t('migration.unmoveFailedDesc'),
-        variant: 'destructive',
-      });
+      toast({ title: t('migration.unmoveFailedTitle'), description: t('migration.unmoveFailedDesc'), variant: 'destructive' });
     } finally {
       setUnmoving(false);
     }
-  };
-
-  const handleRemigrate = async () => {
-    if (migrating) return;
-    setMigrating(true);
-    try {
-      const res = await base44.functions.invoke('migrate-to-swappulse', {
-        customDomain: customDomain || undefined,
-      });
-      const result = res?.data ?? res;
-      if (result?.ok || result?.alreadyMigrated) {
-        await checkUserAuth?.();
-        toast({
-          title: t('migration.announceTitle'),
-          description: t('migration.announceDesc'),
-        });
-      }
-    } catch (e) {
-      console.error('Re-migration failed', e);
-      toast({
-        title: t('migration.announceFailedTitle'),
-        description: t('migration.announceFailedDesc'),
-        variant: 'destructive',
-      });
-    } finally {
-      setMigrating(false);
-    }
-    await runBackfillLoop();
   };
 
   if (linked && !showForm) {
@@ -192,6 +264,18 @@ export default function BlueskyLinkCard() {
           {t('migration.linkedFederating', { handle: user.bsky_handle })}
         </p>
 
+        {/* Identity summary — one cohesive record */}
+        <div className="mt-2.5 rounded-lg border border-border bg-secondary/30 p-2.5 space-y-1">
+          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Server className="h-3 w-3" /> DID
+          </p>
+          <p className="text-[11px] font-mono text-foreground break-all">{user.did || 'Not provisioned'}</p>
+          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1.5">
+            <Globe className="h-3 w-3" /> Handle
+          </p>
+          <p className="text-xs text-foreground">@{user.bsky_handle}</p>
+        </div>
+
         {migrated && (
           <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
             <p className="flex items-center gap-1.5 text-xs font-bold text-primary">
@@ -200,29 +284,33 @@ export default function BlueskyLinkCard() {
             <p className="mt-1 text-xs text-muted-foreground">
               {t('migration.statusMigratedDesc')}
             </p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {t('migration.handleLabel')}: <b className="text-foreground">@{user.bsky_handle}</b>
-            </p>
 
-            {/* Sync status checklist */}
-            <div className="mt-2.5 space-y-1.5">
-              <p className="flex items-center gap-1.5 text-xs text-success">
-                <CheckCircle2 className="h-3 w-3" /> {t('migration.profilePulled')}
-              </p>
-              <p className="flex items-center gap-1.5 text-xs text-success">
-                <CheckCircle2 className="h-3 w-3" /> {t('migration.notificationsImported')}
-              </p>
-              <p className={`flex items-center gap-1.5 text-xs ${backfillComplete ? 'text-success' : 'text-muted-foreground'}`}>
-                {backfillComplete ? <CheckCircle2 className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
-                {backfilling
-                  ? t('migration.syncingPosts', { count: backfillCount })
-                  : backfillComplete
-                    ? t('migration.postsBackfilled')
-                    : t('migration.continueSync')}
-              </p>
+            {/* Per-step migration dashboard */}
+            <div className="mt-2.5 rounded-md border border-border/60 bg-card/50 p-2">
+              <p className="mb-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Sync Status</p>
+              {Object.entries(STEP_META).map(([key]) => (
+                <StepRow
+                  key={key}
+                  stepKey={key}
+                  step={steps[key]}
+                  onRetry={steps[key]?.status === 'failed' ? () => handleRetryStep(key) : null}
+                  retrying={retryingStep === key}
+                />
+              ))}
             </div>
 
-            {/* Continue sync button if backfill is incomplete */}
+            {/* Retry migration button if any step failed */}
+            {hasFailedSteps && !migrating && (
+              <button
+                onClick={handleRetryMigration}
+                disabled={migrating || backfilling}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Retry migration
+              </button>
+            )}
+
+            {/* Continue post sync if backfill incomplete */}
             {!backfillComplete && !backfilling && (
               <button
                 onClick={runBackfillLoop}
@@ -243,6 +331,37 @@ export default function BlueskyLinkCard() {
           </div>
         )}
 
+        {/* Incomplete migration — not yet fully migrated but steps were attempted */}
+        {!migrated && !reverted && hasFailedSteps && (
+          <div className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-warning">
+              <AlertCircle className="h-3.5 w-3.5" /> Migration incomplete
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Some migration steps failed. Review the errors and retry.
+            </p>
+            <div className="mt-2.5 rounded-md border border-border/60 bg-card/50 p-2">
+              {Object.entries(STEP_META).map(([key]) => (
+                <StepRow
+                  key={key}
+                  stepKey={key}
+                  step={steps[key]}
+                  onRetry={steps[key]?.status === 'failed' ? () => handleRetryStep(key) : null}
+                  retrying={retryingStep === key}
+                />
+              ))}
+            </div>
+            <button
+              onClick={handleRetryMigration}
+              disabled={migrating}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            >
+              {migrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Retry migration
+            </button>
+          </div>
+        )}
+
         {reverted && !migrated && (
           <div className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
             <p className="flex items-center gap-1.5 text-xs font-bold text-warning">
@@ -252,7 +371,7 @@ export default function BlueskyLinkCard() {
               {t('migration.revertedDesc')}
             </p>
             <button
-              onClick={handleRemigrate}
+              onClick={handleRetryMigration}
               disabled={migrating}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
@@ -295,7 +414,7 @@ export default function BlueskyLinkCard() {
         {t('migration.linkAutoMigrate')}
       </p>
 
-      {/* Handle preview — shows the default username.swappulse.org handle */}
+      {/* Handle preview */}
       <div className="mt-2 rounded-lg border border-border bg-card/50 p-2.5">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <Globe className="h-3 w-3" /> {t('migration.handlePreview')}
