@@ -10,11 +10,11 @@ export const PROFILE_THEMES = [
   { key: 'competitive', label: 'Competitive', gradient: 'from-blue-500/40 via-indigo-400/30 to-cyan-300/30' },
   { key: 'shiny', label: 'Shiny', gradient: 'from-fuchsia-500/40 via-pink-400/30 to-rose-300/30' },
   { key: 'investment', label: 'Investment', gradient: 'from-emerald-500/40 via-teal-400/30 to-green-300/30' },
-  { key: 'bluesky', label: 'Bluesky', gradient: 'from-sky-400/40 via-blue-400/30 to-indigo-300/30', platform: true },
-  { key: 'facebook', label: 'Facebook', gradient: 'from-blue-600/40 via-blue-500/30 to-blue-400/30', platform: true },
-  { key: 'mastodon', label: 'Mastodon', gradient: 'from-purple-500/40 via-violet-400/30 to-fuchsia-300/30', platform: true },
-  { key: 'x', label: 'X', gradient: 'from-slate-700/40 via-slate-600/30 to-slate-400/30', platform: true },
-  { key: 'youtube', label: 'YouTube', gradient: 'from-red-600/40 via-red-500/30 to-rose-400/30', platform: true },
+  { key: 'bluesky', label: 'Feed', gradient: 'from-sky-400/40 via-blue-400/30 to-indigo-300/30', platform: true },
+  { key: 'facebook', label: 'Social Hub', gradient: 'from-blue-600/40 via-blue-500/30 to-blue-400/30', platform: true },
+  { key: 'mastodon', label: 'Federated', gradient: 'from-purple-500/40 via-violet-400/30 to-fuchsia-300/30', platform: true },
+  { key: 'x', label: 'Microblog', gradient: 'from-slate-700/40 via-slate-600/30 to-slate-400/30', platform: true },
+  { key: 'youtube', label: 'Podcast', gradient: 'from-red-600/40 via-red-500/30 to-rose-400/30', platform: true },
 ];
 
 export const DEFAULT_THEME = 'default';
@@ -111,7 +111,7 @@ export const THEME_CONFIGS = {
     ],
   },
   youtube: {
-    label: 'YouTube',
+    label: 'Podcast',
     accentHex: '#FF0000',
     headerVariant: 'youtube',
     containerClass: '',
@@ -124,7 +124,7 @@ export const THEME_CONFIGS = {
     ],
   },
   x: {
-    label: 'X',
+    label: 'Microblog',
     accentHex: '#0f172a',
     headerVariant: 'x',
     containerClass: '',
@@ -137,7 +137,7 @@ export const THEME_CONFIGS = {
     ],
   },
   facebook: {
-    label: 'Facebook',
+    label: 'Social Hub',
     accentHex: '#1877F2',
     headerVariant: 'facebook',
     containerClass: '',
@@ -149,7 +149,7 @@ export const THEME_CONFIGS = {
     ],
   },
   bluesky: {
-    label: 'Bluesky',
+    label: 'Feed',
     accentHex: '#0085ff',
     headerVariant: 'bluesky',
     containerClass: '',
@@ -160,7 +160,7 @@ export const THEME_CONFIGS = {
     ],
   },
   mastodon: {
-    label: 'Mastodon',
+    label: 'Federated',
     accentHex: '#6364ff',
     headerVariant: 'mastodon',
     containerClass: '',
