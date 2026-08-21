@@ -211,6 +211,8 @@ export interface ProfileSyncResult {
   error?: string;
   avatar_blob_ref?: any;
   header_blob_ref?: any;
+  avatar_source_url?: string;
+  header_source_url?: string;
 }
 
 export async function syncProfileForUser(
@@ -272,33 +274,35 @@ export async function syncProfileForUser(
     record.description = '';
   }
 
-  // Avatar: only re-upload if the local URL is from an allowlisted CDN (a
-  // new Base44 upload). If the local avatar is a Bluesky CDN URL (from a
-  // previous inbound sync), skip re-upload — the blob is already PDS-resident
-  // and the existing record's avatar blob ref is still valid.
+  // Avatar: re-upload only when the local source URL has changed. We track the
+  // last-synced local URL (avatar_source_url) so we can distinguish "same
+  // Base44 upload, blob already on PDS" (skip — efficient) from "new Base44
+  // upload, needs re-upload" (re-upload). This fixes the revert bug where a
+  // new avatar upload was skipped because the old PDS blob CID matched the old
+  // stored ref — the CID comparison alone can't detect a changed source URL.
   let avatarBlobRef: any = null;
+  let avatarSourceUrl = userRecord.avatar_source_url || '';
   const localAvatar = userRecord.avatar || '';
   if (localAvatar && isAllowedImageUrl(localAvatar).ok) {
-    // Base44 CDN URL. Skip re-upload if the blob is already on the PDS by
-    // comparing the existing PDS record's avatar blob cid against our stored
-    // blob ref cid. If they match, the blob is already resident (we pushed it
-    // before) — use the existing record's avatar ref and don't advance
-    // profile_synced_at. This replaces the old avatar_source_url tracking;
-    // the direct PDS read makes the echo loop structurally impossible.
-    const existingCid = blobRefCid(existing?.avatar);
+    // Base44 CDN URL. If the current local URL matches the last-synced source
+    // URL AND we have a stored blob ref, the blob is already on the PDS — skip
+    // re-upload. Otherwise (new upload or no stored ref), re-upload.
     const storedCid = blobRefCid(userRecord.avatar_pds_ref);
-    if (existingCid && storedCid && existingCid === storedCid) {
+    if (localAvatar === userRecord.avatar_source_url && storedCid && existing?.avatar) {
       record.avatar = existing.avatar;
     } else {
       avatarBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localAvatar, 'avatar');
       if (avatarBlobRef) {
         record.avatar = avatarBlobRef;
+        avatarSourceUrl = localAvatar;
         changed = true;
       }
     }
   } else if (localAvatar && isBlueskyCdnUrl(localAvatar)) {
     // Bluesky CDN URL — the blob is already PDS-resident. Use the stored blob
     // ref if available, otherwise preserve the existing record's avatar ref.
+    // Clear the source URL since this is not a Base44 upload.
+    avatarSourceUrl = '';
     if (userRecord.avatar_pds_ref) {
       try {
         const stored = JSON.parse(userRecord.avatar_pds_ref);
@@ -311,26 +315,27 @@ export async function syncProfileForUser(
     // Local avatar was cleared — remove it from the record.
     if (existing.avatar) changed = true;
     delete record.avatar;
+    avatarSourceUrl = '';
   }
 
-  // Banner: same logic as avatar.
+  // Banner: same source-URL tracking logic as avatar.
   let headerBlobRef: any = null;
+  let headerSourceUrl = userRecord.header_source_url || '';
   const localHeader = userRecord.header || '';
   if (localHeader && isAllowedImageUrl(localHeader).ok) {
-    // Skip re-upload if the blob is already on the PDS (same cid comparison
-    // as avatar). Replaces the old header_source_url tracking.
-    const existingCid = blobRefCid(existing?.banner);
     const storedCid = blobRefCid(userRecord.header_pds_ref);
-    if (existingCid && storedCid && existingCid === storedCid) {
+    if (localHeader === userRecord.header_source_url && storedCid && existing?.banner) {
       record.banner = existing.banner;
     } else {
       headerBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localHeader, 'banner');
       if (headerBlobRef) {
         record.banner = headerBlobRef;
+        headerSourceUrl = localHeader;
         changed = true;
       }
     }
   } else if (localHeader && isBlueskyCdnUrl(localHeader)) {
+    headerSourceUrl = '';
     if (userRecord.header_pds_ref) {
       try {
         const stored = JSON.parse(userRecord.header_pds_ref);
@@ -342,6 +347,7 @@ export async function syncProfileForUser(
   } else if (!localHeader && existing) {
     if (existing.banner) changed = true;
     delete record.banner;
+    headerSourceUrl = '';
   }
 
   // If nothing actually changed, skip the putRecord entirely. Still return
@@ -354,6 +360,8 @@ export async function syncProfileForUser(
       changed: false,
       avatar_blob_ref: avatarBlobRef,
       header_blob_ref: headerBlobRef,
+      avatar_source_url: avatarSourceUrl,
+      header_source_url: headerSourceUrl,
     };
   }
 
@@ -375,6 +383,8 @@ export async function syncProfileForUser(
       cid: res.cid,
       avatar_blob_ref: avatarBlobRef,
       header_blob_ref: headerBlobRef,
+      avatar_source_url: avatarSourceUrl,
+      header_source_url: headerSourceUrl,
     };
   } catch (e: any) {
     return { ok: false, error: `putRecord: ${e?.message || e}` };

@@ -68,6 +68,7 @@ export default async function(req: Request): Promise<Response> {
       profile_pull: makeStep('pending'),
       post_backfill: makeStep('pending'),
       notification_import: makeStep('pending'),
+      graph_import: makeStep('pending'),
       handle_update: makeStep('pending'),
       announcement: makeStep('pending'),
     };
@@ -160,7 +161,31 @@ export default async function(req: Request): Promise<Response> {
       await updateSteps({ notification_import: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
-    // 5. Update the handle to username.swappulse.org (or custom domain).
+    // 5. Import the user's social graph (outgoing follows + incoming followers).
+    await updateSteps({ graph_import: makeStep('running') });
+    let graphImported = false;
+    try {
+      const giRes = await base44.functions.invoke('import-atproto-graph', {
+        fromPds: true,
+        includeFollowers: true,
+      }).catch((e: any) => {
+        console.error('migrate: graph import failed', e?.message || e);
+        return null;
+      });
+      const giData = giRes?.data ?? giRes;
+      if (giData && (giData.imported !== undefined || giData.followers_imported !== undefined)) {
+        graphImported = true;
+        await updateSteps({ graph_import: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        const errMsg = giData?.error || 'Graph import returned no data';
+        await updateSteps({ graph_import: makeStep('failed', errMsg, new Date().toISOString()) });
+      }
+    } catch (e: any) {
+      console.error('migrate: graph import trigger failed', e?.message);
+      await updateSteps({ graph_import: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
+    }
+
+    // 6. Update the handle to username.swappulse.org (or custom domain).
     //    Best-effort — failure doesn't block the announcement.
     await updateSteps({ handle_update: makeStep('running') });
     let handleUpdated = false;
@@ -185,9 +210,9 @@ export default async function(req: Request): Promise<Response> {
       await updateSteps({ handle_update: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
-    // 6. GATE: Only post the announcement if ALL critical steps succeeded.
-    //    Critical = profile_pull, post_backfill, notification_import.
-    const criticalStepsOk = profilePulled && backfillStarted && notificationsImported;
+    // 7. GATE: Only post the announcement if ALL critical steps succeeded.
+    //    Critical = profile_pull, post_backfill, notification_import, graph_import.
+    const criticalStepsOk = profilePulled && backfillStarted && notificationsImported && graphImported;
 
     let pinnedUri = '';
     let profileUrl = '';

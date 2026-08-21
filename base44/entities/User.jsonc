@@ -111,6 +111,14 @@
       "type": "string",
       "description": "JSON-serialized PDS blob ref for the header/banner, stored after a successful outbound sync. Same purpose as avatar_pds_ref but for the banner image."
     },
+    "avatar_source_url": {
+      "type": "string",
+      "description": "The local avatar URL (Base44 CDN) that was last successfully pushed to the PDS. The outbound sync compares the current local avatar URL against this to decide whether to re-upload: if the URL is the same, the blob is already on the PDS and re-upload is skipped; if it differs (new upload), the image is re-uploaded. Cleared when the avatar is a Bluesky CDN URL (inbound-synced) or empty."
+    },
+    "header_source_url": {
+      "type": "string",
+      "description": "The local header/banner URL (Base44 CDN) that was last successfully pushed to the PDS. Same source-URL tracking as avatar_source_url but for the banner image."
+    },
     "migrated_from_bluesky": {
       "type": "boolean",
       "default": false,
@@ -167,7 +175,7 @@
     },
     "migration_steps": {
       "type": "object",
-      "description": "Per-step migration status tracking. Each key is a step name (profile_pull, post_backfill, notification_import, handle_update, announcement, custom_records) with { status: 'pending'|'running'|'success'|'failed', error: string, completed_at: string }. Drives the unified migration dashboard in BlueskyLinkCard so the user sees exactly what succeeded, what failed, and why.",
+      "description": "Per-step migration status tracking. Each key is a step name (profile_pull, post_backfill, notification_import, graph_import, handle_update, announcement, custom_records) with { status: 'pending'|'running'|'success'|'failed', error: string, completed_at: string }. Drives the unified migration dashboard in BlueskyLinkCard so the user sees exactly what succeeded, what failed, and why.",
       "properties": {
         "profile_pull": {
           "type": "object",
@@ -212,6 +220,27 @@
           }
         },
         "notification_import": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "graph_import": {
           "type": "object",
           "properties": {
             "status": {

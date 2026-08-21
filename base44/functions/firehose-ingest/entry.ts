@@ -446,12 +446,14 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
             if (url && url !== user.avatar) {
               updates.avatar = url;
               updates.avatar_pds_ref = '';
+              updates.avatar_source_url = '';
             }
           }
         } else if (user.avatar) {
           // Avatar was removed on Bluesky.
           updates.avatar = '';
           updates.avatar_pds_ref = '';
+          updates.avatar_source_url = '';
         }
         // Banner: same logic as avatar.
         if (profile.banner) {
@@ -462,11 +464,13 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
             if (url && url !== user.header) {
               updates.header = url;
               updates.header_pds_ref = '';
+              updates.header_source_url = '';
             }
           }
         } else if (user.header) {
           updates.header = '';
           updates.header_pds_ref = '';
+          updates.header_source_url = '';
         }
         if (Object.keys(updates).length === 0) continue;
         updates.profile_synced_at = new Date().toISOString();
@@ -593,10 +597,12 @@ export default async function(req: Request): Promise<Response> {
     const migratedUsers = await svc.entities.User
       .filter({ migrated_from_bluesky: true }, '-created_date', 100).catch(() => []);
     const migratedDids = new Set<string>();
+    const migratedUserMap = new Map<string, any>();
     for (const mu of (migratedUsers || [])) {
       if (mu.did && mu.did !== localDid) {
         remoteDids.add(mu.did);
         migratedDids.add(mu.did);
+        migratedUserMap.set(mu.did, mu);
       }
     }
 
@@ -614,8 +620,29 @@ export default async function(req: Request): Promise<Response> {
       for (const repoDid of reposToScan) {
         try {
           const isLocal = repoDid === localDid;
-          const listUrl = isLocal ? pdsUrl : APPVIEW;
-          const records = await listRecords(listUrl, repoDid, collection, isLocal ? accessJwt : undefined);
+          let listUrl = isLocal ? pdsUrl : APPVIEW;
+          let listJwt = isLocal ? accessJwt : undefined;
+
+          // For migrated users, prefer the per-user PDS session (authoritative,
+          // zero indexing lag) over the eventually-consistent AppView. Fall
+          // back to the AppView if the per-user session can't be resolved.
+          if (!isLocal && migratedDids.has(repoDid)) {
+            const mUser = migratedUserMap.get(repoDid);
+            if (mUser) {
+              const identity = await getUserIdentity(svc, mUser);
+              if (identity) {
+                try {
+                  const mSession = (await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword)).session;
+                  listUrl = identity.pdsUrl;
+                  listJwt = mSession.accessJwt;
+                } catch (e) {
+                  console.error(`firehose-ingest: per-user session failed for ${repoDid}, falling back to AppView`, e?.message || e);
+                }
+              }
+            }
+          }
+
+          const records = await listRecords(listUrl, repoDid, collection, listJwt);
           if (!records) {
             rate_limited++;
             continue;
@@ -713,7 +740,15 @@ export default async function(req: Request): Promise<Response> {
           // at_uri is gone from the PDS are tombstoned locally.
           try {
             const localByDid = await svc.entities[entityName]
-              .filter({ did: repoDid, bridged: true }, '-created_date', 200).catch(() => []);
+              .filter({ did: repoDid, bridged: true }, '-created_date', 500).catch(() => []);
+            // Safety guard: if the PDS/AppView returned fewer records than we
+            // have locally, the fetch may be incomplete (rate limiting, indexing
+            // lag, or pagination issues). Skip deletion for this cycle to avoid
+            // wiping valid records — they'll be re-checked next cycle.
+            if (pdsUriSet.size > 0 && pdsUriSet.size < (localByDid || []).length) {
+              console.log(`firehose-ingest: skipping delete-detect for ${collection} ${repoDid} — PDS ${pdsUriSet.size} < local ${(localByDid || []).length}`);
+              continue;
+            }
             for (const local of localByDid || []) {
               if (!local.at_uri) continue;
               if (!pdsUriSet.has(local.at_uri)) {

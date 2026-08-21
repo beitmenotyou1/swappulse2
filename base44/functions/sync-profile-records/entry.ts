@@ -99,6 +99,12 @@ export default async function(req: Request): Promise<Response> {
             if (r.header_blob_ref) {
               updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
             }
+            if (r.avatar_source_url !== undefined) {
+              updates.avatar_source_url = r.avatar_source_url;
+            }
+            if (r.header_source_url !== undefined) {
+              updates.header_source_url = r.header_source_url;
+            }
             await svc.entities.User.update(u.id, updates).catch(() => {});
           } else {
             failed++;
@@ -158,6 +164,12 @@ export default async function(req: Request): Promise<Response> {
       }
       if (r.header_blob_ref) {
         updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
+      }
+      if (r.avatar_source_url !== undefined) {
+        updates.avatar_source_url = r.avatar_source_url;
+      }
+      if (r.header_source_url !== undefined) {
+        updates.header_source_url = r.header_source_url;
       }
       await svc.entities.User.update(user.id, updates).catch(() => {});
     } else {

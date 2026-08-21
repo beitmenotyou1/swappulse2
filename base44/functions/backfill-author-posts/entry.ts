@@ -1,24 +1,32 @@
-// backfill-author-posts — resumable all-time post backfill for a migrated user.
-// Pages through the user's PDS repo (com.atproto.repo.listRecords on
-// app.bsky.feed.post) and upserts each post into the local Post entity (deduped
-// by at_uri, marked bridged) so the user's full Bluesky history renders on
-// SwapPulse after linking.
+// backfill-author-posts — resumable all-time post backfill for migrated users.
 //
-// Stores a cursor on the user (post_backfill_cursor) so large histories can be
-// backfilled across multiple calls within function timeouts. Called by
-// migrate-to-swappulse on link (first batch) and re-callable until hasMore is
-// false. Idempotent: re-running with the stored cursor continues from where it
-// left off; already-ingested posts are skipped via at_uri dedup.
+// Two modes:
+//   1. Single-user (authenticated caller, no args): processes one page of the
+//      calling user's PDS post records. Called by migrate-to-swappulse on link
+//      (first batch) and re-callable by the user.
+//   2. Continue (admin/workflow, { continue: true }): iterates over migrated
+//      users with post_backfill_complete=false, processing one page per user.
+//      Called by the PDS Sync workflow every 5 minutes until all histories are
+//      fully imported.
 //
-// Output: { ok, backfilled, updated, skipped, hasMore, cursor }
+// Stores a cursor on each user (post_backfill_cursor) so large histories can be
+// backfilled across multiple calls within function timeouts. Idempotent: re-
+// running with the stored cursor continues from where it left off; already-
+// ingested posts are skipped via at_uri dedup.
+//
+// Output (single-user): { ok, backfilled, updated, skipped, hasMore, cursor }
+// Output (continue):     { ok, users_processed, total_backfilled, total_updated, total_skipped }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
+import { getUserIdentity } from '../../shared/userIdentity.ts';
+import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
 
 const POST_COLLECTION = 'app.bsky.feed.post';
 const APPVIEW = 'https://public.api.bsky.app';
 const PAGE_LIMIT = 100;
+const MAX_CONTINUE_USERS = 10; // cap per 5-minute cycle
 
 // Resolve the user's profile once so backfilled posts carry author metadata.
 async function getProfile(did: string): Promise<any> {
@@ -33,9 +41,134 @@ async function getProfile(did: string): Promise<any> {
   }
 }
 
+// Process one page of post records for a single user. Shared by both modes.
+async function processPage(
+  svc: any,
+  pdsUrl: string,
+  accessJwt: string,
+  userDid: string,
+  cursor: string | null,
+  profile: any,
+  updateFn: (updates: any) => Promise<void>,
+): Promise<{ backfilled: number; updated: number; skipped: number; hasMore: boolean; nextCursor: string | null }> {
+  const postMapper = FIELD_MAPPERS[POST_COLLECTION];
+  let backfilled = 0, updated = 0, skipped = 0;
+  let hasMore = false;
+  let nextCursor: string | null = null;
+
+  const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.listRecords`);
+  url.searchParams.set('repo', userDid);
+  url.searchParams.set('collection', POST_COLLECTION);
+  url.searchParams.set('limit', String(PAGE_LIMIT));
+  if (cursor) url.searchParams.set('cursor', cursor);
+
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${accessJwt}` },
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    console.error('backfill-author-posts: listRecords failed', res.status, t.slice(0, 200));
+    return { backfilled, updated, skipped, hasMore, nextCursor };
+  }
+  const data = await res.json();
+  const records = data.records || [];
+  nextCursor = data.cursor || null;
+  hasMore = !!nextCursor;
+
+  for (const rec of records) {
+    try {
+      const atUri = rec.uri || '';
+      const val = rec.value || {};
+      if (!atUri) { skipped++; continue; }
+
+      const existing = await svc.entities.Post.filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
+      const mapped = postMapper(val, atUri, userDid, profile);
+
+      if (existing && existing.length > 0) {
+        await svc.entities.Post.update(existing[0].id, mapped).catch(() => {});
+        updated++;
+      } else {
+        await svc.entities.Post.create(mapped).catch(() => null);
+        backfilled++;
+      }
+    } catch (e) {
+      skipped++;
+      console.error('backfill-author-posts: record error', e?.message || e);
+    }
+  }
+
+  await updateFn({
+    post_backfill_cursor: nextCursor || '',
+    post_backfill_complete: !hasMore,
+  });
+
+  console.log(`[backfill-author-posts] user ${userDid}: +${backfilled} new, ${updated} updated, ${skipped} skipped, hasMore=${hasMore}`);
+  return { backfilled, updated, skipped, hasMore, nextCursor };
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    const continueMode = !!(body as any).continue;
+
+    if (continueMode) {
+      // Admin/workflow mode: iterate over users with incomplete backfills.
+      const caller = await base44.auth.me().catch(() => null);
+      if (!caller) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (caller.role !== 'admin') {
+        return Response.json({ error: 'Admin only' }, { status: 403 });
+      }
+
+      const svc = base44.asServiceRole;
+      const incompleteUsers = await svc.entities.User
+        .filter({ migrated_from_bluesky: true, post_backfill_complete: false }, '-created_date', MAX_CONTINUE_USERS)
+        .catch(() => []);
+
+      let totalBackfilled = 0, totalUpdated = 0, totalSkipped = 0;
+      let usersProcessed = 0;
+
+      for (const u of incompleteUsers || []) {
+        try {
+          if (!u.did || !u.did.startsWith('did:plc:')) continue;
+          const identity = await getUserIdentity(svc, u);
+          if (!identity) continue;
+
+          let session: any;
+          try {
+            session = (await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword)).session;
+          } catch (e) {
+            console.error(`backfill-author-posts: session failed for ${u.did}`, e?.message || e);
+            continue;
+          }
+
+          const profile = await getProfile(u.did);
+          const cursor = u.post_backfill_cursor || null;
+
+          const result = await processPage(
+            svc, identity.pdsUrl, session.accessJwt, identity.did, cursor, profile,
+            async (updates) => { await svc.entities.User.update(u.id, updates).catch(() => {}); },
+          );
+
+          totalBackfilled += result.backfilled;
+          totalUpdated += result.updated;
+          totalSkipped += result.skipped;
+          usersProcessed++;
+        } catch (e) {
+          console.error(`backfill-author-posts: continue error for user ${u.id}`, e?.message || e);
+        }
+      }
+
+      return Response.json({
+        ok: true,
+        users_processed: usersProcessed,
+        total_backfilled: totalBackfilled,
+        total_updated: totalUpdated,
+        total_skipped: totalSkipped,
+      });
+    }
+
+    // Single-user mode (authenticated caller).
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (!user.did || !user.did.startsWith('did:plc:')) {
@@ -46,78 +179,21 @@ export default async function(req: Request): Promise<Response> {
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
     const userDid = sess.did;
 
-    const postMapper = FIELD_MAPPERS[POST_COLLECTION];
-    if (!postMapper) return Response.json({ error: 'No post mapper' }, { status: 500 });
-
-    // Resolve author profile once for metadata on all backfilled posts.
     const profile = await getProfile(userDid);
+    const cursor = user.post_backfill_cursor || null;
 
-    // Resume from the stored cursor (if any).
-    let cursor: string | null = user.post_backfill_cursor || null;
-    let backfilled = 0, updated = 0, skipped = 0;
-    let hasMore = false;
-    let nextCursor: string | null = null;
+    const result = await processPage(
+      svc, pdsUrl, sess.accessJwt, userDid, cursor, profile,
+      async (updates) => { await base44.auth.updateMe(updates).catch(() => {}); },
+    );
 
-    // Page through the user's post records. One page per call to stay within
-    // function timeouts; the caller re-invokes until hasMore is false.
-    const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.listRecords`);
-    url.searchParams.set('repo', userDid);
-    url.searchParams.set('collection', POST_COLLECTION);
-    url.searchParams.set('limit', String(PAGE_LIMIT));
-    if (cursor) url.searchParams.set('cursor', cursor);
-
-    const res = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${sess.accessJwt}` },
-    });
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      console.error('backfill-author-posts: listRecords failed', res.status, t.slice(0, 200));
-      return Response.json({ error: `listRecords failed (${res.status})` }, { status: 502 });
-    }
-    const data = await res.json();
-    const records = data.records || [];
-    nextCursor = data.cursor || null;
-    hasMore = !!nextCursor;
-
-    for (const rec of records) {
-      try {
-        const atUri = rec.uri || '';
-        const val = rec.value || {};
-        if (!atUri) { skipped++; continue; }
-
-        // Dedup by at_uri — skip if already local.
-        const existing = await svc.entities.Post.filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
-        const mapped = postMapper(val, atUri, userDid, profile);
-
-        if (existing && existing.length > 0) {
-          // Update in place (catches edits made on Bluesky before backfill).
-          await svc.entities.Post.update(existing[0].id, mapped).catch(() => {});
-          updated++;
-        } else {
-          await svc.entities.Post.create(mapped).catch(() => null);
-          backfilled++;
-        }
-      } catch (e) {
-        skipped++;
-        console.error('backfill-author-posts: record error', e?.message || e);
-      }
-    }
-
-    // Persist the cursor and completion flag on the user.
-    const updates: any = {
-      post_backfill_cursor: nextCursor || '',
-      post_backfill_complete: !hasMore,
-    };
-    await base44.auth.updateMe(updates).catch(() => {});
-
-    console.log(`[backfill-author-posts] user ${user.id}: +${backfilled} new, ${updated} updated, ${skipped} skipped, hasMore=${hasMore}`);
     return Response.json({
       ok: true,
-      backfilled,
-      updated,
-      skipped,
-      hasMore,
-      cursor: nextCursor || '',
+      backfilled: result.backfilled,
+      updated: result.updated,
+      skipped: result.skipped,
+      hasMore: result.hasMore,
+      cursor: result.nextCursor || '',
     });
   } catch (error) {
     console.error('backfill-author-posts error:', error?.message || error);

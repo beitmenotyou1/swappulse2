@@ -20,7 +20,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "pds_sync",
-      "version": "1.2",
+      "version": "1.3",
       "namespace": "base44"
     },
     "do": [
@@ -75,15 +75,31 @@
             "function_name": "sync-post-edits",
             "args": {}
           },
-          "then": "end",
+          "then": "post_backfill_continue",
           "x-base44": {
             "title": "Push post edits to PDS",
             "description": "Detect locally-edited bridged posts and push the updated text to the PDS via putRecord so post edits on SwapPulse are reflected on Bluesky."
           }
         }
+      },
+      {
+        "post_backfill_continue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "backfill-author-posts",
+            "args": {
+              "continue": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Continue post backfill",
+            "description": "Continue backfilling historical posts for any migrated user whose post_backfill_complete is still false. Processes one page per user per 5-minute cycle until all histories are fully imported."
+          }
+        }
       }
     ]
   },
-  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates, pushes outbound profile updates, retries pending handle updates, and pushes post edits every 5 minutes.",
+  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates, pushes outbound profile updates, retries pending handle updates, pushes post edits, and continues post backfill for incomplete histories every 5 minutes.",
   "name": "PDS Sync"
 }
