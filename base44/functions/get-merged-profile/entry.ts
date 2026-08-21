@@ -1,9 +1,9 @@
 // get-merged-profile — returns a single merged profile object combining the
 // local SwapPulse User record with the live AT Protocol (Bluesky) profile from
-// the public AppView. Remote wins for shared identity fields (display name,
-// bio, avatar, banner); local-only fields (username, federated handle,
-// verification, stats) are preserved. The merge is read-only — it does NOT
-// write remote values back to the User entity.
+// the public AppView. For migrated users, local wins for shared identity
+// fields (SwapPulse is the source of truth after migration; the AppView lags
+// behind the PDS). For non-migrated users, remote wins (Bluesky is still
+// authoritative). Local-only fields are preserved. The merge is read-only.
 //
 // Input:  { did?, handle? }  — at least one required. A handle is resolved to
 //         a DID via the public AppView.

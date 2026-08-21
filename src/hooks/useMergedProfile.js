@@ -17,7 +17,14 @@ export function useMergedProfile({ did, handle } = {}) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reloadTick, setReloadTick] = useState(0);
   const key = did || handle || '';
+
+  // Clear the cache entry for this profile and trigger a fresh fetch.
+  const reload = () => {
+    cache.delete(key);
+    setReloadTick((t) => t + 1);
+  };
 
   useEffect(() => {
     if (!key) {
@@ -57,7 +64,7 @@ export function useMergedProfile({ did, handle } = {}) {
     })();
 
     return () => { active = false; };
-  }, [key]);
+  }, [key, reloadTick]);
 
-  return { profile, loading, error };
+  return { profile, loading, error, reload };
 }

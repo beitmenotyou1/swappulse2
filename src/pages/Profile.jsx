@@ -60,7 +60,7 @@ export default function Profile() {
 
   // Merged profile overlays live Bluesky identity (remote wins for shared
   // fields) on top of the local user record for the header display.
-  const { profile: merged } = useMergedProfile({ did });
+  const { profile: merged, reload: reloadMerged } = useMergedProfile({ did });
   // Owner's enhanced profile config (personal info, milestones, theme, layout).
   const { config, saving: configSaving, save: saveConfig, reload: reloadConfig } = useOwnProfileConfig();
 
@@ -223,7 +223,7 @@ export default function Profile() {
         <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />
       )}
       {showEdit && (
-        <EditProfileModal onClose={() => setShowEdit(false)} onSaved={load} />
+        <EditProfileModal onClose={() => setShowEdit(false)} onSaved={() => { load(); reloadMerged(); }} />
       )}
       {showCustomize && (
         <ProfileEditorModal

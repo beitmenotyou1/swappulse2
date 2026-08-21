@@ -42,24 +42,47 @@ export async function fetchAppViewProfile(did: string): Promise<any | null> {
 }
 
 // Merge a local SwapPulse User record with a remote AT Protocol profile.
-// Remote wins for shared identity fields; local-only fields are preserved.
-// Either side may be null (local-only for non-members, remote-only for
-// federated search of external actors).
+// For migrated users, local wins for shared identity fields (SwapPulse is the
+// source of truth after migration; the AppView lags behind the PDS). For
+// non-migrated users, remote wins (Bluesky is still authoritative). Local-only
+// fields are always preserved. Either side may be null.
 export function mergeProfiles(local: any | null, remote: any | null): any {
   const remoteName = remote?.displayName || '';
   const remoteDesc = remote?.description || '';
   const remoteAvatar = remote?.avatar || '';
   const remoteBanner = remote?.banner || '';
+  const localName = local?.display_name || local?.full_name || '';
+  const localDesc = local?.description || '';
+  const localAvatar = local?.avatar || '';
+  const localHeader = local?.header || '';
+  const migrated = !!(local?.migrated_from_bluesky);
+
+  // Migrated: local wins (SwapPulse is source of truth, AppView may lag).
+  // Non-migrated: remote wins (Bluesky is still the authoritative profile).
+  const name = migrated
+    ? (localName || remoteName || local?.username || 'Collector')
+    : (remoteName || localName || local?.username || 'Collector');
+  const display_name = migrated
+    ? (localName || remoteName || '')
+    : (remoteName || localName || '');
+  const description = migrated
+    ? (localDesc || remoteDesc || '')
+    : (remoteDesc || localDesc || '');
+  const avatar = migrated
+    ? (localAvatar || remoteAvatar || '')
+    : (remoteAvatar || localAvatar || '');
+  const header = migrated
+    ? (localHeader || remoteBanner || '')
+    : (remoteBanner || localHeader || '');
 
   return {
     found: !!(local || remote),
     did: local?.did || remote?.did || '',
-    // Shared identity fields — remote wins, local fills gaps.
-    name: remoteName || local?.display_name || local?.full_name || local?.username || 'Collector',
-    display_name: remoteName || local?.display_name || local?.full_name || '',
-    description: remoteDesc || local?.description || '',
-    avatar: remoteAvatar || local?.avatar || '',
-    header: remoteBanner || local?.header || '',
+    name,
+    display_name,
+    description,
+    avatar,
+    header,
     // Local-only identity fields — always from the SwapPulse record.
     bsky_handle: local?.bsky_handle || remote?.handle || '',
     username: local?.username || '',
@@ -71,7 +94,7 @@ export function mergeProfiles(local: any | null, remote: any | null): any {
     // Source flags for the UI.
     is_member: !!local,
     remote_synced: !!remote,
-    migrated_from_bluesky: !!(local?.migrated_from_bluesky),
+    migrated_from_bluesky: migrated,
     fetched_at: new Date().toISOString(),
   };
 }
