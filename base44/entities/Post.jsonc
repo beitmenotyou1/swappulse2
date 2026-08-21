@@ -61,10 +61,53 @@
     },
     "embed_images": {
       "type": "array",
+      "maxItems": 4,
       "items": {
-        "type": "string"
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "alt": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Accessibility alt text for the image"
+          }
+        }
       },
-      "description": "Image URLs from Bluesky app.bsky.embed.images attachments. Populated by backfill/ingest for bridged posts so media renders in feeds."
+      "description": "Up to 4 images attached to the post, each with optional alt text. Populated by compose (UploadFile), backfill, and ingest from Bluesky app.bsky.embed.images. Legacy records may store plain URL strings; the renderer normalises both forms."
+    },
+    "embed_video": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Original video URL (YouTube/TikTok/etc.)"
+        },
+        "alt_text": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Accessibility alt text for the video"
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "youtube",
+            "tiktok",
+            "vimeo",
+            "twitch",
+            "dailymotion",
+            "spotify",
+            "instagram",
+            "other"
+          ]
+        },
+        "thumbnail": {
+          "type": "string",
+          "description": "Optional thumbnail URL for the video"
+        }
+      },
+      "description": "External video link that auto-embeds as an inline player on SwapPulse. Bridged to Bluesky as an app.bsky.embed.external link card (external videos cannot be uploaded as PDS blobs)."
     },
     "embed_external": {
       "type": "object",
@@ -80,9 +123,12 @@
         },
         "thumb": {
           "type": "string"
+        },
+        "site_name": {
+          "type": "string"
         }
       },
-      "description": "External link card from Bluesky app.bsky.embed.external. Populated by backfill/ingest for bridged posts."
+      "description": "External link card from Bluesky app.bsky.embed.external or from server-side OpenGraph parsing. Populated by compose (fetch-link-preview), backfill, and ingest for bridged posts."
     },
     "moderation_labels": {
       "type": "array",

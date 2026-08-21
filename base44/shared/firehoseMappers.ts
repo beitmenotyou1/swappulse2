@@ -53,18 +53,22 @@ function blobUrl(did: string, blob: any): string {
 
 function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
   // Extract media from embeds. Bluesky supports:
-  //   app.bsky.embed.images          — up to 4 images
+  //   app.bsky.embed.images          — up to 4 images (with optional alt text)
   //   app.bsky.embed.external        — link card with thumbnail
   //   app.bsky.embed.record          — quote post
   //   app.bsky.embed.recordWithMedia — quote + images/external
-  let embedImages: string[] = [];
+  // Images are stored as { url, alt } objects so alt text round-trips.
+  let embedImages: any[] = [];
   let embedExternal: any = null;
   let quoteRef = '';
 
   const embed = val.embed;
   if (embed) {
     if (embed.$type === 'app.bsky.embed.images' && Array.isArray(embed.images)) {
-      embedImages = embed.images.map((img: any) => blobUrl(did, img?.image)).filter(Boolean);
+      embedImages = embed.images.map((img: any) => ({
+        url: blobUrl(did, img?.image),
+        alt: img?.alt || '',
+      })).filter((im: any) => im.url);
     } else if (embed.$type === 'app.bsky.embed.external' && embed.external) {
       const ext = embed.external;
       embedExternal = {
@@ -72,6 +76,7 @@ function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
         title: ext.title || '',
         description: ext.description || '',
         thumb: ext.thumb ? blobUrl(did, ext.thumb) : '',
+        site_name: '',
       };
     } else if (embed.$type === 'app.bsky.embed.record' && embed.record) {
       quoteRef = embed.record.uri || '';
@@ -79,7 +84,10 @@ function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
       if (embed.record?.record) quoteRef = embed.record.record.uri || '';
       const media = embed.media;
       if (media?.$type === 'app.bsky.embed.images' && Array.isArray(media.images)) {
-        embedImages = media.images.map((img: any) => blobUrl(did, img?.image)).filter(Boolean);
+        embedImages = media.images.map((img: any) => ({
+          url: blobUrl(did, img?.image),
+          alt: img?.alt || '',
+        })).filter((im: any) => im.url);
       } else if (media?.$type === 'app.bsky.embed.external' && media.external) {
         const ext = media.external;
         embedExternal = {
@@ -87,6 +95,7 @@ function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
           title: ext.title || '',
           description: ext.description || '',
           thumb: ext.thumb ? blobUrl(did, ext.thumb) : '',
+          site_name: '',
         };
       }
     }
@@ -116,6 +125,8 @@ function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
     embed_images: embedImages,
     embed_external: embedExternal || undefined,
     quote_ref: quoteRef,
+    // embed_video is not set from Bluesky ingest (external video links become
+    // embed_external cards). It is only populated by local compose.
     author_name: profile?.displayName || '',
     author_handle: profile?.handle || '',
     author_avatar: profile?.avatar || '',

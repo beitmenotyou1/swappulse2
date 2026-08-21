@@ -12,6 +12,9 @@ import { dispatchCrossPost } from '@/lib/crosspost';
 import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
 import { extractHashtags, canonicalise } from '@/lib/hashtags';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { useMediaComposer } from '@/hooks/useMediaComposer';
+import MediaComposer from '@/components/feed/MediaComposer';
+import { detectVideoPlatform } from '@/lib/mediaEmbed';
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
@@ -42,6 +45,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [replyPolicy, setReplyPolicy] = useState('everybody');
   const [visibilityScope, setVisibilityScope] = useState('public');
   const [cardAltText, setCardAltText] = useState('');
+  const media = useMediaComposer();
 
   const typeButtons = [
     { key: 'pack_opening', icon: Sparkles, labelKey: 'post.type.packPull' },
@@ -50,13 +54,15 @@ export default function ComposeBox({ onPosted, replyTo }) {
   ];
 
   const handlePost = async () => {
-    if (!content.trim() && !attachedCard) return;
+    if (!content.trim() && !attachedCard && media.images.length === 0 && !media.videoUrl.trim()) return;
     setPosting(true);
     try {
       await ensureBotAllowed('post', content);
       const { did, signingKey } = await ensureUserDid();
       const hashtags = extractHashtags(content).slice(0, 10);
       const canonical_tags = canonicalise(hashtags);
+      // Upload images and build embed fields (embed_images, embed_video, embed_external)
+      const mediaFields = await media.buildMediaFields();
       // Federated reply threading — resolve parent/root refs for the bridge
       const parentUri = replyTo?.at_uri || null;
       const parentCid = replyTo?.cid || null;
@@ -92,6 +98,9 @@ export default function ComposeBox({ onPosted, replyTo }) {
         card_rarity: attachedCard?.rarity,
         card_alt_text: cardAltText.trim() || null,
         set_name: attachedCard?.set?.name,
+        embed_images: mediaFields.embed_images,
+        embed_video: mediaFields.embed_video,
+        embed_external: mediaFields.embed_external,
         author_name: user?.display_name || user?.full_name,
         author_handle: user?.username || user?.bsky_handle || '',
         likes: 0,
@@ -140,6 +149,58 @@ export default function ComposeBox({ onPosted, replyTo }) {
             console.warn('card embed blob upload failed', e?.message || e);
           }
         }
+        // Build the PDS embed from uploaded images, video link, or external link.
+        // Images: upload each to the PDS as a blob and build app.bsky.embed.images.
+        // Video/external: build app.bsky.embed.external (external videos can't be
+        // PDS blobs). Falls back gracefully on any blob upload failure.
+        let mediaEmbed = cardEmbed;
+        if (!mediaEmbed && (mediaFields.embed_images || mediaFields.embed_video || mediaFields.embed_external)) {
+          try {
+            if (mediaFields.embed_images?.length > 0) {
+              const imageBlobs = await Promise.all(
+                mediaFields.embed_images.map(async (img) => {
+                  const ext = (img.url.split('.').pop() || '').toLowerCase();
+                  const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+                  const blobRes = await base44.functions.invoke('atproto-bridge', {
+                    action: 'uploadBlob', imageUrl: img.url, mimeType: mime,
+                  });
+                  return { blob: blobRes?.blob || blobRes?.data?.blob, alt: img.alt };
+                })
+              );
+              const valid = imageBlobs.filter((b) => b.blob);
+              if (valid.length > 0) {
+                mediaEmbed = {
+                  $type: 'app.bsky.embed.images',
+                  images: valid.map((b) => ({ image: b.blob, alt: b.alt || '' })),
+                };
+              }
+            } else if (mediaFields.embed_external) {
+              const ext = mediaFields.embed_external;
+              let thumbBlob = null;
+              if (ext.thumb) {
+                try {
+                  const ext2 = (ext.thumb.split('.').pop() || '').toLowerCase();
+                  const mime = ext2 === 'png' ? 'image/png' : ext2 === 'webp' ? 'image/webp' : 'image/jpeg';
+                  const blobRes = await base44.functions.invoke('atproto-bridge', {
+                    action: 'uploadBlob', imageUrl: ext.thumb, mimeType: mime,
+                  });
+                  thumbBlob = blobRes?.blob || blobRes?.data?.blob;
+                } catch {}
+              }
+              mediaEmbed = {
+                $type: 'app.bsky.embed.external',
+                external: {
+                  uri: ext.uri,
+                  title: ext.title || ext.uri,
+                  description: ext.description || '',
+                  ...(thumbBlob ? { thumb: thumbBlob } : {}),
+                },
+              };
+            }
+          } catch (e) {
+            console.warn('media embed blob upload failed', e?.message || e);
+          }
+        }
         base44.functions.invoke('atproto-bridge', {
           collection: 'app.bsky.feed.post',
           record: {
@@ -147,7 +208,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
             createdAt: new Date().toISOString(),
             langs: [getCurrentTcgdexLang()],
             ...(replyRef ? { reply: replyRef } : {}),
-            ...(cardEmbed ? { embed: cardEmbed } : {}),
+            ...(mediaEmbed ? { embed: mediaEmbed } : {}),
           },
         }).then((res) => {
           if (res?.uri) {
@@ -199,6 +260,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
       setCardAltText('');
       setPostType('text');
       setVisibilityScope('public');
+      media.reset();
       onPosted?.();
     } catch (e) {
       if (isBotBlockError(e)) {
@@ -224,7 +286,10 @@ export default function ComposeBox({ onPosted, replyTo }) {
         <div className="flex-1">
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value.slice(0, 300))}
+            onChange={(e) => {
+              setContent(e.target.value.slice(0, 300));
+              media.detectLinkPreview(e.target.value);
+            }}
             rows={2}
             maxLength={300}
             placeholder={replyTo ? t('compose.placeholder.reply') : t('compose.placeholder.post')}
@@ -268,6 +333,8 @@ export default function ComposeBox({ onPosted, replyTo }) {
               </div>
             </>
           )}
+
+          <MediaComposer media={media} content={content} />
 
           {!replyTo && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -335,7 +402,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
             </div>
             <button
               onClick={handlePost}
-              disabled={posting || (!content.trim() && !attachedCard)}
+              disabled={posting || (!content.trim() && !attachedCard && media.images.length === 0 && !media.videoUrl.trim())}
               className="flex items-center justify-center gap-1.5 self-end rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-40 sm:self-auto"
             >
               {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
