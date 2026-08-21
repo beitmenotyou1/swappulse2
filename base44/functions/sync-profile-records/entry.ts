@@ -100,8 +100,8 @@ export default async function(req: Request): Promise<Response> {
               profile_sync_failed_at: new Date().toISOString(),
               profile_sync_fail_count: failCount,
             }).catch(() => {});
-            errors.push({ id: cred.user_id, error: r.error || 'failed' });
-            console.error('sync-profile-records: failed for', cred.user_id, r.error);
+            errors.push({ id: u.id, error: r.error || 'failed' });
+            console.error('sync-profile-records: failed for', u.id, r.error);
           }
         }
 

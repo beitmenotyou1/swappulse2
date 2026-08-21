@@ -26,7 +26,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
-import { isBlueskyCdnUrl } from '../../shared/profileSync.ts';
+import { isBlueskyCdnUrl, extractBlobCidFromBskyUrl, blobRefCid } from '../../shared/profileSync.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -437,9 +437,16 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
         // and the local Base44 URL is the source of truth).
         if (profile.avatar && profile.avatar !== user.avatar) {
           if (isBlueskyCdnUrl(profile.avatar) && user.avatar_pds_ref) {
-            // Remote is a Bluesky-resolved blob and we have a stored PDS blob
-            // ref — the avatar hasn't actually changed, just the URL format.
-            // Skip to preserve the local Base44 CDN URL (source of truth).
+            // Compare blob cids: if the AppView's blob cid matches the stored
+            // PDS blob ref, it's an echo of our own push (skip). If it differs,
+            // the user changed their avatar on Bluesky (merge the new URL).
+            const remoteCid = extractBlobCidFromBskyUrl(profile.avatar);
+            const storedCid = blobRefCid(user.avatar_pds_ref);
+            if (remoteCid && storedCid && remoteCid !== storedCid) {
+              updates.avatar = profile.avatar;
+              updates.avatar_pds_ref = '';
+            }
+            // else: same blob — echo, skip to preserve local Base44 URL
           } else if (!isBlueskyCdnUrl(profile.avatar)) {
             // Remote avatar is from a non-Bluesky host — this is a genuine
             // remote edit (e.g. user changed avatar on Bluesky). Merge it.
@@ -450,7 +457,12 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
         }
         if (profile.banner && profile.banner !== user.header) {
           if (isBlueskyCdnUrl(profile.banner) && user.header_pds_ref) {
-            // Same echo-loop prevention as avatar.
+            const remoteCid = extractBlobCidFromBskyUrl(profile.banner);
+            const storedCid = blobRefCid(user.header_pds_ref);
+            if (remoteCid && storedCid && remoteCid !== storedCid) {
+              updates.header = profile.banner;
+              updates.header_pds_ref = '';
+            }
           } else if (!isBlueskyCdnUrl(profile.banner)) {
             updates.header = profile.banner;
             updates.header_pds_ref = '';
@@ -459,7 +471,7 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
         if (Object.keys(updates).length === 0) continue;
         updates.profile_synced_at = new Date().toISOString();
         await svc.entities.User.update(user.id, updates).catch((e: any) => {
-          console.error('firehose-ingest: user profile update failed', cred.did, e?.message || e);
+          console.error('firehose-ingest: user profile update failed', user.did, e?.message || e);
         });
         synced++;
       } catch (e) {

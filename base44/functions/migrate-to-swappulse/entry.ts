@@ -57,6 +57,12 @@ export default async function(req: Request): Promise<Response> {
 
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
 
+    // Capture the original Bluesky handle before any handle update. Preserve
+    // an already-captured value across retries — if a prior partial run
+    // already set original_bluesky_handle, don't overwrite it with the now-
+    // migrated handle (which would break un-move restoration).
+    const originalHandle = user.original_bluesky_handle || user.bsky_handle || '';
+
     // Initialize per-step tracking on the User record.
     const steps: Record<string, StepState> = {
       profile_pull: makeStep('pending'),
@@ -197,7 +203,7 @@ export default async function(req: Request): Promise<Response> {
       await base44.auth.updateMe({
         original_bluesky_bio: originalBio,
         original_bluesky_profile: originalProfileJson,
-        original_bluesky_handle: user.bsky_handle,
+        original_bluesky_handle: originalHandle,
         // NOT setting migrated_from_bluesky=true — the user must retry
         ...(handleUpdated
           ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
@@ -253,7 +259,7 @@ export default async function(req: Request): Promise<Response> {
         migrated_from_bluesky: true,
         original_bluesky_bio: originalBio,
         original_bluesky_profile: originalProfileJson,
-        original_bluesky_handle: user.bsky_handle,
+        original_bluesky_handle: originalHandle,
         migrated_at: new Date().toISOString(),
         migration_reverted: false,
         ...(handleUpdated
@@ -297,7 +303,7 @@ export default async function(req: Request): Promise<Response> {
       original_bluesky_bio: originalBio,
       original_bluesky_profile: originalProfileJson,
       pinned_announcement_uri: pinnedUri,
-      original_bluesky_handle: user.bsky_handle,
+      original_bluesky_handle: originalHandle,
       migrated_at: new Date().toISOString(),
       migration_reverted: false,
       ...(handleUpdated

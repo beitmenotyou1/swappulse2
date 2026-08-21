@@ -88,6 +88,37 @@ export function isBlueskyCdnUrl(raw: string): boolean {
   }
 }
 
+// Extract the blob cid from a Bluesky CDN resolved URL. The AppView returns
+// avatar/banner URLs in the format:
+//   https://cdn.bsky.app/img/avatar/plain/{did}/{cid}@{format}
+// The {cid} segment is the blob's content identifier, which we compare against
+// the stored PDS blob ref to distinguish a genuine remote avatar change (new
+// blob cid) from an echo of our own just-pushed blob (same cid).
+export function extractBlobCidFromBskyUrl(raw: string): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    const parts = parsed.pathname.split('/');
+    const last = parts[parts.length - 1];
+    const cid = last.split('@')[0];
+    return cid || null;
+  } catch {
+    return null;
+  }
+}
+
+// Get the cid from a PDS blob ref. Handles both { $type: 'blob', ref: { $link } }
+// and { cid } shapes, and accepts either an object or a JSON string.
+export function blobRefCid(ref: any): string | null {
+  if (!ref) return null;
+  try {
+    const obj = typeof ref === 'string' ? JSON.parse(ref) : ref;
+    return obj?.ref?.$link || obj?.cid || null;
+  } catch {
+    return null;
+  }
+}
+
 // Fetch image bytes from a stored URL and upload as a blob to the user's PDS,
 // returning the blob ref to embed in the profile record. Used for both avatar
 // and banner. Returns null if there is no image, the URL is not allowlisted,
@@ -237,8 +268,12 @@ export async function syncProfileForUser(
         const stored = JSON.parse(userRecord.avatar_pds_ref);
         if (stored) record.avatar = stored;
       } catch { /* ignore parse error, keep existing */ }
+    } else if (record.avatar) {
+      // First outbound after migration — no stored ref yet. Capture the
+      // existing PDS blob ref so future inbound syncs can recognize the
+      // avatar is PDS-resident and detect genuine remote changes by cid.
+      avatarBlobRef = record.avatar;
     }
-    // else: keep existing record's avatar (already in `record` from the spread)
   } else if (!localAvatar && existing) {
     // Local avatar was cleared — remove it from the record.
     delete record.avatar;
@@ -256,6 +291,8 @@ export async function syncProfileForUser(
         const stored = JSON.parse(userRecord.header_pds_ref);
         if (stored) record.banner = stored;
       } catch { /* ignore parse error, keep existing */ }
+    } else if (record.banner) {
+      headerBlobRef = record.banner;
     }
   } else if (!localHeader && existing) {
     delete record.banner;
