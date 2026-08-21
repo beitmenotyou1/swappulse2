@@ -338,7 +338,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const handle = String(body.handle || '').trim().replace(/^@/, '');
     const appPassword = String(body.appPassword || '').trim();
-    const mode = body.mode === 'login' ? 'login' : 'verify';
+    const mode = ['login', 'link'].includes(body.mode) ? body.mode : 'verify';
 
     if (!handle || !appPassword) {
       return Response.json(
