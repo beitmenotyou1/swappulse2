@@ -16,10 +16,37 @@ import {
   MODERATION_SYSTEM_PROMPT,
 } from '../../shared/moderationConfig.ts';
 import { getActiveInsights } from '../../shared/agentLearningLoop.ts';
-import { isInternalServiceCall } from '../../shared/internalAuth.ts';
 import { secrets } from 'base44:runtime';
 
 const LABELER_DID = 'did:web:labeler.swappulse.org';
+
+// Decodes the platform's `base44-service-authorization` JWT (injected on
+// internal workflow/agent calls) and verifies its payload claims — not just
+// the header presence, which any internet caller could spoof. A public
+// caller has no such token, so this gates service-role enforcement behind a
+// legitimate platform-issued credential.
+function base64UrlDecode(str: string): string {
+  const pad = str.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = pad + '==='.slice((pad.length + 3) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function isInternalServiceCall(req: Request): boolean {
+  const header =
+    req.headers.get('base44-service-authorization') ||
+    req.headers.get('Base44-Service-Authorization');
+  if (!header) return false;
+  const parts = header.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(base64UrlDecode(parts[1]) || '{}');
+    return payload?.internal_service_token === true && payload?.caller === 'backend_functions';
+  } catch {
+    return false;
+  }
+}
 
 // Security: ai-moderation applies tiered enforcement (hide/strike/restrict) via
 // the service role, so it must not be callable by unauthenticated public
