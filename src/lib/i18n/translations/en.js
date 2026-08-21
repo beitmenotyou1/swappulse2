@@ -489,6 +489,17 @@ const en = {
   'migration.unmoveFailedDesc': 'Something went wrong reversing the migration. Please try again.',
   'migration.migratingStatus': 'Announcing your move on Bluesky…',
   'migration.rebridgingStatus': 'Migrating your existing content…',
+  'migration.handleLabel': 'Your SwapPulse handle',
+  'migration.handlePreview': 'Your handle will be',
+  'migration.useDefaultDomain': 'Use default domain',
+  'migration.useCustomDomain': 'Use a custom domain',
+  'migration.customDomainNote': 'You\'ll need to add a DNS TXT record to verify ownership. We\'ll show you the exact record after you migrate.',
+  'migration.handleUpdatedDesc': 'Your handle has been updated to @{handle}.',
+  'migration.revertedTitle': 'Profile editing locked',
+  'migration.revertedDesc': 'You moved back to Bluesky, so your SwapPulse profile is read-only. Re-migrate to SwapPulse to edit it again.',
+  'migration.remigrate': 'Re-migrate to SwapPulse',
+  'migration.editLocked': 'Locked',
+  'migration.revertedNotice': 'Profile editing is locked because you moved back to Bluesky. Re-migrate to SwapPulse to unlock editing.',
 };
 
 export default en;
