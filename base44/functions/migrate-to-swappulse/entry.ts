@@ -120,11 +120,12 @@ export default async function(req: Request): Promise<Response> {
         console.error('migrate: backfill first batch failed', e?.message || e);
         return null;
       });
-      if (bfRes?.ok) {
+      const bfData = bfRes?.data ?? bfRes;
+      if (bfData?.ok) {
         backfillStarted = true;
         await updateSteps({ post_backfill: makeStep('success', '', new Date().toISOString()) });
       } else {
-        const errMsg = bfRes?.error || 'Backfill returned non-ok response';
+        const errMsg = bfData?.error || 'Backfill returned non-ok response';
         await updateSteps({ post_backfill: makeStep('failed', errMsg, new Date().toISOString()) });
       }
     } catch (e: any) {
@@ -140,11 +141,12 @@ export default async function(req: Request): Promise<Response> {
         console.error('migrate: notification import failed', e?.message || e);
         return null;
       });
-      if (niRes?.ok) {
+      const niData = niRes?.data ?? niRes;
+      if (niData?.ok) {
         notificationsImported = true;
         await updateSteps({ notification_import: makeStep('success', '', new Date().toISOString()) });
       } else {
-        const errMsg = niRes?.error || 'Notification import returned non-ok response';
+        const errMsg = niData?.error || 'Notification import returned non-ok response';
         await updateSteps({ notification_import: makeStep('failed', errMsg, new Date().toISOString()) });
       }
     } catch (e: any) {
