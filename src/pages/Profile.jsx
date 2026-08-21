@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Star, Mic, Share2, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Star, Mic, Share2, SlidersHorizontal, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import LiveAvatar from '@/components/LiveAvatar';
@@ -56,6 +56,7 @@ export default function Profile() {
   const [showEdit, setShowEdit] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [ending, setEnding] = useState(false);
+  const reverted = !!user?.migration_reverted;
 
   // Merged profile overlays live Bluesky identity (remote wins for shared
   // fields) on top of the local user record for the header display.
@@ -155,6 +156,14 @@ export default function Profile() {
 
   return (
     <div>
+      {reverted && !loading && (
+        <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 px-4 py-2.5">
+          <Lock className="h-4 w-4 shrink-0 text-warning" />
+          <p className="text-xs text-muted-foreground">
+            {t('migration.revertedNotice')}
+          </p>
+        </div>
+      )}
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : (
@@ -184,8 +193,8 @@ export default function Profile() {
           liveSpace={liveSpace}
           actions={
             <>
-              <button onClick={() => setShowEdit(true)} className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary">{t('profile.editProfile')}</button>
-              <button onClick={() => setShowCustomize(true)} className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary"><SlidersHorizontal className="h-3.5 w-3.5" /> Customize</button>
+              <button onClick={() => setShowEdit(true)} disabled={reverted} className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed">{reverted ? <><Lock className="h-3 w-3" /> {t('migration.editLocked')}</> : t('profile.editProfile')}</button>
+              <button onClick={() => setShowCustomize(true)} disabled={reverted} className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"><SlidersHorizontal className="h-3.5 w-3.5" /> Customize</button>
               <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
             </>
           }

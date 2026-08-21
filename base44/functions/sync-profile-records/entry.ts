@@ -57,11 +57,18 @@ export default async function(req: Request): Promise<Response> {
       });
     }
 
-    // Single-user sync (authenticated caller, after profile edit)
+    // Single-user sync (authenticated caller, after profile edit). Only
+    // syncs to the PDS if the user has migrated from Bluesky — before
+    // migration, the Bluesky profile stays as-is and SwapPulse edits
+    // remain local. After un-move (migration_reverted), syncing is also
+    // skipped so the restored original Bluesky profile is not overwritten.
     const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Authentication required' }, { status: 401 });
     if (!user.did || !user.did.startsWith('did:plc:')) {
       return Response.json({ ok: true, skipped: true, reason: 'no did:plc yet' });
+    }
+    if (!user.migrated_from_bluesky) {
+      return Response.json({ ok: true, skipped: true, reason: 'not migrated — profile edits stay local until migration' });
     }
     const creds = await svc.entities.PdsCredential
       .filter({ user_id: user.id }).catch(() => []);

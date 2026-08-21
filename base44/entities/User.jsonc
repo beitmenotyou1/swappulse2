@@ -88,11 +88,15 @@
     "migrated_from_bluesky": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the user has migrated their profile from Bluesky to SwapPulse. Set true by migrate-to-swappulse on link; cleared by unmove-from-bluesky. Drives the public 'Moved from Bluesky' badge on the profile header."
+      "description": "Whether the user has migrated their profile from Bluesky to SwapPulse. Set true by migrate-to-swappulse on link; cleared by unmove-from-bluesky. Drives the public 'Moved from Bluesky' badge on the profile header. Profile edits sync to the PDS only while this is true."
     },
     "original_bluesky_bio": {
       "type": "string",
       "description": "Snapshot of the user's Bluesky bio captured before the migration bio replacement. Used by unmove-from-bluesky to restore the original bio."
+    },
+    "original_bluesky_profile": {
+      "type": "string",
+      "description": "JSON-serialized snapshot of the full original app.bsky.actor.profile record (displayName, description, avatar blob, banner blob) captured at migration time. Used by unmove-from-bluesky to restore the complete original Bluesky profile, undoing any changes made during the migration period."
     },
     "pinned_announcement_uri": {
       "type": "string",
@@ -100,12 +104,17 @@
     },
     "original_bluesky_handle": {
       "type": "string",
-      "description": "The Bluesky handle the user migrated from (captured at migration time in case the handle later changes)."
+      "description": "The Bluesky handle the user migrated from (captured at migration time so unmove-from-bluesky can revert the handle from username.swappulse.org back to the original)."
     },
     "migrated_at": {
       "type": "string",
       "format": "date-time",
       "description": "When the migration was performed. Cleared on un-move."
+    },
+    "migration_reverted": {
+      "type": "boolean",
+      "default": false,
+      "description": "True after the user un-moves (reverts migration). While true, profile editing on SwapPulse is disabled \u2014 the profile reverts to the original Bluesky profile and changes made during migration are undone. Cleared if the user re-migrates."
     }
   },
   "required": [

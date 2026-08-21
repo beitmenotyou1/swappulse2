@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { X, Loader2, User, Link2, Milestone, Layout } from 'lucide-react';
+import { X, Loader2, User, Link2, Milestone, Layout, Lock } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { useT } from '@/lib/i18n/I18nProvider';
 import PersonalInfoTab from './PersonalInfoTab';
 import ContactLinksTab from './ContactLinksTab';
 import MilestonesTab from './MilestonesTab';
@@ -18,7 +21,11 @@ const TABS = [
 // truth), edits a local draft, and persists on Save. The Layout tab needs
 // sectionLabels (key -> human label) to render the reorder list.
 export default function ProfileEditorModal({ config, onSave, onClose, saving, sectionLabels }) {
+  const t = useT();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const reverted = !!user?.migration_reverted;
+  const migrated = !!user?.migrated_from_bluesky;
   const [tab, setTab] = useState('info');
   const [draft, setDraft] = useState(null);
 
@@ -32,6 +39,15 @@ export default function ProfileEditorModal({ config, onSave, onClose, saving, se
     if (!draft) return;
     try {
       await onSave(draft);
+      // After saving the enhanced profile config, if the user has migrated,
+      // push the profile to the PDS so edits reflect on the Protocol.
+      if (migrated) {
+        try {
+          await base44.functions.invoke('sync-profile-records', {});
+        } catch (e) {
+          console.error('ProfileEditorModal: PDS sync failed', e);
+        }
+      }
       toast({ title: 'Profile updated' });
       onClose?.();
     } catch (e) {
@@ -68,14 +84,27 @@ export default function ProfileEditorModal({ config, onSave, onClose, saving, se
         <div className="flex-1 overflow-y-auto p-4">
           {!draft ? (
             <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-          ) : tab === 'info' ? (
-            <PersonalInfoTab draft={draft} update={update} />
-          ) : tab === 'contact' ? (
-            <ContactLinksTab draft={draft} update={update} />
-          ) : tab === 'journey' ? (
-            <MilestonesTab draft={draft} update={update} />
           ) : (
-            <LayoutThemeTab draft={draft} update={update} sectionLabels={sectionLabels} />
+            <div className="space-y-4">
+              {reverted && (
+                <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3">
+                  <Lock className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <div>
+                    <p className="text-xs font-bold text-warning">{t('migration.revertedTitle')}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t('migration.editDisabledDesc')}</p>
+                  </div>
+                </div>
+              )}
+              {tab === 'info' ? (
+                <PersonalInfoTab draft={draft} update={update} />
+              ) : tab === 'contact' ? (
+                <ContactLinksTab draft={draft} update={update} />
+              ) : tab === 'journey' ? (
+                <MilestonesTab draft={draft} update={update} />
+              ) : (
+                <LayoutThemeTab draft={draft} update={update} sectionLabels={sectionLabels} />
+              )}
+            </div>
           )}
         </div>
 
@@ -83,7 +112,7 @@ export default function ProfileEditorModal({ config, onSave, onClose, saving, se
           <button onClick={onClose} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-semibold hover:bg-secondary">Cancel</button>
           <button
             onClick={handleSave}
-            disabled={saving || !draft}
+            disabled={saving || !draft || reverted}
             className="flex flex-[1.5] items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
             {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : 'Save'}

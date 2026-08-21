@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { X, Loader2, Camera } from 'lucide-react';
+import { X, Loader2, Camera, Lock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { useT } from '@/lib/i18n/I18nProvider';
 // Avatars are stored as a reliable, publicly-accessible external URL
 // (UploadFile → media.base44.com) so they render on the site immediately.
 // sync-profile-records then fetches this URL and pushes it to the PDS as a
@@ -15,8 +16,10 @@ import { useToast } from '@/components/ui/use-toast';
 // Saves via base44.auth.updateMe and fire-and-forget syncs the new profile to
 // the PDS as an app.bsky.actor.profile record so it shows on Bluesky.
 export default function EditProfileModal({ onClose, onSaved }) {
+  const t = useT();
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
+  const reverted = !!user?.migration_reverted;
   const [fullName, setFullName] = useState(user?.display_name || user?.full_name || '');
   const [description, setDescription] = useState(user?.description || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
@@ -103,6 +106,15 @@ export default function EditProfileModal({ onClose, onSaved }) {
         </div>
 
         <div className="space-y-4">
+          {reverted && (
+            <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <div>
+                <p className="text-xs font-bold text-warning">{t('migration.revertedTitle')}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t('migration.editDisabledDesc')}</p>
+              </div>
+            </div>
+          )}
           <div>
             <label className="mb-1 block text-xs font-semibold text-muted-foreground">Header image</label>
             <div
@@ -176,7 +188,7 @@ export default function EditProfileModal({ onClose, onSaved }) {
             </button>
             <button
               onClick={save}
-              disabled={busy}
+              disabled={busy || reverted}
               className="flex flex-[1.5] items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
               {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : 'Save'}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2 } from 'lucide-react';
+import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock } from 'lucide-react';
 import AtProtoForm from '@/components/auth/AtProtoForm';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -12,8 +12,12 @@ import { useT } from '@/lib/i18n/I18nProvider';
 // On successful link, refreshes the user context, fires re-bridge-content to
 // migrate existing shared-bridge posts to their own DID, and automatically
 // triggers migrate-to-swappulse to post and pin a 'I've moved' announcement on
-// Bluesky and replace the Bluesky bio with a SwapPulse pointer. When migrated,
-// shows a 'Move back to Bluesky' button to reverse the migration.
+// Bluesky, replace the Bluesky bio with a SwapPulse pointer, and update the
+// handle to username.swappulse.org (or a custom domain if the user specified
+// one). When migrated, shows a 'Move back to Bluesky' button to reverse the
+// migration. When migration_reverted (un-moved), shows a locked notice —
+// profile editing is disabled and the profile reverts to the original
+// Bluesky profile.
 export default function BlueskyLinkCard() {
   const t = useT();
   const { user, checkUserAuth } = useAuth();
@@ -22,9 +26,14 @@ export default function BlueskyLinkCard() {
   const [migrating, setMigrating] = useState(false);
   const [unmoving, setUnmoving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showDomainInput, setShowDomainInput] = useState(false);
+  const [customDomain, setCustomDomain] = useState('');
 
   const linked = !!user?.bsky_handle;
   const migrated = !!user?.migrated_from_bluesky;
+  const reverted = !!user?.migration_reverted;
+
+  const defaultHandle = user?.username || user?.email?.split('@')[0] || 'collector';
 
   const handleLinked = async (data) => {
     toast({
@@ -48,16 +57,20 @@ export default function BlueskyLinkCard() {
       setRebridging(false);
     }
 
-    // Auto-migrate: post announcement, pin it, replace Bluesky bio
+    // Auto-migrate: post announcement, pin it, replace Bluesky bio, update handle
     setMigrating(true);
     try {
-      const res = await base44.functions.invoke('migrate-to-swappulse', {});
+      const res = await base44.functions.invoke('migrate-to-swappulse', {
+        customDomain: customDomain || undefined,
+      });
       const result = res?.data ?? res;
       if (result?.ok || result?.alreadyMigrated) {
         await checkUserAuth?.();
         toast({
           title: t('migration.announceTitle'),
-          description: t('migration.announceDesc'),
+          description: result?.handleUpdated
+            ? t('migration.handleUpdatedDesc', { handle: result.handle })
+            : t('migration.announceDesc'),
         });
       }
     } catch (e) {
@@ -99,6 +112,33 @@ export default function BlueskyLinkCard() {
     }
   };
 
+  const handleRemigrate = async () => {
+    if (migrating) return;
+    setMigrating(true);
+    try {
+      const res = await base44.functions.invoke('migrate-to-swappulse', {
+        customDomain: customDomain || undefined,
+      });
+      const result = res?.data ?? res;
+      if (result?.ok || result?.alreadyMigrated) {
+        await checkUserAuth?.();
+        toast({
+          title: t('migration.announceTitle'),
+          description: t('migration.announceDesc'),
+        });
+      }
+    } catch (e) {
+      console.error('Re-migration failed', e);
+      toast({
+        title: t('migration.announceFailedTitle'),
+        description: t('migration.announceFailedDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   if (linked && !showForm) {
     return (
       <div className="rounded-xl border border-border bg-card p-4">
@@ -117,6 +157,9 @@ export default function BlueskyLinkCard() {
             <p className="mt-1 text-xs text-muted-foreground">
               {t('migration.statusMigratedDesc')}
             </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {t('migration.handleLabel')}: <b className="text-foreground">@{user.bsky_handle}</b>
+            </p>
             <button
               onClick={handleUnmove}
               disabled={unmoving}
@@ -124,6 +167,25 @@ export default function BlueskyLinkCard() {
             >
               {unmoving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
               {t('migration.moveBack')}
+            </button>
+          </div>
+        )}
+
+        {reverted && !migrated && (
+          <div className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-warning">
+              <Lock className="h-3.5 w-3.5" /> {t('migration.revertedTitle')}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('migration.revertedDesc')}
+            </p>
+            <button
+              onClick={handleRemigrate}
+              disabled={migrating}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            >
+              {migrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />}
+              {t('migration.remigrate')}
             </button>
           </div>
         )}
@@ -156,7 +218,40 @@ export default function BlueskyLinkCard() {
       <p className="mt-1 text-xs text-muted-foreground">
         {t('migration.linkAutoMigrate')}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">
+
+      {/* Handle preview — shows the default username.swappulse.org handle */}
+      <div className="mt-2 rounded-lg border border-border bg-card/50 p-2.5">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+          <Globe className="h-3 w-3" /> {t('migration.handlePreview')}
+        </p>
+        <p className="mt-0.5 text-xs text-foreground">
+          @{customDomain || `${defaultHandle}.swappulse.org`}
+        </p>
+        <button
+          onClick={() => setShowDomainInput((v) => !v)}
+          className="mt-1 text-[11px] font-semibold text-primary hover:underline"
+        >
+          {showDomainInput ? t('migration.useDefaultDomain') : t('migration.useCustomDomain')}
+        </button>
+        {showDomainInput && (
+          <div className="mt-1.5 flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-2.5 py-1.5">
+            <span className="text-xs text-muted-foreground">@</span>
+            <input
+              value={customDomain}
+              onChange={(e) => setCustomDomain(e.target.value)}
+              placeholder="yourbrand.com"
+              className="flex-1 bg-transparent text-xs outline-none"
+            />
+          </div>
+        )}
+        {showDomainInput && customDomain && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {t('migration.customDomainNote')}
+          </p>
+        )}
+      </div>
+
+      <p className="mt-2 text-xs text-muted-foreground">
         {t('migration.noAccount')}{' '}
         <a
           href="https://bsky.app"

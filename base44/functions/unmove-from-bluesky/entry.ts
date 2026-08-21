@@ -1,13 +1,16 @@
 // unmove-from-bluesky — reverses a Bluesky-to-SwapPulse migration. Restores
-// the original Bluesky bio from the stored snapshot, unpins and deletes the
-// migration announcement post, and clears the migration state so the 'Moved
-// from Bluesky' badge disappears. Bluesky linking remains active (posts still
-// federate) — only the migration announcement is reversed.
+// the full original Bluesky profile (displayName, description, avatar, banner)
+// from the stored snapshot, reverts the handle from username.swappulse.org
+// back to the original Bluesky handle, unpins and deletes the migration
+// announcement post, and sets migration_reverted=true so profile editing on
+// SwapPulse is disabled (the profile reverts to the original Bluesky profile
+// and changes made during migration are undone). Bluesky linking remains
+// active (posts still federate) — only the migration is reversed.
 //
 // Called by BlueskyLinkCard when the user clicks 'Move back to Bluesky'.
 // Idempotent: if not migrated, returns success without doing anything.
 //
-// Output: { ok, unmoved }
+// Output: { ok, unmoved, handleReverted }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
@@ -24,9 +27,22 @@ export default async function(req: Request): Promise<Response> {
 
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
 
-    // 1. Restore the original Bluesky bio. Fetch the current profile record so
-    //    we preserve displayName/avatar/banner and only swap the description.
-    let existingProfile: any = {};
+    // 1. Restore the full original Bluesky profile from the stored snapshot.
+    //    The snapshot includes displayName, description, avatar blob, and
+    //    banner blob — putting it back undoes any changes made during the
+    //    migration period.
+    let originalProfile: any = null;
+    try {
+      if (user.original_bluesky_profile) {
+        originalProfile = JSON.parse(user.original_bluesky_profile);
+      }
+    } catch (e) {
+      console.error('unmove: parse original profile failed', e?.message);
+    }
+
+    // Fetch the current profile record to merge with (in case the snapshot
+    // is missing fields that exist on the current record).
+    let currentProfile: any = {};
     try {
       const profileRes = await fetch(
         `${pdsUrl}/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(sess.did)}&collection=app.bsky.actor.profile&rkey=self`,
@@ -34,39 +50,62 @@ export default async function(req: Request): Promise<Response> {
       );
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        existingProfile = profileData.value || {};
+        currentProfile = profileData.value || {};
       }
     } catch (e) {
       console.error('unmove: getRecord profile failed (continuing)', e?.message);
     }
 
-    const bioToRestore: string = user.original_bluesky_bio || '';
+    // The restored profile is the original snapshot (if available) merged
+    // with the current record's $type/createdAt, so the putRecord succeeds.
+    const restoredProfile: any = {
+      ...(originalProfile || currentProfile),
+      $type: 'app.bsky.actor.profile',
+      createdAt: (originalProfile || currentProfile).createdAt || currentProfile.createdAt || new Date().toISOString(),
+    };
+
     try {
-      const mergedProfile = {
-        ...existingProfile,
-        $type: 'app.bsky.actor.profile',
-        description: bioToRestore,
-      };
       let bioResult: any = await pdsRequest(
         pdsUrl, sess.accessJwt, 'com.atproto.repo.putRecord',
-        { repo: sess.did, collection: 'app.bsky.actor.profile', rkey: 'self', record: mergedProfile },
+        { repo: sess.did, collection: 'app.bsky.actor.profile', rkey: 'self', record: restoredProfile },
       );
       if (bioResult?.error && bioResult.status === 401) {
         clearPdsSession();
         const fresh = await resolveBridgeSession(req);
         bioResult = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.putRecord',
-          { repo: fresh.session.did, collection: 'app.bsky.actor.profile', rkey: 'self', record: mergedProfile },
+          { repo: fresh.session.did, collection: 'app.bsky.actor.profile', rkey: 'self', record: restoredProfile },
         );
       }
       if (bioResult?.error) {
         console.error('unmove: putRecord profile failed (continuing)', bioResult.status);
       }
     } catch (e) {
-      console.error('unmove: bio restore failed (continuing)', e?.message);
+      console.error('unmove: profile restore failed (continuing)', e?.message);
     }
 
-    // 2. Unpin and delete the announcement post.
+    // 2. Revert the handle from username.swappulse.org back to the original
+    //    Bluesky handle. Best-effort — the PDS must verify the original
+    //    handle still resolves to the user's DID.
+    let handleReverted = false;
+    const originalHandle = user.original_bluesky_handle;
+    if (originalHandle && originalHandle !== user.bsky_handle) {
+      try {
+        const handleRes = await pdsRequest(
+          pdsUrl, sess.accessJwt, 'com.atproto.identity.updateHandle',
+          { handle: originalHandle },
+        );
+        if (handleRes?.error) {
+          console.error('unmove: handle revert failed (best-effort)', handleRes.status, handleRes.body);
+        } else {
+          handleReverted = true;
+        }
+      } catch (e) {
+        console.error('unmove: handle revert failed (best-effort)', e?.message);
+      }
+    }
+
+    // 3. Unpin and delete the announcement post.
     const pinnedUri: string = user.pinned_announcement_uri || '';
     if (pinnedUri) {
       // Unpin (best-effort)
@@ -100,17 +139,21 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // 3. Clear migration state.
+    // 4. Clear migration state and set the reverted flag so profile editing
+    //    is disabled on SwapPulse. The profile reverts to the original
+    //    Bluesky profile and changes made during migration are undone.
     await base44.auth.updateMe({
       migrated_from_bluesky: false,
       original_bluesky_bio: '',
+      original_bluesky_profile: '',
       pinned_announcement_uri: '',
-      original_bluesky_handle: '',
       migrated_at: '',
+      migration_reverted: true,
+      ...(handleReverted ? { bsky_handle: originalHandle } : {}),
     });
 
-    console.log(`[unmove-from-bluesky] user ${user.id} un-moved`);
-    return Response.json({ ok: true, unmoved: true });
+    console.log(`[unmove-from-bluesky] user ${user.id} un-moved${handleReverted ? ` → @${originalHandle}` : ''}`);
+    return Response.json({ ok: true, unmoved: true, handleReverted });
   } catch (error) {
     console.error('unmove-from-bluesky error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });

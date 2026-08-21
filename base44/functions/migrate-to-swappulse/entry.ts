@@ -1,12 +1,17 @@
 // migrate-to-swappulse — auto-migrates a collector's Bluesky presence to
 // SwapPulse on link. Posts and pins a default 'I've moved' announcement to
 // their Bluesky feed, replaces their Bluesky bio with a SwapPulse pointer,
-// and stores migration state for the 'Moved from Bluesky' badge and un-move.
+// snapshots the full original profile for un-move restoration, updates the
+// handle to username.swappulse.org (or a custom domain if provided), and
+// stores migration state for the 'Moved from Bluesky' badge and un-move.
 //
 // Called automatically by BlueskyLinkCard after a successful link. Idempotent:
 // if already migrated, returns success without re-posting.
 //
-// Output: { ok, migrated, pinnedUri, profileUrl }
+// Input: { customDomain? } — optional custom domain for the handle (e.g.
+//   'mybrand.com'). If omitted, defaults to username.swappulse.org.
+//
+// Output: { ok, migrated, pinnedUri, profileUrl, handleUpdated, handle }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
@@ -25,9 +30,15 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ ok: true, alreadyMigrated: true });
     }
 
+    const body = await req.json().catch(() => ({}));
+    const customDomain = body.customDomain
+      ? String(body.customDomain).trim().toLowerCase().replace(/^@/, '')
+      : '';
+
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
 
-    // 1. Snapshot the current Bluesky bio from the raw PDS profile record.
+    // 1. Snapshot the full current Bluesky profile record (for un-move
+    //    restoration of displayName, avatar, banner — not just the bio).
     let existingProfile: any = {};
     try {
       const profileRes = await fetch(
@@ -42,6 +53,8 @@ export default async function(req: Request): Promise<Response> {
       console.error('migrate: getRecord profile failed (continuing)', e?.message);
     }
     const originalBio: string = existingProfile.description || '';
+    // Store the full profile snapshot as JSON for un-move restoration.
+    const originalProfileJson: string = JSON.stringify(existingProfile);
 
     // 2. Post the announcement to the user's Bluesky feed.
     const appUrl = resolveAppUrl(req);
@@ -120,21 +133,49 @@ export default async function(req: Request): Promise<Response> {
       console.error('migrate: bio update failed (continuing)', e?.message);
     }
 
-    // 5. Store migration state on the user.
+    // 5. Update the handle to username.swappulse.org (or custom domain).
+    //    Best-effort — the PDS must verify the handle via DNS TXT or
+    //    well-known file. If verification fails, the migration still
+    //    succeeds; the user can manually update their handle later.
+    let handleUpdated = false;
+    let newHandle = '';
+    const username = user.username || user.email?.split('@')[0] || 'collector';
+    const targetHandle = customDomain || `${username}.swappulse.org`;
+    try {
+      const handleRes = await pdsRequest(
+        pdsUrl, sess.accessJwt, 'com.atproto.identity.updateHandle',
+        { handle: targetHandle },
+      );
+      if (handleRes?.error) {
+        console.error('migrate: handle update failed (best-effort)', handleRes.status, handleRes.body);
+      } else {
+        handleUpdated = true;
+        newHandle = targetHandle;
+      }
+    } catch (e) {
+      console.error('migrate: handle update failed (best-effort)', e?.message);
+    }
+
+    // 6. Store migration state on the user.
     await base44.auth.updateMe({
       migrated_from_bluesky: true,
       original_bluesky_bio: originalBio,
+      original_bluesky_profile: originalProfileJson,
       pinned_announcement_uri: pinnedUri,
       original_bluesky_handle: user.bsky_handle,
       migrated_at: new Date().toISOString(),
+      migration_reverted: false,
+      ...(handleUpdated ? { bsky_handle: newHandle } : {}),
     });
 
-    console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}`);
+    console.log(`[migrate-to-swappulse] user ${user.id} migrated from @${user.bsky_handle}${handleUpdated ? ` → @${newHandle}` : ''}`);
     return Response.json({
       ok: true,
       migrated: true,
       pinnedUri,
       profileUrl,
+      handleUpdated,
+      handle: newHandle || user.bsky_handle,
     });
   } catch (error) {
     console.error('migrate-to-swappulse error:', error?.message || error);
