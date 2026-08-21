@@ -83,6 +83,16 @@ export function I18nProvider({ children }) {
     setCurrentTcgdexLang(LOCALE_TO_TCGDEX[locale] || 'en');
   }, [locale]);
 
+  // Keep <html lang> in sync with the active locale so search engines and
+  // screen readers announce content in the correct language. The static
+  // index.html default is "en"; this updates it to the user's locale for
+  // every page (SEO + accessibility).
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
+
   // On mount, if authenticated, pick up a previously-saved locale from the user record.
   // Skip this if a ?lang= URL param is present — that represents an explicit choice from
   // a promo post link and must not be overridden by the user's saved account locale.
