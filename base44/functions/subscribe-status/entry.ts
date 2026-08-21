@@ -3,6 +3,7 @@
 // confirmation email. If already subscribed and confirmed, returns early.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { resolveAppUrl } from '../../shared/appUrl.ts';
 
 function randomToken() {
   const bytes = new Uint8Array(32);
@@ -44,7 +45,7 @@ export default async function(req) {
       });
     }
 
-    const origin = req.headers.get('origin') || req.headers.get('Origin') || 'https://swappulse.org';
+    const origin = resolveAppUrl(req);
     const confirmUrl = `${origin}/status?confirm=${confirmToken}`;
 
     const html = `<!DOCTYPE html>
