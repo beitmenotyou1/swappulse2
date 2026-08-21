@@ -11,6 +11,7 @@ import ServicesSection from '@/components/admin/ServicesSection';
 import MaintenanceSection from '@/components/admin/MaintenanceSection';
 import BackfillSection from '@/components/admin/BackfillSection';
 import ProvisionIdentitiesSection from '@/components/admin/ProvisionIdentitiesSection';
+import ConsolidateIdentitySection from '@/components/admin/ConsolidateIdentitySection';
 import SyncProfilesSection from '@/components/admin/SyncProfilesSection';
 import FederationDiagnosticsSection from '@/components/admin/FederationDiagnosticsSection';
 import SeoAuditSection from '@/components/admin/SeoAuditSection';
@@ -85,6 +86,7 @@ export default function Admin() {
         <MaintenanceSection />
         <BackfillSection />
         <ProvisionIdentitiesSection />
+        <ConsolidateIdentitySection />
         <FederationDiagnosticsSection />
         <SyncProfilesSection />
         <IncidentsSection />
