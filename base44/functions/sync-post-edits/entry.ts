@@ -54,31 +54,34 @@ export default async function(req: Request): Promise<Response> {
 
     // Process migrated users with PDS credentials (their posts live under their
     // own DID, so we need their per-user PDS session).
-    const creds = await svc.entities.PdsCredential.list('-created_date', 50).catch(() => []);
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 50).catch(() => []);
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
 
     let scanned = 0, edited = 0, pushed = 0, failed = 0;
     const errors: Array<{ id: string; error: string }> = [];
 
-    for (const cred of (creds || [])) {
-      const user = await svc.entities.User.get(cred.user_id).catch(() => null);
-      if (!user || !user.migrated_from_bluesky) continue;
+    for (const user of (usersWithDid || [])) {
+      if (!user.migrated_from_bluesky) continue;
+      const identity = await getUserIdentity(svc, user);
+      if (!identity) continue;
 
       let session: any;
       try {
-        const s = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
+        const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
         session = s.session;
       } catch (e: any) {
-        console.error('sync-post-edits: session failed for', cred.did, e?.message || e);
+        console.error('sync-post-edits: session failed for', identity.did, e?.message || e);
         continue;
       }
 
       // List this user's bridged posts (under their own DID).
       const posts = await svc.entities.Post
-        .filter({ did: cred.did, bridged: true }, '-updated_date', 50).catch(() => []);
+        .filter({ did: identity.did, bridged: true }, '-updated_date', 50).catch(() => []);
 
       for (const post of (posts || [])) {
         scanned++;
-        if (!post.at_uri || !post.at_uri.startsWith(`at://${cred.did}/`)) continue;
+        if (!post.at_uri || !post.at_uri.startsWith(`at://${identity.did}/`)) continue;
 
         // Compute the current content hash from the local post text and compare
         // with the stored hash to detect edits.
@@ -97,7 +100,7 @@ export default async function(req: Request): Promise<Response> {
         const rkey = post.at_uri.split('/').pop() || '';
         if (!rkey) continue;
 
-        const existingRecord = await fetchExistingPostRecord(pdsUrl, session.accessJwt, cred.did, rkey);
+        const existingRecord = await fetchExistingPostRecord(identity.pdsUrl, session.accessJwt, identity.did, rkey);
         if (!existingRecord) {
           // Record was deleted on the PDS — skip (firehose-ingest will tombstone
           // the local copy).

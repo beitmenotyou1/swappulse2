@@ -27,12 +27,13 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ likes: [], reason: 'no_pds_did' });
       }
       userDid = me.did;
-      const creds = await svc.entities.PdsCredential.filter({ user_id: me.id }).catch(() => []);
-      if (!creds?.length || !creds[0].app_password) {
+      const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+      const identity = await getUserIdentity(svc, me);
+      if (!identity) {
         return Response.json({ likes: [], reason: 'no_credential' });
       }
-      pdsUrl = creds[0].pds_url;
-      appPassword = creds[0].app_password;
+      pdsUrl = identity.pdsUrl;
+      appPassword = identity.appPassword;
     } catch {
       return Response.json({ likes: [], reason: 'no_session' });
     }

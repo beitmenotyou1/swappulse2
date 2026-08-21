@@ -42,16 +42,12 @@ export default async function (req: Request): Promise<Response> {
     // otherwise the shared bridge account.
     let session: { accessJwt: string; did: string };
     try {
-      if (user.did && user.did.startsWith('did:plc:')) {
-        const creds = await base44.asServiceRole.entities.PdsCredential
-          .filter({ user_id: user.id }).catch(() => []);
-        if (creds && creds.length > 0 && creds[0].app_password) {
-          const s = await getPdsSessionForUser(pdsUrl, user.did, creds[0].app_password);
-          session = { accessJwt: s.session.accessJwt, did: s.session.did };
-        } else {
-          const s = await getPdsSession();
-          session = { accessJwt: s.session.accessJwt, did: s.session.did };
-        }
+      const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+      const identity = user.did?.startsWith('did:plc:')
+        ? await getUserIdentity(base44.asServiceRole, user) : null;
+      if (identity) {
+        const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
+        session = { accessJwt: s.session.accessJwt, did: s.session.did };
       } else {
         const s = await getPdsSession();
         session = { accessJwt: s.session.accessJwt, did: s.session.did };

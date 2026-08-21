@@ -131,25 +131,29 @@ export default async function(req: Request): Promise<Response> {
     // paths so the notification list never freezes or dead-ends.
     const cleaned = await cleanupStaleNotifications(svc);
 
-    const creds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
-    if (!creds || !creds.length) {
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 500).catch(() => []);
+    if (!usersWithDid || !usersWithDid.length) {
       return Response.json({ processed: 0, created: 0, skipped: 0, errors: 0 });
     }
+
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
 
     // Rotating window: process a bounded batch per run, cycling through all
     // provisioned users across successive runs.
     const slot = Math.floor(Date.now() / (5 * 60 * 1000));
     const perRun = 20;
-    const start = (slot * perRun) % creds.length;
-    const batch = [...creds.slice(start), ...creds.slice(0, start)].slice(0, perRun);
+    const start = (slot * perRun) % usersWithDid.length;
+    const batch = [...usersWithDid.slice(start), ...usersWithDid.slice(0, start)].slice(0, perRun);
 
     let created = 0, skipped = 0, errors = 0;
 
-    for (const cred of batch) {
-      const userDid = cred.did;
-      const pdsUrl = cred.pds_url;
-      const appPassword = cred.app_password;
-      if (!userDid || !pdsUrl || !appPassword) { skipped++; continue; }
+    for (const user of batch) {
+      const identity = await getUserIdentity(svc, user);
+      if (!identity) { skipped++; continue; }
+      const userDid = identity.did;
+      const pdsUrl = identity.pdsUrl;
+      const appPassword = identity.appPassword;
 
       try {
         const { session } = await getPdsSessionForUser(pdsUrl, userDid, appPassword);

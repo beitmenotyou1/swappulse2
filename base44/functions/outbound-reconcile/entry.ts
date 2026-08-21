@@ -57,24 +57,28 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
     }
 
-    const creds = await svc.entities.PdsCredential.list('-created_date', 10).catch(() => []);
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 10).catch(() => []);
     const consentMap = await getConsentMap(svc);
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
     let reconciled = 0, created = 0, updated = 0, errors = 0, skipped = 0, deleted = 0;
     const perUser: any[] = [];
 
-    for (const cred of creds) {
+    for (const user of usersWithDid) {
+      const identity = await getUserIdentity(svc, user);
+      if (!identity) { skipped++; continue; }
       // CCPA opt-out: skip users who enabled Do Not Sell or Share
-      if (isDoNotSell(consentMap.get(cred.user_id))) {
-        console.log('outbound-reconcile: skipping user (do-not-sell)', cred.did);
+      if (isDoNotSell(consentMap.get(user.id))) {
+        console.log('outbound-reconcile: skipping user (do-not-sell)', identity.did);
         skipped++;
         continue;
       }
       let session: any;
       try {
-        const s = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
+        const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
         session = s.session;
       } catch (e: any) {
-        console.error('outbound-reconcile: session failed for', cred.did, e?.message || e);
+        console.error('outbound-reconcile: session failed for', identity.did, e?.message || e);
         errors++;
         continue;
       }
@@ -84,7 +88,7 @@ export default async function (req: Request): Promise<Response> {
         if (SKIP_FOR_RECONCILE.has(collection)) continue;
         try {
           const local = await svc.entities[entityName]
-            .filter({ did: cred.did, bridged: true }, '-updated_date', 50).catch(() => []);
+            .filter({ did: identity.did, bridged: true }, '-updated_date', 50).catch(() => []);
           if (!local || local.length === 0) continue;
 
           const pdsRecords = await listPdsRecords(pdsUrl, session.accessJwt, session.did, collection);
@@ -162,10 +166,10 @@ export default async function (req: Request): Promise<Response> {
           console.error('outbound-reconcile: collection error', collection, e?.message || e);
         }
       }
-      perUser.push({ did: cred.did, reconciled: userReconciled });
+      perUser.push({ did: identity.did, reconciled: userReconciled });
     }
 
-    return Response.json({ reconciled, created, updated, deleted, errors, skipped, users: creds.length, perUser });
+    return Response.json({ reconciled, created, updated, deleted, errors, skipped, users: usersWithDid.length, perUser });
   } catch (error) {
     console.error('outbound-reconcile error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });

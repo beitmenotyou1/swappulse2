@@ -38,14 +38,15 @@ export default async function (req: Request): Promise<Response> {
     if (!user.did || !user.did.startsWith('did:plc:')) {
       return Response.json({ error: 'Import requires a federated identity (did:plc). Link your PDS account first.' }, { status: 403 });
     }
-    const creds = await svc.entities.PdsCredential.filter({ user_id: user.id }).catch(() => []);
-    if (!creds || creds.length === 0 || !creds[0].app_password) {
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+    const identity = await getUserIdentity(svc, user);
+    if (!identity) {
       return Response.json({ error: 'No PDS credential found. Link your PDS account first.' }, { status: 403 });
     }
 
     let session: any;
     try {
-      const s = await getPdsSessionForUser(pdsUrl, user.did, creds[0].app_password);
+      const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
       session = s.session;
     } catch (e: any) {
       console.error('import-repo: session failed', e?.message || e);

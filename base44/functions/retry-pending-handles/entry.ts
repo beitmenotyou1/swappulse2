@@ -4,7 +4,7 @@
 // every 5 minutes so handle updates eventually succeed once DNS propagates.
 //
 // For each user with handle_update_pending=true:
-//   1. Look up their PdsCredential to get the per-user PDS session.
+//   1. Resolve their consolidated PDS identity (did + app password) from User.
 //   2. Call com.atproto.identity.updateHandle with the pending_handle.
 //   3. On success: clear handle_update_pending, persist bsky_handle.
 //   4. On failure: leave the flag set so the next run retries.
@@ -44,17 +44,16 @@ export default async function(req: Request): Promise<Response> {
       }
       retried++;
 
-      const creds = await svc.entities.PdsCredential
-        .filter({ user_id: user.id }).catch(() => []);
-      if (!creds || creds.length === 0) {
+      const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+      const identity = await getUserIdentity(svc, user);
+      if (!identity) {
         failed++;
-        errors.push({ id: user.id, error: 'no PdsCredential' });
+        errors.push({ id: user.id, error: 'no PDS identity' });
         continue;
       }
-      const cred = creds[0];
 
       try {
-        const { session } = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
+        const { session } = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
         const res = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.identity.updateHandle', {
           handle: user.pending_handle,
         });

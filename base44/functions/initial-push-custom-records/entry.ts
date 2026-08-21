@@ -45,26 +45,30 @@ export default async function (req: Request): Promise<Response> {
     let remaining = 0;
     const perCollection: Record<string, { pushed: number; errors: number; remaining: number }> = {};
 
-    // All users provisioned on the current PDS
-    const creds = await svc.entities.PdsCredential
-      .filter({ pds_url: pdsUrl }, '-created_date', 100).catch(() => []);
+    // All users provisioned on the current PDS (consolidated identity on User)
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 100).catch(() => []);
     const consentMap = await getConsentMap(svc);
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
 
-    for (const cred of creds || []) {
+    for (const user of usersWithDid || []) {
       if (Date.now() - startTime > TIME_BUDGET_MS) break;
 
+      const identity = await getUserIdentity(svc, user);
+      if (!identity) continue;
+
       // CCPA opt-out: skip users who enabled Do Not Sell or Share
-      if (isDoNotSell(consentMap.get(cred.user_id))) {
-        console.log('initial-push: skipping user (do-not-sell)', cred.did);
+      if (isDoNotSell(consentMap.get(user.id))) {
+        console.log('initial-push: skipping user (do-not-sell)', identity.did);
         continue;
       }
 
       let session: any;
       try {
-        const s = await getPdsSessionForUser(pdsUrl, cred.did, cred.app_password);
+        const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
         session = s.session;
       } catch (e: any) {
-        console.error('initial-push: session failed for', cred.did, e?.message || e);
+        console.error('initial-push: session failed for', identity.did, e?.message || e);
         continue;
       }
 
@@ -82,8 +86,8 @@ export default async function (req: Request): Promise<Response> {
           const records = await svc.entities[entityName]
             .filter({
               $or: [
-                { did: cred.did, bridged: { $ne: true } },
-                { created_by_id: cred.user_id, did: { $in: [null, ''] }, bridged: { $ne: true } },
+                { did: identity.did, bridged: { $ne: true } },
+                { created_by_id: user.id, did: { $in: [null, ''] }, bridged: { $ne: true } },
               ],
             }, '-created_date', BATCH_LIMIT)
             .catch(() => []);
@@ -91,7 +95,7 @@ export default async function (req: Request): Promise<Response> {
           for (const rec of records || []) {
             // Ensure the record's did is set to the user's DID before bridging
             const didWasUnset = !rec.did;
-            if (didWasUnset) rec.did = cred.did;
+            if (didWasUnset) rec.did = identity.did;
             if (Date.now() - startTime > TIME_BUDGET_MS) {
               remaining++;
               perCollection[collection].remaining++;
@@ -110,7 +114,7 @@ export default async function (req: Request): Promise<Response> {
                 const data = await res.json();
                 const updateData: any = { at_uri: data.uri, cid: data.cid, bridged: true };
                 // Persist the did if it was previously unset
-                if (didWasUnset) updateData.did = cred.did;
+                if (didWasUnset) updateData.did = identity.did;
                 await svc.entities[entityName].update(rec.id, updateData).catch(() => {});
                 pushed++;
                 perCollection[collection].pushed++;

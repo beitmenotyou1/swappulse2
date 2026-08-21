@@ -71,6 +71,14 @@
       "type": "string",
       "description": "Linked Bluesky handle (set when the user links their account via Settings). Empty when not linked."
     },
+    "pds_url": {
+      "type": "string",
+      "description": "AT Protocol PDS base URL this user's identity authenticates against. Consolidated from the retired PdsCredential entity so the account is one cohesive identity record. Set by provision-identity / atproto-auth / consolidate-identity."
+    },
+    "pds_app_password": {
+      "type": "string",
+      "description": "AES-GCM encrypted PDS app password for bridge sessions (per-user PDS writes). Consolidated from the retired PdsCredential entity. Encrypted with APP_PASSWORD_ENCRYPTION_KEY; decrypted on read by the shared userIdentity helper. Never returned in API responses."
+    },
     "signing_key": {
       "type": "string",
       "description": "Local HMAC signing key for simulated AT Protocol record signatures"
@@ -156,6 +164,138 @@
       "type": "string",
       "format": "date-time",
       "description": "When the one-time Bluesky notification snapshot was imported (import-notification-snapshot). Cleared on un-move so a re-migration re-imports."
+    },
+    "migration_steps": {
+      "type": "object",
+      "description": "Per-step migration status tracking. Each key is a step name (profile_pull, post_backfill, notification_import, handle_update, announcement, custom_records) with { status: 'pending'|'running'|'success'|'failed', error: string, completed_at: string }. Drives the unified migration dashboard in BlueskyLinkCard so the user sees exactly what succeeded, what failed, and why.",
+      "properties": {
+        "profile_pull": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "post_backfill": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "notification_import": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "handle_update": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "announcement": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "custom_records": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
     }
   },
   "required": [

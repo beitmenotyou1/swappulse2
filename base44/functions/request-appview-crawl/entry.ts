@@ -26,12 +26,13 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
     }
 
-    const creds = await svc.entities.PdsCredential.list('-created_date', 500).catch(() => []);
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 500).catch(() => []);
     const results: any[] = [];
 
-    for (const c of (creds || [])) {
-      if (c.pds_url !== pdsUrl) continue;
-      const did = c.did;
+    for (const u of (usersWithDid || [])) {
+      if (!u.did) continue;
+      const did = u.did;
       let indexed = false; let profileHandle = '';
       try {
         const r = await fetch(`${APPVIEW}/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`);
@@ -43,7 +44,7 @@ export default async function(req: Request): Promise<Response> {
       } catch (e) {
         console.error('request-appview-crawl: getProfile failed', did, e?.message || e);
       }
-      results.push({ userId: c.user_id, did, indexed, profileHandle });
+      results.push({ userId: u.id, did, indexed, profileHandle });
     }
 
     const indexedCount = results.filter((r) => r.indexed).length;

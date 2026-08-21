@@ -368,21 +368,10 @@ Deno.serve(async (req) => {
       const me = await base44.auth.me().catch(() => null);
       if (!me) return Response.json({ error: 'Sign in to link your Bluesky account.' }, { status: 401 });
 
-      // Persist the app password in PdsCredential (service role bypasses RLS).
-      // If a credential already exists (re-linking), update it in place.
-      const existing = await base44.asServiceRole.entities.PdsCredential
-        .filter({ user_id: me.id }).catch(() => []);
-      if (existing && existing.length > 0) {
-        await base44.asServiceRole.entities.PdsCredential.update(existing[0].id, {
-          did: session.did, pds_url: pdsUrl, app_password: appPassword,
-        });
-      } else {
-        await base44.asServiceRole.entities.PdsCredential.create({
-          user_id: me.id, did: session.did, pds_url: pdsUrl, app_password: appPassword,
-        });
-      }
-
-      // Set the did:plc + bsky_handle on the user record
+      // Persist the PDS identity on the User record (consolidated — encrypted
+      // app password). Replaces the retired PdsCredential entity.
+      const { setUserIdentity } = await import('../../shared/userIdentity.ts');
+      await setUserIdentity(base44.asServiceRole, me.id, session.did, pdsUrl, appPassword);
       await base44.auth.updateMe({ did: session.did, bsky_handle: session.handle });
 
       return Response.json({

@@ -384,18 +384,18 @@ async function syncInboundDms(base44: any, svc: any): Promise<number> {
 async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
   let synced = 0;
   try {
-    const creds = await svc.entities.PdsCredential.list('-created_date', 100).catch(() => []);
-    for (const cred of creds || []) {
+    const usersWithDid = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 100).catch(() => []);
+    for (const user of usersWithDid || []) {
       try {
+        if (!user.did) continue;
         const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
-        url.searchParams.set('actor', cred.did);
+        url.searchParams.set('actor', user.did);
         const res = await fetch(url);
         if (res.status === 429 || res.status >= 500) continue;
         if (!res.ok) continue;
         const profile: any = await res.json();
-        const users = await svc.entities.User.filter({ id: cred.user_id }, '-created_date', 1).catch(() => []);
-        const user = users?.[0];
-        if (!user) continue;
+        // user is already the User record — no separate lookup needed.
         // Conflict guard: if the local profile was edited after the last sync,
         // local is authoritative — skip the remote merge. BUT if the outbound
         // sync has failed 3+ times consecutively (profile_sync_fail_count >= 3),
@@ -578,12 +578,13 @@ export default async function(req: Request): Promise<Response> {
     // the source of truth for their posts/likes/reposts after migration, so
     // they must be scanned for two-way sync (creates, edits, deletes). The
     // local bridge repo alone would miss them.
-    const creds = await svc.entities.PdsCredential.list('-created_date', 100).catch(() => []);
+    const migratedUsers = await svc.entities.User
+      .filter({ migrated_from_bluesky: true }, '-created_date', 100).catch(() => []);
     const migratedDids = new Set<string>();
-    for (const c of (creds || [])) {
-      if (c.did && c.did !== localDid) {
-        remoteDids.add(c.did);
-        migratedDids.add(c.did);
+    for (const mu of (migratedUsers || [])) {
+      if (mu.did && mu.did !== localDid) {
+        remoteDids.add(mu.did);
+        migratedDids.add(mu.did);
       }
     }
 

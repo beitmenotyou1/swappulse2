@@ -176,20 +176,12 @@ export async function provisionIdentityForUser(
   // password directly (no separate createSession needed).
   const appPassword = await createAppPasswordFromToken(pdsUrl, result.accessJwt);
 
-  // Store credential (service role bypasses RLS)
-  const existing = await svc.entities.PdsCredential.filter({ user_id: userId }).catch(() => []);
-  if (existing && existing.length > 0) {
-    await svc.entities.PdsCredential.update(existing[0].id, {
-      did, pds_url: pdsUrl, app_password: appPassword,
-    });
-  } else {
-    await svc.entities.PdsCredential.create({
-      user_id: userId, did, pds_url: pdsUrl, app_password: appPassword,
-    });
-  }
-
-  // Set did + bsky_handle on the user record
-  await svc.entities.User.update(userId, { did, bsky_handle: finalHandle });
+  // Store the PDS identity directly on the User record (consolidated — no
+  // separate PdsCredential entity). The app password is AES-GCM encrypted at
+  // rest by setUserIdentity. Also set did + bsky_handle.
+  const { setUserIdentity } = await import('./userIdentity.ts');
+  await setUserIdentity(svc, userId, did, pdsUrl, appPassword);
+  await svc.entities.User.update(userId, { bsky_handle: finalHandle });
 
   return { did, handle: finalHandle };
 }

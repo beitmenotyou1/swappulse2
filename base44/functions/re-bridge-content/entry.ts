@@ -9,12 +9,49 @@
 //   2. Delete the old record from the bridge account's repo (if applicable).
 //   3. Update the local entity's at_uri + cid to the new values.
 //
+// Handles:
+//   - Standard bsky records: posts (with reply structure), reposts, likes
+//   - Custom SwapPulse lexicon records: CollectionEntry, TradeListing, Binder,
+//     Journal, CardReview, Vouch, Story, Reaction, Meetup, Challenge, etc.
+//     (all org.swappulse.* collections via the generic buildRecord serializer)
+//
 // Idempotent: records already under the user's DID are skipped. If the
 // function times out or errors mid-batch, the next login resumes for the
 // remaining records. Limited to 100 records per entity type per run.
+//
+// Reads identity from the consolidated User record (userIdentity helper) —
+// no longer queries the retired PdsCredential entity.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession, getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
+import { getUserIdentity } from '../../shared/userIdentity.ts';
+import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
+
+// Custom SwapPulse collections to re-bridge (org.swappulse.*). Excludes
+// conversation/directMessage (per-conversation, not re-bridgeable) and
+// meetupRsvp/challengeEntry/pullNomination (reference other records via
+// strongRef and are owned by the participant, not the bridge account).
+const CUSTOM_COLLECTIONS_TO_REBRIDGE = [
+  'org.swappulse.collectionEntry',
+  'org.swappulse.tradeListing',
+  'org.swappulse.binder',
+  'org.swappulse.journal',
+  'org.swappulse.cardReview',
+  'org.swappulse.vouch',
+  'org.swappulse.wishlist',
+  'org.swappulse.circle',
+  'org.swappulse.packParty',
+  'org.swappulse.meetup',
+  'org.swappulse.challenge',
+  'org.swappulse.story',
+  'org.swappulse.reaction',
+  'org.swappulse.voiceSpace',
+  'org.swappulse.podcastEpisode',
+  'org.swappulse.tradeChain',
+  'org.swappulse.tradeDispute',
+  'org.swappulse.tradingFeedback',
+  'org.swappulse.pullNomination',
+];
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -26,24 +63,22 @@ export default async function(req: Request): Promise<Response> {
     if (!pdsUrl) return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
 
     // Re-bridge only works for users who have linked a Bluesky account
-    // (a did:plc + stored PdsCredential). Users without a linked account
-    // have no per-user PDS repo to migrate content into.
+    // (a did:plc + consolidated pds_app_password on their User record).
     if (!user.did?.startsWith('did:plc:')) {
       return Response.json({ ok: true, skipped: 'no_did' });
     }
 
-    const creds = await base44.asServiceRole.entities.PdsCredential
-      .filter({ user_id: user.id }).catch(() => []);
-    if (!creds || creds.length === 0 || !creds[0].app_password) {
+    const svc = base44.asServiceRole;
+    const identity = await getUserIdentity(svc, user);
+    if (!identity) {
       return Response.json({ ok: true, skipped: 'no_credential' });
     }
 
-    const cred = creds[0];
-    const userDid = user.did;
+    const userDid = identity.did;
     const userPrefix = `at://${userDid}/`;
 
     // Get both sessions: user's own (for creating) + shared bridge (for deleting old records)
-    const { session: userSession } = await getPdsSessionForUser(pdsUrl, userDid, cred.app_password);
+    const { session: userSession } = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
     let bridgeDid = '';
     let bridgeAccessJwt = '';
     try {
@@ -71,7 +106,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // --- Re-bridge Posts (including replies) ---
-    const posts = await base44.asServiceRole.entities.Post
+    const posts = await svc.entities.Post
       .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
     for (const post of posts || []) {
       if (!post.at_uri || post.at_uri.startsWith(userPrefix)) continue;
@@ -91,7 +126,7 @@ export default async function(req: Request): Promise<Response> {
         });
         if (res?.uri) {
           await deleteOldFromBridge(post.at_uri);
-          await base44.asServiceRole.entities.Post.update(post.id, {
+          await svc.entities.Post.update(post.id, {
             at_uri: res.uri, cid: res.cid, bridged: true, did: userDid,
           }).catch(() => {});
           rebridged++;
@@ -102,7 +137,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // --- Re-bridge Reposts ---
-    const reposts = await base44.asServiceRole.entities.Repost
+    const reposts = await svc.entities.Repost
       .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
     for (const repost of reposts || []) {
       if (!repost.at_uri || repost.at_uri.startsWith(userPrefix)) continue;
@@ -117,7 +152,7 @@ export default async function(req: Request): Promise<Response> {
         });
         if (res?.uri) {
           await deleteOldFromBridge(repost.at_uri);
-          await base44.asServiceRole.entities.Repost.update(repost.id, {
+          await svc.entities.Repost.update(repost.id, {
             at_uri: res.uri, cid: res.cid, did: userDid,
           }).catch(() => {});
           rebridged++;
@@ -127,21 +162,14 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // --- Re-bridge Reactions (likes) ---
-    const reactions = await base44.asServiceRole.entities.Reaction
+    // --- Re-bridge Likes ---
+    const likes = await svc.entities.Like
       .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
-    for (const reaction of reactions || []) {
-      if (!reaction.at_uri || reaction.at_uri.startsWith(userPrefix)) continue;
-      if (!reaction.subject) continue;
-      // Need the subject post's cid — look it up
-      let subjectCid = '';
-      if (reaction.post_id) {
-        const post = await base44.asServiceRole.entities.Post.get(reaction.post_id).catch(() => null);
-        if (post?.cid) subjectCid = post.cid;
-      }
-      if (!subjectCid) continue; // can't create a like without the subject cid
+    for (const like of likes || []) {
+      if (!like.at_uri || like.at_uri.startsWith(userPrefix)) continue;
+      if (!like.post_uri || !like.post_cid) continue;
       const record = {
-        subject: { uri: reaction.subject, cid: subjectCid },
+        subject: { uri: like.post_uri, cid: like.post_cid },
         createdAt: new Date().toISOString(),
       };
       try {
@@ -149,14 +177,48 @@ export default async function(req: Request): Promise<Response> {
           repo: userDid, collection: 'app.bsky.feed.like', record,
         });
         if (res?.uri) {
-          await deleteOldFromBridge(reaction.at_uri);
-          await base44.asServiceRole.entities.Reaction.update(reaction.id, {
+          await deleteOldFromBridge(like.at_uri);
+          await svc.entities.Like.update(like.id, {
             at_uri: res.uri, cid: res.cid, bridged: true, did: userDid,
           }).catch(() => {});
           rebridged++;
         }
       } catch (e) {
-        console.error('re-bridge: reaction failed', reaction.id, e?.message || e);
+        console.error('re-bridge: like failed', like.id, e?.message || e);
+      }
+    }
+
+    // --- Re-bridge custom SwapPulse lexicon records ---
+    // Moves CollectionEntry, TradeListing, Binder, Journal, CardReview, etc.
+    // from the bridge account to the user's own did:plc repo so ALL SwapPulse
+    // content lives under the user's identity, not just posts/reactions.
+    for (const collection of CUSTOM_COLLECTIONS_TO_REBRIDGE) {
+      const entityName = COLLECTIONS[collection];
+      if (!entityName) continue;
+      try {
+        const local = await svc.entities[entityName]
+          .filter({ created_by_id: user.id }, '-created_date', 100).catch(() => []);
+        for (const rec of local || []) {
+          if (!rec.at_uri || rec.at_uri.startsWith(userPrefix)) continue;
+          const record = buildRecord(rec, collection);
+          if (!record) continue;
+          try {
+            const res = await pdsRequest(pdsUrl, userSession.accessJwt, 'com.atproto.repo.createRecord', {
+              repo: userDid, collection, record,
+            });
+            if (res?.uri) {
+              await deleteOldFromBridge(rec.at_uri);
+              await svc.entities[entityName].update(rec.id, {
+                at_uri: res.uri, cid: res.cid, bridged: true, did: userDid,
+              }).catch(() => {});
+              rebridged++;
+            }
+          } catch (e) {
+            console.error(`re-bridge: ${collection} failed`, rec.id, e?.message || e);
+          }
+        }
+      } catch (e) {
+        console.error(`re-bridge: collection ${collection} error`, e?.message || e);
       }
     }
 

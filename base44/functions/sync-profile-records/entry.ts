@@ -56,29 +56,27 @@ export default async function(req: Request): Promise<Response> {
       let processed = 0;
       let lastBatchDate: string | undefined = undefined;
 
-      // Paginate through ALL PdsCredentials on the current PDS, 50 per batch,
-      // until exhausted or we hit the per-run cap. Uses $lt on created_date
-      // for keyset pagination (the SDK filter doesn't support skip/cursor).
+      // Paginate through ALL migrated users, 50 per batch, until exhausted or
+      // we hit the per-run cap. Uses $lt on created_date for keyset pagination.
       // This ensures every migrated user gets outbound-synced, not just the
-      // 50 newest.
+      // 50 newest. Reads identity from the consolidated User record.
+      const { getUserIdentity } = await import('../../shared/userIdentity.ts');
       while (processed < MAX_BACKFILL_PER_RUN) {
-        const query: any = { pds_url: pdsUrl };
+        const query: any = { migrated_from_bluesky: true };
         if (lastBatchDate) query.created_date = { $lt: lastBatchDate };
-        const batch = await svc.entities.PdsCredential
+        const batch = await svc.entities.User
           .filter(query, '-created_date', BACKFILL_BATCH_SIZE).catch(() => []);
         if (!batch || batch.length === 0) break;
 
-        for (const cred of batch) {
+        for (const u of batch) {
           if (processed >= MAX_BACKFILL_PER_RUN) break;
           processed++;
-
-          const u = await svc.entities.User.get(cred.user_id).catch(() => null);
-          if (!u) { failed++; continue; }
-          // Only push profiles for migrated users — non-migrated users'
-          // Bluesky profiles are authoritative until they migrate.
           if (!u.migrated_from_bluesky) { skipped++; continue; }
 
-          const r = await syncProfileForUser(svc, pdsUrl, cred.did, cred.app_password, u);
+          const identity = await getUserIdentity(svc, u);
+          if (!identity) { skipped++; continue; }
+
+          const r = await syncProfileForUser(svc, identity.pdsUrl, identity.did, identity.appPassword, u);
           if (r.ok) {
             synced++;
             // Stamp the outbound sync timestamp so the inbound sync's conflict
@@ -133,13 +131,12 @@ export default async function(req: Request): Promise<Response> {
     if (!user.migrated_from_bluesky) {
       return Response.json({ ok: true, skipped: true, reason: 'not migrated — profile edits stay local until migration' });
     }
-    const creds = await svc.entities.PdsCredential
-      .filter({ user_id: user.id }).catch(() => []);
-    if (!creds || creds.length === 0) {
-      return Response.json({ ok: true, skipped: true, reason: 'no PdsCredential' });
+    const { getUserIdentity } = await import('../../shared/userIdentity.ts');
+    const identity = await getUserIdentity(svc, user);
+    if (!identity) {
+      return Response.json({ ok: true, skipped: true, reason: 'no PDS identity' });
     }
-    const cred = creds[0];
-    const r = await syncProfileForUser(svc, pdsUrl, cred.did, cred.app_password, user);
+    const r = await syncProfileForUser(svc, identity.pdsUrl, identity.did, identity.appPassword, user);
     if (r.ok) {
       const updates: any = {
         profile_synced_at: new Date().toISOString(),
