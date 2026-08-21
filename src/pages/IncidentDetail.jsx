@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SEVERITY_BADGE = {
   critical: 'bg-destructive/15 text-destructive',
@@ -17,6 +18,7 @@ const STATUS_COLOR = {
 };
 
 export default function IncidentDetail() {
+  const t = useT();
   const { incidentId } = useParams();
   const [incident, setIncident] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,9 +29,9 @@ export default function IncidentDetail() {
     setLoading(true);
     base44.entities.StatusIncident.get(incidentId)
       .then((data) => setIncident(data))
-      .catch((e) => setError(e.message || 'Failed to load incident'))
+      .catch((e) => setError(e.message || t('page.incident.loadError')))
       .finally(() => setLoading(false));
-  }, [incidentId]);
+  }, [incidentId, t]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +40,7 @@ export default function IncidentDetail() {
           <Link to="/status" className="rounded-full p-1.5 hover:bg-secondary">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-xl font-extrabold tracking-tight">Incident Details</h1>
+          <h1 className="text-xl font-extrabold tracking-tight">{t('page.incident.title')}</h1>
         </div>
       </header>
 
@@ -66,16 +68,16 @@ export default function IncidentDetail() {
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${SEVERITY_BADGE[incident.severity] || ''}`}>
                   {incident.severity}
                 </span>
-                <span>Started {new Date(incident.started_at).toLocaleString()}</span>
+                <span>{t('page.incident.started')} {new Date(incident.started_at).toLocaleString()}</span>
                 {incident.resolved_at && (
-                  <span>Resolved {new Date(incident.resolved_at).toLocaleString()}</span>
+                  <span>{t('page.incident.resolved')} {new Date(incident.resolved_at).toLocaleString()}</span>
                 )}
               </div>
 
               {(incident.affected_services || []).length > 0 && (
                 <div className="mt-4 border-t border-border pt-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Affected Services
+                    {t('page.incident.affectedServices')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {incident.affected_services.map((s, i) => (
@@ -90,10 +92,10 @@ export default function IncidentDetail() {
 
             <div className="rounded-2xl border border-border bg-card p-6">
               <h3 className="mb-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Incident Timeline
+                {t('page.incident.timeline')}
               </h3>
               {(incident.updates || []).length === 0 ? (
-                <p className="text-sm italic text-muted-foreground">No updates have been posted yet.</p>
+                <p className="text-sm italic text-muted-foreground">{t('page.incident.noUpdates')}</p>
               ) : (
                 <div className="space-y-0">
                   {incident.updates.map((upd, i) => {
@@ -116,7 +118,7 @@ export default function IncidentDetail() {
                           <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                             upd.status === 'resolved' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary'
                           }`}>{upd.status}</span>
-                          <span className="text-xs text-muted-foreground">by {upd.authored_by}</span>
+                          <span className="text-xs text-muted-foreground">{t('page.incident.by').replace('{author}', upd.authored_by)}</span>
                         </div>
                         <p className="mt-1 text-sm">{upd.text}</p>
                       </div>
@@ -127,7 +129,7 @@ export default function IncidentDetail() {
             </div>
 
             <Link to="/status" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-              <ArrowLeft className="h-4 w-4" /> Back to status page
+              <ArrowLeft className="h-4 w-4" /> {t('page.incident.backToStatus')}
             </Link>
           </>
         )}

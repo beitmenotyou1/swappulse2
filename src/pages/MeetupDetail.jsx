@@ -5,24 +5,26 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeMeetupRsvp } from '@/lib/federatedBridge';
 import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { useAuth } from '@/lib/AuthContext';
-import { CalendarDays, MapPin, Users, ShieldCheck, Loader2, BookOpen, X } from 'lucide-react';
+import { CalendarDays, MapPin, Users, ShieldCheck, Loader2, BookOpen } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const ATTENDING = [
-  ['yes', 'Going'],
-  ['maybe', 'Maybe'],
-  ['no', 'Can\'t make it'],
+  ['yes', 'meetup.attending.yes'],
+  ['maybe', 'meetup.attending.maybe'],
+  ['no', 'meetup.attending.no'],
 ];
 
 export default function MeetupDetail() {
+  const t = useT();
+  const { meetupId } = useParams();
   useSEO({
     title: 'Meetup',
     description: 'A Pokémon TCG collector meetup on SwapPulse, organise, attend, and swap cards in person.',
     canonicalPath: `/meetups/${meetupId}`,
   });
-  const { meetupId } = useParams();
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,7 +87,6 @@ export default function MeetupDetail() {
           signingKey,
         );
         const created = await base44.entities.MeetupRsvp.create(stamped);
-        // Bridge to AT Protocol PDS as a real org.swappulse.meetupRsvp record
         bridgeMeetupRsvp(stamped).then((res) => {
           if (res.bridged) base44.entities.MeetupRsvp.update(created.id, res).catch(() => {});
         }).catch(() => {});
@@ -100,7 +101,7 @@ export default function MeetupDetail() {
   };
 
   const cancelMeetup = async () => {
-    if (!confirm('Cancel this meetup?')) return;
+    if (!confirm(t('meetup.cancelConfirm'))) return;
     try {
       await base44.entities.Meetup.update(data.meetup.id, { status: 'cancelled' });
       if (data.meetup.bridged && data.meetup.at_uri) {
@@ -118,7 +119,7 @@ export default function MeetupDetail() {
     return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
   if (!data?.meetup) {
-    return <div className="py-16 text-center text-sm text-muted-foreground">Meetup not found.</div>;
+    return <div className="py-16 text-center text-sm text-muted-foreground">{t('meetup.notFound')}</div>;
   }
 
   const m = data.meetup;
@@ -129,7 +130,7 @@ export default function MeetupDetail() {
     <div>
       <PageHeader title={m.title} subtitle={m.region || 'Meetup'}>
         {data.isOrganiser && !cancelled && (
-          <button onClick={cancelMeetup} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-secondary">Cancel</button>
+          <button onClick={cancelMeetup} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-secondary">{t('common.cancel')}</button>
         )}
       </PageHeader>
 
@@ -137,22 +138,22 @@ export default function MeetupDetail() {
         <div className="rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-primary" />
-              {when ? when.toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+              {when ? when.toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : t('meetup.tbd')}
             </span>
             <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> {m.location_name}</span>
-            <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary" /> {data.yesCount} going · {data.maybeCount} maybe · {m.capacity} cap</span>
+            <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary" /> {t('meetup.stats').replace('{going}', data.yesCount).replace('{maybe}', data.maybeCount).replace('{cap}', m.capacity)}</span>
           </div>
           {m.description && <p className="mt-3 text-sm">{m.description}</p>}
-          {cancelled && <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">This meetup has been cancelled.</p>}
+          {cancelled && <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{t('meetup.cancelled')}</p>}
           <div className="mt-3 flex items-center gap-2">
             <Avatar name={m.author_name} size={24} />
-            <span className="text-xs text-muted-foreground">Organised by {m.author_name || 'Collector'}</span>
+            <span className="text-xs text-muted-foreground">{t('meetup.organisedBy').replace('{name}', m.author_name || t('common.collector'))}</span>
           </div>
         </div>
 
         {!cancelled && (
           <section className="rounded-2xl border border-border bg-card p-4">
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Your RSVP</h2>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('meetup.yourRsvp')}</h2>
             <div className="grid grid-cols-3 gap-2">
               {ATTENDING.map(([k, l]) => (
                 <button
@@ -160,16 +161,16 @@ export default function MeetupDetail() {
                   onClick={() => setAttending(k)}
                   className={`rounded-xl border px-3 py-2 text-sm font-medium transition ${attending === k ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-secondary'}`}
                 >
-                  {l}
+                  {t(l)}
                 </button>
               ))}
             </div>
             <label className="mt-3 flex items-center gap-2 text-sm">
               <input type="checkbox" checked={bringingBinder} onChange={(e) => setBringingBinder(e.target.checked)} className="h-4 w-4 rounded accent-primary" />
-              <span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> Bringing my trade binder</span>
+              <span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> {t('meetup.bringingBinder')}</span>
             </label>
             <div className="mt-3">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Looking for (comma separated)</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.lookingFor')}</label>
               <input
                 value={lookingFor}
                 onChange={(e) => setLookingFor(e.target.value)}
@@ -180,7 +181,7 @@ export default function MeetupDetail() {
             <div className="mt-4 flex justify-end">
               <button onClick={submitRsvp} disabled={saving} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {data.myRsvp ? 'Update RSVP' : 'Send RSVP'}
+                {data.myRsvp ? t('meetup.updateRsvp') : t('meetup.sendRsvp')}
               </button>
             </div>
           </section>
@@ -188,23 +189,23 @@ export default function MeetupDetail() {
 
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Attendees</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('meetup.attendees')}</h2>
             {m.required_vouches > 0 && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5" /> {m.required_vouches} vouches needed · you have {data.viewerVouches}
+                <ShieldCheck className="h-3.5 w-3.5" /> {t('meetup.vouchesNeeded').replace('{needed}', m.required_vouches).replace('{yours}', data.viewerVouches)}
               </span>
             )}
           </div>
           {data.canSeeAttendees ? (
             data.attendees.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">No RSVPs yet. Be the first!</div>
+              <div className="rounded-2xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">{t('meetup.noRsvps')}</div>
             ) : (
               <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
                 {data.attendees.map((a) => (
                   <div key={a.id} className="flex items-center gap-2">
                     <Avatar name={a.attendee_name} src={a.attendee_avatar} size={28} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{a.attendee_name || 'Attendee'}</span>
-                    {a.bringing_trade_binder && <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent"><BookOpen className="h-3 w-3" /> Binder</span>}
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{a.attendee_name || t('meetup.attendee')}</span>
+                    {a.bringing_trade_binder && <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent"><BookOpen className="h-3 w-3" /> {t('meetup.binder')}</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${a.attending === 'yes' ? 'bg-success/15 text-success' : a.attending === 'maybe' ? 'bg-accent/15 text-accent' : 'bg-secondary text-muted-foreground'}`}>{a.attending}</span>
                   </div>
                 ))}
@@ -214,7 +215,7 @@ export default function MeetupDetail() {
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border py-8 text-center">
               <ShieldCheck className="h-8 w-8 text-muted-foreground" />
               <p className="px-6 text-sm text-muted-foreground">
-                Attendee list is vouch-gated. You need {m.required_vouches} incoming vouches (you have {data.viewerVouches}) to see who's coming.
+                {t('meetup.vouchGated').replace('{needed}', m.required_vouches).replace('{yours}', data.viewerVouches)}
               </p>
             </div>
           )}

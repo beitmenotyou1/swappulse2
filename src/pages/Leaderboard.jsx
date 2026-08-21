@@ -4,8 +4,10 @@ import { base44 } from '@/api/base44Client';
 import { Loader2, ArrowLeft, Trophy, ShieldCheck, Lock } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Card } from '@/components/ui/card';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Leaderboard() {
+  const t = useT();
   const { challengeId } = useParams();
   const [challenge, setChallenge] = useState(null);
   const [cat, setCat] = useState(null);
@@ -28,8 +30,8 @@ export default function Leaderboard() {
 
   return (
     <div>
-      <PageHeader title="Leaderboard" subtitle={challenge.title}>
-        <Link to={`/challenges/${challengeId}`} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Challenge</Link>
+      <PageHeader title={t('page.leaderboard.title')} subtitle={challenge.title}>
+        <Link to={`/challenges/${challengeId}`} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />{t('page.leaderboard.challenge')}</Link>
       </PageHeader>
       <div className="space-y-3 p-4">
         {cats.length > 1 && (
@@ -41,16 +43,16 @@ export default function Leaderboard() {
         )}
         <Card className="overflow-hidden p-0">
           {!data ? <div className="flex justify-center p-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
-            : data.feed.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground"><Trophy className="mx-auto mb-2 h-8 w-8 opacity-40" />No one has opted into this leaderboard yet. Be the first?</div>
+            : data.feed.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground"><Trophy className="mx-auto mb-2 h-8 w-8 opacity-40" />{t('page.leaderboard.empty')}</div>
             : (
               <table className="w-full text-sm">
                 <thead className="bg-secondary/50 text-xs text-muted-foreground">
                   <tr>
-                    <th scope="col" className="p-2 text-left">Rank</th>
-                    <th scope="col" className="p-2 text-left">Collector</th>
-                    <th scope="col" className="p-2 text-right">Score</th>
-                    <th scope="col" className="p-2 text-right">Entries</th>
-                    <th scope="col" className="p-2 text-center">Verified</th>
+                    <th scope="col" className="p-2 text-left">{t('page.leaderboard.rank')}</th>
+                    <th scope="col" className="p-2 text-left">{t('page.leaderboard.collector')}</th>
+                    <th scope="col" className="p-2 text-right">{t('page.leaderboard.score')}</th>
+                    <th scope="col" className="p-2 text-right">{t('page.leaderboard.entries')}</th>
+                    <th scope="col" className="p-2 text-center">{t('page.leaderboard.verified')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -69,8 +71,8 @@ export default function Leaderboard() {
         </Card>
         {data?.meta && (
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>{data.meta.optInParticipants} visible · {data.meta.totalParticipants} total participants</p>
-            <p className="flex items-center gap-1"><Lock className="h-3 w-3" />Some collectors have chosen not to appear. Respect their choice.</p>
+            <p>{t('page.leaderboard.stats').replace('{visible}', data.meta.optInParticipants).replace('{total}', data.meta.totalParticipants)}</p>
+            <p className="flex items-center gap-1"><Lock className="h-3 w-3" />{t('page.leaderboard.privacyNote')}</p>
           </div>
         )}
       </div>

@@ -5,16 +5,16 @@ import { base44 } from '@/api/base44Client';
 import InPlatformSpace from '@/components/spaces/InPlatformSpace';
 import ExternalStreamSpace from '@/components/spaces/ExternalStreamSpace';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-// SpaceRoom — loads the VoiceSpace by id and delegates to the in-platform
-// (WebRTC mesh) or external-stream experience based on space_mode.
 export default function SpaceRoom() {
+  const t = useT();
+  const { spaceId } = useParams();
   useSEO({
     title: 'Voice Space',
     description: 'Join a live Pokémon TCG audio space on SwapPulse.',
     canonicalPath: `/spaces/${spaceId}`,
   });
-  const { spaceId } = useParams();
   const [space, setSpace] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -28,7 +28,7 @@ export default function SpaceRoom() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center gap-2 text-center">
         <Radio className="h-8 w-8 text-muted-foreground" />
-        <p className="text-lg font-bold">Space not found</p>
+        <p className="text-lg font-bold">{t('page.space.notFound')}</p>
       </div>
     );
   }

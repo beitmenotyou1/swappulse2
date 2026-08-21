@@ -18,10 +18,12 @@ import ShareButton from '@/components/share/ShareButton';
 import BotChallengeProvider from '@/lib/BotChallengeProvider';
 import { usePresence } from '@/hooks/usePresence';
 import { useApplyAccessibility } from '@/hooks/useSettings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Layout() {
   const online = usePresence();
   useApplyAccessibility();
+  const t = useT();
   return (
     <BotChallengeProvider>
     <BannerProvider>
@@ -29,7 +31,7 @@ export default function Layout() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
       >
-        Skip to content
+        {t('common.skipToContent')}
       </a>
       <div className="mx-auto flex min-h-screen w-full max-w-[1400px] overflow-x-hidden">
         <div className="hidden w-[72px] shrink-0 md:block xl:w-[240px]">
