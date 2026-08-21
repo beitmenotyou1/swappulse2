@@ -14,7 +14,6 @@ import { extractHashtags, canonicalise } from '@/lib/hashtags';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { useMediaComposer } from '@/hooks/useMediaComposer';
 import MediaComposer from '@/components/feed/MediaComposer';
-import { detectVideoPlatform } from '@/lib/mediaEmbed';
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
