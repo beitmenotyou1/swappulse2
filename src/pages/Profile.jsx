@@ -37,6 +37,7 @@ import { useOwnProfileConfig } from '@/hooks/useProfileConfig';
 import { themeGradient, DEFAULT_OWNER_SECTIONS, ALL_TAB_LABELS } from '@/lib/profileThemes';
 import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import MovedFromBlueskyBadge from '@/components/profile/MovedFromBlueskyBadge';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Profile() {
@@ -188,6 +189,7 @@ export default function Profile() {
               <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
             </>
           }
+          badges={user?.migrated_from_bluesky ? <MovedFromBlueskyBadge size="md" /> : null}
           extra={
             <>
               <div><NotificationToggle /></div>

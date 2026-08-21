@@ -20,6 +20,7 @@ import ActivityTab from '@/components/profile/ActivityTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import ExternalProfileBanner from '@/components/profile/ExternalProfileBanner';
+import MovedFromBlueskyBadge from '@/components/profile/MovedFromBlueskyBadge';
 import ImmersiveProfile from '@/components/profile/ImmersiveProfile';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
@@ -131,6 +132,7 @@ export default function UserProfile() {
     follows_count: merged?.follows_count || 0,
     posts_count: merged?.posts_count || 0,
     remote_synced: !!merged?.remote_synced,
+    migrated_from_bluesky: !!merged?.migrated_from_bluesky,
   };
 
   const isFriend = friendship.my?.status === 'accepted' && friendship.their?.status === 'accepted';
@@ -193,6 +195,7 @@ export default function UserProfile() {
           badges={
             <>
               <TrustedTraderBadge did={subjectDid} size="md" />
+              {profile.migrated_from_bluesky && <MovedFromBlueskyBadge size="md" />}
               {!isExternal && <FollowsYouBadge subjectDid={subjectDid} />}
               {!isExternal && <FriendsBadge isFriend={isFriend} />}
             </>
@@ -202,7 +205,7 @@ export default function UserProfile() {
               <ArrowLeft className="h-4 w-4" /> {t('userProfile.back')}
             </Link>
           }
-          externalBanner={isExternal && <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} />}
+          externalBanner={isExternal && <ExternalProfileBanner did={subjectDid} handle={profile?.bsky_handle} migrated={profile?.migrated_from_bluesky} />}
           visitorExtras={{ tradeFields: profileConfig?.tradeFields }}
         />
       )}

@@ -71,6 +71,7 @@ export function mergeProfiles(local: any | null, remote: any | null): any {
     // Source flags for the UI.
     is_member: !!local,
     remote_synced: !!remote,
+    migrated_from_bluesky: !!(local?.migrated_from_bluesky),
     fetched_at: new Date().toISOString(),
   };
 }

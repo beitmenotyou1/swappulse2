@@ -84,6 +84,28 @@
       "type": "string",
       "format": "date-time",
       "description": "Last time the inbound profile sync (firehose-ingest) merged remote Bluesky profile fields into this user. Compared against updated_date to decide whether a remote profile edit should overwrite local (local wins if it was edited more recently than the last sync)."
+    },
+    "migrated_from_bluesky": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has migrated their profile from Bluesky to SwapPulse. Set true by migrate-to-swappulse on link; cleared by unmove-from-bluesky. Drives the public 'Moved from Bluesky' badge on the profile header."
+    },
+    "original_bluesky_bio": {
+      "type": "string",
+      "description": "Snapshot of the user's Bluesky bio captured before the migration bio replacement. Used by unmove-from-bluesky to restore the original bio."
+    },
+    "pinned_announcement_uri": {
+      "type": "string",
+      "description": "at:// URI of the pinned 'I've moved to SwapPulse' announcement post on Bluesky. Used by unmove-from-bluesky to unpin and delete the post."
+    },
+    "original_bluesky_handle": {
+      "type": "string",
+      "description": "The Bluesky handle the user migrated from (captured at migration time in case the handle later changes)."
+    },
+    "migrated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the migration was performed. Cleared on un-move."
     }
   },
   "required": [

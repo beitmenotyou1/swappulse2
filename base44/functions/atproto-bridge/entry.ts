@@ -12,44 +12,11 @@
 // create, and delete the local record on delete. If the PDS is unreachable
 // the call errors (non-fatal — the local record still persists).
 
-import { getPdsSession, getPdsSessionForUser, clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
+import { clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
+import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { attachRichTextFacets } from '../../shared/hashtagFacets.ts';
 import { computeContentHash } from '../../shared/bridgePublish.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-
-// Resolve the PDS session to use for this request. If the calling user has a
-// real PDS-backed did:plc + a stored PdsCredential, use a per-user session
-// (writes to the user's own repo). If the user has no did:plc, auto-provision
-// one via provision-did before proceeding. Falls back to the shared bridge
-// account only if per-user auth fails (e.g. PDS unreachable, no credential).
-async function resolveSession(req: Request) {
-  const pdsUrl = Deno.env.get('PDS_URL');
-  if (!pdsUrl) throw new Error('PDS_URL not configured');
-
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (user?.did?.startsWith('did:plc:')) {
-      // Look up the per-user credential from the server-side store. Users
-      // get a PdsCredential by linking a Bluesky account in Settings; until
-      // then they fall through to the shared bridge session below.
-      const creds = await base44.asServiceRole.entities.PdsCredential
-        .filter({ user_id: user.id }).catch(() => []);
-      if (creds && creds.length > 0 && creds[0].app_password) {
-        try {
-          return await getPdsSessionForUser(pdsUrl, user.did, creds[0].app_password);
-        } catch (e) {
-          console.error('atproto-bridge: per-user session failed, falling back to shared', e?.message || e);
-        }
-      }
-    }
-  } catch {
-    // No auth context (e.g. workflow call) — use shared session
-  }
-
-  return getPdsSession();
-}
 
 // Security: verify the caller owns the federated record identified by `uri`
 // before deleting/updating it on the PDS. Without this, any authenticated user
@@ -124,14 +91,14 @@ Deno.serve(async (req) => {
       if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
         return Response.json({ error: 'You can only delete your own records' }, { status: 403 });
       }
-      const { pdsUrl, session } = await resolveSession(req);
+      const { pdsUrl, session } = await resolveBridgeSession(req);
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.deleteRecord',
         { repo: session.did, collection: collectionFromUri, rkey },
       );
       if (result?.error && result.status === 401) {
         clearPdsSession();
-        const fresh = await resolveSession(req);
+        const fresh = await resolveBridgeSession(req);
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.deleteRecord',
           { repo: fresh.session.did, collection: collectionFromUri, rkey },
@@ -164,14 +131,14 @@ Deno.serve(async (req) => {
       if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
         return Response.json({ error: 'You can only update your own records' }, { status: 403 });
       }
-      const { pdsUrl, session } = await resolveSession(req);
+      const { pdsUrl, session } = await resolveBridgeSession(req);
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord',
         { repo: session.did, collection, rkey, record },
       );
       if (result?.error && result.status === 401) {
         clearPdsSession();
-        const fresh = await resolveSession(req);
+        const fresh = await resolveBridgeSession(req);
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.putRecord',
           { repo: fresh.session.did, collection, rkey, record },
@@ -191,14 +158,14 @@ Deno.serve(async (req) => {
       if (!Array.isArray(labels) || labels.length === 0) {
         return Response.json({ error: 'labels array is required for emitLabels' }, { status: 400 });
       }
-      const { pdsUrl, session } = await resolveSession(req);
+      const { pdsUrl, session } = await resolveBridgeSession(req);
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.label.emitLabels',
         { labels },
       );
       if (result?.error && result.status === 401) {
         clearPdsSession();
-        const fresh = await resolveSession(req);
+        const fresh = await resolveBridgeSession(req);
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.label.emitLabels',
           { labels },
@@ -245,7 +212,7 @@ Deno.serve(async (req) => {
       if (!ALLOWED_IMAGE_HOSTS.has(hostname)) {
         return Response.json({ error: 'imageUrl hostname is not allowed' }, { status: 400 });
       }
-      const { pdsUrl, session } = await resolveSession(req);
+      const { pdsUrl, session } = await resolveBridgeSession(req);
       // SSRF: fetch with redirect:'manual' (the runtime does not support
       // 'error') and reject any 3xx, so an allowlisted public URL can't 302
       // to an internal or cloud-metadata endpoint.
@@ -287,14 +254,14 @@ Deno.serve(async (req) => {
     if (collection === 'app.bsky.feed.post') {
       attachRichTextFacets(record);
     }
-    const { pdsUrl, session } = await resolveSession(req);
+    const { pdsUrl, session } = await resolveBridgeSession(req);
     let result: any = await pdsRequest(
       pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord',
       { repo: session.did, collection, record },
     );
     if (result?.error && result.status === 401) {
       clearPdsSession();
-      const fresh = await resolveSession(req);
+      const fresh = await resolveBridgeSession(req);
       result = await pdsRequest(
         fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.createRecord',
         { repo: fresh.session.did, collection, record },

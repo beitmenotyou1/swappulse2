@@ -8,6 +8,7 @@
 // Output: { imported, skipped, total }
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -55,6 +56,44 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error('import-atproto-graph: failed to create follow for', f.did, e?.message || e);
       }
+    }
+
+    // Follower reconnection: check if any of the newly imported follows point
+    // at a SwapPulse member who has migrated from Bluesky. If so, dispatch a
+    // notification so the migrated collector knows their Bluesky follower has
+    // joined SwapPulse and is now following them here too.
+    try {
+      const importedDids = follows
+        .filter((f) => f.did && existingDids.has(f.did))
+        .map((f) => f.did);
+      if (importedDids.length) {
+        // Look up migrated SwapPulse members among the followed DIDs.
+        const svc = base44.asServiceRole;
+        const migratedMembers = await svc.entities.User
+          .filter({ migrated_from_bluesky: true }, '-created_date', 100)
+          .catch(() => []);
+        const migratedDids = new Set(migratedMembers.map((u: any) => u.did).filter(Boolean));
+        const reconnected = importedDids.filter((d) => migratedDids.has(d));
+        if (reconnected.length) {
+          const actorName = user.display_name || user.full_name || user.username || user.bsky_handle || 'A collector';
+          for (const migratedDid of reconnected) {
+            try {
+              await dispatchNotification(svc, {
+                recipientDid: migratedDid,
+                type: 'migration_reconnect',
+                title: 'Your Bluesky follower joined SwapPulse',
+                body: `${actorName} followed you on Bluesky and has now joined SwapPulse — they're following you here too.`,
+                params: { actorDid: myDid, actorName },
+                actorDid: myDid,
+              });
+            } catch (e) {
+              console.error('import-atproto-graph: reconnect notify failed for', migratedDid, e?.message);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('import-atproto-graph: reconnection check failed (non-fatal)', e?.message);
     }
 
     return Response.json({ imported, skipped, total: follows.length });
