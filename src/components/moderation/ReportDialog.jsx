@@ -4,19 +4,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const REASONS = [
-  { value: 'spam', label: 'Spam', desc: 'Repeated low-effort or flooding' },
-  { value: 'scam', label: 'Scam / Fraud', desc: 'Soliciting money, phishing, fake giveaways' },
-  { value: 'harassment', label: 'Harassment', desc: 'Personal attacks or bullying' },
-  { value: 'nsfw', label: 'NSFW', desc: 'Sexual or graphic content' },
-  { value: 'off_topic', label: 'Off-topic', desc: 'Derailing discussions' },
-  { value: 'misgraded', label: 'Misgraded card', desc: 'Deliberate condition misrepresentation' },
-  { value: 'impersonation', label: 'Impersonation', desc: 'Pretending to be someone else' },
-  { value: 'other', label: 'Other', desc: 'Something else' },
+  { value: 'spam', labelKey: 'report.reason.spam.label', descKey: 'report.reason.spam.desc' },
+  { value: 'scam', labelKey: 'report.reason.scam.label', descKey: 'report.reason.scam.desc' },
+  { value: 'harassment', labelKey: 'report.reason.harassment.label', descKey: 'report.reason.harassment.desc' },
+  { value: 'nsfw', labelKey: 'report.reason.nsfw.label', descKey: 'report.reason.nsfw.desc' },
+  { value: 'off_topic', labelKey: 'report.reason.off_topic.label', descKey: 'report.reason.off_topic.desc' },
+  { value: 'misgraded', labelKey: 'report.reason.misgraded.label', descKey: 'report.reason.misgraded.desc' },
+  { value: 'impersonation', labelKey: 'report.reason.impersonation.label', descKey: 'report.reason.impersonation.desc' },
+  { value: 'other', labelKey: 'report.reason.other.label', descKey: 'report.reason.other.desc' },
 ];
 
 export default function ReportDialog({ open, onOpenChange, contentType, contentId, contentPreview, authorHandle }) {
+  const t = useT();
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -36,9 +38,6 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
         details: details.trim(),
         status: 'pending',
       });
-      // Feed the report into the moderation agent's learning loop so the agent
-      // learns what the community considers reportable. The daily learning loop
-      // workflow processes this into AgentInsight records the agent reads.
       base44.entities.AgentFeedback.create({
         agent_name: 'moderation_agent',
         feedback_type: 'correction',
@@ -48,12 +47,12 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
         processed: false,
       }).catch((e) => console.error('ReportDialog: AgentFeedback log failed', e?.message));
 
-      toast({ title: 'Report submitted', description: 'Thank you, our moderation team will review it.' });
+      toast({ title: t('toast.reportSubmitted'), description: t('toast.reportSubmittedDesc') });
       setReason('');
       setDetails('');
       onOpenChange(false);
     } catch (e) {
-      toast({ title: 'Could not submit report', description: e.message, variant: 'destructive' });
+      toast({ title: t('toast.reportFailed'), description: e.message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -64,16 +63,16 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Flag className="h-4 w-4 text-destructive" /> Report content
+            <Flag className="h-4 w-4 text-destructive" /> {t('report.title')}
           </DialogTitle>
           <DialogDescription>
-            Help us keep SwapPulse safe. Reports are reviewed by our moderation team and help our AI agent learn.
+            {t('report.desc')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <p className="mb-1.5 text-sm font-semibold">Why are you reporting this?</p>
+            <p className="mb-1.5 text-sm font-semibold">{t('report.why')}</p>
             <div className="grid grid-cols-2 gap-1.5">
               {REASONS.map((r) => (
                 <button
@@ -85,32 +84,32 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
                       : 'border-border hover:bg-secondary'
                   }`}
                 >
-                  <p className="font-bold">{r.label}</p>
-                  <p className="text-muted-foreground">{r.desc}</p>
+                  <p className="font-bold">{t(r.labelKey)}</p>
+                  <p className="text-muted-foreground">{t(r.descKey)}</p>
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <p className="mb-1.5 text-sm font-semibold">Additional details (optional)</p>
+            <p className="mb-1.5 text-sm font-semibold">{t('report.details')}</p>
             <textarea
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               rows={3}
               maxLength={1000}
-              placeholder="Tell us more about what's wrong…"
+              placeholder={t('report.detailsPlaceholder')}
               className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button size="sm" onClick={submit} disabled={submitting || !reason}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
-              Submit report
+              {t('report.submit')}
             </Button>
           </div>
         </div>

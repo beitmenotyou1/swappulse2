@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Cookie } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const STORAGE_KEY = 'swappulse-cookie-consent';
 const CONSENT_VERSION = '1.0';
 
 const CATEGORIES = [
-  { key: 'essential', label: 'Essential', desc: 'Login, session, security. Always on.', locked: true },
-  { key: 'functional', label: 'Functional', desc: 'Preferences, offline cache, PWA features.' },
-  { key: 'analytics', label: 'Analytics', desc: 'Aggregate usage insights (no individual tracking).' },
-  { key: 'marketing', label: 'Marketing', desc: 'Onboarding emails and weekly digest.' },
+  { key: 'essential', labelKey: 'cookie.cat.essential.label', descKey: 'cookie.cat.essential.desc', locked: true },
+  { key: 'functional', labelKey: 'cookie.cat.functional.label', descKey: 'cookie.cat.functional.desc' },
+  { key: 'analytics', labelKey: 'cookie.cat.analytics.label', descKey: 'cookie.cat.analytics.desc' },
+  { key: 'marketing', labelKey: 'cookie.cat.marketing.label', descKey: 'cookie.cat.marketing.desc' },
 ];
 
 export default function CookieConsentBanner() {
+  const t = useT();
   const { user } = useAuth();
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -82,25 +84,25 @@ export default function CookieConsentBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-3 md:p-4" role="dialog" aria-label="Cookie consent">
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-3 md:p-4" role="dialog" aria-label={t('cookie.title')}>
       <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card shadow-elevated">
         <div className="flex items-start gap-3 p-4">
           <div className="rounded-lg bg-primary/10 p-2 shrink-0">
             <Cookie className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold">Cookie preferences</p>
+            <p className="text-sm font-bold">{t('cookie.title')}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              We use essential cookies to run SwapPulse. Optional cookies help us improve. See our{' '}
-              <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
+              {t('cookie.desc')}{' '}
+              <a href="/privacy" className="text-primary hover:underline">{t('nav.privacy')}</a>.
             </p>
             {expanded && (
               <div className="mt-3 space-y-2">
                 {CATEGORIES.map((cat) => (
                   <label key={cat.key} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2">
                     <div>
-                      <p className="text-xs font-semibold">{cat.label}</p>
-                      <p className="text-xs text-muted-foreground">{cat.desc}</p>
+                      <p className="text-xs font-semibold">{t(cat.labelKey)}</p>
+                      <p className="text-xs text-muted-foreground">{t(cat.descKey)}</p>
                     </div>
                     <input
                       type="checkbox"
@@ -119,20 +121,20 @@ export default function CookieConsentBanner() {
                 disabled={saving}
                 className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
               >
-                Accept all
+                {t('cookie.acceptAll')}
               </button>
               <button
                 onClick={rejectAll}
                 disabled={saving}
                 className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
               >
-                Reject all
+                {t('cookie.rejectAll')}
               </button>
               <button
                 onClick={() => setExpanded(!expanded)}
                 className="rounded-lg px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
               >
-                {expanded ? 'Hide options' : 'Preferences'}
+                {expanded ? t('cookie.hideOptions') : t('cookie.preferences')}
               </button>
               {expanded && (
                 <button
@@ -140,7 +142,7 @@ export default function CookieConsentBanner() {
                   disabled={saving}
                   className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-background disabled:opacity-50"
                 >
-                  Save preferences
+                  {t('cookie.savePrefs')}
                 </button>
               )}
             </div>

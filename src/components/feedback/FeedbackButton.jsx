@@ -3,14 +3,16 @@ import { MessageSquare, X, Loader2, Send, Camera, Star, Lightbulb, Bug, MessageC
 import html2canvas from 'html2canvas';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const CATEGORIES = [
-  { id: 'suggestion', label: 'Suggestion', icon: Lightbulb, desc: 'A new feature idea', color: 'text-amber-500' },
-  { id: 'bug', label: 'Bug Report', icon: Bug, desc: 'Something is broken', color: 'text-destructive' },
-  { id: 'comment', label: 'Comment', icon: MessageCircle, desc: 'General thoughts', color: 'text-primary' },
+  { id: 'suggestion', labelKey: 'feedback.cat.suggestion.label', icon: Lightbulb, descKey: 'feedback.cat.suggestion.desc', color: 'text-amber-500' },
+  { id: 'bug', labelKey: 'feedback.cat.bug.label', icon: Bug, descKey: 'feedback.cat.bug.desc', color: 'text-destructive' },
+  { id: 'comment', labelKey: 'feedback.cat.comment.label', icon: MessageCircle, descKey: 'feedback.cat.comment.desc', color: 'text-primary' },
 ];
 
 export default function FeedbackButton() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState('');
@@ -56,7 +58,7 @@ export default function FeedbackButton() {
 
   const submit = async () => {
     if (!comment.trim()) {
-      toast({ title: 'Add a comment', description: 'Tell us what you noticed.', variant: 'destructive' });
+      toast({ title: t('toast.addComment'), description: t('toast.addCommentDesc'), variant: 'destructive' });
       return;
     }
     setSubmitting(true);
@@ -71,10 +73,10 @@ export default function FeedbackButton() {
         userAgent: navigator.userAgent,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
       });
-      toast({ title: 'Feedback sent', description: 'Thanks - our team will review it.' });
+      toast({ title: t('toast.feedbackSent'), description: t('toast.feedbackSentDesc') });
       setOpen(false);
     } catch (e) {
-      toast({ title: 'Could not send feedback', description: e?.message || 'Please try again later.', variant: 'destructive' });
+      toast({ title: t('toast.feedbackFailed'), description: e?.message || t('toast.tryAgain'), variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -84,16 +86,15 @@ export default function FeedbackButton() {
     <>
       <button
         onClick={start}
-        aria-label="Send feedback"
+        aria-label={t('feedback.sendAria')}
         className="fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 bg-primary px-3 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary/90 [writing-mode:vertical-rl] md:flex"
       >
-        <MessageSquare className="h-4 w-4" /> <span className="[transform:rotate(180deg)]">Feedback</span>
+        <MessageSquare className="h-4 w-4" /> <span className="[transform:rotate(180deg)]">{t('feedback.label')}</span>
       </button>
 
-      {/* Mobile FAB */}
       <button
         onClick={start}
-        aria-label="Send feedback"
+        aria-label={t('feedback.sendAria')}
         className="fixed bottom-36 right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 md:hidden"
       >
         <MessageSquare className="h-5 w-5" />
@@ -107,17 +108,16 @@ export default function FeedbackButton() {
           >
             <div className="flex items-center justify-between border-b border-border p-4">
               <h2 className="flex items-center gap-2 text-lg font-bold">
-                <MessageSquare className="h-5 w-5 text-primary" /> Send feedback
+                <MessageSquare className="h-5 w-5 text-primary" /> {t('feedback.title')}
               </h2>
-              <button onClick={() => setOpen(false)} className="rounded-full p-1 hover:bg-secondary" aria-label="Close">
+              <button onClick={() => setOpen(false)} className="rounded-full p-1 hover:bg-secondary" aria-label={t('common.close')}>
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-              {/* Category selector */}
               <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium">What kind of feedback?</label>
+                <label className="mb-2 block text-sm font-medium">{t('feedback.kind')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {CATEGORIES.map((c) => {
                     const Icon = c.icon;
@@ -134,20 +134,19 @@ export default function FeedbackButton() {
                         }`}
                       >
                         <Icon className={`h-5 w-5 ${active ? c.color : 'text-muted-foreground'}`} />
-                        <span className="text-xs font-semibold">{c.label}</span>
+                        <span className="text-xs font-semibold">{t(c.labelKey)}</span>
                       </button>
                     );
                   })}
                 </div>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  {CATEGORIES.find((c) => c.id === category)?.desc}
+                  {t(CATEGORIES.find((c) => c.id === category)?.descKey)}
                 </p>
               </div>
 
-              {/* Title */}
               <div className="mb-4">
                 <label htmlFor="feedback-title" className="mb-2 block text-sm font-medium">
-                  Title <span className="text-muted-foreground">(optional)</span>
+                  {t('feedback.titleLabel')} <span className="text-muted-foreground">{t('common.optional')}</span>
                 </label>
                 <input
                   id="feedback-title"
@@ -155,15 +154,14 @@ export default function FeedbackButton() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={200}
-                  placeholder="Summarise your feedback in a few words"
+                  placeholder={t('feedback.titlePlaceholder')}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 />
               </div>
 
-              {/* Rating */}
               <div className="mb-4">
                 <label className="mb-2 block text-sm font-medium">
-                  Rate your experience <span className="text-muted-foreground">(optional)</span>
+                  {t('feedback.rating')} <span className="text-muted-foreground">{t('common.optional')}</span>
                 </label>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -187,10 +185,9 @@ export default function FeedbackButton() {
                 </div>
               </div>
 
-              {/* Comment */}
               <div className="mb-4">
                 <label htmlFor="feedback-comment" className="mb-2 block text-sm font-medium">
-                  Comments <span className="text-destructive">*</span>
+                  {t('feedback.comments')} <span className="text-destructive">*</span>
                 </label>
                 <textarea
                   id="feedback-comment"
@@ -198,26 +195,25 @@ export default function FeedbackButton() {
                   onChange={(e) => setComment(e.target.value)}
                   rows={4}
                   maxLength={5000}
-                  placeholder="Tell us more about your experience, what you'd like to see, or what went wrong…"
+                  placeholder={t('feedback.commentsPlaceholder')}
                   className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 />
                 <p className="mt-1 text-right text-xs text-muted-foreground">{comment.length}/5000</p>
               </div>
 
-              {/* Snapshot */}
               <div>
-                <label className="mb-2 block text-sm font-medium">Page snapshot</label>
+                <label className="mb-2 block text-sm font-medium">{t('feedback.snapshot')}</label>
                 <div className="overflow-hidden rounded-xl border border-border bg-secondary/50">
                   {capturing ? (
                     <div className="flex h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Capturing page…
+                      <Loader2 className="h-4 w-4 animate-spin" /> {t('feedback.capturing')}
                     </div>
                   ) : screenshotUrl ? (
-                    <img src={screenshotUrl} alt="Page snapshot" className="max-h-48 w-full object-top object-contain" />
+                    <img src={screenshotUrl} alt={t('feedback.snapshot')} className="max-h-48 w-full object-top object-contain" />
                   ) : (
                     <div className="flex h-40 flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
                       <Camera className="h-6 w-6" />
-                      Snapshot unavailable - your comments still help.
+                      {t('feedback.snapshotUnavailable')}
                     </div>
                   )}
                 </div>
@@ -226,7 +222,7 @@ export default function FeedbackButton() {
 
             <div className="flex justify-end gap-2 border-t border-border p-4">
               <button onClick={() => setOpen(false)} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={submit}
@@ -234,7 +230,7 @@ export default function FeedbackButton() {
                 className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {submitting ? 'Sending…' : 'Send feedback'}
+                {submitting ? t('common.sending') : t('feedback.send')}
               </button>
             </div>
           </div>

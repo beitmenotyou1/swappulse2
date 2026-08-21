@@ -11,11 +11,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ExternalLink } from 'lucide-react';
 import { subscribeExternalLink, clearExternalLink } from '@/lib/externalLink';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-// Mounted once at the app root. Listens for external-link confirmation
-// requests from any RichText/RichLink instance and shows a single shared
-// dialog. On Continue, opens the URL in a new tab with noopener/noreferrer.
 export default function ExternalLinkConfirm() {
+  const t = useT();
   const [url, setUrl] = useState(null);
 
   useEffect(() => subscribeExternalLink(setUrl), []);
@@ -35,11 +34,11 @@ export default function ExternalLinkConfirm() {
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <ExternalLink className="h-5 w-5 text-primary" />
-            Leaving SwapPulse
+            {t('externalLink.title')}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-2">
-              <p>You're about to open an external link. It will open in a new tab.</p>
+              <p>{t('externalLink.desc')}</p>
               {url && (
                 <p className="break-all rounded-lg bg-secondary px-3 py-2 font-mono text-xs text-muted-foreground">
                   {url}
@@ -49,8 +48,8 @@ export default function ExternalLinkConfirm() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleContinue}>Continue</AlertDialogAction>
+          <AlertDialogCancel onClick={handleCancel}>{t('common.cancel')}</AlertDialogCancel>
+          <AlertDialogAction onClick={handleContinue}>{t('externalLink.continue')}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
