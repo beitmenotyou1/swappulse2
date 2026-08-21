@@ -23,7 +23,7 @@ export default function MediaGallery({ images }) {
   };
 
   return (
-    <div className={`mt-3 grid gap-1 overflow-hidden rounded-xl border border-border ${gridClass}`}>
+    <div data-lightbox className={`mt-3 grid gap-1 overflow-hidden rounded-xl border border-border ${gridClass}`}>
       {imgs.map((img, i) => (
         <div
           key={i}

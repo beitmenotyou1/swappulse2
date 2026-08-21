@@ -132,6 +132,7 @@ import JournalDetail from '@/pages/JournalDetail';
 import HashtagPage from '@/pages/HashtagPage';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
+import { LightboxProvider } from '@/lib/lightboxContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -301,7 +302,9 @@ function App() {
           <LivePresenceProvider>
             <PodcastPlayerProvider>
               <MembershipProvider>
-                <AuthenticatedApp />
+                <LightboxProvider>
+                  <AuthenticatedApp />
+                </LightboxProvider>
               </MembershipProvider>
             </PodcastPlayerProvider>
           </LivePresenceProvider>
