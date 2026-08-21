@@ -4,9 +4,11 @@
 // Input:  { url: string }
 // Output: { title, description, image, site_name, url }
 //
-// SSRF protection: only https URLs are allowed; internal/private IP ranges
-// and localhost are blocked. Redirects are followed but the final host is
-// re-validated. A 5-second timeout prevents hanging on slow servers.
+// SSRF protection: only http(s) URLs are allowed; internal/private IP ranges
+// and localhost are blocked. Redirects are handled manually — each redirect
+// target is re-validated against isPrivateHost() before following, preventing
+// SSRF bypasses via 302 to internal/metadata endpoints. A 5-second timeout
+// prevents hanging on slow servers.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
@@ -76,21 +78,54 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Internal hosts are not allowed' }, { status: 400 });
     }
 
-    // Fetch with a 5-second timeout. Follow redirects (re-validated by URL
-    // constructor above; the runtime blocks internal IPs at the network layer).
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    // Fetch with manual redirect handling: each redirect Location is
+    // re-validated against isPrivateHost() to prevent SSRF bypasses where an
+    // external server 302-redirects to an internal/metadata endpoint.
+    const MAX_REDIRECTS = 5;
+    let currentUrl = url;
     let res: Response;
-    try {
-      res = await fetch(url, {
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'User-Agent': 'SwapPulseLinkPreview/1.0' },
-      });
-    } catch (e) {
-      return Response.json({ error: `Fetch failed: ${e?.message || e}` }, { status: 502 });
-    } finally {
-      clearTimeout(timeout);
+    let redirects = 0;
+    while (true) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        res = await fetch(currentUrl, {
+          signal: controller.signal,
+          redirect: 'manual',
+          headers: { 'User-Agent': 'SwapPulseLinkPreview/1.0' },
+        });
+      } catch (e) {
+        return Response.json({ error: `Fetch failed: ${e?.message || e}` }, { status: 502 });
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      // 3xx = redirect; re-validate the Location target before following.
+      if (res.status >= 300 && res.status < 400) {
+        if (++redirects > MAX_REDIRECTS) {
+          return Response.json({ error: 'Too many redirects' }, { status: 502 });
+        }
+        const location = res.headers.get('location');
+        if (!location) {
+          return Response.json({ error: 'Redirect without Location header' }, { status: 502 });
+        }
+        let nextUrl: URL;
+        try {
+          nextUrl = new URL(location, currentUrl); // resolve relative redirects
+        } catch {
+          return Response.json({ error: 'Invalid redirect URL' }, { status: 502 });
+        }
+        if (nextUrl.protocol !== 'https:' && nextUrl.protocol !== 'http:') {
+          return Response.json({ error: 'Redirect to non-http(s) protocol blocked' }, { status: 502 });
+        }
+        if (isPrivateHost(nextUrl.hostname)) {
+          return Response.json({ error: 'Redirect to internal host blocked' }, { status: 502 });
+        }
+        currentUrl = nextUrl.href;
+        continue; // follow the validated redirect
+      }
+
+      break; // non-redirect response — done
     }
 
     if (!res.ok) {
@@ -105,7 +140,7 @@ export default async function(req: Request): Promise<Response> {
 
     const html = await res.text();
     const meta = parseMetaTags(html);
-    const finalUrl = res.url || url;
+    const finalUrl = currentUrl;
     let siteName = meta['og:site_name'] || '';
     if (!siteName) {
       try {
