@@ -20,7 +20,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "pds_sync",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -31,15 +31,31 @@
             "function_name": "sync-from-pds",
             "args": {}
           },
-          "then": "end",
+          "then": "push_profiles",
           "x-base44": {
             "title": "Sync from PDS",
             "description": "Poll PDS for deletions and updates"
           }
         }
+      },
+      {
+        "push_profiles": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sync-profile-records",
+            "args": {
+              "adminBackfill": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Push profiles to PDS",
+            "description": "Sync local profile updates (display name, avatar, bio) to the AT Protocol PDS so Bluesky reflects current SwapPulse data"
+          }
+        }
       }
     ]
   },
-  "description": "Scheduled polling sync from the AT Protocol PDS \u2014 detects inbound deletions and updates, keeping local entities in sync with PDS-side changes every 5 minutes.",
+  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates and pushes outbound profile updates every 5 minutes.",
   "name": "PDS Sync"
 }
