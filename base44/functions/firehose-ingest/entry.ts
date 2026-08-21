@@ -405,6 +405,18 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
         const localUpdated = user.updated_date || '';
         const failCount = user.profile_sync_fail_count || 0;
         if (lastSync && localUpdated > lastSync && failCount < 3) continue;
+        // AppView indexing grace period: after a successful outbound push, the
+        // AppView (public.api.bsky.app) may lag behind the PDS for several
+        // minutes. If we read the AppView during that window, it returns the
+        // pre-push profile and we'd overwrite the just-pushed local edit with
+        // stale data (reverting the user's edit every ~5 min). Skip the inbound
+        // merge for 10 minutes after the last outbound sync to let the AppView
+        // index the push; after that, the indexed profile should match local
+        // and the merge is a no-op.
+        if (lastSync && failCount < 3) {
+          const sinceSyncMs = Date.now() - new Date(lastSync).getTime();
+          if (sinceSyncMs < 10 * 60 * 1000) continue;
+        }
 
         const updates: any = {};
         // Text fields: always merge from remote if different.
