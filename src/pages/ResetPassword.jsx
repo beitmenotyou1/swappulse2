@@ -8,8 +8,10 @@ import { Lock, Loader2, AlertTriangle, Mail } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { checkPasswordBreach, BREACH_WARNING } from "@/lib/hibp";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 export default function ResetPassword() {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
   const migration = searchParams.get("migration") === "1";
@@ -23,49 +25,41 @@ export default function ResetPassword() {
   const [setupEmail, setSetupEmail] = useState(storedSetupEmail || "");
   const [emailInput, setEmailInput] = useState("");
 
-  // Auto-setup passwordless login when the user arrives via the setup flow
   useEffect(() => {
     if (!resetToken || !setupEmail) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        // Single server-side call: validates the reset token, generates + stores
-        // the login_key, and returns it for immediate login. No client-supplied
-        // login_key is accepted, so the token is the only way in.
         const res = await base44.functions.invoke("store-login-key", { reset_token: resetToken, email: setupEmail });
         if (cancelled) return;
         const pwd = res.data?.login_key;
-        if (!pwd) throw new Error(res.data?.error || "Could not set up passwordless login.");
+        if (!pwd) throw new Error(res.data?.error || t('auth.reset.couldNotSetup'));
         localStorage.removeItem("swappulse_setup_email");
-        // Auto-login: use the freshly-bound password to sign in immediately
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
         try {
           await base44.auth.loginViaEmailPassword(setupEmail, pwd);
-          // SDK sets the token but does NOT hard-redirect — redirect explicitly
           if (!cancelled) window.location.href = "/";
           return;
         } catch (loginErr) {
-          // If auto-login fails (e.g. 2FA required), fall back to showing the success screen
           console.error("Auto-login after setup failed:", loginErr?.message || loginErr);
         }
         if (!cancelled) setSetupComplete(true);
       } catch (err) {
-        if (!cancelled) setError(err.message || "Could not set up passwordless login. Please try again.");
+        if (!cancelled) setError(err.message || t('auth.reset.couldNotSetupRetry'));
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [resetToken, setupEmail]);
+  }, [resetToken, setupEmail, t]);
 
-  // Setup mode: automatic passwordless setup (no user interaction needed)
   if (resetToken && setupEmail && !migration) {
     return (
       <AuthLayout
         icon={Mail}
-        title="Signing you in"
-        subtitle="Confirming your sign-in link"
+        title={t('auth.reset.signingIn')}
+        subtitle={t('auth.reset.confirmingLink')}
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -75,10 +69,10 @@ export default function ResetPassword() {
         {setupComplete ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-foreground">
-              You're signed in! Next time, you'll get a 6-digit code instead.
+              {t('auth.reset.signedIn')}
             </p>
             <Button className="w-full h-12 font-medium" onClick={() => { window.location.href = "/"; }}>
-              Go to home
+              {t('auth.reset.goHome')}
             </Button>
           </div>
         ) : (
@@ -90,20 +84,19 @@ export default function ResetPassword() {
     );
   }
 
-  // Setup mode but email not stored (e.g. opened on a different device) — ask for email
   if (resetToken && !setupEmail && !migration) {
     const handleEmailSubmit = (e) => {
       e.preventDefault();
       setError("");
       const trimmed = emailInput.trim().toLowerCase();
-      if (!trimmed) { setError("Enter your email to continue."); return; }
+      if (!trimmed) { setError(t('auth.reset.enterEmailError')); return; }
       setSetupEmail(trimmed);
     };
     return (
       <AuthLayout
         icon={Mail}
-        title="Complete your sign-in"
-        subtitle="Enter your email to continue"
+        title={t('auth.reset.completeSignin')}
+        subtitle={t('auth.reset.enterEmailContinue')}
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -112,14 +105,14 @@ export default function ResetPassword() {
         )}
         <form onSubmit={handleEmailSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="setupEmail">Email</Label>
+            <Label htmlFor="setupEmail">{t('auth.reset.email')}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <Input id="setupEmail" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="pl-10 h-12" required />
             </div>
           </div>
           <Button type="submit" className="w-full h-12 font-medium">
-            Continue
+            {t('auth.reset.continue')}
           </Button>
         </form>
       </AuthLayout>
@@ -130,16 +123,16 @@ export default function ResetPassword() {
     return (
       <AuthLayout
         icon={AlertTriangle}
-        title="Invalid reset link"
-        subtitle="This password reset link is missing or invalid"
+        title={t('auth.reset.invalidLink')}
+        subtitle={t('auth.reset.invalidSubtitle')}
         footer={
           <Link to="/forgot-password" className="text-primary font-medium hover:underline">
-            Request a new link
+            {t('auth.reset.requestNew')}
           </Link>
         }
       >
         <p className="text-sm text-foreground text-center">
-          The link you used appears to be incomplete. Please request a new password reset email.
+          {t('auth.reset.invalidDesc')}
         </p>
       </AuthLayout>
     );
@@ -149,7 +142,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t('auth.reset.passwordsDontMatch'));
       return;
     }
     setLoading(true);
@@ -167,7 +160,7 @@ export default function ResetPassword() {
       await base44.auth.resetPassword({ resetToken, newPassword });
       window.location.href = migration ? "/login?migration_success=1" : "/login";
     } catch (err) {
-      setError(err.message || "Failed to reset password");
+      setError(err.message || t('auth.reset.failedReset'));
     } finally {
       setLoading(false);
     }
@@ -176,8 +169,8 @@ export default function ResetPassword() {
   return (
     <AuthLayout
       icon={Lock}
-      title={migration ? "Set your new password" : "New password"}
-      subtitle={migration ? "Complete your migration from Google" : "Enter your new password below"}
+      title={migration ? t('auth.reset.migrateTitle') : t('auth.reset.newTitle')}
+      subtitle={migration ? t('auth.reset.migrateSubtitle') : t('auth.reset.newSubtitle')}
     >
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -186,7 +179,7 @@ export default function ResetPassword() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
+          <Label htmlFor="password">{t('auth.reset.newPassword')}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -195,19 +188,19 @@ export default function ResetPassword() {
               autoComplete="new-password"
               autoFocus
               minLength={12}
-              placeholder="At least 12 characters"
+              placeholder={t('auth.reset.minChars')}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="pl-10 h-12"
               required
             />
             <p className="text-xs text-muted-foreground">
-              Minimum 12 characters - use a mix of upper and lower case, numbers and symbols.
+              {t('auth.reset.passwordHint')}
             </p>
         </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">{t('auth.reset.confirmPassword')}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -226,10 +219,10 @@ export default function ResetPassword() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2" />
-              Resetting...
+              {t('auth.reset.resetting')}
             </>
           ) : (
-            "Reset password"
+            t('auth.reset.resetPassword')
           )}
         </Button>
       </form>

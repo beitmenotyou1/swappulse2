@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import { Mail, ShieldCheck, Loader2, AlertTriangle } from "lucide-react";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 export default function Activate() {
+  const t = useT();
   const [params] = useSearchParams();
   const token = params.get("token") || "";
 
@@ -31,11 +33,11 @@ export default function Activate() {
         if (body.valid) {
           setEmail(body.email || "");
           setLinkState("valid");
-          setInfo("Your activation link is valid. Enter the code from your email to activate.");
+          setInfo(t('auth.activate.linkValid'));
         } else if (body.reason === "expired") {
           setEmail(body.email || "");
           setLinkState("expired");
-          setInfo("This activation link has expired. Resend a fresh link, then enter the new code.");
+          setInfo(t('auth.activate.linkExpired'));
         } else {
           setLinkState("invalid");
         }
@@ -44,23 +46,23 @@ export default function Activate() {
       }
     })();
     return () => { active = false; };
-  }, [token]);
+  }, [token, t]);
 
   const handleResend = async () => {
     setError("");
     setInfo("");
     if (!email) {
-      setError("Enter your email to resend the activation link.");
+      setError(t('auth.activate.enterEmailResend'));
       return;
     }
     setLoading(true);
     try {
       await base44.auth.resendOtp(email);
       try { await base44.functions.invoke("send-activation", { email }); } catch {}
-      setInfo("Activation email sent. Check your inbox for the code and link.");
+      setInfo(t('auth.activate.activationSent'));
       setLinkState("valid");
     } catch (e) {
-      setError(e.message || "Failed to resend");
+      setError(e.message || t('auth.activate.failedResend'));
     } finally {
       setLoading(false);
     }
@@ -68,15 +70,15 @@ export default function Activate() {
 
   const handleVerify = async () => {
     setError("");
-    if (!email) { setError("Enter your email."); return; }
-    if (otp.length < 6) { setError("Enter the 6-digit code."); return; }
+    if (!email) { setError(t('auth.activate.enterEmailError')); return; }
+    if (otp.length < 6) { setError(t('auth.activate.enterCode')); return; }
     setLoading(true);
     try {
       const result = await base44.auth.verifyOtp({ email, otpCode: otp });
       if (result?.access_token) base44.auth.setToken(result.access_token);
       window.location.href = "/";
     } catch (e) {
-      setError(e.message || "Invalid verification code");
+      setError(e.message || t('auth.activate.invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -85,12 +87,12 @@ export default function Activate() {
   return (
     <AuthLayout
       icon={ShieldCheck}
-      title="Activate your account"
-      subtitle="Enter the code from your email to activate"
+      title={t('auth.activate.title')}
+      subtitle={t('auth.activate.subtitle')}
       footer={
         <>
           <Link to="/login" className="text-primary font-medium hover:underline">
-            Back to log in
+            {t('auth.activate.backToLogin')}
           </Link>
         </>
       }
@@ -103,7 +105,7 @@ export default function Activate() {
       {linkState === "invalid" && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>This activation link is not valid. You can still activate by entering your email and the code from your verification email.</span>
+          <span>{t('auth.activate.linkInvalid')}</span>
         </div>
       )}
       {info && (
@@ -115,7 +117,7 @@ export default function Activate() {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t('auth.activate.email')}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -129,7 +131,7 @@ export default function Activate() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Verification code</Label>
+          <Label>{t('auth.activate.verificationCode')}</Label>
           <div className="flex justify-center">
             <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus={linkState !== "none"}>
               <InputOTPGroup>
@@ -151,10 +153,10 @@ export default function Activate() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Activating...
+              {t('auth.activate.activating')}
             </>
           ) : (
-            "Activate account"
+            t('auth.activate.activateAccount')
           )}
         </Button>
         <button
@@ -162,7 +164,7 @@ export default function Activate() {
           disabled={loading}
           className="w-full text-sm text-primary font-medium hover:underline disabled:opacity-50"
         >
-          Resend activation email
+          {t('auth.activate.resendActivation')}
         </button>
       </div>
     </AuthLayout>

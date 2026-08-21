@@ -10,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 import ProfileSetup from "@/components/auth/ProfileSetup";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 function randomPassword() {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)))
@@ -17,6 +18,7 @@ function randomPassword() {
 }
 
 export default function Register() {
+  const t = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") || "");
@@ -35,15 +37,15 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (!ageConfirmed) {
-      setError("Please confirm you are 13 or older to create an account.");
+      setError(t('auth.register.ageError'));
       return;
     }
     if (!termsConfirmed) {
-      setError("Please agree to the Terms to create an account.");
+      setError(t('auth.register.termsError'));
       return;
     }
     if (!privacyConfirmed) {
-      setError("Please agree to the Privacy Policy to create an account.");
+      setError(t('auth.register.privacyError'));
       return;
     }
     setConfirmEmail("");
@@ -53,25 +55,23 @@ export default function Register() {
   const handleRegister = async () => {
     setError("");
     if (email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
-      setError("Email addresses do not match. Please check and try again.");
+      setError(t('auth.register.emailMismatch'));
       return;
     }
     setLoading(true);
     try {
-      // Check re-registration blocklist before creating the account
       const blocklistCheck = await base44.functions.invoke("check-username", { email: email.trim().toLowerCase() });
       if (blocklistCheck.data?.available === false) {
-        setError(blocklistCheck.data.reason || "This email address is not available.");
+        setError(blocklistCheck.data.reason || t('auth.register.emailUnavailable'));
         return;
       }
-      // Register with a random password (user never sees it; login is passwordless)
       const pwd = randomPassword();
       generatedPasswordRef.current = pwd;
       await base44.auth.register({ email, password: pwd });
       try { await base44.functions.invoke("send-activation", { email }); } catch {}
       setStep("code");
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || t('auth.register.registrationFailed'));
       setStep("email");
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ export default function Register() {
 
   const handleVerify = async () => {
     setError("");
-    if (otp.length < 6) { setError("Enter the 6-digit code."); return; }
+    if (otp.length < 6) { setError(t('auth.register.enterCode')); return; }
     setLoading(true);
     try {
       const result = await base44.auth.verifyOtp({ email, otpCode: otp });
@@ -94,7 +94,7 @@ export default function Register() {
       }
       setStep("profile");
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError(err.message || t('auth.register.invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ export default function Register() {
     try {
       await base44.auth.resendOtp(email);
     } catch (err) {
-      setError(err.message || "Failed to resend code");
+      setError(err.message || t('auth.register.resendFailed'));
     }
   };
 
@@ -125,25 +125,25 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Confirm your email"
-        subtitle="Re-enter your email address to make sure it's correct, this is where we'll send your verification code"
-        footer={<button onClick={() => setStep("email")} className="text-primary font-medium hover:underline">Back to edit</button>}
+        title={t('auth.register.confirmTitle')}
+        subtitle={t('auth.register.confirmSubtitle')}
+        footer={<button onClick={() => setStep("email")} className="text-primary font-medium hover:underline">{t('auth.register.backToEdit')}</button>}
       >
         {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
         <div className="space-y-4">
           <div className="p-3 rounded-lg bg-secondary/60 text-center">
-            <p className="text-sm text-muted-foreground">You entered</p>
+            <p className="text-sm text-muted-foreground">{t('auth.register.youEntered')}</p>
             <p className="font-semibold text-foreground">{email}</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmEmail">Confirm email</Label>
+            <Label htmlFor="confirmEmail">{t('auth.register.confirmEmail')}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <Input id="confirmEmail" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} className="pl-10 h-12" />
             </div>
           </div>
           <Button className="w-full h-12 font-medium" onClick={handleRegister} disabled={loading || !confirmEmail.trim()}>
-            {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending code...</> : "Send verification code"}
+            {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('auth.register.sendingCode')}</> : t('auth.register.sendVerification')}
           </Button>
         </div>
       </AuthLayout>
@@ -154,9 +154,9 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
-        footer={<Link to="/login" className="text-primary font-medium hover:underline">Back to log in</Link>}
+        title={t('auth.register.verifyTitle')}
+        subtitle={t('auth.register.verifySubtitle').replace('{email}', email)}
+        footer={<Link to="/login" className="text-primary font-medium hover:underline">{t('auth.register.backToLogin')}</Link>}
       >
         {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
         <div className="flex justify-center mb-6">
@@ -168,11 +168,11 @@ export default function Register() {
           </InputOTP>
         </div>
         <Button className="w-full h-12 font-medium" onClick={handleVerify} disabled={loading || otp.length < 6}>
-          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</> : "Verify"}
+          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('auth.register.verifying')}</> : t('auth.register.verify')}
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">Resend</button>
+          {t('auth.register.didntReceive')}{" "}
+          <button onClick={handleResend} className="text-primary font-medium hover:underline">{t('auth.register.resend')}</button>
         </p>
       </AuthLayout>
     );
@@ -181,12 +181,12 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up, no password needed, just your email"
+      title={t('auth.register.createAccount')}
+      subtitle={t('auth.register.subtitle')}
       footer={
         <>
-          Already have an account?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">Log in</Link>
+          {t('auth.register.haveAccount')}{" "}
+          <Link to="/login" className="text-primary font-medium hover:underline">{t('auth.register.login')}</Link>
         </>
       }
     >
@@ -194,7 +194,7 @@ export default function Register() {
 
       <form onSubmit={handleContinue} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t('auth.register.email')}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input id="email" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12" required />
@@ -202,24 +202,24 @@ export default function Register() {
         </div>
         <label className="flex items-start gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" />
-          <span>I confirm I am 13 or older (under-16s need a parent or guardian's consent).</span>
+          <span>{t('auth.register.ageConfirm')}</span>
         </label>
         <label className="flex items-start gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={termsConfirmed} onChange={(e) => setTermsConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" />
           <span>
-            I have read and agree to SwapPulse's{" "}
-            <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Terms</Link>.
+            {t('auth.register.termsConfirm')}{" "}
+            <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">{t('auth.register.terms')}</Link>.
           </span>
         </label>
         <label className="flex items-start gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={privacyConfirmed} onChange={(e) => setPrivacyConfirmed(e.target.checked)} className="mt-1 h-4 w-4 rounded border-border" />
           <span>
-            I have read and agree to SwapPulse's{" "}
-            <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Privacy Policy</Link>.
+            {t('auth.register.privacyConfirm')}{" "}
+            <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">{t('auth.register.privacyPolicy')}</Link>.
           </span>
         </label>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
-          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</> : "Continue"}
+          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('auth.register.creating')}</> : t('auth.register.continue')}
         </Button>
       </form>
     </AuthLayout>
