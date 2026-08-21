@@ -1,6 +1,8 @@
 import React from 'react';
 import { MapPin, Globe, Link as LinkIcon, Twitter, Instagram, Youtube, Github, Linkedin, Facebook, Twitch, AtSign } from 'lucide-react';
 import { confirmExternalLink, isExternalUrl } from '@/lib/externalLink';
+import { Link } from 'react-router-dom';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Platform detection from URL — maps social links to brand-appropriate icons.
 // Falls back to a generic Link icon for unrecognised platforms.
@@ -30,6 +32,7 @@ function iconForUrl(url) {
 // fields the viewer isn't permitted to see are already stripped upstream by
 // get-profile-config, so this component just renders whatever is present.
 export default function ProfileInfoRow({ config }) {
+  const t = useT();
   if (!config) return null;
 
   // Owner config has fields at the top level; visitor config (from
@@ -51,10 +54,15 @@ export default function ProfileInfoRow({ config }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
       {location && (
-        <span className="inline-flex items-center gap-1.5">
+        <Link
+          to={`/discover/users?field=location&value=${encodeURIComponent(location)}`}
+          className="inline-flex items-center gap-1.5 transition-colors hover:text-primary"
+          aria-label={t('discoverUsers.findLocation', { value: location })}
+          title={t('discoverUsers.findLocation', { value: location })}
+        >
           <MapPin className="h-4 w-4 shrink-0" />
           <span>{location}</span>
-        </span>
+        </Link>
       )}
       {website && (
         <a

@@ -13,6 +13,7 @@ import { MembershipProvider } from '@/lib/membershipContext';
 import Layout from '@/components/Layout';
 import Home from '@/pages/Home';
 import Explore from '@/pages/Explore';
+import DiscoverUsers from '@/pages/DiscoverUsers';
 import CardDetail from '@/pages/CardDetail';
 import Collection from '@/pages/Collection';
 import Sets from '@/pages/Sets';
@@ -177,6 +178,7 @@ const AuthenticatedApp = () => {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<Explore />} />
+        <Route path="/discover/users" element={<DiscoverUsers />} />
         <Route path="/card/:cardId" element={<CardDetail />} />
         <Route path="/set/:setId" element={<Explore />} />
         <Route path="/sets" element={<Sets />} />

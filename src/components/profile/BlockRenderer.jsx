@@ -5,6 +5,7 @@ import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import { BLOCK_LABELS } from '@/lib/profileThemes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // BlockShell — shared section wrapper used by ProfileBlocks and every
 // platform theme so cards have a consistent surface.
@@ -17,13 +18,20 @@ export function BlockShell({ title, children, className = '', accent = '' }) {
   );
 }
 
-function BadgeRow({ items, icon: Icon }) {
+function BadgeRow({ items, icon: Icon, linkField, findKey }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((v, i) => (
-        <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+        <Link
+          key={i}
+          to={`/discover/users?field=${linkField}&value=${encodeURIComponent(v)}`}
+          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+          aria-label={t(findKey, { value: v })}
+          title={t(findKey, { value: v })}
+        >
           {Icon && <Icon className="h-3 w-3" />} {v}
-        </span>
+        </Link>
       ))}
     </div>
   );
@@ -35,15 +43,15 @@ function BadgeRow({ items, icon: Icon }) {
 export default function BlockRenderer({ blockKey, data, did, isOwner }) {
   if (blockKey === 'interests') {
     if (!data?.interests?.length) return null;
-    return <BlockShell title={BLOCK_LABELS.interests}><BadgeRow items={data.interests} /></BlockShell>;
+    return <BlockShell title={BLOCK_LABELS.interests}><BadgeRow items={data.interests} linkField="interest" findKey="discoverUsers.findInterest" /></BlockShell>;
   }
   if (blockKey === 'favourite_pokemon') {
     if (!data?.favourite_pokemon?.length) return null;
-    return <BlockShell title={BLOCK_LABELS.favourite_pokemon}><BadgeRow items={data.favourite_pokemon} icon={Sparkles} /></BlockShell>;
+    return <BlockShell title={BLOCK_LABELS.favourite_pokemon}><BadgeRow items={data.favourite_pokemon} icon={Sparkles} linkField="pokemon" findKey="discoverUsers.findPokemon" /></BlockShell>;
   }
   if (blockKey === 'favourite_sets') {
     if (!data?.favourite_sets?.length) return null;
-    return <BlockShell title={BLOCK_LABELS.favourite_sets}><BadgeRow items={data.favourite_sets} icon={Layers} /></BlockShell>;
+    return <BlockShell title={BLOCK_LABELS.favourite_sets}><BadgeRow items={data.favourite_sets} icon={Layers} linkField="set" findKey="discoverUsers.findSet" /></BlockShell>;
   }
   if (blockKey === 'milestones') {
     if (!data?.milestones?.length) return null;
