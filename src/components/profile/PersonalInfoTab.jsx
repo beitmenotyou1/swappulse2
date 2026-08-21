@@ -13,12 +13,12 @@ export default function PersonalInfoTab({ draft, update }) {
         <textarea
           value={draft.bio || ''}
           onChange={(e) => update({ bio: e.target.value })}
-          maxLength={1000}
+          maxLength={256}
           rows={3}
-          placeholder="A longer bio about your collecting journey…"
+          placeholder="A short bio about your collecting journey…"
           className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
         />
-        <p className="mt-1 text-right text-[11px] text-muted-foreground">{(draft.bio || '').length}/1000</p>
+        <p className="mt-1 text-right text-[11px] text-muted-foreground">{(draft.bio || '').length}/256</p>
       </Field>
 
       <Field label="Pronouns" visibility={fv.pronouns} onVis={(v) => setVis('pronouns', v)}>

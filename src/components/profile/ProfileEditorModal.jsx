@@ -37,8 +37,11 @@ export default function ProfileEditorModal({ config, onSave, onClose, saving, se
 
   const handleSave = async () => {
     if (!draft) return;
+    // Enforce the strict 256-character profile bio limit before persisting so
+    // existing longer bios can't be re-saved beyond the cap.
+    const clamped = { ...draft, bio: (draft.bio || '').slice(0, 256) };
     try {
-      await onSave(draft);
+      await onSave(clamped);
       // After saving the enhanced profile config, if the user has migrated,
       // push the profile to the PDS so edits reflect on the Protocol.
       if (migrated) {
