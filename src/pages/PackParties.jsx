@@ -4,7 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Calendar, Users, Plus, Radio } from 'lucide-react';
 import Avatar from '@/components/Avatar';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -42,7 +42,7 @@ export default function PackParties() {
       <PageHeader title={t('page.packParties.title')} subtitle={t('page.packParties.subtitle')}>
         {user && (
           <Button size="sm" onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4" /> New Party
+            <Plus className="h-4 w-4" /> {t('page.packParties.newParty')}
           </Button>
         )}
       </PageHeader>
@@ -53,13 +53,13 @@ export default function PackParties() {
         ) : parties.length === 0 ? (
           <div className="mx-auto max-w-md py-16 text-center">
             <Sparkles className="mx-auto h-12 w-12 text-primary/40" />
-            <h2 className="mt-4 text-lg font-bold">No pack parties yet</h2>
+            <h2 className="mt-4 text-lg font-bold">{t('page.packParties.empty')}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Schedule a synchronized pack opening and invite collectors to join the fun.
+              {t('page.packParties.emptySub')}
             </p>
             {user && (
               <Button className="mt-4" onClick={() => setShowCreate(true)}>
-                <Plus className="h-4 w-4" /> Schedule a Party
+                <Plus className="h-4 w-4" /> {t('page.packParties.schedule')}
               </Button>
             )}
           </div>
@@ -83,6 +83,7 @@ export default function PackParties() {
 }
 
 function PartyCard({ party }) {
+  const t = useT();
   const live = party.status === 'live';
   const scheduled = party.status === 'scheduled';
   const time = party.scheduled_at ? new Date(party.scheduled_at) : null;
@@ -93,14 +94,14 @@ function PartyCard({ party }) {
         <div className="flex items-center gap-2">
           {live ? (
             <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-bold text-success">
-              <Radio className="h-3 w-3 live-ring" /> LIVE
+              <Radio className="h-3 w-3 live-ring" /> {t('page.packParties.live')}
             </span>
           ) : scheduled ? (
             <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               <Calendar className="h-3 w-3" /> {time ? formatDistanceToNow(time, { addSuffix: true }) : ''}
             </span>
           ) : (
-            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">Completed</span>
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{t('page.packParties.completed')}</span>
           )}
         </div>
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -121,7 +122,7 @@ function PartyCard({ party }) {
           <span className="text-xs text-muted-foreground">{party.host_name}</span>
         </div>
         {live && (
-          <Button size="sm" variant="default">Join Now</Button>
+          <Button size="sm" variant="default">{t('page.packParties.joinNow')}</Button>
         )}
       </div>
     </div>
@@ -129,6 +130,7 @@ function PartyCard({ party }) {
 }
 
 function CreatePartyModal({ user, onClose, onCreated }) {
+  const t = useT();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [setId, setSetId] = useState('');
@@ -154,7 +156,7 @@ function CreatePartyModal({ user, onClose, onCreated }) {
       });
       onCreated();
     } catch (e) {
-      alert('Could not create party: ' + e.message);
+      alert(t('page.packParties.createError') + ': ' + e.message);
     } finally {
       setSubmitting(false);
     }
@@ -163,11 +165,11 @@ function CreatePartyModal({ user, onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-t-2xl bg-background p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold">Schedule a Pack Party</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Pick a set, set a time, and invite collectors to open packs together.</p>
+        <h2 className="text-lg font-bold">{t('page.packParties.createTitle')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('page.packParties.createSub')}</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="text-sm font-medium">Title</label>
+            <label className="text-sm font-medium">{t('page.packParties.titleLabel')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Friday Night Pulls"
@@ -176,7 +178,7 @@ function CreatePartyModal({ user, onClose, onCreated }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Description (optional)</label>
+            <label className="text-sm font-medium">{t('page.packParties.descLabel')}</label>
             <textarea
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Opening 5 packs of Scarlet & Violet..."
@@ -186,7 +188,7 @@ function CreatePartyModal({ user, onClose, onCreated }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Set (optional)</label>
+            <label className="text-sm font-medium">{t('page.packParties.setLabel')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="sv3"
@@ -195,7 +197,7 @@ function CreatePartyModal({ user, onClose, onCreated }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">When</label>
+            <label className="text-sm font-medium">{t('page.packParties.whenLabel')}</label>
             <input
               type="datetime-local"
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
@@ -204,7 +206,7 @@ function CreatePartyModal({ user, onClose, onCreated }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Max participants</label>
+            <label className="text-sm font-medium">{t('page.packParties.maxParticipants')}</label>
             <input
               type="number"
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
@@ -214,9 +216,9 @@ function CreatePartyModal({ user, onClose, onCreated }) {
           </div>
         </div>
         <div className="mt-5 flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>{t('common.cancel')}</Button>
           <Button className="flex-1" disabled={!title || !scheduledAt || submitting} onClick={submit}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Schedule'}
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t('page.packParties.scheduleBtn')}
           </Button>
         </div>
       </div>

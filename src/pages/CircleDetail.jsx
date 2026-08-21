@@ -9,19 +9,21 @@ import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-const THEME_LABEL = {
-  general: 'General', vintage: 'Vintage', competitive: 'Competitive', shiny: 'Shiny',
-  investment: 'Investment', local_region: 'Local Region', artist: 'Artist',
+const THEME_LABEL_KEY = {
+  general: 'circle.theme.general', vintage: 'circle.theme.vintage', competitive: 'circle.theme.competitive', shiny: 'circle.theme.shiny',
+  investment: 'circle.theme.investment', local_region: 'circle.theme.localRegion', artist: 'circle.theme.artist',
 };
 
 export default function CircleDetail() {
+  const t = useT();
+  const { circleId } = useParams();
   useSEO({
     title: 'Circle',
     description: 'A themed Pokémon TCG collector circle on SwapPulse, vintage, competitive, shiny, regional, and more.',
     canonicalPath: `/circles/${circleId}`,
   });
-  const { circleId } = useParams();
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -104,26 +106,27 @@ export default function CircleDetail() {
     return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
   if (!data?.circle) {
-    return <div className="py-16 text-center text-sm text-muted-foreground">Circle not found.</div>;
+    return <div className="py-16 text-center text-sm text-muted-foreground">{t('circle.notFound')}</div>;
   }
 
   const c = data.circle;
   const canJoin = !data.isMember && !data.isCurator && !data.denied && c.visibility !== 'private';
+  const memberCount = c.member_count || 1;
 
   return (
     <div>
-      <PageHeader title={c.name} subtitle={`${THEME_LABEL[c.theme] || c.theme}${c.region ? ' · ' + c.region : ''}`}>
+      <PageHeader title={c.name} subtitle={`${THEME_LABEL_KEY[c.theme] ? t(THEME_LABEL_KEY[c.theme]) : c.theme}${c.region ? ' · ' + c.region : ''}`}>
         {data.isCurator ? (
-          <span className="rounded-full bg-primary/15 px-3 py-1.5 text-xs font-bold text-primary">Curator</span>
+          <span className="rounded-full bg-primary/15 px-3 py-1.5 text-xs font-bold text-primary">{t('circle.curator')}</span>
         ) : data.isMember ? (
           <button onClick={exit} disabled={acting} className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50">
-            <LogOut className="h-3.5 w-3.5" /> Leave
+            <LogOut className="h-3.5 w-3.5" /> {t('circle.leave')}
           </button>
         ) : data.denied ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground"><Lock className="h-3.5 w-3.5" /> Private</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground"><Lock className="h-3.5 w-3.5" /> {t('circle.private')}</span>
         ) : canJoin ? (
           <button onClick={join} disabled={acting} className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-50">
-            <LogIn className="h-3.5 w-3.5" /> Join
+            <LogIn className="h-3.5 w-3.5" /> {t('circle.join')}
           </button>
         ) : null}
       </PageHeader>
@@ -135,37 +138,37 @@ export default function CircleDetail() {
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{c.member_count || 1} member{(c.member_count || 1) === 1 ? '' : 's'}</p>
+              <p className="text-sm text-muted-foreground">{memberCount} {t(memberCount === 1 ? 'circle.memberSingular' : 'circle.memberPlural')}</p>
               <p className="text-xs capitalize text-muted-foreground">{c.visibility.replace('_', ' ')}</p>
             </div>
           </div>
           {c.description && <p className="mt-3 text-sm">{c.description}</p>}
           {!data.isMember && data.hasExited && !data.denied && (
-            <p className="mt-2 text-xs text-muted-foreground">You have left this circle.</p>
+            <p className="mt-2 text-xs text-muted-foreground">{t('circle.leftCircle')}</p>
           )}
         </div>
 
         {data.denied ? (
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <Lock className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">This is a private circle. Only members can view its contents.</p>
+            <p className="text-sm text-muted-foreground">{t('circle.privateDesc')}</p>
           </div>
         ) : (
           <>
             {data.canSeeMembers && (
               <section>
-                <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Members</h2>
+                <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('circle.membersTitle')}</h2>
                 <div className="rounded-2xl border border-border bg-card p-3">
                   <div className="flex flex-col gap-2">
                     {(c.member_profiles || []).map((p) => (
                       <div key={p.did} className="flex items-center gap-2">
                         <Avatar name={p.name} src={p.avatar} size={28} />
-                        <span className="truncate text-sm font-medium">{p.name || p.handle || 'Member'}</span>
-                        {p.did === c.did && <span className="text-xs text-primary">curator</span>}
+                        <span className="truncate text-sm font-medium">{p.name || p.handle || t('circle.member')}</span>
+                        {p.did === c.did && <span className="text-xs text-primary">{t('circle.curatorLower')}</span>}
                       </div>
                     ))}
                     {(c.member_profiles || []).length === 0 && (
-                      <p className="text-xs text-muted-foreground">No member profiles.</p>
+                      <p className="text-xs text-muted-foreground">{t('circle.noProfiles')}</p>
                     )}
                   </div>
                 </div>
@@ -173,38 +176,38 @@ export default function CircleDetail() {
             )}
 
             <section>
-              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Circle-scoped trades</h2>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t('circle.scopedTrades')}</h2>
               {data.isMember || data.isCurator ? (
                 data.scopedTrades.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border py-10 text-center">
                     <ArrowLeftRight className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">No circle-scoped trades yet.</p>
+                    <p className="text-sm text-muted-foreground">{t('circle.noScopedTrades')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {data.scopedTrades.map((t) => (
-                      <div key={t.id} className="rounded-2xl border border-border bg-card p-4">
+                    {data.scopedTrades.map((tr) => (
+                      <div key={tr.id} className="rounded-2xl border border-border bg-card p-4">
                         <div className="flex items-center gap-2">
-                          <Avatar name={t.author_name} src={t.author_avatar} size={28} />
-                          <span className="text-sm font-semibold">{t.author_name || 'Collector'}</span>
+                          <Avatar name={tr.author_name} src={tr.author_avatar} size={28} />
+                          <span className="text-sm font-semibold">{tr.author_name || t('common.collector')}</span>
                         </div>
                         <div className="mt-2 grid gap-2 sm:grid-cols-2">
                           <div className="rounded-lg bg-secondary p-2">
-                            <p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">Offering</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">{t('circle.offering')}</p>
                             <div className="flex flex-wrap gap-1.5">
-                              {t.offer_card_images?.slice(0, 3).map((img, i) => (
+                              {tr.offer_card_images?.slice(0, 3).map((img, i) => (
                                 <img key={i} src={cardImageUrl(img)} alt="" className="h-12 w-9 rounded object-cover" />
                               ))}
-                              <span className="self-center text-xs font-medium">{t.offer_card_names?.join(', ')}</span>
+                              <span className="self-center text-xs font-medium">{tr.offer_card_names?.join(', ')}</span>
                             </div>
                           </div>
                           <div className="rounded-lg bg-secondary p-2">
-                            <p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">Wants</p>
-                            <p className="text-xs font-medium">{t.wanted_card_names?.join(', ')}</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase text-muted-foreground">{t('circle.wants')}</p>
+                            <p className="text-xs font-medium">{tr.wanted_card_names?.join(', ')}</p>
                           </div>
                         </div>
                         <div className="mt-2 text-right">
-                          <Link to={`/trade/${t.id}`} className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-white hover:bg-primary/90">Negotiate</Link>
+                          <Link to={`/trade/${tr.id}`} className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-white hover:bg-primary/90">{t('circle.negotiate')}</Link>
                         </div>
                       </div>
                     ))}
@@ -212,7 +215,7 @@ export default function CircleDetail() {
                 )
               ) : (
                 <p className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  Join this circle to see member-only trades.
+                  {t('circle.joinToSee')}
                 </p>
               )}
             </section>

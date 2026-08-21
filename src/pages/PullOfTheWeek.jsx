@@ -65,7 +65,7 @@ export default function PullOfTheWeek() {
       setMyVote(nominationId);
       loadData();
     } catch (e) {
-      alert('Could not vote: ' + e.message);
+      alert(t('page.pullOfTheWeek.voteError') + ': ' + e.message);
     }
   };
 
@@ -74,7 +74,7 @@ export default function PullOfTheWeek() {
       <PageHeader title={t('page.pullOfTheWeek.title')} subtitle={t('page.pullOfTheWeek.subtitle')}>
         {user && !showNominate && (
           <Button size="sm" onClick={() => setShowNominate(true)}>
-            <Plus className="h-4 w-4" /> Nominate
+            <Plus className="h-4 w-4" /> {t('page.pullOfTheWeek.nominate')}
           </Button>
         )}
       </PageHeader>
@@ -87,7 +87,7 @@ export default function PullOfTheWeek() {
             <div className="flex-1">
               <p className="text-sm font-bold">{nominations[0].card_name}</p>
               <p className="text-xs text-muted-foreground">
-                Leading with {nominations[0].vote_count} vote{nominations[0].vote_count !== 1 ? 's' : ''}
+                {t('page.pullOfTheWeek.leading').replace('{count}', nominations[0].vote_count)}
               </p>
             </div>
             <Avatar name={nominations[0].nominator_name} src={nominations[0].nominator_avatar} size={32} />
@@ -99,13 +99,13 @@ export default function PullOfTheWeek() {
         ) : nominations.length === 0 ? (
           <div className="mx-auto max-w-md py-16 text-center">
             <Sparkles className="mx-auto h-12 w-12 text-primary/40" />
-            <h2 className="mt-4 text-lg font-bold">No nominations yet</h2>
+            <h2 className="mt-4 text-lg font-bold">{t('page.pullOfTheWeek.empty')}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Be the first to nominate your best pull this week!
+              {t('page.pullOfTheWeek.emptySub')}
             </p>
             {user && (
               <Button className="mt-4" onClick={() => setShowNominate(true)}>
-                <Plus className="h-4 w-4" /> Nominate a Pull
+                <Plus className="h-4 w-4" /> {t('page.pullOfTheWeek.nominatePull')}
               </Button>
             )}
           </div>
@@ -133,11 +133,11 @@ export default function PullOfTheWeek() {
                       <Star className="h-3.5 w-3.5 fill-accent text-accent" /> {n.vote_count}
                     </span>
                     {myVote === n.id ? (
-                      <span className="text-xs font-medium text-success">Voted</span>
+                      <span className="text-xs font-medium text-success">{t('page.pullOfTheWeek.voted')}</span>
                     ) : myVote ? (
-                      <span className="text-xs text-muted-foreground">Already voted</span>
+                      <span className="text-xs text-muted-foreground">{t('page.pullOfTheWeek.alreadyVoted')}</span>
                     ) : user ? (
-                      <Button size="sm" variant="outline" onClick={() => vote(n.id)}>Vote</Button>
+                      <Button size="sm" variant="outline" onClick={() => vote(n.id)}>{t('page.pullOfTheWeek.vote')}</Button>
                     ) : null}
                   </div>
                 </div>
@@ -161,6 +161,7 @@ export default function PullOfTheWeek() {
 }
 
 function NominateModal({ user, weekKey, onClose, onCreated }) {
+  const t = useT();
   const [cardId, setCardId] = useState('');
   const [cardName, setCardName] = useState('');
   const [cardImage, setCardImage] = useState('');
@@ -201,7 +202,7 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
       }).catch(() => {});
       onCreated();
     } catch (e) {
-      alert('Could not nominate: ' + e.message);
+      alert(t('page.pullOfTheWeek.nominateError') + ': ' + e.message);
     } finally {
       setSubmitting(false);
     }
@@ -210,11 +211,11 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-t-2xl bg-background p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold">Nominate Your Pull</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Enter the card you pulled this week.</p>
+        <h2 className="text-lg font-bold">{t('page.pullOfTheWeek.nominateTitle')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('page.pullOfTheWeek.nominateSub')}</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="text-sm font-medium">Card name</label>
+            <label className="text-sm font-medium">{t('page.pullOfTheWeek.cardName')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Charizard ex"
@@ -223,7 +224,7 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Card ID (optional)</label>
+            <label className="text-sm font-medium">{t('page.pullOfTheWeek.cardId')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="sv3-215"
@@ -232,7 +233,7 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Image URL (optional)</label>
+            <label className="text-sm font-medium">{t('page.pullOfTheWeek.imageUrl')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="https://..."
@@ -242,7 +243,7 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Rarity</label>
+              <label className="text-sm font-medium">{t('page.pullOfTheWeek.rarity')}</label>
               <input
                 className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                 placeholder="Rare Holo"
@@ -251,7 +252,7 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Set</label>
+              <label className="text-sm font-medium">{t('page.pullOfTheWeek.set')}</label>
               <input
                 className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                 placeholder="Scarlet & Violet"
@@ -262,9 +263,9 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
           </div>
         </div>
         <div className="mt-5 flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>{t('common.cancel')}</Button>
           <Button className="flex-1" disabled={!cardName || submitting} onClick={submit}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Nominate'}
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t('page.pullOfTheWeek.nominate')}
           </Button>
         </div>
       </div>
