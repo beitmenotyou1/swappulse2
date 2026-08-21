@@ -17,8 +17,12 @@ import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    // Require an authenticated admin user. Workflow invocations authenticate
+    // as admin, so the PDS Sync workflow can trigger retries; unauthenticated
+    // strangers and non-admin users are rejected.
     const caller = await base44.auth.me().catch(() => null);
-    if (caller && caller.role !== 'admin') {
+    if (!caller) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (caller.role !== 'admin') {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
     const svc = base44.asServiceRole;

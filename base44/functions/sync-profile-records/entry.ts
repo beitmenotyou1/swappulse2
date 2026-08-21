@@ -42,11 +42,12 @@ export default async function(req: Request): Promise<Response> {
     const adminBackfill = !!(body as any).adminBackfill;
 
     if (adminBackfill) {
-      // Allow both admin users (manual trigger) and workflow invocations
-      // (no authenticated user, matching the sync-from-pds pattern) to run
-      // the backfill. Authenticated non-admin users are still rejected.
+      // Require an authenticated admin user. Workflow invocations authenticate
+      // as admin, so the PDS Sync workflow can trigger backfills; unauthenticated
+      // strangers and non-admin users are rejected.
       const caller = await base44.auth.me().catch(() => null);
-      if (caller && caller.role !== 'admin') {
+      if (!caller) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (caller.role !== 'admin') {
         return Response.json({ error: 'Admin only' }, { status: 403 });
       }
 
