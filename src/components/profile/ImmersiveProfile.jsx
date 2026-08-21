@@ -72,7 +72,7 @@ export default function ImmersiveProfile({
       />
       <div className="px-4">
         <ProfileTabNav tabs={tabs} activeTab={tab} onChange={setTab} accentHex={cfg.accentHex} primaryCount={6} />
-        <div className="mt-3">
+        <div id="profile-tabpanel" role="tabpanel" aria-label="Profile content" className="mt-3">
           <ThemeTabContent
             theme={theme}
             tabKey={tab}

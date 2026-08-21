@@ -24,9 +24,9 @@ export default function XTheme({ data, did, isOwner, profile, posts }) {
       )}
 
       <div className="flex items-center justify-around border-y border-border py-1.5 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5" /> Like</span>
-        <span className="flex items-center gap-1"><Repeat2 className="h-3.5 w-3.5" /> Repost</span>
-        <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Reply</span>
+        <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5" aria-hidden="true" /> Like</span>
+        <span className="flex items-center gap-1"><Repeat2 className="h-3.5 w-3.5" aria-hidden="true" /> Repost</span>
+        <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> Reply</span>
       </div>
 
       <div className="divide-y divide-border">

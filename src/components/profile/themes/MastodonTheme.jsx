@@ -9,7 +9,7 @@ import PostCard from '@/components/feed/PostCard';
 export default function MastodonTheme({ data, blockOrder, did, isOwner, profile, posts }) {
   return (
     <div className="py-4">
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+      <div className="grid gap-4 md:grid-cols-[260px_1fr]">
         <div className="space-y-3">
           <BlockShell title="Profile" accent="border-[#6364FF]/30">
             <div className="space-y-2 text-sm">
@@ -34,8 +34,8 @@ export default function MastodonTheme({ data, blockOrder, did, isOwner, profile,
 
         <div className="space-y-3">
           <div className="flex items-center gap-3 rounded-xl border border-[#6364FF]/30 bg-card px-3 py-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Repeat2 className="h-3.5 w-3.5" /> Boost = Repost</span>
-            <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Reply</span>
+            <span className="flex items-center gap-1"><Repeat2 className="h-3.5 w-3.5" aria-hidden="true" /> Boost = Repost</span>
+            <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" aria-hidden="true" /> Reply</span>
           </div>
           {(posts || []).length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">No toots yet.</p>

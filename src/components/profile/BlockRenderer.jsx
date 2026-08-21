@@ -60,11 +60,11 @@ export default function BlockRenderer({ blockKey, data, did, isOwner }) {
     return (
       <BlockShell title={BLOCK_LABELS.contact}>
         <div className="space-y-1.5 text-sm">
-          {data.location && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> {data.location}</p>}
-          {data.website && <a href={data.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 break-all text-primary hover:underline"><LinkIcon className="h-3.5 w-3.5 shrink-0" /> {data.website}</a>}
-          {data.contact_email && <a href={`mailto:${data.contact_email}`} className="flex items-center gap-1.5 break-all text-primary hover:underline"><Mail className="h-3.5 w-3.5 shrink-0" /> {data.contact_email}</a>}
+          {data.location && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" /> {data.location}</p>}
+          {data.website && <a href={data.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 break-all text-primary hover:underline"><LinkIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {data.website}</a>}
+          {data.contact_email && <a href={`mailto:${data.contact_email}`} className="flex items-center gap-1.5 break-all text-primary hover:underline"><Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {data.contact_email}</a>}
           {data.social_links?.filter((s) => s?.url).map((s, i) => (
-            <a key={i} href={s.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 break-all text-primary hover:underline"><Globe className="h-3.5 w-3.5 shrink-0" /> {s.label || s.platform || s.url}</a>
+            <a key={i} href={s.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 break-all text-primary hover:underline"><Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {s.label || s.platform || s.url}</a>
           ))}
         </div>
       </BlockShell>

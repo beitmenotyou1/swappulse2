@@ -38,7 +38,7 @@ export default function FacebookTheme({ data, did, isOwner, profile, posts }) {
 
   return (
     <div className="py-4">
-      <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+      <div className="grid gap-4 md:grid-cols-[280px_1fr]">
         {/* Left sidebar — social hub info */}
         <div className="space-y-3">
           {/* Intro card */}

@@ -96,9 +96,9 @@ function VintageHeader({ profile, actions, extra, badges, reputationNode, backLi
         <div className="mt-4 space-y-2.5 pb-1">
           <h1 className="font-serif text-2xl font-bold text-amber-900">{profile?.name}</h1>
           {badges}
-          {profile?.bsky_handle && <p className="text-sm text-amber-700/70">@{profile.bsky_handle}</p>}
+          {profile?.bsky_handle && <p className="text-sm text-amber-700">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
-          {profile?.description && <RichText text={profile.description} className="text-sm leading-relaxed text-amber-800/80" />}
+          {profile?.description && <RichText text={profile.description} className="text-sm leading-relaxed text-amber-800" />}
           {reputationNode}
           {extra}
         </div>
@@ -219,7 +219,7 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
       <div className="w-full overflow-hidden bg-gradient-to-r from-red-600/40 via-red-500/30 to-rose-400/30 h-32 sm:h-40">
         {profile?.header && <img src={profile.header} alt="Channel art" className="h-full w-full object-cover" />}
       </div>
-      <div className="h-1 bg-red-600" />
+      <div className="h-1 bg-red-600" aria-hidden="true" />
       {externalBanner}
       <div className="px-4">
         {backLink && <div className="mt-2 mb-2">{backLink}</div>}
@@ -283,7 +283,7 @@ function FacebookHeader({ profile, actions, extra, badges, reputationNode, backL
       <div className="w-full overflow-hidden bg-gradient-to-r from-blue-600/40 via-blue-500/30 to-blue-400/30 h-32 sm:h-40">
         {profile?.header && <img src={profile.header} alt="Cover photo" className="h-full w-full object-cover" />}
       </div>
-      <div className="h-1 bg-blue-600" />
+      <div className="h-1 bg-blue-600" aria-hidden="true" />
       {externalBanner}
       <div className="px-4">
         {backLink && <div className="mt-2 mb-2">{backLink}</div>}
@@ -329,7 +329,7 @@ function BlueskyHeader({ profile, actions, extra, badges, reputationNode, backLi
             <h1 className="text-xl font-bold text-sky-700">{profile?.name}</h1>
             {badges}
           </div>
-          {profile?.bsky_handle && <p className="text-sm text-sky-600">@{profile.bsky_handle}</p>}
+          {profile?.bsky_handle && <p className="text-sm text-sky-700">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
           {reputationNode}
@@ -347,7 +347,7 @@ function MastodonHeader({ profile, actions, extra, badges, reputationNode, backL
       <div className="w-full overflow-hidden bg-gradient-to-r from-purple-500/40 via-violet-400/30 to-fuchsia-300/30 h-32 sm:h-40">
         {profile?.header && <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />}
       </div>
-      <div className="h-1 bg-purple-500" />
+      <div className="h-1 bg-purple-500" aria-hidden="true" />
       {externalBanner}
       <div className="px-4">
         {backLink && <div className="mt-2 mb-2">{backLink}</div>}
@@ -363,7 +363,7 @@ function MastodonHeader({ profile, actions, extra, badges, reputationNode, backL
             <h1 className="text-xl font-bold text-purple-700">{profile?.name}</h1>
             {badges}
           </div>
-          {profile?.bsky_handle && <p className="text-sm text-purple-600">@{profile.bsky_handle}</p>}
+          {profile?.bsky_handle && <p className="text-sm text-purple-700">@{profile.bsky_handle}</p>}
           <Metrics followers={profile?.followers_count} following={profile?.follows_count} posts={profile?.posts_count} />
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
           {reputationNode}
