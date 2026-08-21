@@ -180,6 +180,7 @@ export default function Profile() {
             handle_verified: user?.handle_verified,
             remote_synced: !!merged?.remote_synced,
             description: merged?.description || user?.description,
+            pinned_post_id: user?.pinned_post_id || '',
             followers_count: merged?.followers_count || 0,
             follows_count: merged?.follows_count || 0,
             posts_count: myPosts.length,

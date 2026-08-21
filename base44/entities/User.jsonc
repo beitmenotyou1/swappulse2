@@ -32,8 +32,12 @@
     },
     "description": {
       "type": "string",
-      "description": "User bio/description",
-      "maxLength": 500
+      "description": "User bio/description. Max 256 characters to match the AT Protocol app.bsky.actor.profile description limit so the bio fits across the protocol without truncation.",
+      "maxLength": 256
+    },
+    "pinned_post_id": {
+      "type": "string",
+      "description": "Local id of the Post pinned to the user's profile. Maximum one pinned post; displayed prominently on the About tab. Cleared when the post is deleted or unpinned."
     },
     "two_factor_enabled": {
       "type": "boolean",

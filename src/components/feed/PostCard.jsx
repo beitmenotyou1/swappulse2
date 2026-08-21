@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag, Quote, Trash2, Loader2 } from 'lucide-react';
+import { Heart, Repeat2, MessageCircle, Bookmark, Share2, Sparkles, ArrowLeftRight, Image as ImageIcon, Flag, Quote, Trash2, Loader2, Pin } from 'lucide-react';
 import { getPostDetailPath, isInteractiveTarget } from '@/lib/postNav';
 import LiveAvatar from '@/components/LiveAvatar';
 import LiveBadge from '@/components/LiveBadge';
@@ -42,8 +42,9 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [showThread, setShowThread] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pendingPin, setPendingPin] = useState(false);
 
-  const { user } = useAuth();
+  const { user, checkUserAuth } = useAuth();
   const { liveByDid } = useLivePresence();
   const { registerDid } = useMembership();
   const navigate = useNavigate();
@@ -162,6 +163,29 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
     }
   };
 
+  const isPinned = !!user?.pinned_post_id && user.pinned_post_id === post.id;
+  const togglePin = async () => {
+    if (pendingPin || !isAuthor) return;
+    if (isPinned) {
+      setPendingPin(true);
+      try {
+        await base44.auth.updateMe({ pinned_post_id: '' });
+        await checkUserAuth();
+      } catch { /* ignore */ } finally {
+        setPendingPin(false);
+      }
+    } else {
+      if (user?.pinned_post_id && !window.confirm(t('post.pinReplaceConfirm'))) return;
+      setPendingPin(true);
+      try {
+        await base44.auth.updateMe({ pinned_post_id: post.id });
+        await checkUserAuth();
+      } catch { /* ignore */ } finally {
+        setPendingPin(false);
+      }
+    }
+  };
+
   const liveInfo = post.did ? liveByDid.get(post.did) : null;
   const meta = TYPE_META[post.post_type];
   const likeCount = post.likes + (liked ? 1 : 0);
@@ -272,6 +296,16 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <button aria-label={t('common.share')} className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
               <Share2 className="h-4 w-4" />
             </button>
+            {isAuthor && (
+              <button
+                onClick={togglePin}
+                disabled={pendingPin}
+                aria-label={isPinned ? t('common.unpin') : t('common.pin')}
+                className={`rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50 ${isPinned ? 'text-primary' : ''}`}
+              >
+                {pendingPin ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pin className={`h-4 w-4 ${isPinned ? 'fill-current' : ''}`} />}
+              </button>
+            )}
             {isAuthor && (
               <button
                 onClick={handleDelete}

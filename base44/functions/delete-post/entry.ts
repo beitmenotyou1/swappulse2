@@ -49,6 +49,11 @@ export default async function(req: Request): Promise<Response> {
       console.error('delete-post: local delete failed', e?.message || e);
     });
 
+    // Clear the pinned post reference if the deleted post was pinned.
+    if (user.pinned_post_id && user.pinned_post_id === post.id) {
+      await base44.asServiceRole.entities.User.update(user.id, { pinned_post_id: '' }).catch(() => {});
+    }
+
     // Best-effort: clean up local likes/reposts targeting this post.
     const filter = post.id ? { post_id: post.id } : { post_uri: post.at_uri };
     try {

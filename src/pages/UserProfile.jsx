@@ -128,6 +128,7 @@ export default function UserProfile() {
     did: subjectDid,
     handle_verified: merged?.handle_verified || false,
     description: merged?.description || '',
+    pinned_post_id: merged?.pinned_post_id || '',
     followers_count: merged?.followers_count || 0,
     follows_count: merged?.follows_count || 0,
     posts_count: merged?.posts_count || 0,

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, TrendingUp } from 'lucide-react';
 import PostCard from '@/components/feed/PostCard';
+import PinnedPost from '@/components/profile/PinnedPost';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import ActivityTab from '@/components/profile/ActivityTab';
@@ -85,9 +86,14 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
   const t = useT();
   const personalInfo = config?.personal || config;
 
-  // Landing / About / Home
+  // Landing / About / Home — pinned post is shown prominently at the top.
   if (tabKey === 'About' || tabKey === 'Home') {
-    return <LandingView theme={theme} did={did} isOwner={isOwner} config={config} profile={profile} posts={posts} collection={collection} trades={trades} reputation={reputation} journals={journals} />;
+    return (
+      <div className="space-y-2">
+        <PinnedPost pinnedPostId={profile?.pinned_post_id} posts={posts} />
+        <LandingView theme={theme} did={did} isOwner={isOwner} config={config} profile={profile} posts={posts} collection={collection} trades={trades} reputation={reputation} journals={journals} />
+      </div>
+    );
   }
 
   // Posts

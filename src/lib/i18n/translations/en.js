@@ -26,6 +26,8 @@ const en = {
   'common.reply': 'Reply', 'common.repost': 'Repost', 'common.like': 'Like', 'common.share': 'Share',
   'common.cancel': 'Cancel', 'common.save': 'Save', 'common.delete': 'Delete', 'common.edit': 'Edit',
   'common.close': 'Close', 'common.viewOnSwapPulse': 'View on SwapPulse', 'common.fromBluesky': 'From Bluesky',
+  'common.pin': 'Pin to profile', 'common.unpin': 'Unpin from profile',
+  'post.pinnedLabel': 'Pinned', 'post.pinReplaceConfirm': 'This will replace your current pinned post. Continue?',
   'common.viewAll': 'View all', 'common.viewMore': 'View more', 'common.noResults': 'No results yet', 'common.collectors': 'collectors',
   'feed.forYou': 'For You', 'feed.freshPulls': 'Fresh Pulls', 'feed.tradeFloor': 'Trade Floor',
   'feed.showcase': 'Showcase', 'feed.quiet': 'Your feed is quiet', 'feed.followCollectors': 'Follow collectors to personalize your feed',

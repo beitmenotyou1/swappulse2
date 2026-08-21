@@ -91,6 +91,8 @@ export function mergeProfiles(local: any | null, remote: any | null): any {
     followers_count: remote?.followersCount || 0,
     follows_count: remote?.followsCount || 0,
     posts_count: remote?.postsCount || 0,
+    // Local-only custom fields — always from the SwapPulse record.
+    pinned_post_id: local?.pinned_post_id || '',
     // Source flags for the UI.
     is_member: !!local,
     remote_synced: !!remote,
