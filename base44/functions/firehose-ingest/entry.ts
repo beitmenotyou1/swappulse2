@@ -26,7 +26,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
-import { isBlueskyCdnUrl, extractBlobCidFromBskyUrl, blobRefCid } from '../../shared/profileSync.ts';
+import { blobRefCid, pullProfileFromPds, constructBskyCdnUrl } from '../../shared/profileSync.ts';
+import { getUserIdentity } from '../../shared/userIdentity.ts';
+import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -373,14 +375,16 @@ async function syncInboundDms(base44: any, svc: any): Promise<number> {
   return synced;
 }
 
-// Inbound profile sync (two-way identity). For each user with a PdsCredential,
-// fetch their app.bsky.actor.profile from the AppView and merge changed fields
+// Inbound profile sync (two-way identity). For each migrated user, reads their
+// app.bsky.actor.profile record directly from the PDS via getRecord (the
+// authoritative source with zero indexing lag) and merges changed fields
 // (displayName, description, avatar, banner→header) into the local User
-// record. Gated by profile_synced_at vs updated_date so a remote edit never
-// clobbers a newer local edit — if the local profile changed after the last
-// sync, local wins and the remote merge is skipped until the next remote
-// change. This closes the inbound half of profile sync; the outbound half is
-// profileSync (sync-profile-records).
+// record. Blob refs are converted to displayable cdn.bsky.app URLs. Gated by
+// profile_synced_at vs updated_date (last-write-wins) so a remote edit never
+// clobbers a newer local edit. The 10-minute AppView grace period is no
+// longer needed since the PDS read is authoritative — the echo loop is
+// structurally impossible because inbound and outbound compare against the
+// same PDS record.
 async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
   let synced = 0;
   try {
@@ -389,84 +393,74 @@ async function syncInboundProfiles(base44: any, svc: any): Promise<number> {
     for (const user of usersWithDid || []) {
       try {
         if (!user.did) continue;
-        const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
-        url.searchParams.set('actor', user.did);
-        const res = await fetch(url);
-        if (res.status === 429 || res.status >= 500) continue;
-        if (!res.ok) continue;
-        const profile: any = await res.json();
-        // user is already the User record — no separate lookup needed.
-        // Conflict guard: if the local profile was edited after the last sync,
-        // local is authoritative — skip the remote merge. BUT if the outbound
-        // sync has failed 3+ times consecutively (profile_sync_fail_count >= 3),
-        // the local state may never get pushed, so bypass the guard and let
-        // remote win to avoid permanently blocking inbound sync.
+
+        // Resolve per-user PDS identity + session for a direct PDS read.
+        const identity = await getUserIdentity(svc, user);
+        if (!identity) continue;
+        let session: any;
+        try {
+          session = (await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword)).session;
+        } catch (e) {
+          console.error('firehose-ingest: PDS session failed for profile sync', user.did, e?.message || e);
+          continue;
+        }
+
+        // Read the profile record directly from the PDS (authoritative, zero lag).
+        const { ok, profile } = await pullProfileFromPds(identity.pdsUrl, session.accessJwt, identity.did);
+        if (!ok || !profile) continue;
+
+        // Conflict guard: if the local profile was edited after the last
+        // outbound sync, local is authoritative — skip the remote merge.
+        // If the outbound sync has failed 3+ times consecutively, bypass
+        // the guard so remote wins (prevents a dead outbound sync from
+        // permanently blocking inbound). The 10-minute AppView grace period
+        // is removed — the PDS read is lag-free.
         const lastSync = user.profile_synced_at || '';
         const localUpdated = user.updated_date || '';
         const failCount = user.profile_sync_fail_count || 0;
         if (lastSync && localUpdated > lastSync && failCount < 3) continue;
-        // AppView indexing grace period: after a successful outbound push, the
-        // AppView (public.api.bsky.app) may lag behind the PDS for several
-        // minutes. If we read the AppView during that window, it returns the
-        // pre-push profile and we'd overwrite the just-pushed local edit with
-        // stale data (reverting the user's edit every ~5 min). Skip the inbound
-        // merge for 10 minutes after the last outbound sync to let the AppView
-        // index the push; after that, the indexed profile should match local
-        // and the merge is a no-op.
-        if (lastSync && failCount < 3) {
-          const sinceSyncMs = Date.now() - new Date(lastSync).getTime();
-          if (sinceSyncMs < 10 * 60 * 1000) continue;
-        }
 
         const updates: any = {};
-        // Text fields: always merge from remote if different.
+        // Text fields: merge from remote if different.
         if (profile.displayName && profile.displayName !== user.display_name) {
           updates.display_name = profile.displayName;
         }
         if ((profile.description || '') !== (user.description || '')) {
           updates.description = profile.description || '';
         }
-        // Avatar/banner: only overwrite local if the remote URL is NOT a
-        // Bluesky CDN URL that would break the outbound echo loop. When the
-        // local avatar is a Base44 CDN URL (already pushed as a PDS blob),
-        // the AppView resolves it to a cdn.bsky.app URL — overwriting local
-        // with that URL would prevent future outbound syncs from re-uploading
-        // (the SSRF allowlist blocks cdn.bsky.app). So we skip avatar/header
-        // updates when the remote URL is a Bluesky CDN URL and the local URL
-        // is from an allowlisted CDN (meaning the blob is already PDS-resident
-        // and the local Base44 URL is the source of truth).
-        if (profile.avatar && profile.avatar !== user.avatar) {
-          if (isBlueskyCdnUrl(profile.avatar) && user.avatar_pds_ref) {
-            // Compare blob cids: if the AppView's blob cid matches the stored
-            // PDS blob ref, it's an echo of our own push (skip). If it differs,
-            // the user changed their avatar on Bluesky (merge the new URL).
-            const remoteCid = extractBlobCidFromBskyUrl(profile.avatar);
-            const storedCid = blobRefCid(user.avatar_pds_ref);
-            if (remoteCid && storedCid && remoteCid !== storedCid) {
-              updates.avatar = profile.avatar;
+        // Avatar: compare the PDS record's blob cid against the stored blob
+        // ref cid. If they match, it's our own outbound push (echo) — skip.
+        // If they differ, the user changed their avatar on Bluesky — merge
+        // the new cdn.bsky.app URL and clear the stored ref.
+        if (profile.avatar) {
+          const remoteCid = blobRefCid(profile.avatar);
+          const storedCid = blobRefCid(user.avatar_pds_ref);
+          if (remoteCid && (!storedCid || remoteCid !== storedCid)) {
+            const url = constructBskyCdnUrl('avatar', identity.did, profile.avatar);
+            if (url && url !== user.avatar) {
+              updates.avatar = url;
               updates.avatar_pds_ref = '';
             }
-            // else: same blob — echo, skip to preserve local Base44 URL
-          } else if (!isBlueskyCdnUrl(profile.avatar)) {
-            // Remote avatar is from a non-Bluesky host — this is a genuine
-            // remote edit (e.g. user changed avatar on Bluesky). Merge it.
-            updates.avatar = profile.avatar;
-            // Clear the stored PDS blob ref since the avatar changed remotely.
-            updates.avatar_pds_ref = '';
           }
+        } else if (user.avatar) {
+          // Avatar was removed on Bluesky.
+          updates.avatar = '';
+          updates.avatar_pds_ref = '';
         }
-        if (profile.banner && profile.banner !== user.header) {
-          if (isBlueskyCdnUrl(profile.banner) && user.header_pds_ref) {
-            const remoteCid = extractBlobCidFromBskyUrl(profile.banner);
-            const storedCid = blobRefCid(user.header_pds_ref);
-            if (remoteCid && storedCid && remoteCid !== storedCid) {
-              updates.header = profile.banner;
+        // Banner: same logic as avatar.
+        if (profile.banner) {
+          const remoteCid = blobRefCid(profile.banner);
+          const storedCid = blobRefCid(user.header_pds_ref);
+          if (remoteCid && (!storedCid || remoteCid !== storedCid)) {
+            const url = constructBskyCdnUrl('banner', identity.did, profile.banner);
+            if (url && url !== user.header) {
+              updates.header = url;
               updates.header_pds_ref = '';
             }
-          } else if (!isBlueskyCdnUrl(profile.banner)) {
-            updates.header = profile.banner;
-            updates.header_pds_ref = '';
           }
+        } else if (user.header) {
+          updates.header = '';
+          updates.header_pds_ref = '';
         }
         if (Object.keys(updates).length === 0) continue;
         updates.profile_synced_at = new Date().toISOString();

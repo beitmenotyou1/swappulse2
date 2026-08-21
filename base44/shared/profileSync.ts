@@ -7,13 +7,14 @@
 // and any untracked fields (labels, etc.) so nothing on the Bluesky side is
 // lost. Used by sync-profile-records.
 //
-// INBOUND (PDS/AppView → SwapPulse): pullProfileFromAppView fetches the user's
-// Bluesky profile (displayName, description, avatar, banner) from the AppView
-// and returns the field updates to merge into the local User record. Used by
-// migrate-to-swappulse on link so the initial sync pulls the Bluesky identity
-// INTO SwapPulse. The ongoing inbound sync is handled by firehose-ingest's
-// syncInboundProfiles, which recognizes Bluesky CDN URLs and avoids the
-// avatar echo loop.
+// INBOUND (PDS → SwapPulse): pullProfileFromPds reads the user's
+// app.bsky.actor.profile record directly from the PDS via getRecord — the
+// authoritative source with zero indexing lag — and returns the field updates
+// (displayName, description, avatar, banner) to merge into the local User
+// record. Used by migrate-to-swappulse on link and by firehose-ingest's
+// syncInboundProfiles for the ongoing sync. Blob refs are converted to
+// displayable cdn.bsky.app URLs. The old pullProfileFromAppView (AppView-based)
+// is kept as a deprecated fallback for when no per-user PDS session is available.
 
 import { getPdsSessionForUser, pdsRequest } from './pdsSession.ts';
 
@@ -117,6 +118,18 @@ export function blobRefCid(ref: any): string | null {
   } catch {
     return null;
   }
+}
+
+// Construct a displayable cdn.bsky.app URL from a PDS blob ref and the user's
+// DID. The PDS getRecord returns blob refs ({ $type: 'blob', ref: { $link },
+// cid }), not display URLs. The AppView resolves these to cdn.bsky.app URLs;
+// since we now read the PDS directly, we construct the URL ourselves using the
+// canonical format: https://cdn.bsky.app/img/{kind}/plain/{did}/{cid}@jpeg
+// Returns empty string if the blob ref has no extractable cid.
+export function constructBskyCdnUrl(kind: 'avatar' | 'banner', did: string, blobRef: any): string {
+  const cid = blobRefCid(blobRef);
+  if (!cid) return '';
+  return `https://cdn.bsky.app/img/${kind}/plain/${did}/${cid}@jpeg`;
 }
 
 // Fetch image bytes from a stored URL and upload as a blob to the user's PDS,
@@ -266,18 +279,17 @@ export async function syncProfileForUser(
   let avatarBlobRef: any = null;
   const localAvatar = userRecord.avatar || '';
   if (localAvatar && isAllowedImageUrl(localAvatar).ok) {
-    // Base44 CDN URL. Skip the re-upload if the source URL hasn't changed
-    // since the last sync (the blob is already on the PDS). This is the
-    // critical fix: without it, every 5-min workflow run re-uploads the same
-    // image, advances profile_synced_at, and blocks the inbound sync's
-    // 10-min grace period so remote profile edits never merge.
-    if (userRecord.avatar_source_url === localAvatar && userRecord.avatar_pds_ref) {
-      try {
-        const stored = JSON.parse(userRecord.avatar_pds_ref);
-        if (stored) record.avatar = stored;
-      } catch { /* parse failed — fall through to re-upload */ }
-    }
-    if (!record.avatar || !(userRecord.avatar_source_url === localAvatar && userRecord.avatar_pds_ref)) {
+    // Base44 CDN URL. Skip re-upload if the blob is already on the PDS by
+    // comparing the existing PDS record's avatar blob cid against our stored
+    // blob ref cid. If they match, the blob is already resident (we pushed it
+    // before) — use the existing record's avatar ref and don't advance
+    // profile_synced_at. This replaces the old avatar_source_url tracking;
+    // the direct PDS read makes the echo loop structurally impossible.
+    const existingCid = blobRefCid(existing?.avatar);
+    const storedCid = blobRefCid(userRecord.avatar_pds_ref);
+    if (existingCid && storedCid && existingCid === storedCid) {
+      record.avatar = existing.avatar;
+    } else {
       avatarBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localAvatar, 'avatar');
       if (avatarBlobRef) {
         record.avatar = avatarBlobRef;
@@ -285,18 +297,14 @@ export async function syncProfileForUser(
       }
     }
   } else if (localAvatar && isBlueskyCdnUrl(localAvatar)) {
-    // Bluesky CDN URL — the blob is already on the PDS. If we have a stored
-    // blob ref from a previous sync, use it. Otherwise, preserve the existing
-    // record's avatar blob ref.
+    // Bluesky CDN URL — the blob is already PDS-resident. Use the stored blob
+    // ref if available, otherwise preserve the existing record's avatar ref.
     if (userRecord.avatar_pds_ref) {
       try {
         const stored = JSON.parse(userRecord.avatar_pds_ref);
         if (stored) record.avatar = stored;
       } catch { /* ignore parse error, keep existing */ }
     } else if (record.avatar) {
-      // First outbound after migration — no stored ref yet. Capture the
-      // existing PDS blob ref so future inbound syncs can recognize the
-      // avatar is PDS-resident and detect genuine remote changes by cid.
       avatarBlobRef = record.avatar;
     }
   } else if (!localAvatar && existing) {
@@ -309,14 +317,13 @@ export async function syncProfileForUser(
   let headerBlobRef: any = null;
   const localHeader = userRecord.header || '';
   if (localHeader && isAllowedImageUrl(localHeader).ok) {
-    // Skip re-upload if the source URL hasn't changed (same fix as avatar).
-    if (userRecord.header_source_url === localHeader && userRecord.header_pds_ref) {
-      try {
-        const stored = JSON.parse(userRecord.header_pds_ref);
-        if (stored) record.banner = stored;
-      } catch { /* parse failed — fall through to re-upload */ }
-    }
-    if (!record.banner || !(userRecord.header_source_url === localHeader && userRecord.header_pds_ref)) {
+    // Skip re-upload if the blob is already on the PDS (same cid comparison
+    // as avatar). Replaces the old header_source_url tracking.
+    const existingCid = blobRefCid(existing?.banner);
+    const storedCid = blobRefCid(userRecord.header_pds_ref);
+    if (existingCid && storedCid && existingCid === storedCid) {
+      record.banner = existing.banner;
+    } else {
       headerBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localHeader, 'banner');
       if (headerBlobRef) {
         record.banner = headerBlobRef;
@@ -374,13 +381,46 @@ export async function syncProfileForUser(
   }
 }
 
-// ─── Inbound profile pull (AppView → SwapPulse) ──────────────────────────
-// Fetches the user's Bluesky profile (displayName, description, avatar, banner)
-// from the public AppView and returns the field updates to merge into the local
-// User record. Used by migrate-to-swappulse on link so the initial sync pulls
-// the Bluesky identity INTO SwapPulse. The AppView returns resolved avatar/
-// banner URLs (not blob refs), which is what the local User.avatar/header
-// fields store.
+// ─── Inbound profile pull (PDS → SwapPulse) ─────────────────────────────
+// Reads the user's app.bsky.actor.profile record directly from the PDS via
+// getRecord — the authoritative source with zero indexing lag — and returns
+// the field updates to merge into the local User record. Blob refs are
+// converted to displayable cdn.bsky.app URLs so local User.avatar/header
+// continue to store renderable URLs with no frontend change. Used by
+// migrate-to-swappulse on link and by firehose-ingest's syncInboundProfiles.
+export async function pullProfileFromPds(
+  pdsUrl: string,
+  accessJwt: string,
+  userDid: string,
+): Promise<{ ok: boolean; updates: Record<string, any>; profile?: any }> {
+  try {
+    const record = await fetchExistingProfile(pdsUrl, accessJwt, userDid);
+    if (!record) return { ok: false, updates: {} };
+    const updates: Record<string, any> = {};
+    if (record.displayName) updates.display_name = record.displayName;
+    if (record.description !== undefined) updates.description = record.description || '';
+    if (record.avatar) {
+      const url = constructBskyCdnUrl('avatar', userDid, record.avatar);
+      if (url) updates.avatar = url;
+    }
+    if (record.banner) {
+      const url = constructBskyCdnUrl('banner', userDid, record.banner);
+      if (url) updates.header = url;
+    }
+    return { ok: true, updates, profile: record };
+  } catch (e: any) {
+    console.error('pullProfileFromPds error', e?.message || e);
+    return { ok: false, updates: {} };
+  }
+}
+
+// ─── Deprecated: AppView-based inbound profile pull ──────────────────────
+// pullProfileFromAppView reads from the public AppView (public.api.bsky.app),
+// which is eventually consistent — profile updates may not be reflected for
+// several minutes after a putRecord. This caused the outbound→inbound echo
+// loop that required a 10-minute grace period and avatar_source_url tracking
+// to work around. Kept as a fallback for the rare case where a per-user PDS
+// session cannot be resolved (e.g., credential revoked). Prefer pullProfileFromPds.
 const APPVIEW_BASE = 'https://public.api.bsky.app';
 
 export async function pullProfileFromAppView(userDid: string): Promise<{ ok: boolean; updates: Record<string, any>; profile?: any }> {

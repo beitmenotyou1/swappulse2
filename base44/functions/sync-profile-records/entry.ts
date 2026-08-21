@@ -95,11 +95,9 @@ export default async function(req: Request): Promise<Response> {
             // recognize that the local avatar is PDS-resident.
             if (r.avatar_blob_ref) {
               updates.avatar_pds_ref = JSON.stringify(r.avatar_blob_ref);
-              updates.avatar_source_url = u.avatar || '';
             }
             if (r.header_blob_ref) {
               updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
-              updates.header_source_url = u.header || '';
             }
             await svc.entities.User.update(u.id, updates).catch(() => {});
           } else {
@@ -157,11 +155,9 @@ export default async function(req: Request): Promise<Response> {
       }
       if (r.avatar_blob_ref) {
         updates.avatar_pds_ref = JSON.stringify(r.avatar_blob_ref);
-        updates.avatar_source_url = user.avatar || '';
       }
       if (r.header_blob_ref) {
         updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
-        updates.header_source_url = user.header || '';
       }
       await svc.entities.User.update(user.id, updates).catch(() => {});
     } else {

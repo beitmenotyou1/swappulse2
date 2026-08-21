@@ -29,7 +29,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
-import { pullProfileFromAppView } from '../../shared/profileSync.ts';
+import { pullProfileFromPds } from '../../shared/profileSync.ts';
 
 type StepStatus = 'pending' | 'running' | 'success' | 'failed';
 interface StepState { status: StepStatus; error: string; completed_at: string }
@@ -100,7 +100,7 @@ export default async function(req: Request): Promise<Response> {
     await updateSteps({ profile_pull: makeStep('running') });
     let profilePulled = false;
     try {
-      const { ok, updates } = await pullProfileFromAppView(sess.did);
+      const { ok, updates } = await pullProfileFromPds(pdsUrl, sess.accessJwt, sess.did);
       if (ok && Object.keys(updates).length > 0) {
         updates.profile_synced_at = new Date().toISOString();
         await base44.auth.updateMe(updates);
@@ -111,7 +111,7 @@ export default async function(req: Request): Promise<Response> {
         profilePulled = true;
         await updateSteps({ profile_pull: makeStep('success', '', new Date().toISOString()) });
       } else {
-        await updateSteps({ profile_pull: makeStep('failed', 'AppView profile fetch returned no data', new Date().toISOString()) });
+        await updateSteps({ profile_pull: makeStep('failed', 'PDS profile fetch returned no data', new Date().toISOString()) });
       }
     } catch (e: any) {
       console.error('migrate: profile pull failed', e?.message);
