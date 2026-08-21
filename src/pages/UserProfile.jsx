@@ -162,7 +162,7 @@ export default function UserProfile() {
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : (
         <ImmersiveProfile
-          theme={profileConfig?.theme || 'default'}
+          theme="default"
           isOwner={false}
           did={subjectDid}
           profile={profile}

@@ -1,14 +1,14 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Eye, EyeOff, GripVertical, Layout } from 'lucide-react';
-import { PROFILE_THEMES, BLOCK_LABELS, DEFAULT_BLOCK_ORDER, getThemeConfig, ALL_TAB_LABELS } from '@/lib/profileThemes';
+import { Eye, EyeOff, GripVertical } from 'lucide-react';
+import { BLOCK_LABELS, DEFAULT_BLOCK_ORDER, getThemeConfig, ALL_TAB_LABELS } from '@/lib/profileThemes';
 
 // LayoutThemeTab — pick from the merged 11-theme picker (5 gradient + 6
 // platform layouts), drag-to-reorder the About-section content blocks, and
 // toggle tab visibility. Posts is locked on (never hideable).
 export default function LayoutThemeTab({ draft, update, sectionLabels }) {
   const blockOrder = draft.block_order?.length ? draft.block_order : DEFAULT_BLOCK_ORDER;
-  const currentCfg = getThemeConfig(draft.theme);
+  const currentCfg = getThemeConfig('default');
   const currentTabKeys = [...currentCfg.tabs.map((t) => t.key), 'Cross-Posting', 'Privacy'];
   const userOrder = draft.section_order || [];
   const sectionOrder = [
@@ -16,15 +16,6 @@ export default function LayoutThemeTab({ draft, update, sectionLabels }) {
     ...currentTabKeys.filter((k) => !userOrder.includes(k)),
   ];
   const hidden = new Set(draft.hidden_sections || []);
-
-  const onThemeChange = (thKey) => {
-    const newCfg = getThemeConfig(thKey);
-    update({
-      theme: thKey,
-      section_order: [...newCfg.tabs.map((t) => t.key), 'Cross-Posting', 'Privacy'],
-      hidden_sections: [],
-    });
-  };
 
   const onDragEnd = (res) => {
     if (!res.destination || res.destination.index === res.source.index) return;
@@ -45,27 +36,6 @@ export default function LayoutThemeTab({ draft, update, sectionLabels }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <label className="mb-2 block text-xs font-semibold text-muted-foreground">Profile theme</label>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {PROFILE_THEMES.map((th) => (
-            <button
-              key={th.key}
-              type="button"
-              onClick={() => onThemeChange(th.key)}
-              className={`overflow-hidden rounded-xl border-2 text-left transition-colors ${draft.theme === th.key ? 'border-primary' : 'border-border hover:border-border-strong'}`}
-            >
-              <div className={`h-12 w-full bg-gradient-to-r ${th.gradient}`} />
-              <div className="flex items-center justify-between px-2 py-1.5">
-                <span className="text-xs font-semibold">{th.label}</span>
-                {th.platform && <Layout className="h-3 w-3 text-muted-foreground" />}
-              </div>
-            </button>
-          ))}
-        </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">Each theme fully reshapes the profile — header, tabs, and content layout. Native themes curate different sections; platform themes replicate that platform's page structure.</p>
-      </div>
-
       <div>
         <label className="mb-2 block text-xs font-semibold text-muted-foreground">Content blocks · drag to reorder</label>
         <DragDropContext onDragEnd={onDragEnd}>
