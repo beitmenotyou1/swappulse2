@@ -580,9 +580,27 @@ export default async function(req: Request): Promise<Response> {
               // Skip promotional posts
               if (promoUris.has(atUri)) continue;
 
-              // High-water cursor: skip records already processed in a prior run
+              // High-water cursor: skip records already processed in a prior run.
+              // For post records on migrated-user repos (and the local repo),
+              // don't skip past-cursor records — compare CIDs to detect edits
+              // made on Bluesky and update the local record. This closes the
+              // inbound half of two-way post edit sync.
               const rkey = atUri.split('/').pop() || '';
+              const isMigratedRepo = migratedDids.has(repoDid) || isLocal;
+              const isPostCollection = collection === 'app.bsky.feed.post';
               if (cursor && rkey && rkey <= cursor) {
+                if (isMigratedRepo && isPostCollection && rec.cid) {
+                  try {
+                    const existing = await svc.entities[entityName].filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
+                    if (existing && existing.length > 0 && rec.cid !== existing[0].cid) {
+                      const mappedEdit = mapper(val, atUri, repoDid, profile);
+                      await svc.entities[entityName].update(existing[0].id, mappedEdit).catch(() => {});
+                      updated++;
+                    }
+                  } catch (e) {
+                    console.error(`firehose-ingest: edit-detect error for ${collection} ${repoDid}`, e?.message || e);
+                  }
+                }
                 records_skipped++;
                 continue;
               }

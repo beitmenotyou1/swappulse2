@@ -149,6 +149,9 @@ export default async function(req: Request): Promise<Response> {
       pinned_announcement_uri: '',
       migrated_at: '',
       migration_reverted: true,
+      post_backfill_cursor: '',
+      post_backfill_complete: false,
+      notifications_imported_at: '',
       ...(handleReverted ? { bsky_handle: originalHandle } : {}),
     });
 
