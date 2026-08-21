@@ -34,7 +34,7 @@ import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileTabNav from '@/components/profile/ProfileTabNav';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { useOwnProfileConfig } from '@/hooks/useProfileConfig';
-import { themeGradient, DEFAULT_OWNER_SECTIONS } from '@/lib/profileThemes';
+import { themeGradient, DEFAULT_OWNER_SECTIONS, ALL_TAB_LABELS } from '@/lib/profileThemes';
 import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -143,7 +143,7 @@ export default function Profile() {
     { key: 'Cross-Posting', label: t('profile.tab.crossPosting'), icon: <Share2 className="h-4 w-4" /> },
     { key: 'Privacy', label: t('profile.tab.privacy') },
   ];
-  const sectionLabels = Object.fromEntries(baseTabs.map((b) => [b.key, b.label]));
+  const sectionLabels = { ...ALL_TAB_LABELS, ...Object.fromEntries(baseTabs.map((b) => [b.key, b.label])) };
   const order = config?.section_order?.length ? config.section_order : DEFAULT_OWNER_SECTIONS;
   const hidden = new Set(config?.hidden_sections || []);
   const tabs = order

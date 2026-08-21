@@ -1,15 +1,30 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Eye, EyeOff, GripVertical, Layout } from 'lucide-react';
-import { PROFILE_THEMES, BLOCK_LABELS, DEFAULT_BLOCK_ORDER } from '@/lib/profileThemes';
+import { PROFILE_THEMES, BLOCK_LABELS, DEFAULT_BLOCK_ORDER, getThemeConfig, ALL_TAB_LABELS } from '@/lib/profileThemes';
 
 // LayoutThemeTab — pick from the merged 11-theme picker (5 gradient + 6
 // platform layouts), drag-to-reorder the About-section content blocks, and
 // toggle tab visibility. Posts is locked on (never hideable).
 export default function LayoutThemeTab({ draft, update, sectionLabels }) {
   const blockOrder = draft.block_order?.length ? draft.block_order : DEFAULT_BLOCK_ORDER;
-  const sectionOrder = draft.section_order || [];
+  const currentCfg = getThemeConfig(draft.theme);
+  const currentTabKeys = [...currentCfg.tabs.map((t) => t.key), 'Cross-Posting', 'Privacy'];
+  const userOrder = draft.section_order || [];
+  const sectionOrder = [
+    ...userOrder.filter((k) => currentTabKeys.includes(k)),
+    ...currentTabKeys.filter((k) => !userOrder.includes(k)),
+  ];
   const hidden = new Set(draft.hidden_sections || []);
+
+  const onThemeChange = (thKey) => {
+    const newCfg = getThemeConfig(thKey);
+    update({
+      theme: thKey,
+      section_order: [...newCfg.tabs.map((t) => t.key), 'Cross-Posting', 'Privacy'],
+      hidden_sections: [],
+    });
+  };
 
   const onDragEnd = (res) => {
     if (!res.destination || res.destination.index === res.source.index) return;
@@ -37,7 +52,7 @@ export default function LayoutThemeTab({ draft, update, sectionLabels }) {
             <button
               key={th.key}
               type="button"
-              onClick={() => update({ theme: th.key })}
+              onClick={() => onThemeChange(th.key)}
               className={`overflow-hidden rounded-xl border-2 text-left transition-colors ${draft.theme === th.key ? 'border-primary' : 'border-border hover:border-border-strong'}`}
             >
               <div className={`h-12 w-full bg-gradient-to-r ${th.gradient}`} />
@@ -96,7 +111,7 @@ export default function LayoutThemeTab({ draft, update, sectionLabels }) {
                   aria-label={isHidden ? 'Show tab' : 'Hide tab'}
                 >
                   {isHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  {sectionLabels?.[key] || key}
+                  {ALL_TAB_LABELS[key] || sectionLabels?.[key] || key}
                 </button>
               );
             })}

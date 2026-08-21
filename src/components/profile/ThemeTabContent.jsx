@@ -187,7 +187,7 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
   // Market Watch (Investment)
   if (tabKey === 'MarketWatch') {
     return (
-      <div className="p-4 text-center">
+      <div className="py-8 text-center">
         <Link to="/market" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">
           <TrendingUp className="h-4 w-4" /> Open Market Watch
         </Link>

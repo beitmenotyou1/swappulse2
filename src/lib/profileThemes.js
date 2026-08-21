@@ -191,6 +191,12 @@ export function getThemeConfig(key) {
   return THEME_CONFIGS[key] || THEME_CONFIGS.default;
 }
 
+// Comprehensive tab labels merged from all 11 themes — used by the profile
+// editor to label tabs that may belong to any theme's tab set.
+export const ALL_TAB_LABELS = Object.fromEntries(
+  Object.values(THEME_CONFIGS).flatMap((cfg) => cfg.tabs.map((t) => [t.key, t.label]))
+);
+
 // Default per-field visibility for personal-info and trade-detail fields.
 export const DEFAULT_FIELD_VISIBILITY = {
   bio: 'public',
