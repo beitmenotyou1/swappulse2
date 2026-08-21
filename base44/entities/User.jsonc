@@ -111,6 +111,14 @@
       "type": "string",
       "description": "JSON-serialized PDS blob ref for the header/banner, stored after a successful outbound sync. Same purpose as avatar_pds_ref but for the banner image."
     },
+    "avatar_source_url": {
+      "type": "string",
+      "description": "The local avatar URL that was uploaded as a PDS blob during the last outbound sync. When the current avatar matches this, the outbound sync skips re-uploading (the blob is already on the PDS) so profile_synced_at isn't advanced on every run \u2014 letting the inbound sync's AppView indexing grace period expire so remote profile edits can merge."
+    },
+    "header_source_url": {
+      "type": "string",
+      "description": "The local header/banner URL that was uploaded as a PDS blob during the last outbound sync. Same purpose as avatar_source_url but for the banner image."
+    },
     "migrated_from_bluesky": {
       "type": "boolean",
       "default": false,

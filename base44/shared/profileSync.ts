@@ -192,6 +192,7 @@ async function fetchExistingProfile(
 
 export interface ProfileSyncResult {
   ok: boolean;
+  changed?: boolean;
   uri?: string;
   cid?: string;
   error?: string;
@@ -204,7 +205,7 @@ export async function syncProfileForUser(
   pdsUrl: string,
   userDid: string,
   appPassword: string,
-  userRecord: { display_name?: string; full_name?: string; avatar?: string; header?: string; description?: string; created_date?: string; avatar_pds_ref?: string; header_pds_ref?: string },
+  userRecord: { display_name?: string; full_name?: string; avatar?: string; header?: string; description?: string; created_date?: string; avatar_pds_ref?: string; header_pds_ref?: string; avatar_source_url?: string; header_source_url?: string },
 ): Promise<ProfileSyncResult> {
   let session: any;
   try {
@@ -231,8 +232,16 @@ export async function syncProfileForUser(
   // responses — putRecord requires it).
   record.$type = PROFILE_COLLECTION;
 
+  // Track whether any tracked field actually changed vs the existing PDS
+  // record. If nothing changed, we skip the putRecord and return changed=false
+  // so the caller doesn't advance profile_synced_at — which would block the
+  // inbound sync's AppView indexing grace period (10 min) on every 5-min
+  // workflow run, preventing remote profile edits from ever merging.
+  let changed = !existing; // creating a new profile counts as a change
+
   // Merge SwapPulse-tracked text fields (always overwrite with local truth).
   const displayName = truncate(userRecord.display_name || userRecord.full_name || '', 64);
+  if (displayName !== (existing?.displayName || '')) changed = true;
   if (displayName) {
     record.displayName = displayName;
   } else if (existing) {
@@ -242,6 +251,7 @@ export async function syncProfileForUser(
   }
 
   const description = userRecord.description || '';
+  if (description !== (existing?.description || '')) changed = true;
   if (description) {
     record.description = truncate(description, 256);
   } else {
@@ -256,9 +266,24 @@ export async function syncProfileForUser(
   let avatarBlobRef: any = null;
   const localAvatar = userRecord.avatar || '';
   if (localAvatar && isAllowedImageUrl(localAvatar).ok) {
-    // New Base44 upload — fetch and upload as a new blob.
-    avatarBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localAvatar, 'avatar');
-    if (avatarBlobRef) record.avatar = avatarBlobRef;
+    // Base44 CDN URL. Skip the re-upload if the source URL hasn't changed
+    // since the last sync (the blob is already on the PDS). This is the
+    // critical fix: without it, every 5-min workflow run re-uploads the same
+    // image, advances profile_synced_at, and blocks the inbound sync's
+    // 10-min grace period so remote profile edits never merge.
+    if (userRecord.avatar_source_url === localAvatar && userRecord.avatar_pds_ref) {
+      try {
+        const stored = JSON.parse(userRecord.avatar_pds_ref);
+        if (stored) record.avatar = stored;
+      } catch { /* parse failed — fall through to re-upload */ }
+    }
+    if (!record.avatar || !(userRecord.avatar_source_url === localAvatar && userRecord.avatar_pds_ref)) {
+      avatarBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localAvatar, 'avatar');
+      if (avatarBlobRef) {
+        record.avatar = avatarBlobRef;
+        changed = true;
+      }
+    }
   } else if (localAvatar && isBlueskyCdnUrl(localAvatar)) {
     // Bluesky CDN URL — the blob is already on the PDS. If we have a stored
     // blob ref from a previous sync, use it. Otherwise, preserve the existing
@@ -276,6 +301,7 @@ export async function syncProfileForUser(
     }
   } else if (!localAvatar && existing) {
     // Local avatar was cleared — remove it from the record.
+    if (existing.avatar) changed = true;
     delete record.avatar;
   }
 
@@ -283,8 +309,20 @@ export async function syncProfileForUser(
   let headerBlobRef: any = null;
   const localHeader = userRecord.header || '';
   if (localHeader && isAllowedImageUrl(localHeader).ok) {
-    headerBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localHeader, 'banner');
-    if (headerBlobRef) record.banner = headerBlobRef;
+    // Skip re-upload if the source URL hasn't changed (same fix as avatar).
+    if (userRecord.header_source_url === localHeader && userRecord.header_pds_ref) {
+      try {
+        const stored = JSON.parse(userRecord.header_pds_ref);
+        if (stored) record.banner = stored;
+      } catch { /* parse failed — fall through to re-upload */ }
+    }
+    if (!record.banner || !(userRecord.header_source_url === localHeader && userRecord.header_pds_ref)) {
+      headerBlobRef = await uploadImageBlob(pdsUrl, session.accessJwt, localHeader, 'banner');
+      if (headerBlobRef) {
+        record.banner = headerBlobRef;
+        changed = true;
+      }
+    }
   } else if (localHeader && isBlueskyCdnUrl(localHeader)) {
     if (userRecord.header_pds_ref) {
       try {
@@ -295,7 +333,21 @@ export async function syncProfileForUser(
       headerBlobRef = record.banner;
     }
   } else if (!localHeader && existing) {
+    if (existing.banner) changed = true;
     delete record.banner;
+  }
+
+  // If nothing actually changed, skip the putRecord entirely. Still return
+  // any captured blob refs so the caller can persist them. Not advancing
+  // profile_synced_at is the key — it lets the inbound sync's grace period
+  // expire so remote edits can merge.
+  if (!changed) {
+    return {
+      ok: true,
+      changed: false,
+      avatar_blob_ref: avatarBlobRef,
+      header_blob_ref: headerBlobRef,
+    };
   }
 
   try {
@@ -311,6 +363,7 @@ export async function syncProfileForUser(
     }
     return {
       ok: true,
+      changed: true,
       uri: res.uri,
       cid: res.cid,
       avatar_blob_ref: avatarBlobRef,

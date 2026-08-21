@@ -78,20 +78,29 @@ export default async function(req: Request): Promise<Response> {
 
           const r = await syncProfileForUser(svc, identity.pdsUrl, identity.did, identity.appPassword, u);
           if (r.ok) {
-            synced++;
-            // Stamp the outbound sync timestamp so the inbound sync's conflict
-            // guard knows the local state has been propagated and can accept
-            // remote changes again. Reset failure count.
+            if (r.changed) synced++; else skipped++;
+            // Only advance profile_synced_at when the profile actually changed.
+            // Advancing it on every run (even no-op syncs) blocks the inbound
+            // sync's 10-min AppView indexing grace period forever (the workflow
+            // runs every 5 min), preventing remote profile edits from merging.
             const updates: any = {
-              profile_synced_at: new Date().toISOString(),
               profile_sync_fail_count: 0,
               profile_sync_failed_at: '',
             };
-            // Store the PDS blob refs so future outbound syncs skip re-uploading
-            // unchanged images, and the inbound sync can recognize that the
-            // local avatar is PDS-resident (not a new remote edit).
-            if (r.avatar_blob_ref) updates.avatar_pds_ref = JSON.stringify(r.avatar_blob_ref);
-            if (r.header_blob_ref) updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
+            if (r.changed) {
+              updates.profile_synced_at = new Date().toISOString();
+            }
+            // Store the PDS blob refs and source URLs so future outbound syncs
+            // skip re-uploading unchanged images, and the inbound sync can
+            // recognize that the local avatar is PDS-resident.
+            if (r.avatar_blob_ref) {
+              updates.avatar_pds_ref = JSON.stringify(r.avatar_blob_ref);
+              updates.avatar_source_url = u.avatar || '';
+            }
+            if (r.header_blob_ref) {
+              updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
+              updates.header_source_url = u.header || '';
+            }
             await svc.entities.User.update(u.id, updates).catch(() => {});
           } else {
             failed++;
@@ -138,13 +147,22 @@ export default async function(req: Request): Promise<Response> {
     }
     const r = await syncProfileForUser(svc, identity.pdsUrl, identity.did, identity.appPassword, user);
     if (r.ok) {
+      // Only advance profile_synced_at when the profile actually changed.
       const updates: any = {
-        profile_synced_at: new Date().toISOString(),
         profile_sync_fail_count: 0,
         profile_sync_failed_at: '',
       };
-      if (r.avatar_blob_ref) updates.avatar_pds_ref = JSON.stringify(r.avatar_blob_ref);
-      if (r.header_blob_ref) updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
+      if (r.changed) {
+        updates.profile_synced_at = new Date().toISOString();
+      }
+      if (r.avatar_blob_ref) {
+        updates.avatar_pds_ref = JSON.stringify(r.avatar_blob_ref);
+        updates.avatar_source_url = user.avatar || '';
+      }
+      if (r.header_blob_ref) {
+        updates.header_pds_ref = JSON.stringify(r.header_blob_ref);
+        updates.header_source_url = user.header || '';
+      }
       await svc.entities.User.update(user.id, updates).catch(() => {});
     } else {
       const failCount = (user.profile_sync_fail_count || 0) + 1;
