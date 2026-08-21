@@ -9,9 +9,9 @@ import { cardImageUrl } from '@/lib/tcgdex';
 export default function VintageLanding({ data, blockOrder, did, isOwner, profile, posts, collection }) {
   const binderCards = (collection || []).slice(0, 4);
   return (
-    <div className="py-6 space-y-6">
+    <div className="py-4 space-y-4">
       {data?.bio && (
-        <div className="px-2">
+        <div>
           <p className="font-serif text-lg leading-relaxed text-amber-900/80">{data.bio}</p>
         </div>
       )}
@@ -19,7 +19,7 @@ export default function VintageLanding({ data, blockOrder, did, isOwner, profile
       <MilestonesTimeline milestones={data?.milestones || []} />
 
       {binderCards.length > 0 && (
-        <div className="px-2">
+        <div>
           <h3 className="mb-3 font-serif text-base font-bold text-amber-900">Collection</h3>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {binderCards.map((c) => (
@@ -32,7 +32,7 @@ export default function VintageLanding({ data, blockOrder, did, isOwner, profile
       )}
 
       {data?.interests?.length > 0 && (
-        <div className="px-2">
+        <div>
           <h3 className="mb-2 font-serif text-base font-bold text-amber-900">Interests</h3>
           <div className="flex flex-wrap gap-2">
             {data.interests.map((i, idx) => (

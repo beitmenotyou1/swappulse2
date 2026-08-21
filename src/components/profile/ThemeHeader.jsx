@@ -81,20 +81,20 @@ function DefaultHeader({ theme, profile, actions, extra, badges, reputationNode,
 function VintageHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
   return (
     <div>
-      <div className="w-full overflow-hidden bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-50 h-28 sm:h-36">
+      <div className="w-full overflow-hidden bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-50 h-32 sm:h-40">
         {profile?.header && <img src={profile.header} alt="Profile header" className="h-full w-full object-cover opacity-80" />}
       </div>
       {externalBanner}
-      <div className="px-6">
+      <div className="px-4">
         {backLink && <div className="mt-2 mb-2">{backLink}</div>}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between -mt-8 sm:-mt-10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between -mt-10 sm:-mt-12">
           <span className="relative inline-block w-fit">
-            <Avatar name={profile?.name} src={profile?.avatar} size={80} className="ring-4 ring-amber-50" />
+            <Avatar name={profile?.name} src={profile?.avatar} size={96} className="ring-4 ring-amber-50" />
             {avatarBadge}
           </span>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-        <div className="mt-5 space-y-3 pb-2">
+        <div className="mt-4 space-y-2.5 pb-1">
           <h1 className="font-serif text-2xl font-bold text-amber-900">{profile?.name}</h1>
           {badges}
           {profile?.bsky_handle && <p className="text-sm text-amber-700/70">@{profile.bsky_handle}</p>}
@@ -125,7 +125,7 @@ function CompetitiveHeader({ profile, actions, extra, badges, reputationNode, ba
           </span>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-        <div className="mt-4 space-y-2.5 pb-2">
+        <div className="mt-4 space-y-2.5 pb-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-black uppercase tracking-tight">{profile?.name}</h1>
             {badges}
@@ -237,7 +237,7 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
           </div>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-        <div className="mt-3 space-y-2 pb-1">
+        <div className="mt-4 space-y-2.5 pb-1">
           {badges}
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
           {reputationNode}
@@ -252,17 +252,17 @@ function YouTubeHeader({ profile, actions, extra, badges, reputationNode, backLi
 function RedditHeader({ profile, actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge }) {
   return (
     <div>
-      <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500/40 via-orange-400/30 to-amber-300/30 h-28 sm:h-36">
+      <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500/40 via-orange-400/30 to-amber-300/30 h-32 sm:h-40">
         {profile?.header && <img src={profile.header} alt="Profile header" className="h-full w-full object-cover" />}
       </div>
       <div className="h-1 bg-orange-500" />
       {externalBanner}
       <div className="px-4">
         {backLink && <div className="mt-2 mb-2">{backLink}</div>}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between -mt-6 sm:-mt-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between -mt-8 sm:-mt-10">
           <div className="flex items-center gap-3">
             <span className="relative inline-block w-fit">
-              <Avatar name={profile?.name} src={profile?.avatar} size={64} className="ring-4 ring-background" />
+              <Avatar name={profile?.name} src={profile?.avatar} size={80} className="ring-4 ring-background" />
               {avatarBadge}
             </span>
             <div>
@@ -272,7 +272,7 @@ function RedditHeader({ profile, actions, extra, badges, reputationNode, backLin
           </div>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
-        <div className="mt-3 space-y-2 pb-1">
+        <div className="mt-4 space-y-2.5 pb-1">
           {badges}
           {profile?.description && <RichText text={profile.description} className="text-sm" />}
           {reputationNode}
@@ -290,7 +290,7 @@ function XHeader({ profile, actions, extra, badges, reputationNode, backLink, ex
       {externalBanner}
       <div className="px-4">
         {backLink && <div className="mt-2 mb-2">{backLink}</div>}
-        <div className="flex flex-col items-center gap-2 pt-4">
+        <div className="flex flex-col items-center space-y-2.5 pt-4">
           <span className="relative inline-block w-fit">
             <Avatar name={profile?.name} src={profile?.avatar} size={80} />
             {avatarBadge}
