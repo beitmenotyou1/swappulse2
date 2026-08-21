@@ -9,6 +9,7 @@ import { Mail, Loader2, ArrowRight, Ban } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
+import { safeReturnTo } from "@/lib/authReturnTo";
 import { useT } from "@/lib/i18n/I18nProvider";
 
 const CODE_EXPIRY_SECONDS = 300; // 5 minutes
@@ -112,8 +113,7 @@ export default function Login() {
       }
       setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
       await base44.auth.loginViaEmailPassword(email, loginKey);
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
-      window.location.href = returnTo;
+      window.location.href = safeReturnTo();
     } catch (err) {
       setError(err.message || t('auth.login.invalidCode'));
     } finally {
@@ -136,8 +136,7 @@ export default function Login() {
     }
     try {
       await base44.auth.loginViaEmailPassword(email, loginKey);
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
-      window.location.href = returnTo;
+      window.location.href = safeReturnTo();
     } catch (err) {
       setError(err.message || t('auth.login.loginFailed'));
       setStep("code");

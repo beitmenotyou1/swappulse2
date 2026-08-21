@@ -77,7 +77,13 @@ async function resolveHandle(handle: string): Promise<string> {
   // Fallback: HTTPS well-known
   try {
     const base = handle.includes('.') ? `https://${handle}` : `https://${handle}.bsky.social`;
-    const res = await fetch(`${base}/.well-known/atproto-did`, { redirect: 'follow' });
+    // Validate the hostname (blocks IPs, localhost, metadata endpoints) and
+    // use redirect: 'manual' to prevent redirect-based SSRF bypasses.
+    const validatedOrigin = validatePdsUrl(base);
+    const res = await fetch(`${validatedOrigin}/.well-known/atproto-did`, { redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) {
+      throw new Error('Redirect not allowed for handle resolution.');
+    }
     if (res.ok) {
       const text = (await res.text()).trim();
       if (text.startsWith('did:')) return text;
