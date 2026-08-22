@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download as DownloadIcon, Smartphone, Globe, Shield, ChevronRight, Apple } from 'lucide-react';
+import { Download as DownloadIcon, Smartphone, Globe, ChevronRight, Apple } from 'lucide-react';
 import QRCode from 'qrcode';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
@@ -51,24 +51,6 @@ export default function DownloadPage() {
               <div>
                 <p className="text-sm font-bold">Google Play Store</p>
                 <p className="text-xs text-muted-foreground">Install from the Play Store</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </a>
-
-          <a
-            href="https://f-droid.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition hover:border-primary"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                <Shield className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-bold">F-Droid</p>
-                <p className="text-xs text-muted-foreground">Open-source Android repository</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />

@@ -16,6 +16,7 @@ import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import TrendingCardsRail from '@/components/cards/TrendingCardsRail';
 import RarityFilter from '@/components/feed/RarityFilter';
+import CategoryFilterChips from '@/components/feed/CategoryFilterChips';
 import { useT } from '@/lib/i18n/I18nProvider';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 
@@ -24,14 +25,6 @@ const ALL_TABS = [
   { key: 'pack_opening', tKey: 'feed.freshPulls' },
   { key: 'trade', tKey: 'feed.tradeFloor' },
   { key: 'showcase', tKey: 'feed.showcase' },
-];
-
-const CATEGORY_TABS = [
-  { key: 'top_tier_trade', tKey: 'post.category.top_tier_trade' },
-  { key: 'grading_advice', tKey: 'post.category.grading_advice' },
-  { key: 'local_meetup', tKey: 'post.category.local_meetup' },
-  { key: 'market_analysis', tKey: 'post.category.market_analysis' },
-  { key: 'collection_help', tKey: 'post.category.collection_help' },
 ];
 
 export default function Home() {
@@ -205,25 +198,7 @@ export default function Home() {
         </div>
       </div>
 
-      {user && (
-        <div className="flex gap-1.5 overflow-x-auto border-b border-border bg-secondary/30 px-3 py-2">
-          <button
-            onClick={() => setCategory('all')}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${category === 'all' ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
-          >
-            {tr('feed.allCategories')}
-          </button>
-          {CATEGORY_TABS.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setCategory(c.key)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${category === c.key ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
-            >
-              {tr(c.tKey)}
-            </button>
-          ))}
-        </div>
-      )}
+      {user && <CategoryFilterChips value={category} onChange={setCategory} />}
 
       <RarityFilter value={rarityFilter} onChange={setRarityFilter} />
 

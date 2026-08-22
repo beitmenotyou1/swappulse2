@@ -10,6 +10,7 @@ import ExploreCardTile from '@/components/cards/ExploreCardTile';
 import RarityFilterChips from '@/components/cards/RarityFilterChips';
 import SetQuickFilter from '@/components/cards/SetQuickFilter';
 import PostCard from '@/components/feed/PostCard';
+import CategoryFilterChips from '@/components/feed/CategoryFilterChips';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 import FilterPanel from '@/components/explore/FilterPanel';
@@ -45,6 +46,7 @@ export default function Explore() {
   const [feedLoading, setFeedLoading] = useState(false);
   const [filters, setFilters] = useState({ set: '', rarity: '', type: '', minPrice: '', maxPrice: '' });
   const [langFilter, setLangFilter] = useState('all');
+  const [category, setCategory] = useState('all');
   const { filterPosts } = usePostVisibility();
 
   // Everybody feed — all recent posts, for discovering collectors outside your follows.
@@ -132,6 +134,10 @@ export default function Explore() {
     const t = setTimeout(() => runSearch(query, filters), 400);
     return () => clearTimeout(t);
   }, [query, filters, runSearch]);
+
+  const visibleFeedPosts = filterPosts(feedPosts);
+  const categoryFilteredFeed =
+    category === 'all' ? visibleFeedPosts : visibleFeedPosts.filter((p) => (p.post_category || 'general') === category);
 
   const toggleSelect = (id) =>
     setSelected((prev) => {
@@ -225,23 +231,26 @@ export default function Explore() {
       )}
 
       {searchMode === 'posts' && (
-        <div className="p-4">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Flame className="h-4 w-4 text-accent" /> {tr('explore.everybodyFeed')}
-          </h2>
-          {feedLoading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : filterPosts(feedPosts).length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">{tr('explore.noPosts')}</p>
-          ) : (
-            <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-              {filterPosts(feedPosts).map((p) => (
-                <PostCard key={p.id} post={p} />
-              ))}
-            </div>
-          )}
+        <div>
+          <CategoryFilterChips value={category} onChange={setCategory} />
+          <div className="p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
+              <Flame className="h-4 w-4 text-accent" /> {tr('explore.everybodyFeed')}
+            </h2>
+            {feedLoading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : categoryFilteredFeed.length === 0 ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">{tr('explore.noPosts')}</p>
+            ) : (
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                {categoryFilteredFeed.map((p) => (
+                  <PostCard key={p.id} post={p} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
