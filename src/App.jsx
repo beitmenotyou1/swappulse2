@@ -42,7 +42,6 @@ import BoardDetail from '@/pages/BoardDetail';
 import CircleDirectory from '@/pages/CircleDirectory';
 import Labelers from '@/pages/Labelers';
 import SearchPage from '@/pages/Search';
-import Download from '@/pages/Download';
 import Grading from '@/pages/Grading';
 import Binders from '@/pages/Binders';
 import BinderEdit from '@/pages/BinderEdit';
@@ -273,7 +272,6 @@ const AuthenticatedApp = () => {
         <Route path="/circles-directory" element={<CircleDirectory />} />
         <Route path="/labelers" element={<Labelers />} />
         <Route path="/search" element={<SearchPage />} />
-        <Route path="/download" element={<Download />} />
       </Route>
       {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

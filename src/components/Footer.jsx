@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/lib/i18n/I18nProvider';
+import PWAInstallButton from '@/components/PWAInstallButton';
 
 const FOOTER_LINKS = [
   { tKey: 'footer.about', to: '/about' },
@@ -10,7 +11,6 @@ const FOOTER_LINKS = [
   { tKey: 'footer.status', to: '/status' },
   { tKey: 'footer.explore', to: '/explore' },
   { tKey: 'footer.donate', to: '/donate' },
-  { tKey: 'footer.download', to: '/download' },
 ];
 
 export default function Footer() {
@@ -32,6 +32,7 @@ export default function Footer() {
                 {t(link.tKey)}
               </Link>
             ))}
+            <PWAInstallButton />
           </nav>
         </div>
         <p className="mt-4 text-center text-[11px] text-muted-foreground/70">
