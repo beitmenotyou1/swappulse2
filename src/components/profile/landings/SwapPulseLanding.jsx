@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, BookOpen, ArrowLeftRight, Sparkles } from 'lucide-react';
+import { Trophy, ArrowLeftRight, Sparkles } from 'lucide-react';
 import BlockRenderer from '@/components/profile/BlockRenderer';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
@@ -14,8 +14,7 @@ export default function SwapPulseLanding({ data, blockOrder, did, isOwner, profi
 
   return (
     <div className="py-4 space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <HighlightCard icon={BookOpen} label="Posts" value={posts?.length || 0} />
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-3">
         <HighlightCard icon={ArrowLeftRight} label="Trades" value={trades?.length || 0} />
         <HighlightCard icon={Sparkles} label="Cards" value={collection?.length || 0} />
         <HighlightCard icon={Trophy} label="Value" value={formatPrice(portfolioValue)} />
