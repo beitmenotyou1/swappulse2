@@ -10,6 +10,7 @@ const FOOTER_LINKS = [
   { tKey: 'footer.status', to: '/status' },
   { tKey: 'footer.explore', to: '/explore' },
   { tKey: 'footer.donate', to: '/donate' },
+  { tKey: 'footer.download', to: '/download' },
 ];
 
 export default function Footer() {

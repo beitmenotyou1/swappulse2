@@ -66,6 +66,7 @@ const en = {
   'post.category.market_analysis': 'Market Analysis',
   'post.category.collection_help': 'Collection Help',
   'compose.category': 'Category',
+  'footer.download': 'Get the App',
   'feed.rarityLabel': 'Rarity:', 'feed.rarityAll': 'All', 'feed.rarityHolo': 'Holo',
   'feed.rarityUltra': 'Ultra Rare', 'feed.raritySecret': 'Secret Rare',
   'feed.liveBadge': 'Live', 'feed.liveDot': 'live',

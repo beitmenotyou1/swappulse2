@@ -20,19 +20,51 @@ export interface SendNotificationInput {
 
 const MAX_DAILY_PUSHES = 50;
 
-function isInQuietHours(start: string, end: string): boolean {
+interface QuietWindow {
+  start: string;
+  end: string;
+  days?: number[];
+  mode?: string;
+}
+
+function getTimeInTimezone(timezone: string): { time: string; dayOfWeek: number } {
   try {
     const now = new Date();
-    const today = now.toISOString().slice(0, 10);
-    const startDate = new Date(`${today}T${start}:00Z`);
-    const endDate = new Date(`${today}T${end}:00Z`);
-    if (startDate > endDate) {
-      return now >= startDate || now < endDate;
-    }
-    return now >= startDate && now < endDate;
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const parts = fmt.formatToParts(now);
+    const hour = (parts.find((p) => p.type === 'hour')?.value || '0').padStart(2, '0');
+    const minute = (parts.find((p) => p.type === 'minute')?.value || '0').padStart(2, '0');
+    const weekday = parts.find((p) => p.type === 'weekday')?.value || '';
+    const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return { time: `${hour}:${minute}`, dayOfWeek: dayMap[weekday] ?? 0 };
   } catch {
-    return false;
+    const now = new Date();
+    return {
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      dayOfWeek: now.getDay(),
+    };
   }
+}
+
+function isTimeInRange(current: string, start: string, end: string): boolean {
+  if (start <= end) return current >= start && current < end;
+  return current >= start || current < end;
+}
+
+function isInQuietWindow(window: QuietWindow, timezone: string): boolean {
+  const { time, dayOfWeek } = getTimeInTimezone(timezone);
+  if (window.days && window.days.length > 0 && !window.days.includes(dayOfWeek)) return false;
+  return isTimeInRange(time, window.start, window.end);
+}
+
+function isInAnyQuietWindow(windows: QuietWindow[], timezone: string): boolean {
+  return windows.some((w) => isInQuietWindow(w, timezone));
 }
 
 function buildPushPayload(input: SendNotificationInput, deepLink: string, logId: string | null) {
@@ -78,8 +110,8 @@ export async function dispatchNotification(
   // 1. Check preferences from SettingsConfig
   let pushEnabled = true;
   let eventEnabled = true;
-  let quietStart: string | null = null;
-  let quietEnd: string | null = null;
+  let quietWindows: { start: string; end: string; days?: number[]; mode?: string }[] = [];
+  let timezone = 'UTC';
 
   try {
     const prefs = await svc.entities.SettingsConfig.filter({ did: input.recipientDid }, '-updated_date', 1);
@@ -90,16 +122,18 @@ export async function dispatchNotification(
     const channels = n.channels || ['push'];
     pushEnabled = channels.includes('push');
     const qh = n.quietHours || {};
-    quietStart = qh.start || null;
-    quietEnd = qh.end || null;
+    timezone = config.locale?.timezone || 'UTC';
+    quietWindows = Array.isArray(qh.windows)
+      ? qh.windows
+      : (qh.start && qh.end ? [{ start: qh.start, end: qh.end, days: [], mode: 'hold' }] : []);
   } catch {}
 
   if (!eventEnabled) return { delivered: false, deepLink, reason: 'event_disabled' };
 
   // 2. Quiet hours (skip for high priority)
   let channel: 'push' | 'in_app' = 'push';
-  if (pushEnabled && quietStart && quietEnd && input.priority !== 'high') {
-    if (isInQuietHours(quietStart, quietEnd)) channel = 'in_app';
+  if (pushEnabled && quietWindows.length > 0 && input.priority !== 'high') {
+    if (isInAnyQuietWindow(quietWindows, timezone)) channel = 'in_app';
   }
   if (!pushEnabled) channel = 'in_app';
 

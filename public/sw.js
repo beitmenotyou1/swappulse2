@@ -1,112 +1,76 @@
-// SwapPulse Service Worker — push notifications with deep linking.
-// Push arrives → if a client is visible, postMessage for in-app banner;
-// otherwise show a system notification. Notification tap → postMessage
-// NAVIGATE to an open client, or open a new window to the deep link URL.
-
+// SwapPulse Service Worker — PWA caching + web push notifications
 const CACHE_NAME = 'swappulse-v2';
-const APP_SHELL = ['/', '/manifest.json'];
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).catch(() => {})
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
 
-self.addEventListener('push', (event) => {
-  let payload;
-  try {
-    payload = event.data ? event.data.json() : {};
-  } catch {
-    payload = { title: 'SwapPulse', body: 'You have a new notification.' };
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).catch(() => caches.match('/index.html')));
+    return;
   }
-
-  const {
-    title = 'SwapPulse',
-    body = '',
-    data = {},
-    tag,
-    requireInteraction,
-  } = payload;
-
-  event.waitUntil(
-    (async () => {
-      // Check if any client is visible (app in foreground)
-      const clientList = await self.clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true,
-      });
-      const visibleClient = clientList.find((c) => c.visibilityState === 'visible');
-
-      if (visibleClient) {
-        // App in foreground — in-app banner instead of system notification
-        visibleClient.postMessage({
-          type: 'PUSH_RECEIVED',
-          payload: { title, body, data, tag },
-        });
-        return;
-      }
-
-      // App in background — show system notification with deep link data
-      return self.registration.showNotification(title, {
-        body,
-        data,
-        tag: tag || data.notificationType || 'default',
-        requireInteraction: !!requireInteraction,
-        icon: '/icons/icon-192.png',
-        badge: '/icons/badge-72.png',
-        vibrate: [200, 100, 200],
-      });
-    })()
+  event.respondWith(
+    caches.match(request).then((cached) => cached || fetch(request).catch(() => cached))
   );
 });
 
+// Web push — display notification with deep-link action buttons
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: 'SwapPulse', body: event.data ? event.data.text() : 'New notification' };
+  }
+  const title = data.title || 'SwapPulse';
+  const body = data.body || 'New notification';
+  const payload = data.data || {};
+  const route = payload.route || '/';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-96.png',
+      tag: payload.notificationType || 'default',
+      data: { route, ...payload },
+      requireInteraction: data.requireInteraction || false,
+      actions: [
+        { action: 'view', title: 'View' },
+        { action: 'dismiss', title: 'Dismiss' },
+      ],
+    })
+  );
+});
+
+// Notification click — focus/open the app and navigate to the deep link
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
-  const data = event.notification.data || {};
-  const route = data.route || '/';
-
+  if (event.action === 'dismiss') return;
+  const route = event.notification.data?.route || '/';
+  const url = new URL(route, self.location.origin).href;
   event.waitUntil(
-    (async () => {
-      const clientList = await self.clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true,
-      });
-
-      // If a window is already open, navigate it
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if ('focus' in client) {
-          client.postMessage({
-            type: 'NAVIGATE',
-            route,
-            notificationId: data.notificationId,
-            notificationType: data.notificationType,
-          });
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
           return client.focus();
         }
       }
-
-      // Otherwise, open a new window to the deep link
-      if (self.clients.openWindow) {
-        const url = route.startsWith('/') ? route : '/' + route;
-        return self.clients.openWindow(url);
-      }
-    })()
+      if (clients.openWindow) return clients.openWindow(url);
+    })
   );
-});
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
