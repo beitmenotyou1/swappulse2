@@ -180,6 +180,17 @@ export default async function(req: Request): Promise<Response> {
       }).catch(() => {});
       console.error('sync-profile-records: single-user failed', r.error);
     }
+    // Nudge the Bluesky AppView to re-index this user's repo so the updated
+    // avatar/banner are reflected promptly on bsky.app and other AT Protocol
+    // clients. The AppView crawls repos via the firehose automatically, but
+    // calling getProfile for the actor prompts indexing if it hasn't happened
+    // yet; for already-indexed actors the firehose commit from the putRecord
+    // above drives the refresh. Best-effort and non-fatal.
+    if (r.ok && r.changed && user.did) {
+      try {
+        await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(user.did)}`);
+      } catch { /* best-effort refresh nudge */ }
+    }
     return Response.json({ ok: r.ok, error: r.error });
   } catch (error) {
     console.error('sync-profile-records error:', error?.message || error);
