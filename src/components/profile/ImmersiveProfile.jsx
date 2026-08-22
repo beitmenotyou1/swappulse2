@@ -15,6 +15,7 @@ export default function ImmersiveProfile({
   posts, collection, trades, reputation, journals, liveSpace,
   actions, extra, badges, reputationNode, backLink, externalBanner, avatarBadge,
   onReload, isExternal, visitorExtras,
+  loadingMore, hasMore, loadMore,
 }) {
   const cfg = getThemeConfig(theme);
   const [tab, setTab] = useState(cfg.tabs[0]?.key || 'Posts');
@@ -89,6 +90,9 @@ export default function ImmersiveProfile({
             liveSpace={liveSpace}
             onReload={onReload}
             visitorExtras={visitorExtras}
+            loadingMore={loadingMore}
+            hasMore={hasMore}
+            loadMore={loadMore}
           />
         </div>
       </div>

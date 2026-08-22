@@ -26,6 +26,7 @@ import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
+import { usePaginatedPosts } from '@/hooks/usePaginatedPosts';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import { themeGradient, DEFAULT_VISITOR_SECTIONS } from '@/lib/profileThemes';
 import useSEO from '@/hooks/useSEO';
@@ -41,8 +42,6 @@ import { useT } from '@/lib/i18n/I18nProvider';
 export default function UserProfile() {
   const t = useT();
   const { did: subjectDid } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [posts, setPosts] = useState([]);
   const [friendship, setFriendship] = useState({ my: null, their: null });
   const [profileConfig, setProfileConfig] = useState(null);
   const [tab, setTab] = useState('Posts');
@@ -58,30 +57,8 @@ export default function UserProfile() {
 
   const isExternal = !!merged && !merged.is_member && !!merged.remote_synced;
   const isMember = !!merged && !!merged.is_member;
-
-  // Load posts: federated Bluesky feed for externals, local posts for members.
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      if (merging) return;
-      setLoading(true);
-      try {
-        if (isExternal) {
-          const res = await base44.functions.invoke('get-author-feed', { did: subjectDid, limit: 50 });
-          const data = res?.data ?? res;
-          if (active) setPosts(data?.items || []);
-        } else {
-          const p = await base44.entities.Post.filter({ did: subjectDid }, '-created_date', 50).catch(() => []);
-          if (active) setPosts(p);
-        }
-      } catch {
-        if (active) setPosts([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => { active = false; };
-  }, [subjectDid, isExternal, merging]);
+  const { posts, loading: postsLoading, loadingMore, hasMore, loadMore } = usePaginatedPosts(merging ? '' : subjectDid, isExternal);
+  const loading = merging || postsLoading;
 
   // Friendship status — members only.
   useEffect(() => {
@@ -168,6 +145,9 @@ export default function UserProfile() {
           profile={profile}
           config={profileConfig}
           posts={filterPosts(posts)}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          loadMore={loadMore}
           isExternal={isExternal}
           actions={
             <>

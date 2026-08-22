@@ -7,6 +7,7 @@ import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import ActivityTab from '@/components/profile/ActivityTab';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
+import InfiniteScrollSentinel from '@/components/feed/InfiniteScrollSentinel';
 import TradeActivityTab from '@/components/profile/TradeActivityTab';
 import ReputationDashboard from '@/components/profile/ReputationDashboard';
 import ReputationSummary from '@/components/profile/ReputationSummary';
@@ -83,7 +84,7 @@ function LandingView({ theme, did, isOwner, config, profile, posts, collection, 
 // components; theme-specific tabs (Videos, Playlists, Friends, etc.) use
 // dedicated renderers from ThemeTabRenderers. The About/Home tab dispatches
 // to the theme's landing component.
-export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExternal, config, profile, posts, collection, trades, reputation, journals, liveSpace, onReload, visitorExtras }) {
+export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExternal, config, profile, posts, collection, trades, reputation, journals, liveSpace, onReload, visitorExtras, loadingMore, hasMore, loadMore }) {
   const t = useT();
   const { user } = useAuth();
   const personalInfo = config?.personal || config;
@@ -116,6 +117,7 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
       <div>
         <PinnedPost pinnedPostId={pinnedId} posts={posts} />
         {rest.map((p) => <PostCard key={p.id} post={p} />)}
+        <InfiniteScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={loadMore} />
       </div>
     );
   }

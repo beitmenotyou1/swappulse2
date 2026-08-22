@@ -33,6 +33,7 @@ import ProfileMetricsBar from '@/components/profile/ProfileMetricsBar';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileTabNav from '@/components/profile/ProfileTabNav';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
+import { usePaginatedPosts } from '@/hooks/usePaginatedPosts';
 import { useOwnProfileConfig } from '@/hooks/useProfileConfig';
 import { themeGradient, DEFAULT_OWNER_SECTIONS, ALL_TAB_LABELS } from '@/lib/profileThemes';
 import RichText from '@/components/RichText';
@@ -44,10 +45,10 @@ export default function Profile() {
   const t = useT();
   const { user } = useAuth();
   const [tab, setTab] = useState('Posts');
-  const [posts, setPosts] = useState([]);
   const [collection, setCollection] = useState([]);
   const [trades, setTrades] = useState([]);
   const [did, setDid] = useState('');
+  const { posts, loadingMore, hasMore, loadMore } = usePaginatedPosts(did, false);
   const [reputation, setReputation] = useState([]);
   const [journals, setJournals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,15 +71,13 @@ export default function Profile() {
     try {
       const { did: myDid } = await ensureUserDid();
       setDid(myDid);
-      const [p, c, t, r, j, vs] = await Promise.all([
-        base44.entities.Post.filter({ did: myDid }, '-created_date', 50),
+      const [c, t, r, j, vs] = await Promise.all([
         base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100),
         base44.entities.TradeListing.filter({ created_by_id: user.id }, '-created_date', 20),
         base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
         base44.entities.Journal.filter({ created_by_id: user.id }, '-created_date', 50),
         base44.entities.VoiceSpace.filter({ did: myDid, status: 'live' }, '-created_date', 1).catch(() => []),
       ]);
-      setPosts(p);
       setCollection(c);
       setTrades(t);
       setReputation(r);
@@ -183,7 +182,7 @@ export default function Profile() {
             pinned_post_id: user?.pinned_post_id || '',
             followers_count: merged?.followers_count || 0,
             follows_count: merged?.follows_count || 0,
-            posts_count: myPosts.length,
+            posts_count: merged?.posts_count || myPosts.length,
           }}
           config={config}
           posts={myPosts}
@@ -192,6 +191,9 @@ export default function Profile() {
           reputation={reputation}
           journals={myJournals}
           liveSpace={liveSpace}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          loadMore={loadMore}
           actions={
             <>
               <button onClick={() => setShowEdit(true)} disabled={reverted} className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed">{reverted ? <><Lock className="h-3 w-3" /> {t('migration.editLocked')}</> : t('profile.editProfile')}</button>
