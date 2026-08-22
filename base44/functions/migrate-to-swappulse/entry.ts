@@ -67,7 +67,10 @@ export default async function(req: Request): Promise<Response> {
     const steps: Record<string, StepState> = {
       profile_pull: makeStep('pending'),
       post_backfill: makeStep('pending'),
+      likes_backfill: makeStep('pending'),
+      reposts_backfill: makeStep('pending'),
       notification_import: makeStep('pending'),
+      lists_backfill: makeStep('pending'),
       graph_import: makeStep('pending'),
       handle_update: makeStep('pending'),
       announcement: makeStep('pending'),
@@ -140,7 +143,71 @@ export default async function(req: Request): Promise<Response> {
       await updateSteps({ post_backfill: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
     }
 
-    // 4. Import the one-time Bluesky notification snapshot.
+    // 3b. Trigger the all-time likes backfill (first batch).
+    await updateSteps({ likes_backfill: makeStep('running') });
+    let likesStarted = false;
+    try {
+      const lr = await base44.functions.invoke('backfill-likes', {}).catch((e: any) => {
+        console.error('migrate: likes backfill first batch failed', e?.message || e);
+        return null;
+      });
+      const ld = lr?.data ?? lr;
+      if (ld?.ok) {
+        likesStarted = true;
+        await updateSteps({ likes_backfill: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        const errMsg = ld?.error || 'Likes backfill returned non-ok response';
+        await updateSteps({ likes_backfill: makeStep('failed', errMsg, new Date().toISOString()) });
+      }
+    } catch (e: any) {
+      console.error('migrate: likes backfill trigger failed', e?.message);
+      await updateSteps({ likes_backfill: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
+    }
+
+    // 3c. Trigger the all-time reposts backfill (first batch).
+    await updateSteps({ reposts_backfill: makeStep('running') });
+    let repostsStarted = false;
+    try {
+      const rr = await base44.functions.invoke('backfill-reposts', {}).catch((e: any) => {
+        console.error('migrate: reposts backfill first batch failed', e?.message || e);
+        return null;
+      });
+      const rd = rr?.data ?? rr;
+      if (rd?.ok) {
+        repostsStarted = true;
+        await updateSteps({ reposts_backfill: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        const errMsg = rd?.error || 'Reposts backfill returned non-ok response';
+        await updateSteps({ reposts_backfill: makeStep('failed', errMsg, new Date().toISOString()) });
+      }
+    } catch (e: any) {
+      console.error('migrate: reposts backfill trigger failed', e?.message);
+      await updateSteps({ reposts_backfill: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
+    }
+
+    // 3d. Trigger the all-time lists backfill (first batch).
+    await updateSteps({ lists_backfill: makeStep('running') });
+    let listsStarted = false;
+    try {
+      const ls = await base44.functions.invoke('backfill-lists', {}).catch((e: any) => {
+        console.error('migrate: lists backfill first batch failed', e?.message || e);
+        return null;
+      });
+      const lsd = ls?.data ?? ls;
+      if (lsd?.ok) {
+        listsStarted = true;
+        await updateSteps({ lists_backfill: makeStep('success', '', new Date().toISOString()) });
+      } else {
+        const errMsg = lsd?.error || 'Lists backfill returned non-ok response';
+        await updateSteps({ lists_backfill: makeStep('failed', errMsg, new Date().toISOString()) });
+      }
+    } catch (e: any) {
+      console.error('migrate: lists backfill trigger failed', e?.message);
+      await updateSteps({ lists_backfill: makeStep('failed', e?.message || 'Unknown error', new Date().toISOString()) });
+    }
+
+    // 4. Import the Bluesky notification history (first batch; continues via
+    //    the PDS Sync workflow until the full history is paged).
     await updateSteps({ notification_import: makeStep('running') });
     let notificationsImported = false;
     try {
@@ -211,8 +278,9 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // 7. GATE: Only post the announcement if ALL critical steps succeeded.
-    //    Critical = profile_pull, post_backfill, notification_import, graph_import.
-    const criticalStepsOk = profilePulled && backfillStarted && notificationsImported && graphImported;
+    //    Critical = profile_pull, post_backfill, likes_backfill, reposts_backfill,
+    //    lists_backfill, notification_import, graph_import.
+    const criticalStepsOk = profilePulled && backfillStarted && likesStarted && repostsStarted && listsStarted && notificationsImported && graphImported;
 
     let pinnedUri = '';
     let profileUrl = '';
@@ -347,6 +415,9 @@ export default async function(req: Request): Promise<Response> {
       handle: newHandle || user.bsky_handle,
       profilePulled,
       backfillStarted,
+      likesStarted,
+      repostsStarted,
+      listsStarted,
       notificationsImported,
     });
   } catch (error) {

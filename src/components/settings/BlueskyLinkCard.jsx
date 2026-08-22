@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, FileText, XCircle, AlertCircle, Server, User, Bell, Megaphone } from 'lucide-react';
+import { Link2, CheckCircle2, Loader2, RefreshCw, Plane, Undo2, Globe, Lock, DownloadCloud, FileText, XCircle, AlertCircle, Server, User, Bell, Megaphone, Heart, Repeat2, List, Users } from 'lucide-react';
 import AtProtoForm from '@/components/auth/AtProtoForm';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -19,7 +19,11 @@ import { useT } from '@/lib/i18n/I18nProvider';
 const STEP_META = {
   profile_pull: { icon: User, label: 'Profile sync' },
   post_backfill: { icon: FileText, label: 'Post history' },
+  likes_backfill: { icon: Heart, label: 'Likes history' },
+  reposts_backfill: { icon: Repeat2, label: 'Reposts history' },
   notification_import: { icon: Bell, label: 'Notifications' },
+  lists_backfill: { icon: List, label: 'Lists & starter packs' },
+  graph_import: { icon: Users, label: 'Social graph' },
   handle_update: { icon: Globe, label: 'Handle update' },
   announcement: { icon: Megaphone, label: 'Announcement' },
 };
@@ -83,15 +87,22 @@ export default function BlueskyLinkCard() {
   const linked = !!user?.bsky_handle;
   const migrated = !!user?.migrated_from_bluesky;
   const reverted = !!user?.migration_reverted;
-  const backfillComplete = !!user?.post_backfill_complete;
+  const backfillComplete = !!(
+    user?.post_backfill_complete &&
+    user?.likes_backfill_complete &&
+    user?.reposts_backfill_complete &&
+    user?.notifications_backfill_complete &&
+    user?.lists_backfill_complete
+  );
   const steps = user?.migration_steps || {};
   const hasFailedSteps = Object.values(steps).some((s) => s?.status === 'failed');
 
   const defaultHandle = user?.username || user?.email?.split('@')[0] || 'collector';
 
-  // Loop backfill-author-posts until hasMore is false so the user's full
-  // Bluesky post history is synced into SwapPulse.
-  const runBackfillLoop = async () => {
+  // Loop a backfill function until hasMore is false so the user's full
+  // history for that collection is synced into SwapPulse. Used for posts,
+  // likes, reposts, and lists.
+  const runBackfillLoop = async (fnName = 'backfill-author-posts') => {
     setBackfilling(true);
     setBackfillCount(0);
     let total = 0;
@@ -99,9 +110,9 @@ export default function BlueskyLinkCard() {
       let hasMore = true;
       let safety = 0;
       while (hasMore && safety < 50) {
-        const res = await base44.functions.invoke('backfill-author-posts', {});
+        const res = await base44.functions.invoke(fnName, {});
         const result = res?.data ?? res;
-        total += (result?.backfilled || 0) + (result?.updated || 0);
+        total += (result?.backfilled || 0) + (result?.updated || 0) + (result?.processed || 0) + (result?.imported || 0);
         setBackfillCount(total);
         hasMore = !!result?.hasMore;
         safety++;
@@ -112,6 +123,21 @@ export default function BlueskyLinkCard() {
       console.error('Backfill loop failed', e);
     } finally {
       setBackfilling(false);
+    }
+  };
+
+  // Loop all incomplete backfills to completion (posts, likes, reposts,
+  // notifications, lists) — used by the "Sync all" button.
+  const runAllBackfills = async () => {
+    const fns = [
+      'backfill-author-posts',
+      'backfill-likes',
+      'backfill-reposts',
+      'import-notification-snapshot',
+      'backfill-lists',
+    ];
+    for (const fn of fns) {
+      await runBackfillLoop(fn);
     }
   };
 
@@ -172,8 +198,9 @@ export default function BlueskyLinkCard() {
       setMigrating(false);
     }
 
-    // Loop the post backfill to completion.
-    await runBackfillLoop();
+    // Loop all backfills (posts, likes, reposts, notifications, lists) to
+    // completion so the user's full history is synced immediately.
+    await runAllBackfills();
   };
 
   // Retry the full migration (re-runs all failed steps).
@@ -205,7 +232,7 @@ export default function BlueskyLinkCard() {
     } finally {
       setMigrating(false);
     }
-    await runBackfillLoop();
+    await runAllBackfills();
   };
 
   // Retry a single step.
@@ -213,16 +240,16 @@ export default function BlueskyLinkCard() {
     setRetryingStep(stepKey);
     try {
       if (stepKey === 'post_backfill') {
-        await runBackfillLoop();
+        await runBackfillLoop('backfill-author-posts');
+      } else if (stepKey === 'likes_backfill') {
+        await runBackfillLoop('backfill-likes');
+      } else if (stepKey === 'reposts_backfill') {
+        await runBackfillLoop('backfill-reposts');
+      } else if (stepKey === 'lists_backfill') {
+        await runBackfillLoop('backfill-lists');
       } else if (stepKey === 'notification_import') {
-        const res = await base44.functions.invoke('import-notification-snapshot', {});
-        const result = res?.data ?? res;
-        await checkUserAuth?.();
-        if (result?.ok) {
-          toast({ title: 'Notifications imported' });
-        } else {
-          toast({ title: 'Import failed', description: result?.error || '', variant: 'destructive' });
-        }
+        await runBackfillLoop('import-notification-snapshot');
+        toast({ title: 'Notifications imported' });
       } else {
         // profile_pull, handle_update, announcement → re-run migrate
         await handleRetryMigration();
@@ -310,10 +337,10 @@ export default function BlueskyLinkCard() {
               </button>
             )}
 
-            {/* Continue post sync if backfill incomplete */}
+            {/* Continue all backfills if any are incomplete */}
             {!backfillComplete && !backfilling && (
               <button
-                onClick={runBackfillLoop}
+                onClick={runAllBackfills}
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2 text-xs font-bold text-secondary-foreground transition-colors hover:bg-secondary/80"
               >
                 <DownloadCloud className="h-3.5 w-3.5" /> {t('migration.continueSync')}

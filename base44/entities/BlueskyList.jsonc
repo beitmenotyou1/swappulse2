@@ -1,0 +1,101 @@
+{
+  "name": "BlueskyList",
+  "type": "object",
+  "title": "BlueskyList",
+  "description": "app.bsky.graph.list / app.bsky.graph.starterpack \u2014 a collector's Bluesky curated list or starter pack, backfilled from their PDS repo on migration so their full list history is transferred to SwapPulse. One record per list/starterpack definition, deduped by at_uri. member_dids is populated from the user's app.bsky.graph.listitem records (members they added to their own lists). list_type distinguishes curated lists from starter packs.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the list/starterpack owner"
+    },
+    "list_uri": {
+      "type": "string",
+      "description": "at:// URI of the list/starterpack definition record"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "list_type": {
+      "type": "string",
+      "enum": [
+        "curated",
+        "starterpack"
+      ],
+      "default": "curated"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Bluesky list purpose (app.bsky.graph.defs#curatelist or #modlist)"
+    },
+    "member_dids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DIDs of accounts on this list (populated from app.bsky.graph.listitem records). Empty for starter packs."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the list/starterpack was created on Bluesky"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (for dedup)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "Standard AT Protocol record type (app.bsky.graph.list or app.bsky.graph.starterpack)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": true,
+      "description": "True for records ingested from the PDS (remote-originated)"
+    }
+  },
+  "required": [
+    "did",
+    "list_uri",
+    "name",
+    "list_type"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

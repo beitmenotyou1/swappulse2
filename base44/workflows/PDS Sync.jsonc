@@ -20,7 +20,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "pds_sync",
-      "version": "1.3",
+      "version": "1.4",
       "namespace": "base44"
     },
     "do": [
@@ -91,15 +91,79 @@
               "continue": true
             }
           },
-          "then": "end",
+          "then": "likes_backfill_continue",
           "x-base44": {
             "title": "Continue post backfill",
             "description": "Continue backfilling historical posts for any migrated user whose post_backfill_complete is still false. Processes one page per user per 5-minute cycle until all histories are fully imported."
           }
         }
+      },
+      {
+        "likes_backfill_continue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "backfill-likes",
+            "args": {
+              "continue": true
+            }
+          },
+          "then": "reposts_backfill_continue",
+          "x-base44": {
+            "title": "Continue likes backfill",
+            "description": "Continue backfilling historical likes (app.bsky.feed.like) for migrated users whose likes_backfill_complete is still false. Processes one page per user per 5-minute cycle."
+          }
+        }
+      },
+      {
+        "reposts_backfill_continue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "backfill-reposts",
+            "args": {
+              "continue": true
+            }
+          },
+          "then": "notifications_backfill_continue",
+          "x-base44": {
+            "title": "Continue reposts backfill",
+            "description": "Continue backfilling historical reposts (app.bsky.feed.repost) for migrated users whose reposts_backfill_complete is still false. Processes one page per user per 5-minute cycle."
+          }
+        }
+      },
+      {
+        "notifications_backfill_continue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "import-notification-snapshot",
+            "args": {
+              "continue": true
+            }
+          },
+          "then": "lists_backfill_continue",
+          "x-base44": {
+            "title": "Continue notifications backfill",
+            "description": "Continue backfilling the full notification history (app.bsky.notification.listNotifications) for migrated users whose notifications_backfill_complete is still false. Processes one page per user per 5-minute cycle."
+          }
+        }
+      },
+      {
+        "lists_backfill_continue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "backfill-lists",
+            "args": {
+              "continue": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Continue lists backfill",
+            "description": "Continue backfilling Bluesky lists (app.bsky.graph.list, listitem, starterpack) for migrated users whose lists_backfill_complete is still false. Processes one page per user per 5-minute cycle across the lists \u2192 listitems \u2192 starterpacks phases."
+          }
+        }
       }
     ]
   },
-  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates, pushes outbound profile updates, retries pending handle updates, pushes post edits, and continues post backfill for incomplete histories every 5 minutes.",
+  "description": "Scheduled bidirectional sync with the AT Protocol PDS \u2014 pulls inbound deletions/updates, pushes outbound profile updates, retries pending handle updates, pushes post edits, and continues all backfills (posts, likes, reposts, notifications, lists) for incomplete histories every 5 minutes.",
   "name": "PDS Sync"
 }
