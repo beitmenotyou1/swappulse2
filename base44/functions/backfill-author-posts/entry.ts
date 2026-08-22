@@ -22,6 +22,7 @@ import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { getUserIdentity } from '../../shared/userIdentity.ts';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
+import { upsertEntity } from '../../shared/entityDedup.ts';
 
 const POST_COLLECTION = 'app.bsky.feed.post';
 const APPVIEW = 'https://public.api.bsky.app';
@@ -73,7 +74,11 @@ async function processPage(
   const data = await res.json();
   const records = data.records || [];
   nextCursor = data.cursor || null;
-  hasMore = !!nextCursor;
+  // Mark "more available" only when the PDS returned a full page AND a cursor.
+  // A partial page, or a full page with no cursor, means the history is
+  // exhausted — prevents the premature-complete bug where an empty/falsy
+  // cursor on a full page stalled the backfill for good.
+  hasMore = !!nextCursor && records.length >= PAGE_LIMIT;
 
   for (const rec of records) {
     try {
@@ -81,16 +86,9 @@ async function processPage(
       const val = rec.value || {};
       if (!atUri) { skipped++; continue; }
 
-      const existing = await svc.entities.Post.filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
       const mapped = postMapper(val, atUri, userDid, profile);
-
-      if (existing && existing.length > 0) {
-        await svc.entities.Post.update(existing[0].id, mapped).catch(() => {});
-        updated++;
-      } else {
-        await svc.entities.Post.create(mapped).catch(() => null);
-        backfilled++;
-      }
+      const { created } = await upsertEntity(svc, 'Post', mapped, atUri);
+      if (created) backfilled++; else updated++;
     } catch (e) {
       skipped++;
       console.error('backfill-author-posts: record error', e?.message || e);
@@ -184,7 +182,7 @@ export default async function(req: Request): Promise<Response> {
 
     const result = await processPage(
       svc, pdsUrl, sess.accessJwt, userDid, cursor, profile,
-      async (updates) => { await base44.auth.updateMe(updates).catch(() => {}); },
+      async (updates) => { await svc.entities.User.update(user.id, updates).catch(() => {}); },
     );
 
     return Response.json({

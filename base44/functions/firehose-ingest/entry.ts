@@ -29,6 +29,7 @@ import { COLLECTIONS, FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
 import { blobRefCid, pullProfileFromPds, constructBskyCdnUrl } from '../../shared/profileSync.ts';
 import { getUserIdentity } from '../../shared/userIdentity.ts';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
+import { upsertEntity } from '../../shared/entityDedup.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -184,11 +185,9 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
             if (replyNode?.$type !== 'app.bsky.feed.defs#threadViewPost') continue;
             const rp = replyNode.post;
             if (!rp?.uri) continue;
-            const existing = await svc.entities.Post.filter({ at_uri: rp.uri }, '-created_date', 1).catch(() => []);
-            if (existing && existing.length > 0) continue;
             const author = rp.author || {};
             const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
-            const created = await svc.entities.Post.create(mapped).catch(() => null);
+            const { created, id: createdId } = await upsertEntity(svc, 'Post', mapped, rp.uri);
             if (created) {
               synced++;
               // Resolve the local parent's id from parent_uri so the reply
@@ -197,11 +196,11 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
               if (parentUri) {
                 const parents = await svc.entities.Post.filter({ at_uri: parentUri }, '-created_date', 1).catch(() => []);
                 if (parents?.[0]?.id) {
-                  await svc.entities.Post.update(created.id, { reply_to: parents[0].id }).catch(() => {});
+                  await svc.entities.Post.update(createdId, { reply_to: parents[0].id }).catch(() => {});
                 }
               }
+              await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '', rp.uri, rp.cid || '', createdId || '');
             }
-            await maybeNotifyInteraction(base44, 'app.bsky.feed.post', rp.record || {}, author.did || '', rp.uri, rp.cid || '', created?.id || '');
           } catch (e) {
             console.error('firehose-ingest: reply sync error', e?.message || e);
           }
@@ -520,16 +519,13 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
       try {
         if (!post?.uri) continue;
         if (promoUris.has(post.uri)) continue;
-        const existing = await svc.entities.Post.filter({ at_uri: post.uri }, '-created_date', 1).catch(() => []);
-        if (existing && existing.length > 0) continue;
-
         const author = post.author || {};
         const record = post.record || {};
         if (record.reply) continue;
 
         const mapped = postMapper(record, post.uri, author.did || '', author);
-        await svc.entities.Post.create(mapped).catch(() => {});
-        ingested++;
+        const { created } = await upsertEntity(svc, 'Post', mapped, post.uri);
+        if (created) ingested++;
       } catch (e) {
         console.error('firehose-ingest: searchPosts record error', e?.message || e);
       }
@@ -704,21 +700,11 @@ export default async function(req: Request): Promise<Response> {
               }
 
               const mapped = mapper(val, atUri, repoDid, profile);
-              const existing = await svc.entities[entityName].filter({ at_uri: atUri }, '-created_date', 1).catch(() => []);
-              let isNew = false;
-              let createdId = '';
-              if (existing && existing.length > 0) {
-                await svc.entities[entityName].update(existing[0].id, mapped).catch(() => {});
-                updated++;
-              } else {
-                const created = await svc.entities[entityName].create(mapped).catch(() => null);
-                ingested++;
-                isNew = true;
-                createdId = created?.id || '';
-              }
+              const { created: isNew, id: createdId } = await upsertEntity(svc, entityName, mapped, atUri);
+              if (isNew) ingested++; else updated++;
               collectionStats[collection]++;
               if (isNew && !isLocal) {
-                await maybeNotifyInteraction(base44, collection, val, repoDid, atUri, rec.cid || '', createdId);
+                await maybeNotifyInteraction(base44, collection, val, repoDid, atUri, rec.cid || '', createdId || '');
               }
             } catch (e) {
               errors++;
