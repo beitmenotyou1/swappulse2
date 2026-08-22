@@ -1,0 +1,138 @@
+{
+  "name": "CommunityLabeler",
+  "type": "object",
+  "title": "CommunityLabeler",
+  "description": "org.swappulse.communityLabeler \u2014 a community-run labeling service definition (e.g. 'Vintage Authenticity', 'Scam Watch', 'Verified Grader'). Collectors subscribe to labelers to shape their own feed; subscribed labels render as opt-in badges/filters on posts, profiles, and trade listings. Authorship is admin-approved before a labeler can label content. Mirrored to AT Protocol as a real org.swappulse.communityLabeler record.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "authenticity",
+        "safety",
+        "grading",
+        "expertise",
+        "quality",
+        "other"
+      ],
+      "default": "other",
+      "description": "The kind of trust signal this labeler provides"
+    },
+    "label_values": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string"
+      },
+      "description": "The set of label strings this labeler can apply (e.g. 'verified-authentic', 'suspected-reprint', 'psa-confirmed')"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "revoked"
+      ],
+      "default": "pending",
+      "description": "Admin approval state; only 'approved' labelers can label content"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "User id of the admin who approved/rejected"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subscriber_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "label_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of labels this labeler has applied"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "author_avatar": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the labeler author"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.communityLabeler)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the labeler to the author's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the labeler has been mirrored to the AT Protocol PDS as a real org.swappulse.communityLabeler record"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 of the canonical record body, refreshed on each bridge push."
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "approval_status"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

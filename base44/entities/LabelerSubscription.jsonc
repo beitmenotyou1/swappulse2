@@ -1,0 +1,51 @@
+{
+  "name": "LabelerSubscription",
+  "type": "object",
+  "title": "LabelerSubscription",
+  "description": "org.swappulse.labelerSubscription \u2014 a collector's subscription to a community labeler, tracked locally so subscribed labels render as opt-in badges/filters on the subscriber's feed. One record per (did, labeler_id). Created by the toggle-labeler-subscription backend function and by firehose-ingest for remote subscriptions.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the subscriber"
+    },
+    "labeler_id": {
+      "type": "string",
+      "description": "Local id of the CommunityLabeler being subscribed to"
+    },
+    "labeler_ref": {
+      "type": "string",
+      "description": "at:// URI of the labeler record (for federated linking)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this subscription record (for firehose dedup)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True for records ingested from the firehose (remote-originated)"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 of the canonical record body, refreshed on each bridge push."
+    }
+  },
+  "required": [
+    "did",
+    "labeler_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "name": "BookmarkBoard",
+  "type": "object",
+  "title": "BookmarkBoard",
+  "description": "org.swappulse.bookmarkBoard \u2014 a named, optionally-shareable curation board of saved posts, cards, and trade listings. Distinct from the actual card collection (CollectionEntry); this is a Pinterest-for-TCG curation layer. Mirrored to AT Protocol as a real org.swappulse.bookmarkBoard record. Public boards are readable by everyone; private boards are owner-only.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "private"
+      ],
+      "default": "private"
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_type": {
+            "type": "string",
+            "enum": [
+              "post",
+              "card",
+              "trade_listing"
+            ]
+          },
+          "item_id": {
+            "type": "string",
+            "description": "Local entity id of the saved item"
+          },
+          "item_uri": {
+            "type": "string",
+            "description": "at:// URI for federated items"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Optional thumbnail/preview URL for display"
+          },
+          "title": {
+            "type": "string",
+            "description": "Optional cached title/preview text for display"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "item_type"
+        ]
+      }
+    },
+    "cover_image_url": {
+      "type": "string"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_handle": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the board owner"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.bookmarkBoard)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the board to the owner's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the board has been mirrored to the AT Protocol PDS as a real org.swappulse.bookmarkBoard record"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 of the canonical record body, refreshed on each bridge push."
+    }
+  },
+  "required": [
+    "name",
+    "visibility"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.visibility": "public"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

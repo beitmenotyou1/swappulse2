@@ -15,6 +15,7 @@ import { createLike, deleteLike, createRepost, deleteRepost, deletePost } from '
 import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetViewerLiked } from '@/lib/viewerLikes';
 import ReportDialog from '@/components/moderation/ReportDialog';
 import QuoteComposeModal from '@/components/feed/QuoteComposeModal';
+import SaveToBoardModal from '@/components/boards/SaveToBoardModal';
 import QuotedPostCard from '@/components/feed/QuotedPostCard';
 import PostEmbeds from '@/components/feed/PostEmbeds';
 import ExternalIndicator from '@/components/ExternalIndicator';
@@ -40,6 +41,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
   const [saved, setSaved] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [saveBoardOpen, setSaveBoardOpen] = useState(false);
   const [showThread, setShowThread] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pendingPin, setPendingPin] = useState(false);
@@ -286,12 +288,12 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
               <span>{formatNumber(likeCount)}</span>
             </button>
             <button
-              onClick={() => setSaved(!saved)}
+              onClick={() => setSaveBoardOpen(true)}
+              disabled={!user?.id}
               aria-label={t('common.save')}
-              aria-pressed={saved}
-              className={`rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary ${saved ? 'text-primary' : ''}`}
+              className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
             >
-              <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
+              <Bookmark className="h-4 w-4" />
             </button>
             <button aria-label={t('common.share')} className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary">
               <Share2 className="h-4 w-4" />
@@ -340,6 +342,14 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
         open={quoteOpen}
         onClose={() => setQuoteOpen(false)}
         targetPost={post}
+      />
+      <SaveToBoardModal
+        open={saveBoardOpen}
+        onClose={() => setSaveBoardOpen(false)}
+        itemType="post"
+        itemId={post.id}
+        itemUri={post.at_uri}
+        title={post.content?.slice(0, 120)}
       />
     </article>
   );

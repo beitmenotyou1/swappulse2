@@ -16,6 +16,7 @@ import JournalsTab from '@/components/profile/JournalsTab';
 import PodcastsTab from '@/components/profile/PodcastsTab';
 import CrossPostTab from '@/components/crosspost/CrossPostTab';
 import TradeHistoryTab from '@/components/profile/TradeHistoryTab';
+import BoardsTab from '@/components/profile/BoardsTab';
 import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
@@ -233,6 +234,9 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
 
   // Photos (Facebook)
   if (tabKey === 'Photos') return <PhotosTab collection={collection} did={did} />;
+
+  // Boards — curation boards (owner sees all, visitors see public via RLS)
+  if (tabKey === 'Boards') return <BoardsTab did={did} isOwner={isOwner} />;
 
   // Cross-Posting (owner only)
   if (tabKey === 'Cross-Posting') return <CrossPostTab />;

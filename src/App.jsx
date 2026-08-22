@@ -35,6 +35,13 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Activate from '@/pages/Activate';
 // Add page imports here
+import StarterPacks from '@/pages/StarterPacks';
+import StarterPackDetail from '@/pages/StarterPackDetail';
+import Feeds from '@/pages/Feeds';
+import BoardDetail from '@/pages/BoardDetail';
+import CircleDirectory from '@/pages/CircleDirectory';
+import Labelers from '@/pages/Labelers';
+import SearchPage from '@/pages/Search';
 import Grading from '@/pages/Grading';
 import Binders from '@/pages/Binders';
 import BinderEdit from '@/pages/BinderEdit';
@@ -258,6 +265,13 @@ const AuthenticatedApp = () => {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />
+        <Route path="/starter-packs" element={<StarterPacks />} />
+        <Route path="/starter-packs/:packId" element={<StarterPackDetail />} />
+        <Route path="/feeds" element={<Feeds />} />
+        <Route path="/boards/:boardId" element={<BoardDetail />} />
+        <Route path="/circles-directory" element={<CircleDirectory />} />
+        <Route path="/labelers" element={<Labelers />} />
+        <Route path="/search" element={<SearchPage />} />
       </Route>
       {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

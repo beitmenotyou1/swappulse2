@@ -14,6 +14,7 @@ import { extractHashtags, canonicalise } from '@/lib/hashtags';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { useMediaComposer } from '@/hooks/useMediaComposer';
 import MediaComposer from '@/components/feed/MediaComposer';
+import VideoComposer from '@/components/feed/VideoComposer';
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
@@ -44,6 +45,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [replyPolicy, setReplyPolicy] = useState('everybody');
   const [visibilityScope, setVisibilityScope] = useState('public');
   const [cardAltText, setCardAltText] = useState('');
+  const [nativeVideo, setNativeVideo] = useState(null);
   const media = useMediaComposer();
 
   const typeButtons = [
@@ -62,6 +64,8 @@ export default function ComposeBox({ onPosted, replyTo }) {
       const canonical_tags = canonicalise(hashtags);
       // Upload images and build embed fields (embed_images, embed_video, embed_external)
       const mediaFields = await media.buildMediaFields();
+      // Native uploaded pack-opening video takes precedence over external link.
+      if (nativeVideo?.url) mediaFields.embed_video = nativeVideo;
       // Federated reply threading — resolve parent/root refs for the bridge
       const parentUri = replyTo?.at_uri || null;
       const parentCid = replyTo?.cid || null;
@@ -260,6 +264,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
       setPostType('text');
       setVisibilityScope('public');
       media.reset();
+      setNativeVideo(null);
       onPosted?.();
     } catch (e) {
       if (isBotBlockError(e)) {
@@ -335,6 +340,12 @@ export default function ComposeBox({ onPosted, replyTo }) {
 
           <MediaComposer media={media} content={content} />
 
+          {postType === 'pack_opening' && (
+            <div className="mt-2">
+              <VideoComposer value={nativeVideo} onChange={setNativeVideo} />
+            </div>
+          )}
+
           {!replyTo && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">{t('compose.whoCanReply')}</span>
@@ -401,7 +412,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
             </div>
             <button
               onClick={handlePost}
-              disabled={posting || (!content.trim() && !attachedCard && media.images.length === 0 && !media.videoUrl.trim())}
+              disabled={posting || (!content.trim() && !attachedCard && media.images.length === 0 && !media.videoUrl.trim() && !nativeVideo?.url)}
               className="flex items-center justify-center gap-1.5 self-end rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-40 sm:self-auto"
             >
               {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

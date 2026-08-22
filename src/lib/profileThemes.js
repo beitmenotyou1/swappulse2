@@ -53,6 +53,7 @@ export const THEME_CONFIGS = {
       { key: 'Following', label: 'Following' },
       { key: 'Journals', label: 'Journals' },
       { key: 'Podcasts', label: 'Podcasts' },
+      { key: 'Boards', label: 'Boards' },
     ],
   },
   vintage: {

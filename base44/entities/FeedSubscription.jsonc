@@ -1,0 +1,60 @@
+{
+  "name": "FeedSubscription",
+  "type": "object",
+  "title": "FeedSubscription",
+  "description": "org.swappulse.feedSubscription \u2014 a collector's subscription/pin to a custom community feed, tracked locally so pinned feeds appear as home tabs and subscriber counts can be surfaced. One record per (did, feed_uri). Created by the toggle-feed-subscription backend function and by firehose-ingest for remote subscriptions.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the subscriber"
+    },
+    "feed_uri": {
+      "type": "string",
+      "description": "at:// URI of the feed generator being subscribed to"
+    },
+    "feed_name": {
+      "type": "string",
+      "description": "Display name of the feed (cached for the home tab strip)"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the collector has pinned the feed as a home tab"
+    },
+    "author_did": {
+      "type": "string",
+      "description": "DID of the feed author (for notification routing)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this subscription record (for firehose dedup)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True for records ingested from the firehose (remote-originated)"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 of the canonical record body, refreshed on each bridge push."
+    }
+  },
+  "required": [
+    "did",
+    "feed_uri"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -19,6 +19,11 @@ const primary = [
 ];
 
 const moreItems = [
+  { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
+  { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
+  { to: '/starter-packs', icon: Box, label: 'Packs', tKey: 'nav.starterPacks' },
+  { to: '/circles-directory', icon: Network, label: 'Directory', tKey: 'nav.circleDirectory' },
+  { to: '/labelers', icon: Tag, label: 'Labelers', tKey: 'nav.labelers' },
   { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
   { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },

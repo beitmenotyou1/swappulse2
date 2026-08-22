@@ -1,0 +1,78 @@
+{
+  "name": "TrustTierRule",
+  "type": "object",
+  "title": "TrustTierRule",
+  "description": "org.swappulse.trustTierRule \u2014 an admin-managed mapping linking a verified custom-domain handle suffix to a trust tier (e.g. 'verified-seller', 'industry-provenance'). Collectors whose verified domain matches a rule are assigned the tier, which feeds into the trust/reputation engine and elevates trade-listing prominence. Admin-only CRUD; the service role reads these during trust resolution.",
+  "properties": {
+    "domain_suffix": {
+      "type": "string",
+      "maxLength": 120,
+      "description": "Domain suffix to match against a verified handle (e.g. 'psacard.com', '.grader.pro'). Matched case-insensitively against the end of the handle."
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "verified-seller",
+        "industry-provenance",
+        "trusted-shop",
+        "official-partner"
+      ],
+      "description": "The trust tier assigned to collectors whose verified domain matches"
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 60,
+      "description": "Human-readable label for the tier badge (e.g. 'Verified Seller', 'PSA Provenance')"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "trade_listing_boost": {
+      "type": "boolean",
+      "default": true,
+      "description": "True when matching collectors' trade listings receive prominence boost"
+    },
+    "trust_weight": {
+      "type": "integer",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Weight added to the trust score for collectors matching this rule"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "domain_suffix",
+    "tier",
+    "label"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
