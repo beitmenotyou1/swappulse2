@@ -12,13 +12,14 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
 // Validates a PDS service endpoint URL to prevent SSRF. Rejects non-HTTPS
 // schemes, private/loopback/link-local IP ranges, and known metadata
 // endpoints. Returns the validated origin URL or throws.
-function validatePdsUrl(rawUrl: string): string {
+async function validatePdsUrl(rawUrl: string): Promise<string> {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -54,6 +55,11 @@ function validatePdsUrl(rawUrl: string): string {
     throw new Error('PDS endpoint is not allowed.');
   }
 
+  // Resolve the hostname via DNS and reject if any resolved IP is
+  // private/loopback/link-local/metadata (blocks wildcard-DNS SSRF like
+  // 169.254.169.254.nip.io that passes the string checks above).
+  await assertSafeHost(host);
+
   return parsed.origin;
 }
 
@@ -79,7 +85,7 @@ async function resolveHandle(handle: string): Promise<string> {
     const base = handle.includes('.') ? `https://${handle}` : `https://${handle}.bsky.social`;
     // Validate the hostname (blocks IPs, localhost, metadata endpoints) and
     // use redirect: 'manual' to prevent redirect-based SSRF bypasses.
-    const validatedOrigin = validatePdsUrl(base);
+    const validatedOrigin = await validatePdsUrl(base);
     const res = await fetch(`${validatedOrigin}/.well-known/atproto-did`, { redirect: 'manual' });
     if (res.status >= 300 && res.status < 400) {
       throw new Error('Redirect not allowed for handle resolution.');
@@ -102,14 +108,14 @@ async function resolvePdsUrl(did: string): Promise<string> {
       (s: any) => s.type === 'AtprotoPersonalDataServer',
     );
     if (!service?.serviceEndpoint) throw new Error('DID has no PDS endpoint.');
-    return validatePdsUrl(service.serviceEndpoint);
+    return await validatePdsUrl(service.serviceEndpoint);
   }
   if (did.startsWith('did:web:')) {
     const domain = did.replace('did:web:', '');
     // Validate the did:web domain before any outbound request to prevent
     // SSRF (internal IPs / cloud metadata endpoints). redirect: 'manual'
     // blocks redirect-based SSRF bypasses.
-    const didWebUrl = validatePdsUrl(`https://${domain}/.well-known/did.json`);
+    const didWebUrl = await validatePdsUrl(`https://${domain}/.well-known/did.json`);
     const res = await fetch(didWebUrl, { redirect: 'manual' });
     if (!res.ok) throw new Error('Could not resolve did:web DID.');
     const doc = await res.json();
@@ -117,7 +123,7 @@ async function resolvePdsUrl(did: string): Promise<string> {
       (s: any) => s.type === 'AtprotoPersonalDataServer',
     );
     if (!service?.serviceEndpoint) throw new Error('DID has no PDS endpoint.');
-    return validatePdsUrl(service.serviceEndpoint);
+    return await validatePdsUrl(service.serviceEndpoint);
   }
   throw new Error(`Unsupported DID method: ${did.split(':')[1]}`);
 }

@@ -11,28 +11,7 @@
 // prevents hanging on slow servers.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-
-// Check if a hostname resolves to a private/internal IP. Blocks SSRF via
-// decimal/hex IP encodings and IPv6-mapped IPv4.
-function isPrivateHost(hostname: string): boolean {
-  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (h === 'localhost' || h.endsWith('.localhost')) return true;
-  if (h === '0.0.0.0' || h === '::' || h === '::1') return true;
-  // IPv4 literal
-  const ipv4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4) {
-    const [a, b] = [parseInt(ipv4[1]), parseInt(ipv4[2])];
-    if (a === 10) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 127) return true;
-    if (a === 0) return true;
-    if (a === 169 && b === 254) return true;
-  }
-  // IPv6-mapped IPv4 (::ffff:127.0.0.1)
-  if (h.startsWith('::ffff:')) return isPrivateHost(h.slice(7));
-  return false;
-}
+import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 
 // Parse meta tags from an HTML string. Returns a map of property/name → content.
 function parseMetaTags(html: string): Record<string, string> {
@@ -74,8 +53,10 @@ export default async function(req: Request): Promise<Response> {
     if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
       return Response.json({ error: 'Only http(s) URLs are supported' }, { status: 400 });
     }
-    if (isPrivateHost(parsedUrl.hostname)) {
-      return Response.json({ error: 'Internal hosts are not allowed' }, { status: 400 });
+    try {
+      await assertSafeHost(parsedUrl.hostname);
+    } catch (e) {
+      return Response.json({ error: e?.message || 'Internal hosts are not allowed' }, { status: 400 });
     }
 
     // Fetch with manual redirect handling: each redirect Location is
@@ -118,8 +99,10 @@ export default async function(req: Request): Promise<Response> {
         if (nextUrl.protocol !== 'https:' && nextUrl.protocol !== 'http:') {
           return Response.json({ error: 'Redirect to non-http(s) protocol blocked' }, { status: 502 });
         }
-        if (isPrivateHost(nextUrl.hostname)) {
-          return Response.json({ error: 'Redirect to internal host blocked' }, { status: 502 });
+        try {
+          await assertSafeHost(nextUrl.hostname);
+        } catch (e) {
+          return Response.json({ error: e?.message || 'Redirect to internal host blocked' }, { status: 502 });
         }
         currentUrl = nextUrl.href;
         continue; // follow the validated redirect
