@@ -53,8 +53,9 @@ export default function Explore() {
   const loadFeedPosts = useCallback(async () => {
     setFeedLoading(true);
     try {
-      const p = await base44.entities.Post.list('-created_date', 50);
-      setFeedPosts(p || []);
+      const res = await base44.functions.invoke('get-explore-feed', { limit: 50 });
+      const data = res?.data ?? res;
+      setFeedPosts(data?.items || []);
     } catch {
       setFeedPosts([]);
     } finally {

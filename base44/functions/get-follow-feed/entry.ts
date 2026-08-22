@@ -12,6 +12,7 @@
 // accounts / hashtags / log in).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { enrichAuthorAvatars } from '../../shared/avatarEnrichment.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -146,7 +147,13 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // 6. Merge + time-sort — For You is strictly followed accounts + followed
+    // 6. Enrich local (non-external) posts with the current avatar and display
+    //    name from the User table so the feed always shows up-to-date profile
+    //    pictures — even for posts created before avatar denormalisation or
+    //    when the user updated their avatar after the post was created.
+    await enrichAuthorAvatars(svc, items);
+
+    // 7. Merge + time-sort — For You is strictly followed accounts + followed
     // hashtags (local + protocol); discovery happens in the Explore tab.
     items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     const followedCount = items.length;

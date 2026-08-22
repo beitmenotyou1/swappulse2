@@ -117,6 +117,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         embed_external: mediaFields.embed_external,
         author_name: user?.display_name || user?.full_name,
         author_handle: user?.username || user?.bsky_handle || '',
+        author_avatar: user?.avatar || '',
         likes: 0,
         reposts: 0,
         replies: 0,
