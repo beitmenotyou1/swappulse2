@@ -1,0 +1,34 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.starterPack",
+  "revision": 1,
+  "description": "A collector-authored onboarding bundle of member collectors, recommended Circles, pinned custom feeds, and a featured binder/journal, mirrored to AT Protocol so packs are portable and discoverable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A starter pack for onboarding newcomers.",
+      "record": {
+        "type": "object",
+        "required": ["name", "category", "createdAt"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 64 },
+          "description": { "type": "string", "maxLength": 300 },
+          "category": { "type": "string", "knownValues": ["vintage", "modern", "competitive", "investment", "sealed", "japanese", "trading", "general"] },
+          "memberDids": { "type": "array", "maxLength": 50, "items": { "type": "string", "format": "did" } },
+          "circleIds": { "type": "array", "maxLength": 10, "items": { "type": "string" } },
+          "feedUris": { "type": "array", "maxLength": 10, "items": { "type": "string", "format": "at-uri" } },
+          "featuredBinderId": { "type": "string" },
+          "featuredJournalId": { "type": "string" },
+          "coverImageUrl": { "type": "string", "format": "uri" },
+          "subscriberCount": { "type": "integer" },
+          "authorDid": { "type": "string", "format": "did" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "authorAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -29,6 +29,7 @@ export default function FeedCard({ feed, subscribed, onToggle }) {
           author_did: feed.author?.did || '',
           pinned: false,
         });
+        base44.functions.invoke('bridge-record', { action: 'create', entityName: 'FeedSubscription', recordId: created.id }).catch(() => {});
         onToggle?.(feed, true, created);
         toast({ title: 'Subscribed' });
       }

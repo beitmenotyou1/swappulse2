@@ -43,6 +43,7 @@ export default function StarterPackComposer({ open, onClose, onCreated }) {
         author_avatar: user.data?.avatar_url || '',
         did: user.data?.did || '',
       });
+      base44.functions.invoke('bridge-record', { action: 'create', entityName: 'StarterPack', recordId: created.id }).catch(() => {});
       toast({ title: 'Starter pack published' });
       onCreated?.(created);
       onClose?.();

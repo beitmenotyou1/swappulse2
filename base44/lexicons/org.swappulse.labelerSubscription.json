@@ -1,0 +1,23 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.labelerSubscription",
+  "revision": 1,
+  "description": "A collector's subscription to a community labeler, mirrored to AT Protocol so labeler subscriptions are portable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A labeler subscription.",
+      "record": {
+        "type": "object",
+        "required": ["labelerId", "createdAt"],
+        "properties": {
+          "labelerId": { "type": "string" },
+          "labelerRef": { "type": "string", "format": "at-uri" },
+          "authorDid": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

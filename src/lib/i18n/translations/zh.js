@@ -11,6 +11,8 @@ const zh = {
   'nav.grading': '评级', 'nav.help': '帮助', 'nav.donate': '捐赠', 'nav.settings': '设置',
   'nav.login': '登录', 'nav.logout': '退出', 'nav.profile': '查看资料', 'nav.admin': '管理',
   'nav.moderation': '审核',
+  'nav.search': '搜索', 'nav.feeds': '订阅源', 'nav.starterPacks': '新手包',
+  'nav.circleDirectory': '圈子目录', 'nav.labelers': '标注者',
   'card.overview': '概览', 'card.discussion': '讨论', 'card.posts': '帖子', 'card.reviews': '评论',
   'card.trades': '交易', 'card.packOpenings': '开包', 'card.addToCollection': '加入收藏',
   'card.wishlist': '心愿单', 'card.listForTrade': '上架交易', 'card.priceAlert': '价格提醒',

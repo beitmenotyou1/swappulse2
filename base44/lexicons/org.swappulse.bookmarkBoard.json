@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.bookmarkBoard",
+  "revision": 1,
+  "description": "A named, optionally-shareable curation board of saved posts, cards, and trade listings, mirrored to AT Protocol so boards are portable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A bookmark curation board.",
+      "record": {
+        "type": "object",
+        "required": ["name", "visibility", "createdAt"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 60 },
+          "description": { "type": "string", "maxLength": 300 },
+          "visibility": { "type": "string", "knownValues": ["public", "private"] },
+          "items": {
+            "type": "array",
+            "maxLength": 500,
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemType": { "type": "string", "knownValues": ["post", "card", "trade_listing"] },
+                "itemId": { "type": "string" },
+                "itemUri": { "type": "string", "format": "at-uri" },
+                "thumbnail": { "type": "string", "format": "uri" },
+                "title": { "type": "string" },
+                "addedAt": { "type": "string", "format": "datetime" }
+              }
+            }
+          },
+          "coverImageUrl": { "type": "string", "format": "uri" },
+          "authorDid": { "type": "string", "format": "did" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

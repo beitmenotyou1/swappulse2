@@ -11,6 +11,8 @@ const ko = {
   'nav.grading': '그레이딩', 'nav.help': '도움말', 'nav.donate': '기부', 'nav.settings': '설정',
   'nav.login': '로그인', 'nav.logout': '로그아웃', 'nav.profile': '프로필 보기', 'nav.admin': '관리',
   'nav.moderation': '중재',
+  'nav.search': '검색', 'nav.feeds': '피드', 'nav.starterPacks': '스타터 팩',
+  'nav.circleDirectory': '서클 디렉토리', 'nav.labelers': '라벨러',
   'card.overview': '개요', 'card.discussion': '토론', 'card.posts': '게시물', 'card.reviews': '리뷰',
   'card.trades': '교환', 'card.packOpenings': '팩 개봉', 'card.addToCollection': '컬렉션에 추가',
   'card.wishlist': '위시리스트', 'card.listForTrade': '교환 등록', 'card.priceAlert': '가격 알림',

@@ -95,11 +95,46 @@ Deno.serve(async (req) => {
     const outgoingDids = new Set(outgoing.filter((v) => !v.revoked_at).map((v) => v.vouched_did));
     const mutualVouches = dedupedIncoming.filter((v) => outgoingDids.has(v.did)).length;
 
+    // Trust tier boost: if the collector's verified custom-domain handle matches
+    // an active TrustTierRule, add the rule's trust_weight to the score and
+    // surface the tier label so clients can render a badge.
+    let tierBoost = 0;
+    let tierLabel = '';
+    let tierKey = '';
+    let tradeListingBoost = false;
+    try {
+      const rules = await svc.entities.TrustTierRule.filter({ active: true }, '-created_date', 100);
+      if (rules && rules.length) {
+        let handle = '';
+        try {
+          const descRes = await fetch(`${APPVIEW}/xrpc/com.atproto.repo.describe?repo=${encodeURIComponent(targetDid)}`);
+          if (descRes.ok) {
+            const desc = await descRes.json();
+            handle = (desc.handle || '').toLowerCase();
+          }
+        } catch { /* handle resolution best-effort */ }
+        if (handle) {
+          for (const rule of rules) {
+            const suffix = (rule.domain_suffix || '').toLowerCase();
+            if (suffix && handle.endsWith(suffix)) {
+              tierBoost = rule.trust_weight || 0;
+              tierLabel = rule.label || '';
+              tierKey = rule.tier || '';
+              tradeListingBoost = !!rule.trade_listing_boost;
+              break;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('getTrustProfile: TrustTierRule lookup failed', e?.message || e);
+    }
+
     const rawScore = dedupedIncoming.reduce(
       (s, v) => s + (RELATIONSHIP_WEIGHT[v.relationship] || 1),
       0,
     );
-    const normalised = Math.min(100, Math.round(rawScore * 8 + mutualVouches * 5));
+    const normalised = Math.min(100, Math.round(rawScore * 8 + mutualVouches * 5 + tierBoost));
 
     const topVouchers = activeIncoming
       .map((v) => ({
@@ -117,6 +152,10 @@ Deno.serve(async (req) => {
       mutual_vouches: mutualVouches,
       raw_score: rawScore,
       normalised_score: normalised,
+      tier_boost: tierBoost,
+      tier_label: tierLabel,
+      tier_key: tierKey,
+      trade_listing_boost: tradeListingBoost,
       top_vouchers: topVouchers,
       incoming: incoming.map((v) => ({
         id: v.id,

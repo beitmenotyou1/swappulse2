@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.communityLabeler",
+  "revision": 1,
+  "description": "A community-run labeling service definition, mirrored to AT Protocol so labelers are portable and discoverable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A community labeler service.",
+      "record": {
+        "type": "object",
+        "required": ["name", "category", "approvalStatus", "createdAt"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 64 },
+          "description": { "type": "string", "maxLength": 500 },
+          "category": { "type": "string", "knownValues": ["authenticity", "safety", "grading", "expertise", "quality", "other"] },
+          "labelValues": { "type": "array", "maxLength": 20, "items": { "type": "string" } },
+          "approvalStatus": { "type": "string", "knownValues": ["pending", "approved", "rejected", "revoked"] },
+          "reviewedBy": { "type": "string" },
+          "reviewedAt": { "type": "string", "format": "datetime" },
+          "subscriberCount": { "type": "integer" },
+          "labelCount": { "type": "integer" },
+          "authorDid": { "type": "string", "format": "did" },
+          "authorName": { "type": "string" },
+          "authorHandle": { "type": "string" },
+          "authorAvatar": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

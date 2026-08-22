@@ -222,6 +222,11 @@ export const toTradeListingRecord = (e: any) => buildRecord(e, 'org.swappulse.tr
 export const toTradeChainRecord = (e: any) => buildRecord(e, 'org.swappulse.tradeChain');
 export const toTradeDisputeRecord = (e: any) => buildRecord(e, 'org.swappulse.tradeDispute');
 export const toStandardSubscriptionRecord = (e: any) => buildRecord(e, 'site.standard.graph.subscription');
+export const toStarterPackRecord = (e: any) => buildRecord(e, 'org.swappulse.starterPack');
+export const toBookmarkBoardRecord = (e: any) => buildRecord(e, 'org.swappulse.bookmarkBoard');
+export const toCommunityLabelerRecord = (e: any) => buildRecord(e, 'org.swappulse.communityLabeler');
+export const toFeedSubscriptionRecord = (e: any) => buildRecord(e, 'org.swappulse.feedSubscription');
+export const toLabelerSubscriptionRecord = (e: any) => buildRecord(e, 'org.swappulse.labelerSubscription');
 
 // ─── Per-record-type publish helpers ─────────────────────────────────────
 // Convenience wrappers so callers use a descriptive name per type instead of
@@ -247,6 +252,23 @@ export const publishTradeDispute = (b: any, id: string, force = false) =>
   publishRecord(b, 'TradeDispute', id, 'org.swappulse.tradeDispute', force);
 export const publishStandardSubscription = (b: any, id: string, force = false) =>
   publishRecord(b, 'StandardSubscription', id, 'site.standard.graph.subscription', force);
+export const publishStarterPack = (b: any, id: string, force = false) =>
+  publishRecord(b, 'StarterPack', id, 'org.swappulse.starterPack', force);
+export const publishBookmarkBoard = (b: any, id: string, force = false) =>
+  publishRecord(b, 'BookmarkBoard', id, 'org.swappulse.bookmarkBoard', force);
+export const publishCommunityLabeler = (b: any, id: string, force = false) =>
+  publishRecord(b, 'CommunityLabeler', id, 'org.swappulse.communityLabeler', force);
+export const publishFeedSubscription = (b: any, id: string, force = false) =>
+  publishRecord(b, 'FeedSubscription', id, 'org.swappulse.feedSubscription', force);
+export const publishLabelerSubscription = (b: any, id: string, force = false) =>
+  publishRecord(b, 'LabelerSubscription', id, 'org.swappulse.labelerSubscription', force);
+
+export const updateStarterPack = (b: any, id: string) =>
+  updateBridgedRecord(b, 'StarterPack', id, 'org.swappulse.starterPack');
+export const updateBookmarkBoard = (b: any, id: string) =>
+  updateBridgedRecord(b, 'BookmarkBoard', id, 'org.swappulse.bookmarkBoard');
+export const updateCommunityLabeler = (b: any, id: string) =>
+  updateBridgedRecord(b, 'CommunityLabeler', id, 'org.swappulse.communityLabeler');
 
 export const updateJournal = (b: any, id: string) =>
   updateBridgedRecord(b, 'Journal', id, 'org.swappulse.journal');

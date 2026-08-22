@@ -285,6 +285,61 @@ export const LEXICONS: any[] = [
       authorAvatar: { type: 'string', format: 'uri' }, read: { type: 'boolean' }, createdAt: { type: 'string', format: 'datetime' }
     } } } }
   },
+  {
+    lexicon: 1, id: 'org.swappulse.starterPack', revision: 1,
+    description: "A collector-authored onboarding bundle of member collectors, recommended Circles, pinned custom feeds, and a featured binder/journal, mirrored to AT Protocol so packs are portable and discoverable across instances.",
+    defs: { main: { type: 'record', key: 'tid', description: 'A starter pack for onboarding newcomers.', record: { type: 'object', required: ['name', 'category', 'createdAt'], properties: {
+      name: { type: 'string', maxLength: 64 }, description: { type: 'string', maxLength: 300 },
+      category: { type: 'string', knownValues: ['vintage', 'modern', 'competitive', 'investment', 'sealed', 'japanese', 'trading', 'general'] },
+      memberDids: { type: 'array', maxLength: 50, items: { type: 'string', format: 'did' } },
+      circleIds: { type: 'array', maxLength: 10, items: { type: 'string' } },
+      feedUris: { type: 'array', maxLength: 10, items: { type: 'string', format: 'at-uri' } },
+      featuredBinderId: { type: 'string' }, featuredJournalId: { type: 'string' }, coverImageUrl: { type: 'string', format: 'uri' },
+      subscriberCount: { type: 'integer' }, authorDid: { type: 'string', format: 'did' }, authorName: { type: 'string' },
+      authorHandle: { type: 'string' }, authorAvatar: { type: 'string', format: 'uri' }, createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'org.swappulse.bookmarkBoard', revision: 1,
+    description: "A named, optionally-shareable curation board of saved posts, cards, and trade listings, mirrored to AT Protocol so boards are portable across instances.",
+    defs: { main: { type: 'record', key: 'tid', description: 'A bookmark curation board.', record: { type: 'object', required: ['name', 'visibility', 'createdAt'], properties: {
+      name: { type: 'string', maxLength: 60 }, description: { type: 'string', maxLength: 300 },
+      visibility: { type: 'string', knownValues: ['public', 'private'] },
+      items: { type: 'array', maxLength: 500, items: { type: 'object', properties: { itemType: { type: 'string', knownValues: ['post', 'card', 'trade_listing'] }, itemId: { type: 'string' }, itemUri: { type: 'string', format: 'at-uri' }, thumbnail: { type: 'string', format: 'uri' }, title: { type: 'string' }, addedAt: { type: 'string', format: 'datetime' } } } },
+      coverImageUrl: { type: 'string', format: 'uri' }, authorDid: { type: 'string', format: 'did' }, authorName: { type: 'string' },
+      authorHandle: { type: 'string' }, createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'org.swappulse.communityLabeler', revision: 1,
+    description: "A community-run labeling service definition, mirrored to AT Protocol so labelers are portable and discoverable across instances.",
+    defs: { main: { type: 'record', key: 'tid', description: 'A community labeler service.', record: { type: 'object', required: ['name', 'category', 'approvalStatus', 'createdAt'], properties: {
+      name: { type: 'string', maxLength: 64 }, description: { type: 'string', maxLength: 500 },
+      category: { type: 'string', knownValues: ['authenticity', 'safety', 'grading', 'expertise', 'quality', 'other'] },
+      labelValues: { type: 'array', maxLength: 20, items: { type: 'string' } },
+      approvalStatus: { type: 'string', knownValues: ['pending', 'approved', 'rejected', 'revoked'] },
+      reviewedBy: { type: 'string' }, reviewedAt: { type: 'string', format: 'datetime' },
+      subscriberCount: { type: 'integer' }, labelCount: { type: 'integer' },
+      authorDid: { type: 'string', format: 'did' }, authorName: { type: 'string' }, authorHandle: { type: 'string' },
+      authorAvatar: { type: 'string', format: 'uri' }, createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'org.swappulse.feedSubscription', revision: 1,
+    description: "A collector's subscription/pin to a custom community feed, mirrored to AT Protocol so feed subscriptions are portable across instances.",
+    defs: { main: { type: 'record', key: 'tid', description: 'A feed subscription.', record: { type: 'object', required: ['feedUri', 'createdAt'], properties: {
+      feedUri: { type: 'string', format: 'at-uri' }, feedName: { type: 'string' }, pinned: { type: 'boolean' },
+      authorDid: { type: 'string', format: 'did' }, createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
+  {
+    lexicon: 1, id: 'org.swappulse.labelerSubscription', revision: 1,
+    description: "A collector's subscription to a community labeler, mirrored to AT Protocol so labeler subscriptions are portable across instances.",
+    defs: { main: { type: 'record', key: 'tid', description: 'A labeler subscription.', record: { type: 'object', required: ['labelerId', 'createdAt'], properties: {
+      labelerId: { type: 'string' }, labelerRef: { type: 'string', format: 'at-uri' },
+      authorDid: { type: 'string', format: 'did' }, createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
   // ─── Standard.site community lexicons (site.standard.*) ───────────────────
   // Interoperable long-form publishing lexicons so SwapPulse journals, card
   // reviews, and binder descriptions are portable across the ATmosphere and

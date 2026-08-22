@@ -10,7 +10,7 @@
 // metadata (cid, content_hash) — the record body is never mutated here.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { updateBridgedRecord, deleteBridgedRecord, collectionForEntity } from '../../shared/bridgePublish.ts';
+import { publishRecord, updateBridgedRecord, deleteBridgedRecord, collectionForEntity } from '../../shared/bridgePublish.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -31,6 +31,10 @@ export default async function(req: Request): Promise<Response> {
     if (!owns) return Response.json({ error: 'You can only update your own records' }, { status: 403 });
 
     const coll = collection || collectionForEntity(entityName);
+    if (action === 'create') {
+      const res = await publishRecord(base44, entityName, recordId, coll);
+      return Response.json(res);
+    }
     if (action === 'delete') {
       const res = await deleteBridgedRecord(base44, entityName, recordId, coll);
       return Response.json(res);

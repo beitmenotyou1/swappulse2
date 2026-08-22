@@ -11,6 +11,8 @@ const pt = {
   'nav.grading': 'Grading', 'nav.help': 'Ajuda', 'nav.donate': 'Doar', 'nav.settings': 'Configurações',
   'nav.login': 'Entrar', 'nav.logout': 'Sair', 'nav.profile': 'Ver perfil', 'nav.admin': 'Admin',
   'nav.moderation': 'Moderação',
+  'nav.search': 'Buscar', 'nav.feeds': 'Feeds', 'nav.starterPacks': 'Pacotes iniciais',
+  'nav.circleDirectory': 'Diretório de círculos', 'nav.labelers': 'Etiquetadores',
   'card.overview': 'Resumo', 'card.discussion': 'Discussão', 'card.posts': 'Publicações', 'card.reviews': 'Avaliações',
   'card.trades': 'Trocas', 'card.packOpenings': 'Aberturas', 'card.addToCollection': 'Adicionar à Coleção',
   'card.wishlist': 'Lista de desejos', 'card.listForTrade': 'Oferecer para troca', 'card.priceAlert': 'Alerta de preço',

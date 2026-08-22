@@ -35,6 +35,11 @@ export const COLLECTIONS: Record<string, string> = {
   'org.swappulse.directMessage': 'DirectMessage',
   'org.swappulse.collectionEntry': 'CollectionEntry',
   'org.swappulse.tradeListing': 'TradeListing',
+  'org.swappulse.starterPack': 'StarterPack',
+  'org.swappulse.bookmarkBoard': 'BookmarkBoard',
+  'org.swappulse.communityLabeler': 'CommunityLabeler',
+  'org.swappulse.feedSubscription': 'FeedSubscription',
+  'org.swappulse.labelerSubscription': 'LabelerSubscription',
   // Standard.site community lexicon records
   'site.standard.graph.recommend': 'StandardRecommend',
   'site.standard.graph.subscription': 'StandardSubscription',
@@ -371,6 +376,46 @@ function mapTradeListingFields(val: any, atUri: string, did: string) {
     at_uri: atUri, cid: '', record_type: 'org.swappulse.tradeListing', bridged: true,
   };
 }
+function mapStarterPackFields(val: any, atUri: string, did: string) {
+  return {
+    name: val.name || '', description: val.description || '', category: val.category || 'general',
+    member_dids: val.memberDids || [], circle_ids: val.circleIds || [], feed_uris: val.feedUris || [],
+    featured_binder_id: val.featuredBinderId || '', featured_journal_id: val.featuredJournalId || '',
+    cover_image_url: val.coverImageUrl || '', subscriber_count: val.subscriberCount ?? 0,
+    author_name: val.authorName || '', author_handle: val.authorHandle || '', author_avatar: val.authorAvatar || '',
+    did: val.authorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.starterPack', bridged: true,
+  };
+}
+function mapBookmarkBoardFields(val: any, atUri: string, did: string) {
+  return {
+    name: val.name || '', description: val.description || '', visibility: val.visibility || 'private',
+    items: val.items || [], cover_image_url: val.coverImageUrl || '',
+    author_name: val.authorName || '', author_handle: val.authorHandle || '',
+    did: val.authorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.bookmarkBoard', bridged: true,
+  };
+}
+function mapCommunityLabelerFields(val: any, atUri: string, did: string) {
+  return {
+    name: val.name || '', description: val.description || '', category: val.category || 'other',
+    label_values: val.labelValues || [], approval_status: val.approvalStatus || 'pending',
+    reviewed_by: val.reviewedBy || '', reviewed_at: val.reviewedAt || '',
+    subscriber_count: val.subscriberCount ?? 0, label_count: val.labelCount ?? 0,
+    author_name: val.authorName || '', author_handle: val.authorHandle || '', author_avatar: val.authorAvatar || '',
+    did: val.authorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.communityLabeler', bridged: true,
+  };
+}
+function mapFeedSubscriptionFields(val: any, atUri: string, did: string) {
+  return {
+    feed_uri: val.feedUri || '', feed_name: val.feedName || '', pinned: val.pinned ?? false,
+    author_did: val.authorDid || '', did, at_uri: atUri, bridged: true,
+  };
+}
+function mapLabelerSubscriptionFields(val: any, atUri: string, did: string) {
+  return {
+    labeler_id: val.labelerId || '', labeler_ref: val.labelerRef || '',
+    did, at_uri: atUri, bridged: true,
+  };
+}
 function mapStandardRecommendFields(val: any, atUri: string, did: string) {
   return {
     did, document_uri: val.document || '', entity_type: '', entity_id: '',
@@ -412,6 +457,11 @@ export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string
   'org.swappulse.tradingFeedback': mapTradingFeedbackFields,
   'org.swappulse.collectionEntry': mapCollectionEntryFields,
   'org.swappulse.tradeListing': mapTradeListingFields,
+  'org.swappulse.starterPack': mapStarterPackFields,
+  'org.swappulse.bookmarkBoard': mapBookmarkBoardFields,
+  'org.swappulse.communityLabeler': mapCommunityLabelerFields,
+  'org.swappulse.feedSubscription': mapFeedSubscriptionFields,
+  'org.swappulse.labelerSubscription': mapLabelerSubscriptionFields,
   'site.standard.graph.recommend': mapStandardRecommendFields,
   'site.standard.graph.subscription': mapStandardSubscriptionFields,
 };
@@ -541,6 +591,26 @@ const BUILDER_CONFIG: Record<string, { required: FieldPair[]; optional: FieldPai
   'org.swappulse.directMessage': {
     required: [['recipientDid', 'recipient_did'], ['body', 'body']],
     optional: [['conversationId', 'conversation_id'], ['conversationRef', 'conversation_ref'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar'], ['read', 'read']],
+  },
+  'org.swappulse.starterPack': {
+    required: [['name', 'name'], ['category', 'category']],
+    optional: [['description', 'description'], ['memberDids', 'member_dids'], ['circleIds', 'circle_ids'], ['feedUris', 'feed_uris'], ['featuredBinderId', 'featured_binder_id'], ['featuredJournalId', 'featured_journal_id'], ['coverImageUrl', 'cover_image_url'], ['subscriberCount', 'subscriber_count'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar']],
+  },
+  'org.swappulse.bookmarkBoard': {
+    required: [['name', 'name'], ['visibility', 'visibility']],
+    optional: [['description', 'description'], ['items', 'items'], ['coverImageUrl', 'cover_image_url'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle']],
+  },
+  'org.swappulse.communityLabeler': {
+    required: [['name', 'name'], ['category', 'category'], ['approvalStatus', 'approval_status']],
+    optional: [['description', 'description'], ['labelValues', 'label_values'], ['reviewedBy', 'reviewed_by'], ['reviewedAt', 'reviewed_at'], ['subscriberCount', 'subscriber_count'], ['labelCount', 'label_count'], ['authorDid', 'did'], ['authorName', 'author_name'], ['authorHandle', 'author_handle'], ['authorAvatar', 'author_avatar']],
+  },
+  'org.swappulse.feedSubscription': {
+    required: [['feedUri', 'feed_uri']],
+    optional: [['feedName', 'feed_name'], ['pinned', 'pinned'], ['authorDid', 'did']],
+  },
+  'org.swappulse.labelerSubscription': {
+    required: [['labelerId', 'labeler_id']],
+    optional: [['labelerRef', 'labeler_ref'], ['authorDid', 'did']],
   },
 };
 

@@ -1,0 +1,24 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.feedSubscription",
+  "revision": 1,
+  "description": "A collector's subscription/pin to a custom community feed, mirrored to AT Protocol so feed subscriptions are portable across instances.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A feed subscription.",
+      "record": {
+        "type": "object",
+        "required": ["feedUri", "createdAt"],
+        "properties": {
+          "feedUri": { "type": "string", "format": "at-uri" },
+          "feedName": { "type": "string" },
+          "pinned": { "type": "boolean" },
+          "authorDid": { "type": "string", "format": "did" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

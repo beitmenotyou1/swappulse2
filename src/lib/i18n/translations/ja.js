@@ -11,6 +11,8 @@ const ja = {
   'nav.grading': '鑑定', 'nav.help': 'ヘルプ', 'nav.donate': '寄付', 'nav.settings': '設定',
   'nav.login': 'ログイン', 'nav.logout': 'ログアウト', 'nav.profile': 'プロフィール', 'nav.admin': '管理',
   'nav.moderation': 'モデレーション',
+  'nav.search': '検索', 'nav.feeds': 'フィード', 'nav.starterPacks': 'スターターパック',
+  'nav.circleDirectory': 'サークルディレクトリ', 'nav.labelers': 'ラベラー',
   'card.overview': '概要', 'card.discussion': '議論', 'card.posts': '投稿', 'card.reviews': 'レビュー',
   'card.trades': 'トレード', 'card.packOpenings': 'パック開封', 'card.addToCollection': 'コレクションに追加',
   'card.wishlist': 'ほしい物リスト', 'card.listForTrade': 'トレードに出す', 'card.priceAlert': '価格アラート',

@@ -41,6 +41,7 @@ export default function SaveToBoardModal({ open, onClose, itemType, itemId, item
         added_at: new Date().toISOString(),
       }];
       await base44.entities.BookmarkBoard.update(board.id, { items });
+      base44.functions.invoke('bridge-record', { action: 'update', entityName: 'BookmarkBoard', recordId: board.id }).catch(() => {});
       toast({ title: `Saved to ${board.name}` });
       onClose?.();
     } catch (err) {
@@ -66,6 +67,7 @@ export default function SaveToBoardModal({ open, onClose, itemType, itemId, item
         author_name: user.full_name || '',
         did: user.data?.did || '',
       });
+      base44.functions.invoke('bridge-record', { action: 'create', entityName: 'BookmarkBoard', recordId: created.id }).catch(() => {});
       toast({ title: `Created and saved to ${newName.trim()}` });
       onClose?.();
       setNewName('');

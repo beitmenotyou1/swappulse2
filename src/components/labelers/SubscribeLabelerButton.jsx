@@ -24,6 +24,7 @@ export default function SubscribeLabelerButton({ labeler, subscribed, onToggle }
           labeler_id: labeler.id,
           labeler_ref: labeler.at_uri || '',
         });
+        base44.functions.invoke('bridge-record', { action: 'create', entityName: 'LabelerSubscription', recordId: created.id }).catch(() => {});
         onToggle?.(labeler, true, created);
         toast({ title: 'Subscribed to labeler' });
       }
