@@ -19,7 +19,7 @@
     },
     "display_name": {
       "type": "string",
-      "description": "User-editable display name shown across the app and synced to the AT Protocol profile. Falls back to the built-in full_name when empty (full_name is platform-locked and cannot be updated after registration).",
+      "description": "User-editable display name shown across the app and synced to the AT Protocol profile. Falls back to the built-in full_name when empty.",
       "maxLength": 64
     },
     "avatar": {
@@ -32,12 +32,12 @@
     },
     "description": {
       "type": "string",
-      "description": "User bio/description. Max 256 characters to match the AT Protocol app.bsky.actor.profile description limit so the bio fits across the protocol without truncation.",
+      "description": "User bio/description. Max 256 characters to match the AT Protocol app.bsky.actor.profile description limit.",
       "maxLength": 256
     },
     "pinned_post_id": {
       "type": "string",
-      "description": "Local id of the Post pinned to the user's profile. Maximum one pinned post; displayed prominently on the About tab. Cleared when the post is deleted or unpinned."
+      "description": "Local id of the Post pinned to the user's profile."
     },
     "two_factor_enabled": {
       "type": "boolean",
@@ -51,7 +51,7 @@
     "webauthn_enabled": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the user has at least one registered WebAuthn/U2F security key. Kept in sync by the webauthn-verify-reg and webauthn-delete functions so verify-login-code can check without querying the WebAuthnCredential entity."
+      "description": "Whether the user has at least one registered WebAuthn/U2F security key."
     },
     "moderation_strikes": {
       "type": "integer",
@@ -65,7 +65,7 @@
     },
     "login_key": {
       "type": "string",
-      "description": "Random password used for passwordless email-code login (stored during registration or setup flow)"
+      "description": "Random password used for passwordless email-code login"
     },
     "did": {
       "type": "string",
@@ -73,15 +73,15 @@
     },
     "bsky_handle": {
       "type": "string",
-      "description": "Linked Bluesky handle (set when the user links their account via Settings). Empty when not linked."
+      "description": "Linked Bluesky handle (set when the user links their account via Settings)."
     },
     "pds_url": {
       "type": "string",
-      "description": "AT Protocol PDS base URL this user's identity authenticates against. Consolidated from the retired PdsCredential entity so the account is one cohesive identity record. Set by provision-identity / atproto-auth / consolidate-identity."
+      "description": "AT Protocol PDS base URL this user's identity authenticates against."
     },
     "pds_app_password": {
       "type": "string",
-      "description": "AES-GCM encrypted PDS app password for bridge sessions (per-user PDS writes). Consolidated from the retired PdsCredential entity. Encrypted with APP_PASSWORD_ENCRYPTION_KEY; decrypted on read by the shared userIdentity helper. Never returned in API responses."
+      "description": "AES-GCM encrypted PDS app password for bridge sessions. Encrypted with APP_PASSWORD_ENCRYPTION_KEY; decrypted on read by the shared userIdentity helper. Never returned in API responses."
     },
     "signing_key": {
       "type": "string",
@@ -89,60 +89,60 @@
     },
     "locale": {
       "type": "string",
-      "description": "Preferred interface locale (e.g. en-GB, ja-JP, zh-CN, ko-KR). Used by backend functions to send localized system emails. Set by the I18nProvider on locale change.",
+      "description": "Preferred interface locale (e.g. en-GB, ja-JP).",
       "default": "en-GB"
     },
     "profile_synced_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Last-write-wins timestamp for profile sync. Set by sync-profile-records after a successful outbound push (SwapPulse \u2192 PDS) and by firehose-ingest after an inbound merge (PDS \u2192 SwapPulse). Compared against updated_date to decide whether a remote profile edit should overwrite local (local wins if it was edited more recently than the last sync). The old 10-minute AppView grace period is removed \u2014 inbound now reads the PDS directly (zero indexing lag), making the echo loop structurally impossible."
+      "description": "Last-write-wins timestamp for profile sync."
     },
     "profile_sync_failed_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Last time the outbound profile sync (sync-profile-records) failed for this user. Used with profile_sync_fail_count to break the inbound conflict guard deadlock: after 3 consecutive failures, the inbound sync proceeds (remote wins) so a dead outbound sync doesn't permanently block remote profile edits."
+      "description": "Last time the outbound profile sync failed for this user."
     },
     "profile_sync_fail_count": {
       "type": "integer",
       "default": 0,
-      "description": "Consecutive outbound profile sync failures. Reset to 0 on success. When it reaches 3, the inbound sync's conflict guard is bypassed so remote edits can still merge."
+      "description": "Consecutive outbound profile sync failures. Reset to 0 on success."
     },
     "avatar_pds_ref": {
       "type": "string",
-      "description": "JSON-serialized PDS blob ref for the avatar, stored after a successful outbound sync. The inbound sync compares the PDS record's avatar blob cid against this stored ref to distinguish a genuine remote avatar change (different cid) from an echo of our own outbound push (same cid)."
+      "description": "JSON-serialized PDS blob ref for the avatar."
     },
     "header_pds_ref": {
       "type": "string",
-      "description": "JSON-serialized PDS blob ref for the header/banner, stored after a successful outbound sync. Same purpose as avatar_pds_ref but for the banner image."
+      "description": "JSON-serialized PDS blob ref for the header/banner."
     },
     "avatar_source_url": {
       "type": "string",
-      "description": "The local avatar URL (Base44 CDN) that was last successfully pushed to the PDS. The outbound sync compares the current local avatar URL against this to decide whether to re-upload: if the URL is the same, the blob is already on the PDS and re-upload is skipped; if it differs (new upload), the image is re-uploaded. Cleared when the avatar is a Bluesky CDN URL (inbound-synced) or empty."
+      "description": "The local avatar URL (Base44 CDN) that was last successfully pushed to the PDS."
     },
     "header_source_url": {
       "type": "string",
-      "description": "The local header/banner URL (Base44 CDN) that was last successfully pushed to the PDS. Same source-URL tracking as avatar_source_url but for the banner image."
+      "description": "The local header/banner URL (Base44 CDN) that was last successfully pushed to the PDS."
     },
     "migrated_from_bluesky": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the user has migrated their profile from Bluesky to SwapPulse. Set true by migrate-to-swappulse on link; cleared by unmove-from-bluesky. Drives the public 'Moved from Bluesky' badge on the profile header. Profile edits sync to the PDS only while this is true."
+      "description": "Whether the user has migrated their profile from Bluesky to SwapPulse."
     },
     "original_bluesky_bio": {
       "type": "string",
-      "description": "Snapshot of the user's Bluesky bio captured before the migration bio replacement. Used by unmove-from-bluesky to restore the original bio."
+      "description": "Snapshot of the user's Bluesky bio captured before migration."
     },
     "original_bluesky_profile": {
       "type": "string",
-      "description": "JSON-serialized snapshot of the full original app.bsky.actor.profile record (displayName, description, avatar blob, banner blob) captured at migration time. Used by unmove-from-bluesky to restore the complete original Bluesky profile, undoing any changes made during the migration period."
+      "description": "JSON-serialized snapshot of the full original app.bsky.actor.profile record."
     },
     "pinned_announcement_uri": {
       "type": "string",
-      "description": "at:// URI of the pinned 'I've moved to SwapPulse' announcement post on Bluesky. Used by unmove-from-bluesky to unpin and delete the post."
+      "description": "at:// URI of the pinned 'I've moved to SwapPulse' announcement post on Bluesky."
     },
     "original_bluesky_handle": {
       "type": "string",
-      "description": "The Bluesky handle the user migrated from (captured at migration time so unmove-from-bluesky can revert the handle from username.swappulse.org back to the original)."
+      "description": "The Bluesky handle the user migrated from."
     },
     "migrated_at": {
       "type": "string",
@@ -152,34 +152,70 @@
     "migration_reverted": {
       "type": "boolean",
       "default": false,
-      "description": "True after the user un-moves (reverts migration). While true, profile editing on SwapPulse is disabled \u2014 the profile reverts to the original Bluesky profile and changes made during migration are undone. Cleared if the user re-migrates."
+      "description": "True after the user un-moves (reverts migration). Cleared if the user re-migrates."
     },
     "handle_update_pending": {
       "type": "boolean",
       "default": false,
-      "description": "True when the migration handle update to username.swappulse.org (or custom domain) failed because DNS verification wasn't ready yet. The PDS Sync workflow retries pending handle updates until DNS propagates and verification succeeds."
+      "description": "True when the migration handle update failed because DNS wasn't ready."
     },
     "pending_handle": {
       "type": "string",
-      "description": "The target handle (username.swappulse.org or custom domain) that the retry-pending-handles function will attempt to set via com.atproto.identity.updateHandle. Cleared on successful handle update."
+      "description": "The target handle that retry-pending-handles will attempt to set."
     },
     "post_backfill_cursor": {
       "type": "string",
-      "description": "Pagination cursor for the resumable all-time post backfill (backfill-author-posts). Stores the last-processed cursor from com.atproto.repo.listRecords so large post histories can be backfilled across multiple calls within function timeouts. Cleared on un-move."
+      "description": "Pagination cursor for the resumable post backfill."
     },
     "post_backfill_complete": {
       "type": "boolean",
       "default": false,
-      "description": "True once the all-time post backfill has fully paged through the user's PDS repo (backfill-author-posts set this when hasMore was false). Cleared on un-move so a re-migration re-backfills."
+      "description": "True once the post backfill has fully paged through the user's PDS repo. Cleared on un-move."
+    },
+    "likes_backfill_cursor": {
+      "type": "string",
+      "description": "Pagination cursor for the resumable likes backfill."
+    },
+    "likes_backfill_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the likes backfill has fully paged through. Cleared on un-move."
+    },
+    "reposts_backfill_cursor": {
+      "type": "string",
+      "description": "Pagination cursor for the resumable reposts backfill."
+    },
+    "reposts_backfill_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the reposts backfill has fully paged through. Cleared on un-move."
+    },
+    "lists_backfill_cursor": {
+      "type": "string",
+      "description": "Pagination cursor for the resumable lists/starterpacks backfill."
+    },
+    "lists_backfill_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the lists and starterpacks backfill has fully paged through. Cleared on un-move."
+    },
+    "notifications_backfill_cursor": {
+      "type": "string",
+      "description": "Pagination cursor for the resumable notification history backfill."
+    },
+    "notifications_backfill_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the notification history backfill has fully paged through. Cleared on un-move."
     },
     "notifications_imported_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the one-time Bluesky notification snapshot was imported (import-notification-snapshot). Cleared on un-move so a re-migration re-imports."
+      "description": "When the one-time Bluesky notification snapshot was imported. Cleared on un-move."
     },
     "migration_steps": {
       "type": "object",
-      "description": "Per-step migration status tracking. Each key is a step name (profile_pull, post_backfill, notification_import, graph_import, handle_update, announcement, custom_records) with { status: 'pending'|'running'|'success'|'failed', error: string, completed_at: string }. Drives the unified migration dashboard in BlueskyLinkCard so the user sees exactly what succeeded, what failed, and why.",
+      "description": "Per-step migration status tracking. Each key is a step name with { status, error, completed_at }.",
       "properties": {
         "profile_pull": {
           "type": "object",
@@ -223,7 +259,70 @@
             }
           }
         },
+        "likes_backfill": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "reposts_backfill": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
         "notification_import": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "success",
+                "failed"
+              ]
+            },
+            "error": {
+              "type": "string"
+            },
+            "completed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "lists_backfill": {
           "type": "object",
           "properties": {
             "status": {

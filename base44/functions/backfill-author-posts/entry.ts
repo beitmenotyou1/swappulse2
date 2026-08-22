@@ -23,23 +23,37 @@ import { getUserIdentity } from '../../shared/userIdentity.ts';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
 import { upsertEntity } from '../../shared/entityDedup.ts';
+import { constructBskyCdnUrl, pullProfileFromPds } from '../../shared/profileSync.ts';
 
 const POST_COLLECTION = 'app.bsky.feed.post';
 const APPVIEW = 'https://public.api.bsky.app';
 const PAGE_LIMIT = 100;
-const MAX_CONTINUE_USERS = 10; // cap per 5-minute cycle
+const MAX_CONTINUE_USERS = 15; // cap per 5-minute cycle
 
-// Resolve the user's profile once so backfilled posts carry author metadata.
-async function getProfile(did: string): Promise<any> {
+// Resolve the user's profile so backfilled posts carry author metadata.
+// Tries the public AppView first (returns resolved CDN avatar URLs), then
+// falls back to a direct PDS profile read (constructs the CDN URL from the
+// blob ref) so avatars are populated even when the AppView is rate-limited.
+async function getProfile(did: string, pdsUrl?: string, accessJwt?: string): Promise<any> {
   try {
     const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
     url.searchParams.set('actor', did);
     const res = await fetch(url);
-    if (!res.ok) return null;
-    return await res.json();
+    if (res.ok) return await res.json();
   } catch {
-    return null;
+    // fall through to PDS read
   }
+  // Fallback: read the profile record directly from the PDS and construct
+  // the avatar CDN URL from the blob ref.
+  if (pdsUrl && accessJwt) {
+    try {
+      const { ok, profile } = await pullProfileFromPds(pdsUrl, accessJwt, did);
+      if (ok && profile) return profile;
+    } catch {
+      // ignore
+    }
+  }
+  return null;
 }
 
 // Process one page of post records for a single user. Shared by both modes.
@@ -74,11 +88,10 @@ async function processPage(
   const data = await res.json();
   const records = data.records || [];
   nextCursor = data.cursor || null;
-  // Mark "more available" only when the PDS returned a full page AND a cursor.
-  // A partial page, or a full page with no cursor, means the history is
-  // exhausted — prevents the premature-complete bug where an empty/falsy
-  // cursor on a full page stalled the backfill for good.
-  hasMore = !!nextCursor && records.length >= PAGE_LIMIT;
+  // A cursor means the PDS has more records to page through — don't require
+  // a full page (the last page can be partial with a cursor in some PDS
+  // implementations). Only mark complete when there's truly no cursor.
+  hasMore = !!nextCursor && records.length > 0;
 
   for (const rec of records) {
     try {
@@ -99,6 +112,29 @@ async function processPage(
     post_backfill_cursor: nextCursor || '',
     post_backfill_complete: !hasMore,
   });
+
+  // Avatar enrichment: if we have a profile with an avatar, update any posts
+  // by this user that have empty author_avatar (from a prior import where the
+  // AppView was rate-limited). Bounded to one batch of 100 to stay fast.
+  if (profile?.avatar) {
+    try {
+      const stale = await svc.entities.Post.filter(
+        { did: userDid, author_avatar: '' }, '-created_date', 100,
+      ).catch(() => []);
+      for (const p of stale || []) {
+        await svc.entities.Post.update(p.id, {
+          author_avatar: profile.avatar,
+          author_name: profile.displayName || p.author_name || '',
+          author_handle: profile.handle || p.author_handle || '',
+        }).catch(() => {});
+      }
+      if (stale?.length > 0) {
+        console.log(`[backfill-author-posts] enriched ${stale.length} posts with avatar for ${userDid}`);
+      }
+    } catch (e) {
+      console.error('backfill-author-posts: avatar enrichment error', e?.message || e);
+    }
+  }
 
   console.log(`[backfill-author-posts] user ${userDid}: +${backfilled} new, ${updated} updated, ${skipped} skipped, hasMore=${hasMore}`);
   return { backfilled, updated, skipped, hasMore, nextCursor };
@@ -140,7 +176,7 @@ export default async function(req: Request): Promise<Response> {
             continue;
           }
 
-          const profile = await getProfile(u.did);
+          const profile = await getProfile(u.did, identity.pdsUrl, session.accessJwt);
           const cursor = u.post_backfill_cursor || null;
 
           const result = await processPage(
@@ -177,7 +213,7 @@ export default async function(req: Request): Promise<Response> {
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
     const userDid = sess.did;
 
-    const profile = await getProfile(userDid);
+    const profile = await getProfile(userDid, pdsUrl, sess.accessJwt);
     const cursor = user.post_backfill_cursor || null;
 
     const result = await processPage(

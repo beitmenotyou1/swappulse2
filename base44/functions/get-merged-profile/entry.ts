@@ -66,11 +66,15 @@ export default async function(req: Request): Promise<Response> {
     //    from repeated profile views. When that happens, fall back to local
     //    database counts so the profile doesn't appear empty ("new/inactive").
     //    Uses Math.max so the higher of remote/local always wins.
+    // For migrated members, always use Math.max of remote and local counts so
+    // the profile reflects the full imported history (the AppView may lag or
+    // return stale/low counts). For non-migrated members, only fall back when
+    // the remote count is missing/zero.
     const needsLocalCounts = !remote ||
       !merged.followers_count ||
       !merged.follows_count ||
       !merged.posts_count;
-    if (needsLocalCounts && merged.is_member) {
+    if ((needsLocalCounts || merged.migrated_from_bluesky) && merged.is_member) {
       const [localPosts, localFollowers, localFollowing] = await Promise.all([
         svc.entities.Post.filter({ did }, '-created_date', 500).catch(() => []),
         svc.entities.Follow.filter({ subject_did: did }, '-created_date', 500).catch(() => []),

@@ -11,6 +11,8 @@ export const COLLECTIONS: Record<string, string> = {
   'app.bsky.feed.repost': 'Repost',
   'app.bsky.feed.like': 'Like',
   'app.bsky.graph.follow': 'Follow',
+  'app.bsky.graph.list': 'BlueskyList',
+  'app.bsky.graph.starterpack': 'BlueskyList',
   // SwapPulse custom lexicon records
   'org.swappulse.vouch': 'Vouch',
   'org.swappulse.wishlist': 'Wishlist',
@@ -136,6 +138,7 @@ function mapPostFields(val: any, atUri: string, did: string, profile?: any) {
     author_name: profile?.displayName || '',
     author_handle: profile?.handle || '',
     author_avatar: profile?.avatar || '',
+    original_created_at: val.createdAt || '',
     parent_uri: val.reply?.parent?.uri || '',
     parent_cid: val.reply?.parent?.cid || '',
     root_uri: val.reply?.root?.uri || '',
@@ -159,6 +162,38 @@ function mapFollowFields(val: any, atUri: string, did: string) {
   return {
     subject_did: val.subject || '', did, at_uri: atUri, cid: '',
     record_type: 'app.bsky.graph.follow', bridged: true,
+  };
+}
+function mapListFields(val: any, atUri: string, did: string) {
+  const purpose = val.purpose || '';
+  return {
+    did,
+    list_uri: atUri,
+    name: val.name || '',
+    description: val.description || '',
+    list_type: 'curated',
+    purpose,
+    member_dids: [],
+    created_at: val.createdAt || '',
+    at_uri: atUri,
+    cid: '',
+    record_type: 'app.bsky.graph.list',
+    bridged: true,
+  };
+}
+function mapBskyStarterPackFields(val: any, atUri: string, did: string) {
+  return {
+    did,
+    list_uri: atUri,
+    name: val.name || '',
+    description: val.description || '',
+    list_type: 'starterpack',
+    member_dids: val.listItems || [],
+    created_at: val.createdAt || '',
+    at_uri: atUri,
+    cid: '',
+    record_type: 'app.bsky.graph.starterpack',
+    bridged: true,
   };
 }
 function mapVouchFields(val: any, atUri: string, did: string) {
@@ -443,6 +478,8 @@ export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string
   'app.bsky.feed.repost': mapRepostFields,
   'app.bsky.feed.like': mapLikeFields,
   'app.bsky.graph.follow': mapFollowFields,
+  'app.bsky.graph.list': mapListFields,
+  'app.bsky.graph.starterpack': mapBskyStarterPackFields,
   'org.swappulse.vouch': mapVouchFields,
   'org.swappulse.wishlist': mapWishlistFields,
   'org.swappulse.circle': mapCircleFields,

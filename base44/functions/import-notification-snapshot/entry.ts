@@ -71,7 +71,7 @@ async function processNotificationPage(
   const data = await res.json();
   const notifications = data.notifications || [];
   const nextCursor = data.cursor || null;
-  const hasMore = !!nextCursor && notifications.length >= PAGE_LIMIT;
+  const hasMore = !!nextCursor && notifications.length > 0;
 
   let imported = 0, skipped = 0;
 

@@ -10,8 +10,8 @@ export function formatPrice(pence) {
   }).format(pounds);
 }
 
-export function timeAgo(date) {
-  return moment(date).fromNow(true);
+export function timeAgo(date, originalDate) {
+  return moment(originalDate || date).fromNow(true);
 }
 
 export function formatNumber(n) {

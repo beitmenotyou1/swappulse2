@@ -237,6 +237,11 @@
     "author_avatar": {
       "type": "string"
     },
+    "original_created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Original creation timestamp from the source platform (Bluesky val.createdAt). Used for display so imported posts show their original timestamp, not the import time. Falls back to created_date when empty."
+    },
     "likes": {
       "type": "integer",
       "default": 0

@@ -214,7 +214,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <TrustedTraderBadge did={post.did} />
             <span className="text-muted-foreground truncate">@{post.author_handle || 'user'}</span>
             <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground">{timeAgo(post.created_date)}</span>
+            <span className="text-muted-foreground">{timeAgo(post.created_date, post.original_created_at)}</span>
             {meta && (
               <span className={`ml-auto flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium ${meta.color}`}>
                 <meta.icon className="h-3 w-3" /> {t(meta.labelKey)}
