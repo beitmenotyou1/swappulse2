@@ -107,6 +107,16 @@
       "default": 0,
       "description": "Consecutive outbound profile sync failures. Reset to 0 on success."
     },
+    "profile_sync_pending": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when a single-user profile sync failed and needs the workflow's adminBackfill to retry. Cleared on successful sync."
+    },
+    "graph_reconciled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time the social graph (follows + followers) was reconciled against the PDS/AppView by the PDS Sync workflow. Null/old = due for reconciliation."
+    },
     "avatar_pds_ref": {
       "type": "string",
       "description": "JSON-serialized PDS blob ref for the avatar."

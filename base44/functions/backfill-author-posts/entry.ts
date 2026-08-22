@@ -29,6 +29,8 @@ const POST_COLLECTION = 'app.bsky.feed.post';
 const APPVIEW = 'https://public.api.bsky.app';
 const PAGE_LIMIT = 100;
 const MAX_CONTINUE_USERS = 15; // cap per 5-minute cycle
+const MAX_CONTINUE_PAGES = 5; // pages per user per continue cycle
+const TIME_BUDGET_MS = 25000; // single-user mode: loop pages until this budget
 
 // Resolve the user's profile so backfilled posts carry author metadata.
 // Tries the public AppView first (returns resolved CDN avatar URLs), then
@@ -177,16 +179,21 @@ export default async function(req: Request): Promise<Response> {
           }
 
           const profile = await getProfile(u.did, identity.pdsUrl, session.accessJwt);
-          const cursor = u.post_backfill_cursor || null;
-
-          const result = await processPage(
-            svc, identity.pdsUrl, session.accessJwt, identity.did, cursor, profile,
-            async (updates) => { await svc.entities.User.update(u.id, updates).catch(() => {}); },
-          );
-
-          totalBackfilled += result.backfilled;
-          totalUpdated += result.updated;
-          totalSkipped += result.skipped;
+          let cursor = u.post_backfill_cursor || null;
+          let userHasMore = true;
+          let pagesThisUser = 0;
+          while (userHasMore && pagesThisUser < MAX_CONTINUE_PAGES) {
+            const result = await processPage(
+              svc, identity.pdsUrl, session.accessJwt, identity.did, cursor, profile,
+              async (updates) => { await svc.entities.User.update(u.id, updates).catch(() => {}); },
+            );
+            totalBackfilled += result.backfilled;
+            totalUpdated += result.updated;
+            totalSkipped += result.skipped;
+            userHasMore = result.hasMore;
+            cursor = result.nextCursor;
+            pagesThisUser++;
+          }
           usersProcessed++;
         } catch (e) {
           console.error(`backfill-author-posts: continue error for user ${u.id}`, e?.message || e);
@@ -214,20 +221,34 @@ export default async function(req: Request): Promise<Response> {
     const userDid = sess.did;
 
     const profile = await getProfile(userDid, pdsUrl, sess.accessJwt);
-    const cursor = user.post_backfill_cursor || null;
+    let cursor = user.post_backfill_cursor || null;
+    const startTime = Date.now();
+    let totalBackfilled = 0, totalUpdated = 0, totalSkipped = 0;
+    let hasMore = true;
 
-    const result = await processPage(
-      svc, pdsUrl, sess.accessJwt, userDid, cursor, profile,
-      async (updates) => { await svc.entities.User.update(user.id, updates).catch(() => {}); },
-    );
+    // Loop through all pages until complete or the time budget is exhausted.
+    // The cursor is persisted after each page so a timeout resumes on the next
+    // call — most users with < a few hundred posts complete in one trigger.
+    while (hasMore && (Date.now() - startTime) < TIME_BUDGET_MS) {
+      const result = await processPage(
+        svc, pdsUrl, sess.accessJwt, userDid, cursor, profile,
+        async (updates) => { await svc.entities.User.update(user.id, updates).catch(() => {}); },
+      );
+      totalBackfilled += result.backfilled;
+      totalUpdated += result.updated;
+      totalSkipped += result.skipped;
+      hasMore = result.hasMore;
+      cursor = result.nextCursor;
+    }
 
     return Response.json({
       ok: true,
-      backfilled: result.backfilled,
-      updated: result.updated,
-      skipped: result.skipped,
-      hasMore: result.hasMore,
-      cursor: result.nextCursor || '',
+      backfilled: totalBackfilled,
+      updated: totalUpdated,
+      skipped: totalSkipped,
+      hasMore,
+      cursor: cursor || '',
+      complete: !hasMore,
     });
   } catch (error) {
     console.error('backfill-author-posts error:', error?.message || error);

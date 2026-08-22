@@ -22,6 +22,8 @@ const STARTERPACK_COLLECTION = 'app.bsky.graph.starterpack';
 const LISTITEM_COLLECTION = 'app.bsky.graph.listitem';
 const PAGE_LIMIT = 100;
 const MAX_CONTINUE_USERS = 15;
+const MAX_CONTINUE_PAGES = 5;
+const TIME_BUDGET_MS = 25000;
 
 // Fetch all listitem records for a list and return the member DIDs.
 async function fetchListMembers(pdsUrl: string, accessJwt: string, userDid: string, listUri: string): Promise<string[]> {
@@ -166,14 +168,21 @@ export default async function(req: Request): Promise<Response> {
             console.error(`backfill-lists: session failed for ${u.did}`, e?.message || e);
             continue;
           }
-          const cursor = u.lists_backfill_cursor || null;
-          const result = await processPage(
-            svc, identity.pdsUrl, session.accessJwt, identity.did, cursor,
-            async (updates) => { await svc.entities.User.update(u.id, updates).catch(() => {}); },
-          );
-          totalBackfilled += result.backfilled;
-          totalUpdated += result.updated;
-          totalSkipped += result.skipped;
+          let cursor = u.lists_backfill_cursor || null;
+          let userHasMore = true;
+          let pagesThisUser = 0;
+          while (userHasMore && pagesThisUser < MAX_CONTINUE_PAGES) {
+            const result = await processPage(
+              svc, identity.pdsUrl, session.accessJwt, identity.did, cursor,
+              async (updates) => { await svc.entities.User.update(u.id, updates).catch(() => {}); },
+            );
+            totalBackfilled += result.backfilled;
+            totalUpdated += result.updated;
+            totalSkipped += result.skipped;
+            userHasMore = result.hasMore;
+            cursor = result.nextCursor;
+            pagesThisUser++;
+          }
           usersProcessed++;
         } catch (e) {
           console.error(`backfill-lists: continue error for user ${u.id}`, e?.message || e);
@@ -206,19 +215,31 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: `PDS session failed: ${e?.message || e}` }, { status: 502 });
     }
 
-    const cursor = user.lists_backfill_cursor || null;
-    const result = await processPage(
-      svc, identity.pdsUrl, session.accessJwt, identity.did, cursor,
-      async (updates) => { await svc.entities.User.update(user.id, updates).catch(() => {}); },
-    );
+    let cursor = user.lists_backfill_cursor || null;
+    const startTime = Date.now();
+    let totalBackfilled = 0, totalUpdated = 0, totalSkipped = 0;
+    let hasMore = true;
+
+    while (hasMore && (Date.now() - startTime) < TIME_BUDGET_MS) {
+      const result = await processPage(
+        svc, identity.pdsUrl, session.accessJwt, identity.did, cursor,
+        async (updates) => { await svc.entities.User.update(user.id, updates).catch(() => {}); },
+      );
+      totalBackfilled += result.backfilled;
+      totalUpdated += result.updated;
+      totalSkipped += result.skipped;
+      hasMore = result.hasMore;
+      cursor = result.nextCursor;
+    }
 
     return Response.json({
       ok: true,
-      backfilled: result.backfilled,
-      updated: result.updated,
-      skipped: result.skipped,
-      hasMore: result.hasMore,
-      cursor: result.nextCursor || '',
+      backfilled: totalBackfilled,
+      updated: totalUpdated,
+      skipped: totalSkipped,
+      hasMore,
+      cursor: cursor || '',
+      complete: !hasMore,
     });
   } catch (error) {
     console.error('backfill-lists error:', error?.message || error);

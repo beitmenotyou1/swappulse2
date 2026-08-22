@@ -141,9 +141,13 @@ export default async function(req: Request): Promise<Response> {
     if (!user.did || !user.did.startsWith('did:plc:')) {
       return Response.json({ ok: true, skipped: true, reason: 'no did:plc yet' });
     }
-    if (!user.migrated_from_bluesky) {
-      return Response.json({ ok: true, skipped: true, reason: 'not migrated — profile edits stay local until migration' });
+    if (user.migration_reverted) {
+      return Response.json({ ok: true, skipped: true, reason: 'migration reverted — original Bluesky profile preserved' });
     }
+    // Allow sync for linked users who have a did:plc even before migration
+    // completes, so profile edits propagate to Bluesky as soon as the account
+    // is linked. Previously this was skipped with 'not migrated', leaving
+    // pre-migration profile edits stranded locally.
     const { getUserIdentity } = await import('../../shared/userIdentity.ts');
     const identity = await getUserIdentity(svc, user);
     if (!identity) {
@@ -155,6 +159,7 @@ export default async function(req: Request): Promise<Response> {
       const updates: any = {
         profile_sync_fail_count: 0,
         profile_sync_failed_at: '',
+        profile_sync_pending: false,
       };
       if (r.changed) {
         updates.profile_synced_at = new Date().toISOString();
@@ -177,6 +182,7 @@ export default async function(req: Request): Promise<Response> {
       await svc.entities.User.update(user.id, {
         profile_sync_failed_at: new Date().toISOString(),
         profile_sync_fail_count: failCount,
+        profile_sync_pending: true,
       }).catch(() => {});
       console.error('sync-profile-records: single-user failed', r.error);
     }

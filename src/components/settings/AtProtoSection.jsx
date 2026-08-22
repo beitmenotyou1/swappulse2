@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Globe, Loader2, ArrowRightLeft, Info, Upload } from 'lucide-react';
+import { Download, Loader2, ArrowRightLeft, Upload } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -8,6 +8,7 @@ import {
   AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import BlueskyLinkCard from '@/components/settings/BlueskyLinkCard';
+import SyncDashboard from '@/components/settings/SyncDashboard';
 
 export default function AtProtoSection({ settings, update }) {
   const { toast } = useToast();
@@ -186,23 +187,7 @@ export default function AtProtoSection({ settings, update }) {
         </AlertDialog>
       </div>
 
-      <div className="rounded-xl border border-dashed border-border p-4">
-        <p className="flex items-center gap-2 text-xs font-semibold text-foreground">
-          <Info className="h-4 w-4" /> Federation Status
-        </p>
-        <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
-          <p className="flex items-center gap-2">
-            <Globe className="h-3 w-3" />
-            Feed Generator: <span className="font-medium text-foreground">did:web:feed.swappulse.org</span>
-          </p>
-          <p>• Active Trade Listings feed, public</p>
-          <p>• Collection Posts feed, public</p>
-          <p>• Who to Follow feed, personalized</p>
-          <p className="mt-1.5">Labeler: <span className="font-medium text-foreground">did:web:labeler.swappulse.org</span></p>
-          <p>Bridge: Session auto-refresh enabled</p>
-          <p>PDS Sync: Every 5 minutes (scheduled polling)</p>
-        </div>
-      </div>
+      <SyncDashboard />
     </div>
   );
 }

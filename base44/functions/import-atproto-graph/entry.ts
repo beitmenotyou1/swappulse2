@@ -1,6 +1,6 @@
 // import-atproto-graph — creates local Follow entities from AT Protocol follows.
 //
-// Three modes (can be combined):
+// Four modes (can be combined):
 //   1. Array input (registration): { follows: [{ did, handle, displayName, avatar }] }
 //      Creates Follow entities for each followed DID. Called after registration.
 //   2. PDS-direct (migration): { fromPds: true }
@@ -10,8 +10,13 @@
 //   3. Followers (migration): { includeFollowers: true }
 //      Paginates app.bsky.graph.getFollowers from the public AppView. Creates
 //      Follow entities (service role, bridged=true) for each incoming follower.
+//   4. Continue (admin/workflow): { continue: true }
+//      Iterates migrated users whose graph_reconciled_at is null or older than
+//      1 hour, re-paginating follows + followers to catch events the firehose
+//      missed. Idempotent via at_uri dedup. Stamps graph_reconciled_at.
 //
-// Output: { imported, followers_imported, skipped, total }
+// Output: { imported, followers_imported, skipped, total } or
+//         { ok, users_processed, total_imported, total_followers } (continue)
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
@@ -22,6 +27,8 @@ const APPVIEW = 'https://public.api.bsky.app';
 const FOLLOW_COLLECTION = 'app.bsky.graph.follow';
 const PAGE_LIMIT = 100;
 const MAX_PAGES = 10; // cap at 1000 follows/followers per call
+const MAX_CONTINUE_USERS = 10; // cap per workflow cycle
+const RECONCILE_AGE_MS = 60 * 60 * 1000; // re-reconcile users older than 1 hour
 
 Deno.serve(async (req) => {
   try {
@@ -37,6 +44,101 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const myDid = user.did || '';
     const svc = base44.asServiceRole;
+
+    // Mode 4: Continue (admin/workflow) — reconcile social graphs for migrated
+    // users whose last reconciliation is null or older than the threshold. Re-
+    // paginates outgoing follows from the PDS and incoming followers from the
+    // AppView, upserting by at_uri to catch events the firehose missed.
+    if (!!(body as any).continue) {
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Admin only' }, { status: 403 });
+      }
+      const cutoff = new Date(Date.now() - RECONCILE_AGE_MS).toISOString();
+      const users = await svc.entities.User
+        .filter({ migrated_from_bluesky: true }, '-created_date', MAX_CONTINUE_USERS)
+        .catch(() => []);
+
+      let totalImported = 0, totalFollowers = 0, usersProcessed = 0;
+      for (const u of users || []) {
+        // Skip users reconciled recently to avoid redundant AppView calls.
+        if (u.graph_reconciled_at && u.graph_reconciled_at > cutoff) continue;
+        if (!u.did || !u.did.startsWith('did:plc:')) continue;
+        try {
+          const identity = await getUserIdentity(svc, u);
+          if (!identity) continue;
+          let session: any;
+          try {
+            session = (await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword)).session;
+          } catch { continue; }
+
+          // Outgoing follows from PDS
+          const existingOut = await svc.entities.Follow.filter({ did: u.did }, '-created_date', 500).catch(() => []);
+          const existingOutDids = new Set(existingOut.map((f: any) => f.subject_did));
+          let cursor: string | null = null, pages = 0;
+          do {
+            const url = new URL(`${identity.pdsUrl}/xrpc/com.atproto.repo.listRecords`);
+            url.searchParams.set('repo', identity.did);
+            url.searchParams.set('collection', FOLLOW_COLLECTION);
+            url.searchParams.set('limit', String(PAGE_LIMIT));
+            if (cursor) url.searchParams.set('cursor', cursor);
+            const res = await fetch(url, { headers: { 'Authorization': `Bearer ${session.accessJwt}` } });
+            if (!res.ok) break;
+            const data = await res.json();
+            const records = data.records || [];
+            cursor = data.cursor || null;
+            pages++;
+            for (const rec of records) {
+              const subjectDid = rec.value?.subject || '';
+              if (!subjectDid || existingOutDids.has(subjectDid)) continue;
+              try {
+                await svc.entities.Follow.create({
+                  subject_did: subjectDid, did: u.did, at_uri: rec.uri || '',
+                  cid: rec.cid || '', record_type: 'app.bsky.graph.follow', bridged: true,
+                });
+                existingOutDids.add(subjectDid);
+                totalImported++;
+              } catch { /* dedup or create error */ }
+            }
+          } while (cursor && pages < MAX_PAGES);
+
+          // Incoming followers from AppView
+          const existingIn = await svc.entities.Follow.filter({ subject_did: u.did }, '-created_date', 500).catch(() => []);
+          const existingInDids = new Set(existingIn.map((f: any) => f.did));
+          cursor = null; pages = 0;
+          do {
+            const url = new URL(`${APPVIEW}/xrpc/app.bsky.graph.getFollowers`);
+            url.searchParams.set('actor', u.did);
+            url.searchParams.set('limit', String(PAGE_LIMIT));
+            if (cursor) url.searchParams.set('cursor', cursor);
+            const res = await fetch(url);
+            if (!res.ok) break;
+            const data = await res.json();
+            const followers = data.followers || [];
+            cursor = data.cursor || null;
+            pages++;
+            for (const follower of followers) {
+              const followerDid = follower.did || '';
+              if (!followerDid || existingInDids.has(followerDid)) continue;
+              try {
+                await svc.entities.Follow.create({
+                  subject_did: u.did, did: followerDid,
+                  subject_name: follower.displayName || '', subject_handle: follower.handle || '',
+                  subject_avatar: follower.avatar || '', record_type: 'app.bsky.graph.follow', bridged: true,
+                });
+                existingInDids.add(followerDid);
+                totalFollowers++;
+              } catch { /* dedup or create error */ }
+            }
+          } while (cursor && pages < MAX_PAGES);
+
+          await svc.entities.User.update(u.id, { graph_reconciled_at: new Date().toISOString() }).catch(() => {});
+          usersProcessed++;
+        } catch (e) {
+          console.error('import-atproto-graph: continue error for', u.id, e?.message || e);
+        }
+      }
+      return Response.json({ ok: true, users_processed: usersProcessed, total_imported: totalImported, total_followers: totalFollowers });
+    }
 
     // Track existing outgoing follows to avoid duplicates.
     const existing = await base44.entities.Follow.filter({ did: myDid }, '-created_date', 500).catch(() => []);
