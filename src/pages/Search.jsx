@@ -1,12 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Loader2, Users, CreditCard, MessageCircle, ExternalLink } from 'lucide-react';
+import { Search, Loader2, Users, CreditCard, MessageCircle, ExternalLink, Globe } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import LiveAvatar from '@/components/LiveAvatar';
 import ExternalIndicator from '@/components/ExternalIndicator';
+import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { timeAgo } from '@/lib/format';
 
 export default function SearchPage() {
   useSEO({
@@ -19,38 +21,32 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [cards, setCards] = useState([]);
   const [profiles, setProfiles] = useState([]);
-  const [federated, setFederated] = useState([]);
+  const [fedActors, setFedActors] = useState([]);
+  const [fedPosts, setFedPosts] = useState([]);
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef(null);
 
   const runSearch = async (q) => {
     if (!q.trim()) {
-      setCards([]); setProfiles([]); setFederated([]); setSearched(false);
+      setCards([]); setProfiles([]); setFedActors([]); setFedPosts([]); setSearched(false);
       return;
     }
     setLoading(true);
     setSearched(true);
     try {
-      const [cardRes, profileRes] = await Promise.all([
+      const [cardRes, profileRes, fedRes] = await Promise.all([
         base44.functions.invoke('search-cards', { query: q, limit: 12 }).catch(() => ({ data: { results: [] } })),
         base44.functions.invoke('search-profiles', { query: q, limit: 12 }).catch(() => ({ data: { profiles: [] } })),
+        user?.id
+          ? base44.functions.invoke('federated-search', { query: q, limit: 12 }).catch(() => ({ data: { actors: [], posts: [] } }))
+          : Promise.resolve({ data: { actors: [], posts: [] } }),
       ]);
       setCards(cardRes?.data?.results || cardRes?.data?.cards || []);
       setProfiles(profileRes?.data?.profiles || profileRes?.data?.results || []);
-
-      // Federated lookup: if the query looks like a handle, resolve via AT Protocol
-      if (q.includes('.') && !q.includes(' ')) {
-        try {
-          const fedRes = await base44.functions.invoke('resolve-atproto-actor', { handle: q.replace(/^@/, '') });
-          const actor = fedRes?.data?.actor || fedRes?.data;
-          if (actor?.did) setFederated([actor]);
-          else setFederated([]);
-        } catch { setFederated([]); }
-      } else {
-        setFederated([]);
-      }
+      setFedActors(fedRes?.data?.actors || []);
+      setFedPosts(fedRes?.data?.posts || []);
     } catch {
-      setCards([]); setProfiles([]); setFederated([]);
+      setCards([]); setProfiles([]); setFedActors([]); setFedPosts([]);
     } finally {
       setLoading(false);
     }
@@ -62,7 +58,9 @@ export default function SearchPage() {
     debounceRef.current = setTimeout(() => runSearch(val), 350);
   };
 
-  const hasResults = cards.length > 0 || profiles.length > 0 || federated.length > 0;
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
+  const hasResults = cards.length > 0 || profiles.length > 0 || fedActors.length > 0 || fedPosts.length > 0;
 
   return (
     <div>
@@ -91,11 +89,38 @@ export default function SearchPage() {
           <p className="py-16 text-center text-sm text-muted-foreground">No results for "{query}".</p>
         )}
 
-        {federated.length > 0 && (
+        {fedPosts.length > 0 && (
           <section className="mt-5">
-            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><ExternalLink className="h-3.5 w-3.5" /> Federated</h2>
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><Globe className="h-3.5 w-3.5" /> Federated Posts</h2>
             <div className="space-y-2">
-              {federated.map((a) => (
+              {fedPosts.map((p) => (
+                <a
+                  key={p.uri}
+                  href={`https://bsky.app/profile/${p.authorHandle}/post/${p.uri.split('/').pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-xl border border-border bg-card p-3 hover:bg-secondary"
+                >
+                  <div className="flex items-center gap-2">
+                    <LiveAvatar did={p.authorDid} name={p.authorName} src={p.authorAvatar} size={28} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold">{p.authorName}</p>
+                      <p className="truncate text-xs text-muted-foreground">@{p.authorHandle}</p>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  {p.text && <RichText text={p.text} className="mt-1.5 text-sm text-muted-foreground" as="p" />}
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {fedActors.length > 0 && (
+          <section className="mt-5">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><Globe className="h-3.5 w-3.5" /> Federated Collectors</h2>
+            <div className="space-y-2">
+              {fedActors.map((a) => (
                 <Link key={a.did} to={`/profile/${a.did}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary">
                   <LiveAvatar did={a.did} name={a.displayName} src={a.avatar} size={36} />
                   <div className="min-w-0 flex-1">
@@ -111,7 +136,7 @@ export default function SearchPage() {
 
         {profiles.length > 0 && (
           <section className="mt-5">
-            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><Users className="h-3.5 w-3.5" /> Collectors</h2>
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><Users className="h-3.5 w-3.5" /> SwapPulse Collectors</h2>
             <div className="space-y-2">
               {profiles.map((p) => (
                 <Link key={p.did || p.id} to={`/profile/${p.did || p.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:bg-secondary">

@@ -50,9 +50,63 @@ export default async function (req: Request): Promise<Response> {
     const svc = base44.asServiceRole;
 
     const url = new URL(req.url);
-    const feedParam = parseFeedParam(url.searchParams.get('feed'));
-    const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 20, 1), 100);
-    const cursor = url.searchParams.get('cursor') ? Number(url.searchParams.get('cursor')) : 0;
+    // Parse JSON body for internal SDK calls (base44.functions.invoke sends
+    // a POST body, not URL query params). External Bluesky clients call via
+    // GET with query params, so we merge both, with query params taking priority.
+    let body: any = {};
+    try {
+      const text = await req.clone().text();
+      if (text) body = JSON.parse(text);
+    } catch {}
+
+    const feedParam = parseFeedParam(url.searchParams.get('feed') || body.feed || null);
+    const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || body.limit) || 20, 1), 100);
+    const cursorParam = url.searchParams.get('cursor') || body.cursor;
+    const cursor = cursorParam ? Number(cursorParam) : 0;
+
+    // Granular feed filters (query params or body):
+    //   set    — filter posts by card set name (case-insensitive substring)
+    //   labels — comma-separated community label values; only posts carrying
+    //            at least one matching CommunityLabel are returned
+    const setFilter = (url.searchParams.get('set') || body.set || '').trim();
+    const labelFilter = (url.searchParams.get('labels') || body.labels || '').trim();
+    const labelValues = labelFilter
+      ? labelFilter.split(',').map((v) => v.trim()).filter(Boolean)
+      : [];
+
+    // Resolve label filter → set of subject URIs that carry matching labels.
+    // Computed once, reused by every post-based feed below.
+    let labelledUris: Set<string> | null = null;
+    if (labelValues.length > 0) {
+      try {
+        const labels = await svc.entities.CommunityLabel.filter(
+          { label_value: { $in: labelValues } },
+          '-created_date',
+          500,
+        );
+        labelledUris = new Set((labels || []).map((l: any) => l.subject_uri).filter(Boolean));
+      } catch {
+        labelledUris = new Set();
+      }
+    }
+
+    // Apply granular filters to a list of posts (all post-based feeds share this).
+    const applyFilters = (posts: any[]) => {
+      let out = posts;
+      if (setFilter) {
+        const sf = setFilter.toLowerCase();
+        out = out.filter((p: any) =>
+          (p.set_name || '').toLowerCase().includes(sf) ||
+          (p.card_name || '').toLowerCase().includes(sf),
+        );
+      }
+      if (labelledUris !== null) {
+        out = out.filter((p: any) =>
+          labelledUris.has(p.at_uri) || labelledUris.has(`at://${FEED_DID}/app.bsky.feed.post/${p.id}`),
+        );
+      }
+      return out;
+    };
 
     // Try to get user (optional — public feeds don't require auth)
     let user: any = null;
@@ -90,9 +144,9 @@ export default async function (req: Request): Promise<Response> {
         200,
       );
       const enforcedIds = await getEnforcedUserIds(svc);
-      const visible = enforcedIds.size > 0
+      const visible = applyFilters(enforcedIds.size > 0
         ? posts.filter((p: any) => !enforcedIds.has(p.created_by_id))
-        : posts;
+        : posts);
       const slice = visible.slice(cursor, cursor + limit);
       return Response.json({
         cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
@@ -115,9 +169,9 @@ export default async function (req: Request): Promise<Response> {
         200,
       );
       const enforcedIds = await getEnforcedUserIds(svc);
-      const visible = enforcedIds.size > 0
+      const visible = applyFilters(enforcedIds.size > 0
         ? posts.filter((p: any) => !enforcedIds.has(p.created_by_id))
-        : posts;
+        : posts);
       const slice = visible.slice(cursor, cursor + limit);
       return Response.json({
         cursor: cursor + limit < visible.length ? String(cursor + limit) : undefined,
@@ -148,12 +202,16 @@ export default async function (req: Request): Promise<Response> {
         ),
       ]);
       const enforcedIds = await getEnforcedUserIds(svc);
-      const visiblePosts = enforcedIds.size > 0
+      const visiblePosts = applyFilters(enforcedIds.size > 0
         ? posts.filter((p: any) => !enforcedIds.has(p.created_by_id))
-        : posts;
-      const visibleBinders = enforcedIds.size > 0
-        ? binders.filter((b: any) => !enforcedIds.has(b.created_by_id))
-        : binders;
+        : posts);
+      // Skip binders when granular post filters are active — binders have no
+      // set_name or community labels to match against.
+      const visibleBinders = (setFilter || labelledUris !== null)
+        ? []
+        : (enforcedIds.size > 0
+          ? binders.filter((b: any) => !enforcedIds.has(b.created_by_id))
+          : binders);
       // Merge and sort by created_date descending
       const merged: any[] = [
         ...visiblePosts.map((p: any) => ({

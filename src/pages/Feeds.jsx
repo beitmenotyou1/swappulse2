@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Loader2, Rss } from 'lucide-react';
+import { Loader2, Rss, Eye } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import FeedCard from '@/components/feeds/FeedCard';
+import FeedFilterBar from '@/components/feeds/FeedFilterBar';
+import FeedPreview from '@/components/feeds/FeedPreview';
 import useSEO from '@/hooks/useSEO';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -30,6 +32,7 @@ export default function Feeds() {
   const [subscriptions, setSubscriptions] = useState({});
   const [loading, setLoading] = useState(true);
   const [niche, setNiche] = useState('all');
+  const [filters, setFilters] = useState({ set: '', labels: [] });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,11 +58,27 @@ export default function Feeds() {
   };
 
   const feeds = niche === 'all' ? SEED_FEEDS : SEED_FEEDS.filter((f) => f.niche === niche);
+  const hasFilters = filters.set || filters.labels?.length > 0;
 
   return (
     <div>
       <PageHeader title="Feeds" subtitle="Community algorithm feeds. Subscribe and pin to shape your home timeline." />
       <div className="mx-auto max-w-2xl px-4 py-4 pb-24 md:pb-8">
+        {/* Granular feed filter controls + live preview */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">
+            <Eye className="h-3.5 w-3.5" /> Filtered Feed Preview
+          </div>
+          <FeedFilterBar onChange={setFilters} />
+          <div className="mt-3">
+            <FeedPreview filters={filters} />
+          </div>
+        </div>
+
+        {/* Feed marketplace */}
+        <div className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">
+          <Rss className="h-3.5 w-3.5" /> Discover Feeds
+        </div>
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
           {NICHES.map((n) => (
             <button
