@@ -1,0 +1,109 @@
+{
+  "name": "CommunityLabel",
+  "type": "object",
+  "title": "CommunityLabel",
+  "description": "org.swappulse.communityLabel \u2014 a label applied by an approved community labeler to a post, profile, or trade listing. Stores the labeler reference, subject URI, label value, and optional note. Publicly readable so subscribed labels render as opt-in badges/filters for all viewers; mutations go through the apply-community-label backend function (service role), which validates that the caller owns an approved CommunityLabeler before creating. Mirrored to AT Protocol as a real org.swappulse.communityLabel record.",
+  "properties": {
+    "labeler_id": {
+      "type": "string",
+      "description": "Local id of the CommunityLabeler that applied this label"
+    },
+    "labeler_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the labeler author (for federated linking)"
+    },
+    "labeler_name": {
+      "type": "string",
+      "description": "Cached display name of the labeler (for badge tooltip)"
+    },
+    "labeler_category": {
+      "type": "string",
+      "enum": [
+        "authenticity",
+        "safety",
+        "grading",
+        "expertise",
+        "quality",
+        "other"
+      ],
+      "default": "other",
+      "description": "Cached category of the labeler (drives badge colour)"
+    },
+    "subject_uri": {
+      "type": "string",
+      "description": "at:// URI (or local fallback URI) of the record being labeled"
+    },
+    "subject_type": {
+      "type": "string",
+      "enum": [
+        "post",
+        "profile",
+        "trade_listing"
+      ],
+      "description": "The kind of content being labeled"
+    },
+    "label_value": {
+      "type": "string",
+      "maxLength": 60,
+      "description": "The label string (e.g. 'verified-authentic', 'suspected-reprint', 'psa-confirmed'). Must be one of the labeler's label_values."
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 280,
+      "description": "Optional explanation from the labeler"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the labeler author (for bridging)"
+    },
+    "at_uri": {
+      "type": "string",
+      "description": "at:// URI of this record (real once bridged to the PDS)"
+    },
+    "cid": {
+      "type": "string",
+      "description": "Content identifier hash (simulated)"
+    },
+    "record_type": {
+      "type": "string",
+      "description": "SwapPulse lexicon NSID (org.swappulse.communityLabel)"
+    },
+    "sig": {
+      "type": "string",
+      "description": "HMAC signature binding the label to the labeler's signing key (simulated)"
+    },
+    "bridged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the label has been mirrored to the AT Protocol PDS as a real org.swappulse.communityLabel record"
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 of the canonical record body, refreshed on each bridge push."
+    }
+  },
+  "required": [
+    "labeler_id",
+    "subject_uri",
+    "subject_type",
+    "label_value"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

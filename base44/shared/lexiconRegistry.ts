@@ -340,6 +340,17 @@ export const LEXICONS: any[] = [
       authorDid: { type: 'string', format: 'did' }, createdAt: { type: 'string', format: 'datetime' }
     } } } }
   },
+  {
+    lexicon: 1, id: 'org.swappulse.communityLabel', revision: 1,
+    description: "A label applied by an approved community labeler to a post, profile, or trade listing, mirrored to AT Protocol so labels are portable and verifiable across instances.",
+    defs: { main: { type: 'record', key: 'tid', description: 'A community-applied label.', record: { type: 'object', required: ['labelerId', 'subjectUri', 'subjectType', 'labelValue', 'createdAt'], properties: {
+      labelerId: { type: 'string' }, labelerDid: { type: 'string', format: 'did' }, labelerName: { type: 'string' },
+      labelerCategory: { type: 'string', knownValues: ['authenticity', 'safety', 'grading', 'expertise', 'quality', 'other'] },
+      subjectUri: { type: 'string', format: 'at-uri' }, subjectType: { type: 'string', knownValues: ['post', 'profile', 'trade_listing'] },
+      labelValue: { type: 'string', maxLength: 60 }, note: { type: 'string', maxLength: 280 },
+      authorDid: { type: 'string', format: 'did' }, createdAt: { type: 'string', format: 'datetime' }
+    } } } }
+  },
   // ─── Standard.site community lexicons (site.standard.*) ───────────────────
   // Interoperable long-form publishing lexicons so SwapPulse journals, card
   // reviews, and binder descriptions are portable across the ATmosphere and

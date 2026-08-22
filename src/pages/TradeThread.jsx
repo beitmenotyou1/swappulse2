@@ -14,6 +14,8 @@ import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
 import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import LabelBadges from '@/components/labelers/LabelBadges';
+import LabelContentButton from '@/components/labelers/LabelContentButton';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // Live negotiation thread for a trade listing - §9.1 trade.message consumer.
@@ -171,12 +173,14 @@ export default function TradeThread() {
             <div className="mt-3">
               <TradeFairnessCalculator trade={trade} />
             </div>
+            <LabelBadges subjectUri={trade.at_uri || trade.id} size="md" className="mt-3" />
             {!isOwner && !['completed', 'cancelled'].includes(trade.status) && (
               <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
                 <button onClick={toggleWatch} disabled={watchBusy} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${watching ? 'bg-accent/20 text-accent' : 'bg-primary text-white hover:bg-primary/90'}`}>
                   {watching ? <BellRing className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
                   {watching ? t('tradeThread.watching') : t('tradeThread.watchTrade')}
                 </button>
+                <LabelContentButton subjectUri={trade.at_uri || trade.id} subjectType="trade_listing" />
                 <span className="text-xs text-muted-foreground">{t('tradeThread.watchSub')}</span>
               </div>
             )}

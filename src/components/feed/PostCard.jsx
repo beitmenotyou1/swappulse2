@@ -16,6 +16,8 @@ import { loadViewerLikes, isLikedByViewer, getViewerLike, setViewerLiked, unsetV
 import ReportDialog from '@/components/moderation/ReportDialog';
 import QuoteComposeModal from '@/components/feed/QuoteComposeModal';
 import SaveToBoardModal from '@/components/boards/SaveToBoardModal';
+import LabelBadges from '@/components/labelers/LabelBadges';
+import LabelContentButton from '@/components/labelers/LabelContentButton';
 import QuotedPostCard from '@/components/feed/QuotedPostCard';
 import PostEmbeds from '@/components/feed/PostEmbeds';
 import ExternalIndicator from '@/components/ExternalIndicator';
@@ -224,6 +226,8 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             <RichText text={post.content} className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed" />
           )}
 
+          <LabelBadges subjectUri={post.at_uri || post.id} className="mt-2" />
+
           <PostEmbeds post={post} />
 
           {post.card_id && (
@@ -325,6 +329,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
             >
               <Flag className="h-4 w-4" />
             </button>
+            <LabelContentButton subjectUri={post.at_uri || post.id} subjectType="post" />
           </div>
           <ReactionBar post={post} initial={reactions} />
           {showThread && <PostReplyThread parentPost={post} />}

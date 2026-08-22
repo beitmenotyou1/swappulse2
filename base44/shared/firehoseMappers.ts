@@ -40,6 +40,7 @@ export const COLLECTIONS: Record<string, string> = {
   'org.swappulse.communityLabeler': 'CommunityLabeler',
   'org.swappulse.feedSubscription': 'FeedSubscription',
   'org.swappulse.labelerSubscription': 'LabelerSubscription',
+  'org.swappulse.communityLabel': 'CommunityLabel',
   // Standard.site community lexicon records
   'site.standard.graph.recommend': 'StandardRecommend',
   'site.standard.graph.subscription': 'StandardSubscription',
@@ -416,6 +417,14 @@ function mapLabelerSubscriptionFields(val: any, atUri: string, did: string) {
     did, at_uri: atUri, bridged: true,
   };
 }
+function mapCommunityLabelFields(val: any, atUri: string, did: string) {
+  return {
+    labeler_id: val.labelerId || '', labeler_did: val.labelerDid || '', labeler_name: val.labelerName || '',
+    labeler_category: val.labelerCategory || 'other', subject_uri: val.subjectUri || '',
+    subject_type: val.subjectType || 'post', label_value: val.labelValue || '', note: val.note || '',
+    did: val.authorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.communityLabel', bridged: true,
+  };
+}
 function mapStandardRecommendFields(val: any, atUri: string, did: string) {
   return {
     did, document_uri: val.document || '', entity_type: '', entity_id: '',
@@ -462,6 +471,7 @@ export const FIELD_MAPPERS: Record<string, (val: any, atUri: string, did: string
   'org.swappulse.communityLabeler': mapCommunityLabelerFields,
   'org.swappulse.feedSubscription': mapFeedSubscriptionFields,
   'org.swappulse.labelerSubscription': mapLabelerSubscriptionFields,
+  'org.swappulse.communityLabel': mapCommunityLabelFields,
   'site.standard.graph.recommend': mapStandardRecommendFields,
   'site.standard.graph.subscription': mapStandardSubscriptionFields,
 };
@@ -611,6 +621,10 @@ const BUILDER_CONFIG: Record<string, { required: FieldPair[]; optional: FieldPai
   'org.swappulse.labelerSubscription': {
     required: [['labelerId', 'labeler_id']],
     optional: [['labelerRef', 'labeler_ref'], ['authorDid', 'did']],
+  },
+  'org.swappulse.communityLabel': {
+    required: [['labelerId', 'labeler_id'], ['subjectUri', 'subject_uri'], ['subjectType', 'subject_type'], ['labelValue', 'label_value']],
+    optional: [['labelerDid', 'labeler_did'], ['labelerName', 'labeler_name'], ['labelerCategory', 'labeler_category'], ['note', 'note'], ['authorDid', 'did']],
   },
 };
 

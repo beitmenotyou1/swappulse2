@@ -25,6 +25,8 @@ import ImmersiveProfile from '@/components/profile/ImmersiveProfile';
 import MilestonesTimeline from '@/components/profile/MilestonesTimeline';
 import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
+import LabelBadges from '@/components/labelers/LabelBadges';
+import LabelContentButton from '@/components/labelers/LabelContentButton';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { usePaginatedPosts } from '@/hooks/usePaginatedPosts';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
@@ -151,6 +153,7 @@ export default function UserProfile() {
           isExternal={isExternal}
           actions={
             <>
+              <LabelBadges subjectUri={`at://${subjectDid}`} size="md" className="mr-1" />
               <FollowBellButton
                 subjectDid={subjectDid}
                 subjectName={profile?.name}
@@ -164,6 +167,7 @@ export default function UserProfile() {
                 targetHandle={profile?.bsky_handle || profile?.username}
                 targetAvatar={profile?.avatar}
               />
+              <LabelContentButton subjectUri={`at://${subjectDid}`} subjectType="profile" />
             </>
           }
           extra={!isExternal && (

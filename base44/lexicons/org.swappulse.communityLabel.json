@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "org.swappulse.communityLabel",
+  "revision": 1,
+  "description": "A label applied by an approved community labeler to a post, profile, or trade listing. Mirrored to AT Protocol so labels are portable and verifiable across instances. The labeler author must own an approved org.swappulse.communityLabeler record whose labelValues include the labelValue.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A community-applied label on a piece of content.",
+      "record": {
+        "type": "object",
+        "required": ["labelerId", "subjectUri", "subjectType", "labelValue", "createdAt"],
+        "properties": {
+          "labelerId": { "type": "string", "description": "Local id of the CommunityLabeler that applied this label" },
+          "labelerDid": { "type": "string", "format": "did", "description": "DID of the labeler author" },
+          "labelerName": { "type": "string", "description": "Cached display name of the labeler" },
+          "labelerCategory": { "type": "string", "knownValues": ["authenticity", "safety", "grading", "expertise", "quality", "other"] },
+          "subjectUri": { "type": "string", "format": "at-uri", "description": "at:// URI of the record being labeled" },
+          "subjectType": { "type": "string", "knownValues": ["post", "profile", "trade_listing"] },
+          "labelValue": { "type": "string", "maxLength": 60, "description": "The label string (e.g. 'verified-authentic')" },
+          "note": { "type": "string", "maxLength": 280, "description": "Optional explanation from the labeler" },
+          "authorDid": { "type": "string", "format": "did", "description": "DID of the labeler author (for bridging)" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
