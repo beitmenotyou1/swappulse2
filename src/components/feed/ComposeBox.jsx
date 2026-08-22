@@ -33,11 +33,21 @@ const SCOPE_DEFS = [
   { key: 'mentioned', icon: AtSign, labelKey: 'compose.scope.mentioned' },
 ];
 
+const CATEGORY_DEFS = [
+  { key: 'general', labelKey: 'post.category.general' },
+  { key: 'top_tier_trade', labelKey: 'post.category.top_tier_trade' },
+  { key: 'grading_advice', labelKey: 'post.category.grading_advice' },
+  { key: 'local_meetup', labelKey: 'post.category.local_meetup' },
+  { key: 'market_analysis', labelKey: 'post.category.market_analysis' },
+  { key: 'collection_help', labelKey: 'post.category.collection_help' },
+];
+
 export default function ComposeBox({ onPosted, replyTo }) {
   const t = useT();
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState('text');
+  const [postCategory, setPostCategory] = useState('general');
   const [attachedCard, setAttachedCard] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
@@ -91,6 +101,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
       const stamped = await stampRecord({
         content: content.trim(),
         post_type: attachedCard ? postType : 'text',
+        post_category: postCategory,
         hashtags,
         canonical_tags,
         visibility_scope: visibilityScope,
@@ -262,6 +273,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
       setAttachedCard(null);
       setCardAltText('');
       setPostType('text');
+      setPostCategory('general');
       setVisibilityScope('public');
       media.reset();
       setNativeVideo(null);
@@ -376,6 +388,23 @@ export default function ComposeBox({ onPosted, replyTo }) {
                   }`}
                 >
                   <s.icon className="h-3.5 w-3.5" /> {t(s.labelKey)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!replyTo && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">{t('compose.category')}</span>
+              {CATEGORY_DEFS.map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => setPostCategory(c.key)}
+                  className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+                    postCategory === c.key ? 'bg-primary/15 font-semibold text-primary' : 'text-muted-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {t(c.labelKey)}
                 </button>
               ))}
             </div>

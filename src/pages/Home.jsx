@@ -26,6 +26,14 @@ const ALL_TABS = [
   { key: 'showcase', tKey: 'feed.showcase' },
 ];
 
+const CATEGORY_TABS = [
+  { key: 'top_tier_trade', tKey: 'post.category.top_tier_trade' },
+  { key: 'grading_advice', tKey: 'post.category.grading_advice' },
+  { key: 'local_meetup', tKey: 'post.category.local_meetup' },
+  { key: 'market_analysis', tKey: 'post.category.market_analysis' },
+  { key: 'collection_help', tKey: 'post.category.collection_help' },
+];
+
 export default function Home() {
   useSEO({
     title: 'Home Feed',
@@ -37,6 +45,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [rarityFilter, setRarityFilter] = useState('all');
+  const [category, setCategory] = useState('all');
   const [reactionsMap, setReactionsMap] = useState({});
   const [repostMap, setRepostMap] = useState({});
   const [likeMap, setLikeMap] = useState({});
@@ -167,6 +176,7 @@ export default function Home() {
     if (rarityFilter === 'secret') return r.includes('secret');
     return true;
   });
+  const categoryFiltered = category === 'all' ? rarityFiltered : rarityFiltered.filter((p) => (p.post_category || 'general') === category);
 
   if (showTour) {
     return <OnboardingTour onComplete={completeTour} />;
@@ -195,6 +205,26 @@ export default function Home() {
         </div>
       </div>
 
+      {user && (
+        <div className="flex gap-1.5 overflow-x-auto border-b border-border bg-secondary/30 px-3 py-2">
+          <button
+            onClick={() => setCategory('all')}
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${category === 'all' ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
+          >
+            {tr('feed.allCategories')}
+          </button>
+          {CATEGORY_TABS.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${category === c.key ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
+            >
+              {tr(c.tKey)}
+            </button>
+          ))}
+        </div>
+      )}
+
       <RarityFilter value={rarityFilter} onChange={setRarityFilter} />
 
       <StoriesBar />
@@ -209,7 +239,7 @@ export default function Home() {
 
       <TradeInterestBanner />
 
-      {!loading && user && tab === 'all' && followedCount === 0 && rarityFiltered.length > 0 && (
+      {!loading && user && tab === 'all' && followedCount === 0 && categoryFiltered.length > 0 && (
         <div className="mx-4 my-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <p className="font-semibold text-foreground">{tr('feed.followCollectors')}</p>
           <p className="mt-0.5 text-muted-foreground">{tr('feed.followCollectorsSub')}</p>
@@ -221,7 +251,7 @@ export default function Home() {
         <div className="flex justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      ) : rarityFiltered.length === 0 ? (
+      ) : categoryFiltered.length === 0 ? (
         <div className="px-4 py-20 text-center">
           {user && tab === 'all' ? (
             <>
@@ -244,7 +274,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="animate-fade-in">
-          {rarityFiltered.map((post) => (
+          {categoryFiltered.map((post) => (
             <PostCard key={post.id} post={post} reactions={reactionsMap[post.id]} myRepost={repostMap[post.id]} myLike={likeMap[post.id]} />
           ))}
         </div>

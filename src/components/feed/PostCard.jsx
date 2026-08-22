@@ -220,6 +220,11 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
                 <meta.icon className="h-3 w-3" /> {t(meta.labelKey)}
               </span>
             )}
+            {post.post_category && post.post_category !== 'general' && (
+              <span className={`${meta ? '' : 'ml-auto'} rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary`}>
+                {t(`post.category.${post.post_category}`)}
+              </span>
+            )}
           </div>
 
           {post.content && (

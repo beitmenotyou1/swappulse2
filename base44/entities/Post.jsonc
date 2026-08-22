@@ -18,6 +18,19 @@
       ],
       "default": "text"
     },
+    "post_category": {
+      "type": "string",
+      "enum": [
+        "general",
+        "top_tier_trade",
+        "grading_advice",
+        "local_meetup",
+        "market_analysis",
+        "collection_help"
+      ],
+      "default": "general",
+      "description": "Structured category tag for the post, letting users label content for filtering in the main feed (e.g. Top Tier Trade, Grading Advice, Local Meetup). Independent of post_type; 'general' is the default for uncategorised posts."
+    },
     "visibility_scope": {
       "type": "string",
       "enum": [
