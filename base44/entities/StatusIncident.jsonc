@@ -71,6 +71,10 @@
       "type": "boolean",
       "default": false,
       "description": "True if created by the automated monitoring worker"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

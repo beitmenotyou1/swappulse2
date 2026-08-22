@@ -71,6 +71,10 @@
     "content_hash": {
       "type": "string",
       "description": "SHA-256 of the canonical record body, refreshed on each bridge push. outbound-reconcile compares it against the rebuilt record to detect silent local drift and re-push."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -32,6 +32,10 @@
     "batch": {
       "type": "string",
       "description": "Generation batch label"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

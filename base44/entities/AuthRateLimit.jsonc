@@ -22,6 +22,10 @@
       "type": "string",
       "format": "date-time",
       "description": "When the most recent code request was made"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

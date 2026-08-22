@@ -73,6 +73,10 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the credential to the holder's signing key (simulated)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

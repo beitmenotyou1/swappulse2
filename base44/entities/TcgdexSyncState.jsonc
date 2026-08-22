@@ -27,6 +27,10 @@
       "type": "integer",
       "default": 0,
       "description": "Total sets fully synced across all languages since the cursor started"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -11,6 +11,10 @@
     "public_key": {
       "type": "string",
       "description": "JSON-stringified ECDH P-256 public JWK"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

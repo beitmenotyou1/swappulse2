@@ -104,6 +104,10 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the poll to the creator's signing key (simulated)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

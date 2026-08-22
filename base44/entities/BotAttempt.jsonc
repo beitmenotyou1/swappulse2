@@ -52,6 +52,10 @@
     "content_hash": {
       "type": "string",
       "description": "Optional short hash of the submitted content for repetition analysis"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

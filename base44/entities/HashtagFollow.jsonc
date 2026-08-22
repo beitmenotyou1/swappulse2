@@ -11,6 +11,10 @@
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the follower"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

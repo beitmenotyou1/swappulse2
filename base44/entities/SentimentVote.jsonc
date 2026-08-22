@@ -44,6 +44,10 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the vote to the voter's signing key (simulated)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

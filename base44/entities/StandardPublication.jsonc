@@ -25,6 +25,10 @@
     "profile_url": {
       "type": "string",
       "description": "SwapPulse profile URL for this collector"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

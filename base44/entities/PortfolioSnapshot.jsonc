@@ -21,6 +21,10 @@
       "type": "integer",
       "default": 0,
       "description": "Number of cards in the collection at snapshot time"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -56,6 +56,10 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the feedback to the rater's signing key (simulated)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

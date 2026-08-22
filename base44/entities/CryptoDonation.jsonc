@@ -61,6 +61,10 @@
     "ipn_received_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

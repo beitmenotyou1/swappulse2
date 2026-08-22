@@ -41,6 +41,10 @@
     "sig": {
       "type": "string",
       "description": "HMAC signature binding the repost to the reposter's signing key (simulated)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

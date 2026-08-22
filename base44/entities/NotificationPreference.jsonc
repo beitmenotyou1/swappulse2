@@ -30,6 +30,10 @@
       "type": "boolean",
       "default": false,
       "description": "Master pause: true drops all notifications entirely (no in-app Notification record, no push), overriding who_filter and on_site_only."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

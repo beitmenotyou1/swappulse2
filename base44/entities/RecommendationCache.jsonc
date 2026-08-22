@@ -20,6 +20,10 @@
       "type": "string",
       "format": "date-time",
       "description": "When the cache was last computed"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

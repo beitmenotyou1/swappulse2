@@ -26,6 +26,10 @@
       "type": "integer",
       "default": 0,
       "description": "Number of failed verification attempts for this code; the code is deleted after 5 failures to prevent brute force"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

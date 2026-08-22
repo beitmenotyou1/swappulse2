@@ -66,6 +66,10 @@
     "ip_hash": {
       "type": "string",
       "description": "Hashed IP address for audit purposes"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

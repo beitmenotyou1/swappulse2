@@ -44,6 +44,10 @@
       "type": "string",
       "format": "date-time",
       "description": "When the translation was generated or last updated"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

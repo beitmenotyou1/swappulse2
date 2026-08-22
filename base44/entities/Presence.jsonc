@@ -25,6 +25,10 @@
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the collector (simulated)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

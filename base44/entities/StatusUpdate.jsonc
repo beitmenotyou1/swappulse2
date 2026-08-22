@@ -31,6 +31,10 @@
     "authored_by": {
       "type": "string",
       "description": "Developer name or 'system-monitor' for automated"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -21,6 +21,10 @@
       "type": "string",
       "format": "date-time",
       "description": "When the onboarding email was sent"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

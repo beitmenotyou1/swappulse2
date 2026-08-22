@@ -81,6 +81,10 @@
       "type": "string",
       "format": "date-time",
       "description": "When this record was last refreshed from TCGDex"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

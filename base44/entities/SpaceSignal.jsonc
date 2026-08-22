@@ -33,6 +33,10 @@
     "payload": {
       "type": "string",
       "description": "JSON-stringified RTCSessionDescriptionInit or RTCIceCandidateInit"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

@@ -40,6 +40,10 @@
       "type": "string",
       "format": "date-time",
       "description": "When the account was activated (mirrors user.is_verified)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [

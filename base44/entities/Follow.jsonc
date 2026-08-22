@@ -40,6 +40,10 @@
       "type": "boolean",
       "default": false,
       "description": "True once the follow has been mirrored to the AT Protocol PDS as a real app.bsky.graph.follow record"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
     }
   },
   "required": [
