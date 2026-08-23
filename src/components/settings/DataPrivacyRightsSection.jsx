@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import SettingRow from '@/components/settings/SettingRow';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function DataPrivacyRightsSection() {
   const { toast } = useToast();
@@ -191,19 +192,20 @@ export default function DataPrivacyRightsSection() {
           "Download your data" above. We respond to all requests within 30 days.
         </p>
         <div className="mt-3 space-y-2">
-          <select
+          <SettingSelect
             value={requestType}
-            onChange={(e) => setRequestType(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="rectification">Rectification, correct inaccurate data</option>
-            <option value="objection">Objection, stop certain processing</option>
-            <option value="restriction">Restriction, limit processing temporarily</option>
-            <option value="erasure">Erasure, request data deletion</option>
-            <option value="access">Access, request a copy (via email)</option>
-            <option value="portability">Portability, data transfer request</option>
-            <option value="consent_withdrawal">Consent withdrawal</option>
-          </select>
+            onChange={setRequestType}
+            label="Request type"
+            options={[
+              { value: 'rectification', label: 'Rectification, correct inaccurate data' },
+              { value: 'objection', label: 'Objection, stop certain processing' },
+              { value: 'restriction', label: 'Restriction, limit processing temporarily' },
+              { value: 'erasure', label: 'Erasure, request data deletion' },
+              { value: 'access', label: 'Access, request a copy (via email)' },
+              { value: 'portability', label: 'Portability, data transfer request' },
+              { value: 'consent_withdrawal', label: 'Consent withdrawal' },
+            ]}
+          />
           <Textarea
             value={details}
             onChange={(e) => setDetails(e.target.value)}

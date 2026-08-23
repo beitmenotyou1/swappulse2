@@ -300,7 +300,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
               onClick={() => setSaveBoardOpen(true)}
               disabled={!user?.id}
               aria-label={t('common.save')}
-              className="rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+              className="relative rounded-full px-2 py-1 transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50 before:content-[''] before:absolute before:-inset-y-[10px] before:-inset-x-1"
             >
               <Bookmark className="h-4 w-4" />
             </button>

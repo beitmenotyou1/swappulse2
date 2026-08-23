@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckSquare, Square, X, ArrowRightLeft, Loader2 } from 'lucide-react';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const CONDITIONS = [
   { value: 'mint', label: 'Mint' },
@@ -22,16 +23,13 @@ export default function BulkActionsBar({ selectedCount, allSelected, onSelectAll
         {allSelected ? 'All selected' : 'Select all'}
       </button>
       <div className="flex items-center gap-1.5">
-        <select
+        <SettingSelect
           value={condition}
-          onChange={(e) => setCondition(e.target.value)}
-          className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground"
-          aria-label="Condition to apply"
-        >
-          {CONDITIONS.map((c) => (
-            <option key={c.value} value={c.value}>{c.label}</option>
-          ))}
-        </select>
+          onChange={setCondition}
+          label="Condition to apply"
+          options={CONDITIONS}
+          className="!w-auto !rounded-full !border-border !bg-secondary !px-3 !py-1.5 !text-xs !font-semibold !text-secondary-foreground"
+        />
         <button
           onClick={() => onUpdateCondition(condition)}
           disabled={busy}

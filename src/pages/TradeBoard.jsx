@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import PullToRefresh from '@/components/PullToRefresh';
 
 export default function TradeBoard() {
   const tr = useT();
@@ -154,6 +155,7 @@ export default function TradeBoard() {
         </div>
       </PageHeader>
 
+      <PullToRefresh onRefresh={load}>
       {!loading && listings.length > 0 && (
         <div className="flex items-center gap-2 px-4 py-2">
           <button
@@ -234,6 +236,7 @@ export default function TradeBoard() {
           ))}
         </div>
       )}
+      </PullToRefresh>
 
       <CreateTradeModal
         open={showCreate}

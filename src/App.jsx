@@ -1,9 +1,9 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -146,6 +146,25 @@ const HashtagPage = lazy(() => import('@/pages/HashtagPage'));
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Native back-button handling for Android WebView (Cordova/Capacitor).
+  // Closes open overlays first; otherwise pops the router history.
+  useEffect(() => {
+    const onBackButton = (e) => {
+      const openOverlay = document.querySelector(
+        '[data-state="open"][role="dialog"], [data-state="open"][role="presentation"], .fixed.inset-0.z-50'
+      );
+      if (openOverlay) {
+        openOverlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        e.preventDefault();
+      } else if (window.history.length > 1) {
+        navigate(-1);
+      }
+    };
+    window.addEventListener('backbutton', onBackButton);
+    return () => window.removeEventListener('backbutton', onBackButton);
+  }, [navigate]);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {

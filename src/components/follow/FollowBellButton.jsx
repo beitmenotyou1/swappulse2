@@ -114,7 +114,7 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
       <button
         onClick={toggleFollow}
         disabled={busy}
-        className="flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="relative flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 before:content-[''] before:absolute before:-inset-y-1"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : following ? <UserCheck className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
         {following ? 'Following' : 'Follow'}
@@ -125,7 +125,7 @@ export default function FollowBellButton({ subjectDid, subjectName, subjectHandl
           onClick={toggleBell}
           disabled={busy}
           title={bell ? `Notifications on for @${subjectHandle || subjectName}` : 'Turn on notifications'}
-          className={`grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:opacity-50 ${bell ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-primary'}`}
+          className={`relative grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:opacity-50 before:content-[''] before:absolute before:-inset-1.5 ${bell ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:text-primary'}`}
         >
           <Bell className={`h-4 w-4 ${bell ? 'fill-current' : ''}`} />
         </button>

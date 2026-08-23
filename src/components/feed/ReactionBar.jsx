@@ -139,7 +139,7 @@ export default function ReactionBar({ post, initial }) {
             onClick={() => toggle(t)}
             disabled={pending}
             title={r.label}
-            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition disabled:opacity-50 ${
+            className={`relative flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition disabled:opacity-50 before:content-[''] before:absolute before:-inset-y-3 before:-inset-x-1 ${
               active
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border text-muted-foreground hover:bg-secondary'

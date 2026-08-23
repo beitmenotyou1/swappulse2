@@ -11,6 +11,7 @@ import NotificationCard from '@/components/notifications/NotificationCard';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
+import PullToRefresh from '@/components/PullToRefresh';
 
 const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
 
@@ -113,6 +114,7 @@ export default function Notifications() {
 
       <NotificationFilterTabs active={filter} onChange={setFilter} counts={counts} />
 
+      <PullToRefresh onRefresh={handleRefresh}>
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : visible.length === 0 ? (
@@ -127,6 +129,7 @@ export default function Notifications() {
           <NotificationGroup title={t('common.earlier')}>{earlier.map(renderCard)}</NotificationGroup>
         </div>
       )}
+      </PullToRefresh>
       <GuideFooterLink slug="notifications" />
     </div>
   );

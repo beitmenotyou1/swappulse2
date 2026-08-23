@@ -5,6 +5,7 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgeVoiceSpace } from '@/lib/federatedBridge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const PLATFORMS = [
   { value: 'twitch', label: 'Twitch' },
@@ -211,15 +212,12 @@ export default function GoLiveModal({ onClose, onLive }) {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted-foreground">Platform</label>
-                <select
+                <SettingSelect
                   value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-                >
-                  {PLATFORMS.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
+                  onChange={setPlatform}
+                  label="Platform"
+                  options={PLATFORMS}
+                />
               </div>
             </>
           )}

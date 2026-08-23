@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import { AlertTriangle, ShieldAlert, Loader2, CheckCircle2 } from 'lucide-react';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const CONFIRM_WORD = 'DELETE';
 
@@ -44,11 +45,18 @@ export default function ForceDeleteDialog({ user, open, onClose, onDone }) {
           </DialogHeader>
           <div>
             <Label className="mb-1.5 block text-sm font-medium">Blocklist reason</Label>
-            <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-              <option value="scam">Scam</option><option value="spam">Spam</option>
-              <option value="harassment">Harassment</option><option value="ban_evasion">Ban evasion</option>
-              <option value="other">Other</option>
-            </select>
+            <SettingSelect
+              value={reason}
+              onChange={setReason}
+              label="Blocklist reason"
+              options={[
+                { value: 'scam', label: 'Scam' },
+                { value: 'spam', label: 'Spam' },
+                { value: 'harassment', label: 'Harassment' },
+                { value: 'ban_evasion', label: 'Ban evasion' },
+                { value: 'other', label: 'Other' },
+              ]}
+            />
           </div>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Cancel</Button>
