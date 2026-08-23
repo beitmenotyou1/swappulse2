@@ -9,6 +9,8 @@ import useSEO from '@/hooks/useSEO';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { timeAgo } from '@/lib/format';
+import RarityFilterChips from '@/components/cards/RarityFilterChips';
+import { rarityKey } from '@/lib/tcgdex';
 
 export default function SearchPage() {
   useSEO({
@@ -24,6 +26,7 @@ export default function SearchPage() {
   const [fedActors, setFedActors] = useState([]);
   const [fedPosts, setFedPosts] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [rarityFilter, setRarityFilter] = useState('');
   const debounceRef = useRef(null);
 
   const runSearch = async (q) => {
@@ -60,7 +63,8 @@ export default function SearchPage() {
 
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
-  const hasResults = cards.length > 0 || profiles.length > 0 || fedActors.length > 0 || fedPosts.length > 0;
+  const filteredCards = rarityFilter ? cards.filter((c) => rarityKey(c.rarity) === rarityFilter) : cards;
+  const hasResults = filteredCards.length > 0 || profiles.length > 0 || fedActors.length > 0 || fedPosts.length > 0;
 
   return (
     <div>
@@ -154,8 +158,12 @@ export default function SearchPage() {
         {cards.length > 0 && (
           <section className="mt-5">
             <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><CreditCard className="h-3.5 w-3.5" /> Cards</h2>
+            <RarityFilterChips value={rarityFilter} onChange={setRarityFilter} />
+            {filteredCards.length === 0 && rarityFilter && (
+              <p className="py-4 text-center text-xs text-muted-foreground">No cards match this rarity. Try a different filter.</p>
+            )}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {cards.map((c) => (
+              {filteredCards.map((c) => (
                 <Link key={c.id || c.cardId} to={`/card/${c.id || c.cardId}`} className="overflow-hidden rounded-xl border border-border bg-card hover:shadow-raised">
                   {c.image || c.card_image ? (
                     <img src={c.image || c.card_image} alt={c.name || c.card_name} className="h-32 w-full object-cover" />

@@ -156,15 +156,11 @@ export default async function(req: Request): Promise<Response> {
 
     // 7. Merge + time-sort — For You is strictly followed accounts + followed
     // hashtags (local + protocol); discovery happens in the Explore tab.
-    items.sort((a, b) => {
-      const aTime = new Date(a.original_created_at || a.created_date || 0).getTime();
-      const bTime = new Date(b.original_created_at || b.created_date || 0).getTime();
-      return bTime - aTime;
-    });
-    const followedCount = items.length;
+    const sorted = sortPostsDescending(items);
+    const followedCount = sorted.length;
 
     return Response.json({
-      items: items.slice(0, limit),
+      items: sorted.slice(0, limit),
       source: 'follow',
       followed_count: followedCount,
       authed: true,

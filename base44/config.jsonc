@@ -1,5 +1,5 @@
 {
-  "name": "SwapPulse Network",
+  "name": "SwapPulseTCG",
   "site": {
     "installCommand": "npm install",
     "buildCommand": "npm run build",
