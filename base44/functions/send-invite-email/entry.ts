@@ -10,7 +10,30 @@ import { resolveAppUrl } from '../../shared/appUrl.ts';
 import { buildBrandedHtml, buildPlainText, esc } from '../../shared/emailTemplate.ts';
 
 const DAILY_CAP = 10;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Stricter regex: ASCII-only, no control chars/whitespace (prevents CRLF header injection — CWE-93).
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}$/;
+const MAX_EMAIL_LEN = 254;
+
+// Strip CR/LF and other control chars from values used in email headers
+// (subject, from_name) to prevent header injection from user-controlled profile data.
+function sanitizeHeader(str) {
+  return String(str || '').replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, 100);
+}
+
+// Validate the recipient domain actually accepts mail (MX, falling back to A as
+// implicit MX). Blocks relay abuse via throwaway/non-existent domains.
+async function domainCanReceiveMail(domain) {
+  if (typeof Deno === 'undefined' || !Deno.resolveDns) return true; // skip if DNS API unavailable
+  try {
+    const mx = await Deno.resolveDns(domain, 'MX');
+    if (mx && mx.length) return true;
+  } catch {}
+  try {
+    const a = await Deno.resolveDns(domain, 'A');
+    if (a && a.length) return true;
+  } catch {}
+  return false;
+}
 
 function genCode() {
   const bytes = new Uint8Array(6);
@@ -30,8 +53,12 @@ export default async function (req) {
 
     const body = await req.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
-    if (!EMAIL_RE.test(email)) {
+    if (!email || email.length > MAX_EMAIL_LEN || !EMAIL_RE.test(email)) {
       return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    }
+    const recipientDomain = email.split('@')[1];
+    if (!await domainCanReceiveMail(recipientDomain)) {
+      return Response.json({ error: 'That email domain cannot receive mail. Please check the address.' }, { status: 400 });
     }
 
     const did = user.data?.did || '';
@@ -74,7 +101,7 @@ export default async function (req) {
       code = created;
     }
 
-    const inviterName = user.full_name || user.email || 'a SwapPulse collector';
+    const inviterName = sanitizeHeader(user.full_name || user.email || 'a SwapPulse collector');
     const inviterHandle = user.data?.bsky_handle || '';
     const appOrigin = resolveAppUrl(req);
     const inviteUrl = `${appOrigin}/invite/${code.code}`;
