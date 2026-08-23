@@ -133,6 +133,24 @@ export function constructBskyCdnUrl(kind: 'avatar' | 'banner', did: string, blob
   return `https://cdn.bsky.app/img/${kind}/plain/${did}/${cid}@jpeg`;
 }
 
+// Construct a Wix Media Platform JPEG transform URL that re-encodes and
+// resizes the source image server-side. The format is:
+//   {baseUrl}/v1/fill/w_{maxDim},h_{maxDim},q_90,enc_jpg/{name}.jpg
+// where baseUrl is the full original path (including the original filename).
+// Returns null if the URL can't be parsed. The caller validates the response
+// is actually image/jpeg before using the bytes.
+function buildJpegTransformUrl(raw: string, maxDim: number): string | null {
+  try {
+    const url = new URL(raw);
+    const basePath = url.pathname;
+    const filename = basePath.split('/').pop() || 'image';
+    const nameWithoutExt = filename.replace(/\.[a-z0-9]+$/i, '') || 'image';
+    return `${url.origin}${basePath}/v1/fill/w_${maxDim},h_${maxDim},q_90,enc_jpg/${nameWithoutExt}.jpg`;
+  } catch {
+    return null;
+  }
+}
+
 // Fetch image bytes from a stored URL and upload as a blob to the user's PDS,
 // returning the blob ref to embed in the profile record. Used for both avatar
 // and banner. Returns null if there is no image, the URL is not allowlisted,
@@ -177,35 +195,29 @@ async function uploadImageBlob(
     let bytes = new Uint8Array(await imgRes.arrayBuffer());
 
     // AT Protocol profile avatar/banner lexicon only accepts image/png and
-    // image/jpeg, with a 1 MB max blob size. Resize to a max dimension and
-    // convert to JPEG via OffscreenCanvas, iteratively reducing quality until
-    // under the 900 KB safety threshold. This handles WebP source images and
-    // oversized banners that would otherwise be rejected by putRecord.
+    // image/jpeg, with a 1 MB max blob size. The Base44 CDN serves images as
+    // WebP, which the PDS rejects. Instead of converting in the backend
+    // (createImageBitmap/OffscreenCanvas are not available in this Deno
+    // runtime), request a server-side JPEG re-encode + resize via the Wix
+    // Media Platform transform URL: {baseUrl}/v1/fill/w_,h_,q_,enc_jpg/{name}.jpg
+    // This produces a JPEG within the PDS size limit, handling both WebP
+    // source format and oversized banners.
     const maxDim = label === 'avatar' ? 400 : 1500;
-    const targetSize = 900000;
-    try {
-      const bitmap = await createImageBitmap(new Blob([bytes], { type: mimeType }));
-      let w = bitmap.width;
-      let h = bitmap.height;
-      if (w > maxDim || h > maxDim) {
-        const scale = maxDim / Math.max(w, h);
-        w = Math.round(w * scale);
-        h = Math.round(h * scale);
+    const jpegUrl = buildJpegTransformUrl(imageUrl, maxDim);
+    if (jpegUrl) {
+      try {
+        const jpegRes = await fetch(jpegUrl, { redirect: 'follow' });
+        if (jpegRes.ok) {
+          const ct = (jpegRes.headers.get('content-type') || '').split(';')[0].trim();
+          if (ct === 'image/jpeg' || ct === 'image/jpg') {
+            bytes = new Uint8Array(await jpegRes.arrayBuffer());
+            mimeType = 'image/jpeg';
+          }
+        }
+      } catch {
+        // Fall through to upload original bytes (may fail for WebP, but text
+        // fields still sync).
       }
-      const canvas = new OffscreenCanvas(w, h);
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(bitmap, 0, 0, w, h);
-      let quality = 0.92;
-      let jpegBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
-      while (jpegBlob.size > targetSize && quality > 0.3) {
-        quality -= 0.1;
-        jpegBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
-      }
-      bytes = new Uint8Array(await jpegBlob.arrayBuffer());
-      mimeType = 'image/jpeg';
-    } catch (e: any) {
-      console.error(`profileSync: ${label} format conversion failed`, e?.message || e);
-      return null;
     }
 
     const upRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
