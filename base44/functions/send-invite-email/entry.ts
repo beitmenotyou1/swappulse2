@@ -16,6 +16,22 @@ const RECIPIENT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // same address can't be re-m
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}$/;
 const MAX_EMAIL_LEN = 254;
 
+// Disposable/temporary email domains commonly used for relay abuse. Rejecting
+// these restricts the endpoint to real, persistent mailboxes and prevents an
+// attacker from spinning up throwaway addresses to relay spam.
+const BLOCKED_DOMAINS = new Set([
+  'mailinator.com', 'guerrillamail.com', 'guerrillamailblock.com', 'sharklasers.com',
+  '10minutemail.com', '10minutemail.net', 'tempmail.com', 'tempmail.net', 'temp-mail.org',
+  'throwawaymail.com', 'throwaway.email', 'yopmail.com', 'yopmail.net', 'getnada.com',
+  'nada.email', 'maildrop.cc', 'dispostable.com', 'fakeinbox.com', 'mailnesia.com',
+  'trashmail.com', 'trashmail.net', 'trashmail.me', 'sharklasers.com', 'spam4.me',
+  'mintemail.com', 'mohmal.com', 'mohmal.tech', 'tmpmail.org', 'tmpmail.net',
+  'emailondeck.com', 'mytemp.email', 'tempinbox.com', 'spambog.com', 'spambog.ru',
+  'discard.email', 'discardmail.com', 'mailcatch.com', 'harakirimail.com',
+  'jetable.org', 'jetable.com', 'rtrtr.com', 'fakebox.com', 'filzmail.com',
+  'byom.de', 'tempr.email', 'temprmail.com', 'tempmailo.com', 'vomoto.com',
+]);
+
 // Strip CR/LF and other control chars from values used in email headers
 // (subject, from_name) to prevent header injection from user-controlled profile data.
 function sanitizeHeader(str) {
@@ -59,6 +75,9 @@ export default async function (req) {
       return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     }
     const recipientDomain = email.split('@')[1];
+    if (BLOCKED_DOMAINS.has(recipientDomain)) {
+      return Response.json({ error: 'Invites cannot be sent to disposable email addresses. Please use a real email.' }, { status: 400 });
+    }
     if (!await domainCanReceiveMail(recipientDomain)) {
       return Response.json({ error: 'That email domain cannot receive mail. Please check the address.' }, { status: 400 });
     }
