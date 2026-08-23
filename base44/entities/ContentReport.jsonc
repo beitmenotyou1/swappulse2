@@ -2,7 +2,7 @@
   "name": "ContentReport",
   "type": "object",
   "title": "ContentReport",
-  "description": "org.swappulse.contentReport \u2014 a user-submitted report flagging content (post, listing, message, or profile) for moderator review. Each report feeds into the AI moderation learning loop as AgentFeedback so the agent learns what the community considers reportable.",
+  "description": "org.swappulse.contentReport \u2014 a user-submitted report flagging content (post, listing, message, or profile) for moderator review. Each report feeds into the AI moderation learning loop as AgentFeedback so the agent learns what the community considers reportable. Supports evidence file uploads (evidence_urls) and, for DM reports, a moderator-only decrypted plaintext (reported_message_plaintext) populated server-side via the decrypt-reported-message backend function.",
   "properties": {
     "content_type": {
       "type": "string",
@@ -10,7 +10,8 @@
         "post",
         "trade_listing",
         "trade_message",
-        "profile"
+        "profile",
+        "direct_message"
       ],
       "description": "The type of content being reported"
     },
@@ -45,6 +46,19 @@
       "type": "string",
       "maxLength": 1000,
       "description": "Free-text explanation from the reporter"
+    },
+    "evidence_urls": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of uploaded evidence files (screenshots, images) supporting the report"
+    },
+    "reported_message_plaintext": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Moderator-only decrypted plaintext of a reported DM, populated server-side by the decrypt-reported-message backend function via key escrow. Empty for non-DM reports."
     },
     "status": {
       "type": "string",

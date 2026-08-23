@@ -2,7 +2,7 @@
   "name": "StarterPack",
   "type": "object",
   "title": "StarterPack",
-  "description": "org.swappulse.starterPack \u2014 a collector-authored onboarding bundle of member collectors, recommended Circles, pinned custom feeds, and a featured binder/journal, mirrored to AT Protocol as a real org.swappulse.starterPack record so packs are portable and discoverable across instances. Extends the imported BlueskyList pattern to native authoring + outbound bridging.",
+  "description": "org.swappulse.starterPack \u2014 a collector-authored onboarding bundle of member collectors, recommended Circles, pinned custom feeds, and a featured binder/journal, mirrored to AT Protocol as a real org.swappulse.starterPack record so packs are portable and discoverable across instances. Extends the imported BlueskyList pattern to native authoring + outbound bridging. Supports up to 100 members and up to 5 packs per author; one pack may be marked is_site_wide by an admin to surface as the newcomer welcome pack.",
   "properties": {
     "name": {
       "type": "string",
@@ -29,11 +29,11 @@
     },
     "member_dids": {
       "type": "array",
-      "maxItems": 50,
+      "maxItems": 100,
       "items": {
         "type": "string"
       },
-      "description": "DIDs of collectors bundled in the pack"
+      "description": "DIDs of collectors bundled in the pack (up to 100)"
     },
     "circle_ids": {
       "type": "array",
@@ -61,6 +61,11 @@
     },
     "cover_image_url": {
       "type": "string"
+    },
+    "is_site_wide": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this pack is the admin-curated site-wide newcomer welcome pack. Only one pack may have this flag set at a time; setting it on a new pack clears it on all others (enforced by set-site-wide-starter-pack backend function)."
     },
     "subscriber_count": {
       "type": "integer",

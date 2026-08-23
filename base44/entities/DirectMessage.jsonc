@@ -2,7 +2,7 @@
   "name": "DirectMessage",
   "type": "object",
   "title": "DirectMessage",
-  "description": "org.swappulse.directMessage \u2014 a single message in a 1:1 conversation, mirrored to AT Protocol as a real org.swappulse.directMessage record. The sender is tracked by created_by_id + did; the recipient by recipient_did so RLS grants read access to both. read is set true by the recipient when they open the thread, driving the unread badge.",
+  "description": "org.swappulse.directMessage \u2014 a single message in a 1:1 conversation, mirrored to AT Protocol as a real org.swappulse.directMessage record. The sender is tracked by created_by_id + did; the recipient by recipient_did so RLS grants read access to both. read is set true by the recipient when they open the thread, driving the unread badge. The body is end-to-end encrypted (ECDH+AES-GCM via e2ee.js); escrow_key_cipher stores an admin-encrypted copy of the per-message AES key so moderators can decrypt reported messages and users can recover history on a new device.",
   "properties": {
     "conversation_id": {
       "type": "string",
@@ -22,8 +22,12 @@
     },
     "body": {
       "type": "string",
-      "maxLength": 2000,
-      "description": "Message text body"
+      "maxLength": 4000,
+      "description": "Message text body (E2EE ciphertext prefixed with 'e2ee:' when encrypted)"
+    },
+    "escrow_key_cipher": {
+      "type": "string",
+      "description": "AES-GCM encrypted copy of the per-message symmetric key used to encrypt the body. Encrypted with an admin-held escrow key (APP_PASSWORD_ENCRYPTION_KEY). Enables moderator decryption of reported messages and user history recovery on a new device. Empty for legacy plaintext messages."
     },
     "author_name": {
       "type": "string"
