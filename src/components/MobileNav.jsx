@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
@@ -53,6 +53,7 @@ const moreItems = [
 
 export default function MobileNav() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const { liveByDid } = useLivePresence();
   const liveCount = liveByDid.size;
@@ -80,6 +81,15 @@ export default function MobileNav() {
             <Link
               key={item.to}
               to={item.to}
+              onClick={(e) => {
+                if (pathname === item.to) {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (pathname.startsWith(item.to) && item.to !== '/') {
+                  e.preventDefault();
+                  navigate(item.to);
+                }
+              }}
               className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
                 active ? 'text-primary' : 'text-muted-foreground'
               }`}
