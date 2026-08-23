@@ -11,6 +11,7 @@ import ProfileSetup from "@/components/auth/ProfileSetup";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 import { useT } from "@/lib/i18n/I18nProvider";
+import useSEO from "@/hooks/useSEO";
 
 function randomPassword() {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)))

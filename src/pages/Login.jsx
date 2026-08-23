@@ -11,6 +11,7 @@ import TwoFactorChallenge from "@/components/auth/TwoFactorChallenge";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useT } from "@/lib/i18n/I18nProvider";
+import useSEO from "@/hooks/useSEO";
 
 const CODE_EXPIRY_SECONDS = 300; // 5 minutes
 

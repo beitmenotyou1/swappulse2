@@ -9,6 +9,7 @@ import AuthLayout from "@/components/AuthLayout";
 import { checkPasswordBreach, BREACH_WARNING } from "@/lib/hibp";
 import { setStoredAuthEpoch, CURRENT_AUTH_EPOCH } from "@/lib/authEpoch";
 import { useT } from "@/lib/i18n/I18nProvider";
+import useSEO from "@/hooks/useSEO";
 
 export default function ResetPassword() {
   const t = useT();

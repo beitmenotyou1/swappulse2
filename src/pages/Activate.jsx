@@ -8,6 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthLayout from "@/components/AuthLayout";
 import { Mail, ShieldCheck, Loader2, AlertTriangle } from "lucide-react";
 import { useT } from "@/lib/i18n/I18nProvider";
+import useSEO from "@/hooks/useSEO";
 
 export default function Activate() {
   const t = useT();

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { useT } from "@/lib/i18n/I18nProvider";
+import useSEO from "@/hooks/useSEO";
 
 export default function ForgotPassword() {
   const t = useT();
