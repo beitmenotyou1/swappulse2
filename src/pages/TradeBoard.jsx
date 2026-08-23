@@ -20,6 +20,13 @@ export default function TradeBoard() {
     title: 'Trade Board',
     description: 'Browse and post open Pokémon TCG trade listings on the SwapPulse trade board, peer-to-peer card exchange.',
     canonicalPath: '/trades',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Pokémon TCG Trade Board',
+      description: 'Browse and post open Pokémon TCG trade listings on the SwapPulse trade board.',
+      url: 'https://swappulse.org/trades',
+    },
   });
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);

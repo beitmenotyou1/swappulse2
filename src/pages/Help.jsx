@@ -186,6 +186,13 @@ export default function Help() {
     title: 'Help & FAQ',
     description: 'Learn how SwapPulse works, scanning, trading, voice spaces, podcasts, direct messages, circles, challenges, and more.',
     canonicalPath: '/help',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      name: 'SwapPulse Help & FAQ',
+      description: 'Learn how SwapPulse works, scanning, trading, voice spaces, podcasts, direct messages, circles, challenges, and more.',
+      url: 'https://swappulse.org/help',
+    },
   });
   const [query, setQuery] = useState('');
 

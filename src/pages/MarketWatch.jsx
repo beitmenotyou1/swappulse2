@@ -15,6 +15,13 @@ export default function MarketWatch() {
     title: 'Market Watch',
     description: 'Track Pokémon TCG card prices, monitor your portfolio, and set price alerts on SwapPulse, the decentralized collector community.',
     canonicalPath: '/market',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Pokémon TCG Market Watch',
+      description: 'Track Pokémon TCG card prices, monitor your portfolio, and set price alerts on SwapPulse.',
+      url: 'https://swappulse.org/market',
+    },
   });
   const [portfolio, setPortfolio] = useState(null);
   const [prices, setPrices] = useState([]);

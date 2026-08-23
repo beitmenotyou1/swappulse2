@@ -134,8 +134,6 @@ import Privacy from '@/pages/Privacy';
 import About from '@/pages/About';
 import SitemapXml from '@/pages/SitemapXml';
 import RobotsTxt from '@/pages/RobotsTxt';
-import WellKnownStandardPublication from '@/pages/WellKnownStandardPublication';
-import WellKnownAtProtoDid from '@/pages/WellKnownAtProtoDid';
 import JournalDetail from '@/pages/JournalDetail';
 import HashtagPage from '@/pages/HashtagPage';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
@@ -177,8 +175,7 @@ const AuthenticatedApp = () => {
       <Route path="/status" element={<Status />} />
       <Route path="/sitemap.xml" element={<SitemapXml />} />
       <Route path="/robots.txt" element={<RobotsTxt />} />
-      <Route path="/.well-known/site.standard.publication" element={<WellKnownStandardPublication />} />
-      <Route path="/.well-known/atproto-did" element={<WellKnownAtProtoDid />} />
+
       <Route path="/incidents/:incidentId" element={<IncidentDetail />} />
       <Route path="/u/:handle" element={<HandleProfile />} />
       {/* Public browsable content, no login required */}

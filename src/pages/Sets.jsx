@@ -13,6 +13,13 @@ export default function Sets() {
     title: 'Set Checklists',
     description: 'Track your Pokémon TCG set completion and download printable PDF checklists on SwapPulse.',
     canonicalPath: '/sets',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Pokémon TCG Set Checklists',
+      description: 'Track your Pokémon TCG set completion and download printable PDF checklists on SwapPulse.',
+      url: 'https://swappulse.org/sets',
+    },
   });
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

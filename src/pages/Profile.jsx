@@ -48,6 +48,13 @@ export default function Profile() {
     title: 'My Profile',
     description: 'View and edit your SwapPulse collector profile, posts, trades, and collections.',
     canonicalPath: '/profile',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'ProfilePage',
+      name: 'My SwapPulse Profile',
+      description: 'View and edit your SwapPulse collector profile, posts, trades, and collections.',
+      url: 'https://swappulse.org/profile',
+    },
   });
   const { user } = useAuth();
   const [tab, setTab] = useState('Posts');

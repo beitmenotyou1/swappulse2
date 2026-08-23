@@ -28,6 +28,13 @@ export default function Explore() {
     title: 'Explore Cards',
     description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
     canonicalPath: '/explore',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Explore Pokémon TCG Cards',
+      description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
+      url: 'https://swappulse.org/explore',
+    },
   });
   const { settings } = useSettings();
   const lang = localeToTcgdexLang(settings?.language?.preferredContent?.[0] || settings?.language?.targetLanguage);

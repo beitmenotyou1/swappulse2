@@ -43,6 +43,13 @@ export default function Collection() {
     title: 'My Collection',
     description: 'Track your Pokémon TCG collection, manage duplicates, and monitor portfolio value on SwapPulse.',
     canonicalPath: '/collection',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'My Pokémon TCG Collection',
+      description: 'Track your Pokémon TCG collection, manage duplicates, and monitor portfolio value on SwapPulse.',
+      url: 'https://swappulse.org/collection',
+    },
   });
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);

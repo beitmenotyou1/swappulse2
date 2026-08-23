@@ -14,6 +14,13 @@ export default function Donate() {
     title: 'Support SwapPulse',
     description: 'Donate to SwapPulse by card or cryptocurrency. Every contribution keeps the platform free and open-source.',
     canonicalPath: '/donate',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Support SwapPulse',
+      description: 'Donate to SwapPulse by card or cryptocurrency. Every contribution keeps the platform free and open-source.',
+      url: 'https://swappulse.org/donate',
+    },
   });
   const [method, setMethod] = useState('card');
 
