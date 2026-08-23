@@ -21,6 +21,7 @@ import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { sortPostsDescending } from '@/lib/postSort';
+import PullToRefresh from '@/components/PullToRefresh';
 
 export default function Explore() {
   const tr = useT();
@@ -188,9 +189,22 @@ export default function Explore() {
     }
   };
 
+  const handleRefresh = async () => {
+    if (searchMode === 'posts') {
+      await loadFeedPosts();
+    } else if (searchMode === 'cards') {
+      try {
+        const s = await getSets(lang);
+        setSets(s.slice(-12).reverse());
+      } catch {}
+      await runSearch(query, filters);
+    }
+  };
+
   return (
     <div>
       <PageHeader title={tr('page.explore.title')} subtitle={tr('page.explore.subtitle')} />
+      <PullToRefresh onRefresh={handleRefresh}>
       <div className="border-b border-border p-4 space-y-3">
         <div className="flex gap-1 rounded-full bg-secondary p-1">
           <button
@@ -362,6 +376,7 @@ export default function Explore() {
         </div>
       )}
       <GuideFooterLink slug="explore" />
+      </PullToRefresh>
     </div>
   );
 }

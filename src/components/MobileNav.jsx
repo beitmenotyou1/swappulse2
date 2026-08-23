@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -17,6 +17,18 @@ const primary = [
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
 ];
+
+const TAB_ROOTS = ['/', '/explore', '/trades', '/collection'];
+
+// Determine which primary tab owns a given pathname.
+// Sub-pages not matching any tab root fall back to the last active tab.
+function getOwningTab(pathname, fallback) {
+  if (pathname === '/') return '/';
+  for (const root of TAB_ROOTS) {
+    if (root !== '/' && pathname.startsWith(root)) return root;
+  }
+  return fallback;
+}
 
 const moreItems = [
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
@@ -61,6 +73,27 @@ export default function MobileNav() {
   const unreadDMs = useUnreadDMCount();
   const { user, isAuthenticated, logout } = useAuth();
   const t = useT();
+
+  // --- Native-style tab navigation: per-tab scroll + history preservation ---
+  const lastTabRef = useRef('/');
+  const tabStates = useRef({});
+  const pendingRestore = useRef(null);
+
+  const owningTab = useMemo(() => getOwningTab(pathname, lastTabRef.current), [pathname]);
+
+  useEffect(() => {
+    if (owningTab) lastTabRef.current = owningTab;
+  }, [owningTab]);
+
+  // Restore scroll position after navigating to a saved tab state
+  useEffect(() => {
+    if (pendingRestore.current && pathname === pendingRestore.current.pathname) {
+      const { scrollY } = pendingRestore.current;
+      pendingRestore.current = null;
+    requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
+    }
+  }, [pathname]);
+
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
 
   return (
@@ -76,25 +109,36 @@ export default function MobileNav() {
       )}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 pb-[env(safe-area-inset-bottom,16px)] backdrop-blur md:hidden">
         {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
-          const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
+          const active = owningTab === item.to;
           return (
             <Link
               key={item.to}
               to={item.to}
               onClick={(e) => {
-                if (pathname === item.to) {
-                  e.preventDefault();
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                  // Save scroll position in history state for restoration on back navigation
-                  window.history.replaceState(
-                    { ...(window.history.state || {}), scrollY: window.scrollY },
-                    ''
-                  );
+                e.preventDefault();
+                // Save current tab's scroll position and pathname before switching
+                if (owningTab) {
+                  tabStates.current[owningTab] = { pathname, scrollY: window.scrollY };
                 }
-                // Otherwise let the Link navigate normally — it pushes a new
-                // history entry, so the browser back button returns to the
-                // sub-page the user was on (e.g. /card/123 in Explore).
+                if (owningTab === item.to) {
+                  // Tapping the active tab — pop to root or scroll to top
+                  if (pathname === item.to) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } else {
+                    navigate(item.to);
+                  }
+                } else {
+                  // Tapping a different tab — restore saved state or go to root
+                  const saved = tabStates.current[item.to];
+                  const targetPath = saved?.pathname || item.to;
+                  const targetScrollY = saved?.scrollY || 0;
+                  if (targetPath === pathname) {
+                    window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+                  } else {
+                    pendingRestore.current = { pathname: targetPath, scrollY: targetScrollY };
+                    navigate(targetPath);
+                  }
+                }
               }}
               className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
                 active ? 'text-primary' : 'text-muted-foreground'
