@@ -17,7 +17,7 @@ import { uploadPromoImage } from '../../shared/promoImageUpload.ts';
 
 const PROMO_USER_ID = '6a6422a1b8cda8ece8138c87';
 
-const DEFAULT_AVATAR_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/ac9fe4c0c_generated_image.png';
+const DEFAULT_AVATAR_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/ddbf66bd3_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.png';
 const DEFAULT_BANNER_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/a22b46eb2_generated_image.png';
 const DEFAULT_DISPLAY_NAME = 'SwapPulse';
 const DEFAULT_DESCRIPTION = 'The decentralized social network for Pokémon TCG collectors. Free, open-source, built on the AT Protocol. 🎴';
