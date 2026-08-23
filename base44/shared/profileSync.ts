@@ -387,8 +387,9 @@ export async function syncProfileForUser(
       record,
     });
     if (res?.error) {
-      console.error('profileSync: putRecord failed', res.status, JSON.stringify(res.body || {}).slice(0, 200));
-      return { ok: false, error: `putRecord failed (${res.status})` };
+      const bodyText = typeof res.body === 'string' ? res.body : JSON.stringify(res.body || {});
+      console.error('profileSync: putRecord failed', res.status, bodyText.slice(0, 300));
+      return { ok: false, error: `putRecord failed (${res.status}): ${bodyText.slice(0, 200)}` };
     }
     return {
       ok: true,
