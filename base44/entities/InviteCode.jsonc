@@ -2,7 +2,7 @@
   "name": "InviteCode",
   "type": "object",
   "title": "InviteCode",
-  "description": "org.swappulse.inviteCode \u2014 alpha onboarding invite codes (limited to 10,000). Admin-generated; redeemed once at registration.",
+  "description": "org.swappulse.inviteCode \u2014 onboarding invite codes. Admin-generated alpha codes (limited to 10,000) and user-generated personal invite links. User-generated codes carry an inviter_did so that joining via the link auto-follows the inviter and auto-creates an accepted Friendship. Redeemed once at registration via the redeem-invite backend function.",
   "properties": {
     "code": {
       "type": "string",
@@ -16,6 +16,31 @@
         "disabled"
       ],
       "default": "active"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "admin",
+      "description": "Whether this code was admin-generated (alpha batch) or user-generated (personal invite link)"
+    },
+    "inviter_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who generated this personal invite link. Empty for admin-generated codes. Joining via this code auto-follows and auto-friends the inviter."
+    },
+    "inviter_name": {
+      "type": "string",
+      "description": "Display name of the inviter (cached for the invite landing page)"
+    },
+    "inviter_handle": {
+      "type": "string",
+      "description": "Handle of the inviter (cached for the invite landing page)"
+    },
+    "inviter_avatar": {
+      "type": "string",
+      "description": "Avatar URL of the inviter (cached for the invite landing page)"
     },
     "used_by_did": {
       "type": "string",
@@ -44,14 +69,28 @@
   ],
   "rls": {
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.inviter_did": "{{user.data.did}}"
+        }
+      ]
     },
     "create": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
     },
     "update": {
       "user_condition": {
