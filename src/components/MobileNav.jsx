@@ -85,10 +85,10 @@ export default function MobileNav() {
                 if (pathname === item.to) {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else if (pathname.startsWith(item.to) && item.to !== '/') {
-                  e.preventDefault();
-                  navigate(item.to);
                 }
+                // Otherwise let the Link navigate normally — it pushes a new
+                // history entry, so the browser back button returns to the
+                // sub-page the user was on (e.g. /card/123 in Explore).
               }}
               className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
                 active ? 'text-primary' : 'text-muted-foreground'

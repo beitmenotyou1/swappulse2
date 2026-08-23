@@ -106,6 +106,14 @@
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
+  /* iOS WebView: remove native grey tap highlight on interactive elements */
+  a, button, select, input, textarea, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* iOS WebView: disable long-press callout/share menu on links and images */
+  a, img {
+    -webkit-touch-callout: none;
+  }
   /* Custom scrollbars only on desktop — mobile WebViews should use the
      native overlay scrollbar to avoid layout shift and jank. */
   @media (min-width: 768px) {

@@ -4,12 +4,13 @@ import { base44 } from '@/api/base44Client';
 import { ensureUserDid, NSID } from '@/lib/atproto';
 import { bridgeVouch } from '@/lib/federatedBridge';
 import Avatar from '@/components/Avatar';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const RELATIONSHIPS = [
-  ['trade_partner', 'Trade Partner'],
-  ['repeat_trader', 'Repeat Trader'],
-  ['personal_acquaintance', 'Personal Acquaintance'],
-  ['community_member', 'Community Member'],
+  { value: 'trade_partner', label: 'Trade Partner' },
+  { value: 'repeat_trader', label: 'Repeat Trader' },
+  { value: 'personal_acquaintance', label: 'Personal Acquaintance' },
+  { value: 'community_member', label: 'Community Member' },
 ];
 
 export default function VouchForm({ onCreated }) {
@@ -130,17 +131,12 @@ export default function VouchForm({ onCreated }) {
       )}
       {resolved && !isSelf && !alreadyVouched && (
         <div className="mt-3 space-y-2">
-          <select
+          <SettingSelect
             value={relationship}
-            onChange={(e) => setRelationship(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            {RELATIONSHIPS.map(([k, l]) => (
-              <option key={k} value={k}>
-                {l}
-              </option>
-            ))}
-          </select>
+            onChange={setRelationship}
+            label="Relationship"
+            options={RELATIONSHIPS}
+          />
           <textarea
             value={context}
             onChange={(e) => setContext(e.target.value)}
