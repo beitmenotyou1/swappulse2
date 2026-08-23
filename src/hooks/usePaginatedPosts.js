@@ -55,7 +55,7 @@ export function usePaginatedPosts(did, isExternal) {
       if (!batch || batch.length === 0) {
         setHasMore(false);
       } else {
-        setPosts((prev) => [...prev, ...batch]);
+        setPosts((prev) => sortPostsDescending([...prev, ...batch]));
         skipRef.current += batch.length;
         if (batch.length < BATCH_SIZE) setHasMore(false);
       }
