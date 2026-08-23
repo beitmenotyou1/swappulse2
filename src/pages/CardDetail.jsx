@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus, Layers } from 'lucide-react';
-import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus } from 'lucide-react';
+import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import AddToCollectionModal from '@/components/cards/AddToCollectionModal';
@@ -136,19 +137,9 @@ export default function CardDetail() {
       <div className={`p-4 ${tab !== 'overview' ? 'hidden' : ''}`}>
         <div className="flex flex-col gap-5 sm:flex-row">
           <div className="mx-auto sm:mx-0">
-            {cardImageUrl(card.image) ? (
-              <img
-                src={cardImageUrl(card.image)}
-                alt={card.name}
-                className="w-56 rounded-2xl border border-border shadow-xl"
-              />
-            ) : (
-              <div className="flex h-80 w-56 flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-gradient-to-br from-secondary to-muted p-4 text-center">
-                <Layers className="h-8 w-8 text-muted-foreground/40" />
-                <p className="text-sm font-medium text-muted-foreground/70">{card.name}</p>
-                <p className="text-xs text-muted-foreground/50">{card.set?.name || card.localId}</p>
-              </div>
-            )}
+            <div className="w-56 overflow-hidden rounded-2xl border border-border bg-secondary shadow-xl">
+              <CardImage card={card} alt={card.name} className="p-1" />
+            </div>
           </div>
 
           <div className="flex-1">

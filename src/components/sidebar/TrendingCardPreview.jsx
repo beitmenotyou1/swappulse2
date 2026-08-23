@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Globe, Loader2 } from 'lucide-react';
-import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { formatPrice } from '@/lib/format';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -172,21 +173,13 @@ export default function TrendingCardPreview({ card, count }) {
               </div>
             ) : cardData ? (
               <div className="flex gap-3">
-                {cardImageUrl(cardData.image) ? (
-                  <img
-                    src={cardImageUrl(cardData.image)}
-                    alt={cardData.name}
-                    className="h-36 w-26 shrink-0 rounded-lg border border-border object-cover"
-                  />
-                ) : (
-                  <div className="flex h-36 w-26 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-center text-[10px] text-muted-foreground p-1">
-                    {cardData.name}
-                  </div>
-                )}
+                <div className="h-36 w-26 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
+                  <CardImage card={cardData} alt={cardData.name} />
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold leading-tight">{cardData.name}</p>
-                  {cardData.set?.name && (
-                    <p className="truncate text-xs text-muted-foreground">{cardData.set.name}</p>
+                  {cardSetName(cardData) && (
+                    <p className="truncate text-xs text-muted-foreground">{cardSetName(cardData)}</p>
                   )}
                   {cardData.rarity && (
                     <span className={`mt-1 inline-block text-[11px] font-semibold ${rarityClasses(cardData.rarity).text}`}>

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Trash2, CheckSquare, Square } from 'lucide-react';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
 
 export default function CollectionCardRow({ item, selected, selectMode, onToggleSelect, onToggleShowcase, onRemove }) {
@@ -26,11 +27,9 @@ export default function CollectionCardRow({ item, selected, selectMode, onToggle
         <Star className={`h-5 w-5 ${item.showcased ? 'fill-accent' : ''}`} />
       </button>
       <Link to={`/card/${item.card_id}`}>
-        {cardImageUrl(item.card_image) ? (
-          <img src={cardImageUrl(item.card_image)} alt={item.card_name} className="h-20 w-14 rounded-lg object-cover" />
-        ) : (
-          <div className="h-20 w-14 rounded-lg bg-secondary" />
-        )}
+        <div className="h-20 w-14 overflow-hidden rounded-lg bg-secondary">
+          <CardImage src={item.card_image} alt={item.card_name} quality="low" />
+        </div>
       </Link>
       <div className="min-w-0 flex-1">
         <Link to={`/card/${item.card_id}`} className="block truncate font-semibold hover:text-primary">{item.card_name}</Link>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { cardImageUrl } from '@/lib/tcgdex';
+import { cardImageUrl, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { createEntry } from '@/lib/offlineSync';
@@ -73,14 +74,12 @@ export default function AddToCollectionModal({ open, onClose, card }) {
 
         {card && (
           <div className="mb-4 flex gap-3 rounded-xl border border-border bg-secondary p-3">
-            <img
-              src={cardImageUrl(card.image)}
-              alt={card.name}
-              className="h-28 w-20 rounded-lg object-cover"
-            />
+            <div className="h-28 w-20 overflow-hidden rounded-lg bg-muted">
+              <CardImage card={card} alt={card.name} />
+            </div>
             <div className="min-w-0">
               <p className="font-semibold">{card.name}</p>
-              <p className="text-sm text-muted-foreground">{card.set?.name}</p>
+              <p className="text-sm text-muted-foreground">{cardSetName(card)}</p>
               <p className="text-xs text-primary">{card.rarity}</p>
             </div>
           </div>

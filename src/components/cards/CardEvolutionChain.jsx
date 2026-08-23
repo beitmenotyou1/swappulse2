@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Loader2, Dna } from 'lucide-react';
 import { searchCards, cardImageUrl } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 
 // CardEvolutionChain — shows the evolution line for a card by searching TCGDex
 // for the base stage, mid stages, and final stage using the card's name and
@@ -71,11 +72,7 @@ export default function CardEvolutionChain({ card }) {
               className="group flex shrink-0 flex-col items-center gap-1"
             >
               <div className="h-16 w-12 overflow-hidden rounded-lg border border-border bg-secondary transition-transform group-hover:scale-105">
-                {cardImageUrl(c.image) ? (
-                  <img src={cardImageUrl(c.image, 'low')} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[8px] text-muted-foreground/50">{c.name}</div>
-                )}
+                <CardImage card={c} alt={c.name} quality="low" />
               </div>
               <span className="max-w-[60px] truncate text-[10px] font-medium">{c.name}</span>
               {c.stage && <span className="text-[9px] text-muted-foreground">{c.stage}</span>}

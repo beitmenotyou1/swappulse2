@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Layers, ArrowRight } from 'lucide-react';
 import { getSet, cardImageUrl, normalizeSetId } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 
 // CardSetRail — "More from this set" discovery rail. Fetches the full set
 // checklist from TCGDex and shows a horizontal scroll of sibling cards,
@@ -58,11 +59,7 @@ export default function CardSetRail({ card }) {
             className="group shrink-0"
           >
             <div className="h-20 w-14 overflow-hidden rounded-lg border border-border bg-secondary transition-transform group-hover:scale-105">
-              {cardImageUrl(c.image) ? (
-                <img src={cardImageUrl(c.image, 'low')} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center p-1 text-center text-[8px] text-muted-foreground/50">{c.name}</div>
-              )}
+              <CardImage card={c} alt={c.name} quality="low" />
             </div>
             <p className="mt-1 max-w-[56px] truncate text-[10px] font-medium">{c.name}</p>
           </Link>

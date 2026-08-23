@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // §4 Card of the Day - surfaces the biggest pricing mover from the feeds service.
@@ -42,13 +43,15 @@ export default function CardOfTheDay() {
       to={`/card/${featured.cardId}`}
       className="mx-4 mb-3 flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-r from-primary/15 to-accent/10 p-3 transition hover:border-primary/40"
     >
-      {card && cardImageUrl(card.image) ? (
-        <img src={cardImageUrl(card.image)} alt={featured.cardName} className="h-16 w-12 rounded-lg object-cover" />
-      ) : (
-        <div className="grid h-16 w-12 place-items-center rounded-lg bg-secondary">
-          <Sparkles className="h-5 w-5 text-accent" />
-        </div>
-      )}
+      <div className="h-16 w-12 overflow-hidden rounded-lg bg-secondary">
+        {card ? (
+          <CardImage card={card} alt={featured.cardName} quality="low" />
+        ) : (
+          <div className="grid h-full w-full place-items-center">
+            <Sparkles className="h-5 w-5 text-accent" />
+          </div>
+        )}
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-xs font-semibold capitalize text-accent">
           <Sparkles className="h-3.5 w-3.5" /> {tr('home.cardOfTheDay')} · {featured.dayKey}
@@ -57,6 +60,9 @@ export default function CardOfTheDay() {
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           <TrendingUp className="h-3 w-3" /> {tr('home.cardOfTheDaySub')}
         </p>
+        {card && cardSetName(card) && (
+          <p className="truncate text-[10px] text-muted-foreground">{cardSetName(card)}</p>
+        )}
       </div>
     </Link>
   );

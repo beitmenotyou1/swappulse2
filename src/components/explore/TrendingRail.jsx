@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Flame, Loader2, TrendingUp, ArrowLeftRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 
 // TrendingRail — shows trending cards based on two signals: most-wishlisted
 // (from the Wishlist entity) and most-traded (from TradeListing offers).
@@ -74,18 +75,14 @@ export default function TrendingRail({ limit = 10 }) {
               className={`group shrink-0 w-28 ${glow}`}
             >
               <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border bg-secondary transition-transform group-hover:scale-105">
-                {cardImageUrl(c.card_image) ? (
-                  <img src={cardImageUrl(c.card_image, 'low')} alt={c.card_name} loading="lazy" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-secondary to-muted p-2 text-center text-[10px] text-muted-foreground/60">{c.card_name}</div>
-                )}
+                <CardImage src={c.card_image} alt={c.card_name} quality="low" />
                 <span className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
                   <TrendingUp className="h-2.5 w-2.5" /> {c.wishlists || 0}
                   {c.trades > 0 && <ArrowLeftRight className="ml-0.5 h-2.5 w-2.5" />}
                 </span>
               </div>
               <p className="mt-1 truncate text-[11px] font-semibold">{c.card_name}</p>
-              {c.set_name && <p className="truncate text-[10px] text-muted-foreground">{c.set_name}</p>}
+              <p className="truncate text-[10px] text-muted-foreground">{c.set_name || cardSetName(c) || c.rarity || ''}</p>
             </Link>
           );
         })}

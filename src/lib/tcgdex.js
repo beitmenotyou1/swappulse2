@@ -22,8 +22,19 @@ export function localeToTcgdexLang(locale) {
 export function cardImageUrl(imageField, quality = 'high', extension = 'webp') {
   if (!imageField) return null;
   const suffix = `/${quality}.${extension}`;
-  if (imageField.startsWith('http')) return `${imageField}${suffix}`;
+  if (imageField.startsWith('http')) {
+    // Avoid double-appending if the URL already ends with an image extension
+    if (/\.(webp|png|jpg|jpeg)$/i.test(imageField)) return imageField;
+    return `${imageField}${suffix}`;
+  }
   return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
+}
+
+/** Resolve a card's set name from either the live API shape (card.set.name)
+ *  or the local TcgdexCard cache shape (card.set_name). */
+export function cardSetName(card) {
+  if (!card) return '';
+  return card.set?.name || card.set_name || card.set?.id || '';
 }
 
 // Write-through catalog cache + offline fallback (§8 Layer 2).

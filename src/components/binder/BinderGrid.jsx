@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Star, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cardImageUrl, rarityClasses, rarityKey } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { formatPrice, conditionLabel } from '@/lib/format';
 
 const RARITY_HEX = {
@@ -98,17 +99,7 @@ export default function BinderGrid({ items, gridSize, onReorder, binderPublic, o
                                 className="absolute inset-0 overflow-hidden rounded-lg border bg-secondary"
                                 style={{ backfaceVisibility: 'hidden', borderColor: RARITY_HEX[key] }}
                               >
-                                {cardImageUrl(item.card_image) ? (
-                                  <img
-                                    src={cardImageUrl(item.card_image)}
-                                    alt={item.card_name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="grid h-full w-full place-items-center p-1 text-center text-[9px] font-semibold">
-                                    {item.card_name}
-                                  </div>
-                                )}
+                                <CardImage src={item.card_image} alt={item.card_name} quality="low" />
                                 <div className="pointer-events-none absolute left-0 top-0 h-1 w-full" style={{ background: RARITY_HEX[key] }} />
                               </div>
                             </Link>

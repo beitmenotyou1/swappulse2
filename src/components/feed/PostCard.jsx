@@ -8,6 +8,7 @@ import { useLivePresence } from '@/lib/livePresence';
 import ReactionBar from '@/components/feed/ReactionBar';
 import PostReplyThread from '@/components/feed/PostReplyThread';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import { timeAgo, formatNumber } from '@/lib/format';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -236,12 +237,10 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
           <PostEmbeds post={post} />
 
           {post.card_id && (
-            <div className="mt-3 flex overflow-hidden rounded-xl border border-border bg-secondary">
-              <img
-                src={cardImageUrl(post.card_image)}
-                alt={post.card_alt_text || post.card_name}
-                className="h-44 w-36 shrink-0 object-cover"
-              />
+            <Link to={`/card/${post.card_id}`} className="mt-3 flex overflow-hidden rounded-xl border border-border bg-secondary transition hover:border-primary/40">
+              <div className="h-44 w-36 shrink-0">
+                <CardImage src={post.card_image} alt={post.card_alt_text || post.card_name} />
+              </div>
               <div className="flex flex-col justify-center px-4 py-3">
                 <p className="font-bold">{post.card_name}</p>
                 <p className="text-sm text-muted-foreground">{post.set_name}</p>
@@ -251,7 +250,7 @@ export default function PostCard({ post, reactions, myRepost, myLike, onDelete }
                   </span>
                 )}
               </div>
-            </div>
+            </Link>
           )}
 
           {(post.quote_of_id || post.quote_ref) && (

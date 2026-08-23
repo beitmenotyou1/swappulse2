@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { searchCardsMulti, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { searchCardsMulti, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 import LanguageFilter from '@/components/cards/LanguageFilter';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -92,20 +93,12 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
                       className="group overflow-hidden rounded-lg border border-border bg-secondary text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10"
                     >
                       <div className="aspect-[3/4] overflow-hidden bg-muted">
-                        {cardImageUrl(card.image) ? (
-                          <img
-                            src={cardImageUrl(card.image)}
-                            alt={card.name}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="grid h-full place-items-center text-[10px] text-muted-foreground">No image</div>
-                        )}
+                        <CardImage card={card} alt={card.name} />
                       </div>
                       <div className="p-1.5">
                         <p className="truncate text-[11px] font-semibold">{card.name}</p>
                         <p className={`truncate text-[10px] ${text}`}>{card.rarity || '-'}</p>
+                        {cardSetName(card) && <p className="truncate text-[10px] text-muted-foreground">{cardSetName(card)}</p>}
                       </div>
                     </button>
                   );

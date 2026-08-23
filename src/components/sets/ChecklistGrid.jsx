@@ -3,6 +3,7 @@ import { Search, Check, Plus, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToggleCardOwnership } from '@/hooks/useSetChecklist';
 import { rarityClasses } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 
 const FILTER_MODES = ['all', 'owned', 'missing'];
 
@@ -90,13 +91,7 @@ export default function ChecklistGrid({ cards, setId, setName, recentlyScannedId
                       card.is_owned ? '' : 'opacity-50 grayscale'
                     }`}
                   >
-                    {card.image_available && card.image ? (
-                      <img src={card.image} alt={card.name} className="h-full w-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-secondary">
-                        <span className="text-[10px] text-muted-foreground">No image</span>
-                      </div>
-                    )}
+                    <CardImage src={card.image} alt={card.name} quality="low" />
                     {card.is_owned && (
                       <div className="absolute inset-0 flex items-center justify-center bg-success/10">
                         <Check className="h-8 w-8 text-success opacity-80" />

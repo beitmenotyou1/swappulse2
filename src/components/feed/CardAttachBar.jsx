@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Image, FolderOpen, X } from 'lucide-react';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import CollectionPickerModal from '@/components/feed/CollectionPickerModal';
-import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 
 // Reusable attach bar shared by the post composer, comment composer, and
 // quote composer. Renders three triggers — text search (Card), AI scanner
@@ -21,14 +22,12 @@ export default function CardAttachBar({ value, onChange, searchTitle = 'Attach a
     const { text } = rarityClasses(value.rarity);
     return (
       <div className="mt-2 flex items-center gap-2 rounded-lg border border-border bg-secondary p-2">
-        {cardImageUrl(value.image) ? (
-          <img src={cardImageUrl(value.image)} alt={value.name} className="h-12 w-9 shrink-0 rounded object-cover" />
-        ) : (
-          <div className="grid h-12 w-9 shrink-0 place-items-center rounded bg-muted text-[9px] text-muted-foreground">No img</div>
-        )}
+        <div className="h-12 w-9 shrink-0 overflow-hidden rounded bg-muted">
+          <CardImage card={value} alt={value.name} quality="low" />
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold">{value.name}</p>
-          <p className="truncate text-[11px] text-muted-foreground">{value.set?.name || ''}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{cardSetName(value)}</p>
           {value.rarity && <p className={`truncate text-[10px] ${text}`}>{value.rarity}</p>}
         </div>
         <button onClick={clear} className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Remove card">

@@ -1,31 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckSquare, Square, Layers } from 'lucide-react';
-import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { CheckSquare, Square } from 'lucide-react';
+import { rarityClasses, cardSetName } from '@/lib/tcgdex';
+import CardImage from '@/components/cards/CardImage';
 
 export default function ExploreCardTile({ card, selected, selectMode, onToggleSelect }) {
   const { text, glow } = rarityClasses(card.rarity);
+  const setName = cardSetName(card);
 
   const inner = (
     <>
       <div className="aspect-[3/4] overflow-hidden bg-secondary">
-        {cardImageUrl(card.image) ? (
-          <img
-            src={cardImageUrl(card.image)}
-            alt={card.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-secondary to-muted p-2 text-center">
-            <Layers className="h-5 w-5 text-muted-foreground/40" />
-            <p className="line-clamp-2 text-[10px] font-medium text-muted-foreground/60">{card.name}</p>
-          </div>
-        )}
+        <CardImage card={card} alt={card.name} />
       </div>
       <div className="p-2">
         <p className="truncate text-xs font-semibold">{card.name}</p>
         <p className={`truncate text-[10px] ${text}`}>{card.rarity || '-'}</p>
+        {setName && <p className="truncate text-[10px] text-muted-foreground">{setName}</p>}
       </div>
     </>
   );
