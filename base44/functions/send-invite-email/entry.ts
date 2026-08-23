@@ -10,6 +10,8 @@ import { resolveAppUrl } from '../../shared/appUrl.ts';
 import { buildBrandedHtml, buildPlainText, esc } from '../../shared/emailTemplate.ts';
 
 const DAILY_CAP = 10;
+const LIFETIME_CAP = 50; // total invite emails a single inviter may ever send
+const RECIPIENT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // same address can't be re-mailed within 24h
 // Stricter regex: ASCII-only, no control chars/whitespace (prevents CRLF header injection — CWE-93).
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}$/;
 const MAX_EMAIL_LEN = 254;
@@ -69,10 +71,28 @@ export default async function (req) {
     // Per-inviter daily rate limit using a counter on the user's profile data.
     const sentDate = user.data?.inviteEmailSentDate || '';
     const sentCount = Number(user.data?.inviteEmailSentCount || 0);
+    const sentTotal = Number(user.data?.inviteEmailSentTotal || 0);
     const today = todayStr();
     if (sentDate === today && sentCount >= DAILY_CAP) {
       return Response.json(
         { error: `You've sent the daily limit of ${DAILY_CAP} invite emails. Try again tomorrow.` },
+        { status: 429 },
+      );
+    }
+    if (sentTotal >= LIFETIME_CAP) {
+      return Response.json(
+        { error: `You've reached the invite email limit. Contact support if you need to send more.` },
+        { status: 429 },
+      );
+    }
+    // Per-recipient cooldown: block re-mailing the same address within 24h to
+    // prevent an attacker from hammering one mailbox via this endpoint.
+    const now = Date.now();
+    const recipients = Array.isArray(user.data?.inviteEmailRecipients) ? user.data.inviteEmailRecipients : [];
+    const recent = recipients.filter((r) => r && r.email && now - Number(r.ts || 0) < RECIPIENT_COOLDOWN_MS);
+    if (recent.some((r) => r.email === email)) {
+      return Response.json(
+        { error: `An invite was already sent to that address recently. Try again later.` },
         { status: 429 },
       );
     }
@@ -154,10 +174,14 @@ export default async function (req) {
       );
     }
 
-    // Increment the daily counter (reset if the day rolled over).
+    // Increment the daily + lifetime counters (reset daily if the day rolled
+    // over) and append the recipient to the 24h cooldown list (capped to last 20).
+    const updatedRecipients = [...recent, { email, ts: now }].slice(-20);
     await base44.auth.updateMe({
       inviteEmailSentDate: today,
       inviteEmailSentCount: sentDate === today ? sentCount + 1 : 1,
+      inviteEmailSentTotal: sentTotal + 1,
+      inviteEmailRecipients: updatedRecipients,
     });
 
     return Response.json({ ok: true, sentTo: email });
