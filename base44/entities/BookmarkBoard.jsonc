@@ -104,18 +104,20 @@
     "visibility"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
-          "data.visibility": "public"
+          "created_by_id": "{{user.id}}"
         },
         {
-          "created_by_id": "{{user.id}}"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
-    },
-    "create": {
-      "created_by_id": "{{user.id}}"
     },
     "update": {
       "created_by_id": "{{user.id}}"
