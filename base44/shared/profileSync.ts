@@ -174,7 +174,40 @@ async function uploadImageBlob(
       const ext = imageUrl.split('?')[0].split('.').pop()?.toLowerCase() || '';
       mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
     }
-    const bytes = new Uint8Array(await imgRes.arrayBuffer());
+    let bytes = new Uint8Array(await imgRes.arrayBuffer());
+
+    // AT Protocol profile avatar/banner lexicon only accepts image/png and
+    // image/jpeg, with a 1 MB max blob size. Resize to a max dimension and
+    // convert to JPEG via OffscreenCanvas, iteratively reducing quality until
+    // under the 900 KB safety threshold. This handles WebP source images and
+    // oversized banners that would otherwise be rejected by putRecord.
+    const maxDim = label === 'avatar' ? 400 : 1500;
+    const targetSize = 900000;
+    try {
+      const bitmap = await createImageBitmap(new Blob([bytes], { type: mimeType }));
+      let w = bitmap.width;
+      let h = bitmap.height;
+      if (w > maxDim || h > maxDim) {
+        const scale = maxDim / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = new OffscreenCanvas(w, h);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      let quality = 0.92;
+      let jpegBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
+      while (jpegBlob.size > targetSize && quality > 0.3) {
+        quality -= 0.1;
+        jpegBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
+      }
+      bytes = new Uint8Array(await jpegBlob.arrayBuffer());
+      mimeType = 'image/jpeg';
+    } catch (e: any) {
+      console.error(`profileSync: ${label} format conversion failed`, e?.message || e);
+      return null;
+    }
+
     const upRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
       method: 'POST',
       headers: { 'Content-Type': mimeType, 'Authorization': `Bearer ${accessJwt}` },
