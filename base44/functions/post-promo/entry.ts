@@ -263,6 +263,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'PDS authentication failed' }, { status: 502 });
     }
 
+    // Credential object for uploadPromoImage's PDS session-refresh path
+    // (used only on a 401 during blob upload).
+    const cred = { did: identity.did, app_password: identity.appPassword };
+
     // Pick a random language for this post — the bot publishes in different
     // languages across runs. Links get a ?lang=LOCALE param so the site loads
     // in the same language when a user clicks through.
