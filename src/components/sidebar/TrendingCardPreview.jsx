@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Globe, Loader2 } from 'lucide-react';
 import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
@@ -11,15 +11,22 @@ const cardCache = new Map();
 // Hover preview for a trending card name in the sidebar. On mouse enter,
 // lazily fetches the card from TCGDex (cached) and shows a small popup with
 // the card image and current market price. The popup appears to the LEFT of
-// the link so it doesn't overflow the right-hand sidebar. On touch devices
-// where hover isn't available, the link still navigates to the card page.
+// the link so it doesn't overflow the right-hand sidebar.
+// On touch devices, the preview triggers on short-hold (long press) or
+// double-tap; a single tap navigates normally after a brief delay.
 export default function TrendingCardPreview({ card, count }) {
   const tr = useT();
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
   const [cardData, setCardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
   const hideTimer = useRef(null);
+  const holdTimer = useRef(null);
+  const clickTimer = useRef(null);
+  const touchTriggeredRef = useRef(false);
+  const isTouchRef = useRef(false);
+  const containerRef = useRef(null);
 
   // Lazy fetch on first hover; reuse cached data on subsequent hovers.
   useEffect(() => {
@@ -54,16 +61,91 @@ export default function TrendingCardPreview({ card, count }) {
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setHovered(false), 200);
   };
-  useEffect(() => () => clearTimeout(hideTimer.current), []);
+
+  // --- Touch handlers for mobile (short-hold + double-tap) ---
+  const handleTouchStart = () => {
+    isTouchRef.current = true;
+    clearTimeout(hideTimer.current);
+    holdTimer.current = setTimeout(() => {
+      touchTriggeredRef.current = true;
+      setHovered(true);
+    }, 400);
+  };
+  const handleTouchEnd = () => {
+    clearTimeout(holdTimer.current);
+  };
+  const handleTouchMove = () => {
+    clearTimeout(holdTimer.current);
+  };
+
+  // Close preview when clicking/tapping outside (for touch-triggered preview)
+  useEffect(() => {
+    if (!hovered) return;
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setHovered(false);
+      }
+    };
+    // Defer listener attachment so the opening click doesn't immediately close
+    const timer = setTimeout(() => document.addEventListener('click', handler), 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handler);
+    };
+  }, [hovered]);
+
+  // Cleanup all timers on unmount
+  useEffect(() => () => {
+    clearTimeout(hideTimer.current);
+    clearTimeout(holdTimer.current);
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+  }, []);
 
   const to = card.card_id ? `/card/${card.card_id}` : `/explore?q=${encodeURIComponent(card.card_name)}`;
   const pricing = cardData?.pricing?.tcgplayer || cardData?.pricing?.cardmarket || {};
   const avg = pricing.avg ?? pricing.avg30;
 
   return (
-    <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
+    <div ref={containerRef} className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <Link
         to={to}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          if (clickTimer.current) { clearTimeout(clickTimer.current); clickTimer.current = null; }
+          setHovered(true);
+        }}
+        onClick={(e) => {
+          // If preview was triggered by short-hold, suppress navigation
+          if (touchTriggeredRef.current) {
+            e.preventDefault();
+            touchTriggeredRef.current = false;
+            return;
+          }
+          // If preview is open, close it instead of navigating
+          if (hovered) {
+            e.preventDefault();
+            setHovered(false);
+            return;
+          }
+          if (isTouchRef.current) {
+            // Touch device — delay single tap to allow double-tap detection
+            e.preventDefault();
+            if (clickTimer.current) {
+              clearTimeout(clickTimer.current);
+              clickTimer.current = null;
+              setHovered(true);
+            } else {
+              clickTimer.current = setTimeout(() => {
+                clickTimer.current = null;
+                navigate(to);
+              }, 300);
+            }
+          }
+          // Desktop — let the Link navigate normally (no delay)
+        }}
         className="flex items-center justify-between rounded-lg px-2 py-1 transition-colors hover:bg-secondary"
       >
         <span className="flex items-center gap-1.5 truncate text-sm font-medium">

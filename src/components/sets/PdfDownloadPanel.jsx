@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ChecklistIcon, BinderIcon } from '@/components/icons/CollectionIcons';
 import { usePdfGeneration } from '@/hooks/usePdfGeneration';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function PdfDownloadPanel({ setId, setName, cards, totalCards, ownedLocalIds }) {
   const [checklistOpts, setChecklistOpts] = useState({ pageSize: 'a4' });
@@ -26,15 +27,18 @@ export default function PdfDownloadPanel({ setId, setName, cards, totalCards, ow
     });
   };
 
+  const PAGE_SIZE_OPTIONS = [
+    { value: 'a4', label: 'A4 (Europe)' },
+    { value: 'letter', label: 'US Letter' },
+  ];
+
   const PageSizeSelect = ({ value, onChange }) => (
-    <select
+    <SettingSelect
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-    >
-      <option value="a4">A4 (Europe)</option>
-      <option value="letter">US Letter</option>
-    </select>
+      onChange={onChange}
+      label="Paper size"
+      options={PAGE_SIZE_OPTIONS}
+    />
   );
 
   return (

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Loader2, ShieldAlert, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const OUTCOME_STYLE = {
   allowed: 'bg-secondary text-muted-foreground',
@@ -60,19 +61,20 @@ export default function BotProtectionLogSection() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
+          <SettingSelect
             value={outcomeFilter}
-            onChange={(e) => setOutcomeFilter(e.target.value)}
-            className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-          >
-            <option value="flagged">Flagged only</option>
-            <option value="">All outcomes</option>
-            <option value="blocked">Blocked</option>
-            <option value="challenged">Challenged</option>
-            <option value="challenge_failed">Challenge failed</option>
-            <option value="challenge_passed">Challenge passed</option>
-            <option value="allowed">Allowed (borderline)</option>
-          </select>
+            onChange={setOutcomeFilter}
+            label="Outcome"
+            options={[
+              { value: 'flagged', label: 'Flagged only' },
+              { value: '', label: 'All outcomes' },
+              { value: 'blocked', label: 'Blocked' },
+              { value: 'challenged', label: 'Challenged' },
+              { value: 'challenge_failed', label: 'Challenge failed' },
+              { value: 'challenge_passed', label: 'Challenge passed' },
+              { value: 'allowed', label: 'Allowed (borderline)' },
+            ]}
+          />
           <Button variant="outline" size="sm" onClick={load}>
             <RefreshCw className="h-4 w-4" /> Refresh
           </Button>
