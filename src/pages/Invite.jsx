@@ -29,6 +29,7 @@ export default function Invite() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('checking');
   const [inviter, setInviter] = useState(null);
+  const [connecting, setConnecting] = useState(false);
   useSEO({
     title: 'Join SwapPulse, Pokémon TCG Collector Community',
     description: "You're invited to join SwapPulse, the decentralized social network for Pokémon TCG collectors. Track your collection, trade cards, and connect with the community.",
@@ -40,8 +41,31 @@ export default function Invite() {
     (async () => {
       try {
         const res = await base44.functions.invoke('validate-invite', { code });
-        setStatus(res.data?.valid ? 'valid' : 'invalid');
-        setInviter(res.data?.inviter || null);
+        const valid = res.data?.valid;
+        const inv = res.data?.inviter || null;
+        setInviter(inv);
+        if (!valid) { setStatus('invalid'); return; }
+
+        // If the visitor is already a member, silently auto-connect and redirect
+        // to the inviter's profile instead of showing the registration CTA.
+        const authed = await base44.auth.isAuthenticated().catch(() => false);
+        if (authed && inv?.did) {
+          setStatus('connecting');
+          setConnecting(true);
+          try {
+            const conn = await base44.functions.invoke('connect-invite', { code });
+            const cdata = conn.data || conn;
+            if (cdata?.connected) {
+              const target = inv.handle ? `/u/${inv.handle}` : `/profile/${inv.did}`;
+              navigate(target, { replace: true });
+              return;
+            }
+          } catch {
+            // fall through to the registration CTA if connect fails
+          }
+          setConnecting(false);
+        }
+        setStatus('valid');
       } catch {
         setStatus('invalid');
       }
@@ -75,6 +99,11 @@ export default function Invite() {
           {status === 'checking' && (
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> {t('page.invite.verifying')}
+            </div>
+          )}
+          {status === 'connecting' && (
+            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Connecting you to {inviter?.name || inviter?.handle || 'your inviter'}…
             </div>
           )}
           {status === 'valid' && (
