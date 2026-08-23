@@ -51,6 +51,14 @@
       },
       "description": "at:// URIs of pinned custom feeds"
     },
+    "feed_names": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string"
+      },
+      "description": "Display names of pinned feeds, parallel to feed_uris so the pack detail page can render feed titles instead of raw URIs."
+    },
     "featured_binder_id": {
       "type": "string",
       "description": "Local Binder id featured in the pack"

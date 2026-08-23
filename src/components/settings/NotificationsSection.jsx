@@ -3,6 +3,7 @@ import { Bell, Send, Loader2, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SettingRow from '@/components/settings/SettingRow';
 import WhoCanReachYouCard from '@/components/settings/WhoCanReachYouCard';
+import StarterPackAutoAcceptCard from '@/components/settings/StarterPackAutoAcceptCard';
 import QuietHoursBuilder from '@/components/settings/QuietHoursBuilder';
 import NotificationToggle from '@/components/pwa/NotificationToggle';
 import { base44 } from '@/api/base44Client';
@@ -80,6 +81,8 @@ export default function NotificationsSection({ settings, update }) {
       </div>
 
       <WhoCanReachYouCard />
+
+      <StarterPackAutoAcceptCard />
 
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="flex items-center gap-2 text-sm font-bold">

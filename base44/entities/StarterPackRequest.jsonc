@@ -1,0 +1,112 @@
+{
+  "name": "StarterPackRequest",
+  "type": "object",
+  "title": "StarterPackRequest",
+  "description": "org.swappulse.starterPackRequest \u2014 a pending inclusion request sent by a starter pack author to a collector, asking them to accept or deny being bundled in the pack. The collector stays hidden from the pack's public member list until they accept (status moves to 'accepted' and their DID is promoted into StarterPack.member_dids). One active pending request per (pack_id, target_did); duplicates are ignored. If the target has the auto_accept_starter_pack setting enabled, the request is auto-promoted on creation and no pending record is kept.",
+  "properties": {
+    "pack_id": {
+      "type": "string",
+      "description": "Local id of the StarterPack this request belongs to"
+    },
+    "pack_name": {
+      "type": "string",
+      "description": "Cached name of the pack (for the notification + request list)"
+    },
+    "requester_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the pack author who sent the request"
+    },
+    "requester_name": {
+      "type": "string"
+    },
+    "requester_handle": {
+      "type": "string"
+    },
+    "requester_avatar": {
+      "type": "string"
+    },
+    "target_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector asked to join the pack"
+    },
+    "target_name": {
+      "type": "string"
+    },
+    "target_handle": {
+      "type": "string"
+    },
+    "target_avatar": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "denied"
+      ],
+      "default": "pending"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "pack_id",
+    "requester_did",
+    "target_did",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.target_did": "{{user.data.did}}"
+        },
+        {
+          "data.requester_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.target_did": "{{user.data.did}}"
+        },
+        {
+          "data.requester_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.requester_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

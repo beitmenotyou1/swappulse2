@@ -5,6 +5,7 @@ import Avatar from '@/components/Avatar';
 import { Image } from '@/components/ui/image';
 import InteractionActions from '@/components/notifications/InteractionActions';
 import FollowBackButton from '@/components/notifications/FollowBackButton';
+import StarterPackRequestActions from '@/components/starterpack/StarterPackRequestActions';
 
 const REACTION_EMOJI = {
   insane_pull: '🔥', jealous: '😏', congrats: '🎉', trade_interest: '🤝',
@@ -26,6 +27,7 @@ const ACTION_META = {
   reputation: { Icon: Star, tint: 'text-accent' },
   message: { Icon: MessageSquare, tint: 'text-primary' },
   pack_pull: { Icon: Star, tint: 'text-accent' },
+  starter_pack: { Icon: UserPlus, tint: 'text-primary' },
 };
 
 const SYSTEM_TYPES = new Set(['price_alert']);
@@ -48,6 +50,12 @@ function actionText(n) {
     case 'reputation': return n.target_label || 'Your reputation was updated';
     case 'message': return 'sent you a message';
     case 'pack_pull': return 'pulled a card on your wishlist';
+    case 'starter_pack': {
+      const kind = n.metadata?.kind;
+      if (kind === 'accepted') return 'accepted your starter pack request';
+      if (kind === 'denied') return 'declined your starter pack request';
+      return `added you to ${n.metadata?.packName || 'a starter pack'}`;
+    }
     default: return 'notified you';
   }
 }
@@ -58,6 +66,7 @@ export default function NotificationCard({ n, onOpen, onDismiss }) {
   const isSystem = SYSTEM_TYPES.has(n.action_type) || (n.action_type === 'reputation' && !n.metadata?.kind);
   const isInteraction = ['like', 'repost', 'comment'].includes(n.action_type);
   const isFollow = n.action_type === 'follow';
+  const isStarterPackRequest = n.action_type === 'starter_pack' && n.metadata?.kind === 'request';
   const actor = n.actor_name || 'Someone';
 
   return (
@@ -109,10 +118,11 @@ export default function NotificationCard({ n, onOpen, onDismiss }) {
           </div>
         )}
       </div>
-      {(isInteraction || isFollow) && (
+      {(isInteraction || isFollow || isStarterPackRequest) && (
         <div className="px-4 pb-2" onClick={(e) => e.stopPropagation()}>
           {isInteraction && <InteractionActions n={n} onResponded={() => onDismiss(n.id)} />}
           {isFollow && <FollowBackButton n={n} onResponded={() => onDismiss(n.id)} />}
+          {isStarterPackRequest && <StarterPackRequestActions n={n} onResponded={() => onDismiss(n.id)} />}
         </div>
       )}
     </div>

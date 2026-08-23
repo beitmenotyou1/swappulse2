@@ -37,6 +37,7 @@ export const ROUTE_MAP: Record<string, (params: Record<string, unknown>) => stri
   like: (p) => (p.postId ? `/post/${p.postId}` : '/notifications'),
   repost: (p) => (p.postId ? `/post/${p.postId}` : '/notifications'),
   comment: (p) => (p.postId ? `/post/${p.postId}` : '/notifications'),
+  starter_pack: (p) => (p.packId ? `/starter-packs/${p.packId}` : '/notifications'),
 };
 
 export function buildDeepLink(type: string, params: Record<string, unknown>): string {

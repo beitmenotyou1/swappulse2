@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "title": "Notification",
-  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, repost, quote, comment, mention, reaction, achievement earned/revoked, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details, interaction post refs for respond-to-notification, quoteText for quote notifications, reactionType for reaction notifications).",
+  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, repost, quote, comment, mention, reaction, achievement earned/revoked, starter pack inclusion request, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details, interaction post refs for respond-to-notification, quoteText for quote notifications, reactionType for reaction notifications, kind/packId/requestId for starter pack request accept/deny actions).",
   "properties": {
     "did": {
       "type": "string",
@@ -24,7 +24,8 @@
         "voice_live",
         "podcast",
         "message",
-        "reputation"
+        "reputation",
+        "starter_pack"
       ],
       "default": "reaction"
     },
@@ -86,7 +87,7 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath }, interaction { postId, postUri, postCid, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType })"
+      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath }, interaction { postId, postUri, postCid, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType }, starter_pack { kind: request|accepted|denied, packId, requestId, packName })"
     },
     "at_uri": {
       "type": "string",
