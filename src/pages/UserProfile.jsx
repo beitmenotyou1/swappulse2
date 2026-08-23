@@ -29,6 +29,7 @@ import LabelBadges from '@/components/labelers/LabelBadges';
 import LabelContentButton from '@/components/labelers/LabelContentButton';
 import ReportProfileButton from '@/components/moderation/ReportProfileButton';
 import ProfileStarterPacks from '@/components/profile/ProfileStarterPacks';
+import ProfilePinnedFeeds from '@/components/profile/ProfilePinnedFeeds';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { usePaginatedPosts } from '@/hooks/usePaginatedPosts';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
@@ -185,6 +186,7 @@ export default function UserProfile() {
                 subjectHandle={profile?.bsky_handle || profile?.username}
               />
               <ProfileStarterPacks did={subjectDid} />
+              <ProfilePinnedFeeds did={subjectDid} />
             </div>
           )}
           badges={

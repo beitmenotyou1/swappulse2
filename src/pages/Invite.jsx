@@ -61,7 +61,7 @@ export default function Invite() {
           <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">{t('page.invite.subtitle')}</p>
           {status === 'valid' && inviter && (
             <div className="mx-auto mt-5 flex max-w-md items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
-              <Avatar name={inviter.name || inviter.handle} src={inviter.avatar} size="md" />
+              <Avatar name={inviter.name || inviter.handle} src={inviter.avatar} size={48} />
               <div className="min-w-0 text-left">
                 <p className="text-xs text-muted-foreground">Invited by</p>
                 <p className="truncate text-sm font-bold">{inviter.name || inviter.handle || 'A SwapPulse collector'}</p>

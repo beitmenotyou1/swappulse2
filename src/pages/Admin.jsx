@@ -22,6 +22,7 @@ import StandardSiteSection from '@/components/admin/StandardSiteSection';
 import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import TrustTierSection from '@/components/admin/TrustTierSection';
+import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -88,6 +89,7 @@ export default function Admin() {
         )}
         <DsarSummaryCard />
         <InviteCodesSection />
+        <SiteWideStarterPackSection />
         <EmailTestSection />
         <ServicesSection />
         <MaintenanceSection />
