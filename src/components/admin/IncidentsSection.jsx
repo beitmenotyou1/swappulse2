@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Send, Trash2, RefreshCw, Loader2, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const SEVERITIES = ['minor', 'major', 'critical'];
 const STATUSES = ['investigating', 'identified', 'monitoring', 'resolved'];
@@ -119,20 +120,18 @@ export default function IncidentsSection() {
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
           />
           <div className="flex gap-2">
-            <select
+            <SettingSelect
               value={newInc.severity}
-              onChange={(e) => setNewInc({ ...newInc, severity: e.target.value })}
-              className="rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none"
-            >
-              {SEVERITIES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select
+              onChange={(v) => setNewInc({ ...newInc, severity: v })}
+              label="Severity"
+              options={SEVERITIES.map((s) => ({ value: s, label: s }))}
+            />
+            <SettingSelect
               value={newInc.status}
-              onChange={(e) => setNewInc({ ...newInc, status: e.target.value })}
-              className="rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none"
-            >
-              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+              onChange={(v) => setNewInc({ ...newInc, status: v })}
+              label="Status"
+              options={STATUSES.map((s) => ({ value: s, label: s }))}
+            />
           </div>
           <div className="flex flex-wrap gap-1.5">
             {ALL_SERVICES.map((svc) => (
@@ -252,14 +251,12 @@ function AdminIncidentCard({ incident, updateForm, setUpdateForm, onAddUpdate, o
                 className="w-full rounded border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary"
               />
               <div className="flex gap-2">
-                <select
+                <SettingSelect
                   value={updateForm.status}
-                  onChange={(e) => setUpdateForm({ ...updateForm, status: e.target.value })}
-                  className="rounded border border-border bg-card px-2 py-1.5 text-sm outline-none"
-                >
-                  <option value="">Keep status</option>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                  onChange={(v) => setUpdateForm({ ...updateForm, status: v })}
+                  label="Status"
+                  options={[{ value: '', label: 'Keep status' }, ...STATUSES.map((s) => ({ value: s, label: s }))]}
+                />
                 <Button size="sm" onClick={onAddUpdate} disabled={posting || !updateForm.text?.trim()}>
                   {posting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
                   Post Update

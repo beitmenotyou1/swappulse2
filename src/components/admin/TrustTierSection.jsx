@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SettingSelect from '@/components/settings/SettingSelect';
 import { useToast } from '@/components/ui/use-toast';
 
 const TIERS = ['verified-seller', 'industry-provenance', 'trusted-shop', 'official-partner'];
@@ -74,9 +75,13 @@ export default function TrustTierSection() {
         </div>
         <div>
           <Label htmlFor="tt-tier">Tier</Label>
-          <select id="tt-tier" value={tier} onChange={(e) => setTier(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm">
-            {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <SettingSelect
+            value={tier}
+            onChange={setTier}
+            label="Tier"
+            options={TIERS.map((t) => ({ value: t, label: t }))}
+            className="mt-1"
+          />
         </div>
         <div>
           <Label htmlFor="tt-label">Badge label</Label>

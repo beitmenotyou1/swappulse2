@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { RefreshCw, ChevronDown, Loader2, Save, Activity } from 'lucide-react';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const STATUS_OPTIONS = [
   { value: 'operational', label: 'Operational', color: 'text-success' },
@@ -123,15 +124,13 @@ export default function ServicesSection() {
                 {isOpen && (
                   <div className="border-t border-border p-3">
                     <label className="mb-1 block text-xs font-semibold text-muted-foreground">New Status</label>
-                    <select
+                    <SettingSelect
                       value={editStatus}
-                      onChange={(e) => setEditStatus(e.target.value)}
-                      className="mb-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    >
-                      {STATUS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
+                      onChange={setEditStatus}
+                      label="New Status"
+                      options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                      className="mb-3"
+                    />
                     <label className="mb-1 block text-xs font-semibold text-muted-foreground">Message</label>
                     <textarea
                       value={editMsg}
