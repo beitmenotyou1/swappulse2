@@ -142,6 +142,7 @@ export const communityPages = {
           '<b>Trade matches:</b> When a new listing matches your wishlist.',
           '<b>Price alerts:</b> When a tracked card crosses your alert threshold.',
           '<b>Achievements:</b> When you earn a new badge.',
+          '<b>Starter pack requests:</b> When a pack author adds you, accept or deny right from the notification.',
           '<b>System events:</b> Platform-wide announcements.',
         ]},
       ]},
@@ -246,6 +247,66 @@ export const communityPages = {
       ]},
       { icon: 'Send', title: 'Sharing to Bluesky', blocks: [
         { type: 'p', text: 'Because SwapPulse is built on the AT Protocol, posts with attached cards render as rich link cards on Bluesky. Sharing a SwapPulse card link on Bluesky shows a preview with the card image and name.' },
+      ]},
+    ],
+  },
+
+  'starter-packs': {
+    title: 'Starter Packs',
+    subtitle: 'Curated onboarding bundles for newcomers',
+    sections: [
+      { icon: 'Package', title: 'What are Starter Packs?', blocks: [
+        { type: 'p', text: 'A Starter Pack is a collector-authored onboarding bundle that gathers recommended collectors, circles, and custom feeds into one shareable page. Think of it as a curated welcome guide for a specific niche, vintage WOTC, competitive standard, Japanese sealed, and so on. Newcomers follow everyone in the pack and join the circles in one tap. Packs are mirrored to your AT Protocol PDS as portable org.swappulse.starterPack records.' },
+      ]},
+      { title: 'What\'s in a pack', blocks: [
+        { type: 'list', items: [
+          '<b>Members:</b> Up to 100 collectors bundled in the pack.',
+          '<b>Circles:</b> Up to 10 recommended local SwapPulse circles.',
+          '<b>Feeds:</b> Up to 10 pinned custom feeds (at:// feed generators).',
+          '<b>Featured content:</b> One featured binder and one featured journal.',
+          '<b>Category:</b> A niche tag like vintage, modern, competitive, investment, sealed, japanese, trading, or general.',
+        ]},
+      ]},
+      { icon: 'Search', title: 'Building a pack (searchable composer)', blocks: [
+        { type: 'p', text: 'When you create a pack, you add members, feeds, and circles through searchable pickers instead of pasting raw IDs or URIs:' },
+        { type: 'list', items: [
+          '<b>Members:</b> Type a username. Your friends and follows appear first (badged "Friend"), then other SwapPulse members, then wider Bluesky accounts.',
+          '<b>Feeds:</b> Your subscribed feeds appear first, then discoverable feed generators from the Bluesky App View.',
+          '<b>Circles:</b> Search local SwapPulse circles by name.',
+        ]},
+      ]},
+      { icon: 'UserCheck', title: 'Consent: members must accept', blocks: [
+        { type: 'p', text: 'Adding a collector to your pack sends them an inclusion request, it does not list them immediately. They receive a notification with Accept and Deny buttons. A collector stays hidden from the pack\'s public member list until they accept. Once they accept, their DID is promoted into the pack and it re-bridges to the PDS. You can see how many requests are pending on the pack\'s detail page.' },
+      ]},
+      { icon: 'CheckCheck', title: 'Auto-accept', blocks: [
+        { type: 'p', text: 'Prefer to skip the request step? In Settings → Notifications, toggle "Auto-accept starter pack requests". When enabled, any pack author who adds you gets an automatic yes, you\'re promoted to confirmed membership straight away with no pending request. Turn it off anytime to review each invitation manually.' },
+      ]},
+      { icon: 'Plus', title: 'Creating a pack', blocks: [
+        { type: 'steps', items: [
+          'Go to the Starter Packs page and click New Starter Pack.',
+          'Enter a name (up to 64 characters) and a short description.',
+          'Pick a category for the niche the pack onboards newcomers into.',
+          'Search and add members, feeds, and circles using the pickers.',
+          'Publish. Inclusion requests are sent to each member automatically.',
+        ]},
+      ]},
+      { icon: 'Users', title: 'Limits', blocks: [
+        { type: 'list', items: [
+          'Up to 5 starter packs per author.',
+          'Up to 100 members per pack.',
+          'Up to 10 circles and 10 feeds per pack.',
+          'One pack may be marked site-wide by an admin to surface as the newcomer welcome pack.',
+        ]},
+      ]},
+      { icon: 'UserPlus', title: 'Using a pack', blocks: [
+        { type: 'p', text: 'Open any starter pack to see its members, recommended circles, and pinned feeds. Tap "Follow all" to follow every member in one go. Packs are great for newcomers building a relevant feed fast, or for veterans curating a themed directory.' },
+      ]},
+      { variant: 'primary', title: 'Tips', blocks: [
+        { type: 'list', items: [
+          'Add friends first, they\'re more likely to accept and appear at the top of member search.',
+          'Pin feeds that match the pack\'s niche so newcomers get relevant content immediately.',
+          'Feature a binder or journal to give newcomers a taste of the niche.',
+        ]},
       ]},
     ],
   },

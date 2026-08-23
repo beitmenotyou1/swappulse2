@@ -98,6 +98,10 @@ const FAQ = [
     a: 'Circles are themed collector groups, vintage, competitive, shiny, regional, and more. Join a circle to see scoped trade listings, discussions, and meetups. You can be in multiple circles.',
   },
   {
+    q: 'What are Starter Packs?',
+    a: 'A Starter Pack is a curated onboarding bundle of collectors, circles, and feeds for a specific niche. When you add a collector, they get an inclusion request and must accept before appearing in the pack. Newcomers can follow everyone in a pack in one tap. You can create up to 5 packs with up to 100 members each. Prefer to skip the request step? Enable "Auto-accept starter pack requests" in Settings → Notifications.',
+  },
+  {
     q: 'How do I get help if something is broken?',
     a: 'Tap the Feedback button on the right edge of the screen, it captures a snapshot of the page and sends your comment straight to the team. You can also check the System Status page to see if a service is down.',
   },
@@ -131,6 +135,10 @@ const TROUBLESHOOTING = [
   {
     q: 'I\'m not getting push notifications',
     a: 'Make sure push is enabled in Settings → Notifications and your browser allows notifications for swappulse.org. Check that the event type (trade matches, price alerts, etc.) is toggled on. Quiet hours may be pausing non-critical alerts, check your quiet hours settings.',
+  },
+  {
+    q: 'A collector I added to my starter pack isn\'t showing up',
+    a: 'Adding a collector sends them an inclusion request, they don\'t appear in the pack until they accept. Check the "Pending requests" section on your pack\'s detail page to see who hasn\'t responded yet. If they have auto-accept enabled, they\'ll be promoted immediately with no pending step. You can\'t force someone into a pack, consent is required by design.',
   },
   {
     q: 'A trade listing disappeared',
@@ -167,6 +175,8 @@ const LEXICONS = [
   { nsid: 'org.swappulse.challengeEntry', label: 'Challenge Entry' },
   { nsid: 'org.swappulse.packParty', label: 'Pack Party' },
   { nsid: 'org.swappulse.pullNomination', label: 'Pull Nomination' },
+  { nsid: 'org.swappulse.starterPack', label: 'Starter Pack' },
+  { nsid: 'org.swappulse.starterPackRequest', label: 'Starter Pack Request' },
 ];
 
 const CATEGORY_TKEYS = {

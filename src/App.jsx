@@ -90,6 +90,7 @@ const HelpProfiles = lazy(() => import('@/pages/help/HelpProfiles'));
 const HelpJournals = lazy(() => import('@/pages/help/HelpJournals'));
 const HelpBinders = lazy(() => import('@/pages/help/HelpBinders'));
 const HelpCircles = lazy(() => import('@/pages/help/HelpCircles'));
+const HelpStarterPacks = lazy(() => import('@/pages/help/HelpStarterPacks'));
 const HelpMeetups = lazy(() => import('@/pages/help/HelpMeetups'));
 const HelpPackOpenings = lazy(() => import('@/pages/help/HelpPackOpenings'));
 const HelpPackParties = lazy(() => import('@/pages/help/HelpPackParties'));
@@ -265,6 +266,7 @@ const AuthenticatedApp = () => {
         <Route path="/help/journals" element={<HelpJournals />} />
         <Route path="/help/binders" element={<HelpBinders />} />
         <Route path="/help/circles" element={<HelpCircles />} />
+        <Route path="/help/starter-packs" element={<HelpStarterPacks />} />
         <Route path="/help/meetups" element={<HelpMeetups />} />
         <Route path="/help/pack-openings" element={<HelpPackOpenings />} />
         <Route path="/help/pack-parties" element={<HelpPackParties />} />

@@ -42,6 +42,7 @@ export const HELP_GUIDES = [
   { slug: 'journals', title: 'Journals', category: 'Social & Community', icon: BookOpen, description: 'Long-form collector journal entries with markdown, cover images, and embedded cards.', relatedRoute: '/journal' },
   { slug: 'binders', title: 'Binders', category: 'Social & Community', icon: BookOpen, description: 'Curate and share showcase binders with themed covers and drag-to-reorder pages.', relatedRoute: '/binders' },
   { slug: 'circles', title: 'Circles', category: 'Social & Community', icon: Users, description: 'Join themed collector circles for scoped trades, discussions, and meetups.', relatedRoute: '/circles' },
+  { slug: 'starter-packs', title: 'Starter Packs', category: 'Social & Community', icon: Package, description: 'Curated onboarding bundles of collectors, circles, and feeds. Members must accept inclusion.', relatedRoute: '/starter-packs' },
   { slug: 'meetups', title: 'Meetups', category: 'Social & Community', icon: CalendarDays, description: 'Organise or attend in-person meetups, swaps, and live pulls near you.', relatedRoute: '/meetups' },
   { slug: 'pack-openings', title: 'Pack Openings', category: 'Social & Community', icon: Package, description: 'Share your pulls and follow collectors to see fresh pack openings in your feed.', relatedRoute: '/packs' },
   { slug: 'pack-parties', title: 'Pack Parties', category: 'Social & Community', icon: PartyPopper, description: 'Join synchronised pack-opening events and share reactions live.', relatedRoute: '/pack-parties' },

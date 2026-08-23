@@ -325,6 +325,7 @@ export const accountPages = {
           '<b>Push notifications:</b> Enable web push (no app install required) via VAPID.',
           '<b>Quiet hours:</b> Pause non-critical alerts during set hours.',
           '<b>Per-event toggles:</b> Choose which event types notify you (trade matches, price alerts, mentions, etc.).',
+          '<b>Auto-accept starter packs:</b> Skip the request step and automatically join any pack a collector adds you to.',
         ]},
       ]},
       { icon: 'Shield', title: 'Privacy', blocks: [
