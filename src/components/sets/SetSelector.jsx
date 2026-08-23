@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useAvailableSets } from '@/hooks/useSetChecklist';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function SetSelector({ selectedSetId, onSelect }) {
   const { data: sets, isLoading, error } = useAvailableSets();
@@ -27,25 +28,21 @@ export default function SetSelector({ selectedSetId, onSelect }) {
 
   return (
     <div className="space-y-2">
-      <label htmlFor="set-selector" className="block text-sm font-medium text-muted-foreground">
+      <label className="block text-sm font-medium text-muted-foreground">
         Choose a set
       </label>
-      <div className="relative">
-        <select
-          id="set-selector"
-          value={selectedSetId ?? ''}
-          onChange={(e) => onSelect(e.target.value)}
-          className="w-full appearance-none rounded-lg border border-border bg-card px-4 py-3 pr-10 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-        >
-          <option value="">Select a set…</option>
-          {sortedSets.map((set) => (
-            <option key={set.setId} value={set.setId}>
-              {set.setName} ({set.cardCount} cards)
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      </div>
+      <SettingSelect
+        value={selectedSetId ?? ''}
+        onChange={onSelect}
+        label="Choose a set"
+        options={[
+          { value: '', label: 'Select a set…' },
+          ...sortedSets.map((set) => ({
+            value: set.setId,
+            label: `${set.setName} (${set.cardCount} cards)`,
+          })),
+        ]}
+      />
     </div>
   );
 }

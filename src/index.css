@@ -90,13 +90,15 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
-  /* Prevent system text-selection on interactive targets in Android WebView.
-     Inputs and textareas remain selectable so users can still edit/copy text. */
-  button, a, [role="tab"], svg {
+  /* Disable text selection globally for a native app feel (iOS App Store readiness).
+     Re-enabled selectively on content elements where text copying is expected. */
+  body {
     -webkit-user-select: none;
     user-select: none;
   }
-  input, textarea, [contenteditable="true"] {
+  input, textarea, [contenteditable="true"],
+  article, .prose, .post-content, .comment-content, .comment-body,
+  .description, .rich-text, [data-selectable="true"] {
     -webkit-user-select: text;
     user-select: text;
   }

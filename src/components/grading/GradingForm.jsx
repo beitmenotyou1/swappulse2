@@ -3,6 +3,7 @@ import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useT } from '@/lib/i18n/I18nProvider';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const SERVICES = [
   { id: 'psa', label: 'PSA' },
@@ -59,16 +60,16 @@ export default function GradingForm({ collection, onClose, onSaved }) {
         </div>
 
         <label className="text-xs font-semibold text-muted-foreground">{t('grading.cardFromCollection')}</label>
-        <select
+        <SettingSelect
           value={selId}
-          onChange={(e) => setSelId(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-        >
-          <option value="">{t('grading.selectCard')}</option>
-          {collection.map((c) => (
-            <option key={c.id} value={c.id}>{c.card_name} · {c.set_name || '-'}</option>
-          ))}
-        </select>
+          onChange={setSelId}
+          label={t('grading.cardFromCollection')}
+          className="mt-1"
+          options={[
+            { value: '', label: t('grading.selectCard') },
+            ...collection.map((c) => ({ value: c.id, label: `${c.card_name} · ${c.set_name || '-'}` })),
+          ]}
+        />
 
         {selected && (
           <div className="mt-2 flex items-center gap-2 rounded-lg bg-secondary p-2">
