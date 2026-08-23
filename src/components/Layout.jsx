@@ -33,7 +33,7 @@ export default function Layout() {
       >
         {t('common.skipToContent')}
       </a>
-      <div className="mx-auto flex min-h-screen w-full max-w-[1400px] overflow-x-hidden overscroll-y-none">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1400px] overflow-x-clip">
         <div className="hidden w-[72px] shrink-0 md:block xl:w-[240px]">
           <LeftNav />
         </div>
