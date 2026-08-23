@@ -49,10 +49,32 @@ export async function subscribePush() {
   const publicKey = await getVapidPublicKey();
   if (!publicKey) throw new Error('Push not configured yet, ask your admin to add VAPID keys');
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlB64ToUint8(publicKey),
-  });
+  // The browser's push service (FCM/Mozilla) can briefly fail to complete a
+  // subscription ("Registration failed - push service error"). Retry once after
+  // a short delay — it's usually transient.
+  let sub;
+  let lastErr;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8(publicKey),
+      });
+      break;
+    } catch (e) {
+      lastErr = e;
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 800));
+    }
+  }
+  if (!sub) {
+    const msg = String(lastErr?.message || lastErr || '');
+    if (/push service|abort|network|fetch/i.test(msg)) {
+      throw new Error(
+        'Push service is temporarily unavailable. Check your connection and try again — if you are in the app preview, open the published app in its own tab and retry.',
+      );
+    }
+    throw lastErr || new Error('Push registration failed');
+  }
   const subStr = JSON.stringify(sub);
   // Register with backend (multi-device PushToken + legacy User.push_subscription)
   try {
