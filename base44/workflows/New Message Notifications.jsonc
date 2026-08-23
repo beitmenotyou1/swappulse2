@@ -1,0 +1,40 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "DirectMessage"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "new_message_notifications",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "notify": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "notify-new-message",
+            "args": {
+              "message_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Notify message recipient",
+            "description": "In-app + push notification"
+          }
+        }
+      }
+    ]
+  },
+  "name": "New Message Notifications",
+  "description": "Notifies the recipient when a new DirectMessage is created, via in-app notification and web push."
+}

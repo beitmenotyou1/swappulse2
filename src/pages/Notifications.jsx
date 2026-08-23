@@ -12,6 +12,7 @@ import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 import PullToRefresh from '@/components/PullToRefresh';
+import NotificationToggle from '@/components/pwa/NotificationToggle';
 
 const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
 
@@ -113,6 +114,22 @@ export default function Notifications() {
       </PageHeader>
 
       <NotificationFilterTabs active={filter} onChange={setFilter} counts={counts} />
+
+      <div className="px-4 py-3">
+        <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <h2 className="text-sm font-bold">Push Notifications</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Get real-time alerts for new messages, trade updates, mentions, and more — even when the app is closed.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <NotificationToggle />
+          </div>
+        </div>
+      </div>
 
       <PullToRefresh onRefresh={handleRefresh}>
       {loading ? (

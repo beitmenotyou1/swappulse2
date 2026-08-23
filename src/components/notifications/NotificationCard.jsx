@@ -46,7 +46,7 @@ function actionText(n) {
     case 'voice_live': return 'went live';
     case 'podcast': return 'published a new podcast';
     case 'reputation': return n.target_label || 'Your reputation was updated';
-    case 'message': return 'sent you a trade message';
+    case 'message': return 'sent you a message';
     case 'pack_pull': return 'pulled a card on your wishlist';
     default: return 'notified you';
   }
