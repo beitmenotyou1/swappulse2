@@ -45,6 +45,7 @@ const ALLOWED_IMAGE_HOSTS = new Set([
   'media.base44.com',         // Base44 UploadFile CDN (primary)
   'media.base44static.com',   // Base44 uploaded / generated images (mirror)
   'static.wixstatic.com',     // Base44 static media mirror
+  'base44.app',               // Base44 app file API (UploadFile returns URLs on this host)
 ]);
 
 // Bluesky CDN hosts — these are the resolved blob URLs the AppView returns for
