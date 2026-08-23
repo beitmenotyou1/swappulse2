@@ -85,6 +85,14 @@ export async function sendDirectMessage(conversation, text, user) {
 
   const created = await base44.entities.DirectMessage.create(stamped);
 
+  // Escrow an admin-encrypted copy of the plaintext so moderators can review
+  // reported messages and the user can recover history on a new device. The
+  // E2EE body above is never sent in plaintext; this is a separate, encrypted
+  // field populated by a backend function (fire-and-forget, non-fatal).
+  if (encrypted) {
+    base44.functions.invoke('escrow-dm-key', { messageId: created.id, plaintext: trimmed }).catch(() => {});
+  }
+
   // Update the conversation's last-message metadata. The preview is masked
   // when encrypted so the list view never leaks plaintext.
   const preview = encrypted ? '🔒 Encrypted message' : trimmed.slice(0, 200);

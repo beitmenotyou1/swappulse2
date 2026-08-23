@@ -27,6 +27,8 @@ import EngagementHub from '@/components/profile/EngagementHub';
 import TrustedTraderBadge from '@/components/trust/TrustedTraderBadge';
 import LabelBadges from '@/components/labelers/LabelBadges';
 import LabelContentButton from '@/components/labelers/LabelContentButton';
+import ReportProfileButton from '@/components/moderation/ReportProfileButton';
+import ProfileStarterPacks from '@/components/profile/ProfileStarterPacks';
 import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { usePaginatedPosts } from '@/hooks/usePaginatedPosts';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
@@ -168,14 +170,22 @@ export default function UserProfile() {
                 targetAvatar={profile?.avatar}
               />
               <LabelContentButton subjectUri={`at://${subjectDid}`} subjectType="profile" />
+              <ReportProfileButton
+                profileId={subjectDid}
+                profileHandle={profile?.bsky_handle || profile?.username}
+                profileName={profile?.name}
+              />
             </>
           }
           extra={!isExternal && (
-            <AddFriendLink
-              subjectDid={subjectDid}
-              subjectName={profile?.name}
-              subjectHandle={profile?.bsky_handle || profile?.username}
-            />
+            <div className="space-y-4">
+              <AddFriendLink
+                subjectDid={subjectDid}
+                subjectName={profile?.name}
+                subjectHandle={profile?.bsky_handle || profile?.username}
+              />
+              <ProfileStarterPacks did={subjectDid} />
+            </div>
           )}
           badges={
             <>

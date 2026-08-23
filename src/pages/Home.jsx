@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import TrendingCardsRail from '@/components/cards/TrendingCardsRail';
+import SiteWidePackCard from '@/components/home/SiteWidePackCard';
 import RarityFilter from '@/components/feed/RarityFilter';
 import CategoryFilterChips from '@/components/feed/CategoryFilterChips';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -207,6 +208,8 @@ export default function Home() {
       <StoriesBar />
 
       <SpaceBar />
+
+      {user && followedCount === 0 && <SiteWidePackCard />}
 
       <CardOfTheDay />
 

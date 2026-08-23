@@ -11,17 +11,16 @@ export default async function (req) {
     const invite = found[0];
     if (!invite || invite.status !== 'active') return Response.json({ valid: false });
 
-    if (body.redeem) {
-      const user = await base44.auth.me();
-      if (!user) return Response.json({ valid: true, redeemed: false, error: 'auth required to redeem' });
-      await base44.asServiceRole.entities.InviteCode.update(invite.id, {
-        status: 'used',
-        used_by_did: user.email || user.id,
-        used_at: new Date().toISOString(),
-      });
-      return Response.json({ valid: true, redeemed: true });
-    }
-    return Response.json({ valid: true });
+    // Return the inviter's cached profile for user-generated codes so the
+    // invite landing page can show who invited them.
+    const inviter = invite.inviter_did ? {
+      did: invite.inviter_did,
+      name: invite.inviter_name || '',
+      handle: invite.inviter_handle || '',
+      avatar: invite.inviter_avatar || '',
+    } : null;
+
+    return Response.json({ valid: true, origin: invite.origin || 'admin', inviter });
   } catch (e) {
     return Response.json({ valid: false, error: e?.message || String(e) }, { status: 500 });
   }

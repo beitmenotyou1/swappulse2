@@ -95,7 +95,7 @@ export default function Register() {
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
         try { await base44.auth.updateMe({ login_key: generatedPasswordRef.current }); } catch {}
         if (inviteCode) {
-          try { await base44.functions.invoke("validate-invite", { code: inviteCode, redeem: true }); } catch {}
+          try { await base44.functions.invoke("redeem-invite", { code: inviteCode }); } catch {}
         }
       }
       setStep("profile");

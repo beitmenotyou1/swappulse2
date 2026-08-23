@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Sparkles, ArrowRight, Link2, CheckCircle2, Loader2, ShieldCheck, Users, RefreshCw, ScanLine, BookOpen } from 'lucide-react';
+import { Sparkles, ArrowRight, Link2, CheckCircle2, Loader2, ShieldCheck, Users, RefreshCw, ScanLine, BookOpen, UserPlus } from 'lucide-react';
+import Avatar from '@/components/Avatar';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -27,6 +28,7 @@ export default function Invite() {
   const { code } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('checking');
+  const [inviter, setInviter] = useState(null);
   useSEO({
     title: 'Join SwapPulse, Pokémon TCG Collector Community',
     description: "You're invited to join SwapPulse, the decentralized social network for Pokémon TCG collectors. Track your collection, trade cards, and connect with the community.",
@@ -39,6 +41,7 @@ export default function Invite() {
       try {
         const res = await base44.functions.invoke('validate-invite', { code });
         setStatus(res.data?.valid ? 'valid' : 'invalid');
+        setInviter(res.data?.inviter || null);
       } catch {
         setStatus('invalid');
       }
@@ -56,6 +59,19 @@ export default function Invite() {
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t('page.invite.title')}</h1>
           <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">{t('page.invite.subtitle')}</p>
+          {status === 'valid' && inviter && (
+            <div className="mx-auto mt-5 flex max-w-md items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+              <Avatar name={inviter.name || inviter.handle} src={inviter.avatar} size="md" />
+              <div className="min-w-0 text-left">
+                <p className="text-xs text-muted-foreground">Invited by</p>
+                <p className="truncate text-sm font-bold">{inviter.name || inviter.handle || 'A SwapPulse collector'}</p>
+                {inviter.handle && <p className="truncate text-xs text-muted-foreground">@{inviter.handle}</p>}
+              </div>
+              <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
+                <UserPlus className="h-3 w-3" /> Auto-follow
+              </span>
+            </div>
+          )}
           {status === 'checking' && (
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> {t('page.invite.verifying')}

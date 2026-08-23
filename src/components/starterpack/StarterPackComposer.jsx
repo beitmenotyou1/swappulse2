@@ -29,7 +29,14 @@ export default function StarterPackComposer({ open, onClose, onCreated }) {
     if (!name.trim() || !user?.id) return;
     setSaving(true);
     try {
-      const member_dids = memberHandles.split('\n').map((h) => h.trim().replace(/^@/, '')).filter(Boolean);
+      const member_dids = memberHandles.split('\n').map((h) => h.trim().replace(/^@/, '')).filter(Boolean).slice(0, 100);
+      // Enforce max 5 starter packs per author.
+      const existing = await base44.entities.StarterPack.filter({ did: user.data?.did || '' }, '-created_date', 10).catch(() => []);
+      if (existing.length >= 5) {
+        toast({ title: 'Pack limit reached', description: 'You can create up to 5 starter packs. Delete one to make room.', variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
       const circle_ids = circleIds.split('\n').map((s) => s.trim()).filter(Boolean);
       const feed_uris = feedUris.split('\n').map((s) => s.trim()).filter(Boolean);
       const created = await base44.entities.StarterPack.create({
@@ -81,8 +88,9 @@ export default function StarterPackComposer({ open, onClose, onCreated }) {
             </div>
           </div>
           <div>
-            <Label htmlFor="sp-members">Member handles (one per line)</Label>
-            <Textarea id="sp-members" value={memberHandles} onChange={(e) => setMemberHandles(e.target.value)} placeholder={'@collector.bsky.social\n@another.dev'} rows={3} />
+            <Label htmlFor="sp-members">Member handles (one per line, up to 100)</Label>
+            <Textarea id="sp-members" value={memberHandles} onChange={(e) => setMemberHandles(e.target.value)} placeholder={'@collector.bsky.social\n@another.dev'} rows={4} />
+            <p className="mt-1 text-xs text-muted-foreground">{memberHandles.split('\n').filter((h) => h.trim()).length}/100 members</p>
           </div>
           <div>
             <Label htmlFor="sp-circles">Circle IDs (one per line, optional)</Label>
