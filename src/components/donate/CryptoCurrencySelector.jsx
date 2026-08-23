@@ -1,4 +1,5 @@
 import React from 'react';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const GROUPS = [
   {
@@ -31,21 +32,19 @@ const GROUPS = [
   },
 ];
 
+// Flattened options for SettingSelect (bottom-sheet picker has no optgroup support)
+const OPTIONS = GROUPS.flatMap((g) => g.options.map((o) => ({
+  value: o.symbol,
+  label: `${o.name} (${o.network})`,
+})));
+
 export default function CryptoCurrencySelector({ value, onChange }) {
   return (
-    <select
-      id="crypto-currency"
+    <SettingSelect
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold outline-none focus:border-primary"
-    >
-      {GROUPS.map((g) => (
-        <optgroup key={g.label} label={g.label}>
-          {g.options.map((o) => (
-            <option key={o.symbol} value={o.symbol}>{o.name} ({o.network})</option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+      onChange={onChange}
+      label="Cryptocurrency"
+      options={OPTIONS}
+    />
   );
 }

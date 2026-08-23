@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { useMyLabelers } from '@/lib/myLabelers';
 import { invalidateCommunityLabels } from '@/lib/communityLabels';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 // LabelContentButton — shown on posts, profiles, and trade listings. Lets a
 // collector who owns an approved CommunityLabeler apply a label to the content.
@@ -67,22 +68,19 @@ export default function LabelContentButton({ subjectUri, subjectType, className 
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-elevated" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-bold">Apply community label</h3>
-              <button onClick={() => !busy && setOpen(false)} className="rounded-full p-1 hover:bg-secondary" aria-label="Close">
+              <button onClick={() => !busy && setOpen(false)} className="relative rounded-full p-1 hover:bg-secondary before:content-[''] before:absolute before:-inset-2.5" aria-label="Close">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted-foreground">Labeler</label>
-                <select
+                <SettingSelect
                   value={selectedLabeler?.id || ''}
-                  onChange={(e) => { setSelectedLabeler(labelers.find((l) => l.id === e.target.value)); setSelectedValue(''); }}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                >
-                  {labelers.map((l) => (
-                    <option key={l.id} value={l.id}>{l.name} ({l.category})</option>
-                  ))}
-                </select>
+                  onChange={(val) => { setSelectedLabeler(labelers.find((l) => l.id === val)); setSelectedValue(''); }}
+                  label="Labeler"
+                  options={labelers.map((l) => ({ value: l.id, label: `${l.name} (${l.category})` }))}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted-foreground">Label value</label>

@@ -4,6 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { PLATFORMS, CONTENT_TYPES, TEMPLATES } from '@/lib/crosspost';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 // §7 - add/edit cross-post platform configuration modal.
 export default function CrossPostModal({ open, editing, onClose, onSaved }) {
@@ -79,15 +80,20 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
       <div className="mt-6 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold">{editing ? 'Edit platform' : 'Add platform'}</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-4">
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="text-muted-foreground">Platform</span>
-            <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-              {PLATFORMS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-            </select>
-          </label>
+            <div className="mt-1">
+              <SettingSelect
+                value={platform}
+                onChange={setPlatform}
+                label="Platform"
+                options={PLATFORMS.map((p) => ({ value: p.key, label: p.label }))}
+              />
+            </div>
+          </div>
           <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Handle / display name (e.g. @collector)" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
           <input value={credential} onChange={(e) => setCredential(e.target.value)} placeholder={meta.credLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
           {meta.extraLabel && (

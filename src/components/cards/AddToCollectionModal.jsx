@@ -6,6 +6,7 @@ import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { createEntry } from '@/lib/offlineSync';
 import { bridgeCollectionEntry } from '@/lib/atprotoRecords';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function AddToCollectionModal({ open, onClose, card }) {
   const [condition, setCondition] = useState('near_mint');
@@ -65,7 +66,7 @@ export default function AddToCollectionModal({ open, onClose, card }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Add to Collection</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
+          <button onClick={onClose} className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -88,27 +89,21 @@ export default function AddToCollectionModal({ open, onClose, card }) {
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium">Condition</label>
-            <select
+            <SettingSelect
               value={condition}
-              onChange={(e) => setCondition(e.target.value)}
-              className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            >
-              {['mint', 'near_mint', 'excellent', 'good', 'damaged'].map((c) => (
-                <option key={c} value={c}>{conditionLabel(c)}</option>
-              ))}
-            </select>
+              onChange={setCondition}
+              label="Condition"
+              options={['mint', 'near_mint', 'excellent', 'good', 'damaged'].map((c) => ({ value: c, label: conditionLabel(c) }))}
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">Variant</label>
-            <select
+            <SettingSelect
               value={variant}
-              onChange={(e) => setVariant(e.target.value)}
-              className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            >
-              {['normal', 'holo', 'reverse_holo'].map((v) => (
-                <option key={v} value={v}>{variantLabel(v)}</option>
-              ))}
-            </select>
+              onChange={setVariant}
+              label="Variant"
+              options={['normal', 'holo', 'reverse_holo'].map((v) => ({ value: v, label: variantLabel(v) }))}
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">Purchase price (£)</label>

@@ -14,6 +14,7 @@ import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import PullToRefresh from '@/components/PullToRefresh';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function TradeBoard() {
   const tr = useT();
@@ -420,22 +421,22 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
       <div className="mt-6 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{tr('trade.newListingModal')}</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} aria-label="Close" className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5"><X className="h-5 w-5" /></button>
         </div>
 
         {templates.length > 0 && (
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-secondary p-2">
             <Bookmark className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <select
-              onChange={(e) => { const tpl = templates.find((t) => t.id === e.target.value); if (tpl) loadTemplate(tpl); e.target.value = ''; }}
-              className="flex-1 rounded border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
-              defaultValue=""
-            >
-              <option value="">{tr('trade.loadTemplate')}</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            <SettingSelect
+              value=""
+              onChange={(val) => { const tpl = templates.find((t) => t.id === val); if (tpl) loadTemplate(tpl); }}
+              label={tr('trade.loadTemplate')}
+              options={[
+                { value: '', label: tr('trade.loadTemplate') },
+                ...templates.map((t) => ({ value: t.id, label: t.name })),
+              ]}
+              className="flex-1"
+            />
             {loadedTemplateId && (
               <button onClick={() => deleteTemplate(loadedTemplateId)} aria-label="Delete loaded template" className="shrink-0 rounded p-1.5 text-destructive hover:bg-destructive/10">
                 <Trash2 className="h-4 w-4" />
@@ -494,29 +495,42 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">{tr('trade.currency')}</label>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                <option>GBP</option><option>EUR</option><option>USD</option>
-              </select>
+              <SettingSelect
+                value={currency}
+                onChange={setCurrency}
+                label={tr('trade.currency')}
+                options={[{ value: 'GBP', label: 'GBP' }, { value: 'EUR', label: 'EUR' }, { value: 'USD', label: 'USD' }]}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-sm font-medium">{tr('trade.listingExpires')}</label>
-              <select value={expiresIn} onChange={(e) => setExpiresIn(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                <option value="7">{tr('trade.in7days')}</option>
-                <option value="30">{tr('trade.in30days')}</option>
-                <option value="90">{tr('trade.in90days')}</option>
-                <option value="0">{tr('trade.noExpiry')}</option>
-              </select>
+              <SettingSelect
+                value={expiresIn}
+                onChange={setExpiresIn}
+                label={tr('trade.listingExpires')}
+                options={[
+                  { value: '7', label: tr('trade.in7days') },
+                  { value: '30', label: tr('trade.in30days') },
+                  { value: '90', label: tr('trade.in90days') },
+                  { value: '0', label: tr('trade.noExpiry') },
+                ]}
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">{tr('trade.visibility')}</label>
-              <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                <option value="public">{tr('trade.public')}</option>
-                <option value="wishlist_only">{tr('trade.wishlistOnly')}</option>
-                <option value="circle_scoped">{tr('trade.circleOnly')}</option>
-              </select>
+              <SettingSelect
+                value={visibility}
+                onChange={setVisibility}
+                label={tr('trade.visibility')}
+                options={[
+                  { value: 'public', label: tr('trade.public') },
+                  { value: 'wishlist_only', label: tr('trade.wishlistOnly') },
+                  { value: 'circle_scoped', label: tr('trade.circleOnly') },
+                ]}
+              />
             </div>
           </div>
           {visibility === 'circle_scoped' && (
@@ -525,12 +539,15 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
               {circles.length === 0 ? (
                 <p className="text-xs text-muted-foreground">{tr('trade.noCircles')}</p>
               ) : (
-                <select value={circleRef} onChange={(e) => setCircleRef(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                  <option value="">{tr('trade.selectCircle')}</option>
-                  {circles.map((c) => (
-                    <option key={c.at_uri} value={c.at_uri}>{c.name || 'Circle'}</option>
-                  ))}
-                </select>
+                <SettingSelect
+                  value={circleRef}
+                  onChange={setCircleRef}
+                  label={tr('trade.visibleToCircle')}
+                  options={[
+                    { value: '', label: tr('trade.selectCircle') },
+                    ...circles.map((c) => ({ value: c.at_uri, label: c.name || 'Circle' })),
+                  ]}
+                />
               )}
             </div>
           )}

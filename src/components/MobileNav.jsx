@@ -85,6 +85,12 @@ export default function MobileNav() {
                 if (pathname === item.to) {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  // Save scroll position in history state for restoration on back navigation
+                  window.history.replaceState(
+                    { ...(window.history.state || {}), scrollY: window.scrollY },
+                    ''
+                  );
                 }
                 // Otherwise let the Link navigate normally — it pushes a new
                 // history entry, so the browser back button returns to the

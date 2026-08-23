@@ -15,7 +15,7 @@ export default function CategoryFilterChips({ value, onChange }) {
     <div className="flex gap-1.5 overflow-x-auto border-b border-border bg-secondary/30 px-3 py-2">
       <button
         onClick={() => onChange('all')}
-        className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${value === 'all' ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
+        className={`relative shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition before:content-[''] before:absolute before:-inset-y-[10px] ${value === 'all' ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
       >
         {tr('feed.allCategories')}
       </button>
@@ -23,7 +23,7 @@ export default function CategoryFilterChips({ value, onChange }) {
         <button
           key={c.key}
           onClick={() => onChange(c.key)}
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${value === c.key ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
+          className={`relative shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition before:content-[''] before:absolute before:-inset-y-[10px] ${value === c.key ? 'bg-primary text-white' : 'bg-background text-muted-foreground hover:bg-secondary'}`}
         >
           {tr(c.tKey)}
         </button>
