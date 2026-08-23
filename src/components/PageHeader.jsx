@@ -1,10 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+
+const HIDE_BACK_PATHS = ['/', '/explore', '/trades', '/collection'];
 
 export default function PageHeader({ title, subtitle, children }) {
   const navigate = useNavigate();
-  const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
+  const location = useLocation();
+  const canGoBack = !HIDE_BACK_PATHS.includes(location.pathname);
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 pt-[env(safe-area-inset-top,20px)] backdrop-blur">
       <div className="flex items-center justify-between px-4 py-3">

@@ -9,7 +9,11 @@ import { handleSubdomainRedirect } from '@/lib/subdomainRedirect'
 handleSubdomainRedirect();
 
 try {
-  if (localStorage.getItem('swappulse-theme') !== 'light') {
+  const stored = localStorage.getItem('swappulse-theme');
+  const useDark = stored !== null
+    ? stored !== 'light'
+    : window.matchMedia?.('(prefers-color-scheme: dark)')?.matches;
+  if (useDark) {
     document.documentElement.classList.add('dark');
   }
 } catch (e) { /* ignore */ }

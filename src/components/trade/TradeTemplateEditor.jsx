@@ -5,6 +5,7 @@ import CardSearchModal from '@/components/cards/CardSearchModal';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useToast } from '@/components/ui/use-toast';
 import { useT } from '@/lib/i18n/I18nProvider';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 // TradeTemplateEditor — modal form for editing a saved TradeTemplate's name,
 // offers, wants, shipping regions, currency, visibility, and notes. Mirrors the
@@ -125,19 +126,13 @@ export default function TradeTemplateEditor({ template, open, onClose, onSaved }
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">{tr('trade.currency')}</label>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-                <option>GBP</option><option>EUR</option><option>USD</option>
-              </select>
+              <SettingSelect value={currency} onChange={setCurrency} label={tr('trade.currency')} options={[{value:'GBP',label:'GBP'},{value:'EUR',label:'EUR'},{value:'USD',label:'USD'}]} />
             </div>
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium">{tr('trade.visibility')}</label>
-            <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary">
-              <option value="public">{tr('trade.public')}</option>
-              <option value="wishlist_only">{tr('trade.wishlistOnly')}</option>
-              <option value="circle_scoped">{tr('trade.circleOnly')}</option>
-            </select>
+            <SettingSelect value={visibility} onChange={setVisibility} label={tr('trade.visibility')} options={[{value:'public',label:tr('trade.public')},{value:'wishlist_only',label:tr('trade.wishlistOnly')},{value:'circle_scoped',label:tr('trade.circleOnly')}]} />
           </div>
 
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder={tr('trade.notesPlaceholder')} className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />

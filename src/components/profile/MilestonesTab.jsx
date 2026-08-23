@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, X } from 'lucide-react';
 import FieldVisibilitySelect from './FieldVisibilitySelect';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const TYPES = [
   { value: 'first_card', label: 'First card' },
@@ -39,9 +40,9 @@ export default function MilestonesTab({ draft, update }) {
               <button type="button" onClick={() => removeM(i)} className="rounded-lg border border-border px-2 hover:bg-card" aria-label="Remove milestone"><X className="h-4 w-4" /></button>
             </div>
             <div className="flex gap-2">
-              <select value={m.milestone_type || 'custom'} onChange={(e) => setM(i, { milestone_type: e.target.value })} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary">
-                {TYPES.map((tp) => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
-              </select>
+              <div className="flex-1">
+                <SettingSelect value={m.milestone_type || 'custom'} options={TYPES} onChange={(v) => setM(i, { milestone_type: v })} label="Milestone type" />
+              </div>
               <input type="date" value={m.date || ''} onChange={(e) => setM(i, { date: e.target.value })} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />
             </div>
             <textarea value={m.description || ''} onChange={(e) => setM(i, { description: e.target.value })} rows={2} placeholder="What happened?" className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />

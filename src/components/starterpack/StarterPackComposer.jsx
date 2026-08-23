@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 const CATEGORIES = ['vintage', 'modern', 'competitive', 'investment', 'sealed', 'japanese', 'trading', 'general'];
 
@@ -75,9 +76,9 @@ export default function StarterPackComposer({ open, onClose, onCreated }) {
           </div>
           <div>
             <Label htmlFor="sp-cat">Category</Label>
-            <select id="sp-cat" value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm">
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <div className="mt-1">
+              <SettingSelect value={category} onChange={setCategory} label="Category" options={CATEGORIES.map((c) => ({ value: c, label: c }))} />
+            </div>
           </div>
           <div>
             <Label htmlFor="sp-members">Member handles (one per line)</Label>
