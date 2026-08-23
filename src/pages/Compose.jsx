@@ -5,9 +5,15 @@ import PageHeader from '@/components/PageHeader';
 import BlueskyLinkPrompt from '@/components/BlueskyLinkPrompt';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function Compose() {
   const t = useT();
+  useSEO({
+    title: 'Compose Post',
+    description: 'Share a post, pack pull, or trade showcase with the SwapPulse Pokémon TCG collector community.',
+    canonicalPath: '/compose',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const replyTo = location.state?.replyTo || null;

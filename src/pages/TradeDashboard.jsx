@@ -6,11 +6,17 @@ import PageHeader from '@/components/PageHeader';
 import TradeDashboardCard from '@/components/trade/TradeDashboardCard';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const ACTIVE_STATUSES = ['open', 'negotiating', 'pending_ship'];
 
 export default function TradeDashboard() {
   const t = useT();
+  useSEO({
+    title: 'Trade Dashboard',
+    description: 'Manage your Pokémon TCG trade listings and watched trades on SwapPulse.',
+    canonicalPath: '/trade-dashboard',
+  });
   const [loading, setLoading] = useState(true);
   const [myListings, setMyListings] = useState([]);
   const [watched, setWatched] = useState([]);

@@ -25,9 +25,15 @@ import TrustTierSection from '@/components/admin/TrustTierSection';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function Admin() {
   const t = useT();
+  useSEO({
+    title: 'Admin Dashboard',
+    description: 'SwapPulse admin dashboard for platform management, federation diagnostics, and moderation tools.',
+    canonicalPath: '/admin',
+  });
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -17,6 +17,7 @@ import CollectionCardRow from '@/components/collection/CollectionCardRow';
 import { useToast } from "@/components/ui/use-toast";
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   { id: 'cards', tKey: 'page.collection.tabs.cards', icon: LayoutGrid },
@@ -38,6 +39,11 @@ const rarityRank = (r) => (r && RARITY_RANK[r] != null ? RARITY_RANK[r] : 5);
 
 export default function Collection() {
   const tr = useT();
+  useSEO({
+    title: 'My Collection',
+    description: 'Track your Pokémon TCG collection, manage duplicates, and monitor portfolio value on SwapPulse.',
+    canonicalPath: '/collection',
+  });
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const SEVERITY_BADGE = {
   critical: 'bg-destructive/15 text-destructive',
@@ -19,6 +20,11 @@ const STATUS_COLOR = {
 
 export default function IncidentDetail() {
   const t = useT();
+  useSEO({
+    title: 'Platform Incident',
+    description: 'SwapPulse platform incident details and status updates.',
+    canonicalPath: '/incidents',
+  });
   const { incidentId } = useParams();
   const [incident, setIncident] = useState(null);
   const [loading, setLoading] = useState(true);

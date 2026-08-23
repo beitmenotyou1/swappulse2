@@ -3,9 +3,15 @@ import { CheckCircle2, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function AccountDeleted() {
   const t = useT();
+  useSEO({
+    title: 'Account Deleted',
+    description: 'Your SwapPulse account has been deleted.',
+    canonicalPath: '/account-deleted',
+  });
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <div className="mb-8"><Logo size={48} withText /></div>

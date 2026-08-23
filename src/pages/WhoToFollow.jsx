@@ -12,6 +12,7 @@ import BlueskyMutualsSection from '@/components/follow/BlueskyMutualsSection';
 import { createBridgedFollow } from '@/lib/followBridge';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const SOURCE_LABELS = {
   trust_proximity: { label: 'Trust proximity', icon: ShieldCheck, tone: 'text-success' },
@@ -22,6 +23,11 @@ const SOURCE_LABELS = {
 
 export default function WhoToFollow() {
   const t = useT();
+  useSEO({
+    title: 'Who to Follow',
+    description: 'Discover Pokémon TCG collectors to follow on SwapPulse based on trust, collection overlap, and interests.',
+    canonicalPath: '/who-to-follow',
+  });
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

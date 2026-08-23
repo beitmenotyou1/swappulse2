@@ -9,6 +9,7 @@ import ServiceRow from '@/components/status/ServiceRow';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 // Maps health-check service keys to StatusService slugs
 const HEALTH_TO_SLUG = {
@@ -45,6 +46,11 @@ const SEVERITY_BADGE = {
 
 export default function Status() {
   const t = useT();
+  useSEO({
+    title: 'System Status',
+    description: 'SwapPulse platform status, service health, incident history, and maintenance schedule.',
+    canonicalPath: '/status',
+  });
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState(null);

@@ -15,6 +15,7 @@ import AccountEnforcementSection from '@/components/moderation/AccountEnforcemen
 import BotAttemptsSection from '@/components/moderation/BotAttemptsSection';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const DEFAULT_FILTERS = {
   severity: [],
@@ -27,6 +28,11 @@ const DEFAULT_FILTERS = {
 
 export default function Moderation() {
   const t = useT();
+  useSEO({
+    title: 'Moderation Dashboard',
+    description: 'Review flagged content, manage trade disputes, and enforce community standards on SwapPulse.',
+    canonicalPath: '/moderation',
+  });
   const { user } = useAuth();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);

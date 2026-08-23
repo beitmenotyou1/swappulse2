@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'trade_assistant';
 
@@ -85,6 +86,11 @@ function MessageBubble({ message, agentName, conversationId }) {
 }
 
 export default function TradeAssistant() {
+  useSEO({
+    title: 'Trade Assistant',
+    description: 'AI trade assistant for finding fair Pokémon TCG trades and negotiating on SwapPulse.',
+    canonicalPath: '/trade-assistant',
+  });
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);

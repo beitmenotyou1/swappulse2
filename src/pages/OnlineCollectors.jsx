@@ -5,11 +5,17 @@ import { usePresence } from '@/hooks/usePresence';
 import Avatar from '@/components/Avatar';
 import PageHeader from '@/components/PageHeader';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 // Full real-time list of collectors currently online. Reuses usePresence so the
 // list refreshes on the same heartbeat + subscription cadence as the sidebar.
 export default function OnlineCollectors() {
   const tr = useT();
+  useSEO({
+    title: 'Online Collectors',
+    description: 'See which Pokémon TCG collectors are online right now on SwapPulse.',
+    canonicalPath: '/online-now',
+  });
   const online = usePresence();
 
   const newestIds = new Set(

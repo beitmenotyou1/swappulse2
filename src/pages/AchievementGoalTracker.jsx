@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'achievement_goal_tracker';
 
@@ -92,6 +93,11 @@ function MessageBubble({ message, agentName, conversationId }) {
 }
 
 export default function AchievementGoalTracker() {
+  useSEO({
+    title: 'Achievement Goal Tracker',
+    description: 'AI assistant for tracking and unlocking Pokémon TCG collector achievements on SwapPulse.',
+    canonicalPath: '/achievement-goal-tracker',
+  });
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);

@@ -7,6 +7,7 @@ import { cardImageUrl } from '@/lib/tcgdex';
 import GradingForm from '@/components/grading/GradingForm';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const SERVICES = { psa: 'PSA', bgs: 'BGS', cgc: 'CGC', ace: 'ACE' };
 const STATUS_META = {
@@ -29,6 +30,11 @@ const STATUS_ORDER = ['submitted', 'in_progress', 'graded', 'returned'];
 // advance status, record the received grade.
 export default function Grading() {
   const t = useT();
+  useSEO({
+    title: 'Grading Submissions',
+    description: 'Track PSA, BGS, CGC, and ACE grading submissions for your Pokémon TCG cards on SwapPulse.',
+    canonicalPath: '/grading',
+  });
   const [items, setItems] = useState([]);
   const [collection, setCollection] = useState([]);
   const [loading, setLoading] = useState(true);

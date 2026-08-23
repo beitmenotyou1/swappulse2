@@ -12,6 +12,11 @@ import { useT } from "@/lib/i18n/I18nProvider";
 
 export default function ResetPassword() {
   const t = useT();
+  useSEO({
+    title: 'Reset Password',
+    description: 'Set a new password for your SwapPulse account.',
+    canonicalPath: '/reset-password',
+  });
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
   const migration = searchParams.get("migration") === "1";

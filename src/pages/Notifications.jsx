@@ -10,6 +10,7 @@ import NotificationGroup from '@/components/notifications/NotificationGroup';
 import NotificationCard from '@/components/notifications/NotificationCard';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const isAchievement = (n) => n.action_type === 'reputation' && n.metadata?.kind;
 
@@ -34,6 +35,11 @@ const EMPTY_MSG = {
 
 export default function Notifications() {
   const t = useT();
+  useSEO({
+    title: 'Notifications',
+    description: 'View your SwapPulse notifications, likes, follows, mentions, and trade updates.',
+    canonicalPath: '/notifications',
+  });
   const navigate = useNavigate();
   const { items, loading, unreadCount, refresh, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState('all');

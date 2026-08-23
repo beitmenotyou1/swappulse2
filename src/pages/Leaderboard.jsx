@@ -5,9 +5,15 @@ import { Loader2, ArrowLeft, Trophy, ShieldCheck, Lock } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Card } from '@/components/ui/card';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function Leaderboard() {
   const t = useT();
+  useSEO({
+    title: 'Challenge Leaderboard',
+    description: 'Rankings for Pokémon TCG collector challenges on SwapPulse.',
+    canonicalPath: '/challenges',
+  });
   const { challengeId } = useParams();
   const [challenge, setChallenge] = useState(null);
   const [cat, setCat] = useState(null);

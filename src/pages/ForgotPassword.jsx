@@ -10,6 +10,11 @@ import { useT } from "@/lib/i18n/I18nProvider";
 
 export default function ForgotPassword() {
   const t = useT();
+  useSEO({
+    title: 'Forgot Password',
+    description: 'Reset your SwapPulse account password via email.',
+    canonicalPath: '/forgot-password',
+  });
   const [searchParams] = useSearchParams();
   const migration = searchParams.get("migration") === "1";
   const [email, setEmail] = useState("");

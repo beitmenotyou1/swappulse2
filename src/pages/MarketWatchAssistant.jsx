@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'market_watch';
 
@@ -85,6 +86,11 @@ function MessageBubble({ message, agentName, conversationId }) {
 }
 
 export default function MarketWatchAssistant() {
+  useSEO({
+    title: 'Market Watch Assistant',
+    description: 'AI assistant for tracking Pokémon TCG card prices and market trends on SwapPulse.',
+    canonicalPath: '/market-watch-assistant',
+  });
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);

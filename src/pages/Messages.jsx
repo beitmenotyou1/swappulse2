@@ -8,9 +8,15 @@ import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function Messages() {
   const t = useT();
+  useSEO({
+    title: 'Messages',
+    description: 'Send and receive end-to-end encrypted direct messages with other SwapPulse collectors.',
+    canonicalPath: '/messages',
+  });
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);

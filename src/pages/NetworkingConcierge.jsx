@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'networking_concierge';
 
@@ -92,6 +93,11 @@ function MessageBubble({ message, agentName, conversationId }) {
 }
 
 export default function NetworkingConcierge() {
+  useSEO({
+    title: 'Networking Concierge',
+    description: 'AI assistant for discovering Pokémon TCG collector circles, meetups, and connections on SwapPulse.',
+    canonicalPath: '/networking-concierge',
+  });
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);

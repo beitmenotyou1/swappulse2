@@ -5,11 +5,17 @@ import PageHeader from '@/components/PageHeader';
 import { idbGet, idbDelete } from '@/lib/offlineDB';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 // Receives images shared into SwapPulse from the OS share sheet (§8.1 Share Target).
 // The service worker stores the shared file in IndexedDB 'shares' and redirects here.
 export default function Share() {
   const t = useT();
+  useSEO({
+    title: 'Share to SwapPulse',
+    description: 'Share images and Pokémon TCG content into SwapPulse from your device.',
+    canonicalPath: '/share',
+  });
   const [share, setShare] = useState(null);
   const [url, setUrl] = useState(null);
 

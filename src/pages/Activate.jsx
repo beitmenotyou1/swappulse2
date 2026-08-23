@@ -11,6 +11,11 @@ import { useT } from "@/lib/i18n/I18nProvider";
 
 export default function Activate() {
   const t = useT();
+  useSEO({
+    title: 'Activate Account',
+    description: 'Activate your SwapPulse account with your verification link.',
+    canonicalPath: '/activate',
+  });
   const [params] = useSearchParams();
   const token = params.get("token") || "";
 

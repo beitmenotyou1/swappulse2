@@ -15,6 +15,7 @@ import AppPasswordsSection from '@/components/settings/AppPasswordsSection';
 import DataPrivacyRightsSection from '@/components/settings/DataPrivacyRightsSection';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   { key: 'account', tKey: 'settings.tab.account', Icon: Shield, Comp: AccountSection },
@@ -32,6 +33,11 @@ const TABS = [
 
 export default function Settings() {
   const t = useT();
+  useSEO({
+    title: 'Settings',
+    description: 'Manage your SwapPulse account, privacy, notifications, security, and accessibility preferences.',
+    canonicalPath: '/settings',
+  });
   const { settings, update, loading } = useSettings();
   const [tab, setTab] = useState('account');
   const Active = TABS.find((t) => t.key === tab)?.Comp || AccountSection;

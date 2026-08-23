@@ -3,9 +3,15 @@ import { Link } from 'react-router-dom';
 import { Heart, ArrowLeft, Home } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function DonateThanks() {
   const t = useT();
+  useSEO({
+    title: 'Thank You for Your Donation',
+    description: 'Thank you for supporting SwapPulse, the free and open-source Pokémon TCG collector community.',
+    canonicalPath: '/donate/thanks',
+  });
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">

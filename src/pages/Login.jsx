@@ -16,6 +16,11 @@ const CODE_EXPIRY_SECONDS = 300; // 5 minutes
 
 export default function Login() {
   const t = useT();
+  useSEO({
+    title: 'Sign In',
+    description: 'Log in to SwapPulse, the decentralized social network for Pokémon TCG collectors.',
+    canonicalPath: '/login',
+  });
   const [searchParams] = useSearchParams();
   const initialEmail = searchParams.get("email") || "";
 

@@ -14,7 +14,7 @@ export default function StarterPackDetail() {
   const [following, setFollowing] = useState(false);
   const [followed, setFollowed] = useState(new Set());
 
-  useSEO({ title: pack?.name || 'Starter Pack', canonicalPath: `/starter-packs/${packId}` });
+  useSEO({ title: pack?.name || 'Starter Pack', description: 'A curated starter pack of collectors, circles, and feeds for a Pokémon TCG niche on SwapPulse.', canonicalPath: `/starter-packs/${packId}` });
 
   useEffect(() => {
     (async () => {

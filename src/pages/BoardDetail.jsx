@@ -25,7 +25,7 @@ export default function BoardDetail() {
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useSEO({ title: board?.name || 'Board', canonicalPath: `/boards/${boardId}` });
+  useSEO({ title: board?.name || 'Board', description: 'A curated bookmark board of posts, cards, and trade listings on SwapPulse.', canonicalPath: `/boards/${boardId}` });
 
   useEffect(() => {
     (async () => {

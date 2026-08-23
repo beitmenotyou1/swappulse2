@@ -3,9 +3,15 @@ import { Link } from 'react-router-dom';
 import { Heart, ArrowLeft, Home } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function FiatSuccess() {
   const t = useT();
+  useSEO({
+    title: 'Donation Complete',
+    description: 'Your card donation to SwapPulse has been processed successfully.',
+    canonicalPath: '/donate/fiat-success',
+  });
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">

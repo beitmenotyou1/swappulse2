@@ -11,12 +11,18 @@ import PageHeader from '@/components/PageHeader';
 import SlotPicker from '@/components/binder/SlotPicker';
 import { BINDER_THEMES } from '@/components/binder/theme';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 const emptySlot = (i) => ({ slot_index: i + 1, collection_entry_uri: '', custom_caption: '' });
 const emptyPage = (n) => ({ page_number: n, slots: Array.from({ length: 6 }, (_, i) => emptySlot(i)) });
 
 export default function BinderEdit() {
   const t = useT();
+  useSEO({
+    title: 'Edit Binder',
+    description: 'Create and edit Pokémon TCG collector binders on SwapPulse.',
+    canonicalPath: '/binders/new',
+  });
   const { binderId } = useParams();
   const navigate = useNavigate();
   const isEdit = !!binderId;

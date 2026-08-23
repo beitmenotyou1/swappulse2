@@ -9,9 +9,15 @@ import ProofViewerModal from '@/components/achievements/ProofViewerModal';
 import { ACHIEVEMENT_ICONS, categoryToPillar, PILLARS } from '@/lib/achievementSpecs';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function Achievements() {
   const t = useT();
+  useSEO({
+    title: 'Achievements',
+    description: 'View your Pokémon TCG collector achievements and credentials on SwapPulse.',
+    canonicalPath: '/achievements',
+  });
   const { toast } = useToast();
   const [records, setRecords] = useState([]);
   const [specs, setSpecs] = useState([]);

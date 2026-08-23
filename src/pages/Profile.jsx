@@ -40,9 +40,15 @@ import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import MovedFromBlueskyBadge from '@/components/profile/MovedFromBlueskyBadge';
 import { useT } from '@/lib/i18n/I18nProvider';
+import useSEO from '@/hooks/useSEO';
 
 export default function Profile() {
   const t = useT();
+  useSEO({
+    title: 'My Profile',
+    description: 'View and edit your SwapPulse collector profile, posts, trades, and collections.',
+    canonicalPath: '/profile',
+  });
   const { user } = useAuth();
   const [tab, setTab] = useState('Posts');
   const [collection, setCollection] = useState([]);

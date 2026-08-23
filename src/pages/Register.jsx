@@ -19,6 +19,11 @@ function randomPassword() {
 
 export default function Register() {
   const t = useT();
+  useSEO({
+    title: 'Create Account',
+    description: 'Join SwapPulse, the decentralized social network for Pokémon TCG collectors. Own your collection, trade with trust.',
+    canonicalPath: '/register',
+  });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") || "");

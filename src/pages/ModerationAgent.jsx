@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
+import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'moderation_agent';
 
@@ -118,6 +119,11 @@ function FlaggedItem({ item, onSelect }) {
 
 export default function ModerationAgent() {
   const { user } = useAuth();
+  useSEO({
+    title: 'Moderation Agent',
+    description: 'AI-powered moderation assistant for reviewing flagged content on SwapPulse.',
+    canonicalPath: '/moderation-agent',
+  });
   const [conversations, setConversations] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);
