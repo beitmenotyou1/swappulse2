@@ -20,6 +20,7 @@ import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { sortPostsDescending } from '@/lib/postSort';
 
 export default function Explore() {
   const tr = useT();
@@ -126,7 +127,7 @@ export default function Explore() {
     (async () => {
       try {
         const p = await base44.entities.Post.list('-created_date', 20);
-        setLatestPosts(p || []);
+        setLatestPosts(sortPostsDescending(p || []));
       } catch { setLatestPosts([]); }
     })();
   }, []);

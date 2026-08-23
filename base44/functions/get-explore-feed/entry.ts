@@ -8,6 +8,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { enrichAuthorAvatars } from '../../shared/avatarEnrichment.ts';
+import { sortPostsDescending } from '../../shared/postSort.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -17,9 +18,11 @@ export default async function(req: Request): Promise<Response> {
 
     const svc = base44.asServiceRole;
 
-    // 1. Fetch recent local posts (everybody feed)
+    // 1. Fetch recent local posts (everybody feed), then re-sort by
+    //    original_created_at (falling back to created_date) so imported
+    //    Bluesky posts appear in their original chronological order.
     const posts = await base44.entities.Post.list('-created_date', limit).catch(() => []);
-    const items = (posts || []).map((p: any) => ({ ...p, external: false }));
+    const items = sortPostsDescending(posts || []).map((p: any) => ({ ...p, external: false }));
 
     // 2. Enrich with current avatars from the User table
     await enrichAuthorAvatars(svc, items);

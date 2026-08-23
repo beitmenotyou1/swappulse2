@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { sortPostsDescending } from '@/lib/postSort';
 
 const BATCH_SIZE = 50;
 
@@ -23,7 +24,9 @@ export function usePaginatedPosts(did, isExternal) {
       const data = res?.data ?? res;
       return data?.items || [];
     }
-    return base44.entities.Post.filter({ did }, '-created_date', BATCH_SIZE, skip).catch(() => []);
+    return base44.entities.Post.filter({ did }, '-created_date', BATCH_SIZE, skip)
+      .then((posts) => sortPostsDescending(posts || []))
+      .catch(() => []);
   }, [did, isExternal]);
 
   // Initial load — resets whenever the target did or external flag changes.

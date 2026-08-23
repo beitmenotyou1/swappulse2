@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { sortPostsDescending } from '@/lib/postSort';
 
 // Public hashtag discovery page. Reads the tag from the URL, fetches posts
 // whose canonical_tags array contains the tag, and renders them with the
@@ -77,7 +78,7 @@ export default function HashtagPage() {
         const matched = (recent || []).filter(
           (p) => Array.isArray(p.canonical_tags) && p.canonical_tags.includes(tag.toLowerCase())
         );
-        setPosts(matched);
+        setPosts(sortPostsDescending(matched));
       } catch {
         if (alive) setPosts([]);
       } finally {

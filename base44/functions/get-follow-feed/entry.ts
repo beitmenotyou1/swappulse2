@@ -13,6 +13,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { enrichAuthorAvatars } from '../../shared/avatarEnrichment.ts';
+import { sortPostsDescending } from '../../shared/postSort.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -155,7 +156,11 @@ export default async function(req: Request): Promise<Response> {
 
     // 7. Merge + time-sort — For You is strictly followed accounts + followed
     // hashtags (local + protocol); discovery happens in the Explore tab.
-    items.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+    items.sort((a, b) => {
+      const aTime = new Date(a.original_created_at || a.created_date || 0).getTime();
+      const bTime = new Date(b.original_created_at || b.created_date || 0).getTime();
+      return bTime - aTime;
+    });
     const followedCount = items.length;
 
     return Response.json({

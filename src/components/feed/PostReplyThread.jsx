@@ -70,7 +70,11 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
       ]);
       const merge = new Map();
       [...byRoot, ...byReply, ...byParent].forEach((p) => merge.set(p.id, p));
-      const list = Array.from(merge.values()).sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+      const list = Array.from(merge.values()).sort((a, b) => {
+        const aTime = new Date(a.original_created_at || a.created_date || 0).getTime();
+        const bTime = new Date(b.original_created_at || b.created_date || 0).getTime();
+        return aTime - bTime;
+      });
       setAll(list);
     } catch {
       setAll([]);

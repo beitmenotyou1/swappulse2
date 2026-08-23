@@ -6,6 +6,7 @@ import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { sortPostsDescending } from '@/lib/postSort';
 
 export default function PackOpenings() {
   const t = useT();
@@ -20,7 +21,7 @@ export default function PackOpenings() {
   useEffect(() => {
     (async () => {
       try {
-        setPosts(await base44.entities.Post.filter({ post_type: 'pack_opening' }, '-created_date', 50));
+        setPosts(sortPostsDescending(await base44.entities.Post.filter({ post_type: 'pack_opening' }, '-created_date', 50)));
       } catch {} finally {
         setLoading(false);
       }
