@@ -19,7 +19,7 @@ export default function BinderDetail() {
   const [page, setPage] = useState(0);
   const [liked, setLiked] = useState(false);
   useSEO({
-    title: 'Binder',
+    title: data?.binder?.name || 'Pokémon TCG Binder',
     description: 'A curated Pokémon TCG collector binder on SwapPulse, showcase grids of favourite cards.',
     canonicalPath: `/binder/${binderId}`,
     standardDocUri: data?.binder?.standard_doc_uri || '',

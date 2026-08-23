@@ -23,13 +23,13 @@ function timeLeft(endIso, t) {
 export default function ChallengeDetail() {
   const t = useT();
   const { challengeId } = useParams();
+  const { user } = useAuth();
+  const [challenge, setChallenge] = useState(null);
   useSEO({
-    title: 'Challenge',
+    title: challenge?.title || 'Pokémon TCG Collector Challenge',
     description: 'Join a Pokémon TCG collector challenge on SwapPulse, set completion races, pack contests, and community goals.',
     canonicalPath: `/challenges/${challengeId}`,
   });
-  const { user } = useAuth();
-  const [challenge, setChallenge] = useState(null);
   const [data, setData] = useState(null);
   const [myEntries, setMyEntries] = useState([]);
   const [error, setError] = useState(null);

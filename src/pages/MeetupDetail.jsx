@@ -20,11 +20,6 @@ const ATTENDING = [
 export default function MeetupDetail() {
   const t = useT();
   const { meetupId } = useParams();
-  useSEO({
-    title: 'Meetup',
-    description: 'A Pokémon TCG collector meetup on SwapPulse, organise, attend, and swap cards in person.',
-    canonicalPath: `/meetups/${meetupId}`,
-  });
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +27,11 @@ export default function MeetupDetail() {
   const [bringingBinder, setBringingBinder] = useState(false);
   const [lookingFor, setLookingFor] = useState('');
   const [saving, setSaving] = useState(false);
+  useSEO({
+    title: data?.meetup?.title || 'Pokémon TCG Collector Meetup',
+    description: 'A Pokémon TCG collector meetup on SwapPulse, organise, attend, and swap cards in person.',
+    canonicalPath: `/meetups/${meetupId}`,
+  });
 
   const load = async () => {
     setLoading(true);

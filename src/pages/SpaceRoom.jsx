@@ -10,13 +10,13 @@ import { useT } from '@/lib/i18n/I18nProvider';
 export default function SpaceRoom() {
   const t = useT();
   const { spaceId } = useParams();
+  const [space, setSpace] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   useSEO({
-    title: 'Voice Space',
+    title: space?.title || 'Pokémon TCG Voice Space',
     description: 'Join a live Pokémon TCG audio space on SwapPulse.',
     canonicalPath: `/spaces/${spaceId}`,
   });
-  const [space, setSpace] = useState(null);
-  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     base44.entities.VoiceSpace.get(spaceId)

@@ -19,15 +19,15 @@ const THEME_LABEL_KEY = {
 export default function CircleDetail() {
   const t = useT();
   const { circleId } = useParams();
-  useSEO({
-    title: 'Circle',
-    description: 'A themed Pokémon TCG collector circle on SwapPulse, vintage, competitive, shiny, regional, and more.',
-    canonicalPath: `/circles/${circleId}`,
-  });
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
+  useSEO({
+    title: data?.circle?.name || 'Pokémon TCG Collector Circle',
+    description: 'A themed Pokémon TCG collector circle on SwapPulse, vintage, competitive, shiny, regional, and more.',
+    canonicalPath: `/circles/${circleId}`,
+  });
 
   const load = async () => {
     setLoading(true);
