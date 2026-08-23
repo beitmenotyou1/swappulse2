@@ -2,6 +2,7 @@ import React from 'react';
 import { Globe, Languages } from 'lucide-react';
 import { LANGUAGES } from '@/hooks/useSettings';
 import SettingRow from '@/components/settings/SettingRow';
+import SettingSelect from '@/components/settings/SettingSelect';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 
 const PROVIDERS = [
@@ -35,16 +36,17 @@ export default function LanguageSection({ settings, update }) {
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="flex items-center gap-2 text-sm font-bold"><Globe className="h-4 w-4 text-primary" /> Interface language</p>
-        <select
-          value={locale}
-          onChange={(e) => {
-            setLocale(e.target.value);
-            update({ locale: { interface: e.target.value } });
-          }}
-          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        >
-          {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
-        </select>
+        <div className="mt-2">
+          <SettingSelect
+            label="Interface language"
+            value={locale}
+            options={LANGUAGES.map((l) => ({ value: l.code, label: l.name }))}
+            onChange={(v) => {
+              setLocale(v);
+              update({ locale: { interface: v } });
+            }}
+          />
+        </div>
         <p className="mt-1 text-[11px] text-muted-foreground">Switches the UI and card catalogue instantly. Saved to your account and browser for future visits.</p>
       </div>
 
@@ -59,13 +61,14 @@ export default function LanguageSection({ settings, update }) {
           <div className="space-y-3 pt-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Target language</label>
-              <select
-                value={lang.targetLanguage || 'en-GB'}
-                onChange={(e) => update({ language: { targetLanguage: e.target.value } })}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              >
-                {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
-              </select>
+              <div className="mt-1">
+                <SettingSelect
+                  label="Target language"
+                  value={lang.targetLanguage || 'en-GB'}
+                  options={LANGUAGES.map((l) => ({ value: l.code, label: l.name }))}
+                  onChange={(v) => update({ language: { targetLanguage: v } })}
+                />
+              </div>
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Translation provider</label>

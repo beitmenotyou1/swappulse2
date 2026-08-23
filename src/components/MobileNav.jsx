@@ -73,7 +73,7 @@ export default function MobileNav() {
           <Plus className="h-7 w-7" />
         </Link>
       )}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 pb-[env(safe-area-inset-bottom,16px)] backdrop-blur md:hidden">
         {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
           const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
           return (

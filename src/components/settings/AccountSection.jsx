@@ -2,6 +2,7 @@ import React from 'react';
 import { Shield, Clock, Fingerprint, Copy, Check } from 'lucide-react';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import SettingRow from '@/components/settings/SettingRow';
+import SettingSelect from '@/components/settings/SettingSelect';
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -50,16 +51,18 @@ export default function AccountSection({ settings, update }) {
             <p className="flex items-center gap-2 text-sm font-semibold"><Clock className="h-4 w-4 text-muted-foreground" /> Session timeout</p>
             <p className="text-xs text-muted-foreground">Auto-logout after inactivity.</p>
           </div>
-          <select
-            value={sec.sessionTimeout || 86400}
-            onChange={(e) => update({ security: { sessionTimeout: Number(e.target.value) } })}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value={3600}>1 hour</option>
-            <option value={21600}>6 hours</option>
-            <option value={86400}>24 hours</option>
-            <option value={604800}>7 days</option>
-          </select>
+          <SettingSelect
+            label="Session timeout"
+            value={String(sec.sessionTimeout || 86400)}
+            options={[
+              { value: '3600', label: '1 hour' },
+              { value: '21600', label: '6 hours' },
+              { value: '86400', label: '24 hours' },
+              { value: '604800', label: '7 days' },
+            ]}
+            onChange={(v) => update({ security: { sessionTimeout: Number(v) } })}
+            className="w-auto min-w-[140px]"
+          />
         </div>
       </div>
 

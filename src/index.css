@@ -87,23 +87,37 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
+  /* Prevent system text-selection on interactive targets in Android WebView.
+     Inputs and textareas remain selectable so users can still edit/copy text. */
+  button, a, [role="tab"], svg {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: hsl(214 32% 85%);
-    border-radius: 999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(214 32% 78%);
+  /* Custom scrollbars only on desktop — mobile WebViews should use the
+     native overlay scrollbar to avoid layout shift and jank. */
+  @media (min-width: 768px) {
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: hsl(214 32% 85%);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: hsl(214 32% 78%);
+    }
   }
 }
 

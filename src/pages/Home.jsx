@@ -19,6 +19,7 @@ import RarityFilter from '@/components/feed/RarityFilter';
 import CategoryFilterChips from '@/components/feed/CategoryFilterChips';
 import { useT } from '@/lib/i18n/I18nProvider';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import PullToRefresh from '@/components/PullToRefresh';
 
 const ALL_TABS = [
   { key: 'all', tKey: 'feed.forYou' },
@@ -200,6 +201,7 @@ export default function Home() {
 
       {user && <CategoryFilterChips value={category} onChange={setCategory} />}
 
+      <PullToRefresh onRefresh={loadPosts}>
       <RarityFilter value={rarityFilter} onChange={setRarityFilter} />
 
       <StoriesBar />
@@ -254,6 +256,7 @@ export default function Home() {
           ))}
         </div>
       )}
+      </PullToRefresh>
       <PushOnboardingPrompt open={showPushPrompt} onClose={() => setShowPushPrompt(false)} />
       <GuideFooterLink slug="home-feed" />
     </div>

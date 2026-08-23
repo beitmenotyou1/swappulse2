@@ -1,6 +1,7 @@
 import React from 'react';
 import { Download, KeyRound, Bug } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function AdvancedSection({ settings, update }) {
   const { toast } = useToast();
@@ -37,15 +38,18 @@ export default function AdvancedSection({ settings, update }) {
 
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="flex items-center gap-2 text-sm font-bold"><Bug className="h-4 w-4 text-primary" /> Debug log level</p>
-        <select
-          value={settings.debugLogLevel || 'info'}
-          onChange={(e) => update({ debugLogLevel: e.target.value })}
-          className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="info">Info</option>
-          <option value="debug">Debug</option>
-          <option value="verbose">Verbose</option>
-        </select>
+        <div className="mt-2">
+          <SettingSelect
+            label="Debug log level"
+            value={settings.debugLogLevel || 'info'}
+            options={[
+              { value: 'info', label: 'Info' },
+              { value: 'debug', label: 'Debug' },
+              { value: 'verbose', label: 'Verbose' },
+            ]}
+            onChange={(v) => update({ debugLogLevel: v })}
+          />
+        </div>
       </div>
     </div>
   );
