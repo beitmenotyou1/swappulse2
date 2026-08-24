@@ -165,9 +165,9 @@ export default function TradeThread() {
         </div>
       ) : (
         <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
+          {trade && <EscrowTracker tradeListingId={tradeId} trade={trade} me={me} />}
           <div className="border-b border-border p-4">
-            <EscrowTracker tradeListingId={tradeId} trade={trade} me={me} />
-            <div className="mt-3 flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Avatar name={trade.author_name} src={trade.author_avatar} size={32} />
               <span className="text-sm font-semibold">{trade.author_name || t('profile.collector')}</span>
               <span className="text-xs text-muted-foreground">· {TRADE_STATUS_LABELS[trade.status] || trade.status}</span>

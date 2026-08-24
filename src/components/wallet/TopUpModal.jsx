@@ -73,7 +73,7 @@ export default function TopUpModal({ onClose }) {
       }
       setClientSecret(res.data.client_secret);
       const stripeKey = await base44.functions.invoke('get-payment-config', {});
-      const publishableKey = stripeKey.data?.publishableKey || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+      const publishableKey = stripeKey.data?.stripePublishableKey || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
       if (publishableKey) {
         setStripePromise(loadStripe(publishableKey));
       }
