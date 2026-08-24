@@ -8,6 +8,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    // Require an authenticated session — the penalized-ID list must not be
+    // publicly scrapable. Unauthenticated callers get empty arrays (client
+    // pages already handle empty results, so public browsing is unaffected).
+    const user = await base44.auth.me().catch(() => null);
+    if (!user) return Response.json({ dids: [], user_ids: [] });
     const svc = base44.asServiceRole;
     const records = await svc.entities.AccountStatus.filter(
       { status: { $in: ['shadow_banned', 'suspended'] } },
