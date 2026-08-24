@@ -8,6 +8,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
 import { buildBrandedHtml, buildPlainText, esc } from '../../shared/emailTemplate.ts';
+import { checkBotRisk } from '../../shared/botGuard.ts';
 
 const DAILY_CAP = 10;
 const LIFETIME_CAP = 50; // total invite emails a single inviter may ever send
@@ -108,6 +109,30 @@ export default async function (req) {
     // InviteEmailLog entity (admin-only RLS), NOT from user.data fields — a
     // user can reset user.data via the client SDK, which would bypass caps.
     const svc = base44.asServiceRole;
+
+    // Bot-risk verification (A01 — Broken Access Control): run the caller
+    // through the platform's bot-risk guard before dispatching any email.
+    // This blocks automated relay scripts and requires a CAPTCHA challenge
+    // for suspicious patterns, ensuring only real human collectors — not
+    // bots — can use the platform's email infrastructure as a relay.
+    const botVerdict = await checkBotRisk(svc, {
+      user,
+      actionType: 'invite_email',
+      req,
+      turnstileSecret: process.env.TURNSTILE_SECRET_KEY,
+    });
+    if (botVerdict.block) {
+      return Response.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 },
+      );
+    }
+    if (botVerdict.challengeRequired) {
+      return Response.json(
+        { error: 'Human verification required to send invite emails.', challengeRequired: true },
+        { status: 403 },
+      );
+    }
 
     // Anti-relay: the endpoint must only send invite emails to people who are
     // NOT already SwapPulse members. Sending branded platform emails to
@@ -223,9 +248,14 @@ export default async function (req) {
       'Join SwapPulse',
     );
 
+    // CRLF injection defense-in-depth (CWE-93): strip any CR/LF or control
+    // chars from the recipient address immediately before dispatch. EMAIL_RE
+    // already rejects these, but this ensures no CRLF sequence can reach the
+    // SMTP sink even if the regex validation is bypassed.
+    const safeRecipient = email.replace(/[\x00-\x1F\x7F\r\n]/g, '');
     try {
       await base44.integrations.Core.SendEmail({
-        to: email,
+        to: safeRecipient,
         subject: SUBJECT,
         body: html,
         from_name: FROM_NAME,
