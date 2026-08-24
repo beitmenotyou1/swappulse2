@@ -94,6 +94,19 @@ export default async function (req) {
     // InviteEmailLog entity (admin-only RLS), NOT from user.data fields — a
     // user can reset user.data via the client SDK, which would bypass caps.
     const svc = base44.asServiceRole;
+
+    // Anti-relay: the endpoint must only send invite emails to people who are
+    // NOT already SwapPulse members. Sending branded platform emails to
+    // existing members (or to yourself) has no legitimate invite purpose and
+    // would be pure open-relay abuse, so we block both cases before dispatch.
+    if (email === String(user.email || '').trim().toLowerCase()) {
+      return Response.json({ error: "You can't send an invite to yourself." }, { status: 400 });
+    }
+    const existingMembers = await svc.entities.User.filter({ email }).catch(() => []);
+    if (existingMembers && existingMembers.length > 0) {
+      return Response.json({ error: 'That person is already on SwapPulse!' }, { status: 400 });
+    }
+
     const today = todayStr();
     const now = Date.now();
     const cooldownSince = new Date(now - RECIPIENT_COOLDOWN_MS).toISOString();
