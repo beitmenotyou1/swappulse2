@@ -31,7 +31,7 @@ export default async function (req: Request): Promise<Response> {
     const options = await generateRegistrationOptions({
       rpName: 'SwapPulse',
       rpID: rpConfig.rpId,
-      userID: user.id,
+      userID: new TextEncoder().encode(user.id),
       userName: user.email || user.id,
       challenge,
       excludeCredentials,

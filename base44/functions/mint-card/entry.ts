@@ -19,7 +19,7 @@ export default async function(req: Request): Promise<Response> {
     const { collectionEntryId, unlockCredential, verificationSessionId } = body;
     if (!collectionEntryId) return Response.json({ error: 'Missing collectionEntryId' }, { status: 400 });
 
-    const did = user.did;
+    const did = user.data?.did;
     if (!did) return Response.json({ error: 'No AT Protocol DID found' }, { status: 400 });
 
     // If a verification session is provided, validate it and determine the
@@ -73,7 +73,7 @@ export default async function(req: Request): Promise<Response> {
       const cw = custodialWallets[0];
       if (cw.has_passkey || cw.has_pin) {
         if (!unlockCredential) {
-          return Response.json({ error: 'Wallet unlock required', requiresUnlock: true, hasPasskey: cw.has_passkey, hasPin: cw.has_pin }, { status: 401 });
+          return Response.json({ error: 'Wallet unlock required', requiresUnlock: true, hasPasskey: cw.has_passkey, hasPin: cw.has_pin }, { status: 200 });
         }
         const unlockError = await verifyUnlock(base44, req, user, cw, unlockCredential);
         if (unlockError) return unlockError;

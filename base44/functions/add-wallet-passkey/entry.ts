@@ -18,7 +18,7 @@ export default async function (req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const did = user.did;
+    const did = user.data?.did;
     if (!did) return Response.json({ error: 'No DID found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
@@ -46,7 +46,7 @@ export default async function (req: Request): Promise<Response> {
       const options = await generateRegistrationOptions({
         rpName: 'SwapPulse Wallet',
         rpID: rpConfig.rpId,
-        userID: user.id,
+        userID: new TextEncoder().encode(user.id),
         userName: user.email || user.id,
         challenge,
         excludeCredentials,

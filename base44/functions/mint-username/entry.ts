@@ -17,7 +17,7 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const did = user.did;
+    const did = user.data?.did;
     if (!did) return Response.json({ error: 'No AT Protocol DID found for your account' }, { status: 400 });
 
     // Check crypto features are enabled
@@ -44,7 +44,7 @@ export default async function(req: Request): Promise<Response> {
       const cw = custodialWallets[0];
       if (cw.has_passkey || cw.has_pin) {
         if (!unlockCredential) {
-          return Response.json({ error: 'Wallet unlock required', requiresUnlock: true, hasPasskey: cw.has_passkey, hasPin: cw.has_pin }, { status: 401 });
+          return Response.json({ error: 'Wallet unlock required', requiresUnlock: true, hasPasskey: cw.has_passkey, hasPin: cw.has_pin }, { status: 200 });
         }
         const unlockError = await verifyUnlock(base44, req, user, cw, unlockCredential);
         if (unlockError) return unlockError;
