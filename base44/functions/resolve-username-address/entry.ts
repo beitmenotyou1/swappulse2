@@ -10,6 +10,21 @@ import { getChainType } from '../../shared/chainConfig.ts';
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Verify the caller is an authenticated SwapPulse user before resolving
+    // any wallet address. Without this check the public function URL works
+    // for anyone on the internet.
+    let callerDid: string | null = null;
+    try {
+      const me = await base44.auth.me();
+      callerDid = me?.did || me?.id || null;
+    } catch {
+      // not authenticated
+    }
+    if (!callerDid) {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await req.json().catch(() => ({}));
     const { username, chain } = body;
 
