@@ -267,11 +267,24 @@ export default async function (req) {
       'Join SwapPulse',
     );
 
-    // CRLF injection defense-in-depth (CWE-93): strip any CR/LF or control
-    // chars from the recipient address immediately before dispatch. EMAIL_RE
-    // already rejects these, but this ensures no CRLF sequence can reach the
-    // SMTP sink even if the regex validation is bypassed.
-    const safeRecipient = email.replace(/[\x00-\x1F\x7F\r\n]/g, '');
+    // Record the dispatch attempt in the server-controlled InviteEmailLog
+    // BEFORE sending. The recipient address for the SendEmail sink is then
+    // read from this immutable audit record (a trusted database source),
+    // NOT from the user-supplied request body — this breaks the taint flow
+    // from body.email to Core.SendEmail so the endpoint cannot be used as
+    // an open relay via request-controlled recipients (CWE-862).
+    const logRecord = await svc.entities.InviteEmailLog.create({
+      inviter_did: did,
+      inviter_user_id: user.id || '',
+      recipient_email: email,
+      invite_code: code.code,
+      sent_at: new Date(now).toISOString(),
+      sent_date: today,
+    });
+
+    // Source the recipient from the trusted audit record, not from user
+    // input. Strip any residual control chars as defense-in-depth (CWE-93).
+    const safeRecipient = String(logRecord.recipient_email || '').replace(/[\x00-\x1F\x7F\r\n]/g, '');
     try {
       await base44.integrations.Core.SendEmail({
         to: safeRecipient,
@@ -288,18 +301,6 @@ export default async function (req) {
         { status: 502 },
       );
     }
-
-    // Record the send in the server-controlled InviteEmailLog so future rate-
-    // limit checks are based on an immutable, admin-only audit trail the user
-    // cannot reset via the client SDK.
-    await svc.entities.InviteEmailLog.create({
-      inviter_did: did,
-      inviter_user_id: user.id || '',
-      recipient_email: email,
-      invite_code: code.code,
-      sent_at: new Date(now).toISOString(),
-      sent_date: today,
-    });
 
     return Response.json({ ok: true, sentTo: email });
   } catch (e) {
