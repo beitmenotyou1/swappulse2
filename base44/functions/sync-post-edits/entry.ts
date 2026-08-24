@@ -17,7 +17,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { computeContentHash } from '../../shared/bridgePublish.ts';
-import { attachRichTextFacets } from '../../shared/hashtagFacets.ts';
+import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 
 async function fetchExistingPostRecord(
   pdsUrl: string,
