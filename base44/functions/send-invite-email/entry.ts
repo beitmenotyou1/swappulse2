@@ -87,18 +87,27 @@ export default async function (req) {
       return Response.json({ error: 'Your identity is still provisioning — try again in a moment.' }, { status: 409 });
     }
 
-    // Per-inviter daily rate limit using a counter on the user's profile data.
-    const sentDate = user.data?.inviteEmailSentDate || '';
-    const sentCount = Number(user.data?.inviteEmailSentCount || 0);
-    const sentTotal = Number(user.data?.inviteEmailSentTotal || 0);
+    // Per-inviter rate limits are derived from the server-controlled
+    // InviteEmailLog entity (admin-only RLS), NOT from user.data fields — a
+    // user can reset user.data via the client SDK, which would bypass caps.
+    const svc = base44.asServiceRole;
     const today = todayStr();
-    if (sentDate === today && sentCount >= DAILY_CAP) {
+    const now = Date.now();
+    const cooldownSince = new Date(now - RECIPIENT_COOLDOWN_MS).toISOString();
+
+    const [todayLogs, totalLogs, recentRecipientLogs] = await Promise.all([
+      svc.entities.InviteEmailLog.filter({ inviter_did: did, sent_date: today }, '-created_date', 500).catch(() => []),
+      svc.entities.InviteEmailLog.filter({ inviter_did: did }, '-created_date', 500).catch(() => []),
+      svc.entities.InviteEmailLog.filter({ inviter_did: did, recipient_email: email }, '-created_date', 500).catch(() => []),
+    ]);
+
+    if ((todayLogs || []).length >= DAILY_CAP) {
       return Response.json(
         { error: `You've sent the daily limit of ${DAILY_CAP} invite emails. Try again tomorrow.` },
         { status: 429 },
       );
     }
-    if (sentTotal >= LIFETIME_CAP) {
+    if ((totalLogs || []).length >= LIFETIME_CAP) {
       return Response.json(
         { error: `You've reached the invite email limit. Contact support if you need to send more.` },
         { status: 429 },
@@ -106,10 +115,7 @@ export default async function (req) {
     }
     // Per-recipient cooldown: block re-mailing the same address within 24h to
     // prevent an attacker from hammering one mailbox via this endpoint.
-    const now = Date.now();
-    const recipients = Array.isArray(user.data?.inviteEmailRecipients) ? user.data.inviteEmailRecipients : [];
-    const recent = recipients.filter((r) => r && r.email && now - Number(r.ts || 0) < RECIPIENT_COOLDOWN_MS);
-    if (recent.some((r) => r.email === email)) {
+    if ((recentRecipientLogs || []).some((r) => r.sent_at && r.sent_at >= cooldownSince)) {
       return Response.json(
         { error: `An invite was already sent to that address recently. Try again later.` },
         { status: 429 },
@@ -117,7 +123,7 @@ export default async function (req) {
     }
 
     // Reuse the inviter's most recent active personal code, or create one.
-    const existing = await base44.asServiceRole.entities.InviteCode.filter(
+    const existing = await svc.entities.InviteCode.filter(
       { inviter_did: did, status: 'active' },
       '-created_date',
       1,
@@ -126,7 +132,7 @@ export default async function (req) {
     if (existing.length) {
       code = existing[0];
     } else {
-      const created = await base44.asServiceRole.entities.InviteCode.create({
+      const created = await svc.entities.InviteCode.create({
         code: genCode(),
         status: 'active',
         origin: 'user',
@@ -193,14 +199,16 @@ export default async function (req) {
       );
     }
 
-    // Increment the daily + lifetime counters (reset daily if the day rolled
-    // over) and append the recipient to the 24h cooldown list (capped to last 20).
-    const updatedRecipients = [...recent, { email, ts: now }].slice(-20);
-    await base44.auth.updateMe({
-      inviteEmailSentDate: today,
-      inviteEmailSentCount: sentDate === today ? sentCount + 1 : 1,
-      inviteEmailSentTotal: sentTotal + 1,
-      inviteEmailRecipients: updatedRecipients,
+    // Record the send in the server-controlled InviteEmailLog so future rate-
+    // limit checks are based on an immutable, admin-only audit trail the user
+    // cannot reset via the client SDK.
+    await svc.entities.InviteEmailLog.create({
+      inviter_did: did,
+      inviter_user_id: user.id || '',
+      recipient_email: email,
+      invite_code: code.code,
+      sent_at: new Date(now).toISOString(),
+      sent_date: today,
     });
 
     return Response.json({ ok: true, sentTo: email });

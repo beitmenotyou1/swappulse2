@@ -1,0 +1,60 @@
+{
+  "name": "InviteEmailLog",
+  "type": "object",
+  "title": "InviteEmailLog",
+  "description": "org.swappulse.inviteEmailLog \u2014 an immutable audit record of each invite email sent by a collector via the send-invite-email backend function. Used as the server-controlled source of truth for per-inviter rate limiting (daily cap, lifetime cap, per-recipient 24h cooldown). Counters are derived from this table rather than from user.data, which a user could reset via the client SDK to bypass caps. Admin-only access via RLS; the service role bypasses RLS for inserts during send-invite-email.",
+  "properties": {
+    "inviter_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector who sent the invite email"
+    },
+    "inviter_user_id": {
+      "type": "string",
+      "description": "Local User id of the inviter (for audit)"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Lowercased recipient email address the invite was sent to"
+    },
+    "invite_code": {
+      "type": "string",
+      "description": "The InviteCode code used in the invite link"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the invite email was sent (ISO-8601)"
+    },
+    "sent_date": {
+      "type": "string",
+      "description": "Calendar date (YYYY-MM-DD) of the send, used for daily cap queries"
+    }
+  },
+  "required": [
+    "inviter_did",
+    "recipient_email",
+    "sent_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
