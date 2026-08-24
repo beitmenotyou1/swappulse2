@@ -50,6 +50,101 @@ export default async function(req) {
     const svc = base44.asServiceRole;
     const event = JSON.parse(rawBody);
 
+    // Handle wallet top-up PaymentIntent success
+    if (event.type === 'payment_intent.succeeded') {
+      const pi = event.data?.object || {};
+      const type = pi.metadata?.type;
+      if (type === 'wallet_topup') {
+        const did = pi.metadata?.did;
+        const amountCents = Number(pi.metadata?.amount_cents || pi.amount || 0);
+        if (did && amountCents > 0) {
+          try {
+            // Find the pending FiatTopUp record
+            const topups = await svc.entities.FiatTopUp
+              .filter({ stripe_payment_intent_id: pi.id }).catch(() => []);
+            const pending = topups.filter((t) => t.status === 'pending');
+            if (pending.length) {
+              const topup = pending[0];
+              const feeCents = Math.floor((amountCents * 200) / 10000);
+
+              // Mark the top-up as succeeded
+              await svc.entities.FiatTopUp.update(topup.id, {
+                status: 'succeeded',
+                stripe_charge_id: String(pi.latest_charge || pi.charges?.data?.[0]?.id || ''),
+              });
+
+              // Get or create the wallet balance
+              const wallets = await svc.entities.CustodialWallet
+                .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+              if (wallets.length) {
+                const wallet = wallets[0];
+                const balances = await svc.entities.WalletBalance
+                  .filter({ did }, '-created_date', 1).catch(() => []);
+                let balance = balances[0];
+                if (!balance) {
+                  balance = await svc.entities.WalletBalance.create({
+                    did,
+                    wallet_address: wallet.wallet_address,
+                    fiat_cents: 0,
+                    usdc_wei: '0',
+                    total_topup_cents: 0,
+                    total_fees_paid_wei: '0',
+                    last_updated_at: new Date().toISOString(),
+                  });
+                }
+                // Credit the fiat balance (amount minus fee)
+                await svc.entities.WalletBalance.update(balance.id, {
+                  fiat_cents: (balance.fiat_cents || 0) + amountCents - feeCents,
+                  total_topup_cents: (balance.total_topup_cents || 0) + amountCents - feeCents,
+                  last_updated_at: new Date().toISOString(),
+                });
+
+                // Record the top-up credit transfer
+                await svc.entities.CryptoTransfer.create({
+                  did,
+                  transfer_type: 'topup_credit',
+                  from_address: 'stripe',
+                  to_address: wallet.wallet_address,
+                  amount_wei: '0',
+                  fee_wei: '0',
+                  status: 'confirmed',
+                  description: `Top-up of ${(amountCents / 100).toFixed(2)} ${topup.currency || 'GBP'} via Stripe`,
+                  fiat_topup_id: topup.id,
+                });
+
+                // Convert the fee to USDC and sweep to the platform fee wallet
+                try {
+                  const { fiatCentsToUsdcWei, sweepFeeToPlatformWallet } = await import('../../shared/walletEscrow.ts');
+                  const feeUsdcWei = fiatCentsToUsdcWei(feeCents);
+                  if (feeUsdcWei > 0n) {
+                    const { txHash } = await sweepFeeToPlatformWallet(feeUsdcWei);
+                    await svc.entities.FiatTopUp.update(topup.id, {
+                      fee_usdc_wei: feeUsdcWei.toString(),
+                      fee_tx_hash: txHash,
+                    });
+                    await svc.entities.FeeLedger.create({
+                      fee_source: 'topup',
+                      source_did: did,
+                      original_amount_cents: amountCents,
+                      fee_usdc_wei: feeUsdcWei.toString(),
+                      fee_tx_hash: txHash,
+                      swept: true,
+                      swept_at: new Date().toISOString(),
+                      reference_id: topup.id,
+                    });
+                  }
+                } catch (e) {
+                  console.error('Fee sweep for top-up failed:', (e as any)?.message);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('wallet top-up webhook handling failed:', (e as any)?.message);
+          }
+        }
+      }
+    }
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data?.object || {};
       const type = session.metadata?.type || 'donation';

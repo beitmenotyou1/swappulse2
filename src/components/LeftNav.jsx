@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, User as UserIcon, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -18,6 +18,7 @@ const primary = [
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
   { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
+  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', tKey: 'nav.trades' },
   { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },

@@ -11,6 +11,7 @@ import { TRADE_STATUS_LABELS } from '@/lib/format';
 import TradeFairnessCalculator from '@/components/trade/TradeFairnessCalculator';
 import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
 import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
+import EscrowTracker from '@/components/wallet/EscrowTracker';
 import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
@@ -165,7 +166,8 @@ export default function TradeThread() {
       ) : (
         <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
           <div className="border-b border-border p-4">
-            <div className="flex items-center gap-2">
+            <EscrowTracker tradeListingId={tradeId} trade={trade} me={me} />
+            <div className="mt-3 flex items-center gap-2">
               <Avatar name={trade.author_name} src={trade.author_avatar} size={32} />
               <span className="text-sm font-semibold">{trade.author_name || t('profile.collector')}</span>
               <span className="text-xs text-muted-foreground">· {TRADE_STATUS_LABELS[trade.status] || trade.status}</span>

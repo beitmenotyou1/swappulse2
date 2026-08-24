@@ -1,0 +1,221 @@
+{
+  "name": "EscrowTrade",
+  "type": "object",
+  "title": "EscrowTrade",
+  "description": "org.swappulse.escrowTrade \u2014 an escrow-verified trade that holds USDC (for card purchases) or tracks both parties' shipments (for card-for-card swaps) until the buyer(s) confirm physical receipt. For USDC purchases, funds are locked in the platform escrow wallet on creation and released to the seller on buyer confirmation. For card-for-card swaps, no funds are held; both parties must confirm receipt of the other's card. State machine: created \u2192 funded \u2192 shipped \u2192 delivered \u2192 released | disputed | cancelled.",
+  "properties": {
+    "trade_type": {
+      "type": "string",
+      "enum": [
+        "usdc_purchase",
+        "card_swap"
+      ],
+      "description": "usdc_purchase = buyer pays USDC for a card; card_swap = both parties swap cards for free"
+    },
+    "trade_listing_id": {
+      "type": "string",
+      "description": "Local TradeListing id this escrow is attached to"
+    },
+    "buyer_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the buyer (usdc_purchase) or one party (card_swap)"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "buyer_handle": {
+      "type": "string"
+    },
+    "buyer_wallet": {
+      "type": "string",
+      "description": "Polygon wallet address of the buyer (for USDC debit/credit)"
+    },
+    "seller_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the seller (usdc_purchase) or the other party (card_swap)"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "seller_handle": {
+      "type": "string"
+    },
+    "seller_wallet": {
+      "type": "string",
+      "description": "Polygon wallet address of the seller (for USDC credit)"
+    },
+    "usdc_amount_wei": {
+      "type": "string",
+      "default": "0",
+      "description": "USDC amount locked in escrow (base units, 6 decimals). 0 for card_swap."
+    },
+    "fee_wei": {
+      "type": "string",
+      "default": "0",
+      "description": "2% fee in USDC base units, collected on release. 0 for card_swap."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "created",
+        "funded",
+        "shipped",
+        "delivered",
+        "released",
+        "disputed",
+        "cancelled",
+        "refunded"
+      ],
+      "default": "created"
+    },
+    "escrow_tx_hash": {
+      "type": "string",
+      "description": "On-chain tx hash of the USDC transfer into the platform escrow wallet"
+    },
+    "release_tx_hash": {
+      "type": "string",
+      "description": "On-chain tx hash of the USDC release from escrow to the seller"
+    },
+    "buyer_shipping_name": {
+      "type": "string",
+      "description": "Recipient name for the buyer's shipment"
+    },
+    "buyer_shipping_address": {
+      "type": "string",
+      "description": "Full shipping address for the buyer"
+    },
+    "buyer_tracking_code": {
+      "type": "string",
+      "description": "Tracking code for the shipment sent to the buyer"
+    },
+    "buyer_carrier": {
+      "type": "string",
+      "description": "Shipping carrier (e.g. Royal Mail, USPS, DHL)"
+    },
+    "buyer_confirmation_photo": {
+      "type": "string",
+      "description": "URL of the photo uploaded by the buyer showing the received item with tracking code visible"
+    },
+    "buyer_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "seller_shipping_name": {
+      "type": "string"
+    },
+    "seller_shipping_address": {
+      "type": "string"
+    },
+    "seller_tracking_code": {
+      "type": "string"
+    },
+    "seller_carrier": {
+      "type": "string"
+    },
+    "seller_confirmation_photo": {
+      "type": "string"
+    },
+    "seller_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "TCGDex card IDs involved in the trade"
+    },
+    "card_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dispute_reason": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "dispute_filed_by": {
+      "type": "string",
+      "description": "DID of the party who filed the dispute"
+    },
+    "dispute_filed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "User id of the admin/moderator who resolved the dispute"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "trade_type",
+    "trade_listing_id",
+    "buyer_did",
+    "seller_did",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.buyer_did": "{{user.data.did}}"
+        },
+        {
+          "data.seller_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.buyer_did": "{{user.data.did}}"
+        },
+        {
+          "data.seller_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

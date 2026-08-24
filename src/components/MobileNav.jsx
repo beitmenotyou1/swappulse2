@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -14,11 +14,12 @@ import { useT } from '@/lib/i18n/I18nProvider';
 const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
+  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
 ];
 
-const TAB_ROOTS = ['/', '/explore', '/trades', '/collection'];
+const TAB_ROOTS = ['/', '/explore', '/trades', '/collection', '/wallet'];
 
 // Determine which primary tab owns a given pathname.
 // Sub-pages not matching any tab root fall back to the last active tab.

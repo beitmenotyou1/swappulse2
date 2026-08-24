@@ -63,6 +63,7 @@ const UserProfile = lazy(() => import('@/pages/UserProfile'));
 const VoiceSpaces = lazy(() => import('@/pages/VoiceSpaces'));
 const SpaceRoom = lazy(() => import('@/pages/SpaceRoom'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
+const Wallet = lazy(() => import('@/pages/Wallet'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Help = lazy(() => import('@/pages/Help'));
 const Status = lazy(() => import('@/pages/Status'));
@@ -318,6 +319,7 @@ const AuthenticatedApp = () => {
           <Route path="/trade-templates" element={<TradeTemplates />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
+          <Route path="/wallet" element={<Wallet />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
