@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Wallet as WalletIcon, History, Package, Settings as SettingsIcon, Loader2 } from 'lucide-react';
+import { Wallet as WalletIcon, History, Package, Settings as SettingsIcon, Loader2, Image as ImageIcon, Globe as GlobeIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
@@ -18,12 +18,16 @@ import BankAccountSection from '@/components/wallet/BankAccountSection';
 import EscrowTradeList from '@/components/wallet/EscrowTradeList';
 import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
+import NftPortfolioTab from '@/components/wallet/NftPortfolioTab';
+import DappBrowserTab from '@/components/wallet/DappBrowserTab';
 import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   { key: 'assets', label: 'Assets', icon: WalletIcon },
+  { key: 'nfts', label: 'NFTs', icon: ImageIcon },
   { key: 'activity', label: 'Activity', icon: History },
   { key: 'escrows', label: 'Escrows', icon: Package },
+  { key: 'dapps', label: 'dApps', icon: GlobeIcon },
   { key: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -159,6 +163,10 @@ export default function Wallet() {
           </div>
         )}
 
+        {activeTab === 'nfts' && (
+          <NftPortfolioTab />
+        )}
+
         {activeTab === 'activity' && (
           <div className="space-y-4">
             <WalletTrendsChart transfers={walletData?.transfers || []} topups={walletData?.topups || []} />
@@ -185,6 +193,10 @@ export default function Wallet() {
             <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
             <p className="text-sm font-semibold text-muted-foreground">No escrow trades yet</p>
           </div>
+        )}
+
+        {activeTab === 'dapps' && (
+          <DappBrowserTab walletAddress={walletData?.custodial_wallet?.address} />
         )}
 
         {activeTab === 'settings' && (

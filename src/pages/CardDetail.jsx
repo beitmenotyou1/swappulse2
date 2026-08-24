@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus, ShieldCheck } from 'lucide-react';
 import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { base44 } from '@/api/base44Client';
@@ -19,6 +19,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider';
 import CardSocialTabs from '@/components/cards/CardSocialTabs';
 import OnChainBadge from '@/components/blockchain/OnChainBadge';
 import MintOnPolygonButton from '@/components/blockchain/MintOnPolygonButton';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 
 export default function CardDetail() {
   const { cardId } = useParams();
@@ -40,6 +41,7 @@ export default function CardDetail() {
   const [myEntry, setMyEntry] = useState(null);
   const { toast } = useToast();
   const { t, locale } = useI18n();
+  const { cryptoEnabled } = useCryptoEnabled();
 
   useEffect(() => {
     (async () => {
@@ -64,6 +66,14 @@ export default function CardDetail() {
     })();
   }, [card]);
 
+  const refreshMyEntry = async () => {
+    if (!card) return;
+    try {
+      const entries = await base44.entities.CollectionEntry.filter({ card_id: card.id }, '-updated_date', 1);
+      setMyEntry(entries[0] || null);
+    } catch {}
+  };
+
   useEffect(() => {
     if (!card) return;
     (async () => {
@@ -71,10 +81,7 @@ export default function CardDetail() {
         const res = await base44.functions.invoke('get-on-chain-assets', { cardId: card.id });
         setOnChainAsset(res.data.assets[0] || null);
       } catch {}
-      try {
-        const entries = await base44.entities.CollectionEntry.filter({ card_id: card.id }, '-updated_date', 1);
-        setMyEntry(entries[0] || null);
-      } catch {}
+      refreshMyEntry();
     })();
   }, [card]);
 
@@ -255,8 +262,17 @@ export default function CardDetail() {
           <button onClick={() => setShowAlert(true)} className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
             <Bell className="h-4 w-4" /> {t('card.priceAlert')}
           </button>
-          {myEntry && (
+          {cryptoEnabled && myEntry && (
             <MintOnPolygonButton collectionEntryId={myEntry.id} cardName={card.name} cardImage={card.image} />
+          )}
+          {cryptoEnabled && !myEntry && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Mint on Polygon
+            </button>
           )}
         </div>
 
@@ -355,7 +371,7 @@ export default function CardDetail() {
 
       {tab === 'discussion' && <DiscussionTab card={card} />}
 
-      <AddToCollectionModal open={showAdd} onClose={() => setShowAdd(false)} card={card} />
+      <AddToCollectionModal open={showAdd} onClose={() => { setShowAdd(false); refreshMyEntry(); }} card={card} />
       {showAlert && <WishlistAlertModal card={card} onClose={() => setShowAlert(false)} />}
     </div>
   );
