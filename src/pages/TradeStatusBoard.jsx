@@ -8,6 +8,7 @@ import { TRADE_STATUS_LABELS, timeAgo } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
+import EscrowDashboard from '@/components/trade/EscrowDashboard';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const COLUMN_TKEYS = {
@@ -139,6 +140,9 @@ export default function TradeStatusBoard() {
           })}
         </div>
       </div>
+
+      {/* Escrow Dashboard: shows the user's active escrows with held payments and release status */}
+      {me && !loading && <EscrowDashboard userDid={me?.data?.did || me?.did} />}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>

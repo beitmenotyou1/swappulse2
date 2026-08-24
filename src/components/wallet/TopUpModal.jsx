@@ -71,12 +71,14 @@ export default function TopUpModal({ onClose }) {
         toast({ title: 'Top-up failed', description: res.data.error, variant: 'destructive' });
         return;
       }
-      setClientSecret(res.data.client_secret);
       const stripeKey = await base44.functions.invoke('get-payment-config', {});
       const publishableKey = stripeKey.data?.stripePublishableKey || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-      if (publishableKey) {
-        setStripePromise(loadStripe(publishableKey));
+      if (!publishableKey) {
+        toast({ title: 'Payment unavailable', description: 'Stripe is not configured. Please try again later.', variant: 'destructive' });
+        return;
       }
+      setStripePromise(loadStripe(publishableKey));
+      setClientSecret(res.data.client_secret);
     } catch (e) {
       toast({ title: 'Top-up failed', description: e.message, variant: 'destructive' });
     } finally {

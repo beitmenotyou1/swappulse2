@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine, RefreshCw, Building2, History, Loader2, RotateCcw } from 'lucide-react';
+import { Wallet as WalletIcon, History, Package, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import PageHeader from '@/components/PageHeader';
-import BalanceCards from '@/components/wallet/BalanceCards';
+import TotalBalanceCard from '@/components/wallet/TotalBalanceCard';
+import AssetList from '@/components/wallet/AssetList';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import SendCryptoModal from '@/components/wallet/SendCryptoModal';
 import ReceiveModal from '@/components/wallet/ReceiveModal';
@@ -18,12 +18,19 @@ import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
 import useSEO from '@/hooks/useSEO';
 
+const TABS = [
+  { key: 'assets', label: 'Assets', icon: WalletIcon },
+  { key: 'activity', label: 'Activity', icon: History },
+  { key: 'escrows', label: 'Escrows', icon: Package },
+  { key: 'settings', label: 'Settings', icon: SettingsIcon },
+];
+
 export default function Wallet() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { cryptoEnabled } = useCryptoEnabled();
   const [walletData, setWalletData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('assets');
   const [showTopUp, setShowTopUp] = useState(false);
   const [showSend, setShowSend] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
@@ -72,119 +79,133 @@ export default function Wallet() {
   const hasWallet = !!walletData?.custodial_wallet;
   const balance = walletData?.balance;
 
+  const reloadAfterModal = () => {
+    setShowTopUp(false); setShowSend(false); setShowReceive(false); setShowConvert(false); setShowRefund(false);
+    loadWallet();
+  };
+
   return (
     <div>
       <PageHeader title="Wallet" subtitle="Top up, send, receive, and convert your funds" />
 
-      {/* Balance Cards */}
-      <BalanceCards
+      {/* Hero balance card with action buttons (MetaMask/Brave style) */}
+      <TotalBalanceCard
         balance={balance}
         cryptoEnabled={cryptoEnabled}
         onChainUsdcWei={walletData?.on_chain_usdc_wei}
         formatFiat={formatFiat}
         formatUsdc={formatUsdc}
+        onTopUp={() => setShowTopUp(true)}
+        onSend={() => setShowSend(true)}
+        onReceive={() => setShowReceive(true)}
+        onConvert={() => setShowConvert(true)}
+        onRefund={() => setShowRefund(true)}
+        hasWallet={hasWallet}
       />
 
-      {/* Action Buttons */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={() => setShowTopUp(true)}
-          className="flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors"
-        >
-          <ArrowDownToLine className="h-4 w-4" /> Top Up
-        </button>
-        {cryptoEnabled && hasWallet && (
-          <>
-            <button
-              onClick={() => setShowSend(true)}
-              className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors"
-            >
-              <ArrowUpFromLine className="h-4 w-4" /> Send
-            </button>
-            <button
-              onClick={() => setShowReceive(true)}
-              className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors"
-            >
-              <ArrowDownToLine className="h-4 w-4" /> Receive
-            </button>
-            <button
-              onClick={() => setShowConvert(true)}
-              className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" /> Convert
-            </button>
-          </>
-        )}
-        {balance && balance.fiat_cents > 0 && (
+      {/* Tab navigation */}
+      <div className="mt-4 flex gap-1 rounded-xl border border-border bg-card p-1">
+        {TABS.map((tab) => (
           <button
-            onClick={() => setShowRefund(true)}
-            className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors"
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-bold transition ${
+              activeTab === tab.key
+                ? 'bg-primary text-white'
+                : 'text-muted-foreground hover:bg-secondary'
+            }`}
           >
-            <RotateCcw className="h-4 w-4" /> Refund
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
           </button>
-        )}
+        ))}
       </div>
 
-      {/* Low Balance Alert */}
-      {balance && (
-        <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
-      )}
-
-      {/* Bank Account Section (crypto off) */}
-      {!cryptoEnabled && (
-        <div className="mt-6">
-          <BankAccountSection bankAccount={walletData?.bank_account} onUpdated={loadWallet} />
-        </div>
-      )}
-
-      {/* No wallet CTA (crypto on but no custodial wallet) */}
-      {cryptoEnabled && !hasWallet && (
-        <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
-          <div className="flex items-center gap-2">
-            <WalletIcon className="h-5 w-5 text-primary" />
-            <h3 className="text-sm font-bold">Create a Wallet to Enable Crypto Features</h3>
+      {/* Tab content */}
+      <div className="mt-4">
+        {activeTab === 'assets' && (
+          <div className="space-y-4">
+            <AssetList
+              balance={balance}
+              cryptoEnabled={cryptoEnabled}
+              onChainUsdcWei={walletData?.on_chain_usdc_wei}
+              formatFiat={formatFiat}
+              formatUsdc={formatUsdc}
+            />
+            {balance && (
+              <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
+            )}
+            {cryptoEnabled && !hasWallet && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-center gap-2">
+                  <WalletIcon className="h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-bold">Create a Wallet to Enable Crypto Features</h3>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  You need a SwapPulse custodial wallet to send, receive, and hold USDC. Go to Settings → Polygon to create one.
+                </p>
+              </div>
+            )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            You need a SwapPulse custodial wallet to send, receive, and hold USDC. Go to Settings → Polygon to create one.
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* Active Escrow Trades */}
-      {hasWallet && (
-        <div className="mt-6">
+        {activeTab === 'activity' && (
+          <div className="space-y-4">
+            <WalletTrendsChart transfers={walletData?.transfers || []} topups={walletData?.topups || []} />
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-bold">Transaction History</h2>
+              </div>
+              <TransactionHistory
+                transfers={walletData?.transfers || []}
+                topups={walletData?.topups || []}
+                formatFiat={formatFiat}
+                formatUsdc={formatUsdc}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'escrows' && hasWallet && (
           <EscrowTradeList userDid={userDid} onUpdated={loadWallet} />
-        </div>
-      )}
+        )}
+        {activeTab === 'escrows' && !hasWallet && (
+          <div className="py-12 text-center">
+            <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+            <p className="text-sm font-semibold text-muted-foreground">No escrow trades yet</p>
+          </div>
+        )}
 
-      {/* 30-Day Trends Chart */}
-      <WalletTrendsChart transfers={walletData?.transfers || []} topups={walletData?.topups || []} />
-
-      {/* Transaction History */}
-      <div className="mt-6">
-        <div className="mb-3 flex items-center gap-2">
-          <History className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-bold">Transaction History</h2>
-        </div>
-        <TransactionHistory transfers={walletData?.transfers || []} topups={walletData?.topups || []} formatFiat={formatFiat} formatUsdc={formatUsdc} />
+        {activeTab === 'settings' && (
+          <div className="space-y-4">
+            {!cryptoEnabled && (
+              <BankAccountSection bankAccount={walletData?.bank_account} onUpdated={loadWallet} />
+            )}
+            {balance && balance.fiat_cents > 0 && (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <h3 className="text-sm font-bold">Refund Balance</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Refund unused fiat top-ups back to your original payment method. Refundable: {formatFiat(balance.total_topup_cents || 0, balance?.currency || 'GBP')}
+                </p>
+                <button
+                  onClick={() => setShowRefund(true)}
+                  className="mt-3 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-bold hover:bg-secondary/80"
+                >
+                  Request Refund
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modals */}
-      {showTopUp && (
-        <TopUpModal onClose={() => { setShowTopUp(false); loadWallet(); }} />
-      )}
-      {showSend && (
-        <SendCryptoModal wallet={walletData?.custodial_wallet} onClose={() => { setShowSend(false); loadWallet(); }} />
-      )}
-      {showReceive && (
-        <ReceiveModal walletAddress={walletData?.custodial_wallet?.address} onClose={() => setShowReceive(false)} />
-      )}
-      {showConvert && (
-        <ConvertModal balance={balance} wallet={walletData?.custodial_wallet} onClose={() => { setShowConvert(false); loadWallet(); }} />
-      )}
-      {showRefund && (
-        <RefundModal balance={balance} topups={walletData?.topups || []} onClose={() => { setShowRefund(false); loadWallet(); }} />
-      )}
+      {showTopUp && <TopUpModal onClose={reloadAfterModal} />}
+      {showSend && <SendCryptoModal wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
+      {showReceive && <ReceiveModal walletAddress={walletData?.custodial_wallet?.address} onClose={() => setShowReceive(false)} />}
+      {showConvert && <ConvertModal balance={balance} wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
+      {showRefund && <RefundModal balance={balance} topups={walletData?.topups || []} onClose={reloadAfterModal} />}
     </div>
   );
 }
