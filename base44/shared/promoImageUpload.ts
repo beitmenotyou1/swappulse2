@@ -70,7 +70,14 @@ export async function uploadPromoImage(
   let currentJwt = accessJwt;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const imgRes = await fetch(imageUrl);
+      // Send an explicit Accept header to prevent CDNs (e.g. TCGDex) from
+      // serving WebP via content negotiation despite a .png/.jpg URL suffix.
+      // Bluesky's app.bsky.embed.images lexicon only accepts JPEG and PNG;
+      // a WebP blob uploads to the PDS but the AppView strips the embed,
+      // rendering the post as plain text on Bluesky.
+      const imgRes = await fetch(imageUrl, {
+        headers: { 'Accept': 'image/png, image/jpeg' },
+      });
       if (!imgRes.ok) {
         console.error('promoImageUpload: image fetch failed', imgRes.status, imageUrl);
         if (attempt === 0) continue;
