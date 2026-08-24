@@ -2,7 +2,7 @@
   "name": "WalletBalance",
   "type": "object",
   "title": "WalletBalance",
-  "description": "org.swappulse.walletBalance \u2014 a collector's dual-currency wallet balance tracking fiat_cents (from Stripe top-ups, pre-conversion) and usdc_wei (USDC on Polygon, post-conversion or received). Extended for multi-chain support: chain_balances stores per-chain native token balances and USDC balances queried from each chain's RPC. default_chain is the user's preferred settlement chain for auto-conversion during trades. receive_strict_mode gates incoming transfers to allowlisted senders only. Linked to the user's MultiChainWallet (or legacy CustodialWallet) by did + wallet_address. One record per user. All balance mutations go through backend functions to ensure atomicity and fee collection.",
+  "description": "org.swappulse.walletBalance \u2014 a collector's dual-currency wallet balance tracking fiat_cents (from Stripe top-ups, pre-conversion) and usdc_wei (USDC on Polygon, post-conversion or received). Linked to the user's CustodialWallet by did + wallet_address. One record per user. All balance mutations go through backend functions to ensure atomicity and fee collection. Includes a user-configurable low_balance_threshold_cents for automated low-balance alerts.",
   "properties": {
     "did": {
       "type": "string",
@@ -10,7 +10,7 @@
     },
     "wallet_address": {
       "type": "string",
-      "description": "Primary wallet address (EVM address, lowercased) of the linked wallet"
+      "description": "Polygon wallet address (lowercased) of the linked custodial wallet"
     },
     "currency": {
       "type": "string",
@@ -30,27 +30,12 @@
     "usdc_wei": {
       "type": "string",
       "default": "0",
-      "description": "USDC balance in base units (6 decimals). Stored as string to avoid integer overflow."
-    },
-    "chain_balances": {
-      "type": "object",
-      "additionalProperties": true,
-      "description": "Per-chain balance snapshot from the last get-wallet-balance query. Structure: { polygon: { native_wei, usdc_wei }, ethereum: { native_wei, usdc_wei }, ..., solana: { native_lamports }, bitcoin: { native_sats } }. Refreshed on each wallet page load."
-    },
-    "default_chain": {
-      "type": "string",
-      "default": "polygon",
-      "description": "The user's preferred settlement chain for auto-conversion during trades. When a trade settles in USDC, this determines which chain the USDC is locked/released on."
-    },
-    "receive_strict_mode": {
-      "type": "boolean",
-      "default": false,
-      "description": "When true, incoming crypto transfers are only accepted from addresses on the user's ReceiveAllowlist or from traded contacts (completed EscrowTrade counterparties). Non-allowlisted sends are blocked at the watch layer."
+      "description": "USDC balance in base units (wei). USDC has 6 decimals, so 1000000 = 1 USDC. Stored as string to avoid integer overflow on large balances."
     },
     "total_topup_cents": {
       "type": "integer",
       "default": 0,
-      "description": "Cumulative fiat top-up amount (cents) eligible for refund. Decremented when a refund is issued."
+      "description": "Cumulative fiat top-up amount (cents) that is eligible for refund. Decremented when a refund is issued. Converted USDC cannot be refunded."
     },
     "total_fees_paid_wei": {
       "type": "string",
@@ -60,11 +45,12 @@
     "low_balance_threshold_cents": {
       "type": "integer",
       "default": 0,
-      "description": "User-configurable threshold in fiat cents for low-balance alerts. 0 = disabled."
+      "description": "User-configurable threshold in fiat cents. When fiat_cents drops below this value, the platform sends a low-balance notification. 0 = alert disabled. Checked by the check-low-balances scheduled function."
     },
     "low_balance_notified_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Timestamp of the last low-balance notification sent. Used to throttle alerts to once per 24 hours. Reset to null when the balance recovers above the threshold."
     },
     "last_updated_at": {
       "type": "string",
