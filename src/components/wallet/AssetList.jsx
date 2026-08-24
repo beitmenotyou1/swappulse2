@@ -1,9 +1,10 @@
 import React from 'react';
 import { Wallet as WalletIcon, Coins } from 'lucide-react';
+import ChainAssetList from '@/components/wallet/ChainAssetList';
 
 // MetaMask-style asset rows: each balance is a row with icon, name, amount,
 // and a subtitle — cleaner than separate cards and familiar to wallet users.
-export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, formatFiat, formatUsdc, cryptoDisplay }) {
+export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, formatFiat, formatUsdc, cryptoDisplay, chainBalances, cryptoPrices }) {
   const fiatCents = balance?.fiat_cents || 0;
   const currency = balance?.currency || 'GBP';
   const usdcWei = balance?.usdc_wei || '0';
@@ -39,24 +40,32 @@ export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, form
   }
 
   return (
-    <div className="divide-y divide-border rounded-2xl border border-border bg-card shadow-raised">
-      {rows.map((row, i) => (
-        <div key={i} className="flex items-center gap-3 p-4">
-          <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${row.iconBg}`}>
-            <row.icon className={`h-5 w-5 ${row.iconColor}`} />
+    <div className="space-y-4">
+      <div className="divide-y divide-border rounded-2xl border border-border bg-card shadow-raised">
+        {rows.map((row, i) => (
+          <div key={i} className="flex items-center gap-3 p-4">
+            <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${row.iconBg}`}>
+              <row.icon className={`h-5 w-5 ${row.iconColor}`} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">{row.name}</p>
+              <p className="text-xs text-muted-foreground">{row.subtitle}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold">{row.value}</p>
+              {row.subValue && (
+                <p className="text-xs text-muted-foreground">{row.subValue}</p>
+              )}
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">{row.name}</p>
-            <p className="text-xs text-muted-foreground">{row.subtitle}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-bold">{row.value}</p>
-            {row.subValue && (
-              <p className="text-xs text-muted-foreground">{row.subValue}</p>
-            )}
-          </div>
+        ))}
+      </div>
+      {cryptoEnabled && chainBalances && chainBalances.length > 0 && (
+        <div>
+          <h3 className="mb-2 px-1 text-xs font-bold uppercase text-muted-foreground">On-Chain Balances</h3>
+          <ChainAssetList chainBalances={chainBalances} formatFiat={formatFiat} cryptoPrices={cryptoPrices} />
         </div>
-      ))}
+      )}
     </div>
   );
 }

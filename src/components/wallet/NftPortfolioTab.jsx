@@ -8,6 +8,8 @@ import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import NftCard from '@/components/wallet/NftCard';
 import NftDetailSheet from '@/components/wallet/NftDetailSheet';
 import BulkMintModal from '@/components/wallet/BulkMintModal';
+import NftPortfolioChart from '@/components/wallet/NftPortfolioChart';
+import ChainTabBar from '@/components/wallet/ChainTabBar';
 
 function convertUsdToDisplay(usdAmount, displayCurrency, prices) {
   switch (displayCurrency) {
@@ -38,6 +40,7 @@ export default function NftPortfolioTab() {
   const [loading, setLoading] = useState(true);
   const [selectedNft, setSelectedNft] = useState(null);
   const [showBulkMint, setShowBulkMint] = useState(false);
+  const [activeChain, setActiveChain] = useState('all');
   const { prices } = useCryptoPrices();
   const { settings } = useSettings();
   const { cryptoEnabled } = useCryptoEnabled();
@@ -95,6 +98,18 @@ export default function NftPortfolioTab() {
         </p>
       </div>
 
+      {/* Portfolio value trends chart */}
+      {cardNfts.length > 0 && <NftPortfolioChart />}
+
+      {/* Chain filter tabs */}
+      {nfts.length > 0 && (
+        <ChainTabBar
+          chains={nfts.map(n => n.asset.chain_id === '137' ? 'polygon' : (n.asset.chain_id || 'polygon'))}
+          activeChain={activeChain}
+          onSelectChain={setActiveChain}
+        />
+      )}
+
       {/* NFT grid */}
       {nfts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -109,7 +124,10 @@ export default function NftPortfolioTab() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {nfts.map((nft) => (
+          {(activeChain === 'all' ? nfts : nfts.filter(n => {
+            const nftChain = n.asset.chain_id === '137' ? 'polygon' : (n.asset.chain_id || 'polygon');
+            return nftChain === activeChain;
+          })).map((nft) => (
             <NftCard
               key={nft.asset.id}
               nft={nft}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Wallet as WalletIcon, History, Package, Settings as SettingsIcon, Loader2, Image as ImageIcon, Globe as GlobeIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -10,7 +11,6 @@ import TotalBalanceCard from '@/components/wallet/TotalBalanceCard';
 import AssetList from '@/components/wallet/AssetList';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import SendCryptoModal from '@/components/wallet/SendCryptoModal';
-import ReceiveModal from '@/components/wallet/ReceiveModal';
 import ConvertModal from '@/components/wallet/ConvertModal';
 import RefundModal from '@/components/wallet/RefundModal';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
@@ -20,6 +20,7 @@ import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
 import NftPortfolioTab from '@/components/wallet/NftPortfolioTab';
 import DappBrowserTab from '@/components/wallet/DappBrowserTab';
+import ChainTabBar from '@/components/wallet/ChainTabBar';
 import useSEO from '@/hooks/useSEO';
 
 const TABS = [
@@ -32,17 +33,19 @@ const TABS = [
 ];
 
 export default function Wallet() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { cryptoEnabled } = useCryptoEnabled();
   const { settings } = useSettings();
   const { prices } = useCryptoPrices();
   const displayCurrency = settings?.crypto?.display_currency || 'USDC';
   const [walletData, setWalletData] = useState(null);
+  const [chainBalances, setChainBalances] = useState([]);
+  const [activeChain, setActiveChain] = useState('all');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('assets');
   const [showTopUp, setShowTopUp] = useState(false);
   const [showSend, setShowSend] = useState(false);
-  const [showReceive, setShowReceive] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showRefund, setShowRefund] = useState(false);
 
@@ -57,8 +60,12 @@ export default function Wallet() {
   const loadWallet = useCallback(async () => {
     if (!userDid) { setLoading(false); return; }
     try {
-      const res = await base44.functions.invoke('get-wallet-balance', {});
-      setWalletData(res.data);
+      const [balanceRes, chainRes] = await Promise.all([
+        base44.functions.invoke('get-wallet-balance', {}),
+        base44.functions.invoke('get-multi-chain-balances', {}).catch(() => ({ data: { balances: [] } })),
+      ]);
+      setWalletData(balanceRes.data);
+      setChainBalances(chainRes.data?.balances || []);
     } catch (e) {
       console.error('Wallet load error:', e);
     } finally {
@@ -92,7 +99,7 @@ export default function Wallet() {
     : null;
 
   const reloadAfterModal = () => {
-    setShowTopUp(false); setShowSend(false); setShowReceive(false); setShowConvert(false); setShowRefund(false);
+    setShowTopUp(false); setShowSend(false); setShowConvert(false); setShowRefund(false);
     loadWallet();
   };
 
@@ -109,7 +116,7 @@ export default function Wallet() {
         formatUsdc={formatUsdc}
         onTopUp={() => setShowTopUp(true)}
         onSend={() => setShowSend(true)}
-        onReceive={() => setShowReceive(true)}
+        onReceive={() => navigate('/wallet/receive')}
         onConvert={() => setShowConvert(true)}
         onRefund={() => setShowRefund(true)}
         hasWallet={hasWallet}
@@ -138,6 +145,13 @@ export default function Wallet() {
       <div className="mt-4">
         {activeTab === 'assets' && (
           <div className="space-y-4">
+            {cryptoEnabled && chainBalances.length > 0 && (
+              <ChainTabBar
+                chains={chainBalances.filter(cb => parseFloat(cb.balance) > 0).map(cb => cb.chain)}
+                activeChain={activeChain}
+                onSelectChain={setActiveChain}
+              />
+            )}
             <AssetList
               balance={balance}
               cryptoEnabled={cryptoEnabled}
@@ -145,6 +159,8 @@ export default function Wallet() {
               formatFiat={formatFiat}
               formatUsdc={formatUsdc}
               cryptoDisplay={cryptoDisplay}
+              chainBalances={activeChain === 'all' ? chainBalances : chainBalances.filter(cb => cb.chain === activeChain)}
+              cryptoPrices={prices}
             />
             {balance && (
               <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
@@ -225,7 +241,6 @@ export default function Wallet() {
       {/* Modals */}
       {showTopUp && <TopUpModal onClose={reloadAfterModal} />}
       {showSend && <SendCryptoModal wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
-      {showReceive && <ReceiveModal walletAddress={walletData?.custodial_wallet?.address} onClose={() => setShowReceive(false)} />}
       {showConvert && <ConvertModal balance={balance} wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
       {showRefund && <RefundModal balance={balance} topups={walletData?.topups || []} onClose={reloadAfterModal} />}
     </div>

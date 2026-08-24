@@ -11,6 +11,7 @@ import WalletPinModal from './WalletPinModal';
 import CreateWalletModal from './CreateWalletModal';
 import WalletLinkCard from './WalletLinkCard';
 import UsernameMintCard from './UsernameMintCard';
+import AllowlistManager from '@/components/wallet/AllowlistManager';
 
 export default function PolygonSettingsSection({ settings, update }) {
   const { user } = useAuth();
@@ -80,6 +81,7 @@ export default function PolygonSettingsSection({ settings, update }) {
               </div>
 
               <UsernameMintCard walletLinked={true} />
+              <AllowlistManager />
             </>
           ) : (
             <>

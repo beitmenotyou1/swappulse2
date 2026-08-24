@@ -64,6 +64,23 @@ export default async function(req: Request): Promise<Response> {
     const mintWallet = getMintWallet();
     const contract = getUsernameContract(mintWallet);
     const handle = user.bsky_handle || user.username || '';
+
+    // Enforce username immutability: reject if handle is already minted by
+    // a different collector. Usernames are permanent on-chain identity.
+    const handleLower = handle.toLowerCase();
+    if (handleLower) {
+      const allUsernameAssets = await base44.asServiceRole.entities.OnChainAsset
+        .filter({ asset_type: 'username' }, '-minted_at', 500).catch(() => []);
+      const handleMatch = allUsernameAssets.find(
+        (a: any) => (a.handle || '').toLowerCase() === handleLower
+      );
+      if (handleMatch && handleMatch.owner_did !== did) {
+        return Response.json({
+          error: 'This username is already minted by another collector. Usernames are immutable once minted — choose a different handle in your profile first.',
+        }, { status: 409 });
+      }
+    }
+
     // Dynamic metadata endpoint — the NFT image (logo + username + details)
     // and attributes update automatically when the collector edits their profile.
     const reqUrl = new URL(req.url);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Loader2, Send, Copy } from 'lucide-react';
+import { X, Loader2, Send, Copy, AtSign, Search } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import UnlockWalletModal from '@/components/blockchain/UnlockWalletModal';
@@ -10,6 +10,29 @@ export default function SendCryptoModal({ wallet, onClose }) {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [unlockState, setUnlockState] = useState(null);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [resolving, setResolving] = useState(false);
+
+  const resolveUsername = async () => {
+    if (!usernameInput.trim()) return;
+    setResolving(true);
+    try {
+      const res = await base44.functions.invoke('resolve-username-address', {
+        username: usernameInput.replace(/^@/, ''),
+        chain: 'polygon',
+      });
+      if (res.data?.error) {
+        toast({ title: 'Resolution failed', description: res.data.error, variant: 'destructive' });
+      } else if (res.data?.address) {
+        setToAddress(res.data.address);
+        toast({ title: `Resolved @${res.data.handle}`, description: `${res.data.address.slice(0, 8)}…${res.data.address.slice(-4)}` });
+      }
+    } catch (e) {
+      toast({ title: 'Resolution failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setResolving(false);
+    }
+  };
 
   const usdcBalance = 0; // will be passed from parent or fetched
   const fee = amount ? (parseFloat(amount) * 0.02).toFixed(2) : '0.00';
@@ -59,13 +82,41 @@ export default function SendCryptoModal({ wallet, onClose }) {
           </div>
 
           <div className="space-y-4">
+            {/* Username resolution */}
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-3">
+              <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                <AtSign className="mr-1 inline h-3 w-3" />Send to Username
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && resolveUsername()}
+                  placeholder="@username"
+                  className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm font-mono outline-none focus:border-primary"
+                />
+                <button
+                  onClick={resolveUsername}
+                  disabled={resolving || !usernameInput.trim()}
+                  className="flex items-center gap-1 rounded-lg bg-accent px-3 py-2 text-xs font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+                >
+                  {resolving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                  Resolve
+                </button>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Minted usernames are immutable address aliases across all chains.
+              </p>
+            </div>
+
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Recipient Address</label>
               <input
                 type="text"
                 value={toAddress}
                 onChange={(e) => setToAddress(e.target.value)}
-                placeholder="0x…"
+                placeholder="0x… or resolve a @username above"
                 className="w-full rounded-xl border border-border bg-secondary px-3 py-3 text-sm font-mono outline-none focus:border-primary"
               />
             </div>

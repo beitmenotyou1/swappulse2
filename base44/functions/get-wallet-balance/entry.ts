@@ -18,6 +18,23 @@ export default async function (req: Request): Promise<Response> {
       .filter({ did, active: true }, '-created_date', 1).catch(() => []);
     const custodialWallet = wallets[0] || null;
 
+    // Get multi-chain wallet (has Solana/Bitcoin addresses in addition to EVM)
+    const multiWallets = await base44.entities.MultiChainWallet
+      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+    const multiWallet = multiWallets[0] || null;
+
+    // Wallet addresses per chain type (EVM chains share one address)
+    const walletAddresses = {
+      evm: multiWallet?.evm_address || custodialWallet?.wallet_address || null,
+      solana: multiWallet?.solana_address || null,
+      bitcoin: multiWallet?.bitcoin_address || null,
+    };
+
+    // Get username NFT (if minted — serves as immutable cross-chain address alias)
+    const usernameNfts = await base44.entities.OnChainAsset
+      .filter({ owner_did: did, asset_type: 'username' }, '-minted_at', 1).catch(() => []);
+    const usernameNft = usernameNfts[0] || null;
+
     // Get wallet balance
     let balance = null;
     if (custodialWallet) {
@@ -72,6 +89,12 @@ export default async function (req: Request): Promise<Response> {
         bic_masked: bankAccount.bic_masked,
         account_holder_name: bankAccount.account_holder_name,
         bank_name: bankAccount.bank_name,
+      } : null,
+      wallet_addresses: walletAddresses,
+      username_nft: usernameNft ? {
+        handle: usernameNft.handle,
+        token_id: usernameNft.token_id,
+        contract_address: usernameNft.contract_address,
       } : null,
     });
   } catch (error: any) {
