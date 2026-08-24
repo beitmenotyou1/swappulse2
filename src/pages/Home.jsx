@@ -21,6 +21,7 @@ import CategoryFilterChips from '@/components/feed/CategoryFilterChips';
 import { useT } from '@/lib/i18n/I18nProvider';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import PullToRefresh from '@/components/PullToRefresh';
+import SecurityPromptBanner from '@/components/home/SecurityPromptBanner';
 
 const ALL_TABS = [
   { key: 'all', tKey: 'feed.forYou' },
@@ -201,6 +202,8 @@ export default function Home() {
       </div>
 
       {user && <CategoryFilterChips value={category} onChange={setCategory} />}
+
+      {user && <SecurityPromptBanner />}
 
       <PullToRefresh onRefresh={loadPosts}>
       <RarityFilter value={rarityFilter} onChange={setRarityFilter} />

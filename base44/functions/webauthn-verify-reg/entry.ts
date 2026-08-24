@@ -68,6 +68,23 @@ export default async function (req: Request): Promise<Response> {
     // Mark user as having WebAuthn enabled
     await base44.asServiceRole.entities.User.update(user.id, { webauthn_enabled: true });
 
+    // Unify: also add this credential to the user's active CustodialWallet
+    // (if any) so one passkey serves both account login and wallet unlock.
+    const userDid = user.data?.did || user.did;
+    if (userDid) {
+      const wallets = await base44.asServiceRole.entities.CustodialWallet
+        .filter({ did: userDid, active: true }, '-created_date', 1)
+        .catch(() => []);
+      if (wallets && wallets.length) {
+        const wallet = wallets[0];
+        const updatedCredentialIds = [...(wallet.passkey_credential_ids || []), credentialIdB64];
+        await base44.asServiceRole.entities.CustodialWallet.update(wallet.id, {
+          passkey_credential_ids: updatedCredentialIds,
+          has_passkey: true,
+        }).catch(() => {});
+      }
+    }
+
     return Response.json({
       verified: true,
       credential_id: credentialIdB64,
