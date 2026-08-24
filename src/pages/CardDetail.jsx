@@ -130,7 +130,7 @@ export default function CardDetail() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-bold leading-tight">{card.name}</h1>
-            {onChainAsset && <OnChainBadge />}
+            {onChainAsset && <OnChainBadge verificationLevel={onChainAsset.verification_level} />}
           </div>
           <p className="text-xs text-muted-foreground">{card.set?.name} · #{card.localId}</p>
         </div>
@@ -256,7 +256,7 @@ export default function CardDetail() {
             <Bell className="h-4 w-4" /> {t('card.priceAlert')}
           </button>
           {myEntry && (
-            <MintOnPolygonButton collectionEntryId={myEntry.id} cardName={card.name} />
+            <MintOnPolygonButton collectionEntryId={myEntry.id} cardName={card.name} cardImage={card.image} />
           )}
         </div>
 

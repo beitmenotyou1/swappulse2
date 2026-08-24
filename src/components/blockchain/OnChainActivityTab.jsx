@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import CardImage from '@/components/cards/CardImage';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
+import OnChainBadge from './OnChainBadge';
 
 // Profile tab showing a collector's minted on-chain assets: their soulbound
 // username NFT and any card NFTs they've minted as proof of ownership.
@@ -92,6 +93,9 @@ export default function OnChainActivityTab({ did }) {
                   )}
                 </div>
                 <p className="mt-1.5 truncate text-xs font-semibold">{asset.linked_card_name}</p>
+                <div className="mt-0.5 mb-1">
+                  <OnChainBadge verificationLevel={asset.verification_level} size="sm" />
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-muted-foreground">#{asset.token_id}</span>
                   {asset.mint_tx_hash && (
