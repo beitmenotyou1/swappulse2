@@ -304,6 +304,28 @@ export default async function (req) {
     // Source the recipient from the trusted audit record, not from user
     // input. Strip any residual control chars as defense-in-depth (CWE-93).
     const safeRecipient = String(logRecord.recipient_email || '').replace(/[\x00-\x1F\x7F\r\n]/g, '');
+
+    // Final sink-side validation: independently re-verify the recipient value
+    // that will be passed to Core.SendEmail. This breaks the taint flow from
+    // the request body to the email integration sink — even though the
+    // original `email` was validated above, we re-check the trusted-source
+    // value here so the address reaching SendEmail is guaranteed to have
+    // passed every constraint (format, non-disposable, not-self, not-member).
+    if (!safeRecipient || safeRecipient.length > MAX_EMAIL_LEN || !EMAIL_RE.test(safeRecipient)) {
+      return Response.json({ error: 'Invalid recipient address.' }, { status: 400 });
+    }
+    const safeDomain = safeRecipient.split('@')[1];
+    if (BLOCKED_DOMAINS.has(safeDomain)) {
+      return Response.json({ error: 'Recipient domain is not allowed.' }, { status: 400 });
+    }
+    if (safeRecipient === String(user.email || '').trim().toLowerCase()) {
+      return Response.json({ error: "You can't send an invite to yourself." }, { status: 400 });
+    }
+    const safeMemberCheck = await svc.entities.User.filter({ email: safeRecipient }).catch(() => []);
+    if (safeMemberCheck && safeMemberCheck.length > 0) {
+      return Response.json({ error: 'That person is already on SwapPulse!' }, { status: 400 });
+    }
+
     try {
       await base44.integrations.Core.SendEmail({
         to: safeRecipient,

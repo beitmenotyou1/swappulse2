@@ -24,6 +24,19 @@ const ERC20_BALANCE_ABI = [
   'function transfer(address, uint256) returns (bool)',
 ];
 
+// Server-side allowlist of ERC20 token contract addresses that may be
+// converted to USDC via this endpoint. The platform credits real USDC from
+// its reserve wallet in exchange for the user's tokens, so accepting an
+// arbitrary user-supplied token_address would let an attacker mint a
+// worthless custom token and drain the reserve. Only tokens listed here
+// are accepted; the list is intentionally empty by default (fail-closed)
+// until a proper price oracle / DEX aggregator is integrated. Add supported
+// token addresses (lowercased) when oracle-backed valuation is available.
+const SUPPORTED_TOKEN_ADDRESSES: ReadonlySet<string> = new Set([
+  // e.g. '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', // USDC.e
+  // e.g. '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', // USDC (native)
+]);
+
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -40,6 +53,13 @@ export default async function (req: Request): Promise<Response> {
     }
     if (token_address.toLowerCase() === USDC_CONTRACT_ADDRESS.toLowerCase()) {
       return Response.json({ error: 'Token is already USDC' }, { status: 400 });
+    }
+    // Security: only tokens in the server-side allowlist may be converted.
+    // Without this check an attacker could create a worthless custom ERC20,
+    // mint a large balance, and drain the platform's USDC reserve at the
+    // 1:1 exchange rate assumed below.
+    if (!SUPPORTED_TOKEN_ADDRESSES.has(token_address.toLowerCase())) {
+      return Response.json({ error: 'This token is not supported for conversion.' }, { status: 403 });
     }
 
     // Get the user's custodial wallet
