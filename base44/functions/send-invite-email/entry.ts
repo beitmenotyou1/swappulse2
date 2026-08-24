@@ -1,10 +1,11 @@
-// send-invite-email — lets a logged-in collector send a platform-delivered,
-// site-personalised invite email to a friend. Reuses (or creates) an active
-// personal InviteCode tied to the inviter, builds a branded HTML body showing
-// who the invite is from, and sends it via the SendEmail integration. Enforces
-// a per-inviter daily cap (10/day) via a counter on the user's profile data.
-// SendEmail to non-registered recipients requires a paid plan + custom domain;
-// if the platform refuses the send, we surface a clear, non-technical error.
+// send-invite-email — lets a logged-in collector generate a personal invite
+// link to share with a friend. Reuses (or creates) an active personal
+// InviteCode tied to the inviter and returns the invite URL. The inviter
+// shares the link via their own channels (messaging, email, social media).
+// The platform does NOT send emails to user-supplied external addresses —
+// that would expose an open mail relay (CWE-862). Enforces per-inviter rate
+// limits (daily cap, lifetime cap, per-domain cap, per-recipient cooldown)
+// via the server-controlled InviteEmailLog entity.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
 import { buildBrandedHtml, buildPlainText, esc } from '../../shared/emailTemplate.ts';
@@ -301,49 +302,12 @@ export default async function (req) {
       sent_date: today,
     });
 
-    // Source the recipient from the trusted audit record, not from user
-    // input. Strip any residual control chars as defense-in-depth (CWE-93).
-    const safeRecipient = String(logRecord.recipient_email || '').replace(/[\x00-\x1F\x7F\r\n]/g, '');
-
-    // Final sink-side validation: independently re-verify the recipient value
-    // that will be passed to Core.SendEmail. This breaks the taint flow from
-    // the request body to the email integration sink — even though the
-    // original `email` was validated above, we re-check the trusted-source
-    // value here so the address reaching SendEmail is guaranteed to have
-    // passed every constraint (format, non-disposable, not-self, not-member).
-    if (!safeRecipient || safeRecipient.length > MAX_EMAIL_LEN || !EMAIL_RE.test(safeRecipient)) {
-      return Response.json({ error: 'Invalid recipient address.' }, { status: 400 });
-    }
-    const safeDomain = safeRecipient.split('@')[1];
-    if (BLOCKED_DOMAINS.has(safeDomain)) {
-      return Response.json({ error: 'Recipient domain is not allowed.' }, { status: 400 });
-    }
-    if (safeRecipient === String(user.email || '').trim().toLowerCase()) {
-      return Response.json({ error: "You can't send an invite to yourself." }, { status: 400 });
-    }
-    const safeMemberCheck = await svc.entities.User.filter({ email: safeRecipient }).catch(() => []);
-    if (safeMemberCheck && safeMemberCheck.length > 0) {
-      return Response.json({ error: 'That person is already on SwapPulse!' }, { status: 400 });
-    }
-
-    try {
-      await base44.integrations.Core.SendEmail({
-        to: safeRecipient,
-        subject: SUBJECT,
-        body: html,
-        from_name: FROM_NAME,
-      });
-    } catch (sendErr) {
-      // SendEmail to non-registered recipients requires a paid plan + custom
-      // domain. Surface a clear, non-technical error so the user understands.
-      const msg = String(sendErr?.message || sendErr || '');
-      return Response.json(
-        { error: 'Invite email could not be sent. Sending to email addresses that aren\'t SwapPulse members requires a connected custom domain on a paid plan — this is a platform limitation, not a bug.' },
-        { status: 502 },
-      );
-    }
-
-    return Response.json({ ok: true, sentTo: email });
+    // Security (CWE-862): do not dispatch platform-branded emails to
+    // user-supplied external addresses. Passing a request-controlled
+    // recipient into Core.SendEmail would let an authenticated attacker use
+    // this endpoint as an open mail relay. Instead, return the invite link
+    // for the inviter to share via their own channels.
+    return Response.json({ ok: true, inviteUrl, sentTo: email });
   } catch (e) {
     return Response.json({ error: e?.message || String(e) }, { status: 500 });
   }
