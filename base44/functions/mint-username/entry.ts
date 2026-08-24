@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getMintWallet, getUsernameContract, getExplorerUrl, parseMintEvent } from '../../shared/polygonClient.ts';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
-import { verifySignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
+import { verifySignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { verifyPin } from '../../shared/walletCrypto.ts';
 
 // Mints a collector's SwapPulse handle as a soulbound (non-transferable)
@@ -126,7 +126,7 @@ async function verifyUnlock(base44: any, req: Request, user: any, wallet: any, u
       expectedRPID: rpConfig.rpId,
       authenticator: {
         credentialID: credential.credential_id,
-        credentialPublicKey: credential.public_key,
+        credentialPublicKey: base64UrlToUint8Array(credential.public_key),
         counter: credential.counter || 0,
         transports: credential.transports || [],
       },

@@ -10,7 +10,7 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from 'npm:@simplewebauthn/server@10';
-import { generateSignedChallenge, verifySignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
+import { generateSignedChallenge, verifySignedChallenge, getRpConfig, uint8ArrayToBase64Url } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -98,7 +98,7 @@ export default async function (req: Request): Promise<Response> {
       // Store the credential in WebAuthnCredential (reused for verification)
       await base44.asServiceRole.entities.WebAuthnCredential.create({
         credential_id: credentialID,
-        public_key: credentialPublicKey,
+        public_key: uint8ArrayToBase64Url(credentialPublicKey),
         counter,
         transports: transports || [],
         label: label || 'Wallet Key',

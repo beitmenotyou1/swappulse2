@@ -7,7 +7,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
-import { verifySignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
+import { verifySignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
 import {
   TOTP_RATE_LIMIT_MAX,
@@ -88,7 +88,7 @@ export default async function (req: Request): Promise<Response> {
       expectedRPID: rpConfig.rpId,
       authenticator: {
         credentialID: credential.credential_id,
-        credentialPublicKey: credential.public_key,
+        credentialPublicKey: base64UrlToUint8Array(credential.public_key),
         counter: credential.counter || 0,
         transports: credential.transports || [],
       },

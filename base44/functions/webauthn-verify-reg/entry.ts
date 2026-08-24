@@ -4,7 +4,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyRegistrationResponse } from 'npm:@simplewebauthn/server@10';
-import { verifySignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
+import { verifySignedChallenge, getRpConfig, uint8ArrayToBase64Url } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -44,7 +44,7 @@ export default async function (req: Request): Promise<Response> {
       verification.registrationInfo;
 
     const credentialIdB64 = credentialID; // already base64url from @simplewebauthn/server
-    const pubKeyB64 = credentialPublicKey;
+    const pubKeyB64 = uint8ArrayToBase64Url(credentialPublicKey);
 
     // Check for duplicate credential ID
     const dupes = await base44.asServiceRole.entities.WebAuthnCredential
