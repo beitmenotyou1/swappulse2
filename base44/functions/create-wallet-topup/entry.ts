@@ -37,13 +37,11 @@ export default async function (req: Request): Promise<Response> {
       body: new URLSearchParams({
         amount: String(amount_cents),
         currency: currency.toLowerCase(),
-        automatic_payment_methods: JSON.stringify({ enabled: true }),
-        metadata: JSON.stringify({
-          type: 'wallet_topup',
-          did,
-          user_id: user.id,
-          amount_cents: String(amount_cents),
-        }),
+        'automatic_payment_methods[enabled]': 'true',
+        'metadata[type]': 'wallet_topup',
+        'metadata[did]': did,
+        'metadata[user_id]': user.id,
+        'metadata[amount_cents]': String(amount_cents),
       }),
     });
 
