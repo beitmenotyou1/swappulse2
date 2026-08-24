@@ -64,7 +64,11 @@ export default async function(req: Request): Promise<Response> {
     const mintWallet = getMintWallet();
     const contract = getUsernameContract(mintWallet);
     const handle = user.bsky_handle || user.username || '';
-    const metadataURI = `https://swappulse.org/u/${handle}`;
+    // Dynamic metadata endpoint — the NFT image (logo + username + details)
+    // and attributes update automatically when the collector edits their profile.
+    const reqUrl = new URL(req.url);
+    const origin = `${reqUrl.protocol}//${reqUrl.host}`;
+    const metadataURI = `${origin}/functions/username-nft-metadata?did=${encodeURIComponent(did)}`;
 
     const tx = await contract.mint(walletAddress, handle, did, metadataURI);
     const receipt = await tx.wait();

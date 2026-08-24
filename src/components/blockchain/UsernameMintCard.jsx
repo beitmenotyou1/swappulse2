@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import UnlockWalletModal from './UnlockWalletModal';
+import UsernameNftPreview from './UsernameNftPreview';
 
 export default function UsernameMintCard({ walletLinked }) {
   const { user } = useAuth();
@@ -16,6 +17,10 @@ export default function UsernameMintCard({ walletLinked }) {
   const [unlockState, setUnlockState] = useState(null);
 
   const userDid = user?.data?.did || user?.did;
+  const handle = user?.bsky_handle || user?.username || '';
+  const displayName = user?.data?.display_name || user?.full_name || handle;
+  const memberSince = user?.created_date;
+
   const load = async () => {
     if (!userDid) { setLoading(false); return; }
     try {
@@ -68,9 +73,12 @@ export default function UsernameMintCard({ walletLinked }) {
             <Check className="h-3 w-3" /> MINTED
           </span>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Your handle <span className="font-semibold text-foreground">@{asset.handle}</span> is permanently minted as a soulbound NFT.
-        </p>
+        <div className="mt-3 flex flex-col items-center gap-3">
+          <UsernameNftPreview handle={asset.handle || handle} displayName={displayName} memberSince={memberSince} />
+          <p className="text-center text-xs text-muted-foreground">
+            Your handle <span className="font-semibold text-foreground">@{asset.handle}</span> is permanently minted as a soulbound NFT. The image and details update automatically when you edit your profile.
+          </p>
+        </div>
         <div className="mt-2 text-xs font-mono text-muted-foreground">
           Token #{asset.token_id} · {asset.contract_address?.slice(0, 10)}…{asset.contract_address?.slice(-6)}
         </div>
@@ -95,7 +103,10 @@ export default function UsernameMintCard({ walletLinked }) {
           <Fingerprint className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-bold">On-Chain Username</h3>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <div className="mt-3 flex justify-center">
+          <UsernameNftPreview handle={handle || 'yourhandle'} displayName={displayName} memberSince={memberSince} />
+        </div>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
           Create or link a wallet first, then mint your handle as a permanent, non-transferable on-chain identity.
         </p>
       </div>
@@ -109,13 +120,16 @@ export default function UsernameMintCard({ walletLinked }) {
           <Fingerprint className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold">On-Chain Username</h3>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Mint your SwapPulse handle as a soulbound NFT on Polygon. It's permanent, non-transferable, and serves as your on-chain identity and crypto address.
-        </p>
+        <div className="mt-3 flex flex-col items-center gap-3">
+          <UsernameNftPreview handle={handle || 'yourhandle'} displayName={displayName} memberSince={memberSince} />
+          <p className="text-center text-xs text-muted-foreground">
+            Mint your SwapPulse handle as a soulbound NFT on Polygon. The logo, your username, and profile details are embedded in the NFT image and update automatically when you edit your profile.
+          </p>
+        </div>
         <button
           onClick={() => doMint(null)}
           disabled={minting}
-          className="mt-3 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
         >
           {minting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
           Mint Username NFT
