@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Loader2, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Loader2, CreditCard, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
@@ -9,7 +9,18 @@ function CheckoutForm({ clientSecret, onSuccess, onClose }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
+  const [formReady, setFormReady] = useState(false);
+  const [stripeLoadFailed, setStripeLoadFailed] = useState(false);
   const { toast } = useToast();
+
+  // Detect if Stripe.js fails to load within 15 seconds (ad blocker, network, etc.)
+  useEffect(() => {
+    if (stripe) return; // loaded successfully
+    const timer = setTimeout(() => {
+      if (!stripe) setStripeLoadFailed(true);
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [stripe]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,17 +44,62 @@ function CheckoutForm({ clientSecret, onSuccess, onClose }) {
     }
   };
 
+  // Stripe.js hasn't loaded yet — show a loading state, not a greyed-out button
+  if (!stripe && !stripeLoadFailed) {
+    return (
+      <div className="space-y-4">
+        <div className="flex h-48 items-center justify-center rounded-xl border border-border bg-secondary">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading secure payment form…</p>
+          </div>
+        </div>
+        <div className="flex w-full items-center justify-center gap-2 rounded-full bg-secondary px-4 py-3 text-sm font-bold text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Preparing payment…
+        </div>
+      </div>
+    );
+  }
+
+  // Stripe.js failed to load
+  if (stripeLoadFailed && !stripe) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-sm font-semibold text-destructive">Payment form failed to load</p>
+          <p className="text-xs text-muted-foreground">
+            This may be caused by a network issue or ad blocker. Please disable any ad blockers, refresh the page, and try again.
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-secondary px-4 py-3 text-sm font-bold hover:bg-secondary/80"
+        >
+          Close and Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement options={{ layout: 'tabs' }} />
+      <PaymentElement
+        options={{ layout: 'tabs' }}
+        onChange={(e) => setFormReady(e.complete)}
+      />
       <button
         type="submit"
-        disabled={!stripe || loading}
+        disabled={loading || !formReady}
         className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
         {loading ? 'Processing…' : 'Pay Now'}
       </button>
+      {!formReady && (
+        <p className="text-center text-xs text-muted-foreground">Enter your payment details above to continue</p>
+      )}
     </form>
   );
 }
