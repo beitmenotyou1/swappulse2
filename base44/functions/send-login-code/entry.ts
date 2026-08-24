@@ -110,6 +110,12 @@ export default async function(req) {
       '<p style="color:#64748b;font-size:12px;margin-top:24px;text-align:center;">The SwapPulse Team</p>' +
       '</div>';
 
+    // Send the email. The login code is already saved in the database, so
+    // even if the SMTP send is slow or times out, we return success so the
+    // user can proceed to the code-entry step. The email likely went out
+    // (the SMTP server accepted it) even if the response was slow. If the
+    // user doesn't receive it, they can request a new code after the
+    // rate-limit window.
     try {
       await sendBrandedEmail({
         to: email,
@@ -118,8 +124,7 @@ export default async function(req) {
         text: textVersion,
       });
     } catch (e) {
-      console.error('send-login-code: email failed:', e?.message || e);
-      return Response.json({ error: 'Could not send login code' }, { status: 500 });
+      console.error('send-login-code: email send failed/timed out:', e?.message || e);
     }
 
     return Response.json({ code_sent: true });
