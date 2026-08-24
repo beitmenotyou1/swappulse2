@@ -39,9 +39,12 @@ function sanitizeHeader(str) {
 }
 
 // Validate the recipient domain actually accepts mail (MX, falling back to A as
-// implicit MX). Blocks relay abuse via throwaway/non-existent domains.
+// implicit MX). Blocks relay abuse via throwaway/non-existent domains. Fails
+// CLOSED: if the DNS resolution API is unavailable we reject the send rather
+// than allow it, so the recipient domain is always strictly verified before
+// Core.SendEmail is called — no open-relay fallback path.
 async function domainCanReceiveMail(domain) {
-  if (typeof Deno === 'undefined' || !Deno.resolveDns) return true; // skip if DNS API unavailable
+  if (typeof Deno === 'undefined' || !Deno.resolveDns) return false;
   try {
     const mx = await Deno.resolveDns(domain, 'MX');
     if (mx && mx.length) return true;
