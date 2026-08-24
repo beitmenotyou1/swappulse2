@@ -15,6 +15,7 @@ import TransactionHistory from '@/components/wallet/TransactionHistory';
 import BankAccountSection from '@/components/wallet/BankAccountSection';
 import EscrowTradeList from '@/components/wallet/EscrowTradeList';
 import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
+import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
 import useSEO from '@/hooks/useSEO';
 
 export default function Wallet() {
@@ -155,6 +156,9 @@ export default function Wallet() {
           <EscrowTradeList userDid={userDid} onUpdated={loadWallet} />
         </div>
       )}
+
+      {/* 30-Day Trends Chart */}
+      <WalletTrendsChart transfers={walletData?.transfers || []} topups={walletData?.topups || []} />
 
       {/* Transaction History */}
       <div className="mt-6">
