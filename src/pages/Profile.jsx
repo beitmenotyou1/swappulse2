@@ -39,6 +39,7 @@ import { themeGradient, DEFAULT_OWNER_SECTIONS, ALL_TAB_LABELS } from '@/lib/pro
 import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import MovedFromBlueskyBadge from '@/components/profile/MovedFromBlueskyBadge';
+import OnChainBadge from '@/components/blockchain/OnChainBadge';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -70,6 +71,7 @@ export default function Profile() {
   const [showEdit, setShowEdit] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [onChainAssets, setOnChainAssets] = useState([]);
   const reverted = !!user?.migration_reverted;
 
   // Merged profile overlays live Bluesky identity (remote wins for shared
@@ -84,18 +86,20 @@ export default function Profile() {
     try {
       const { did: myDid } = await ensureUserDid();
       setDid(myDid);
-      const [c, t, r, j, vs] = await Promise.all([
+      const [c, t, r, j, vs, oa] = await Promise.all([
         base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100),
         base44.entities.TradeListing.filter({ created_by_id: user.id }, '-created_date', 20),
         base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
         base44.entities.Journal.filter({ created_by_id: user.id }, '-created_date', 50),
         base44.entities.VoiceSpace.filter({ did: myDid, status: 'live' }, '-created_date', 1).catch(() => []),
+        base44.entities.OnChainAsset.filter({ owner_did: myDid }, '-minted_at', 50).catch(() => []),
       ]);
       setCollection(c);
       setTrades(t);
       setReputation(r);
       setJournals(j);
       setLiveSpace(vs[0] || null);
+      setOnChainAssets(oa);
     } catch {} finally {
       setLoading(false);
     }
@@ -214,7 +218,12 @@ export default function Profile() {
               <GoLiveControl liveSpace={liveSpace} onOpenModal={() => setShowGoLive(true)} onEndStream={endStream} ending={ending} />
             </>
           }
-          badges={user?.migrated_from_bluesky ? <MovedFromBlueskyBadge size="md" /> : null}
+          badges={
+            <>
+              {user?.migrated_from_bluesky && <MovedFromBlueskyBadge size="md" />}
+              {onChainAssets.length > 0 && <OnChainBadge />}
+            </>
+          }
           extra={
             <>
               <div><NotificationToggle /></div>

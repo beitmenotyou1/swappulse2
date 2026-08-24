@@ -17,6 +17,8 @@ import { formatPrice } from '@/lib/format';
 import useSEO from '@/hooks/useSEO';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import CardSocialTabs from '@/components/cards/CardSocialTabs';
+import OnChainBadge from '@/components/blockchain/OnChainBadge';
+import MintOnPolygonButton from '@/components/blockchain/MintOnPolygonButton';
 
 export default function CardDetail() {
   const { cardId } = useParams();
@@ -34,6 +36,8 @@ export default function CardDetail() {
   const [wishlisted, setWishlisted] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [tab, setTab] = useState('overview');
+  const [onChainAsset, setOnChainAsset] = useState(null);
+  const [myEntry, setMyEntry] = useState(null);
   const { toast } = useToast();
   const { t, locale } = useI18n();
 
@@ -56,6 +60,20 @@ export default function CardDetail() {
       try {
         const existing = await base44.entities.Wishlist.filter({ card_id: card.id }, '-created_date', 1);
         setWishlisted(existing.length > 0);
+      } catch {}
+    })();
+  }, [card]);
+
+  useEffect(() => {
+    if (!card) return;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('get-on-chain-assets', { cardId: card.id });
+        setOnChainAsset(res.data.assets[0] || null);
+      } catch {}
+      try {
+        const entries = await base44.entities.CollectionEntry.filter({ card_id: card.id }, '-updated_date', 1);
+        setMyEntry(entries[0] || null);
       } catch {}
     })();
   }, [card]);
@@ -110,7 +128,10 @@ export default function CardDetail() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="font-bold leading-tight">{card.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-bold leading-tight">{card.name}</h1>
+            {onChainAsset && <OnChainBadge />}
+          </div>
           <p className="text-xs text-muted-foreground">{card.set?.name} · #{card.localId}</p>
         </div>
       </div>
@@ -234,6 +255,9 @@ export default function CardDetail() {
           <button onClick={() => setShowAlert(true)} className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
             <Bell className="h-4 w-4" /> {t('card.priceAlert')}
           </button>
+          {myEntry && (
+            <MintOnPolygonButton collectionEntryId={myEntry.id} cardName={card.name} />
+          )}
         </div>
 
         {avg != null && (

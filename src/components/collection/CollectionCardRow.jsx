@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Trash2, CheckSquare, Square } from 'lucide-react';
+import MintOnPolygonButton from '@/components/blockchain/MintOnPolygonButton';
 import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
@@ -40,13 +41,14 @@ export default function CollectionCardRow({ item, selected, selectMode, onToggle
           <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px]">{variantLabel(item.variant)}</span>
         </div>
       </div>
-      <div className="text-right">
+      <div className="flex flex-col items-end gap-1.5 text-right">
         {item.purchase_price ? (
           <p className="text-sm font-bold">{formatPrice(item.purchase_price)}</p>
         ) : (
           <p className="text-sm text-muted-foreground">-</p>
         )}
-        <button onClick={() => onRemove(item.id)} className="mt-1 text-muted-foreground hover:text-red-400">
+        <MintOnPolygonButton collectionEntryId={item.id} cardName={item.card_name} />
+        <button onClick={() => onRemove(item.id)} className="text-muted-foreground hover:text-red-400">
           <Trash2 className="h-4 w-4" />
         </button>
       </div>

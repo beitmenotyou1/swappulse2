@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target, Lock, Network, Scale, Key, UserPlus } from 'lucide-react';
+import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target, Lock, Network, Scale, Key, UserPlus, Boxes } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { useSettings } from '@/hooks/useSettings';
 import AccountSection from '@/components/settings/AccountSection';
@@ -14,6 +14,7 @@ import AtProtoSection from '@/components/settings/AtProtoSection';
 import AppPasswordsSection from '@/components/settings/AppPasswordsSection';
 import DataPrivacyRightsSection from '@/components/settings/DataPrivacyRightsSection';
 import InviteLinkSection from '@/components/settings/InviteLinkSection';
+import PolygonSettingsSection from '@/components/blockchain/PolygonSettingsSection';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
@@ -30,6 +31,7 @@ const TABS = [
   { key: 'datarights', tKey: 'settings.tab.datarights', Icon: Scale, Comp: DataPrivacyRightsSection },
   { key: 'atprotocol', tKey: 'settings.tab.atprotocol', Icon: Network, Comp: AtProtoSection },
   { key: 'apppasswords', tKey: 'settings.tab.apppasswords', Icon: Key, Comp: AppPasswordsSection },
+  { key: 'blockchain', tKey: 'Polygon', Icon: Boxes, Comp: PolygonSettingsSection },
   { key: 'invite', tKey: 'Invite friends', Icon: UserPlus, Comp: InviteLinkSection },
 ];
 

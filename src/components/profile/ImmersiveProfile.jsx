@@ -28,7 +28,7 @@ export default function ImmersiveProfile({
     const ownerExtra = isOwner
       ? [{ key: 'Cross-Posting', label: 'Cross-Post' }, { key: 'Privacy', label: 'Privacy' }]
       : [];
-    let allTabs = [...themeTabs, ...ownerExtra];
+    let allTabs = [...themeTabs, ...ownerExtra, { key: 'OnChain', label: 'On-Chain' }];
 
     // For external (non-member) visitors, restrict to tabs that work with
     // posts-only data from the federated Bluesky feed.
