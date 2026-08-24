@@ -3,6 +3,8 @@ import { Wallet as WalletIcon, History, Package, Settings as SettingsIcon, Loade
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
+import { useSettings } from '@/hooks/useSettings';
+import { useCryptoPrices, convertUsdcToDisplay } from '@/hooks/useCryptoPrices';
 import PageHeader from '@/components/PageHeader';
 import TotalBalanceCard from '@/components/wallet/TotalBalanceCard';
 import AssetList from '@/components/wallet/AssetList';
@@ -28,6 +30,9 @@ const TABS = [
 export default function Wallet() {
   const { user } = useAuth();
   const { cryptoEnabled } = useCryptoEnabled();
+  const { settings } = useSettings();
+  const { prices } = useCryptoPrices();
+  const displayCurrency = settings?.crypto?.display_currency || 'USDC';
   const [walletData, setWalletData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('assets');
@@ -78,6 +83,9 @@ export default function Wallet() {
 
   const hasWallet = !!walletData?.custodial_wallet;
   const balance = walletData?.balance;
+  const cryptoDisplay = cryptoEnabled && balance
+    ? convertUsdcToDisplay(balance.usdc_wei, displayCurrency, prices)
+    : null;
 
   const reloadAfterModal = () => {
     setShowTopUp(false); setShowSend(false); setShowReceive(false); setShowConvert(false); setShowRefund(false);
@@ -101,6 +109,7 @@ export default function Wallet() {
         onConvert={() => setShowConvert(true)}
         onRefund={() => setShowRefund(true)}
         hasWallet={hasWallet}
+        cryptoDisplay={cryptoDisplay}
       />
 
       {/* Tab navigation */}
@@ -131,6 +140,7 @@ export default function Wallet() {
               onChainUsdcWei={walletData?.on_chain_usdc_wei}
               formatFiat={formatFiat}
               formatUsdc={formatUsdc}
+              cryptoDisplay={cryptoDisplay}
             />
             {balance && (
               <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />

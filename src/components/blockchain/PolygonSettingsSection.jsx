@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { clearCryptoEnabledCache, useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import CryptoToggle from './CryptoToggle';
+import DisplayCurrencySelector from '@/components/wallet/DisplayCurrencySelector';
 import CustodialWalletCard from './CustodialWalletCard';
 import PasskeyManager from './PasskeyManager';
 import WalletPinModal from './WalletPinModal';
@@ -45,6 +46,10 @@ export default function PolygonSettingsSection({ settings, update }) {
       </div>
 
       <CryptoToggle enabled={cryptoEnabled} onToggle={handleToggle} />
+
+      {cryptoEnabled && (
+        <DisplayCurrencySelector settings={settings} update={update} />
+      )}
 
       {cryptoEnabled && (
         <>

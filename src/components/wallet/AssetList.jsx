@@ -3,7 +3,7 @@ import { Wallet as WalletIcon, Coins } from 'lucide-react';
 
 // MetaMask-style asset rows: each balance is a row with icon, name, amount,
 // and a subtitle — cleaner than separate cards and familiar to wallet users.
-export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, formatFiat, formatUsdc }) {
+export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, formatFiat, formatUsdc, cryptoDisplay }) {
   const fiatCents = balance?.fiat_cents || 0;
   const currency = balance?.currency || 'GBP';
   const usdcWei = balance?.usdc_wei || '0';
@@ -23,15 +23,17 @@ export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, form
   ];
 
   if (cryptoEnabled) {
+    const displayLabel = cryptoDisplay?.label || 'USDC';
+    const displayFormatted = cryptoDisplay?.formatted || `${formatUsdc(usdcWei)} USDC`;
     rows.push({
       icon: Coins,
       iconBg: 'bg-primary/10',
       iconColor: 'text-primary',
-      name: 'USDC',
-      subtitle: 'Polygon',
-      value: `${formatUsdc(usdcWei)}`,
+      name: displayLabel,
+      subtitle: 'Polygon · USDC',
+      value: displayFormatted,
       subValue: onChainUsdcWei && onChainUsdcWei !== '0'
-        ? `On-chain ${formatUsdc(onChainUsdcWei)}`
+        ? `On-chain ${formatUsdc(onChainUsdcWei)} USDC`
         : null,
     });
   }

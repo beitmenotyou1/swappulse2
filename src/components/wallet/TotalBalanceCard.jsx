@@ -6,6 +6,7 @@ import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, RotateCcw, QrCode } from '
 export default function TotalBalanceCard({
   balance, cryptoEnabled, formatFiat, formatUsdc,
   onTopUp, onSend, onReceive, onConvert, onRefund, hasWallet,
+  cryptoDisplay,
 }) {
   const fiatCents = balance?.fiat_cents || 0;
   const currency = balance?.currency || 'GBP';
@@ -36,7 +37,7 @@ export default function TotalBalanceCard({
         {cryptoEnabled && (
           <p className="mt-1 flex items-center gap-1.5 text-sm text-white/60">
             <span className="inline-block h-2 w-2 rounded-full bg-accent" />
-            {formatUsdc(usdcWei)} USDC
+            {cryptoDisplay?.formatted || `${formatUsdc(usdcWei)} USDC`}
           </p>
         )}
       </div>
