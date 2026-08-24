@@ -25,7 +25,7 @@ export default function UsernameMintCard({ walletLinked }) {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [user?.did]);
+  useEffect(() => { load(); }, [userDid]);
 
   const doMint = async (unlockCredential) => {
     setMinting(true);
