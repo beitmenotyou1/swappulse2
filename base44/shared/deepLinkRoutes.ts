@@ -38,6 +38,8 @@ export const ROUTE_MAP: Record<string, (params: Record<string, unknown>) => stri
   repost: (p) => (p.postId ? `/post/${p.postId}` : '/notifications'),
   comment: (p) => (p.postId ? `/post/${p.postId}` : '/notifications'),
   starter_pack: (p) => (p.packId ? `/starter-packs/${p.packId}` : '/notifications'),
+  wallet_topup: (p) => '/wallet',
+  escrow_held: (p) => (p.tradeId ? `/trade/${p.tradeId}` : '/wallet'),
 };
 
 export function buildDeepLink(type: string, params: Record<string, unknown>): string {

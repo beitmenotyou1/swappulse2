@@ -136,6 +136,35 @@ export default async function(req) {
                 } catch (e) {
                   console.error('Fee sweep for top-up failed:', (e as any)?.message);
                 }
+
+                // Send top-up complete notification (in-app + push)
+                try {
+                  const { dispatchNotification } = await import('../../shared/notificationDispatcher.ts');
+                  const currency = topup.currency || 'GBP';
+                  const symbol = currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : '$';
+                  const netCents = amountCents - feeCents;
+                  await svc.entities.Notification.create({
+                    did,
+                    action_type: 'wallet_topup',
+                    actor_name: 'SwapPulse',
+                    actor_handle: 'swappulse',
+                    target_type: 'wallet',
+                    target_path: '/wallet',
+                    target_label: `${symbol}${(netCents / 100).toFixed(2)} added`,
+                    is_read: false,
+                    metadata: { amountCents, feeCents, currency, topupId: topup.id },
+                  });
+                  await dispatchNotification(svc, {
+                    recipientDid: did,
+                    type: 'wallet_topup',
+                    title: '💰 Top-up Complete',
+                    body: `Your ${symbol}${(netCents / 100).toFixed(2)} top-up is now available in your wallet.`,
+                    params: {},
+                    priority: 'standard',
+                  });
+                } catch (e) {
+                  console.error('Top-up notification failed:', (e as any)?.message);
+                }
               }
             }
           } catch (e) {

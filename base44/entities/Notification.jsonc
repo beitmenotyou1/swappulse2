@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "title": "Notification",
-  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, repost, quote, comment, mention, reaction, achievement earned/revoked, starter pack inclusion request, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details, interaction post refs for respond-to-notification, quoteText for quote notifications, reactionType for reaction notifications, kind/packId/requestId for starter pack request accept/deny actions).",
+  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, repost, quote, comment, mention, reaction, achievement earned/revoked, starter pack inclusion request, wallet top-up, escrow held, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details, interaction post refs for respond-to-notification, quoteText for quote notifications, reactionType for reaction notifications, kind/packId/requestId for starter pack request accept/deny actions, amountCents/currency for wallet top-up, escrowId/tradeType for escrow held).",
   "properties": {
     "did": {
       "type": "string",
@@ -25,7 +25,9 @@
         "podcast",
         "message",
         "reputation",
-        "starter_pack"
+        "starter_pack",
+        "wallet_topup",
+        "escrow_held"
       ],
       "default": "reaction"
     },
@@ -54,7 +56,8 @@
         "trade",
         "listing",
         "space",
-        "podcast"
+        "podcast",
+        "wallet"
       ]
     },
     "target_path": {
@@ -87,7 +90,7 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath }, interaction { postId, postUri, postCid, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType }, starter_pack { kind: request|accepted|denied, packId, requestId, packName })"
+      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath }, interaction { postId, postUri, postCid, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType }, starter_pack { kind: request|accepted|denied, packId, requestId, packName }, wallet_topup { amountCents, currency, topupId }, escrow_held { escrowId, tradeType, amountUsdc, cardNames })"
     },
     "at_uri": {
       "type": "string",

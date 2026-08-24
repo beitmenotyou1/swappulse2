@@ -185,6 +185,73 @@ export default async function (req: Request): Promise<Response> {
       }
     }
 
+    // Send escrow-held notifications to both parties (in-app + push)
+    try {
+      const { dispatchNotification } = await import('../../shared/notificationDispatcher.ts');
+      const cardSummary = (card_names || []).slice(0, 2).join(', ') || 'cards';
+      const amountUsdc = trade_type === 'usdc_purchase' ? Number(BigInt(usdc_amount_wei)) / 1_000_000 : 0;
+
+      // Buyer notification: payment held in escrow
+      const buyerTitle = trade_type === 'usdc_purchase'
+        ? '🔒 Payment Held in Escrow'
+        : '🔄 Swap Escrow Created';
+      const buyerBody = trade_type === 'usdc_purchase'
+        ? `${amountUsdc.toFixed(2)} USDC is held in escrow for "${cardSummary}". Funds release to the seller once you confirm receipt.`
+        : `Escrow created for your card swap (${cardSummary}). Enter shipping details to proceed.`;
+
+      await base44.asServiceRole.entities.Notification.create({
+        did: buyerDid,
+        action_type: 'escrow_held',
+        actor_name: 'SwapPulse',
+        actor_handle: 'swappulse',
+        target_type: 'trade',
+        target_path: `/trade/${trade_listing_id}`,
+        target_label: cardSummary,
+        is_read: false,
+        metadata: { escrowId: escrow.id, tradeType: trade_type, amountUsdc, cardNames: card_names },
+      });
+      await dispatchNotification(base44.asServiceRole, {
+        recipientDid: buyerDid,
+        type: 'escrow_held',
+        title: buyerTitle,
+        body: buyerBody,
+        params: { tradeId: trade_listing_id },
+        priority: 'high',
+      });
+
+      // Seller notification: buyer has funded escrow / swap initiated
+      if (sellerDid && sellerDid !== buyerDid) {
+        const sellerTitle = trade_type === 'usdc_purchase'
+          ? '💰 Payment Received in Escrow'
+          : '🔄 Swap Escrow Created';
+        const sellerBody = trade_type === 'usdc_purchase'
+          ? `${amountUsdc.toFixed(2)} USDC is held in escrow for "${cardSummary}". Ship the card to receive payment.`
+          : `A card swap escrow was created for "${cardSummary}". Enter shipping details to proceed.`;
+
+        await base44.asServiceRole.entities.Notification.create({
+          did: sellerDid,
+          action_type: 'escrow_held',
+          actor_name: user.full_name || 'SwapPulse',
+          actor_handle: user.bsky_handle || user.username || 'swappulse',
+          target_type: 'trade',
+          target_path: `/trade/${trade_listing_id}`,
+          target_label: cardSummary,
+          is_read: false,
+          metadata: { escrowId: escrow.id, tradeType: trade_type, amountUsdc, cardNames: card_names },
+        });
+        await dispatchNotification(base44.asServiceRole, {
+          recipientDid: sellerDid,
+          type: 'escrow_held',
+          title: sellerTitle,
+          body: sellerBody,
+          params: { tradeId: trade_listing_id },
+          priority: 'high',
+        });
+      }
+    } catch (e) {
+      console.error('Escrow notification failed:', (e as any)?.message);
+    }
+
     return Response.json({
       success: true,
       escrow_id: escrow.id,
