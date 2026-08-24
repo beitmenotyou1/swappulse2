@@ -37,7 +37,7 @@ const RATE_LIMITS: Record<string, { soft: number; hard: number }> = {
   meetup_rsvp:    { soft: 10, hard: 30 },
   binder_edit:    { soft: 20, hard: 60 },
   story:          { soft: 5,  hard: 15 },
-  login_code:     { soft: 3,  hard: 8 },
+  login_code:     { soft: 5,  hard: 12 },
   register:       { soft: 3,  hard: 6 },
   default:        { soft: 15, hard: 45 },
 };

@@ -77,7 +77,7 @@ export default function Login() {
       setStep("code");
       setInfo(t('auth.login.codeSent').replace('{email}', email));
     } catch (err) {
-      setError(err.message || t('auth.login.couldNotSend'));
+      setError(err.response?.data?.error || err.data?.error || err.message || t('auth.login.couldNotSend'));
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export default function Login() {
       await base44.auth.loginViaEmailPassword(email, loginKey);
       window.location.href = safeReturnTo();
     } catch (err) {
-      setError(err.message || t('auth.login.invalidCode'));
+      setError(err.response?.data?.error || err.data?.error || err.message || t('auth.login.invalidCode'));
     } finally {
       setLoading(false);
     }
