@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Check, QrCode, AtSign, Loader2 } from 'lucide-react';
+import { ArrowLeft, Copy, Check, QrCode, AtSign, Loader2, Zap } from 'lucide-react';
 import QRCode from 'qrcode';
 import PageHeader from '@/components/PageHeader';
 import { base44 } from '@/api/base44Client';
@@ -21,6 +21,7 @@ export default function WalletReceive() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const [upgrading, setUpgrading] = useState(false);
 
   const selectedChain = searchParams.get('chain') || '';
   const userDid = user?.data?.did || user?.did;
@@ -95,6 +96,27 @@ export default function WalletReceive() {
   const availableChains = useMemo(() => {
     return CHAINS.filter(c => !!addressByChain[c.key]);
   }, [addressByChain]);
+
+  // Detect if the user has an EVM wallet but is missing Solana/Bitcoin addresses
+  // (old CustodialWallet that hasn't been upgraded to MultiChainWallet)
+  const hasEvmOnly = evmAddress && !solanaAddress && !walletAddresses.bitcoin;
+  const missingChains = useMemo(() => {
+    return CHAINS.filter(c => c.type !== 'evm' && !addressByChain[c.key]);
+  }, [addressByChain]);
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      await base44.functions.invoke('upgrade-to-multi-chain', {});
+      toast({ title: 'Wallet upgraded!', description: 'All chain addresses are now available.' });
+      await loadWallet();
+    } catch (e) {
+      const msg = e?.response?.data?.error || e.message;
+      toast({ title: 'Upgrade failed', description: msg, variant: 'destructive' });
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -210,28 +232,57 @@ export default function WalletReceive() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {availableChains.map((chain) => {
-            const address = addressByChain[chain.key];
-            return (
-              <button
-                key={chain.key}
-                onClick={() => setSearchParams({ chain: chain.key })}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/30 hover:shadow-raised"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-primary/15 to-primary/5 text-sm font-bold text-primary">
-                  {chain.symbol.slice(0, 3)}
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-bold">{chain.name}</p>
-                  <p className="truncate font-mono text-[10px] text-muted-foreground">
-                    {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—'}
+        <>
+          {/* Upgrade banner for old EVM-only wallets */}
+          {hasEvmOnly && missingChains.length > 0 && (
+            <div className="mb-4 rounded-xl border border-accent/30 bg-accent/10 p-4">
+              <div className="flex items-start gap-3">
+                <Zap className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-foreground">Unlock all chains</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Your wallet has an EVM address but is missing Solana, Bitcoin, Bitcoin Cash,
+                    Dogecoin and Litecoin. Upgrade to generate all addresses — your EVM address
+                    and NFTs stay the same.
                   </p>
+                  <button
+                    onClick={handleUpgrade}
+                    disabled={upgrading}
+                    className="mt-3 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+                  >
+                    {upgrading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Upgrading...</>
+                    ) : (
+                      <><Zap className="h-4 w-4" /> Upgrade Wallet</>
+                    )}
+                  </button>
                 </div>
-              </button>
-            );
-          })}
-        </div>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {availableChains.map((chain) => {
+              const address = addressByChain[chain.key];
+              return (
+                <button
+                  key={chain.key}
+                  onClick={() => setSearchParams({ chain: chain.key })}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/30 hover:shadow-raised"
+                >
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-primary/15 to-primary/5 text-sm font-bold text-primary">
+                    {chain.symbol.slice(0, 3)}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold">{chain.name}</p>
+                    <p className="truncate font-mono text-[10px] text-muted-foreground">
+                      {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—'}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
