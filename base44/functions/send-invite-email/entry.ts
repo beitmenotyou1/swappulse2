@@ -72,6 +72,20 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Platform-level sender verification (CWE-862): only accounts that have
+    // been registered for at least 24 hours can dispatch invite emails. This
+    // prevents attackers from creating throwaway accounts purely to relay
+    // spam through the platform's email infrastructure — the core open-relay
+    // vector. Established accounts have reputational skin in the game.
+    const MIN_ACCOUNT_AGE_MS = 24 * 60 * 60 * 1000;
+    const accountAge = user.created_date ? Date.now() - new Date(user.created_date).getTime() : 0;
+    if (accountAge < MIN_ACCOUNT_AGE_MS) {
+      return Response.json(
+        { error: 'Your account must be at least 24 hours old before sending invite emails.' },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
     if (!email || email.length > MAX_EMAIL_LEN || !EMAIL_RE.test(email)) {
