@@ -112,8 +112,15 @@ export default async function(req: Request): Promise<Response> {
         existingRecord.text = post.content || '';
         existingRecord.$type = 'app.bsky.feed.post';
         // Regenerate facets from the updated text so hashtags and links render
-        // correctly on Bluesky.
-        attachRichTextFacets(existingRecord);
+        // correctly on Bluesky. Replace the entire facets array (don't append)
+        // to avoid duplicate facets that would cause putRecord validation
+        // errors and potentially strip the embed from the PDS record.
+        const newFacets = buildRichTextFacets(post.content || '');
+        if (newFacets.length > 0) {
+          existingRecord.facets = newFacets;
+        } else {
+          delete existingRecord.facets;
+        }
 
         edited++;
 

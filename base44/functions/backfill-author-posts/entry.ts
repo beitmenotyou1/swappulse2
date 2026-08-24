@@ -32,6 +32,15 @@ const MAX_CONTINUE_USERS = 15; // cap per 5-minute cycle
 const MAX_CONTINUE_PAGES = 5; // pages per user per continue cycle
 const TIME_BUDGET_MS = 25000; // single-user mode: loop pages until this budget
 
+// Load promo post at_uris so they're never ingested as local Posts.
+// Promo posts exist on the PDS only — they should never appear in the
+// SwapPulse local feed. Without this check, backfill would ingest them
+// and they'd render as plain text (no embed round-trips through the mapper).
+async function loadPromoUris(svc: any): Promise<Set<string>> {
+  const promoPosts = await svc.entities.PromoPost.list('-created_date', 500).catch(() => []);
+  return new Set((promoPosts || []).map((p: any) => p.at_uri).filter(Boolean));
+}
+
 // Resolve the user's profile so backfilled posts carry author metadata.
 // Tries the public AppView first (returns resolved CDN avatar URLs), then
 // falls back to a direct PDS profile read (constructs the CDN URL from the
@@ -67,6 +76,7 @@ async function processPage(
   cursor: string | null,
   profile: any,
   updateFn: (updates: any) => Promise<void>,
+  promoUris: Set<string>,
 ): Promise<{ backfilled: number; updated: number; skipped: number; hasMore: boolean; nextCursor: string | null }> {
   const postMapper = FIELD_MAPPERS[POST_COLLECTION];
   let backfilled = 0, updated = 0, skipped = 0;
@@ -100,6 +110,10 @@ async function processPage(
       const atUri = rec.uri || '';
       const val = rec.value || {};
       if (!atUri) { skipped++; continue; }
+
+      // Skip promotional posts — they exist on the PDS only and should
+      // never be ingested into the local feed.
+      if (promoUris.has(atUri)) { skipped++; continue; }
 
       const mapped = postMapper(val, atUri, userDid, profile);
       const { created } = await upsertEntity(svc, 'Post', mapped, atUri);
@@ -161,6 +175,8 @@ export default async function(req: Request): Promise<Response> {
         .filter({ migrated_from_bluesky: true, post_backfill_complete: false }, '-created_date', MAX_CONTINUE_USERS)
         .catch(() => []);
 
+      const promoUris = await loadPromoUris(svc);
+
       let totalBackfilled = 0, totalUpdated = 0, totalSkipped = 0;
       let usersProcessed = 0;
 
@@ -186,6 +202,7 @@ export default async function(req: Request): Promise<Response> {
             const result = await processPage(
               svc, identity.pdsUrl, session.accessJwt, identity.did, cursor, profile,
               async (updates) => { await svc.entities.User.update(u.id, updates).catch(() => {}); },
+              promoUris,
             );
             totalBackfilled += result.backfilled;
             totalUpdated += result.updated;
@@ -220,6 +237,8 @@ export default async function(req: Request): Promise<Response> {
     const { pdsUrl, session: sess } = await resolveBridgeSession(req);
     const userDid = sess.did;
 
+    const promoUris = await loadPromoUris(svc);
+
     const profile = await getProfile(userDid, pdsUrl, sess.accessJwt);
     let cursor = user.post_backfill_cursor || null;
     const startTime = Date.now();
@@ -233,6 +252,7 @@ export default async function(req: Request): Promise<Response> {
       const result = await processPage(
         svc, pdsUrl, sess.accessJwt, userDid, cursor, profile,
         async (updates) => { await svc.entities.User.update(user.id, updates).catch(() => {}); },
+        promoUris,
       );
       totalBackfilled += result.backfilled;
       totalUpdated += result.updated;

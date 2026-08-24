@@ -160,7 +160,7 @@ async function maybeNotifyInteraction(base44: any, collection: string, val: any,
 // recent local post, upserts reply posts not yet in the local DB, and fires
 // notify-interaction. Idempotent: a reply already present locally is skipped.
 // Scans depth 3 and 50 recent posts so nested replies are captured.
-async function syncInboundReplies(base44: any, svc: any): Promise<number> {
+async function syncInboundReplies(base44: any, svc: any, promoUris: Set<string>): Promise<number> {
   let synced = 0;
   try {
     const posts = await svc.entities.Post.list('-created_date', 50).catch(() => []);
@@ -185,6 +185,8 @@ async function syncInboundReplies(base44: any, svc: any): Promise<number> {
             if (replyNode?.$type !== 'app.bsky.feed.defs#threadViewPost') continue;
             const rp = replyNode.post;
             if (!rp?.uri) continue;
+            // Skip promotional posts — never ingest them as local Posts
+            if (promoUris.has(rp.uri)) continue;
             const author = rp.author || {};
             const mapped = postMapper(rp.record || {}, rp.uri, author.did || '', author);
             const { created, id: createdId } = await upsertEntity(svc, 'Post', mapped, rp.uri);
@@ -798,7 +800,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // Catch replies from Bluesky users the bridge account doesn't follow
-    const replies_synced = await syncInboundReplies(base44, svc);
+    const replies_synced = await syncInboundReplies(base44, svc, promoUris);
 
     // Catch likes/reposts from non-followed Bluesky users
     const { likes_synced, reposts_synced } = await syncInboundInteractions(base44, svc);

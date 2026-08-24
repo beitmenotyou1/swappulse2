@@ -16,6 +16,13 @@ export async function findExistingEntity(svc: any, entityName: string, atUri: st
 // Upsert an entity record by at_uri: update if it already exists, create if
 // not. Returns { created, id } so callers can distinguish new vs updated and
 // reference the record id for downstream notifications.
+//
+// For Post entities: when updating, preserve existing embed_images and
+// embed_external if the new mapped data has empty values for these fields.
+// This prevents embeds from being stripped during re-ingestion when the PDS
+// record temporarily has no embed (e.g., during AppView indexing lag, or when
+// a transient fetch returns partial data). The embed is only overwritten when
+// the new data explicitly carries a different (non-empty) value.
 export async function upsertEntity(
   svc: any,
   entityName: string,
@@ -24,7 +31,21 @@ export async function upsertEntity(
 ): Promise<{ created: boolean; id: string | null }> {
   const existing = await findExistingEntity(svc, entityName, atUri);
   if (existing) {
-    await svc.entities[entityName].update(existing.id, mapped).catch(() => {});
+    const updateData = { ...mapped };
+    if (entityName === 'Post') {
+      // Preserve existing embeds if the new data has empty/missing embeds.
+      // This is the critical fix: without it, any re-ingestion cycle that
+      // fetches a post whose embed hasn't been indexed yet would overwrite
+      // the stored embed_images with an empty array, causing the post to
+      // render as plain text.
+      if ((!updateData.embed_images || updateData.embed_images.length === 0) && existing.embed_images && existing.embed_images.length > 0) {
+        updateData.embed_images = existing.embed_images;
+      }
+      if (!updateData.embed_external && existing.embed_external) {
+        updateData.embed_external = existing.embed_external;
+      }
+    }
+    await svc.entities[entityName].update(existing.id, updateData).catch(() => {});
     return { created: false, id: existing.id };
   }
   const created = await svc.entities[entityName].create(mapped).catch(() => null);
