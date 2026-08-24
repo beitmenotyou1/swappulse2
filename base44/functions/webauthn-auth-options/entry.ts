@@ -29,10 +29,12 @@ export default async function (req: Request): Promise<Response> {
       const creds = await base44.asServiceRole.entities.WebAuthnCredential
         .filter({ user_id: user.id }, '-created_date', 20)
         .catch(() => []);
-      allowCredentials = (creds || []).map((c) => ({
-        id: c.credential_id,
-        type: 'public-key' as const,
-      }));
+      allowCredentials = (creds || [])
+        .filter((c) => c.credential_id)
+        .map((c) => ({
+          id: c.credential_id,
+          type: 'public-key' as const,
+        }));
     }
 
     const { challenge, signature } = await generateSignedChallenge(process.env.BACKEND_FUNCTION_SECRET!);

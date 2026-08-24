@@ -36,10 +36,12 @@ export default async function (req: Request): Promise<Response> {
 
     if (phase === 'options') {
       // Exclude existing wallet passkeys
-      const excludeCredentials = (wallet.passkey_credential_ids || []).map((id: string) => ({
-        id,
-        type: 'public-key' as const,
-      }));
+      const excludeCredentials = (wallet.passkey_credential_ids || [])
+        .filter((id: string) => id)
+        .map((id: string) => ({
+          id,
+          type: 'public-key' as const,
+        }));
 
       const { challenge, signature } = await generateSignedChallenge(process.env.BACKEND_FUNCTION_SECRET!);
 

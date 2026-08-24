@@ -21,10 +21,12 @@ export default async function (req: Request): Promise<Response> {
       .filter({ user_id: user.id }, '-created_date', 100)
       .catch(() => []);
 
-    const excludeCredentials = (existing || []).map((c) => ({
-      id: c.credential_id,
-      type: 'public-key' as const,
-    }));
+    const excludeCredentials = (existing || [])
+      .filter((c) => c.credential_id)
+      .map((c) => ({
+        id: c.credential_id,
+        type: 'public-key' as const,
+      }));
 
     const { challenge, signature } = await generateSignedChallenge(process.env.BACKEND_FUNCTION_SECRET!);
 
