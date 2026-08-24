@@ -7,7 +7,17 @@ import { secrets } from 'base44:runtime';
 
 export default async function(req) {
   try {
-    createClientFromRequest(req);
+    const base44 = createClientFromRequest(req);
+
+    // Verify the caller is an authenticated SwapPulse user before returning
+    // payment configuration.
+    try {
+      const me = await base44.auth.me();
+      if (!me?.id) throw new Error('unauthenticated');
+    } catch {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const publishableKey = secrets.get('STRIPE_PUBLISHABLE_KEY') || '';
     return Response.json({ stripePublishableKey: publishableKey });
   } catch (error) {

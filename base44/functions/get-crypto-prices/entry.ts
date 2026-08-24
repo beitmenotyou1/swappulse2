@@ -14,7 +14,16 @@ const FALLBACK_RATES = {
 
 export default async function (req: Request): Promise<Response> {
   try {
-    createClientFromRequest(req);
+    const base44 = createClientFromRequest(req);
+
+    // Verify the caller is an authenticated SwapPulse user before running
+    // external price lookups on their behalf.
+    try {
+      const me = await base44.auth.me();
+      if (!me?.id) throw new Error('unauthenticated');
+    } catch {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
 
     const ratesUrl = new URL('https://api.coinbase.com/v2/exchange-rates?currency=USD');
     await assertSafeHost(ratesUrl.hostname);

@@ -5,7 +5,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 Deno.serve(async (req) => {
   try {
-    createClientFromRequest(req); // initialise context
+    const base44 = createClientFromRequest(req); // initialise context
+
+    // Verify the caller is an authenticated SwapPulse user.
+    try {
+      const me = await base44.auth.me();
+      if (!me?.id) throw new Error('unauthenticated');
+    } catch {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const siteKey = Deno.env.get('TURNSTILE_SITE_KEY') || '';
     return Response.json({ siteKey });
   } catch (error) {
