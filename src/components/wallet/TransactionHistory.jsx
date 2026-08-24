@@ -1,5 +1,11 @@
 import React from 'react';
-import { ArrowDownLeft, ArrowUpRight, RefreshCw, Lock, Unlock, CreditCard } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, RefreshCw, Lock, Unlock, CreditCard, RotateCcw } from 'lucide-react';
+
+const REFUND_STATUS = {
+  pending: { label: 'Refund pending', color: 'text-warning', bg: 'bg-warning/10' },
+  partial: { label: 'Partially refunded', color: 'text-warning', bg: 'bg-warning/10' },
+  refunded: { label: 'Refunded', color: 'text-success', bg: 'bg-success/10' },
+};
 
 const TRANSFER_TYPE_LABELS = {
   send: { label: 'Sent', icon: ArrowUpRight, color: 'text-destructive' },
@@ -65,6 +71,13 @@ export default function TransactionHistory({ transfers, topups, formatFiat, form
               <p className="truncate text-xs text-muted-foreground">
                 {tx.description || (isTopup ? `Top-up via Stripe` : tx.tx_hash?.slice(0, 20) + '…' || '')}
               </p>
+              {isTopup && tx.refund_status && tx.refund_status !== 'none' && REFUND_STATUS[tx.refund_status] && (
+                <span className={`mt-1 inline-flex items-center gap-1 rounded-full ${REFUND_STATUS[tx.refund_status].bg} ${REFUND_STATUS[tx.refund_status].color} px-2 py-0.5 text-[10px] font-semibold`}>
+                  <RotateCcw className="h-2.5 w-2.5" />
+                  {REFUND_STATUS[tx.refund_status].label}
+                  {tx.refunded_cents > 0 && ` · ${formatFiat(tx.refunded_cents, tx.currency)}`}
+                </span>
+              )}
             </div>
             <div className="text-right">
               <p className={`text-sm font-bold ${meta.color}`}>{amount}</p>
