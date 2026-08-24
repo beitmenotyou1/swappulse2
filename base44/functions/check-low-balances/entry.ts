@@ -11,6 +11,16 @@ import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    // Security: this endpoint scans all users' wallet balances and bulk-creates
+    // Notification records + dispatches push notifications via the service role,
+    // so it must not be callable by arbitrary internet callers. The platform
+    // injects an internal service JWT on workflow/function-to-function calls;
+    // base44.auth.me() resolves that to an admin caller. A public internet
+    // caller has no such token and is rejected with 403.
+    const caller = await base44.auth.me().catch(() => null);
+    if (!caller || caller.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     const svc = base44.asServiceRole;
 
     const balances = await svc.entities.WalletBalance.list('-created_date', 500).catch(() => []);

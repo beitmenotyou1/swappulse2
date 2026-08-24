@@ -13,6 +13,12 @@ import { checkBotRisk } from '../../shared/botGuard.ts';
 const DAILY_CAP = 10;
 const LIFETIME_CAP = 50; // total invite emails a single inviter may ever send
 const RECIPIENT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // same address can't be re-mailed within 24h
+// Per-domain daily cap: no more than this many distinct addresses at the same
+// domain per inviter per day. This blocks the classic open-relay spam pattern
+// of sending to many different mailboxes at one target domain (e.g. a
+// corporate target) while still allowing legitimate invites to friends at
+// common providers (gmail.com etc.).
+const PER_DOMAIN_DAILY_CAP = 3;
 // Stricter regex: ASCII-only, no control chars/whitespace (prevents CRLF header injection — CWE-93).
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}$/;
 const MAX_EMAIL_LEN = 254;
@@ -184,6 +190,19 @@ export default async function (req) {
     if ((totalLogs || []).length >= LIFETIME_CAP) {
       return Response.json(
         { error: `You've reached the invite email limit. Contact support if you need to send more.` },
+        { status: 429 },
+      );
+    }
+    // Per-domain daily cap: block sending to more than PER_DOMAIN_DAILY_CAP
+    // distinct addresses at the same domain in one day. This prevents the
+    // open-relay spam pattern of mailing many mailboxes at one target domain.
+    const domainTodayCount = (todayLogs || []).filter((r) => {
+      const rec = String(r.recipient_email || '').toLowerCase();
+      return rec.endsWith('@' + recipientDomain);
+    }).length;
+    if (domainTodayCount >= PER_DOMAIN_DAILY_CAP) {
+      return Response.json(
+        { error: `You've sent too many invites to ${recipientDomain} today. Try again tomorrow.` },
         { status: 429 },
       );
     }
