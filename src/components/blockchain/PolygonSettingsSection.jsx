@@ -41,7 +41,7 @@ export default function PolygonSettingsSection({ settings, update }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Crypto features can be toggled in <span className="font-semibold">Settings → Account</span>. Minting of username and card NFTs is on Polygon only — gas is paid by you.
+        Minting of username and card NFTs is on Polygon only — gas is paid by you.
       </p>
 
       {cryptoEnabled && (

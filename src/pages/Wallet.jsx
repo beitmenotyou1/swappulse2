@@ -15,6 +15,8 @@ import ConvertModal from '@/components/wallet/ConvertModal';
 import RefundModal from '@/components/wallet/RefundModal';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
 import BankAccountSection from '@/components/wallet/BankAccountSection';
+import CryptoFeaturesSection from '@/components/settings/CryptoFeaturesSection';
+import PolygonSettingsSection from '@/components/blockchain/PolygonSettingsSection';
 import EscrowTradeList from '@/components/wallet/EscrowTradeList';
 import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
@@ -36,7 +38,7 @@ export default function Wallet() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cryptoEnabled } = useCryptoEnabled();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const { prices } = useCryptoPrices();
   const displayCurrency = settings?.crypto?.display_currency || 'USDC';
   const [walletData, setWalletData] = useState(null);
@@ -172,7 +174,7 @@ export default function Wallet() {
                   <h3 className="text-sm font-bold">Create a Wallet to Enable Crypto Features</h3>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  You need a SwapPulse custodial wallet to send, receive, and hold USDC. Go to Settings → Polygon to create one.
+                  You need a SwapPulse custodial wallet to send, receive, and hold USDC. Go to the Settings tab to create one.
                 </p>
               </div>
             )}
@@ -217,6 +219,12 @@ export default function Wallet() {
 
         {activeTab === 'settings' && (
           <div className="space-y-4">
+            <CryptoFeaturesSection />
+
+            {cryptoEnabled && (
+              <PolygonSettingsSection settings={settings} update={update} />
+            )}
+
             {!cryptoEnabled && (
               <BankAccountSection bankAccount={walletData?.bank_account} onUpdated={loadWallet} />
             )}
