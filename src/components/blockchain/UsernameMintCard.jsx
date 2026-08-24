@@ -15,10 +15,11 @@ export default function UsernameMintCard({ walletLinked }) {
   const [minting, setMinting] = useState(false);
   const [unlockState, setUnlockState] = useState(null);
 
+  const userDid = user?.data?.did || user?.did;
   const load = async () => {
-    if (!user?.did) { setLoading(false); return; }
+    if (!userDid) { setLoading(false); return; }
     try {
-      const res = await base44.functions.invoke('get-on-chain-assets', { did: user.did, assetType: 'username' });
+      const res = await base44.functions.invoke('get-on-chain-assets', { did: userDid, assetType: 'username' });
       setAsset(res.data.assets[0] || null);
     } catch { setAsset(null); }
     finally { setLoading(false); }
@@ -38,8 +39,16 @@ export default function UsernameMintCard({ walletLinked }) {
       setAsset(res.data.asset);
       toast({ title: 'Username minted on Polygon!', description: 'Your handle is now permanently on-chain.' });
     } catch (e) {
-      const msg = e?.response?.data?.error || e.message;
-      toast({ title: 'Mint failed', description: msg, variant: 'destructive' });
+      // If already minted, the backend returns the existing asset — display it
+      // instead of showing an error toast.
+      const existingAsset = e?.response?.data?.asset;
+      if (existingAsset) {
+        setAsset(existingAsset);
+        toast({ title: 'Already minted', description: 'Your username NFT is already on-chain.' });
+      } else {
+        const msg = e?.response?.data?.error || e.message;
+        toast({ title: 'Mint failed', description: msg, variant: 'destructive' });
+      }
     } finally {
       setMinting(false);
     }
