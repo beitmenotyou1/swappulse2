@@ -1,0 +1,128 @@
+{
+  "name": "OnChainAsset",
+  "type": "object",
+  "title": "OnChainAsset",
+  "description": "org.swappulse.onChainAsset \u2014 a minted Polygon NFT tracked by SwapPulse. Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via backend functions; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse.",
+  "properties": {
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "username",
+        "card"
+      ],
+      "description": "Whether this NFT is a soulbound username identity or a transferable card ownership proof"
+    },
+    "token_id": {
+      "type": "integer",
+      "description": "On-chain ERC-721 token ID assigned by the contract"
+    },
+    "contract_address": {
+      "type": "string",
+      "description": "Polygon contract address that minted this token"
+    },
+    "owner_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the current on-chain owner"
+    },
+    "owner_wallet": {
+      "type": "string",
+      "description": "Polygon wallet address of the current on-chain owner"
+    },
+    "handle": {
+      "type": "string",
+      "description": "SwapPulse handle embedded in a username NFT (empty for card assets)"
+    },
+    "did_ref": {
+      "type": "string",
+      "description": "AT Protocol DID reference embedded in a username NFT (empty for card assets)"
+    },
+    "linked_card_id": {
+      "type": "string",
+      "description": "TCGDex card ID this NFT represents (empty for username assets)"
+    },
+    "linked_card_name": {
+      "type": "string",
+      "description": "Cached card name for display"
+    },
+    "linked_card_image": {
+      "type": "string",
+      "description": "Cached card image URL for display"
+    },
+    "linked_collection_entry_id": {
+      "type": "string",
+      "description": "Local CollectionEntry ID the card NFT was minted from"
+    },
+    "mint_tx_hash": {
+      "type": "string",
+      "description": "Polygon transaction hash of the mint"
+    },
+    "mint_block_number": {
+      "type": "integer",
+      "description": "Block number the mint was confirmed in"
+    },
+    "minted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "transferable": {
+      "type": "boolean",
+      "default": true,
+      "description": "False for soulbound username NFTs; true for card NFTs"
+    },
+    "transfer_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "to_wallet": {
+            "type": "string"
+          },
+          "to_did": {
+            "type": "string"
+          },
+          "tx_hash": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "Chronological log of on-chain transfers (empty for soulbound tokens)"
+    },
+    "metadata_uri": {
+      "type": "string",
+      "description": "URI to the NFT metadata JSON (card image, attributes, etc.)"
+    },
+    "chain_id": {
+      "type": "string",
+      "default": "137"
+    }
+  },
+  "required": [
+    "asset_type",
+    "token_id",
+    "contract_address",
+    "owner_did",
+    "owner_wallet"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

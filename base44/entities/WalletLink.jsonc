@@ -1,0 +1,88 @@
+{
+  "name": "WalletLink",
+  "type": "object",
+  "title": "WalletLink",
+  "description": "org.swappulse.walletLink \u2014 a collector's verified Polygon wallet link. The wallet address is verified via EIP-4361 (Sign-In with Ethereum) signature verification in the link-wallet backend function, so SwapPulse knows the collector owns the wallet without ever holding their private key. One active wallet link per user; the linked wallet serves as the on-chain identity for minting and the crypto send/receive address.",
+  "properties": {
+    "wallet_address": {
+      "type": "string",
+      "description": "Polygon wallet address (lowercased checksum) of the linked wallet"
+    },
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the linked SwapPulse user"
+    },
+    "handle": {
+      "type": "string",
+      "description": "SwapPulse handle cached for display"
+    },
+    "chain_id": {
+      "type": "string",
+      "default": "137",
+      "description": "Polygon chain ID (137 = mainnet, 80002 = Amoy testnet)"
+    },
+    "nonce": {
+      "type": "string",
+      "description": "Single-use nonce used in the EIP-4361 signing message"
+    },
+    "signature": {
+      "type": "string",
+      "description": "EIP-4361 signature proving wallet ownership (kept for audit)"
+    },
+    "linked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "False when a user unlinks or replaces their wallet"
+    }
+  },
+  "required": [
+    "wallet_address",
+    "did"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
