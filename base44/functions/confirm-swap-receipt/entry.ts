@@ -55,6 +55,40 @@ export default async function (req: Request): Promise<Response> {
 
     const updated = await base44.entities.EscrowTrade.update(escrow_id, updates);
 
+    // When both parties have confirmed, notify both that the swap is complete
+    if (buyerConfirmed && sellerConfirmed) {
+      try {
+        const { dispatchNotification } = await import('../../shared/notificationDispatcher.ts');
+        const cardSummary = (escrow.card_names || []).slice(0, 2).join(', ') || 'cards';
+        const tradePath = `/trade/${escrow.trade_listing_id}`;
+
+        for (const recipientDid of [escrow.buyer_did, escrow.seller_did]) {
+          if (!recipientDid) continue;
+          await base44.asServiceRole.entities.Notification.create({
+            did: recipientDid,
+            action_type: 'escrow_released',
+            actor_name: 'SwapPulse',
+            actor_handle: 'swappulse',
+            target_type: 'trade',
+            target_path: tradePath,
+            target_label: cardSummary,
+            is_read: false,
+            metadata: { escrowId: escrow_id, tradeType: 'card_swap', cardNames: escrow.card_names },
+          });
+          await dispatchNotification(base44.asServiceRole, {
+            recipientDid,
+            type: 'escrow_released',
+            title: '✅ Swap Complete',
+            body: `Both parties have confirmed receipt. Your card swap (${cardSummary}) is complete.`,
+            params: { tradeId: escrow.trade_listing_id },
+            priority: 'high',
+          });
+        }
+      } catch (e) {
+        console.error('Swap release notification failed:', (e as any)?.message);
+      }
+    }
+
     return Response.json({
       success: true,
       status: updated.status,

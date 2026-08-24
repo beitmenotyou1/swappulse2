@@ -14,6 +14,7 @@ import RefundModal from '@/components/wallet/RefundModal';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
 import BankAccountSection from '@/components/wallet/BankAccountSection';
 import EscrowTradeList from '@/components/wallet/EscrowTradeList';
+import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import useSEO from '@/hooks/useSEO';
 
 export default function Wallet() {
@@ -116,16 +117,17 @@ export default function Wallet() {
         {balance && balance.fiat_cents > 0 && (
           <button
             onClick={() => setShowRefund(true)}
-            className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-colors ${
-              !cryptoEnabled
-                ? 'bg-primary text-white hover:bg-primary/90'
-                : 'border border-border bg-card font-semibold hover:bg-secondary'
-            }`}
+            className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors"
           >
-            <RotateCcw className="h-4 w-4" /> {!cryptoEnabled ? 'Withdraw to Bank' : 'Refund'}
+            <RotateCcw className="h-4 w-4" /> Refund
           </button>
         )}
       </div>
+
+      {/* Low Balance Alert */}
+      {balance && (
+        <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
+      )}
 
       {/* Bank Account Section (crypto off) */}
       {!cryptoEnabled && (

@@ -2,7 +2,7 @@
   "name": "WalletBalance",
   "type": "object",
   "title": "WalletBalance",
-  "description": "org.swappulse.walletBalance \u2014 a collector's dual-currency wallet balance tracking fiat_cents (from Stripe top-ups, pre-conversion) and usdc_wei (USDC on Polygon, post-conversion or received). Linked to the user's CustodialWallet by did + wallet_address. One record per user. All balance mutations go through backend functions to ensure atomicity and fee collection.",
+  "description": "org.swappulse.walletBalance \u2014 a collector's dual-currency wallet balance tracking fiat_cents (from Stripe top-ups, pre-conversion) and usdc_wei (USDC on Polygon, post-conversion or received). Linked to the user's CustodialWallet by did + wallet_address. One record per user. All balance mutations go through backend functions to ensure atomicity and fee collection. Includes a user-configurable low_balance_threshold_cents for automated low-balance alerts.",
   "properties": {
     "did": {
       "type": "string",
@@ -41,6 +41,16 @@
       "type": "string",
       "default": "0",
       "description": "Cumulative fees paid by this user in USDC base units, for display and analytics."
+    },
+    "low_balance_threshold_cents": {
+      "type": "integer",
+      "default": 0,
+      "description": "User-configurable threshold in fiat cents. When fiat_cents drops below this value, the platform sends a low-balance notification. 0 = alert disabled. Checked by the check-low-balances scheduled function."
+    },
+    "low_balance_notified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the last low-balance notification sent. Used to throttle alerts to once per 24 hours. Reset to null when the balance recovers above the threshold."
     },
     "last_updated_at": {
       "type": "string",

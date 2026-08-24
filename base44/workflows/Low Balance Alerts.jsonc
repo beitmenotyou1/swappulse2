@@ -1,0 +1,45 @@
+{
+  "name": "Low Balance Alerts",
+  "description": "Every 5 minutes, scans all wallet balances for users who have set a low-balance threshold and sends an in-app + push notification if their fiat balance has dropped below it. Throttled to once per 24 hours per user; auto-resets when the balance recovers.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "low_balance_alerts",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check_balances": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "check-low-balances",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Check low wallet balances",
+            "description": "Scans all wallet balances and notifies users below their threshold"
+          }
+        }
+      }
+    ]
+  }
+}

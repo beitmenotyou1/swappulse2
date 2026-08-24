@@ -124,6 +124,60 @@ export default async function (req: Request): Promise<Response> {
       updated_at: new Date().toISOString(),
     });
 
+    // Send escrow-released notifications to both parties (in-app + push)
+    try {
+      const { dispatchNotification } = await import('../../shared/notificationDispatcher.ts');
+      const cardSummary = (escrow.card_names || []).slice(0, 2).join(', ') || 'cards';
+      const amountUsdc = Number(BigInt(escrow.usdc_amount_wei || '0')) / 1_000_000;
+      const sellerNet = Number(sellerNetWei) / 1_000_000;
+
+      // Buyer: purchase complete, payment released
+      await base44.asServiceRole.entities.Notification.create({
+        did: escrow.buyer_did,
+        action_type: 'escrow_released',
+        actor_name: 'SwapPulse',
+        actor_handle: 'swappulse',
+        target_type: 'trade',
+        target_path: `/trade/${escrow.trade_listing_id}`,
+        target_label: cardSummary,
+        is_read: false,
+        metadata: { escrowId: escrow_id, tradeType: 'usdc_purchase', amountUsdc, cardNames: escrow.card_names },
+      });
+      await dispatchNotification(base44.asServiceRole, {
+        recipientDid: escrow.buyer_did,
+        type: 'escrow_released',
+        title: '✅ Escrow Released',
+        body: `Your card purchase (${cardSummary}) is complete. Payment has been released to the seller.`,
+        params: { tradeId: escrow.trade_listing_id },
+        priority: 'high',
+      });
+
+      // Seller: payment received
+      if (escrow.seller_did && escrow.seller_did !== escrow.buyer_did) {
+        await base44.asServiceRole.entities.Notification.create({
+          did: escrow.seller_did,
+          action_type: 'escrow_released',
+          actor_name: 'SwapPulse',
+          actor_handle: 'swappulse',
+          target_type: 'wallet',
+          target_path: '/wallet',
+          target_label: `${sellerNet.toFixed(2)} USDC received`,
+          is_read: false,
+          metadata: { escrowId: escrow_id, tradeType: 'usdc_purchase', amountUsdc: sellerNet, cardNames: escrow.card_names },
+        });
+        await dispatchNotification(base44.asServiceRole, {
+          recipientDid: escrow.seller_did,
+          type: 'escrow_released',
+          title: '💰 Payment Received',
+          body: `${sellerNet.toFixed(2)} USDC from the sale of "${cardSummary}" has been released to your wallet.`,
+          params: {},
+          priority: 'high',
+        });
+      }
+    } catch (e) {
+      console.error('Escrow release notification failed:', (e as any)?.message);
+    }
+
     return Response.json({
       success: true,
       status: 'released',
