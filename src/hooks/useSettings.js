@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS = {
     eventTypes: { trade_match: true, price_alert: true, mention: true, reaction: false, voice_live: true },
   },
   accessibility: { theme: 'dark', reduceMotion: false, highContrast: false, fontSize: 'medium' },
+  crypto: { enabled: true },
   challenges: {
     leaderboardOptIn: false,
     leaderboardCategories: [],

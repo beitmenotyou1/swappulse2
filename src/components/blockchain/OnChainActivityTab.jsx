@@ -3,17 +3,20 @@ import { Loader2, Fingerprint, ShieldCheck, ExternalLink, Image as ImageIcon } f
 import { base44 } from '@/api/base44Client';
 import CardImage from '@/components/cards/CardImage';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 
 // Profile tab showing a collector's minted on-chain assets: their soulbound
 // username NFT and any card NFTs they've minted as proof of ownership.
 // Shown for both the profile owner and visitors (public read).
+// Hidden when crypto features are disabled.
 export default function OnChainActivityTab({ did }) {
   const t = useT();
+  const { cryptoEnabled, loading: cryptoLoading } = useCryptoEnabled();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!did) { setLoading(false); return; }
+    if (!did || !cryptoEnabled) { setLoading(false); return; }
     (async () => {
       try {
         const res = await base44.functions.invoke('get-on-chain-assets', { did });
@@ -21,11 +24,13 @@ export default function OnChainActivityTab({ did }) {
       } catch { setAssets([]); }
       finally { setLoading(false); }
     })();
-  }, [did]);
+  }, [did, cryptoEnabled]);
 
-  if (loading) {
+  if (cryptoLoading || loading) {
     return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
+
+  if (!cryptoEnabled) return null;
 
   if (!assets.length) {
     return (

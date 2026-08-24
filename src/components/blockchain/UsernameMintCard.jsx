@@ -3,13 +3,17 @@ import { Loader2, Fingerprint, Check, ExternalLink } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
+import UnlockWalletModal from './UnlockWalletModal';
 
 export default function UsernameMintCard({ walletLinked }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { cryptoEnabled } = useCryptoEnabled();
   const [asset, setAsset] = useState(null);
   const [loading, setLoading] = useState(true);
   const [minting, setMinting] = useState(false);
+  const [unlockState, setUnlockState] = useState(null);
 
   const load = async () => {
     if (!user?.did) { setLoading(false); return; }
@@ -22,10 +26,15 @@ export default function UsernameMintCard({ walletLinked }) {
 
   useEffect(() => { load(); }, [user?.did]);
 
-  const handleMint = async () => {
+  const doMint = async (unlockCredential) => {
     setMinting(true);
     try {
-      const res = await base44.functions.invoke('mint-username', {});
+      const res = await base44.functions.invoke('mint-username', { unlockCredential });
+      if (res.data.requiresUnlock) {
+        setUnlockState({ hasPasskey: res.data.hasPasskey, hasPin: res.data.hasPin });
+        setMinting(false);
+        return;
+      }
       setAsset(res.data.asset);
       toast({ title: 'Username minted on Polygon!', description: 'Your handle is now permanently on-chain.' });
     } catch (e) {
@@ -36,7 +45,12 @@ export default function UsernameMintCard({ walletLinked }) {
     }
   };
 
-  if (loading) return null;
+  const handleUnlock = (credential) => {
+    setUnlockState(null);
+    doMint(credential);
+  };
+
+  if (loading || !cryptoEnabled) return null;
 
   if (asset) {
     return (
@@ -76,29 +90,39 @@ export default function UsernameMintCard({ walletLinked }) {
           <h3 className="text-sm font-bold">On-Chain Username</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Link a Polygon wallet first, then mint your handle as a permanent, non-transferable on-chain identity.
+          Create or link a wallet first, then mint your handle as a permanent, non-transferable on-chain identity.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2">
-        <Fingerprint className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-bold">On-Chain Username</h3>
+    <>
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center gap-2">
+          <Fingerprint className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold">On-Chain Username</h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Mint your SwapPulse handle as a soulbound NFT on Polygon. It's permanent, non-transferable, and serves as your on-chain identity and crypto address.
+        </p>
+        <button
+          onClick={() => doMint(null)}
+          disabled={minting}
+          className="mt-3 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+        >
+          {minting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
+          Mint Username NFT
+        </button>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Mint your SwapPulse handle as a soulbound NFT on Polygon. It's permanent, non-transferable, and serves as your on-chain identity and crypto address.
-      </p>
-      <button
-        onClick={handleMint}
-        disabled={minting}
-        className="mt-3 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
-      >
-        {minting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
-        Mint Username NFT
-      </button>
-    </div>
+      {unlockState && (
+        <UnlockWalletModal
+          open={true}
+          unlockState={unlockState}
+          onUnlock={handleUnlock}
+          onCancel={() => { setUnlockState(null); setMinting(false); }}
+        />
+      )}
+    </>
   );
 }

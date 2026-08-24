@@ -1,34 +1,129 @@
-import React from 'react';
-import { Boxes } from 'lucide-react';
-import WalletLinkCard from '@/components/blockchain/WalletLinkCard';
-import UsernameMintCard from '@/components/blockchain/UsernameMintCard';
-import { useAuth } from '@/lib/AuthContext';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Boxes, Wallet, KeyRound, Loader2, Plus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { clearCryptoEnabledCache, useCryptoEnabled } from '@/hooks/useCryptoEnabled';
+import CryptoToggle from './CryptoToggle';
+import CustodialWalletCard from './CustodialWalletCard';
+import PasskeyManager from './PasskeyManager';
+import WalletPinModal from './WalletPinModal';
+import CreateWalletModal from './CreateWalletModal';
+import WalletLinkCard from './WalletLinkCard';
+import UsernameMintCard from './UsernameMintCard';
 
 export default function PolygonSettingsSection({ settings, update }) {
   const { user } = useAuth();
-  const [walletLinked, setWalletLinked] = useState(false);
+  const { cryptoEnabled } = useCryptoEnabled();
+  const [custodialWallet, setCustodialWallet] = useState(null);
+  const [loadingWallet, setLoadingWallet] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
 
-  useEffect(() => {
-    if (!user?.did) return;
-    base44.entities.WalletLink.filter({ did: user.did, active: true })
-      .then((links) => setWalletLinked(links.length > 0))
-      .catch(() => setWalletLinked(false));
+  const loadWallet = useCallback(async () => {
+    if (!user?.did) { setLoadingWallet(false); return; }
+    try {
+      const wallets = await base44.entities.CustodialWallet.filter({ did: user.did, active: true });
+      setCustodialWallet(wallets[0] || null);
+    } catch { setCustodialWallet(null); }
+    finally { setLoadingWallet(false); }
   }, [user?.did]);
+
+  useEffect(() => { loadWallet(); }, [loadWallet]);
+
+  const handleToggle = (enabled) => {
+    update({ crypto: { enabled } });
+    clearCryptoEnabledCache();
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Boxes className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-bold">Polygon Blockchain</h2>
+        <h2 className="text-lg font-bold">Wallet & Blockchain</h2>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Link a Polygon wallet and mint your on-chain identity. Your username NFT is permanent and non-transferable;
-        card NFTs are transferable proof of ownership.
-      </p>
-      <WalletLinkCard />
-      <UsernameMintCard walletLinked={walletLinked} />
+
+      <CryptoToggle enabled={cryptoEnabled} onToggle={handleToggle} />
+
+      {cryptoEnabled && (
+        <>
+          {loadingWallet ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : custodialWallet ? (
+            <>
+              <CustodialWalletCard wallet={custodialWallet} onUpdated={loadWallet} />
+              <PasskeyManager wallet={custodialWallet} onUpdated={loadWallet} />
+
+              {/* PIN management */}
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold">Wallet PIN</h3>
+                  {custodialWallet.has_pin && (
+                    <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">SET</span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {custodialWallet.has_pin
+                    ? 'A PIN is set as an alternative unlock method.'
+                    : 'Optional: set a PIN as a backup unlock method.'}
+                </p>
+                <button
+                  onClick={() => setShowPinModal(true)}
+                  className="mt-3 flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  {custodialWallet.has_pin ? 'Change PIN' : 'Set PIN'}
+                </button>
+              </div>
+
+              <UsernameMintCard walletLinked={true} />
+            </>
+          ) : (
+            <>
+              {/* No custodial wallet — show create CTA + external link option */}
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold">Create a SwapPulse Wallet</h3>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  No browser extension needed. Your SwapPulse account becomes your Polygon wallet —
+                  we'll generate and securely store your keys. You can also add a passkey (Face ID / Touch ID)
+                  for protection and a 24-word recovery phrase for backup.
+                </p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="mt-3 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" /> Create My Wallet
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 py-1">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-semibold text-muted-foreground">OR</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <WalletLinkCard />
+              <UsernameMintCard walletLinked={false} />
+            </>
+          )}
+
+          {showCreateModal && (
+            <CreateWalletModal onClose={() => { setShowCreateModal(false); loadWallet(); }} />
+          )}
+          {showPinModal && (
+            <WalletPinModal
+              open={true}
+              hasExistingPin={custodialWallet?.has_pin || false}
+              onClose={() => setShowPinModal(false)}
+              onSuccess={() => { setShowPinModal(false); loadWallet(); }}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
