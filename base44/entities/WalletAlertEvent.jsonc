@@ -1,0 +1,117 @@
+{
+  "name": "WalletAlertEvent",
+  "type": "object",
+  "title": "WalletAlertEvent",
+  "description": "org.swappulse.walletAlertEvent \u2014 an idempotency and audit record for each processed wallet webhook event. The wallet-webhook receiver checks for an existing record with the same (chain, tx_hash, log_index) before processing; if found, it skips (idempotent). Also serves as an audit trail of all wallet activity detected by the platform across Alchemy (EVM), Helius (Solana), and Bitcoin polling.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the wallet owner"
+    },
+    "chain": {
+      "type": "string",
+      "description": "Chain key (polygon, ethereum, arbitrum, optimism, base, solana, bitcoin)"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "On-chain transaction hash"
+    },
+    "log_index": {
+      "type": "integer",
+      "default": 0,
+      "description": "Log index within the transaction (for ERC-20/721 transfers). 0 for native transfers."
+    },
+    "wallet_address": {
+      "type": "string",
+      "description": "The user's wallet address involved in this event (lowercased for EVM)"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "incoming",
+        "outgoing",
+        "nft_mint",
+        "nft_transfer",
+        "low_balance",
+        "large_tx"
+      ],
+      "description": "Type of wallet event"
+    },
+    "asset_symbol": {
+      "type": "string",
+      "description": "Symbol of the asset (e.g. POL, ETH, USDC, SOL, BTC)"
+    },
+    "amount_wei": {
+      "type": "string",
+      "description": "Amount in base units (wei for EVM, lamports for Solana, sats for Bitcoin)"
+    },
+    "usd_value": {
+      "type": "number",
+      "description": "USD value of the transaction at the time of processing"
+    },
+    "from_address": {
+      "type": "string"
+    },
+    "to_address": {
+      "type": "string"
+    },
+    "nft_contract": {
+      "type": "string",
+      "description": "NFT contract address (for NFT events only)"
+    },
+    "nft_token_id": {
+      "type": "string",
+      "description": "NFT token ID (for NFT events only)"
+    },
+    "block_number": {
+      "type": "integer"
+    },
+    "notified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether a notification was created for this event (false if filtered by smart rules)"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "chain",
+    "tx_hash",
+    "wallet_address",
+    "event_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
