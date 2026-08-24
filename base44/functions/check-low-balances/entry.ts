@@ -10,16 +10,30 @@ import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
-    const base44 = createClientFromRequest(req);
     // Security: this endpoint scans all users' wallet balances and bulk-creates
     // Notification records + dispatches push notifications via the service role,
-    // so it must not be callable by arbitrary internet callers. The platform
-    // injects an internal service JWT on workflow/function-to-function calls;
-    // base44.auth.me() resolves that to an admin caller. A public internet
-    // caller has no such token and is rejected with 403.
-    const caller = await base44.auth.me().catch(() => null);
-    if (!caller || caller.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    // so it must not be callable by arbitrary internet callers. Two authorized
+    // paths are accepted:
+    //   1. A shared secret (BACKEND_FUNCTION_SECRET) passed in the X-Trigger-Secret
+    //      header or the trigger_secret body field — for external/scheduled callers.
+    //   2. An admin caller via base44.auth.me() — the platform injects an internal
+    //      service JWT on workflow/function-to-function calls that resolves to admin.
+    const expectedSecret = Deno.env.get('BACKEND_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-trigger-secret') || '';
+    let bodySecret = '';
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      bodySecret = String(body?.trigger_secret || '');
+    } catch {}
+    const secretOk = expectedSecret && expectedSecret.length > 0 &&
+      (headerSecret === expectedSecret || bodySecret === expectedSecret);
+
+    const base44 = createClientFromRequest(req);
+    if (!secretOk) {
+      const caller = await base44.auth.me().catch(() => null);
+      if (!caller || caller.role !== 'admin') {
+        return Response.json({ error: 'Unauthorized' }, { status: 403 });
+      }
     }
     const svc = base44.asServiceRole;
 
