@@ -17,7 +17,7 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const did = user.did;
+    const did = user.data?.did || user.did;
     if (!did) return Response.json({ error: 'No AT Protocol DID found for your account' }, { status: 400 });
 
     // Check crypto features are enabled
@@ -57,7 +57,7 @@ export default async function(req: Request): Promise<Response> {
       asset_type: 'username',
     });
     if (existing.length) {
-      return Response.json({ error: 'Username already minted', asset: existing[0] }, { status: 400 });
+      return Response.json({ alreadyMinted: true, asset: existing[0] }, { status: 200 });
     }
 
     // Mint on-chain via the platform wallet

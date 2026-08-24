@@ -36,19 +36,16 @@ export default function UsernameMintCard({ walletLinked }) {
         setMinting(false);
         return;
       }
+      if (res.data.alreadyMinted) {
+        setAsset(res.data.asset);
+        toast({ title: 'Already minted', description: 'Your username NFT is already on-chain.' });
+        return;
+      }
       setAsset(res.data.asset);
       toast({ title: 'Username minted on Polygon!', description: 'Your handle is now permanently on-chain.' });
     } catch (e) {
-      // If already minted, the backend returns the existing asset — display it
-      // instead of showing an error toast.
-      const existingAsset = e?.response?.data?.asset;
-      if (existingAsset) {
-        setAsset(existingAsset);
-        toast({ title: 'Already minted', description: 'Your username NFT is already on-chain.' });
-      } else {
-        const msg = e?.response?.data?.error || e.message;
-        toast({ title: 'Mint failed', description: msg, variant: 'destructive' });
-      }
+      const msg = e?.response?.data?.error || e.message;
+      toast({ title: 'Mint failed', description: msg, variant: 'destructive' });
     } finally {
       setMinting(false);
     }

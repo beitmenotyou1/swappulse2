@@ -11,20 +11,35 @@ export default function PasskeyManager({ wallet, onUpdated }) {
   const { toast } = useToast();
   const [enrolling, setEnrolling] = useState(false);
 
+  // Uses the unified webauthn-reg-options + webauthn-verify-reg flow (same as
+  // Settings > Security). verify-reg automatically links the credential to the
+  // active CustodialWallet, so one passkey secures both account and wallet.
   const handleAdd = async () => {
     setEnrolling(true);
     try {
-      const optsRes = await base44.functions.invoke('add-wallet-passkey', { phase: 'options' });
-      const attestation = await startRegistration(optsRes.data.options);
-      await base44.functions.invoke('add-wallet-passkey', {
-        phase: 'verify',
+      const optsRes = await base44.functions.invoke('webauthn-reg-options', {});
+      if (optsRes.data?.error) {
+        toast({ title: 'Passkey setup failed', description: optsRes.data.error, variant: 'destructive' });
+        return;
+      }
+      const { options, challenge_signature } = optsRes.data;
+      if (!options || !options.challenge) {
+        toast({ title: 'Passkey setup failed', description: 'Could not generate registration options.', variant: 'destructive' });
+        return;
+      }
+      const attestation = await startRegistration({ optionsJSON: options });
+      const verifyRes = await base44.functions.invoke('webauthn-verify-reg', {
         attestation,
-        challenge: optsRes.data.challenge,
-        challenge_signature: optsRes.data.challenge_signature,
+        challenge: options.challenge,
+        challenge_signature,
         label: 'Wallet Passkey',
       });
-      toast({ title: 'Passkey added', description: 'Your wallet is now secured by this device.' });
-      if (onUpdated) onUpdated();
+      if (verifyRes.data?.verified) {
+        toast({ title: 'Passkey added', description: 'Your wallet is now secured by this device.' });
+        if (onUpdated) onUpdated();
+      } else {
+        toast({ title: 'Passkey setup failed', description: verifyRes.data?.error || 'Registration failed', variant: 'destructive' });
+      }
     } catch (e) {
       if (e.name !== 'NotAllowedError') {
         toast({ title: 'Passkey setup failed', description: e.message, variant: 'destructive' });

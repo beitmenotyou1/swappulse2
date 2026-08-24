@@ -46,12 +46,33 @@ export default async function (req: Request): Promise<Response> {
     const credentialIdB64 = credentialID; // already base64url from @simplewebauthn/server
     const pubKeyB64 = uint8ArrayToBase64Url(credentialPublicKey);
 
-    // Check for duplicate credential ID
+    // Check for duplicate credential ID — if already registered, link it to
+    // the wallet (if not already) and return success instead of a 409 error.
     const dupes = await base44.asServiceRole.entities.WebAuthnCredential
       .filter({ credential_id: credentialIdB64 }, '-created_date', 1)
       .catch(() => []);
     if (dupes && dupes.length) {
-      return Response.json({ error: 'This security key is already registered' }, { status: 409 });
+      const userDid = user.data?.did || user.did;
+      if (userDid) {
+        const wallets = await base44.asServiceRole.entities.CustodialWallet
+          .filter({ did: userDid, active: true }, '-created_date', 1)
+          .catch(() => []);
+        if (wallets && wallets.length) {
+          const wallet = wallets[0];
+          if (!(wallet.passkey_credential_ids || []).includes(credentialIdB64)) {
+            await base44.asServiceRole.entities.CustodialWallet.update(wallet.id, {
+              passkey_credential_ids: [...(wallet.passkey_credential_ids || []), credentialIdB64],
+              has_passkey: true,
+            }).catch(() => {});
+          }
+        }
+      }
+      return Response.json({
+        verified: true,
+        credential_id: credentialIdB64,
+        label: label || 'Security Key',
+        already_registered: true,
+      });
     }
 
     await base44.asServiceRole.entities.WebAuthnCredential.create({

@@ -20,14 +20,15 @@ export default function PolygonSettingsSection({ settings, update }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
 
+  const userDid = user?.data?.did || user?.did;
   const loadWallet = useCallback(async () => {
-    if (!user?.did) { setLoadingWallet(false); return; }
+    if (!userDid) { setLoadingWallet(false); return; }
     try {
-      const wallets = await base44.entities.CustodialWallet.filter({ did: user.did, active: true });
+      const wallets = await base44.entities.CustodialWallet.filter({ did: userDid, active: true });
       setCustodialWallet(wallets[0] || null);
     } catch { setCustodialWallet(null); }
     finally { setLoadingWallet(false); }
-  }, [user?.did]);
+  }, [userDid]);
 
   useEffect(() => { loadWallet(); }, [loadWallet]);
 
