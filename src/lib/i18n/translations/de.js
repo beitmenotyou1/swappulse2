@@ -4,6 +4,7 @@
 const de = {
   'nav.home': 'Startseite', 'nav.explore': 'Entdecken', 'nav.collection': 'Sammlung', 'nav.scan': 'Scannen',
   'nav.binders': 'Mappen', 'nav.trades': 'Tauschbörse', 'nav.circles': 'Kreise', 'nav.meetups': 'Treffen',
+  'nav.wallet': 'Geldbörse',
   'nav.live': 'Live', 'nav.notifications': 'Benachrichtigungen', 'nav.messages': 'Nachrichten', 'nav.more': 'Mehr',
   'nav.trust': 'Vertrauen', 'nav.whoToFollow': 'Wem folgen', 'nav.achievements': 'Erfolge',
   'nav.challenges': 'Herausforderungen', 'nav.packParties': 'Booster-Partys', 'nav.pullOfTheWeek': 'Pull der Woche',

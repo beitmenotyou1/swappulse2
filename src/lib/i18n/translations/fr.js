@@ -4,6 +4,7 @@
 const fr = {
   'nav.home': 'Accueil', 'nav.explore': 'Explorer', 'nav.collection': 'Collection', 'nav.scan': 'Scanner',
   'nav.binders': 'Classeurs', 'nav.trades': 'Échanges', 'nav.circles': 'Cercles', 'nav.meetups': 'Rencontres',
+  'nav.wallet': 'Portefeuille',
   'nav.live': 'En Direct', 'nav.notifications': 'Notifications', 'nav.messages': 'Messages', 'nav.more': 'Plus',
   'nav.trust': 'Confiance', 'nav.whoToFollow': 'À suivre', 'nav.achievements': 'Succès',
   'nav.challenges': 'Défis', 'nav.packParties': 'Fêtes d\'Ouverture', 'nav.pullOfTheWeek': 'Tirage de la Semaine',

@@ -4,6 +4,7 @@
 const zh = {
   'nav.home': '首页', 'nav.explore': '探索', 'nav.collection': '收藏', 'nav.scan': '扫描',
   'nav.binders': '卡册', 'nav.trades': '交易', 'nav.circles': '圈子', 'nav.meetups': '聚会',
+  'nav.wallet': '钱包',
   'nav.live': '直播', 'nav.notifications': '通知', 'nav.messages': '消息', 'nav.more': '更多',
   'nav.trust': '信任', 'nav.whoToFollow': '推荐关注', 'nav.achievements': '成就',
   'nav.challenges': '挑战', 'nav.packParties': '开包派对', 'nav.pullOfTheWeek': '本周最佳',

@@ -4,6 +4,7 @@
 const ko = {
   'nav.home': '홈', 'nav.explore': '탐색', 'nav.collection': '컬렉션', 'nav.scan': '스캔',
   'nav.binders': '바인더', 'nav.trades': '교환', 'nav.circles': '서클', 'nav.meetups': '모임',
+  'nav.wallet': '지갑',
   'nav.live': '라이브', 'nav.notifications': '알림', 'nav.messages': '메시지', 'nav.more': '더보기',
   'nav.trust': '신뢰', 'nav.whoToFollow': '팔로우 추천', 'nav.achievements': '업적',
   'nav.challenges': '챌린지', 'nav.packParties': '팩 파티', 'nav.pullOfTheWeek': '이번 주 풀',

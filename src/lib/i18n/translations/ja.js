@@ -4,6 +4,7 @@
 const ja = {
   'nav.home': 'ホーム', 'nav.explore': '探す', 'nav.collection': 'コレクション', 'nav.scan': 'スキャン',
   'nav.binders': 'バインダー', 'nav.trades': 'トレード', 'nav.circles': 'サークル', 'nav.meetups': 'ミートアップ',
+  'nav.wallet': 'ウォレット',
   'nav.live': 'ライブ', 'nav.notifications': '通知', 'nav.messages': 'メッセージ', 'nav.more': 'もっと見る',
   'nav.trust': '信頼', 'nav.whoToFollow': 'おすすめ', 'nav.achievements': 'アチーブメント',
   'nav.challenges': 'チャレンジ', 'nav.packParties': 'パックパーティー', 'nav.pullOfTheWeek': '今週のプル',
