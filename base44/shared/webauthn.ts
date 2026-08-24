@@ -74,13 +74,20 @@ export async function verifySignedChallenge(
 // The RP ID must be a registrable domain suffix of the origin.
 export function getRpConfig(req: Request): { origin: string; rpId: string } | null {
   const origin = req.headers.get('Origin') || req.headers.get('Referer');
-  if (!origin) return null;
-  try {
-    const url = new URL(origin);
-    return { origin: url.origin, rpId: url.hostname };
-  } catch {
-    return null;
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      return { origin: url.origin, rpId: url.hostname };
+    } catch {}
   }
+  // Fallback: construct from Host header when Origin/Referer are absent
+  // (some proxies or preview environments strip the Origin header).
+  const host = req.headers.get('Host');
+  if (host) {
+    const protocol = host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https';
+    return { origin: `${protocol}://${host}`, rpId: host.split(':')[0] };
+  }
+  return null;
 }
 
 // Convert a base64url string to a Uint8Array (for @simplewebauthn/server interop).

@@ -39,7 +39,15 @@ export default function WebAuthnSection() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("webauthn-reg-options", {});
+      if (res.data?.error) {
+        setError(res.data.error);
+        return;
+      }
       const { options, challenge_signature } = res.data;
+      if (!options || !options.challenge) {
+        setError("Could not generate registration options. Please try again.");
+        return;
+      }
       const attestation = await startRegistration({ optionsJSON: options });
       const verifyRes = await base44.functions.invoke("webauthn-verify-reg", {
         attestation,
