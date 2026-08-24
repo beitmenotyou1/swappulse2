@@ -4,6 +4,7 @@
 const en = {
   'nav.home': 'Home', 'nav.explore': 'Explore', 'nav.collection': 'Collection', 'nav.scan': 'Scan Cards',
   'nav.binders': 'Binders', 'nav.trades': 'Trade Board', 'nav.circles': 'Circles', 'nav.meetups': 'Meetups',
+  'nav.wallet': 'Wallet',
   'nav.live': 'Live Now', 'nav.notifications': 'Notifications', 'nav.messages': 'Messages', 'nav.more': 'More',
   'nav.trust': 'Trust', 'nav.whoToFollow': 'Who to Follow', 'nav.achievements': 'Achievements',
   'nav.challenges': 'Challenges', 'nav.packParties': 'Pack Parties', 'nav.pullOfTheWeek': 'Pull of the Week',
