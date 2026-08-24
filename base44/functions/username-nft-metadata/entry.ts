@@ -33,15 +33,23 @@ function generateSvg(
   displayName: string,
   bio: string,
   memberSince: string,
+  avatarUrl?: string,
 ): string {
   const h = escapeXml(handle);
   const name = escapeXml(displayName);
   const bioShort = escapeXml(bio ? bio.slice(0, 80) : 'SwapPulse Collector');
   const date = escapeXml(memberSince);
+  const avatar = avatarUrl ? escapeXml(avatarUrl) : '';
+
+  // Use the user's avatar as the full-bleed background if available;
+  // fall back to the SwapPulse logo for collectors without an avatar.
+  const bgImage = avatar
+    ? `<image href="${avatar}" x="0" y="0" width="600" height="600" preserveAspectRatio="xMidYMid slice" opacity="0.9"/>`
+    : `<image href="${LOGO_URL}" x="80" y="100" width="440" height="440" preserveAspectRatio="xMidYMid meet" opacity="0.85"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
   <rect width="600" height="600" fill="#000000"/>
-  <image href="${LOGO_URL}" x="80" y="100" width="440" height="440" preserveAspectRatio="xMidYMid meet" opacity="0.85"/>
+  ${bgImage}
   <defs>
     <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#000000" stop-opacity="0.95"/>
@@ -100,8 +108,11 @@ export default async function (req: Request): Promise<Response> {
       month: 'long',
       year: 'numeric',
     });
+    // User's avatar URL — embedded in the SVG so the NFT visual updates
+    // automatically when the collector changes their profile photo.
+    const avatarUrl = user?.data?.avatar || user?.avatar || '';
 
-    const svg = generateSvg(handle, displayName, bioShort, memberSince);
+    const svg = generateSvg(handle, displayName, bioShort, memberSince, avatarUrl);
     const imageDataUri = `data:image/svg+xml;base64,${encodeBase64(svg)}`;
 
     const metadata = {

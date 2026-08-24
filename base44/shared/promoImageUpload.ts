@@ -30,13 +30,11 @@ function detectImageType(bytes: Uint8Array): string | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return 'image/jpeg';
   }
-  // WebP: RIFF....WEBP
-  if (
-    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
-    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
-  ) {
-    return 'image/webp';
-  }
+  // WebP is intentionally NOT accepted — Bluesky's app.bsky.embed.images
+  // lexicon only accepts image/jpeg and image/png. A WebP blob uploads to
+  // the PDS successfully, but the AppView strips the embed and renders the
+  // post as plain text. Rejecting WebP here aborts the post so the workflow
+  // retries with a JPEG/PNG image instead.
   return null;
 }
 
@@ -49,7 +47,9 @@ function normalizeMimeType(raw: string): string | null {
   if (!raw) return null;
   const base = raw.split(';')[0].trim().toLowerCase();
   if (base === 'image/jpg') return 'image/jpeg';
-  if (base === 'image/jpeg' || base === 'image/png' || base === 'image/webp') return base;
+  // Only JPEG and PNG are accepted — Bluesky's app.bsky.embed.images lexicon
+  // rejects WebP, causing the AppView to strip the embed (plain-text post).
+  if (base === 'image/jpeg' || base === 'image/png') return base;
   return null;
 }
 

@@ -143,10 +143,13 @@ async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null>
   return null;
 }
 
-/** Build the small card image URL from TCGDex's CDN (low quality webp). */
+/** Build the small card image URL from TCGDex's CDN.
+ * Uses JPEG (not WebP) because Bluesky's app.bsky.embed.images lexicon only
+ * accepts image/jpeg and image/png. A WebP blob uploads to the PDS but the
+ * AppView strips the embed, rendering the post as plain text. */
 function cardImageUrl(imageField: string | null): string | null {
   if (!imageField) return null;
-  const suffix = '/low.webp';
+  const suffix = '/low.jpg';
   if (imageField.startsWith('http')) return `${imageField}${suffix}`;
   return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
 }
