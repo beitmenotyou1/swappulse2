@@ -6,7 +6,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateAuthenticationOptions } from 'npm:@simplewebauthn/server@10';
-import { generateSignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
+import { generateSignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -37,7 +37,7 @@ export default async function (req: Request): Promise<Response> {
 
     const options = await generateAuthenticationOptions({
       rpID: rpConfig.rpId,
-      challenge,
+      challenge: base64UrlToUint8Array(challenge),
       allowCredentials,
       userVerification: 'preferred',
     });

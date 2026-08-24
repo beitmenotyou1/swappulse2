@@ -10,7 +10,7 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from 'npm:@simplewebauthn/server@10';
-import { generateSignedChallenge, verifySignedChallenge, getRpConfig, uint8ArrayToBase64Url } from '../../shared/webauthn.ts';
+import { generateSignedChallenge, verifySignedChallenge, getRpConfig, uint8ArrayToBase64Url, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -43,12 +43,16 @@ export default async function (req: Request): Promise<Response> {
 
       const { challenge, signature } = await generateSignedChallenge(process.env.BACKEND_FUNCTION_SECRET!);
 
+      // Pass the challenge as a Uint8Array (raw bytes decoded from the
+      // base64url string) so the library base64url-encodes the raw bytes
+      // for the browser. If passed as a string, the library treats it as
+      // raw text bytes, causing a challenge mismatch on verification.
       const options = await generateRegistrationOptions({
         rpName: 'SwapPulse Wallet',
         rpID: rpConfig.rpId,
         userID: new TextEncoder().encode(user.id),
         userName: user.email || user.id,
-        challenge,
+        challenge: base64UrlToUint8Array(challenge),
         excludeCredentials,
         authenticatorSelection: {
           residentKey: 'preferred',

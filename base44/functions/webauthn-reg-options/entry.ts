@@ -5,7 +5,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateRegistrationOptions } from 'npm:@simplewebauthn/server@10';
-import { generateSignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
+import { generateSignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -33,7 +33,7 @@ export default async function (req: Request): Promise<Response> {
       rpID: rpConfig.rpId,
       userID: new TextEncoder().encode(user.id),
       userName: user.email || user.id,
-      challenge,
+      challenge: base64UrlToUint8Array(challenge),
       excludeCredentials,
       authenticatorSelection: {
         residentKey: 'preferred',

@@ -87,6 +87,25 @@ export default async function (req) {
       );
     }
 
+    // Sender account validation: only collectors in good standing (not
+    // suspended or shadow-banned) can send invite emails. This prevents
+    // penalized accounts from using the platform's email infrastructure
+    // as an open relay — a suspended user's session token is still valid
+    // until it expires, so this server-side check is the authoritative gate.
+    const senderStatus = await base44.asServiceRole.entities.AccountStatus
+      .filter({ user_id: user.id }, '-updated_date', 1)
+      .catch(() => []);
+    if (senderStatus.length && senderStatus[0].status === 'suspended') {
+      const suspendedUntil = senderStatus[0].suspended_until;
+      const isStillSuspended = !suspendedUntil || new Date(suspendedUntil) > new Date();
+      if (isStillSuspended) {
+        return Response.json(
+          { error: 'Your account is suspended and cannot send invite emails.' },
+          { status: 403 },
+        );
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
     if (!email || email.length > MAX_EMAIL_LEN || !EMAIL_RE.test(email)) {
