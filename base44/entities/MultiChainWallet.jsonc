@@ -2,7 +2,7 @@
   "name": "MultiChainWallet",
   "type": "object",
   "title": "MultiChainWallet",
-  "description": "org.swappulse.multiChainWallet \u2014 a custodial multi-chain wallet for a collector. Stores one EVM keypair (shared across Polygon, Ethereum, Arbitrum, Optimism, Base), one Solana keypair, and one Bitcoin keypair, all derived from the same 24-word mnemonic. Private keys are AES-256-GCM encrypted server-side and gated by passkey and/or optional PIN. The mnemonic is also encrypted for recovery. One active wallet per user. Replaces CustodialWallet for users who enable multi-chain support.",
+  "description": "org.swappulse.multiChainWallet \u2014 a custodial multi-chain wallet for a collector. Stores one EVM keypair (shared across Polygon, Ethereum, Arbitrum, Optimism, Base), one Solana keypair, and one Bitcoin keypair, all derived from the same 24-word mnemonic. From the Bitcoin keypair, separate addresses are derived for Bitcoin (P2WPKH bech32), Bitcoin Cash (CashAddr), Dogecoin (P2PKH), and Litecoin (P2PKH). Private keys are AES-256-GCM encrypted server-side and gated by passkey and/or optional PIN. The mnemonic is also encrypted for recovery. One active wallet per user. Replaces CustodialWallet for users who enable multi-chain support.",
   "properties": {
     "did": {
       "type": "string",
@@ -30,7 +30,19 @@
     },
     "bitcoin_address": {
       "type": "string",
-      "description": "Bitcoin P2WPKH (bech32) address"
+      "description": "Bitcoin P2WPKH (bech32) address (bc1q...)"
+    },
+    "bitcoin_cash_address": {
+      "type": "string",
+      "description": "Bitcoin Cash CashAddr address (bitcoincash:q...)"
+    },
+    "dogecoin_address": {
+      "type": "string",
+      "description": "Dogecoin P2PKH address (D...)"
+    },
+    "litecoin_address": {
+      "type": "string",
+      "description": "Litecoin P2PKH address (L...)"
     },
     "mnemonic_cipher": {
       "type": "string",

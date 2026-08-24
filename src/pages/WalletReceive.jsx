@@ -45,22 +45,28 @@ export default function WalletReceive() {
 
   useEffect(() => { loadWallet(); }, [loadWallet]);
 
-  // Wallet addresses per chain type
+  // Wallet addresses per chain — each Bitcoin-derived chain has its own
+  // address format (Bitcoin bech32, BCH CashAddr, Dogecoin/Litecoin P2PKH)
   const walletAddresses = walletData?.wallet_addresses || {};
   const evmAddress = walletAddresses.evm || walletData?.custodial_wallet?.address || null;
   const solanaAddress = walletAddresses.solana || null;
-  const bitcoinAddress = walletAddresses.bitcoin || null;
   const usernameHandle = walletData?.username_nft?.handle || user?.bsky_handle || user?.username;
+
+  // Map each chain key to its specific address
+  const addressByChain = useMemo(() => {
+    const map = {};
+    for (const c of CHAINS) {
+      if (c.type === 'evm') map[c.key] = evmAddress;
+      else if (c.type === 'solana') map[c.key] = solanaAddress;
+      else if (c.type === 'bitcoin') map[c.key] = walletAddresses[c.key] || null;
+      else map[c.key] = evmAddress; // 'other' chains fall back to EVM
+    }
+    return map;
+  }, [evmAddress, solanaAddress, walletAddresses]);
 
   // Address for the selected chain
   const selectedChainDef = selectedChain ? getChain(selectedChain) : null;
-  const selectedAddress = useMemo(() => {
-    if (!selectedChainDef) return null;
-    if (selectedChainDef.type === 'evm') return evmAddress;
-    if (selectedChainDef.type === 'solana') return solanaAddress;
-    if (selectedChainDef.type === 'bitcoin') return bitcoinAddress;
-    return evmAddress;
-  }, [selectedChainDef, evmAddress, solanaAddress, bitcoinAddress]);
+  const selectedAddress = selectedChainDef ? addressByChain[selectedChainDef.key] : null;
 
   // Generate QR code client-side
   useEffect(() => {
@@ -87,13 +93,8 @@ export default function WalletReceive() {
 
   // Chains that have an address available
   const availableChains = useMemo(() => {
-    return CHAINS.filter(c => {
-      if (c.type === 'evm') return !!evmAddress;
-      if (c.type === 'solana') return !!solanaAddress;
-      if (c.type === 'bitcoin') return !!bitcoinAddress;
-      return !!evmAddress;
-    });
-  }, [evmAddress, solanaAddress, bitcoinAddress]);
+    return CHAINS.filter(c => !!addressByChain[c.key]);
+  }, [addressByChain]);
 
   if (loading) {
     return (
@@ -211,10 +212,7 @@ export default function WalletReceive() {
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {availableChains.map((chain) => {
-            const address = chain.type === 'evm' ? evmAddress
-              : chain.type === 'solana' ? solanaAddress
-              : chain.type === 'bitcoin' ? bitcoinAddress
-              : evmAddress;
+            const address = addressByChain[chain.key];
             return (
               <button
                 key={chain.key}

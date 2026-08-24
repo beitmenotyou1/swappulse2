@@ -28,6 +28,9 @@ export default async function (req: Request): Promise<Response> {
       evm: multiWallet?.evm_address || custodialWallet?.wallet_address || null,
       solana: multiWallet?.solana_address || null,
       bitcoin: multiWallet?.bitcoin_address || null,
+      'bitcoin-cash': multiWallet?.bitcoin_cash_address || null,
+      dogecoin: multiWallet?.dogecoin_address || null,
+      litecoin: multiWallet?.litecoin_address || null,
     };
 
     // Get username NFT (if minted — serves as immutable cross-chain address alias)
