@@ -151,6 +151,17 @@ export default async function (req) {
     const appOrigin = resolveAppUrl(req);
     const inviteUrl = `${appOrigin}/invite/${code.code}`;
 
+    // Immutable, branded email metadata. The subject and from_name are fixed
+    // strings that never embed user-controlled profile text, so an attacker
+    // cannot spoof the email envelope/headers by setting a misleading
+    // full_name (e.g. "SwapPulse Security Team"). The inviter's name still
+    // appears inside the escaped HTML body, which is clearly within a branded
+    // SwapPulse template — that personalisation is the feature's purpose and
+    // cannot inject HTML or control email headers.
+    const SUBJECT = "You're invited to SwapPulse";
+    const FROM_NAME = 'SwapPulse';
+    const PREHEADER = 'A friend thinks you would love SwapPulse — the decentralized social network for Pokémon TCG collectors.';
+
     const bodyHtml = `
       <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#f1f5f9;">${esc(inviterName)} invited you to SwapPulse</p>
       <p style="margin:0 0 16px;font-size:15px;color:#94a3b8;line-height:1.7;">
@@ -162,8 +173,8 @@ export default async function (req) {
       </p>`;
 
     const html = buildBrandedHtml({
-      subject: `${inviterName} invited you to SwapPulse`,
-      preheader: `${inviterName} thinks you'd love SwapPulse — join and connect automatically.`,
+      subject: SUBJECT,
+      preheader: PREHEADER,
       bodyHtml,
       ctaLink: inviteUrl,
       ctaLabel: 'Join SwapPulse',
@@ -172,9 +183,9 @@ export default async function (req) {
     });
 
     const text = buildPlainText(
-      `${inviterName} invited you to SwapPulse`,
+      SUBJECT,
       [
-        `${inviterName}${inviterHandle ? ` (@${inviterHandle})` : ''} thinks you'd love SwapPulse — the decentralized social network for Pokémon TCG collectors.`,
+        `${esc(inviterName)}${inviterHandle ? ` (@${inviterHandle})` : ''} thinks you'd love SwapPulse — the decentralized social network for Pokémon TCG collectors.`,
         'Track your collection, trade cards, scan pulls, and connect with the community.',
         `Join via the link below and you'll automatically follow ${inviterName} and become friends.`,
       ],
@@ -185,9 +196,9 @@ export default async function (req) {
     try {
       await base44.integrations.Core.SendEmail({
         to: email,
-        subject: `${inviterName} invited you to SwapPulse`,
+        subject: SUBJECT,
         body: html,
-        from_name: inviterName,
+        from_name: FROM_NAME,
       });
     } catch (sendErr) {
       // SendEmail to non-registered recipients requires a paid plan + custom
