@@ -30,7 +30,7 @@ export default function CreateWalletModal({ onClose }) {
   const handleCreate = async () => {
     setStep('creating');
     try {
-      const res = await base44.functions.invoke('create-custodial-wallet', {});
+      const res = await base44.functions.invoke('create-multi-chain-wallet', {});
       setMnemonic(res.data.mnemonic);
       setWalletAddress(res.data.wallet.address);
       setStep('seed');
@@ -88,15 +88,16 @@ export default function CreateWalletModal({ onClose }) {
                 Create Your SwapPulse Wallet
               </DialogTitle>
               <DialogDescription>
-                Your SwapPulse account becomes your Polygon wallet. No browser extensions needed —
-                we'll generate and securely store your keys.
+                Your SwapPulse account becomes your multi-chain wallet. No browser extensions needed —
+                we'll generate and securely store your keys across all supported chains.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
               <div className="rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground">
                 <p className="font-semibold text-foreground">What you'll get:</p>
                 <ul className="mt-1.5 space-y-1">
-                  <li>• A Polygon wallet address for receiving crypto and NFTs</li>
+                  <li>• EVM address (Polygon, Ethereum, Arbitrum, Optimism, Base &amp; more)</li>
+                  <li>• Solana, Bitcoin, Bitcoin Cash, Dogecoin &amp; Litecoin addresses</li>
                   <li>• A 24-word recovery phrase (write it down!)</li>
                   <li>• Optional passkey protection (Face ID / Touch ID)</li>
                 </ul>
