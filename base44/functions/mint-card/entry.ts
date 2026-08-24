@@ -19,7 +19,7 @@ export default async function(req: Request): Promise<Response> {
     const { collectionEntryId, unlockCredential, verificationSessionId } = body;
     if (!collectionEntryId) return Response.json({ error: 'Missing collectionEntryId' }, { status: 400 });
 
-    const did = user.data?.did;
+    const did = user.did;
     if (!did) return Response.json({ error: 'No AT Protocol DID found' }, { status: 400 });
 
     // If a verification session is provided, validate it and determine the

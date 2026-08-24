@@ -17,7 +17,7 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const did = user.data?.did;
+    const did = user.did;
     if (!did) return Response.json({ error: 'No AT Protocol DID found for your account' }, { status: 400 });
 
     // Check crypto features are enabled
