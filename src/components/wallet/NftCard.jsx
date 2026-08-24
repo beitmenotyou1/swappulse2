@@ -53,6 +53,9 @@ export default function NftCard({ nft, priceFormatted, onClick }) {
       </div>
       <div className="p-2.5">
         <p className="truncate text-sm font-bold">{asset.linked_card_name || asset.handle || 'NFT'}</p>
+        {!isUsername && asset.minter_username && (
+          <p className="truncate text-[10px] text-muted-foreground">@{asset.minter_username}</p>
+        )}
         <div className="mt-1 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground">
             {isUsername ? 'Identity' : `#${asset.token_id}`}

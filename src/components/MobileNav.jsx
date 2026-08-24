@@ -10,11 +10,12 @@ import { PopoverTrigger } from '@/components/ui/popover';
 import NotificationPopover from '@/components/notifications/NotificationPopover';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
-  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
+  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true, cryptoOnly: true },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
 ];
@@ -73,6 +74,7 @@ export default function MobileNav() {
   const unread = useUnreadCount();
   const unreadDMs = useUnreadDMCount();
   const { user, isAuthenticated, logout } = useAuth();
+  const { cryptoEnabled } = useCryptoEnabled();
   const t = useT();
 
   // --- Native-style tab navigation: per-tab scroll + history preservation ---
@@ -109,7 +111,7 @@ export default function MobileNav() {
         </Link>
       )}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 pb-[env(safe-area-inset-bottom,16px)] backdrop-blur md:hidden">
-        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
+        {primary.filter((i) => (!i.authOnly || isAuthenticated) && (!i.cryptoOnly || cryptoEnabled)).map((item) => {
           const active = owningTab === item.to;
           return (
             <Link

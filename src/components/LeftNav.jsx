@@ -12,13 +12,14 @@ import { PopoverTrigger } from '@/components/ui/popover';
 import NotificationPopover from '@/components/notifications/NotificationPopover';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 
 const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
   { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
-  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
+  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true, cryptoOnly: true },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', tKey: 'nav.trades' },
   { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
   { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },
@@ -57,6 +58,7 @@ export default function LeftNav() {
   const unread = useUnreadCount();
   const unreadDMs = useUnreadDMCount();
   const [showMore, setShowMore] = useState(false);
+  const { cryptoEnabled } = useCryptoEnabled();
   const t = useT();
 
   const linkClass = ({ isActive }) =>
@@ -72,7 +74,7 @@ export default function LeftNav() {
         </NavLink>
       </div>
       <div className="flex flex-col items-center gap-1 xl:items-stretch">
-        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
+        {primary.filter((i) => (!i.authOnly || isAuthenticated) && (!i.cryptoOnly || cryptoEnabled)).map((item) => {
           if (item.to === '/notifications') {
             return (
               <NotificationPopover

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, Package, Sparkles } from 'lucide-react';
+import { Loader2, Package, Sparkles, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCryptoPrices } from '@/hooks/useCryptoPrices';
 import { useSettings } from '@/hooks/useSettings';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import NftCard from '@/components/wallet/NftCard';
 import NftDetailSheet from '@/components/wallet/NftDetailSheet';
+import BulkMintModal from '@/components/wallet/BulkMintModal';
 
 function convertUsdToDisplay(usdAmount, displayCurrency, prices) {
   switch (displayCurrency) {
@@ -35,8 +37,10 @@ export default function NftPortfolioTab() {
   const [totalValueUsd, setTotalValueUsd] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedNft, setSelectedNft] = useState(null);
+  const [showBulkMint, setShowBulkMint] = useState(false);
   const { prices } = useCryptoPrices();
   const { settings } = useSettings();
+  const { cryptoEnabled } = useCryptoEnabled();
   const displayCurrency = settings?.crypto?.display_currency || 'USD';
 
   const loadNfts = useCallback(async () => {
@@ -67,6 +71,17 @@ export default function NftPortfolioTab() {
 
   return (
     <div className="space-y-4">
+      {/* Bulk mint button */}
+      {cryptoEnabled && (
+        <button
+          onClick={() => setShowBulkMint(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-muted py-3 text-sm font-bold text-white shadow-raised transition hover:opacity-90"
+        >
+          <Zap className="h-4 w-4" />
+          Bulk Mint Cards
+        </button>
+      )}
+
       {/* Total value header */}
       <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 to-accent/5 p-5">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -118,6 +133,13 @@ export default function NftPortfolioTab() {
               : null
           }
           onClose={() => setSelectedNft(null)}
+        />
+      )}
+
+      {showBulkMint && (
+        <BulkMintModal
+          onClose={() => { setShowBulkMint(false); loadNfts(); }}
+          onMinted={() => loadNfts()}
         />
       )}
     </div>

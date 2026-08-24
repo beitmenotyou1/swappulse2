@@ -2,7 +2,7 @@
   "name": "OnChainAsset",
   "type": "object",
   "title": "OnChainAsset",
-  "description": "org.swappulse.onChainAsset \u2014 a minted Polygon NFT tracked by SwapPulse. Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via backend functions; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse. verification_level (0\u20133) records the trust tier of the ownership proof, embedded in the NFT metadata so buyers and traders can see how much trust the on-chain proof carries.",
+  "description": "org.swappulse.onChainAsset \u2014 a minted Polygon NFT tracked by SwapPulse. Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via backend functions; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse. Each transfer entry includes a 'verified' flag that is only set true once the physical card receipt is confirmed via the escrow system, ensuring the physical card and its NFT are treated as a single entity. minter_username stores the original minter's SwapPulse handle for transparency. verification_level (0\u20133) records the trust tier of the ownership proof, embedded in the NFT metadata so buyers and traders can see how much trust the on-chain proof carries.",
   "properties": {
     "asset_type": {
       "type": "string",
@@ -52,6 +52,14 @@
       "type": "string",
       "description": "Local CollectionEntry ID the card NFT was minted from"
     },
+    "minter_username": {
+      "type": "string",
+      "description": "SwapPulse handle of the original minter, embedded in NFT metadata for transparency and accountability"
+    },
+    "minter_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the original minter"
+    },
     "mint_tx_hash": {
       "type": "string",
       "description": "Polygon transaction hash of the mint"
@@ -74,6 +82,9 @@
       "items": {
         "type": "object",
         "properties": {
+          "from_wallet": {
+            "type": "string"
+          },
           "to_wallet": {
             "type": "string"
           },
@@ -86,10 +97,18 @@
           "at": {
             "type": "string",
             "format": "date-time"
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "True only when the physical card receipt has been confirmed via the escrow system. Until verified, the transfer is pending and the NFT + physical card are treated as a single entity."
+          },
+          "escrow_trade_id": {
+            "type": "string",
+            "description": "ID of the EscrowTrade that triggered this transfer, for physical verification linkage"
           }
         }
       },
-      "description": "Chronological log of on-chain transfers (empty for soulbound tokens)"
+      "description": "Chronological log of on-chain transfers (empty for soulbound tokens). Each entry's 'verified' flag is set true only after physical card receipt confirmation."
     },
     "metadata_uri": {
       "type": "string",

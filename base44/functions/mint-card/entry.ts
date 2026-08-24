@@ -88,6 +88,9 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Card already minted as NFT', asset: existing[0] }, { status: 400 });
     }
 
+    // Get the minter's username for NFT metadata
+    const minterUsername = user.data?.handle || user.full_name || user.data?.full_name || 'Unknown Collector';
+
     // Mint on-chain via the platform wallet
     const mintWallet = getMintWallet();
     const contract = getCardContract(mintWallet);
@@ -100,7 +103,7 @@ export default async function(req: Request): Promise<Response> {
     const receipt = await tx.wait();
     const { tokenId } = parseMintEvent(contract, receipt);
 
-    // Record the asset
+    // Record the asset with minter username
     const asset = await base44.asServiceRole.entities.OnChainAsset.create({
       asset_type: 'card',
       token_id: tokenId,
@@ -111,6 +114,8 @@ export default async function(req: Request): Promise<Response> {
       linked_card_name: cardName,
       linked_card_image: cardImage,
       linked_collection_entry_id: collectionEntryId,
+      minter_username: minterUsername,
+      minter_did: did,
       mint_tx_hash: tx.hash,
       mint_block_number: receipt.blockNumber,
       minted_at: new Date().toISOString(),

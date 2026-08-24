@@ -3,8 +3,7 @@ import { Boxes, Wallet, KeyRound, Loader2, Plus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { clearCryptoEnabledCache, useCryptoEnabled } from '@/hooks/useCryptoEnabled';
-import CryptoToggle from './CryptoToggle';
+import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import DisplayCurrencySelector from '@/components/wallet/DisplayCurrencySelector';
 import CustodialWalletCard from './CustodialWalletCard';
 import PasskeyManager from './PasskeyManager';
@@ -33,11 +32,6 @@ export default function PolygonSettingsSection({ settings, update }) {
 
   useEffect(() => { loadWallet(); }, [loadWallet]);
 
-  const handleToggle = (enabled) => {
-    update({ crypto: { enabled } });
-    clearCryptoEnabledCache();
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -45,7 +39,9 @@ export default function PolygonSettingsSection({ settings, update }) {
         <h2 className="text-lg font-bold">Wallet & Blockchain</h2>
       </div>
 
-      <CryptoToggle enabled={cryptoEnabled} onToggle={handleToggle} />
+      <p className="text-xs text-muted-foreground">
+        Crypto features can be toggled in <span className="font-semibold">Settings → Account</span>. Minting of username and card NFTs is on Polygon only — gas is paid by you.
+      </p>
 
       {cryptoEnabled && (
         <DisplayCurrencySelector settings={settings} update={update} />

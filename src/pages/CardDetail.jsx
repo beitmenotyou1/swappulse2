@@ -19,6 +19,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider';
 import CardSocialTabs from '@/components/cards/CardSocialTabs';
 import OnChainBadge from '@/components/blockchain/OnChainBadge';
 import MintOnPolygonButton from '@/components/blockchain/MintOnPolygonButton';
+import CardNftTracker from '@/components/wallet/CardNftTracker';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 
 export default function CardDetail() {
@@ -368,6 +369,13 @@ export default function CardDetail() {
       </div>
 
       {tab === 'overview' && <CardSocialTabs card={card} />}
+
+      {/* On-Chain NFT Tracking — visible even when crypto is disabled */}
+      {tab === 'overview' && (
+        <div className="mt-5 px-4">
+          <CardNftTracker cardId={card.id} cardName={card.name} cardImage={card.image} />
+        </div>
+      )}
 
       {tab === 'discussion' && <DiscussionTab card={card} />}
 

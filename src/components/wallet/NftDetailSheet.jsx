@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, ExternalLink, ArrowDownLeft, Copy } from 'lucide-react';
+import { X, ShieldCheck, ExternalLink, ArrowDownLeft, Copy, Clock, CheckCircle2 } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -42,6 +42,11 @@ export default function NftDetailSheet({ nft, priceFormatted, onClose }) {
 
           <div>
             <h3 className="text-xl font-extrabold">{asset.linked_card_name || asset.handle || 'NFT'}</h3>
+            {!isUsername && asset.minter_username && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Minted by <span className="font-semibold">@{asset.minter_username}</span>
+              </p>
+            )}
             {!isUsername && priceFormatted && (
               <p className="mt-1 text-2xl font-bold text-primary">{priceFormatted}</p>
             )}
@@ -102,11 +107,28 @@ export default function NftDetailSheet({ nft, priceFormatted, onClose }) {
               <div className="space-y-1.5">
                 {asset.transfer_history.map((t, i) => (
                   <div key={i} className="flex items-center justify-between rounded-lg bg-secondary px-3 py-2 text-xs">
-                    <span className="font-mono">{t.to_wallet?.slice(0, 8)}…{t.to_wallet?.slice(-4)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono">{t.to_wallet?.slice(0, 8)}…{t.to_wallet?.slice(-4)}</span>
+                      {t.verified === false && (
+                        <span className="flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">
+                          <Clock className="h-2.5 w-2.5" /> Pending
+                        </span>
+                      )}
+                      {t.verified === true && (
+                        <span className="flex items-center gap-0.5 rounded-full bg-success/15 px-1.5 py-0.5 text-[9px] font-bold text-success">
+                          <CheckCircle2 className="h-2.5 w-2.5" /> Verified
+                        </span>
+                      )}
+                    </div>
                     <span className="text-muted-foreground">{new Date(t.at).toLocaleDateString()}</span>
                   </div>
                 ))}
               </div>
+              {asset.transfer_history.some(t => t.verified === false) && (
+                <p className="mt-2 text-[10px] text-amber-600">
+                  Pending transfers complete only when the physical card receipt is confirmed.
+                </p>
+              )}
             </div>
           )}
         </div>
