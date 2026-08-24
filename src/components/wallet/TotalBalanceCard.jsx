@@ -1,17 +1,29 @@
 import React from 'react';
 import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, RotateCcw, QrCode } from 'lucide-react';
+import { calculatePortfolioTotal } from '@/hooks/useCryptoPrices';
 
-// MetaMask/Brave-style balance hero card: large total balance on a gradient
-// background with a row of quick-action buttons (Buy, Send, Receive, Swap).
+// MetaMask/Brave-style hero card: large multi-chain portfolio total on a
+// gradient background with quick-action buttons.
 export default function TotalBalanceCard({
-  balance, cryptoEnabled, formatFiat, formatUsdc,
-  onTopUp, onSend, onReceive, onConvert, onRefund, hasWallet,
-  cryptoDisplay,
+  balance, chainBalances, cryptoEnabled, formatFiat, formatUsdc,
+  onTopUp, onSend, onReceive, onConvert, onRefund, hasWallet, displayCurrency, prices,
 }) {
   const fiatCents = balance?.fiat_cents || 0;
   const currency = balance?.currency || 'GBP';
-  const usdcWei = balance?.usdc_wei || '0';
-  const symbol = currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : '$';
+
+  // Compute the total portfolio value across all chains
+  const portfolioTotal = cryptoEnabled && prices
+    ? calculatePortfolioTotal(
+        chainBalances,
+        fiatCents,
+        currency,
+        balance?.usdc_wei || '0',
+        displayCurrency,
+        prices,
+      )
+    : null;
+
+  const totalFormatted = portfolioTotal?.formatted || formatFiat(fiatCents, currency);
 
   const actions = [
     { icon: ArrowDownToLine, label: 'Buy', onClick: onTopUp, primary: true },
@@ -31,13 +43,10 @@ export default function TotalBalanceCard({
     <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary-muted shadow-elevated">
       <div className="px-5 pt-5 pb-4 text-white">
         <p className="text-sm font-medium text-white/70">Total Balance</p>
-        <p className="mt-1 text-4xl font-extrabold tracking-tight">
-          {formatFiat(fiatCents, currency)}
-        </p>
-        {cryptoEnabled && (
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-white/60">
-            <span className="inline-block h-2 w-2 rounded-full bg-accent" />
-            {cryptoDisplay?.formatted || `${formatUsdc(usdcWei)} USDC`}
+        <p className="mt-1 text-4xl font-extrabold tracking-tight">{totalFormatted}</p>
+        {cryptoEnabled && portfolioTotal && (
+          <p className="mt-1 text-sm text-white/60">
+            Across all chains · {displayCurrency}
           </p>
         )}
       </div>

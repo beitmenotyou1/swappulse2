@@ -4,10 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import { useSettings } from '@/hooks/useSettings';
-import { useCryptoPrices, convertUsdcToDisplay } from '@/hooks/useCryptoPrices';
+import { useCryptoPrices } from '@/hooks/useCryptoPrices';
 import PageHeader from '@/components/PageHeader';
 import TotalBalanceCard from '@/components/wallet/TotalBalanceCard';
 import AssetList from '@/components/wallet/AssetList';
+import ChainSwitcher from '@/components/wallet/ChainSwitcher';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import SendCryptoModal from '@/components/wallet/SendCryptoModal';
 import ReceiveModal from '@/components/wallet/ReceiveModal';
@@ -18,6 +19,7 @@ import BankAccountSection from '@/components/wallet/BankAccountSection';
 import EscrowTradeList from '@/components/wallet/EscrowTradeList';
 import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
+import ReceiveAllowlistSection from '@/components/wallet/ReceiveAllowlistSection';
 import useSEO from '@/hooks/useSEO';
 
 const TABS = [
@@ -36,6 +38,7 @@ export default function Wallet() {
   const [walletData, setWalletData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('assets');
+  const [selectedChain, setSelectedChain] = useState('all');
   const [showTopUp, setShowTopUp] = useState(false);
   const [showSend, setShowSend] = useState(false);
   const [showReceive, setShowReceive] = useState(false);
@@ -44,11 +47,12 @@ export default function Wallet() {
 
   useSEO({
     title: 'Wallet',
-    description: 'Manage your SwapPulse wallet: top up, send, receive, and convert between fiat and USDC.',
+    description: 'Manage your SwapPulse multi-chain wallet: top up, send, receive, and convert across Polygon, Ethereum, Solana, and Bitcoin.',
     canonicalPath: '/wallet',
   });
 
   const userDid = user?.data?.did || user?.did;
+  const username = user?.bsky_handle || user?.username || '';
 
   const loadWallet = useCallback(async () => {
     if (!userDid) { setLoading(false); return; }
@@ -81,11 +85,10 @@ export default function Wallet() {
     );
   }
 
-  const hasWallet = !!walletData?.custodial_wallet;
+  const hasWallet = !!(walletData?.multi_chain_wallet || walletData?.custodial_wallet);
   const balance = walletData?.balance;
-  const cryptoDisplay = cryptoEnabled && balance
-    ? convertUsdcToDisplay(balance.usdc_wei, displayCurrency, prices)
-    : null;
+  const chainBalances = walletData?.chain_balances || [];
+  const chainAddresses = walletData?.chain_addresses || {};
 
   const reloadAfterModal = () => {
     setShowTopUp(false); setShowSend(false); setShowReceive(false); setShowConvert(false); setShowRefund(false);
@@ -94,13 +97,12 @@ export default function Wallet() {
 
   return (
     <div>
-      <PageHeader title="Wallet" subtitle="Top up, send, receive, and convert your funds" />
+      <PageHeader title="Wallet" subtitle="Multi-chain · Send, receive, and convert" />
 
-      {/* Hero balance card with action buttons (MetaMask/Brave style) */}
       <TotalBalanceCard
         balance={balance}
+        chainBalances={chainBalances}
         cryptoEnabled={cryptoEnabled}
-        onChainUsdcWei={walletData?.on_chain_usdc_wei}
         formatFiat={formatFiat}
         formatUsdc={formatUsdc}
         onTopUp={() => setShowTopUp(true)}
@@ -109,10 +111,10 @@ export default function Wallet() {
         onConvert={() => setShowConvert(true)}
         onRefund={() => setShowRefund(true)}
         hasWallet={hasWallet}
-        cryptoDisplay={cryptoDisplay}
+        displayCurrency={displayCurrency}
+        prices={prices}
       />
 
-      {/* Tab navigation */}
       <div className="mt-4 flex gap-1 rounded-xl border border-border bg-card p-1">
         {TABS.map((tab) => (
           <button
@@ -130,17 +132,23 @@ export default function Wallet() {
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="mt-4">
         {activeTab === 'assets' && (
           <div className="space-y-4">
+            {cryptoEnabled && hasWallet && (
+              <ChainSwitcher selected={selectedChain} onSelect={setSelectedChain} />
+            )}
             <AssetList
               balance={balance}
+              chainBalances={chainBalances}
               cryptoEnabled={cryptoEnabled}
-              onChainUsdcWei={walletData?.on_chain_usdc_wei}
+              chainAddresses={chainAddresses}
               formatFiat={formatFiat}
               formatUsdc={formatUsdc}
-              cryptoDisplay={cryptoDisplay}
+              displayCurrency={displayCurrency}
+              prices={prices}
+              selectedChain={selectedChain}
+              hiddenCount={0}
             />
             {balance && (
               <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
@@ -149,10 +157,10 @@ export default function Wallet() {
               <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                 <div className="flex items-center gap-2">
                   <WalletIcon className="h-5 w-5 text-primary" />
-                  <h3 className="text-sm font-bold">Create a Wallet to Enable Crypto Features</h3>
+                  <h3 className="text-sm font-bold">Create a Multi-Chain Wallet</h3>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  You need a SwapPulse custodial wallet to send, receive, and hold USDC. Go to Settings → Polygon to create one.
+                  Generate a custodial wallet with addresses on Polygon, Ethereum, Arbitrum, Optimism, Base, Solana, and Bitcoin. Go to Settings → Wallet to create one.
                 </p>
               </div>
             )}
@@ -189,6 +197,13 @@ export default function Wallet() {
 
         {activeTab === 'settings' && (
           <div className="space-y-4">
+            {cryptoEnabled && hasWallet && (
+              <ReceiveAllowlistSection
+                allowlistedAddresses={walletData?.allowlisted_addresses || []}
+                strictMode={balance?.receive_strict_mode || false}
+                onUpdated={loadWallet}
+              />
+            )}
             {!cryptoEnabled && (
               <BankAccountSection bankAccount={walletData?.bank_account} onUpdated={loadWallet} />
             )}
@@ -210,11 +225,10 @@ export default function Wallet() {
         )}
       </div>
 
-      {/* Modals */}
       {showTopUp && <TopUpModal onClose={reloadAfterModal} />}
-      {showSend && <SendCryptoModal wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
-      {showReceive && <ReceiveModal walletAddress={walletData?.custodial_wallet?.address} onClose={() => setShowReceive(false)} />}
-      {showConvert && <ConvertModal balance={balance} wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
+      {showSend && <SendCryptoModal wallet={walletData?.multi_chain_wallet || walletData?.custodial_wallet} chainAddresses={chainAddresses} onClose={reloadAfterModal} />}
+      {showReceive && <ReceiveModal chainAddresses={chainAddresses} username={username} onClose={() => setShowReceive(false)} />}
+      {showConvert && <ConvertModal balance={balance} wallet={walletData?.multi_chain_wallet || walletData?.custodial_wallet} onClose={reloadAfterModal} />}
       {showRefund && <RefundModal balance={balance} topups={walletData?.topups || []} onClose={reloadAfterModal} />}
     </div>
   );
