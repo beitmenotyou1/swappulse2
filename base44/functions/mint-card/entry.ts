@@ -16,16 +16,40 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { collectionEntryId, unlockCredential } = body;
+    const { collectionEntryId, unlockCredential, verificationSessionId } = body;
     if (!collectionEntryId) return Response.json({ error: 'Missing collectionEntryId' }, { status: 400 });
+
+    const did = user.did;
+    if (!did) return Response.json({ error: 'No AT Protocol DID found' }, { status: 400 });
+
+    // If a verification session is provided, validate it and determine the
+    // verification level to embed in the NFT metadata.
+    let verificationLevel = 0;
+    if (verificationSessionId) {
+      const sessions = await base44.entities.CardVerificationSession.filter({ id: verificationSessionId });
+      if (!sessions.length) {
+        return Response.json({ error: 'Verification session not found' }, { status: 404 });
+      }
+      const session = sessions[0];
+      if (session.did !== did) {
+        return Response.json({ error: 'Verification session does not belong to you' }, { status: 403 });
+      }
+      if (session.collection_entry_id !== collectionEntryId) {
+        return Response.json({ error: 'Verification session does not match this card' }, { status: 400 });
+      }
+      if (session.status !== 'verified') {
+        return Response.json({ error: 'Verification session is not verified' }, { status: 400 });
+      }
+      if (new Date(session.expires_at) < new Date()) {
+        return Response.json({ error: 'Verification session has expired' }, { status: 400 });
+      }
+      verificationLevel = session.verification_level || 0;
+    }
 
     // Fetch the collection entry (user-scoped so RLS enforces ownership)
     const entries = await base44.entities.CollectionEntry.filter({ id: collectionEntryId });
     if (!entries.length) return Response.json({ error: 'Collection entry not found' }, { status: 404 });
     const entry = entries[0];
-
-    const did = user.did;
-    if (!did) return Response.json({ error: 'No AT Protocol DID found' }, { status: 400 });
 
     // Check crypto features are enabled
     const settingsList = await base44.entities.SettingsConfig.filter({ did }, '-updated_date', 1);
@@ -93,6 +117,8 @@ export default async function(req: Request): Promise<Response> {
       transferable: true,
       metadata_uri: metadataURI,
       chain_id: '137',
+      verification_level: verificationLevel,
+      verification_session_id: verificationSessionId || '',
     });
 
     return Response.json({

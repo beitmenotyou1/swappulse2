@@ -2,7 +2,7 @@
   "name": "OnChainAsset",
   "type": "object",
   "title": "OnChainAsset",
-  "description": "org.swappulse.onChainAsset \u2014 a minted Polygon NFT tracked by SwapPulse. Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via backend functions; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse.",
+  "description": "org.swappulse.onChainAsset \u2014 a minted Polygon NFT tracked by SwapPulse. Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via backend functions; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse. verification_level (0\u20133) records the trust tier of the ownership proof, embedded in the NFT metadata so buyers and traders can see how much trust the on-chain proof carries.",
   "properties": {
     "asset_type": {
       "type": "string",
@@ -98,6 +98,17 @@
     "chain_id": {
       "type": "string",
       "default": "137"
+    },
+    "verification_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "default": 0,
+      "description": "Trust level of the ownership proof: 0=self-attested (card in collection only), 1=scanned (physical scan uploaded), 2=AI-verified scan (InvokeLLM vision match), 3=graded cert (verified PSA/BGS/CGC certificate). Embedded in the NFT metadata so buyers and traders can see how much trust the on-chain proof carries."
+    },
+    "verification_session_id": {
+      "type": "string",
+      "description": "ID of the CardVerificationSession used for this mint (empty for Level 0 self-attested mints)"
     }
   },
   "required": [

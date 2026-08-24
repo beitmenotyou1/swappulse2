@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, ShieldCheck, ExternalLink } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
 import UnlockWalletModal from './UnlockWalletModal';
+import CardVerificationModal from './CardVerificationModal';
 
 // Mint button shown on collection rows and card detail pages.
 // Checks whether the user has a linked wallet and whether the card is
-// already minted before allowing the mint action. If the user has a
-// custodial wallet with a passkey or PIN, an unlock modal is shown first.
-export default function MintOnPolygonButton({ collectionEntryId, cardName, onMinted }) {
+// already minted before allowing the mint action. Opens the verification
+// modal first so collectors can prove physical ownership for higher trust levels.
+// If the user has a custodial wallet with a passkey or PIN, an unlock modal
+// is shown after verification (or when skipping verification).
+export default function MintOnPolygonButton({ collectionEntryId, cardName, cardImage, onMinted }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { cryptoEnabled } = useCryptoEnabled();
@@ -19,6 +22,8 @@ export default function MintOnPolygonButton({ collectionEntryId, cardName, onMin
   const [loading, setLoading] = useState(true);
   const [minting, setMinting] = useState(false);
   const [unlockState, setUnlockState] = useState(null);
+  const [showVerification, setShowVerification] = useState(false);
+  const pendingSessionId = useRef(null);
 
   useEffect(() => {
     if (!collectionEntryId) { setLoading(false); return; }
@@ -39,18 +44,20 @@ export default function MintOnPolygonButton({ collectionEntryId, cardName, onMin
     })();
   }, [collectionEntryId, user?.did]);
 
-  const doMint = async (unlockCredential) => {
+  const doMint = async (unlockCredential, verificationSessionId) => {
     setMinting(true);
     try {
-      const res = await base44.functions.invoke('mint-card', { collectionEntryId, unlockCredential });
+      const res = await base44.functions.invoke('mint-card', { collectionEntryId, unlockCredential, verificationSessionId });
       if (res.data.requiresUnlock) {
         setUnlockState({ hasPasskey: res.data.hasPasskey, hasPin: res.data.hasPin });
+        pendingSessionId.current = verificationSessionId;
         setMinting(false);
         return;
       }
       setAsset(res.data.asset);
       toast({ title: 'Card minted on Polygon!', description: cardName || 'NFT created' });
       if (onMinted) onMinted(res.data.asset);
+      setShowVerification(false);
     } catch (e) {
       const msg = e?.response?.data?.error || e.message;
       toast({ title: 'Mint failed', description: msg, variant: 'destructive' });
@@ -64,20 +71,33 @@ export default function MintOnPolygonButton({ collectionEntryId, cardName, onMin
       toast({ title: 'No linked wallet', description: 'Create or link a wallet in Settings first.', variant: 'destructive' });
       return;
     }
-    doMint(null);
+    setShowVerification(true);
+  };
+
+  const handleVerifiedMint = (verificationSessionId) => {
+    setShowVerification(false);
+    doMint(null, verificationSessionId);
   };
 
   const handleUnlock = (credential) => {
+    const sessionId = pendingSessionId.current;
     setUnlockState(null);
-    doMint(credential);
+    doMint(credential, sessionId);
   };
 
   if (loading || !cryptoEnabled) return null;
 
   if (asset) {
+    const level = asset.verification_level || 0;
+    const badgeClass = level >= 3
+      ? 'bg-accent/15 text-accent'
+      : level >= 1
+        ? 'bg-primary/10 text-primary'
+        : 'bg-muted text-muted-foreground';
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
-        <ShieldCheck className="h-3 w-3" /> On-chain
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${badgeClass}`}>
+        <ShieldCheck className="h-3 w-3" />
+        {level >= 3 ? 'On-chain · Graded' : level >= 1 ? 'On-chain · Verified' : 'On-chain'}
         {asset.mint_tx_hash && (
           <a
             href={`https://polygonscan.com/tx/${asset.mint_tx_hash}`}
@@ -102,6 +122,15 @@ export default function MintOnPolygonButton({ collectionEntryId, cardName, onMin
         {minting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
         Mint on Polygon
       </button>
+      {showVerification && (
+        <CardVerificationModal
+          open={true}
+          onOpenChange={setShowVerification}
+          collectionEntryId={collectionEntryId}
+          card={{ name: cardName, card_name: cardName, image: cardImage, card_image: cardImage }}
+          onMint={handleVerifiedMint}
+        />
+      )}
       {unlockState && (
         <UnlockWalletModal
           open={true}

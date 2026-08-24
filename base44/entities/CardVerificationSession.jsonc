@@ -1,0 +1,151 @@
+{
+  "name": "CardVerificationSession",
+  "type": "object",
+  "title": "CardVerificationSession",
+  "description": "org.swappulse.cardVerificationSession \u2014 an audit trail for a collector's attempt to prove physical ownership of a card before minting it as an on-chain NFT. Stores the uploaded scan photos, the AI vision match result (confidence + anomalies), optional grading cert verification, and the achieved verification level (0\u20133). Sessions expire after 1 hour to prevent replay or sharing. A valid verified session is referenced by mint-card to embed the verification level in the NFT metadata.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector requesting verification"
+    },
+    "collection_entry_id": {
+      "type": "string",
+      "description": "Local CollectionEntry ID being verified"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card ID being verified"
+    },
+    "card_name": {
+      "type": "string",
+      "description": "Cached card name for display"
+    },
+    "scan_image_urls": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of photos of the physical card uploaded by the collector"
+    },
+    "ai_match_result": {
+      "type": "object",
+      "properties": {
+        "matched": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "anomalies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "is_screen_photo": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "description": "Structured result from the AI vision comparison of the scan vs the TCGDex reference image"
+    },
+    "grading_company": {
+      "type": "string",
+      "enum": [
+        "psa",
+        "bgs",
+        "cgc",
+        "none"
+      ],
+      "default": "none",
+      "description": "Grading company whose cert was submitted for Level 3 verification"
+    },
+    "grading_cert_number": {
+      "type": "string",
+      "description": "Grading certificate number submitted for Level 3 verification"
+    },
+    "grading_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if the grading cert was successfully verified via InvokeLLM web lookup"
+    },
+    "verification_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "default": 0,
+      "description": "Achieved trust level: 0=self-attested, 1=scanned, 2=AI-verified scan, 3=graded cert"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "failed",
+        "expired"
+      ],
+      "default": "pending"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the session expires (1 hour after creation). Expired sessions cannot be used for minting."
+    }
+  },
+  "required": [
+    "did",
+    "collection_entry_id",
+    "card_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
