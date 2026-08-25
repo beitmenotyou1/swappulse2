@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { X, FlaskConical } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const KEY = 'swappulse-alpha-notice-v1';
+const KEY = 'swappulse-beta-notice-v1';
 
 export default function AlphaNotice() {
   const t = useT();
