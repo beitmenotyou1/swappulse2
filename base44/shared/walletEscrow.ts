@@ -143,13 +143,25 @@ export async function transferUsdc(
 }
 
 // Transfer USDC from the platform reserve to a user's custodial wallet.
-// Used for top-up credits and fiat→USDC conversions.
+// Used for top-up credits and fiat→USDC conversions. If the platform wallet
+// doesn't have enough USDC, swaps POL for USDC via the DEX first.
 export async function creditUsdcFromReserve(
   toAddress: string,
   amountWei: bigint,
-): Promise<{ txHash: string }> {
+): Promise<{ txHash: string; swapTxHash?: string }> {
   const platformWallet = getPlatformWallet();
-  return transferUsdc(platformWallet, toAddress, amountWei);
+  const usdcContract = getUsdcContract(platformWallet);
+  const currentUsdc = await usdcContract.balanceOf(platformWallet.address);
+
+  let swapTxHash: string | undefined;
+  if (currentUsdc < amountWei) {
+    const deficit = amountWei - currentUsdc;
+    const swapResult = await swapPolForUsdc(deficit);
+    swapTxHash = swapResult.swapTxHash;
+  }
+
+  const result = await transferUsdc(platformWallet, toAddress, amountWei);
+  return { txHash: result.txHash, swapTxHash };
 }
 
 // Transfer USDC from a user's custodial wallet to the platform reserve.
