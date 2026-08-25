@@ -42,7 +42,7 @@ const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 // Branded SwapPulse promo banner used as the embed thumbnail for feature and
 // community posts (which have no card image of their own), so Bluesky renders
 // a rich image card instead of a bare text link card.
-const PROMO_BANNER_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/c1fbb0258_generated_image.png';
+const PROMO_BANNER_URL = 'https://base44.app/api/apps/6a63d9d64a4d65d370c70892/files/mp/public/6a63d9d64a4d65d370c70892/2f59cf64f_swappulse-poster-promo.jpg';
 
 // Curated list of popular set codes — recognizable cards collectors know.
 const POPULAR_SETS = ['sv3', 'sv3pt5', 'sv4', 'base1', 'sv5', 'sv2', 'swsh1', 'swsh4'];
