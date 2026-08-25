@@ -172,12 +172,20 @@ const ONE_POL = 1000000000000000000n; // 1 POL in wei (18 decimals)
 
 // Swap platform wallet POL for USDC via Velora DEX. Swaps enough POL
 // (with a 10% slippage buffer) to cover the requested USDC amount.
+// Retries with progressively higher slippage if the swap fails.
 // Returns the swap tx hash and the platform wallet's USDC balance after.
 export async function swapPolForUsdc(
   usdcAmountNeededWei: bigint,
 ): Promise<{ swapTxHash: string; usdcBalanceAfter: bigint }> {
   const { fetchDexQuote, executeDexSwap } = await import('./dexAggregator.ts');
   const platformWallet = getPlatformWallet();
+  const provider = getProvider();
+
+  // Guard: check POL balance before attempting swap
+  const polBalance = await provider.getBalance(platformWallet.address);
+  if (polBalance < ONE_POL) {
+    throw new Error(`Insufficient POL for swap: ${ethers.formatEther(polBalance)} POL`);
+  }
 
   // Step 1: Get a price quote for 1 POL → USDC to determine the rate
   const priceQuote = await fetchDexQuote({
@@ -193,6 +201,11 @@ export async function swapPolForUsdc(
   const polNeeded = (usdcAmountNeededWei * ONE_POL) / usdcPerPol;
   const polNeededWithBuffer = (polNeeded * 110n) / 100n;
 
+  // Guard: don't swap less than 0.001 POL (dust) or more than the wallet holds
+  if (polNeededWithBuffer < 1000000000000000n) {
+    throw new Error(`Swap amount too small: ${ethers.formatEther(polNeededWithBuffer)} POL`);
+  }
+
   // Step 3: Get a quote for the exact POL amount
   const swapQuote = await fetchDexQuote({
     srcToken: NATIVE_TOKEN_EEEE,
@@ -201,14 +214,28 @@ export async function swapPolForUsdc(
     network: POLYGON_NETWORK,
   });
 
-  // Step 4: Execute the swap
-  const { txHash } = await executeDexSwap(platformWallet, swapQuote);
+  // Step 4: Execute the swap with retry on slippage failures
+  // Try 0.5% → 1% → 2% → 5% slippage
+  const slippageTiers = [5000, 10000, 20000, 50000];
+  let swapTxHash: string | undefined;
+  let lastError: any;
+  for (const slippage of slippageTiers) {
+    try {
+      const result = await executeDexSwap(platformWallet, swapQuote, slippage);
+      swapTxHash = result.txHash;
+      break;
+    } catch (e) {
+      lastError = e;
+      console.error(`Swap attempt with ${slippage / 100}% slippage failed:`, (e as any)?.message);
+    }
+  }
+  if (!swapTxHash) throw lastError || new Error('All swap attempts failed');
 
-  // Step 5: Check actual USDC balance after swap
+  // Step 5: Verify USDC balance after swap
   const usdcContract = getUsdcContract(platformWallet);
   const usdcBalanceAfter = await usdcContract.balanceOf(platformWallet.address);
 
-  return { swapTxHash: txHash, usdcBalanceAfter };
+  return { swapTxHash, usdcBalanceAfter };
 }
 
 // Sweep accumulated fees to the platform fee wallet as USDC on Polygon.

@@ -64,6 +64,7 @@ export async function fetchDexQuote(params: {
 export async function executeDexSwap(
   userWallet: ethers.Wallet,
   quote: DexQuote,
+  slippageBps: number = 5000, // 0.5% in basis points by default
 ): Promise<{ txHash: string; destAmount: string }> {
   // Build the swap transaction via Velora
   const txBody = {
@@ -73,7 +74,7 @@ export async function executeDexSwap(
     srcAmount: quote.srcAmount,
     userAddress: userWallet.address,
     partner: PARTNER,
-    slippage: 5000, // 0.5% in basis points
+    slippage: slippageBps,
   };
 
   const res = await fetch(`${VELORA_API}/transactions/${quote.network}`, {

@@ -48,10 +48,30 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ success: true, swept_count: unswept.length, total_wei: '0' });
     }
 
-    // Sweep: swap POL for USDC if needed, then transfer to fee wallet
+    // Minimum sweep threshold: don't sweep if total < 0.50 USDC (500000 wei).
+    // Wait for more fees to accumulate to avoid wasting gas on tiny swaps.
+    // Admin-triggered sweeps bypass this threshold (force=true in args).
+    const MIN_SWEEP_WEI = 500000n;
+    let forceSweep = false;
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      forceSweep = !!body?.force;
+    } catch {}
+    if (totalWei < MIN_SWEEP_WEI && !forceSweep) {
+      return Response.json({
+        success: true,
+        skipped: true,
+        reason: 'Below minimum sweep threshold',
+        pending_count: unswept.length,
+        total_wei: totalWei.toString(),
+      });
+    }
+
+    // Sweep: swap POL for USDC if needed, then transfer to fee wallet.
+    // If this throws, fees stay unswept and will be retried next cycle.
     const { txHash, swapTxHash } = await sweepFeesOnChain(totalWei);
 
-    // Mark all as swept
+    // Mark all as swept only after on-chain transfer succeeds
     await Promise.all(unswept.map((f: any) =>
       base44.asServiceRole.entities.FeeLedger.update(f.id, {
         swept: true,

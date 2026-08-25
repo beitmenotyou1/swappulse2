@@ -62,7 +62,7 @@ export default function FeeRevenueSection() {
     setSweeping(true);
     setSweepResult(null);
     try {
-      const res = await base44.functions.invoke('sweep-fees', {});
+      const res = await base44.functions.invoke('sweep-fees', { force: true });
       setSweepResult(res.data);
       await load();
     } catch (e) {
