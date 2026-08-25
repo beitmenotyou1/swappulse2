@@ -113,29 +113,43 @@ export default async function(req) {
                   fiat_topup_id: topup.id,
                 });
 
-                // Convert the fee to USDC and sweep to the platform fee wallet
+                // Convert the fee to USDC and sweep to the platform fee wallet.
+                // If the on-chain sweep fails, still record the fee in FeeLedger
+                // with swept=false so it can be retried via sweep-fees later.
                 try {
                   const { fiatCentsToUsdcWei, sweepFeeToPlatformWallet } = await import('../../shared/walletEscrow.ts');
                   const feeUsdcWei = fiatCentsToUsdcWei(feeCents);
                   if (feeUsdcWei > 0n) {
-                    const { txHash } = await sweepFeeToPlatformWallet(feeUsdcWei);
                     await svc.entities.FiatTopUp.update(topup.id, {
                       fee_usdc_wei: feeUsdcWei.toString(),
-                      fee_tx_hash: txHash,
                     });
-                    await svc.entities.FeeLedger.create({
-                      fee_source: 'topup',
-                      source_did: did,
-                      original_amount_cents: amountCents,
-                      fee_usdc_wei: feeUsdcWei.toString(),
-                      fee_tx_hash: txHash,
-                      swept: true,
-                      swept_at: new Date().toISOString(),
-                      reference_id: topup.id,
-                    });
+                    try {
+                      const { txHash } = await sweepFeeToPlatformWallet(feeUsdcWei);
+                      await svc.entities.FiatTopUp.update(topup.id, { fee_tx_hash: txHash });
+                      await svc.entities.FeeLedger.create({
+                        fee_source: 'topup',
+                        source_did: did,
+                        original_amount_cents: amountCents,
+                        fee_usdc_wei: feeUsdcWei.toString(),
+                        fee_tx_hash: txHash,
+                        swept: true,
+                        swept_at: new Date().toISOString(),
+                        reference_id: topup.id,
+                      });
+                    } catch (sweepErr) {
+                      console.error('Fee sweep on-chain transfer failed (will retry later):', (sweepErr as any)?.message);
+                      await svc.entities.FeeLedger.create({
+                        fee_source: 'topup',
+                        source_did: did,
+                        original_amount_cents: amountCents,
+                        fee_usdc_wei: feeUsdcWei.toString(),
+                        swept: false,
+                        reference_id: topup.id,
+                      });
+                    }
                   }
                 } catch (e) {
-                  console.error('Fee sweep for top-up failed:', (e as any)?.message);
+                  console.error('Fee calculation failed:', (e as any)?.message);
                 }
 
                 // Send top-up complete notification (in-app + push)
