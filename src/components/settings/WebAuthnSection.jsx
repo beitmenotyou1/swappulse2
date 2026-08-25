@@ -48,7 +48,7 @@ export default function WebAuthnSection() {
         setError("Could not generate registration options. Please try again.");
         return;
       }
-      const attestation = await startRegistration({ optionsJSON: options });
+      const attestation = await startRegistration(options);
       const verifyRes = await base44.functions.invoke("webauthn-verify-reg", {
         attestation,
         challenge: options.challenge,

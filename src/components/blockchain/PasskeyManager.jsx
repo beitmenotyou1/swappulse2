@@ -27,7 +27,7 @@ export default function PasskeyManager({ wallet, onUpdated }) {
         toast({ title: 'Passkey setup failed', description: 'Could not generate registration options.', variant: 'destructive' });
         return;
       }
-      const attestation = await startRegistration({ optionsJSON: options });
+      const attestation = await startRegistration(options);
       const verifyRes = await base44.functions.invoke('webauthn-verify-reg', {
         attestation,
         challenge: options.challenge,
