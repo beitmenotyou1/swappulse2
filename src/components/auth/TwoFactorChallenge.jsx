@@ -39,7 +39,7 @@ export default function TwoFactorChallenge({ email, emailCode, methods = ["totp"
     try {
       const optsRes = await base44.functions.invoke("webauthn-auth-options", { email });
       const { options, challenge_signature } = optsRes.data;
-      const assertion = await startAuthentication({ optionsJSON: options });
+      const assertion = await startAuthentication(options);
       const verifyRes = await base44.functions.invoke("webauthn-verify-auth", {
         email,
         assertion,
