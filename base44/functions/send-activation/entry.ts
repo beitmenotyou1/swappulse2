@@ -28,6 +28,19 @@ Deno.serve(async (req) => {
     if (!u) return Response.json({ error: 'No account found for that email' }, { status: 404 });
     if (u.is_verified) return Response.json({ ok: true, alreadyActivated: true });
 
+    // Security: unauthenticated callers may only (re)send an activation link for
+    // accounts created in the last 15 minutes — the legitimate post-register
+    // flow, before the user has a session token. Authenticated callers are
+    // already locked to their own email (me?.email) above. This prevents
+    // strangers from triggering activation emails for arbitrary existing accounts.
+    if (!me) {
+      const createdMs = u.created_date ? new Date(u.created_date).getTime() : 0;
+      const RECENT_WINDOW_MS = 15 * 60 * 1000;
+      if (Date.now() - createdMs > RECENT_WINDOW_MS) {
+        return Response.json({ error: 'Please log in to resend your activation link.' }, { status: 403 });
+      }
+    }
+
     const existing = await svc.entities.Activation.filter({ user_id: u.id });
     let record = existing[0];
     const now = Date.now();
