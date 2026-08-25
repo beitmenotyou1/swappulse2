@@ -13,10 +13,14 @@ export default async function (req: Request): Promise<Response> {
     const did = user.data?.did || user.did;
     if (!did) return Response.json({ error: 'No DID found' }, { status: 400 });
 
-    // Get custodial wallet
-    const wallets = await base44.entities.CustodialWallet
-      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
-    const custodialWallet = wallets[0] || null;
+    // Resolve active wallet (MultiChainWallet preferred, CustodialWallet fallback)
+    const { resolveActiveWallet } = await import('../../shared/walletEscrow.ts');
+    const activeWallet = await resolveActiveWallet(base44, did);
+    const custodialWallet = activeWallet ? {
+      wallet_address: activeWallet.wallet_address,
+      has_passkey: activeWallet.wallet_record.has_passkey,
+      has_pin: activeWallet.wallet_record.has_pin,
+    } : null;
 
     // Get multi-chain wallet (has Solana/Bitcoin addresses in addition to EVM)
     const multiWallets = await base44.entities.MultiChainWallet

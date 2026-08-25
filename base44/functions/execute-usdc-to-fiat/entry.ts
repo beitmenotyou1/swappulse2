@@ -27,14 +27,15 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    // Get the user's custodial wallet
-    const wallets = await base44.asServiceRole.entities.CustodialWallet
-      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
-    if (!wallets.length) return Response.json({ error: 'No active wallet found' }, { status: 400 });
-    const wallet = wallets[0];
+    // Resolve active wallet (MultiChainWallet preferred, CustodialWallet fallback)
+    const { resolveActiveWallet } = await import('../../shared/walletEscrow.ts');
+    const activeWallet = await resolveActiveWallet(base44, did);
+    if (!activeWallet) return Response.json({ error: 'No active wallet found' }, { status: 400 });
+    const wallet = activeWallet.wallet_record;
+    const walletAddress = activeWallet.wallet_address;
 
     // Check balance
-    const balance = await getOrCreateWalletBalance(base44, did, wallet.wallet_address);
+    const balance = await getOrCreateWalletBalance(base44, did, walletAddress);
     if (BigInt(balance.usdc_wei || '0') < BigInt(usdc_wei)) {
       return Response.json({ error: 'Insufficient USDC balance' }, { status: 400 });
     }
@@ -121,8 +122,8 @@ export default async function (req: Request): Promise<Response> {
 
     // Sweep fee from user's wallet to platform fee wallet
     try {
-      const userWallet = new (await import('npm:ethers@6.13.4')).Wallet(privateKey, (await import('npm:ethers@6.13.4')).JsonRpcProvider);
-      const { transferUsdc, getProvider, getUsdcContract, PLATFORM_FEE_WALLET } = await import('../../shared/walletEscrow.ts');
+      const { getProvider, getUsdcContract, PLATFORM_FEE_WALLET } = await import('../../shared/walletEscrow.ts');
+      const userWallet = new (await import('npm:ethers@6.13.4')).Wallet(privateKey, getProvider());
       const contract = getUsdcContract(userWallet);
       const feeTx = await contract.transfer(PLATFORM_FEE_WALLET, feeWei);
       await feeTx.wait();
@@ -142,7 +143,7 @@ export default async function (req: Request): Promise<Response> {
     await base44.entities.CryptoTransfer.create({
       did,
       transfer_type: 'usdc_to_fiat',
-      from_address: wallet.wallet_address,
+      from_address: walletAddress,
       to_address: 'platform_reserve',
       amount_wei: amountWei.toString(),
       fee_wei: feeWei.toString(),

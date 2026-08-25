@@ -62,11 +62,12 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'This token is not supported for conversion.' }, { status: 403 });
     }
 
-    // Get the user's custodial wallet
-    const wallets = await base44.asServiceRole.entities.CustodialWallet
-      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
-    if (!wallets.length) return Response.json({ error: 'No active wallet found' }, { status: 400 });
-    const wallet = wallets[0];
+    // Get the user's active wallet (MultiChainWallet preferred, CustodialWallet fallback)
+    const { resolveActiveWallet } = await import('../../shared/walletEscrow.ts');
+    const activeWallet = await resolveActiveWallet(base44, did);
+    if (!activeWallet) return Response.json({ error: 'No active wallet found' }, { status: 400 });
+    const wallet = activeWallet.wallet_record;
+    const walletAddress = activeWallet.wallet_address;
 
     // Unlock the wallet
     let privateKey: string;
@@ -128,7 +129,7 @@ export default async function (req: Request): Promise<Response> {
 
     // Get the token balance
     const tokenContract = new ethers.Contract(token_address, ERC20_BALANCE_ABI, provider);
-    const tokenBalance = await tokenContract.balanceOf(wallet.wallet_address);
+    const tokenBalance = await tokenContract.balanceOf(walletAddress);
     if (tokenBalance === 0n) {
       return Response.json({ error: 'No balance of this token' }, { status: 400 });
     }
@@ -158,7 +159,7 @@ export default async function (req: Request): Promise<Response> {
     let creditTxHash = '';
     let feeTxHash = '';
     try {
-      const creditResult = await creditUsdcFromReserve(wallet.wallet_address, netUsdcWei);
+      const creditResult = await creditUsdcFromReserve(walletAddress, netUsdcWei);
       creditTxHash = creditResult.txHash;
     } catch (e) {
       return Response.json({ error: 'USDC credit failed: ' + (e as any)?.message }, { status: 500 });
@@ -172,7 +173,7 @@ export default async function (req: Request): Promise<Response> {
     }
 
     // Update balance
-    const balance = await getOrCreateWalletBalance(base44, did, wallet.wallet_address);
+    const balance = await getOrCreateWalletBalance(base44, did, walletAddress);
     await updateBalance(base44, balance.id, {
       usdc_wei: (BigInt(balance.usdc_wei || '0') + netUsdcWei).toString(),
       total_fees_paid_wei: (BigInt(balance.total_fees_paid_wei || '0') + feeWei).toString(),
@@ -182,8 +183,8 @@ export default async function (req: Request): Promise<Response> {
     await base44.entities.CryptoTransfer.create({
       did,
       transfer_type: 'token_convert',
-      from_address: wallet.wallet_address,
-      to_address: wallet.wallet_address,
+      from_address: walletAddress,
+      to_address: walletAddress,
       amount_wei: netUsdcWei.toString(),
       fee_wei: feeWei.toString(),
       tx_hash: creditTxHash,

@@ -98,6 +98,36 @@ export async function updateBalance(base44: any, balanceId: string, updates: any
   });
 }
 
+// Resolve the user's active wallet, preferring MultiChainWallet (which has
+// EVM + Solana + Bitcoin addresses) over the legacy CustodialWallet. Returns
+// { wallet_address, wallet_record, is_multi_chain } or null if neither exists.
+// wallet_address is always the EVM address (shared across all EVM chains).
+export async function resolveActiveWallet(base44: any, did: string): Promise<{
+  wallet_address: string;
+  wallet_record: any;
+  is_multi_chain: boolean;
+} | null> {
+  const multiWallets = await base44.asServiceRole.entities.MultiChainWallet
+    .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+  if (multiWallets.length) {
+    return {
+      wallet_address: multiWallets[0].evm_address,
+      wallet_record: multiWallets[0],
+      is_multi_chain: true,
+    };
+  }
+  const custodialWallets = await base44.asServiceRole.entities.CustodialWallet
+    .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+  if (custodialWallets.length) {
+    return {
+      wallet_address: custodialWallets[0].wallet_address,
+      wallet_record: custodialWallets[0],
+      is_multi_chain: false,
+    };
+  }
+  return null;
+}
+
 // --- On-chain USDC transfer ---
 
 export async function transferUsdc(

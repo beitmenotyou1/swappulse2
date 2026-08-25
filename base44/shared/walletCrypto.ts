@@ -118,11 +118,14 @@ export function timingSafeEqual(a: string, b: string): boolean {
 // --- Decrypt helpers ---
 
 export async function decryptPrivateKey(wallet: any, pin?: string): Promise<string> {
+  // Works with both CustodialWallet (encrypted_private_key) and
+  // MultiChainWallet (evm_private_key_cipher) — both store the EVM key.
+  const cipher = wallet.encrypted_private_key || wallet.evm_private_key_cipher;
   if (wallet.encryption_method === 'pin') {
     if (!pin) throw new Error('PIN required to unlock this wallet');
-    return decryptWithPin(wallet.encrypted_private_key, pin, wallet.pin_salt, wallet.kdf_iterations || 100000);
+    return decryptWithPin(cipher, pin, wallet.pin_salt, wallet.kdf_iterations || 100000);
   }
-  return decryptWithServerKey(wallet.encrypted_private_key);
+  return decryptWithServerKey(cipher);
 }
 
 export async function decryptMnemonic(wallet: any): Promise<string> {

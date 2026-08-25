@@ -25,14 +25,14 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Minimum conversion is 1.00' }, { status: 400 });
     }
 
-    // Get the user's custodial wallet
-    const wallets = await base44.asServiceRole.entities.CustodialWallet
-      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
-    if (!wallets.length) return Response.json({ error: 'No active wallet found' }, { status: 400 });
-    const wallet = wallets[0];
+    // Resolve active wallet (MultiChainWallet preferred, CustodialWallet fallback)
+    const { resolveActiveWallet } = await import('../../shared/walletEscrow.ts');
+    const activeWallet = await resolveActiveWallet(base44, did);
+    if (!activeWallet) return Response.json({ error: 'No active wallet found' }, { status: 400 });
+    const walletAddress = activeWallet.wallet_address;
 
     // Get or create the wallet balance
-    const balance = await getOrCreateWalletBalance(base44, did, wallet.wallet_address);
+    const balance = await getOrCreateWalletBalance(base44, did, walletAddress);
     if (balance.fiat_cents < fiat_cents) {
       return Response.json({ error: 'Insufficient fiat balance' }, { status: 400 });
     }
@@ -53,7 +53,7 @@ export default async function (req: Request): Promise<Response> {
     let creditTxHash = '';
     let feeTxHash = '';
     try {
-      const creditResult = await creditUsdcFromReserve(wallet.wallet_address, netWei);
+      const creditResult = await creditUsdcFromReserve(walletAddress, netWei);
       creditTxHash = creditResult.txHash;
     } catch (e) {
       // Revert balance on failure
@@ -78,7 +78,7 @@ export default async function (req: Request): Promise<Response> {
       did,
       transfer_type: 'fiat_to_usdc',
       from_address: 'platform_reserve',
-      to_address: wallet.wallet_address,
+      to_address: walletAddress,
       amount_wei: netWei.toString(),
       fee_wei: feeWei.toString(),
       tx_hash: creditTxHash,

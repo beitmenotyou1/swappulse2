@@ -73,18 +73,19 @@ export default async function(req) {
                 stripe_charge_id: String(pi.latest_charge || pi.charges?.data?.[0]?.id || ''),
               });
 
-              // Get or create the wallet balance
-              const wallets = await svc.entities.CustodialWallet
-                .filter({ did, active: true }, '-created_date', 1).catch(() => []);
-              if (wallets.length) {
-                const wallet = wallets[0];
+              // Get or create the wallet balance — resolve active wallet
+              // (MultiChainWallet preferred, CustodialWallet fallback)
+              const { resolveActiveWallet } = await import('../../shared/walletEscrow.ts');
+              const activeWallet = await resolveActiveWallet(base44, did);
+              if (activeWallet) {
+                const walletAddress = activeWallet.wallet_address;
                 const balances = await svc.entities.WalletBalance
                   .filter({ did }, '-created_date', 1).catch(() => []);
                 let balance = balances[0];
                 if (!balance) {
                   balance = await svc.entities.WalletBalance.create({
                     did,
-                    wallet_address: wallet.wallet_address,
+                    wallet_address: walletAddress,
                     fiat_cents: 0,
                     usdc_wei: '0',
                     total_topup_cents: 0,
@@ -104,7 +105,7 @@ export default async function(req) {
                   did,
                   transfer_type: 'topup_credit',
                   from_address: 'stripe',
-                  to_address: wallet.wallet_address,
+                  to_address: walletAddress,
                   amount_wei: '0',
                   fee_wei: '0',
                   status: 'confirmed',
