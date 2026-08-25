@@ -71,7 +71,6 @@ export async function executeDexSwap(
     srcToken: quote.srcToken,
     destToken: quote.destToken,
     srcAmount: quote.srcAmount,
-    destAmount: quote.destAmount,
     userAddress: userWallet.address,
     partner: PARTNER,
     slippage: 5000, // 0.5% in basis points

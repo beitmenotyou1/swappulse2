@@ -11,12 +11,19 @@ export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth: admin user OR workflow with secret
-    const secretHeader = req.headers.get('x-backend-secret') || '';
-    const backendSecret = Deno.env.get('BACKEND_FUNCTION_SECRET');
-    const isWorkflow = backendSecret && secretHeader === backendSecret;
+    // Auth: shared secret (X-Trigger-Secret header or trigger_secret body)
+    // or admin caller (platform injects admin JWT for workflow calls).
+    const expectedSecret = Deno.env.get('BACKEND_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-trigger-secret') || '';
+    let bodySecret = '';
+    try {
+      const body = await req.clone().json().catch(() => ({}));
+      bodySecret = String(body?.trigger_secret || '');
+    } catch {}
+    const secretOk = expectedSecret && expectedSecret.length > 0 &&
+      (headerSecret === expectedSecret || bodySecret === expectedSecret);
 
-    if (!isWorkflow) {
+    if (!secretOk) {
       const user = await base44.auth.me().catch(() => null);
       if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
       if (user.role !== 'admin') return Response.json({ error: 'Admin only' }, { status: 403 });
