@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Plus, Trash2, Loader2, Check } from 'lucide-react';
+import { Shield, Plus, Trash2, Loader2, Check, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { CHAINS, getChain } from '@/lib/chainRegistry';
+import { validateAddress } from '@/lib/addressValidation';
 
 // Allowlist manager: lets collectors control which sender addresses can
 // send them crypto/NFTs. Only assets from allowlisted senders appear in
@@ -37,8 +38,16 @@ export default function AllowlistManager() {
 
   useEffect(() => { loadAllowlist(); }, [loadAllowlist]);
 
+  const validation = validateAddress(newAddress, newChain);
+  const showValidation = newAddress.trim().length > 0 && !validation.valid;
+
   const handleAdd = async () => {
     if (!newAddress.trim()) return;
+    const check = validateAddress(newAddress, newChain);
+    if (!check.valid) {
+      toast({ title: 'Invalid address', description: check.message, variant: 'destructive' });
+      return;
+    }
     setAdding(true);
     try {
       await base44.entities.ReceiveAllowlist.create({
@@ -88,8 +97,16 @@ export default function AllowlistManager() {
           value={newAddress}
           onChange={(e) => setNewAddress(e.target.value)}
           placeholder="Sender address (0x… or Solana base58)"
-          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-mono outline-none focus:border-primary"
+          className={`w-full rounded-lg border bg-card px-3 py-2 text-sm font-mono outline-none focus:border-primary ${
+            showValidation ? 'border-destructive/50' : 'border-border'
+          }`}
         />
+        {showValidation && (
+          <div className="flex items-start gap-1.5 rounded-lg bg-destructive/5 px-2 py-1.5">
+            <AlertCircle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+            <p className="text-[11px] leading-snug text-destructive">{validation.message}</p>
+          </div>
+        )}
         <div className="flex gap-2">
           <select
             value={newChain}
@@ -111,7 +128,7 @@ export default function AllowlistManager() {
         </div>
         <button
           onClick={handleAdd}
-          disabled={adding || !newAddress.trim()}
+          disabled={adding || !newAddress.trim() || showValidation}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-50"
         >
           {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
