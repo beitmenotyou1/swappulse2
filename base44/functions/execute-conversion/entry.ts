@@ -1,6 +1,6 @@
 // execute-conversion — unified conversion endpoint supporting:
 // 1. fiat_to_crypto: debits fiat, credits target crypto (USDC directly or
-//    EVM token via ParaSwap DEX from the platform wallet).
+//    EVM token via Velora DEX from the platform wallet).
 // 2. crypto_to_crypto: DEX swap from the user's unlocked wallet (EVM pairs
 //    on Polygon). 2% fee collected in USDC to the platform fee wallet.
 
