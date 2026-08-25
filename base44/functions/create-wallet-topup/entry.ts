@@ -20,8 +20,8 @@ export default async function (req: Request): Promise<Response> {
 
     const body = await req.json().catch(() => ({}));
     const { amount_cents, currency = 'GBP' } = body;
-    if (!amount_cents || amount_cents < 50) {
-      return Response.json({ error: 'Minimum top-up is 0.50' }, { status: 400 });
+    if (!amount_cents || amount_cents < 500) {
+      return Response.json({ error: 'Minimum top-up is 5.00' }, { status: 400 });
     }
 
     const stripeKey = secrets.get('STRIPE_SECRET_KEY');

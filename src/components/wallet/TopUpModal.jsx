@@ -116,8 +116,8 @@ export default function TopUpModal({ onClose }) {
 
   const handleTopUp = async () => {
     const cents = Math.round(parseFloat(amount) * 100);
-    if (!cents || cents < 50) {
-      toast({ title: 'Invalid amount', description: 'Minimum top-up is 0.50', variant: 'destructive' });
+    if (!cents || cents < 500) {
+      toast({ title: 'Invalid amount', description: 'Minimum top-up is 5.00', variant: 'destructive' });
       return;
     }
     setLoading(true);
@@ -176,7 +176,7 @@ export default function TopUpModal({ onClose }) {
                 <input
                   type="number"
                   step="0.01"
-                  min="0.5"
+                  min="5"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
