@@ -146,17 +146,22 @@ export async function uploadPromoImage(
         return { blob: null, accessJwt: currentJwt };
       }
 
-      // Normalize mimeType: prefer PDS-returned, fall back to magic-byte, then content-type
+      // Validate the PDS-returned mimeType is acceptable for Bluesky's
+      // app.bsky.embed.images lexicon (JPEG or PNG only). If the PDS returned
+      // an unsupported mimeType, abort — the AppView would strip the embed.
       const pdsMime = normalizeMimeType(blob.mimeType);
-      const finalMime = pdsMime || detectedType || contentTypeMime || 'image/png';
+      if (!pdsMime) {
+        console.error('promoImageUpload: PDS returned unsupported mimeType', JSON.stringify(blob.mimeType), '— aborting');
+        return { blob: null, accessJwt: currentJwt };
+      }
 
+      // Use the PDS's blob object DIRECTLY — the blob ref in the record must
+      // exactly match what the PDS stored. Reconstructing the blob ref (e.g.,
+      // normalizing the mimeType from image/jpg → image/jpeg, or substituting
+      // size) creates a mismatch that the Bluesky AppView detects during async
+      // validation, stripping the embed and reverting the post to plain text.
       return {
-        blob: {
-          $type: 'blob',
-          ref: { $link: blob.ref.$link },
-          mimeType: finalMime,
-          size: blob.size ?? bytes.length,
-        },
+        blob: blob,
         accessJwt: currentJwt,
       };
     } catch (e) {
