@@ -822,6 +822,65 @@ export const PROMO_MESSAGES: Record<string, PromoMessagePools> = {
   'ko-KR': ko,
 };
 
+// "First to join" beta campaign hooks — urge collectors to be early members.
+// Used by post-promo's first_join / first_join_all modes. One pool per locale.
+export const FIRST_JOIN_HOOKS: Record<string, string[]> = {
+  'en-GB': [
+    "Be among the first to join SwapPulse. We're in beta, and early members shape what we build next.",
+    "Founding members wanted. SwapPulse is in beta, and the first collectors in set the tone.",
+    "Get in early. SwapPulse is in beta, and the first collectors help shape the platform.",
+    "The first collectors on SwapPulse will always be the ones who believed early. Join in beta.",
+  ],
+  'fr-FR': [
+    "Soyez parmi les premiers à rejoindre SwapPulse. Nous sommes en beta, et les premiers membres façonnent la suite.",
+    "Membres fondateurs recherchés. SwapPulse est en beta, et les premiers collectionneurs donnent le ton.",
+    "Entrez tôt. SwapPulse est en beta, et les premiers membres aident à façonner la plateforme.",
+    "Les premiers collectionneurs sur SwapPulse seront toujours ceux qui ont cru en premier. Rejoignez en beta.",
+  ],
+  'de-DE': [
+    "Sei einer der Ersten, die SwapPulse beitreten. Wir sind in der Beta, und frühe Mitglieder prägen, was entsteht.",
+    "Gründungsmitglieder gesucht. SwapPulse ist in der Beta, und die ersten Sammler setzen den Ton.",
+    "Früh dabei sein. SwapPulse ist in der Beta, und frühe Mitglieder helfen, die Plattform zu formen.",
+    "Die ersten Sammler auf SwapPulse werden immer die sein, die früh geglaubt haben. Tritt der Beta bei.",
+  ],
+  'it-IT': [
+    "Sii tra i primi a unirti a SwapPulse. Siamo in beta, e i primi membri modellano ciò che costruiremo.",
+    "Cercasi membri fondatori. SwapPulse è in beta, e i primi collezionisti danno il tono.",
+    "Entra presto. SwapPulse è in beta, e i primi membri aiutano a plasmare la piattaforma.",
+    "I primi collezionisti su SwapPulse saranno sempre quelli che hanno creduto per primi. Unisciti in beta.",
+  ],
+  'es-ES': [
+    "Sé de los primeros en unirte a SwapPulse. Estamos en beta, y los primeros miembros dan forma a lo que viene.",
+    "Buscamos miembros fundadores. SwapPulse está en beta, y los primeros coleccionistas marcan el tono.",
+    "Entra pronto. SwapPulse está en beta, y los primeros miembros ayudan a dar forma a la plataforma.",
+    "Los primeros coleccionistas en SwapPulse siempre serán los que creyeron desde el principio. Únete en beta.",
+  ],
+  'pt-BR': [
+    "Seja um dos primeiros a entrar no SwapPulse. Estamos em beta, e os primeiros membros moldam o que vem a seguir.",
+    "Procuramos membros fundadores. SwapPulse está em beta, e os primeiros colecionadores dão o tom.",
+    "Entre cedo. SwapPulse está em beta, e os primeiros membros ajudam a moldar a plataforma.",
+    "Os primeiros colecionadores no SwapPulse serão sempre os que acreditaram primeiro. Entre em beta.",
+  ],
+  'ja-JP': [
+    "SwapPulseの最初のメンバーになりましょう。ベータ版で、最初のメンバーが次に作るものを形作ります。",
+    "創設メンバー募集中。SwapPulseはベータ版で、最初のコレクターが方向性を決めます。",
+    "早く参加しよう。SwapPulseはベータ版で、最初のメンバーがプラットフォームを形作るのを助けます。",
+    "SwapPulseの最初のコレクターは、常に早く信じた人たちです。ベータ版に参加しましょう。",
+  ],
+  'zh-CN': [
+    "成为最早加入SwapPulse的人之一。我们在beta阶段，早期成员塑造我们接下来构建的内容。",
+    "寻找创始成员。SwapPulse处于beta阶段，第一批收藏者定下基调。",
+    "及早加入。SwapPulse处于beta阶段，早期成员帮助塑造平台。",
+    "SwapPulse上最早的收藏者永远是那些早早相信的人。在beta阶段加入吧。",
+  ],
+  'ko-KR': [
+    "SwapPulse의 첫 번째 멤버가 되세요. 베타 단계이고, 초기 멤버가 다음에 만들 것을 형성합니다.",
+    "창립 멤버를 찾습니다. SwapPulse는 베타 단계이고, 첫 번째 컬렉터가 방향을 정합니다.",
+    "일찍 참여하세요. SwapPulse는 베타 단계이고, 초기 멤버가 플랫폼을 형성하는 데 도움을 줍니다.",
+    "SwapPulse의 첫 번째 컬렉터는 항상 일찍 믿은 사람들입니다. 베타에 참여하세요.",
+  ],
+};
+
 /** Pick a random element from an array. */
 export function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];

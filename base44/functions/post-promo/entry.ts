@@ -27,6 +27,7 @@ import {
   PROMO_LOCALES,
   FEATURE_POOL,
   HASHTAG_SETS,
+  FIRST_JOIN_HOOKS,
   pick,
   pickPromoLocale,
   getPoolsForLocale,
@@ -156,7 +157,7 @@ function cardImageUrl(imageField: string | null): string | null {
   return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
 }
 
-type PromoType = 'card' | 'feature' | 'community';
+type PromoType = 'card' | 'feature' | 'community' | 'first_join';
 
 interface PromoResult {
   content: string;
@@ -233,6 +234,29 @@ function generateCommunityMessage(locale: string): PromoResult {
   return { content, embedUrl: withLangParam(SITE_BASE, locale), embedTitle: 'SwapPulse', embedDescription: `A decentralized social network for Pokémon TCG collectors. Free, open-source, and currently in ${BUILD_STATUS}.`, tags };
 }
 
+/** Type 4: First-to-join pitch — urges collectors to be early members in beta. */
+function generateFirstJoinMessage(locale: string): PromoResult {
+  const pools = getPoolsForLocale(locale);
+  const hooks = FIRST_JOIN_HOOKS[locale] || FIRST_JOIN_HOOKS['en-GB'];
+  const hook = pick(hooks);
+  const statusProp = pick(pools.statusProps).replace(/\{BUILD_STATUS\}/g, BUILD_STATUS);
+  const hashtagSet = pick(HASHTAG_SETS);
+  const tags = parseTags(hashtagSet);
+  const hashtags = hashtagSet;
+  const cta = pick(pools.ctas).replace(/\{SITE_BASE\}/g, withLangParam(SITE_BASE, locale));
+  let content = `${hook}\n\n${statusProp}\n\n${cta}\n\n${hashtags}`;
+  if (countGraphemes(content) > 300) {
+    content = `${hook}\n\n${statusProp}\n\n${hashtags}`;
+    if (countGraphemes(content) > 300) {
+      content = `${hook}\n\n${hashtags}`;
+      if (countGraphemes(content) > 300) {
+        content = content.slice(0, 297) + '...';
+      }
+    }
+  }
+  return { content, embedUrl: withLangParam(SITE_BASE, locale), embedTitle: 'SwapPulse Beta', embedDescription: `Be among the first to join. SwapPulse is in ${BUILD_STATUS}.`, tags };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -241,6 +265,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
     const svc = base44.asServiceRole;
+
+    // Parse the request body for optional overrides (locale, promoType).
+    const body = await req.json().catch(() => ({}));
+    const forcedLocale = body?.locale;
+    const forcedPromoType = body?.promoType;
 
     // Look up the promo account's consolidated PDS identity
     const promoUsers = await svc.entities.User
@@ -272,13 +301,72 @@ Deno.serve(async (req) => {
     // (used only on a 401 during blob upload).
     const cred = { did: identity.did, app_password: identity.appPassword };
 
-    // Pick a random language for this post — the bot publishes in different
-    // languages across runs. Links get a ?lang=LOCALE param so the site loads
-    // in the same language when a user clicks through.
-    const promoLocale: PromoLocale = pickPromoLocale();
+    // Special campaign mode: post first-join beta messages in ALL languages.
+    // Uploads the poster once, then publishes one post per locale.
+    if (forcedPromoType === 'first_join_all') {
+      const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+      if (!uploadResult.blob) {
+        console.error('post-promo: first_join_all image upload failed');
+        return Response.json({ error: 'Image upload failed' }, { status: 502 });
+      }
+      session.accessJwt = uploadResult.accessJwt;
+      const imageBlob = uploadResult.blob;
+      const altText = 'SwapPulse Beta';
+      const results: any[] = [];
+      for (const loc of PROMO_LOCALES) {
+        const promo = generateFirstJoinMessage(loc.locale);
+        const { content, tags } = promo;
+        const record: any = {
+          $type: 'app.bsky.feed.post',
+          text: content,
+          createdAt: new Date().toISOString(),
+          langs: [loc.bcp47],
+          embed: { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] },
+        };
+        if (tags.length > 0) record.tags = tags;
+        const facets = buildRichTextFacets(content);
+        if (facets.length > 0) record.facets = facets;
+        let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
+          repo: session.did,
+          collection: 'app.bsky.feed.post',
+          record,
+        });
+        if (result?.error && result.status === 401) {
+          try {
+            ({ session } = await getPdsSessionForUser(pdsUrl, identity.did, identity.appPassword));
+            result = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
+              repo: session.did,
+              collection: 'app.bsky.feed.post',
+              record,
+            });
+          } catch (e) {
+            console.error('post-promo: first_join_all retry failed', loc.locale, e?.message || e);
+          }
+        }
+        if (result?.error) {
+          console.error('post-promo: first_join_all createRecord failed', loc.locale, result.status);
+          results.push({ locale: loc.locale, error: `createRecord failed (${result.status})` });
+          continue;
+        }
+        await svc.entities.PromoPost.create({
+          at_uri: result.uri,
+          content,
+          did: session.did,
+          posted_at: new Date().toISOString(),
+        }).catch((e: any) => console.error('post-promo: first_join_all PromoPost track failed', loc.locale, e?.message || e));
+        results.push({ locale: loc.locale, uri: result.uri, ok: true });
+        console.log('post-promo: first_join_all published', loc.locale, result.uri);
+      }
+      return Response.json({ ok: true, mode: 'first_join_all', posts: results, count: results.length });
+    }
 
-    // Pick a promo type at random: card, feature, or community pitch
-    const promoType: PromoType = pick(['card', 'feature', 'community'] as PromoType[]);
+    // Pick a language for this post — random unless the caller forced a locale.
+    const promoLocale: PromoLocale = forcedLocale
+      ? (PROMO_LOCALES.find((l) => l.locale === forcedLocale) || pickPromoLocale())
+      : pickPromoLocale();
+
+    // Pick a promo type at random: card, feature, community, or first-join pitch
+    const promoType: PromoType = (forcedPromoType as PromoType) || pick(['card', 'feature', 'community', 'first_join'] as PromoType[]);
 
     let promo: PromoResult;
     let card: FeaturedCard | null = null;
@@ -293,6 +381,8 @@ Deno.serve(async (req) => {
       }
     } else if (promoType === 'feature') {
       promo = generateFeatureMessage(pick(FEATURE_POOL), promoLocale.locale);
+    } else if (promoType === 'first_join') {
+      promo = generateFirstJoinMessage(promoLocale.locale);
     } else {
       promo = generateCommunityMessage(promoLocale.locale);
     }
