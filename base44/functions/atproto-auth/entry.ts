@@ -409,7 +409,7 @@ Deno.serve(async (req) => {
         return Response.json({ needs_setup: true });
       }
       await sendLoginCode(svc, user.email.toLowerCase());
-      return Response.json({ code_sent: true, email: user.email, emailMasked: maskEmail(user.email) });
+      return Response.json({ code_sent: true, emailMasked: maskEmail(user.email) });
     }
 
     // 6. For verify mode: fetch follows then return DID + profile + follows
