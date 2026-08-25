@@ -89,7 +89,11 @@ export async function executeDexSwap(
   const txData = await res.json();
 
   // Check and set ERC20 allowance for the spender (txData.to = Augustus router)
-  if (quote.srcToken !== ethers.ZeroAddress) {
+  // Skip for native tokens (zero address or 0xEeee... placeholder)
+  const NATIVE_TOKEN = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+  const isNative = quote.srcToken.toLowerCase() === ethers.ZeroAddress ||
+                   quote.srcToken.toLowerCase() === NATIVE_TOKEN;
+  if (!isNative) {
     const srcContract = new ethers.Contract(quote.srcToken, ERC20_ABI, userWallet);
     const allowance = await srcContract.allowance(userWallet.address, txData.to);
     if (allowance < BigInt(quote.srcAmount)) {

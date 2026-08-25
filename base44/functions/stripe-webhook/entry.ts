@@ -113,11 +113,10 @@ export default async function(req) {
                   fiat_topup_id: topup.id,
                 });
 
-                // Record the top-up fee in the ledger. Top-up fees are
-                // collected in fiat (already deducted from the user's
-                // balance above), so no on-chain USDC sweep is needed.
-                // fee_usdc_wei stores the USDC equivalent for dashboard
-                // display; swept=true marks it as collected.
+                // Record the top-up fee in the ledger as pending on-chain
+                // sweep. The sweep-fees function will swap POL for USDC
+                // (if needed) and send the USDC to the platform fee wallet
+                // on Polygon. Gas is paid in POL from the platform wallet.
                 try {
                   const { fiatCentsToUsdcWei } = await import('../../shared/walletEscrow.ts');
                   const feeUsdcWei = fiatCentsToUsdcWei(feeCents);
@@ -130,8 +129,7 @@ export default async function(req) {
                       source_did: did,
                       original_amount_cents: amountCents,
                       fee_usdc_wei: feeUsdcWei.toString(),
-                      swept: true,
-                      swept_at: new Date().toISOString(),
+                      swept: false,
                       reference_id: topup.id,
                     });
                   }

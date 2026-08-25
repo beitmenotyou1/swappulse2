@@ -165,6 +165,76 @@ export async function debitUsdcToReserve(
 
 // --- Fee collection ---
 
+// Native token placeholder used by Velora/ParaSwap for native POL
+const NATIVE_TOKEN_EEEE = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+const POLYGON_NETWORK = 137;
+const ONE_POL = 1000000000000000000n; // 1 POL in wei (18 decimals)
+
+// Swap platform wallet POL for USDC via Velora DEX. Swaps enough POL
+// (with a 10% slippage buffer) to cover the requested USDC amount.
+// Returns the swap tx hash and the platform wallet's USDC balance after.
+export async function swapPolForUsdc(
+  usdcAmountNeededWei: bigint,
+): Promise<{ swapTxHash: string; usdcBalanceAfter: bigint }> {
+  const { fetchDexQuote, executeDexSwap } = await import('./dexAggregator.ts');
+  const platformWallet = getPlatformWallet();
+
+  // Step 1: Get a price quote for 1 POL → USDC to determine the rate
+  const priceQuote = await fetchDexQuote({
+    srcToken: NATIVE_TOKEN_EEEE,
+    destToken: USDC_CONTRACT_ADDRESS,
+    amount: ONE_POL.toString(),
+    network: POLYGON_NETWORK,
+  });
+  const usdcPerPol = BigInt(priceQuote.destAmount);
+  if (usdcPerPol === 0n) throw new Error('Could not get POL/USDC price from DEX');
+
+  // Step 2: Calculate POL needed (with 10% buffer for slippage)
+  const polNeeded = (usdcAmountNeededWei * ONE_POL) / usdcPerPol;
+  const polNeededWithBuffer = (polNeeded * 110n) / 100n;
+
+  // Step 3: Get a quote for the exact POL amount
+  const swapQuote = await fetchDexQuote({
+    srcToken: NATIVE_TOKEN_EEEE,
+    destToken: USDC_CONTRACT_ADDRESS,
+    amount: polNeededWithBuffer.toString(),
+    network: POLYGON_NETWORK,
+  });
+
+  // Step 4: Execute the swap
+  const { txHash } = await executeDexSwap(platformWallet, swapQuote);
+
+  // Step 5: Check actual USDC balance after swap
+  const usdcContract = getUsdcContract(platformWallet);
+  const usdcBalanceAfter = await usdcContract.balanceOf(platformWallet.address);
+
+  return { swapTxHash: txHash, usdcBalanceAfter };
+}
+
+// Sweep accumulated fees to the platform fee wallet as USDC on Polygon.
+// If the platform wallet doesn't have enough USDC, swaps POL for USDC
+// via the DEX first. Gas is paid in POL from the platform wallet.
+export async function sweepFeesOnChain(
+  totalFeeWei: bigint,
+): Promise<{ txHash: string; swapTxHash?: string }> {
+  const platformWallet = getPlatformWallet();
+  const usdcContract = getUsdcContract(platformWallet);
+
+  // Check if we need to swap POL for USDC
+  const currentUsdcBalance = await usdcContract.balanceOf(platformWallet.address);
+  let swapTxHash: string | undefined;
+
+  if (currentUsdcBalance < totalFeeWei) {
+    const deficit = totalFeeWei - currentUsdcBalance;
+    const swapResult = await swapPolForUsdc(deficit);
+    swapTxHash = swapResult.swapTxHash;
+  }
+
+  // Transfer the total fee USDC to the fee wallet
+  const { txHash } = await transferUsdc(platformWallet, PLATFORM_FEE_WALLET, totalFeeWei);
+  return { txHash, swapTxHash };
+}
+
 export async function sweepFeeToPlatformWallet(
   amountWei: bigint,
 ): Promise<{ txHash: string }> {
