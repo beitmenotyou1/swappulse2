@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { DollarSign, Loader2, RefreshCw, ArrowUpRight, ExternalLink, TrendingUp } from 'lucide-react';
+import { DollarSign, Loader2, RefreshCw, ArrowUpRight, ExternalLink, TrendingUp, Fuel, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const FEE_SOURCE_LABELS = {
@@ -40,6 +40,8 @@ export default function FeeRevenueSection() {
   const [sweeping, setSweeping] = useState(false);
   const [error, setError] = useState('');
   const [sweepResult, setSweepResult] = useState(null);
+  const [polBalance, setPolBalance] = useState(null);
+  const [usdcBalance, setUsdcBalance] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,15 @@ export default function FeeRevenueSection() {
       // FeeLedger is admin-readable; fetch most recent 200 records
       const list = await base44.entities.FeeLedger.list('-created_date', 200);
       setFees(list);
+      // Fetch platform wallet balances (calls sweep-fees without force —
+      // returns balances without triggering an actual sweep)
+      try {
+        const res = await base44.functions.invoke('sweep-fees', {});
+        if (res.data?.platform_pol_wei !== undefined) {
+          setPolBalance(res.data.platform_pol_wei);
+          setUsdcBalance(res.data.platform_usdc_wei);
+        }
+      } catch {}
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Failed to load fee ledger');
     } finally {
@@ -64,6 +75,10 @@ export default function FeeRevenueSection() {
     try {
       const res = await base44.functions.invoke('sweep-fees', { force: true });
       setSweepResult(res.data);
+      if (res.data?.platform_pol_wei !== undefined) {
+        setPolBalance(res.data.platform_pol_wei);
+        setUsdcBalance(res.data.platform_usdc_wei);
+      }
       await load();
     } catch (e) {
       setSweepResult({ error: e.response?.data?.error || e.message || 'Sweep failed' });
@@ -100,6 +115,11 @@ export default function FeeRevenueSection() {
 
   const explorerUrl = 'https://polygonscan.com';
 
+  // POL balance: 18 decimals. Warn when below 0.5 POL (not enough for gas).
+  const polAmount = polBalance ? Number(BigInt(polBalance) / 1000000000000000n) / 1000 : null;
+  const usdcAmount = usdcBalance ? Number(BigInt(usdcBalance) / 10000n) / 100 : null;
+  const polLow = polAmount !== null && polAmount < 0.5;
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
@@ -119,6 +139,38 @@ export default function FeeRevenueSection() {
 
       {error && (
         <p className="mb-3 text-sm text-destructive">{error}</p>
+      )}
+
+      {/* Platform wallet gas monitor */}
+      {polAmount !== null && (
+        <div className={`mb-4 rounded-xl border p-4 ${polLow ? 'border-destructive/40 bg-destructive/10' : 'border-border bg-secondary'}`}>
+          <div className="flex items-center gap-2">
+            <Fuel className={`h-4 w-4 ${polLow ? 'text-destructive' : 'text-muted-foreground'}`} />
+            <span className="text-xs font-semibold text-muted-foreground">PLATFORM WALLET GAS</span>
+            {polLow && (
+              <span className="ml-auto flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold text-destructive">
+                <AlertTriangle className="h-3 w-3" /> LOW POL — TOP UP NEEDED
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex items-baseline gap-4">
+            <div>
+              <span className="text-xl font-extrabold text-foreground">{polAmount.toFixed(3)}</span>
+              <span className="ml-1 text-sm font-semibold text-muted-foreground">POL</span>
+            </div>
+            {usdcAmount !== null && (
+              <div>
+                <span className="text-xl font-extrabold text-foreground">{usdcAmount.toFixed(2)}</span>
+                <span className="ml-1 text-sm font-semibold text-muted-foreground">USDC</span>
+              </div>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {polLow
+              ? 'The platform wallet needs POL for gas to sweep fees. Send POL to the platform wallet address to keep fee sweeps running.'
+              : 'Gas for fee sweeps is paid from this wallet\'s POL balance. The 5-minute sweep auto-swaps POL→USDC when needed.'}
+          </p>
+        </div>
       )}
 
       {/* Summary cards */}

@@ -30,11 +30,27 @@ export default async function (req: Request): Promise<Response> {
       if (user.role !== 'admin') return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
+    // Helper: report platform wallet POL + USDC balances for gasless monitoring.
+    // The admin dashboard uses these to alert when the wallet needs a POL top-up.
+    async function getPlatformBalances() {
+      try {
+        const provider = getProvider();
+        const platformWallet = getPlatformWallet();
+        const polBalance = (await provider.getBalance(platformWallet.address)).toString();
+        const usdcContract = getUsdcContract(platformWallet);
+        const usdcBalance = (await usdcContract.balanceOf(platformWallet.address)).toString();
+        return { platform_pol_wei: polBalance, platform_usdc_wei: usdcBalance };
+      } catch (e) {
+        console.error('Balance check failed:', (e as any)?.message);
+        return { platform_pol_wei: null, platform_usdc_wei: null };
+      }
+    }
+
     // Find unswept fees
     const unswept = await base44.asServiceRole.entities.FeeLedger
       .filter({ swept: false }, '-created_date', 500).catch(() => []);
     if (!unswept.length) {
-      return Response.json({ success: true, swept_count: 0, total_wei: '0' });
+      return Response.json({ success: true, swept_count: 0, total_wei: '0', ...(await getPlatformBalances()) });
     }
 
     // Sum the total unswept fees
@@ -46,7 +62,7 @@ export default async function (req: Request): Promise<Response> {
           swept: true, swept_at: new Date().toISOString(),
         })
       ));
-      return Response.json({ success: true, swept_count: unswept.length, total_wei: '0' });
+      return Response.json({ success: true, swept_count: unswept.length, total_wei: '0', ...(await getPlatformBalances()) });
     }
 
     // Minimum sweep threshold: don't sweep if total < 0.50 USDC (500000 wei).
@@ -65,6 +81,7 @@ export default async function (req: Request): Promise<Response> {
         reason: 'Below minimum sweep threshold',
         pending_count: unswept.length,
         total_wei: totalWei.toString(),
+        ...(await getPlatformBalances()),
       });
     }
 
@@ -81,19 +98,7 @@ export default async function (req: Request): Promise<Response> {
       })
     ));
 
-    // Report platform wallet POL + USDC balances for gasless monitoring.
-    // The admin dashboard uses these to alert when the wallet needs a POL top-up.
-    let polBalance = null;
-    let usdcBalance = null;
-    try {
-      const provider = getProvider();
-      const platformWallet = getPlatformWallet();
-      polBalance = (await provider.getBalance(platformWallet.address)).toString();
-      const usdcContract = getUsdcContract(platformWallet);
-      usdcBalance = (await usdcContract.balanceOf(platformWallet.address)).toString();
-    } catch (e) {
-      console.error('Balance check failed:', (e as any)?.message);
-    }
+    const balances = await getPlatformBalances();
 
     return Response.json({
       success: true,
@@ -101,8 +106,7 @@ export default async function (req: Request): Promise<Response> {
       total_wei: totalWei.toString(),
       tx_hash: txHash,
       swap_tx_hash: swapTxHash || null,
-      platform_pol_wei: polBalance,
-      platform_usdc_wei: usdcBalance,
+      ...balances,
     });
   } catch (error: any) {
     console.error('sweep-fees error:', error?.message || error);

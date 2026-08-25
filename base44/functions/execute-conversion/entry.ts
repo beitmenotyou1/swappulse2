@@ -8,7 +8,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
 import {
   resolveActiveWallet, getOrCreateWalletBalance, updateBalance,
-  creditUsdcFromReserve, sweepFeeToPlatformWallet, calculateFee,
+  creditUsdcFromReserve, calculateFee,
   fiatCentsToUsdcWei, getProvider, getUsdcContract, getPlatformWallet,
   USDC_CONTRACT_ADDRESS, PLATFORM_FEE_WALLET,
 } from '../../shared/walletEscrow.ts';
@@ -72,14 +72,6 @@ export default async function (req: Request): Promise<Response> {
           return Response.json({ error: 'On-chain USDC transfer failed: ' + (e as any)?.message }, { status: 500 });
         }
 
-        let feeTxHash = '';
-        try {
-          const feeResult = await sweepFeeToPlatformWallet(feeWei);
-          feeTxHash = feeResult.txHash;
-        } catch (e) {
-          console.error('Fee sweep failed:', (e as any)?.message);
-        }
-
         await base44.entities.CryptoTransfer.create({
           did, transfer_type: 'fiat_to_usdc',
           from_address: 'platform_reserve', to_address: walletAddress,
@@ -88,11 +80,12 @@ export default async function (req: Request): Promise<Response> {
           description: `Converted ${(fiat_cents / 100).toFixed(2)} ${currency || 'GBP'} to USDC`,
         });
 
+        // Fee stays in platform wallet; sweep-fees workflow batches it.
         await base44.asServiceRole.entities.FeeLedger.create({
           fee_source: 'fiat_to_usdc', source_did: did,
           original_amount_cents: fiat_cents, original_amount_wei: usdcWei.toString(),
-          fee_usdc_wei: feeWei.toString(), fee_tx_hash: feeTxHash,
-          swept: !!feeTxHash, swept_at: feeTxHash ? new Date().toISOString() : undefined,
+          fee_usdc_wei: feeWei.toString(),
+          swept: false,
         });
 
         return Response.json({ success: true, usdc_credited_wei: netWei.toString(), fee_wei: feeWei.toString(), tx_hash: creditTxHash });
@@ -129,15 +122,6 @@ export default async function (req: Request): Promise<Response> {
           total_fees_paid_wei: (BigInt(balance.total_fees_paid_wei || '0') + feeWei).toString(),
         });
 
-        // Sweep fee to platform fee wallet
-        let feeTxHash = '';
-        try {
-          const feeResult = await sweepFeeToPlatformWallet(feeWei);
-          feeTxHash = feeResult.txHash;
-        } catch (e) {
-          console.error('Fee sweep failed:', (e as any)?.message);
-        }
-
         await base44.entities.CryptoTransfer.create({
           did, transfer_type: 'fiat_to_usdc',
           from_address: 'platform_reserve', to_address: walletAddress,
@@ -146,11 +130,12 @@ export default async function (req: Request): Promise<Response> {
           description: `Converted ${(fiat_cents / 100).toFixed(2)} ${currency || 'GBP'} to crypto via DEX`,
         });
 
+        // Fee stays in platform wallet; sweep-fees workflow batches it.
         await base44.asServiceRole.entities.FeeLedger.create({
           fee_source: 'fiat_to_usdc', source_did: did,
           original_amount_cents: fiat_cents, original_amount_wei: usdcWei.toString(),
-          fee_usdc_wei: feeWei.toString(), fee_tx_hash: feeTxHash,
-          swept: !!feeTxHash, swept_at: feeTxHash ? new Date().toISOString() : undefined,
+          fee_usdc_wei: feeWei.toString(),
+          swept: false,
         });
 
         return Response.json({ success: true, dest_amount: swapResult.destAmount, fee_wei: feeWei.toString(), tx_hash: swapResult.txHash });
@@ -245,15 +230,39 @@ export default async function (req: Request): Promise<Response> {
       const netDestWei = destAmount - feeWei;
 
       let feeTxHash = '';
+      let feeUsdcWei = 0n;
       // If target is USDC, send fee directly to the fee wallet from user's wallet
       if (target_token.toLowerCase() === USDC_CONTRACT_ADDRESS.toLowerCase()) {
+        feeUsdcWei = feeWei;
         try {
           const usdcContract = getUsdcContract(userWallet);
           const feeTx = await usdcContract.transfer(PLATFORM_FEE_WALLET, feeWei);
           await feeTx.wait();
           feeTxHash = feeTx.hash;
         } catch (e) {
-          console.error('Fee sweep failed:', (e as any)?.message);
+          console.error('Fee transfer failed:', (e as any)?.message);
+        }
+      } else {
+        // Non-USDC target: swap the fee portion to USDC and send to fee wallet.
+        // The collector pays gas for this second swap + USDC transfer.
+        try {
+          const feeQuote = await fetchDexQuote({
+            srcToken: target_token,
+            destToken: USDC_CONTRACT_ADDRESS,
+            amount: feeWei.toString(),
+            network: POLYGON_CHAIN_ID,
+          });
+          await executeDexSwap(userWallet, feeQuote);
+          const usdcContract = getUsdcContract(userWallet);
+          const feeUsdcBalance = await usdcContract.balanceOf(userWallet.address);
+          if (feeUsdcBalance > 0n) {
+            const feeTx = await usdcContract.transfer(PLATFORM_FEE_WALLET, feeUsdcBalance);
+            await feeTx.wait();
+            feeTxHash = feeTx.hash;
+            feeUsdcWei = feeUsdcBalance;
+          }
+        } catch (e) {
+          console.error('Fee conversion to USDC failed:', (e as any)?.message);
         }
       }
 
@@ -286,7 +295,7 @@ export default async function (req: Request): Promise<Response> {
       await base44.asServiceRole.entities.FeeLedger.create({
         fee_source: 'token_convert', source_did: did,
         original_amount_wei: amount,
-        fee_usdc_wei: target_token.toLowerCase() === USDC_CONTRACT_ADDRESS.toLowerCase() ? feeWei.toString() : '0',
+        fee_usdc_wei: feeUsdcWei.toString(),
         fee_tx_hash: feeTxHash,
         swept: !!feeTxHash, swept_at: feeTxHash ? new Date().toISOString() : undefined,
       });

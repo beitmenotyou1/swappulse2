@@ -6,7 +6,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import {
   getOrCreateWalletBalance, updateBalance, creditUsdcFromReserve,
-  sweepFeeToPlatformWallet, calculateFee, fiatCentsToUsdcWei,
+  calculateFee, fiatCentsToUsdcWei,
 } from '../../shared/walletEscrow.ts';
 import { decryptWithServerKey } from '../../shared/walletCrypto.ts';
 
@@ -49,9 +49,12 @@ export default async function (req: Request): Promise<Response> {
       total_fees_paid_wei: (BigInt(balance.total_fees_paid_wei || '0') + feeWei).toString(),
     });
 
-    // Send USDC from platform reserve to user's wallet (net amount)
+    // Send USDC from platform reserve to user's wallet (net amount).
+    // The 2% fee stays in the platform wallet and is recorded as pending in
+    // the FeeLedger below. The sweep-fees workflow batches all pending fees
+    // and sends them to the fee wallet every 5 minutes — this avoids a
+    // separate per-transaction gas cost for the fee transfer.
     let creditTxHash = '';
-    let feeTxHash = '';
     try {
       const creditResult = await creditUsdcFromReserve(walletAddress, netWei);
       creditTxHash = creditResult.txHash;
@@ -63,14 +66,6 @@ export default async function (req: Request): Promise<Response> {
         total_fees_paid_wei: balance.total_fees_paid_wei,
       });
       return Response.json({ error: 'On-chain USDC transfer failed: ' + (e as any)?.message }, { status: 500 });
-    }
-
-    // Sweep fee to platform fee wallet
-    try {
-      const feeResult = await sweepFeeToPlatformWallet(feeWei);
-      feeTxHash = feeResult.txHash;
-    } catch (e) {
-      console.error('Fee sweep failed:', (e as any)?.message);
     }
 
     // Record the transfer
@@ -86,16 +81,15 @@ export default async function (req: Request): Promise<Response> {
       description: `Converted ${(fiat_cents / 100).toFixed(2)} ${body.currency || 'GBP'} to USDC`,
     });
 
-    // Record fee in ledger
+    // Record fee in ledger as pending — the sweep-fees workflow will batch
+    // this with other pending fees and send them to the fee wallet.
     await base44.asServiceRole.entities.FeeLedger.create({
       fee_source: 'fiat_to_usdc',
       source_did: did,
       original_amount_cents: fiat_cents,
       original_amount_wei: usdcWei.toString(),
       fee_usdc_wei: feeWei.toString(),
-      fee_tx_hash: feeTxHash,
-      swept: !!feeTxHash,
-      swept_at: feeTxHash ? new Date().toISOString() : undefined,
+      swept: false,
     });
 
     return Response.json({
@@ -103,7 +97,6 @@ export default async function (req: Request): Promise<Response> {
       usdc_credited_wei: netWei.toString(),
       fee_wei: feeWei.toString(),
       tx_hash: creditTxHash,
-      fee_tx_hash: feeTxHash,
     });
   } catch (error: any) {
     console.error('execute-fiat-to-usdc error:', error?.message || error);
