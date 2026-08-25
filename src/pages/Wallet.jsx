@@ -11,7 +11,6 @@ import TotalBalanceCard from '@/components/wallet/TotalBalanceCard';
 import AssetList from '@/components/wallet/AssetList';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import SendCryptoModal from '@/components/wallet/SendCryptoModal';
-import ConvertModal from '@/components/wallet/ConvertModal';
 import RefundModal from '@/components/wallet/RefundModal';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
 import BankAccountSection from '@/components/wallet/BankAccountSection';
@@ -48,7 +47,7 @@ export default function Wallet() {
   const [activeTab, setActiveTab] = useState('assets');
   const [showTopUp, setShowTopUp] = useState(false);
   const [showSend, setShowSend] = useState(false);
-  const [showConvert, setShowConvert] = useState(false);
+  // Convert now navigates to the dedicated conversion page
   const [showRefund, setShowRefund] = useState(false);
 
   useSEO({
@@ -101,7 +100,7 @@ export default function Wallet() {
     : null;
 
   const reloadAfterModal = () => {
-    setShowTopUp(false); setShowSend(false); setShowConvert(false); setShowRefund(false);
+    setShowTopUp(false); setShowSend(false); setShowRefund(false);
     loadWallet();
   };
 
@@ -119,7 +118,7 @@ export default function Wallet() {
         onTopUp={() => setShowTopUp(true)}
         onSend={() => setShowSend(true)}
         onReceive={() => navigate('/wallet/receive')}
-        onConvert={() => setShowConvert(true)}
+        onConvert={() => navigate('/wallet/convert')}
         onRefund={() => setShowRefund(true)}
         hasWallet={hasWallet}
         cryptoDisplay={cryptoDisplay}
@@ -249,7 +248,7 @@ export default function Wallet() {
       {/* Modals */}
       {showTopUp && <TopUpModal onClose={reloadAfterModal} />}
       {showSend && <SendCryptoModal wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
-      {showConvert && <ConvertModal balance={balance} wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
+
       {showRefund && <RefundModal balance={balance} topups={walletData?.topups || []} onClose={reloadAfterModal} />}
     </div>
   );

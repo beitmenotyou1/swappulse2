@@ -5,7 +5,8 @@
 // (via the BACKEND_FUNCTION_SECRET header).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { sweepFeesOnChain, getPlatformWallet, getUsdcContract } from '../../shared/walletEscrow.ts';
+import { ethers } from 'npm:ethers@6.13.4';
+import { sweepFeesOnChain, getPlatformWallet, getUsdcContract, getProvider } from '../../shared/walletEscrow.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -80,12 +81,28 @@ export default async function (req: Request): Promise<Response> {
       })
     ));
 
+    // Report platform wallet POL + USDC balances for gasless monitoring.
+    // The admin dashboard uses these to alert when the wallet needs a POL top-up.
+    let polBalance = null;
+    let usdcBalance = null;
+    try {
+      const provider = getProvider();
+      const platformWallet = getPlatformWallet();
+      polBalance = (await provider.getBalance(platformWallet.address)).toString();
+      const usdcContract = getUsdcContract(platformWallet);
+      usdcBalance = (await usdcContract.balanceOf(platformWallet.address)).toString();
+    } catch (e) {
+      console.error('Balance check failed:', (e as any)?.message);
+    }
+
     return Response.json({
       success: true,
       swept_count: unswept.length,
       total_wei: totalWei.toString(),
       tx_hash: txHash,
       swap_tx_hash: swapTxHash || null,
+      platform_pol_wei: polBalance,
+      platform_usdc_wei: usdcBalance,
     });
   } catch (error: any) {
     console.error('sweep-fees error:', error?.message || error);
