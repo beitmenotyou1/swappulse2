@@ -13,6 +13,7 @@ import {
   assessEscrowDispute,
   type RiskAssessment,
 } from '../../shared/escrowRiskAssessment.ts';
+import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
 
 // Count a user's completed trades by checking EscrowTrade records where they
 // are buyer or seller and status is 'released' or 'delivered'.
@@ -77,8 +78,34 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const caller = await base44.auth.me().catch(() => null);
-    const isInternal = req.headers.get('base44-service-authorization') || req.headers.get('Base44-Service-Authorization');
-    if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternal) {
+    // Auth gate: admin/moderator, or a verified internal service call.
+    // Two internal paths are accepted:
+    //   1. A platform-injected Bearer token in 'base44-service-authorization'
+    //      (function-to-function service-role calls) — validated by probing
+    //      the service role, which rejects invalid/expired tokens.
+    //   2. The shared BACKEND_FUNCTION_SECRET in 'x-backend-function-secret'
+    //      (workflow/external triggers) — compared constant-time.
+    // Checking only the header's *presence* would let any caller bypass auth
+    // by sending an empty header, so each path validates the token value.
+    let isInternalCall = false;
+    const svcHeader =
+      req.headers.get('base44-service-authorization') ||
+      req.headers.get('Base44-Service-Authorization') ||
+      '';
+    if (svcHeader.startsWith('Bearer ')) {
+      try {
+        await base44.asServiceRole.entities.Post.list('-created_date', 1);
+        isInternalCall = true;
+      } catch { /* invalid token */ }
+    }
+    if (!isInternalCall) {
+      const expectedSecret = Deno.env.get('BACKEND_FUNCTION_SECRET') || '';
+      const provided = req.headers.get('x-backend-function-secret') || '';
+      if (expectedSecret.length > 0 && provided && timingSafeEqual(provided, expectedSecret)) {
+        isInternalCall = true;
+      }
+    }
+    if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
