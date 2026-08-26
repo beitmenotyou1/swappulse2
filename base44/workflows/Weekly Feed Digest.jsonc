@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "weekly_feed_digest",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "post_digest": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "weekly-feed-digest",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Post weekly digest",
+            "description": "Weekly platform news and community highlights to the feed"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 9 * * 1",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Weekly Feed Digest",
+  "description": "Posts a weekly digest of platform news and community highlights to the SwapPulse feed every Monday at 9am. Skips posting when there's no new activity in the past 7 days."
+}
