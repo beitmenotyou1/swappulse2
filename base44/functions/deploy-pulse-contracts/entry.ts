@@ -61,7 +61,7 @@ export default async function (req: Request): Promise<Response> {
     if (balance === 0n) {
       const explorer = secrets.get('PULSE_EXPLORER_URL') || '';
       return Response.json(
-        { error: `Deployer wallet ${wallet.address} has no $PULSE for gas. Send PLS to this address first${explorer ? ` — ${explorer}/address/${wallet.address}` : ''}.` },
+        { error: `Deployer wallet ${wallet.address} has no native PLS for gas. PulseToken (ERC-20) is NOT the same as native PLS — you need native PLS (the chain's gas coin) to deploy. Send PLS to this address first${explorer ? ` — ${explorer}/address/${wallet.address}` : ''}.` },
         { status: 400 },
       );
     }

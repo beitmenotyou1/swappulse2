@@ -67,7 +67,7 @@ export default async function (req: Request): Promise<Response> {
     const balance = await provider.getBalance(wallet.address);
     if (balance === 0n) {
       return Response.json(
-        { error: `Deployer wallet ${wallet.address} has no native gas tokens on ${chain}. Send ${chain === 'pulse' ? 'PLS' : 'POL'} to this address first${explorerUrl ? ` — ${explorerUrl}/address/${wallet.address}` : ''}.` },
+        { error: `Deployer wallet ${wallet.address} has no native ${chain === 'pulse' ? 'PLS' : 'POL'} for gas. PulseToken (ERC-20) is NOT the same as native gas — you need ${chain === 'pulse' ? 'PLS' : 'POL'} (the chain's gas coin) to deploy. Send it to this address first${explorerUrl ? ` — ${explorerUrl}/address/${wallet.address}` : ''}.` },
         { status: 400 },
       );
     }
