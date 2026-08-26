@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, RefreshCw, Filter } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Filter, Brain, Flag, Scale, Ban, Bot } from 'lucide-react';
 import KpiStrip from '@/components/moderation/KpiStrip';
 import FilterSidebar from '@/components/moderation/FilterSidebar';
 import FlaggedPostsTable from '@/components/moderation/FlaggedPostsTable';
@@ -159,18 +159,18 @@ export default function Moderation() {
       <div className="mx-auto max-w-7xl space-y-4 p-4">
         <div className="flex gap-2 border-b border-border">
           {[
-            ['review', 'AI Review Queue'],
-            ['posts', t('moderation.tab.posts')],
-            ['disputes', t('moderation.tab.disputes')],
-            ['enforcement', t('moderation.tab.enforcement')],
-            ['bots', t('moderation.tab.bots')],
-          ].map(([key, label]) => (
+            ['review', 'AI Review Queue', Brain],
+            ['posts', t('moderation.tab.posts'), Flag],
+            ['disputes', t('moderation.tab.disputes'), Scale],
+            ['enforcement', t('moderation.tab.enforcement'), Ban],
+            ['bots', t('moderation.tab.bots'), Bot],
+          ].map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`relative px-3 py-2.5 text-sm font-semibold transition-colors ${tab === key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+              className={`relative flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-sm font-semibold transition-colors ${tab === key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
             >
-              {label}
+              <Icon className="h-4 w-4" /> {label}
               {tab === key && <span className="absolute bottom-0 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-primary" />}
             </button>
           ))}

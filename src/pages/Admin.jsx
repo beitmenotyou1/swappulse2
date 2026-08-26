@@ -25,10 +25,19 @@ import TrustTierSection from '@/components/admin/TrustTierSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import DeployContractsSection from '@/components/admin/DeployContractsSection';
 import FeeRevenueSection from '@/components/admin/FeeRevenueSection';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldAlert, LayoutDashboard, Boxes, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
+
+const TABS = [
+  { key: 'overview', label: 'Overview', Icon: LayoutDashboard },
+  { key: 'blockchain', label: 'Blockchain', Icon: Boxes },
+  { key: 'identity', label: 'Identity & Federation', Icon: Network },
+  { key: 'platform', label: 'Platform & Content', Icon: Globe2 },
+  { key: 'system', label: 'System & Infrastructure', Icon: Server },
+  { key: 'security', label: 'Users & Security', Icon: ShieldCheck },
+];
 
 export default function Admin() {
   const t = useT();
@@ -41,6 +50,7 @@ export default function Admin() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState('overview');
 
   const load = async () => {
     setLoading(true);
@@ -76,40 +86,76 @@ export default function Admin() {
   return (
     <>
       <PageHeader title={t('admin.title')} subtitle={t('admin.subtitle')} />
+      <div className="flex overflow-x-auto border-b border-border">
+        {TABS.map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`relative flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-colors ${tab === key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+          >
+            <Icon className="h-4 w-4" /> {label}
+            {tab === key && <span className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-primary" />}
+          </button>
+        ))}
+      </div>
       <div className="space-y-6 p-4">
-        {loading && (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {data && (
+        {tab === 'overview' && (
           <>
-            <HealthSection health={data.health} generatedAt={data.generated_at} onRefresh={load} />
-            <MetricsSection counts={data.counts} />
+            {loading && (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            {data && (
+              <>
+                <HealthSection health={data.health} generatedAt={data.generated_at} onRefresh={load} />
+                <MetricsSection counts={data.counts} />
+                <DsarSummaryCard />
+              </>
+            )}
           </>
         )}
-        <DsarSummaryCard />
-        <InviteCodesSection />
-        <SiteWideStarterPackSection />
-        <EmailTestSection />
-        <ServicesSection />
-        <MaintenanceSection />
-        <BackfillSection />
-        <ProvisionIdentitiesSection />
-        <ConsolidateIdentitySection />
-        <FederationDiagnosticsSection />
-        <SyncProfilesSection />
-        <IncidentsSection />
-        <DataSubjectRequestsSection />
-        <BotProtectionLogSection />
-        <StandardSiteSection />
-        <HelpPromoSection />
-        <TranslationSyncSection />
-        <TrustTierSection />
-        <DeployContractsSection />
-        <FeeRevenueSection />
-        <SeoAuditSection />
+        {tab === 'blockchain' && (
+          <>
+            <DeployContractsSection />
+            <FeeRevenueSection />
+            <TrustTierSection />
+          </>
+        )}
+        {tab === 'identity' && (
+          <>
+            <ProvisionIdentitiesSection />
+            <ConsolidateIdentitySection />
+            <FederationDiagnosticsSection />
+            <SyncProfilesSection />
+            <BackfillSection />
+          </>
+        )}
+        {tab === 'platform' && (
+          <>
+            <SiteWideStarterPackSection />
+            <StandardSiteSection />
+            <HelpPromoSection />
+            <TranslationSyncSection />
+          </>
+        )}
+        {tab === 'system' && (
+          <>
+            <ServicesSection />
+            <MaintenanceSection />
+            <IncidentsSection />
+            <SeoAuditSection />
+          </>
+        )}
+        {tab === 'security' && (
+          <>
+            <InviteCodesSection />
+            <BotProtectionLogSection />
+            <DataSubjectRequestsSection />
+            <EmailTestSection />
+          </>
+        )}
       </div>
       <GuideFooterLink slug="admin" />
     </>
