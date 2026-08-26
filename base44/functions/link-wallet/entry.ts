@@ -12,7 +12,7 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { address, signature, message, nonce, did } = body;
+    const { address, signature, message, nonce, did, hardware, wallet_type } = body;
 
     if (!address || !signature || !message || !did) {
       return Response.json({ error: 'Missing address, signature, message, or did' }, { status: 400 });
@@ -55,9 +55,34 @@ export default async function(req: Request): Promise<Response> {
       chain_id: '137',
       nonce,
       signature,
+      hardware: !!hardware,
+      wallet_type: wallet_type || 'extension',
       linked_at: new Date().toISOString(),
       active: true,
     });
+
+    // Auto-disable the receive allowlist strict mode and set the default
+    // wallet to the linked wallet, so the collector's external wallet handles
+    // all sends and receives by default.
+    try {
+      const settingsList = await base44.entities.SettingsConfig.filter({ did }, '-updated_date', 1).catch(() => []);
+      if (settingsList.length) {
+        const config = settingsList[0].config || {};
+        const walletConfig = config.wallet || {};
+        await base44.entities.SettingsConfig.update(settingsList[0].id, {
+          config: { ...config, wallet: { ...walletConfig, receive_strict_mode: false, default_wallet: 'linked' } },
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        await base44.entities.SettingsConfig.create({
+          did,
+          config: { wallet: { receive_strict_mode: false, default_wallet: 'linked' } },
+          updated_at: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error('link-wallet: settings update failed:', (e as any)?.message || e);
+    }
 
     return Response.json({ link });
   } catch (error) {

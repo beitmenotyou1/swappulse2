@@ -6,7 +6,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
-import { encryptWithServerKey } from '../../shared/walletCrypto.ts';
+import { encryptWithServerKey, decryptMnemonic } from '../../shared/walletCrypto.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -24,6 +24,42 @@ export default async function (req: Request): Promise<Response> {
         error: 'You already have a custodial wallet',
         wallet: { address: existing[0].wallet_address, id: existing[0].id },
       }, { status: 400 });
+    }
+
+    // Check for a pre-generated inactive wallet (auto-created at registration).
+    // If one exists, activate it instead of generating a new one — this avoids
+    // duplicate-wallet errors and preserves the seed phrase the user already has.
+    const preGenerated = await base44.entities.CustodialWallet.filter({ did, active: false });
+    if (preGenerated.length) {
+      const pgWallet = preGenerated[0];
+      await base44.entities.CustodialWallet.update(pgWallet.id, { active: true });
+
+      // Deactivate any existing active wallet links for this user
+      const existingLinks = await base44.entities.WalletLink.filter({ did });
+      for (const link of existingLinks) {
+        if (link.active) {
+          await base44.entities.WalletLink.update(link.id, { active: false });
+        }
+      }
+      await base44.entities.WalletLink.create({
+        wallet_address: pgWallet.wallet_address,
+        did,
+        handle: user.bsky_handle || user.username || '',
+        chain_id: '137',
+        nonce: 'custodial',
+        signature: 'custodial',
+        wallet_type: 'custodial',
+        linked_at: new Date().toISOString(),
+        active: true,
+      });
+
+      // Decrypt the mnemonic to show once
+      const mnemonic = await decryptMnemonic(pgWallet);
+
+      return Response.json({
+        wallet: { address: pgWallet.wallet_address, id: pgWallet.id },
+        mnemonic,
+      });
     }
 
     // Generate a new wallet with 256-bit entropy (24-word mnemonic)

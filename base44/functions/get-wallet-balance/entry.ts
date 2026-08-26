@@ -22,6 +22,14 @@ export default async function (req: Request): Promise<Response> {
       has_pin: activeWallet.wallet_record.has_pin,
     } : null;
 
+    // Read the user's default wallet preference (custodial vs linked)
+    const settingsList = await base44.entities.SettingsConfig.filter({ did }, '-updated_date', 1).catch(() => []);
+    const defaultWalletPref = settingsList[0]?.config?.wallet?.default_wallet || 'custodial';
+
+    // Get the linked wallet (if any)
+    const links = await base44.entities.WalletLink.filter({ did, active: true }).catch(() => []);
+    const linkedWallet = links[0] || null;
+
     // Get multi-chain wallet (has Solana/Bitcoin addresses in addition to EVM)
     const multiWallets = await base44.entities.MultiChainWallet
       .filter({ did, active: true }, '-created_date', 1).catch(() => []);
@@ -63,19 +71,28 @@ export default async function (req: Request): Promise<Response> {
       .filter({ did, active: true }, '-created_date', 1).catch(() => []);
     const bankAccount = bankAccounts[0] || null;
 
-    // Get on-chain USDC balance from the custodial wallet
+    // Get on-chain USDC balance from the default wallet (custodial or linked)
     let onChainUsdcWei = '0';
-    if (custodialWallet) {
+    const defaultWalletAddress = (defaultWalletPref === 'linked' && linkedWallet)
+      ? linkedWallet.wallet_address
+      : custodialWallet?.wallet_address;
+    if (defaultWalletAddress) {
       try {
         const { getProvider, getUsdcContract } = await import('../../shared/walletEscrow.ts');
         const provider = getProvider();
         const contract = getUsdcContract(provider);
-        const onChainBalance = await contract.balanceOf(custodialWallet.wallet_address);
+        const onChainBalance = await contract.balanceOf(defaultWalletAddress);
         onChainUsdcWei = onChainBalance.toString();
       } catch {}
     }
 
     return Response.json({
+      default_wallet: defaultWalletPref,
+      linked_wallet: linkedWallet ? {
+        address: linkedWallet.wallet_address,
+        hardware: linkedWallet.hardware,
+        wallet_type: linkedWallet.wallet_type,
+      } : null,
       balance: balance ? {
         fiat_cents: balance.fiat_cents || 0,
         usdc_wei: balance.usdc_wei || '0',

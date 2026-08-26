@@ -5,7 +5,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import {
   getOrCreateWalletBalance, updateBalance, getUsdcContract, getProvider,
-  calculateFee, PLATFORM_FEE_WALLET,
+  calculateFee, PLATFORM_FEE_WALLET, USDC_CONTRACT_ADDRESS,
 } from '../../shared/walletEscrow.ts';
 import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
 import { verifySignedChallenge } from '../../shared/webauthn.ts';
@@ -28,6 +28,61 @@ export default async function (req: Request): Promise<Response> {
     }
     if (!usdc_wei || BigInt(usdc_wei) <= 0n) {
       return Response.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    // Read the user's default wallet preference
+    const settingsList = await base44.asServiceRole.entities.SettingsConfig
+      .filter({ did }, '-updated_date', 1).catch(() => []);
+    const defaultWalletPref = settingsList[0]?.config?.wallet?.default_wallet || 'custodial';
+
+    // If the default wallet is a linked (external/hardware) wallet, the send
+    // must be signed client-side (MetaMask/Ledger) — we can't decrypt a private
+    // key we don't hold. Return the transaction details for the frontend to sign.
+    if (defaultWalletPref === 'linked') {
+      const links = await base44.asServiceRole.entities.WalletLink.filter({ did, active: true }).catch(() => []);
+      if (!links.length) return Response.json({ error: 'No linked wallet found' }, { status: 400 });
+      const linkedWallet = links[0];
+
+      // If the client already signed and broadcast, record the transfer.
+      if (body.client_tx_hash) {
+        const amountWei = BigInt(usdc_wei);
+        const feeWei = calculateFee(amountWei);
+        await base44.entities.CryptoTransfer.create({
+          did,
+          transfer_type: 'send',
+          from_address: linkedWallet.wallet_address,
+          to_address,
+          amount_wei: amountWei.toString(),
+          fee_wei: feeWei.toString(),
+          tx_hash: body.client_tx_hash,
+          fee_tx_hash: body.client_fee_tx_hash || '',
+          status: 'confirmed',
+          description: `Sent USDC to ${to_address.slice(0, 8)}…${to_address.slice(-6)}`,
+        });
+        await base44.asServiceRole.entities.FeeLedger.create({
+          fee_source: 'send',
+          source_did: did,
+          original_amount_wei: amountWei.toString(),
+          fee_usdc_wei: feeWei.toString(),
+          fee_tx_hash: body.client_fee_tx_hash || '',
+          swept: !!body.client_fee_tx_hash,
+          swept_at: body.client_fee_tx_hash ? new Date().toISOString() : undefined,
+        });
+        return Response.json({ success: true, tx_hash: body.client_tx_hash, fee_tx_hash: body.client_fee_tx_hash || '' });
+      }
+
+      // Return the transaction details for client-side signing
+      return Response.json({
+        requiresClientSign: true,
+        from_address: linkedWallet.wallet_address,
+        to_address,
+        amount_wei: usdc_wei,
+        fee_wei: calculateFee(BigInt(usdc_wei)).toString(),
+        usdc_contract_address: USDC_CONTRACT_ADDRESS,
+        platform_fee_wallet: PLATFORM_FEE_WALLET,
+        hardware: linkedWallet.hardware,
+        wallet_type: linkedWallet.wallet_type,
+      });
     }
 
     // Get the user's custodial wallet

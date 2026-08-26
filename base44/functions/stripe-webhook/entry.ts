@@ -137,6 +137,24 @@ export default async function(req) {
                   console.error('Fee recording failed:', (e as any)?.message);
                 }
 
+                // Auto-mint welcome NFTs on the user's first successful top-up.
+                // Mints the soulbound username NFT and a fixed platform welcome
+                // card NFT into the collector's wallet. Only fires once (the
+                // username NFT check in autoMint prevents re-runs).
+                try {
+                  const allTopups = await svc.entities.FiatTopUp
+                    .filter({ did }, '-created_date', 500).catch(() => []);
+                  const succeededCount = allTopups.filter(t => t.status === 'succeeded').length;
+                  if (succeededCount <= 1) {
+                    const { mintWelcomeNfts } = await import('../../shared/autoMint.ts');
+                    const users = await svc.entities.User.filter({ did }).catch(() => []);
+                    const handle = users[0]?.bsky_handle || users[0]?.username || '';
+                    await mintWelcomeNfts(svc, did, walletAddress, handle, req.url);
+                  }
+                } catch (e) {
+                  console.error('autoMint on top-up failed:', (e as any)?.message || e);
+                }
+
                 // Send top-up complete notification (in-app + push)
                 try {
                   const { dispatchNotification } = await import('../../shared/notificationDispatcher.ts');

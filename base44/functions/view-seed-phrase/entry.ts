@@ -9,7 +9,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 import { verifySignedChallenge, getRpConfig } from '../../shared/webauthn.ts';
-import { decryptMnemonic, verifyPin } from '../../shared/walletCrypto.ts';
+import { decryptMnemonic, verifyPin, timingSafeEqual } from '../../shared/walletCrypto.ts';
+import { generateTotp } from '../../shared/totp.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -86,6 +87,34 @@ export default async function (req: Request): Promise<Response> {
       if (!pin) return Response.json({ error: 'PIN required' }, { status: 400 });
       const valid = await verifyPin(wallet, pin);
       if (!valid) return Response.json({ error: 'Incorrect PIN' }, { status: 403 });
+    } else if (unlockCredential.type === 'email_code') {
+      const { code } = unlockCredential;
+      if (!code) return Response.json({ error: 'Verification code required' }, { status: 400 });
+      const codeRecords = await base44.entities.SeedPhraseCode
+        .filter({ did, used: false }, '-created_at', 5).catch(() => []);
+      const now = Date.now();
+      const validCode = codeRecords.find(c => new Date(c.expires_at).getTime() > now);
+      if (!validCode) {
+        return Response.json({ error: 'Code expired or not found. Request a new code.' }, { status: 403 });
+      }
+      const providedHashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
+      const providedHash = Array.from(new Uint8Array(providedHashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      if (!timingSafeEqual(providedHash, validCode.code_hash)) {
+        return Response.json({ error: 'Invalid code' }, { status: 403 });
+      }
+      await base44.entities.SeedPhraseCode.update(validCode.id, { used: true, used_at: new Date().toISOString() });
+    } else if (unlockCredential.type === 'totp') {
+      const { code } = unlockCredential;
+      if (!code) return Response.json({ error: 'Authenticator code required' }, { status: 400 });
+      const users = await base44.asServiceRole.entities.User.filter({ id: user.id }).catch(() => []);
+      const fullUser = users[0];
+      if (!fullUser?.two_factor_secret) {
+        return Response.json({ error: 'Authenticator app not set up. Enable 2FA in Settings first.' }, { status: 400 });
+      }
+      const expected = await generateTotp(fullUser.two_factor_secret);
+      if (!timingSafeEqual(code, expected)) {
+        return Response.json({ error: 'Invalid authenticator code' }, { status: 403 });
+      }
     } else {
       return Response.json({ error: 'Invalid unlock credential type' }, { status: 400 });
     }
