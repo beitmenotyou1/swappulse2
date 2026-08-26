@@ -75,3 +75,13 @@ export function parsePulseMintEvent(contract: ethers.Contract, receipt: any): { 
     to: decoded.args.to,
   };
 }
+
+export function getPulseAnchorContractAddress(): string | null {
+  return secrets.get('CARD_METADATA_ANCHOR_CONTRACT') || null;
+}
+
+export function getPulseAnchorContract(signerOrProvider: any): ethers.Contract {
+  const address = getPulseAnchorContractAddress();
+  if (!address) throw new Error('Card metadata anchor contract not deployed. Run deploy-card-metadata-anchor first and set CARD_METADATA_ANCHOR_CONTRACT secret.');
+  return new ethers.Contract(address, CARD_METADATA_ANCHOR_ABI, signerOrProvider);
+}

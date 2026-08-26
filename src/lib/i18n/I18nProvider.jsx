@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { translations, LOCALE_TO_TCGDEX, SUPPORTED_LOCALES } from './translations';
 import { setCurrentTcgdexLang } from './currentLang';
 import { detectLocaleFromGeo } from './geoLocale';
+import { getCardLanguageOverride } from '@/lib/cardLanguage';
 
 const I18nContext = createContext({ locale: 'en-GB', t: (k) => k, setLocale: () => {} });
 
@@ -81,7 +82,7 @@ export function I18nProvider({ children }) {
 
   // Sync module-level TCGDex lang whenever locale changes
   useEffect(() => {
-    setCurrentTcgdexLang(LOCALE_TO_TCGDEX[locale] || 'en');
+    setCurrentTcgdexLang(getCardLanguageOverride() || LOCALE_TO_TCGDEX[locale] || 'en');
   }, [locale]);
 
   // Keep <html lang> in sync with the active locale so search engines and
@@ -132,7 +133,7 @@ export function I18nProvider({ children }) {
         if (detected && SUPPORTED_LOCALES.includes(detected)) {
           if (detected !== locale) {
             setLocaleState(detected);
-            setCurrentTcgdexLang(LOCALE_TO_TCGDEX[detected] || 'en');
+            setCurrentTcgdexLang(getCardLanguageOverride() || LOCALE_TO_TCGDEX[detected] || 'en');
           }
           // Save even when the detected locale matches the current one, so
           // detection doesn't re-run on every visit for users in en-GB regions.

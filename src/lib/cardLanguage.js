@@ -47,6 +47,16 @@ function setStored(lang) {
 }
 
 /**
+ * Returns the user's explicit card language override, or null if none is set
+ * (meaning the auto-detected UI locale mapping should be used).
+ */
+export function getCardLanguageOverride() {
+  const stored = getStored();
+  if (stored && CARD_LANGUAGES.some((l) => l.code === stored)) return stored;
+  return null;
+}
+
+/**
  * Get the current card data language. Returns the override if set, otherwise
  * falls back to the auto-detected TCGDex language from the UI locale.
  */
