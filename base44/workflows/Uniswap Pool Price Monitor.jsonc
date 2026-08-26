@@ -1,0 +1,48 @@
+{
+  "name": "Uniswap Pool Price Monitor",
+  "description": "Every 5 minutes, reads the live price of the SwapPulse $PULSE/USDC Uniswap v4 pool on Polygon from the PoolManager and emails admins if the price drifts beyond 25% of the $0.001/PULSE target or the liquidity position falls out of range. Alerts are throttled to one per 24h.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "uniswap_pool_price_monitor",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check_pool": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "get-uniswap-v4-pool-price",
+            "args": {
+              "alert": true,
+              "threshold": 0.25
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Check PULSE/USDC pool price",
+            "description": "Reads the v4 pool price on Polygon and alerts admins on drift or out-of-range"
+          }
+        }
+      }
+    ]
+  }
+}
