@@ -18,6 +18,15 @@ function detectPlatform(url) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    // Verify caller authentication — this function queries and updates
+    // VoiceSpace records via the service role, so it must not be callable
+    // by unauthenticated strangers.
+    try {
+      const me = await base44.auth.me();
+      if (!me?.id) throw new Error('unauthenticated');
+    } catch {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
     const svc = base44.asServiceRole;
     const live = [];
     const now = Date.now();
