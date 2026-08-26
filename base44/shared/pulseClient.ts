@@ -11,6 +11,7 @@ import {
   PULSE_CARD_ABI,
   PULSE_BRIDGE_ABI,
 } from './pulseCompiledArtifacts.ts';
+import { CARD_METADATA_ANCHOR_ABI } from './cardMetadataAnchorArtifacts.ts';
 
 export function getPulseProvider(): ethers.JsonRpcProvider {
   const rpcUrl = secrets.get('PULSE_RPC_URL');
