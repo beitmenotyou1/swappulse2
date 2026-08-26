@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { X, Loader2, Send, Copy, AtSign, Search } from 'lucide-react';
+import { X, Loader2, Send, Copy, AtSign, Search, Coins, Zap } from 'lucide-react';
 import { ethers } from 'ethers';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import UnlockWalletModal from '@/components/blockchain/UnlockWalletModal';
 
-export default function SendCryptoModal({ wallet, onClose }) {
+// Send modal supports two tokens:
+// - USDC (ERC-20 on Polygon, 6 decimals)
+// - PULSE (native on PulseChain, 18 decimals)
+export default function SendCryptoModal({ wallet, token: initialToken = 'usdc', pulseBalance = '0', onClose }) {
   const { toast } = useToast();
+  const [token, setToken] = useState(initialToken);
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,13 +18,23 @@ export default function SendCryptoModal({ wallet, onClose }) {
   const [usernameInput, setUsernameInput] = useState('');
   const [resolving, setResolving] = useState(false);
 
+  const isPulse = token === 'pulse';
+  const decimals = isPulse ? 18 : 6;
+  const tokenSymbol = isPulse ? 'PULSE' : 'USDC';
+
+  // Available balance for display
+  const pulseCoins = Number(BigInt(pulseBalance)) / 1e18;
+  const availableBalance = isPulse
+    ? pulseCoins.toLocaleString('en-US', { maximumFractionDigits: 6 })
+    : '—';
+
   const resolveUsername = async () => {
     if (!usernameInput.trim()) return;
     setResolving(true);
     try {
       const res = await base44.functions.invoke('resolve-username-address', {
         username: usernameInput.replace(/^@/, ''),
-        chain: 'polygon',
+        chain: isPulse ? 'pulse' : 'polygon',
       });
       if (res.data?.error) {
         toast({ title: 'Resolution failed', description: res.data.error, variant: 'destructive' });
@@ -35,21 +49,20 @@ export default function SendCryptoModal({ wallet, onClose }) {
     }
   };
 
-  const usdcBalance = 0; // will be passed from parent or fetched
-  const fee = amount ? (parseFloat(amount) * 0.02).toFixed(2) : '0.00';
-  const total = amount ? (parseFloat(amount) * 1.02).toFixed(2) : '0.00';
+  const fee = amount ? (parseFloat(amount) * 0.02).toFixed(isPulse ? 6 : 2) : '0';
+  const total = amount ? (parseFloat(amount) * 1.02).toFixed(isPulse ? 6 : 2) : '0';
 
   const handleSend = async (unlockCredential) => {
-    const usdcWei = BigInt(Math.round(parseFloat(amount) * 1_000_000)).toString();
-    if (!usdcWei || BigInt(usdcWei) <= 0n) return;
+    const amountWei = BigInt(Math.round(parseFloat(amount) * Math.pow(10, decimals))).toString();
+    if (!amountWei || BigInt(amountWei) <= 0n) return;
 
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('send-crypto', {
-        to_address: toAddress,
-        usdc_wei: usdcWei,
-        unlockCredential,
-      });
+      const payload = isPulse
+        ? { to_address: toAddress, token: 'pulse', amount_wei: amountWei, unlockCredential }
+        : { to_address: toAddress, usdc_wei: amountWei, unlockCredential };
+
+      const res = await base44.functions.invoke('send-crypto', payload);
       if (res.data?.requiresUnlock) {
         setUnlockState({ hasPasskey: res.data.hasPasskey, hasPin: res.data.hasPin });
         setLoading(false);
@@ -69,13 +82,11 @@ export default function SendCryptoModal({ wallet, onClose }) {
             return;
           }
           const iface = new ethers.Interface(['function transfer(address to, uint256 amount) returns (bool)']);
-          // Send USDC to recipient
           const transferData = iface.encodeFunctionData('transfer', [toAddress, BigInt(res.data.amount_wei)]);
           const txHash = await window.ethereum.request({
             method: 'eth_sendTransaction',
             params: [{ from: res.data.from_address, to: res.data.usdc_contract_address, data: transferData }],
           });
-          // Send 2% fee to platform fee wallet
           let feeTxHash = '';
           try {
             const feeData = iface.encodeFunctionData('transfer', [res.data.platform_fee_wallet, BigInt(res.data.fee_wei)]);
@@ -86,7 +97,6 @@ export default function SendCryptoModal({ wallet, onClose }) {
           } catch (e) {
             console.error('Fee send failed:', e);
           }
-          // Record the transfer
           const recordRes = await base44.functions.invoke('send-crypto', {
             to_address: toAddress,
             usdc_wei: res.data.amount_wei,
@@ -97,7 +107,7 @@ export default function SendCryptoModal({ wallet, onClose }) {
             toast({ title: 'Recording failed', description: recordRes.data.error, variant: 'destructive' });
             return;
           }
-          toast({ title: 'USDC sent!', description: 'Transaction confirmed on Polygon.' });
+          toast({ title: `${tokenSymbol} sent!`, description: 'Transaction confirmed.' });
           onClose();
         } catch (e) {
           toast({ title: 'Send failed', description: e.message, variant: 'destructive' });
@@ -110,7 +120,7 @@ export default function SendCryptoModal({ wallet, onClose }) {
         toast({ title: 'Send failed', description: res.data.error, variant: 'destructive' });
         return;
       }
-      toast({ title: 'USDC sent!', description: 'Transaction confirmed on Polygon.' });
+      toast({ title: `${tokenSymbol} sent!`, description: 'Transaction confirmed.' });
       onClose();
     } catch (e) {
       toast({ title: 'Send failed', description: e.message, variant: 'destructive' });
@@ -129,9 +139,38 @@ export default function SendCryptoModal({ wallet, onClose }) {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-elevated" onClick={(e) => e.stopPropagation()}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold">Send USDC</h2>
+            <h2 className="text-lg font-bold">Send {tokenSymbol}</h2>
             <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
           </div>
+
+          {/* Token selector */}
+          <div className="mb-4 flex gap-1 rounded-xl border border-border bg-secondary p-1">
+            <button
+              onClick={() => { setToken('usdc'); setAmount(''); }}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                token === 'usdc' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Coins className="h-3.5 w-3.5" />
+              USDC
+            </button>
+            <button
+              onClick={() => { setToken('pulse'); setAmount(''); }}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                token === 'pulse' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              PULSE
+            </button>
+          </div>
+
+          {isPulse && (
+            <div className="mb-3 flex items-center justify-between rounded-lg bg-accent/5 px-3 py-2 text-xs">
+              <span className="text-muted-foreground">Available</span>
+              <span className="font-bold text-accent">{availableBalance} PULSE</span>
+            </div>
+          )}
 
           <div className="space-y-4">
             {/* Username resolution */}
@@ -168,15 +207,15 @@ export default function SendCryptoModal({ wallet, onClose }) {
                 type="text"
                 value={toAddress}
                 onChange={(e) => setToAddress(e.target.value)}
-                placeholder="0x… or resolve a @username above"
+                placeholder={`0x… or resolve a @username above`}
                 className="w-full rounded-xl border border-border bg-secondary px-3 py-3 text-sm font-mono outline-none focus:border-primary"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Amount (USDC)</label>
+              <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">Amount ({tokenSymbol})</label>
               <input
                 type="number"
-                step="0.01"
+                step={isPulse ? "0.000001" : "0.01"}
                 min="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -186,9 +225,9 @@ export default function SendCryptoModal({ wallet, onClose }) {
             </div>
             {amount && parseFloat(amount) > 0 && (
               <div className="rounded-lg bg-secondary p-3 text-xs">
-                <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><span className="font-semibold">{parseFloat(amount).toFixed(2)} USDC</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Fee (2%)</span><span className="font-semibold">{fee} USDC</span></div>
-                <div className="mt-1 flex justify-between border-t border-border pt-1"><span className="font-bold">Total</span><span className="font-bold">{total} USDC</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><span className="font-semibold">{parseFloat(amount).toFixed(isPulse ? 6 : 2)} {tokenSymbol}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Fee (2%)</span><span className="font-semibold">{fee} {tokenSymbol}</span></div>
+                <div className="mt-1 flex justify-between border-t border-border pt-1"><span className="font-bold">Total</span><span className="font-bold">{total} {tokenSymbol}</span></div>
               </div>
             )}
             <button
@@ -197,7 +236,7 @@ export default function SendCryptoModal({ wallet, onClose }) {
               className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {loading ? 'Sending…' : 'Send USDC'}
+              {loading ? 'Sending…' : `Send ${tokenSymbol}`}
             </button>
           </div>
         </div>

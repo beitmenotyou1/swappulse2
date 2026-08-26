@@ -1,12 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Rocket, Loader2, CheckCircle2, AlertCircle, ExternalLink, Copy, Boxes, Link2 } from 'lucide-react';
 
 // Admin-only: deploys all SwapPulse smart contracts across Polygon and
-// PulseChain. Each deployment card calls its backend function and displays
-// the returned contract addresses with copy buttons and the secret name to
-// set in Settings.
+// PulseChain. On mount, fetches the currently configured contract addresses
+// from secrets (via get-contract-addresses) so already-deployed contracts
+// are displayed with their addresses instead of prompting for redeployment.
 export default function DeployContractsSection() {
+  const [deployed, setDeployed] = useState(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+
+  const fetchAddresses = async () => {
+    try {
+      const res = await base44.functions.invoke('get-contract-addresses', {});
+      setDeployed(res.data);
+    } catch (e) {
+      console.error('Failed to fetch contract addresses:', e);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  useEffect(() => { fetchAddresses(); }, []);
+
+  if (loadingAddresses) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-card p-5">
@@ -15,7 +39,7 @@ export default function DeployContractsSection() {
           <h3 className="font-bold">Contract Deployment</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Deploy SwapPulse smart contracts across Polygon and PulseChain. After each deployment, copy the returned addresses into the corresponding secrets.
+          Deploy SwapPulse smart contracts across Polygon and PulseChain. Already-deployed contracts are shown with their addresses. Deploy only the contracts that haven't been deployed yet.
         </p>
       </div>
 
@@ -29,6 +53,11 @@ export default function DeployContractsSection() {
           { label: 'Username contract', address: r.usernameContract, secret: 'POLYGON_USERNAME_CONTRACT', explorerUrl: `${r.explorerUrl || 'https://amoy.polygonscan.com'}/address/${r.usernameContract}` },
           { label: 'Card NFT contract', address: r.cardContract, secret: 'POLYGON_CARD_CONTRACT', explorerUrl: `${r.explorerUrl || 'https://amoy.polygonscan.com'}/address/${r.cardContract}` },
         ]}
+        deployedAddresses={[
+          { label: 'Username contract', address: deployed?.polygon?.username, secret: 'POLYGON_USERNAME_CONTRACT', explorerUrl: deployed?.polygon?.explorerUrl ? `${deployed.polygon.explorerUrl}/address/${deployed.polygon.username}` : '' },
+          { label: 'Card NFT contract', address: deployed?.polygon?.card, secret: 'POLYGON_CARD_CONTRACT', explorerUrl: deployed?.polygon?.explorerUrl ? `${deployed.polygon.explorerUrl}/address/${deployed.polygon.card}` : '' },
+        ]}
+        onDeployed={fetchAddresses}
       />
 
       <DeployCard
@@ -42,6 +71,12 @@ export default function DeployContractsSection() {
           { label: 'Card NFT V2', address: r.contracts?.SwapPulseCardNFTV2, secret: 'PULSE_SPCD_CONTRACT', explorerUrl: `${r.chain?.explorerUrl || ''}/address/${r.contracts?.SwapPulseCardNFTV2}` },
           { label: 'PulseChain Bridge', address: r.contracts?.PulseChainBridge, secret: 'PULSE_BRIDGE_CONTRACT', explorerUrl: `${r.chain?.explorerUrl || ''}/address/${r.contracts?.PulseChainBridge}` },
         ]}
+        deployedAddresses={[
+          { label: 'Username V2', address: deployed?.pulse?.username, secret: 'PULSE_SPUN_CONTRACT', explorerUrl: deployed?.pulse?.explorerUrl ? `${deployed.pulse.explorerUrl}/address/${deployed.pulse.username}` : '' },
+          { label: 'Card NFT V2', address: deployed?.pulse?.card, secret: 'PULSE_SPCD_CONTRACT', explorerUrl: deployed?.pulse?.explorerUrl ? `${deployed.pulse.explorerUrl}/address/${deployed.pulse.card}` : '' },
+          { label: 'PulseChain Bridge', address: deployed?.pulse?.bridge, secret: 'PULSE_BRIDGE_CONTRACT', explorerUrl: deployed?.pulse?.explorerUrl ? `${deployed.pulse.explorerUrl}/address/${deployed.pulse.bridge}` : '' },
+        ]}
+        onDeployed={fetchAddresses}
       />
 
       <DeployCard
@@ -53,16 +88,34 @@ export default function DeployContractsSection() {
         extractResults={(r) => [
           { label: 'PolygonBridge', address: r.address, secret: 'POLYGON_BRIDGE_CONTRACT', explorerUrl: r.polygonExplorer },
         ]}
+        deployedAddresses={[
+          { label: 'PolygonBridge', address: deployed?.polygon?.bridge, secret: 'POLYGON_BRIDGE_CONTRACT', explorerUrl: deployed?.polygon?.explorerUrl ? `${deployed.polygon.explorerUrl}/address/${deployed.polygon.bridge}` : '' },
+        ]}
+        onDeployed={fetchAddresses}
       />
     </div>
   );
 }
 
-function DeployCard({ title, icon: Icon, description, functionName, confirmMessage, extractResults }) {
+function DeployCard({ title, icon: Icon, description, functionName, confirmMessage, extractResults, deployedAddresses = [], onDeployed }) {
   const [deploying, setDeploying] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
+
+  // Determine which addresses are already deployed (from secrets)
+  const alreadyDeployed = deployedAddresses.filter((a) => a.address);
+
+  // Determine which addresses are newly deployed (from the deploy result)
+  const newResults = result ? extractResults(result).filter((r) => r.address) : [];
+
+  // All addresses to display: newly deployed take priority, then already-deployed
+  const allAddresses = [...newResults, ...alreadyDeployed.filter(
+    (a) => !newResults.some((r) => r.label === a.label)
+  )];
+
+  const nextSteps = result?.nextSteps || (result?.instructions ? [result.instructions] : []);
+  const isFullyDeployed = alreadyDeployed.length > 0 && alreadyDeployed.every((a) => a.address);
 
   const deploy = async () => {
     if (!window.confirm(confirmMessage)) return;
@@ -72,6 +125,7 @@ function DeployCard({ title, icon: Icon, description, functionName, confirmMessa
     try {
       const res = await base44.functions.invoke(functionName, {});
       setResult(res.data);
+      if (onDeployed) onDeployed();
     } catch (e) {
       setError(e.response?.data?.error || e.message || 'Deployment failed');
     } finally {
@@ -85,52 +139,64 @@ function DeployCard({ title, icon: Icon, description, functionName, confirmMessa
     setTimeout(() => setCopied(''), 1500);
   };
 
-  const results = result ? extractResults(result).filter((r) => r.address) : [];
-  const nextSteps = result?.nextSteps || (result?.instructions ? [result.instructions] : []);
-
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
         <Icon className="h-5 w-5 text-primary" />
         <h3 className="font-bold">{title}</h3>
+        {isFullyDeployed && (
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-bold text-success">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Deployed
+          </span>
+        )}
       </div>
       <p className="mb-4 text-sm text-muted-foreground">{description}</p>
-      <button
-        onClick={deploy}
-        disabled={deploying}
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
-      >
-        {deploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-        {deploying ? 'Deploying…' : `Deploy ${title}`}
-      </button>
 
-      {results.length > 0 && (
-        <div className="mt-4 space-y-3">
-          <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3 text-sm text-success">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            <p className="font-semibold">Deployment successful</p>
-          </div>
-          <div className="space-y-2">
-            {results.map((r) => (
-              <ContractAddressRow
-                key={r.label}
-                label={r.label}
-                address={r.address}
-                secret={r.secret}
-                explorerUrl={r.explorerUrl}
-                copied={copied === r.label}
-                onCopy={() => copy(r.label, r.address)}
-              />
-            ))}
-          </div>
-          {nextSteps.length > 0 && (
-            <div className="rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
-              <p className="font-semibold text-foreground">Next steps</p>
-              <ul className="mt-1 list-inside list-disc space-y-0.5">
-                {nextSteps.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
-          )}
+      {/* Already-deployed addresses */}
+      {allAddresses.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {allAddresses.map((r) => (
+            <ContractAddressRow
+              key={r.label}
+              label={r.label}
+              address={r.address}
+              secret={r.secret}
+              explorerUrl={r.explorerUrl}
+              copied={copied === r.label}
+              onCopy={() => copy(r.label, r.address)}
+              isNew={newResults.some((nr) => nr.label === r.label)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Deploy button — only show if not fully deployed */}
+      {!isFullyDeployed && (
+        <button
+          onClick={deploy}
+          disabled={deploying}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+        >
+          {deploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+          {deploying ? 'Deploying…' : `Deploy ${title}`}
+        </button>
+      )}
+
+      {/* Newly deployed success banner */}
+      {newResults.length > 0 && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-success/10 p-3 text-sm text-success">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="font-semibold">Deployment successful — copy these addresses into your secrets.</p>
+        </div>
+      )}
+
+      {nextSteps.length > 0 && newResults.length > 0 && (
+        <div className="mt-3 rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
+          <p className="font-semibold text-foreground">Next steps</p>
+          <ul className="mt-1 list-inside list-disc space-y-0.5">
+            {nextSteps.map((s, i) => <li key={i}>{s}</li>)}
+          </ul>
         </div>
       )}
 
@@ -147,14 +213,14 @@ function DeployCard({ title, icon: Icon, description, functionName, confirmMessa
   );
 }
 
-function ContractAddressRow({ label, address, secret, explorerUrl, copied, onCopy }) {
+function ContractAddressRow({ label, address, secret, explorerUrl, copied, onCopy, isNew }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 p-3">
+    <div className={`flex items-center justify-between gap-2 rounded-lg border p-3 ${isNew ? 'border-success/30 bg-success/5' : 'border-border bg-secondary/50'}`}>
       <div className="min-w-0">
         <p className="text-xs font-semibold text-muted-foreground">{label}</p>
         <p className="truncate font-mono text-xs">{address}</p>
         {secret && (
-          <p className="mt-0.5 text-[10px] text-primary/80">Set as: <code className="font-mono">{secret}</code></p>
+          <p className="mt-0.5 text-[10px] text-primary/80">Secret: <code className="font-mono">{secret}</code></p>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
