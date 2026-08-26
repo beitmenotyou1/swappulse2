@@ -10,6 +10,8 @@ import PasskeyManager from './PasskeyManager';
 import WalletPinModal from './WalletPinModal';
 import CreateWalletModal from './CreateWalletModal';
 import WalletLinkCard from './WalletLinkCard';
+import HardwareWalletCard from './HardwareWalletCard';
+import DefaultWalletSelector from './DefaultWalletSelector';
 import UsernameMintCard from './UsernameMintCard';
 import AllowlistManager from '@/components/wallet/AllowlistManager';
 
@@ -17,6 +19,7 @@ export default function PolygonSettingsSection({ settings, update }) {
   const { user } = useAuth();
   const { cryptoEnabled } = useCryptoEnabled();
   const [custodialWallet, setCustodialWallet] = useState(null);
+  const [linkedWallet, setLinkedWallet] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -25,9 +28,13 @@ export default function PolygonSettingsSection({ settings, update }) {
   const loadWallet = useCallback(async () => {
     if (!userDid) { setLoadingWallet(false); return; }
     try {
-      const wallets = await base44.entities.CustodialWallet.filter({ did: userDid, active: true });
+      const [wallets, links] = await Promise.all([
+        base44.entities.CustodialWallet.filter({ did: userDid, active: true }),
+        base44.entities.WalletLink.filter({ did: userDid, active: true }).catch(() => []),
+      ]);
       setCustodialWallet(wallets[0] || null);
-    } catch { setCustodialWallet(null); }
+      setLinkedWallet(links[0] || null);
+    } catch { setCustodialWallet(null); setLinkedWallet(null); }
     finally { setLoadingWallet(false); }
   }, [userDid]);
 
@@ -80,6 +87,15 @@ export default function PolygonSettingsSection({ settings, update }) {
                 </button>
               </div>
 
+              {linkedWallet && (
+                <DefaultWalletSelector
+                  settings={settings}
+                  update={update}
+                  linkedWallet={linkedWallet}
+                  custodialWallet={custodialWallet}
+                />
+              )}
+              <HardwareWalletCard onLinked={loadWallet} />
               <UsernameMintCard walletLinked={true} />
               <AllowlistManager />
             </>
@@ -111,6 +127,7 @@ export default function PolygonSettingsSection({ settings, update }) {
               </div>
 
               <WalletLinkCard />
+              <HardwareWalletCard onLinked={loadWallet} />
               <UsernameMintCard walletLinked={false} />
             </>
           )}

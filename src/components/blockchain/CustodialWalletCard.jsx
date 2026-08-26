@@ -1,56 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Wallet, Copy, Check, ExternalLink, Fingerprint, KeyRound, Eye, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
+import { Wallet, Copy, Check, ExternalLink, Fingerprint, KeyRound, Eye } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
-import { startAuthentication } from '@simplewebauthn/browser';
 import SeedPhraseModal from './SeedPhraseModal';
-import UnlockWalletModal from './UnlockWalletModal';
+import SeedPhraseViewerModal from './SeedPhraseViewerModal';
 
 // Shows the user's custodial wallet address, security status, and management
-// actions: view seed phrase, add passkey, set PIN.
+// actions: view seed phrase (via unified verification modal), add passkey,
+// set PIN.
 export default function CustodialWalletCard({ wallet, onUpdated }) {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [showSeedViewer, setShowSeedViewer] = useState(false);
   const [showSeed, setShowSeed] = useState(false);
   const [mnemonic, setMnemonic] = useState('');
-  const [unlockState, setUnlockState] = useState(null);
-  const [loadingSeed, setLoadingSeed] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(wallet.wallet_address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleViewSeed = async () => {
-    // If wallet has passkey/PIN, need to unlock first
-    if (wallet.has_passkey || wallet.has_pin) {
-      setUnlockState({ hasPasskey: wallet.has_passkey, hasPin: wallet.has_pin });
-    } else {
-      // No lock — fetch directly
-      await fetchSeedPhrase(null);
-    }
-  };
-
-  const fetchSeedPhrase = async (credential) => {
-    setLoadingSeed(true);
-    try {
-      const res = await base44.functions.invoke('view-seed-phrase', { unlockCredential: credential });
-      setMnemonic(res.data.mnemonic);
-      setShowSeed(true);
-    } catch (e) {
-      const msg = e?.response?.data?.error || e.message;
-      toast({ title: 'Could not view seed phrase', description: msg, variant: 'destructive' });
-    } finally {
-      setLoadingSeed(false);
-    }
-  };
-
-  const handleUnlock = (credential) => {
-    setUnlockState(null);
-    fetchSeedPhrase(credential);
   };
 
   return (
@@ -95,11 +62,10 @@ export default function CustodialWalletCard({ wallet, onUpdated }) {
       {/* Actions */}
       <div className="mt-3 flex flex-wrap gap-2">
         <button
-          onClick={handleViewSeed}
-          disabled={loadingSeed}
-          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+          onClick={() => setShowSeedViewer(true)}
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
         >
-          {loadingSeed ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+          <Eye className="h-3.5 w-3.5" />
           View Seed Phrase
         </button>
         <a
@@ -112,12 +78,12 @@ export default function CustodialWalletCard({ wallet, onUpdated }) {
         </a>
       </div>
 
-      {unlockState && (
-        <UnlockWalletModal
+      {showSeedViewer && (
+        <SeedPhraseViewerModal
+          wallet={wallet}
           open={true}
-          unlockState={unlockState}
-          onUnlock={handleUnlock}
-          onCancel={() => setUnlockState(null)}
+          onClose={() => setShowSeedViewer(false)}
+          onSuccess={(m) => { setMnemonic(m); setShowSeed(true); }}
         />
       )}
 

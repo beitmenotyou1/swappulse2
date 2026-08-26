@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2, Send, Copy, AtSign, Search } from 'lucide-react';
+import { ethers } from 'ethers';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import UnlockWalletModal from '@/components/blockchain/UnlockWalletModal';
@@ -52,6 +53,57 @@ export default function SendCryptoModal({ wallet, onClose }) {
       if (res.data?.requiresUnlock) {
         setUnlockState({ hasPasskey: res.data.hasPasskey, hasPin: res.data.hasPin });
         setLoading(false);
+        return;
+      }
+      if (res.data?.requiresClientSign) {
+        // Linked (external/hardware) wallet — sign client-side via browser extension
+        try {
+          if (!window.ethereum) {
+            toast({ title: 'No wallet extension', description: 'Connect a browser wallet like MetaMask to send from your linked wallet.', variant: 'destructive' });
+            return;
+          }
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const connectedAddr = (accounts[0] || '').toLowerCase();
+          if (connectedAddr !== res.data.from_address.toLowerCase()) {
+            toast({ title: 'Wrong account', description: `Switch to ${res.data.from_address.slice(0, 8)}…${res.data.from_address.slice(-4)} in your wallet extension.`, variant: 'destructive' });
+            return;
+          }
+          const iface = new ethers.Interface(['function transfer(address to, uint256 amount) returns (bool)']);
+          // Send USDC to recipient
+          const transferData = iface.encodeFunctionData('transfer', [toAddress, BigInt(res.data.amount_wei)]);
+          const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{ from: res.data.from_address, to: res.data.usdc_contract_address, data: transferData }],
+          });
+          // Send 2% fee to platform fee wallet
+          let feeTxHash = '';
+          try {
+            const feeData = iface.encodeFunctionData('transfer', [res.data.platform_fee_wallet, BigInt(res.data.fee_wei)]);
+            feeTxHash = await window.ethereum.request({
+              method: 'eth_sendTransaction',
+              params: [{ from: res.data.from_address, to: res.data.usdc_contract_address, data: feeData }],
+            });
+          } catch (e) {
+            console.error('Fee send failed:', e);
+          }
+          // Record the transfer
+          const recordRes = await base44.functions.invoke('send-crypto', {
+            to_address: toAddress,
+            usdc_wei: res.data.amount_wei,
+            client_tx_hash: txHash,
+            client_fee_tx_hash: feeTxHash,
+          });
+          if (recordRes.data?.error) {
+            toast({ title: 'Recording failed', description: recordRes.data.error, variant: 'destructive' });
+            return;
+          }
+          toast({ title: 'USDC sent!', description: 'Transaction confirmed on Polygon.' });
+          onClose();
+        } catch (e) {
+          toast({ title: 'Send failed', description: e.message, variant: 'destructive' });
+        } finally {
+          setLoading(false);
+        }
         return;
       }
       if (res.data?.error) {

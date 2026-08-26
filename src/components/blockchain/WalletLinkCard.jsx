@@ -36,7 +36,7 @@ export default function WalletLinkCard() {
     try {
       const address = await connectWallet();
       const { signature, message, nonce } = await signWalletLinkMessage(address, user.did);
-      const res = await base44.functions.invoke('link-wallet', { address, signature, message, nonce, did: user.did });
+      const res = await base44.functions.invoke('link-wallet', { address, signature, message, nonce, did: user.did, wallet_type: 'extension' });
       setLink(res.data.link);
       toast({ title: 'Wallet linked', description: address });
     } catch (e) {
