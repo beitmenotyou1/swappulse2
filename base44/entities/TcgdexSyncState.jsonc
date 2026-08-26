@@ -2,12 +2,12 @@
   "name": "TcgdexSyncState",
   "type": "object",
   "title": "TcgdexSyncState",
-  "description": "org.swappulse.tcgdexSyncState \u2014 a single-row cursor tracking progress of the TCGDex catalogue sync. Records the current language being synced, the index into the set list, total sets, and last-synced timestamp so sync-tcgdex-catalogue resumes where it left off and rotates through all supported languages. Written by sync-tcgdex-catalogue (service role).",
+  "description": "org.swappulse.tcgdexSyncState \u2014 a single-row cursor tracking progress of the TCGDex catalogue sync. Records the current language being synced (one of 17 TCGDex-supported languages: en, fr, de, it, es, pt, jp, zh, ko, pt-br, pt-pt, nl, pl, ru, zh-cn, id, th), the index into the set list, total sets, and last-synced timestamp so sync-tcgdex-catalogue resumes where it left off and rotates through all supported languages. Written by sync-tcgdex-catalogue (service role).",
   "properties": {
     "current_lang": {
       "type": "string",
       "default": "en",
-      "description": "Language code currently being synced (en, fr, de, it, es, pt, jp, zh, ko)"
+      "description": "Language code currently being synced (one of 17 TCGDex languages)"
     },
     "set_index": {
       "type": "integer",

@@ -1,8 +1,13 @@
 // Shared TCGDex client + rate limiter - §7.1 / §7.5
 // Community-funded free API: throttle to 10 requests/second.
 // Multi-language: TCGDex serves per-language catalogs at /v2/{lang}/...
-// Supported langs: en, fr, de, it, es, pt, jp, zh, ko (unknown -> en).
-export const TCGDEX_LANGS = ['en', 'fr', 'de', 'it', 'es', 'pt', 'jp', 'zh', 'ko'];
+// Supported langs (17): en, fr, de, it, es, pt, jp, zh, ko, pt-br, pt-pt,
+//   nl, pl, ru, zh-cn, id, th (unknown -> en).
+// Source: https://tcgdex.dev/errors/language-invalid
+export const TCGDEX_LANGS = [
+  'en', 'fr', 'de', 'it', 'es', 'pt', 'jp', 'zh', 'ko',
+  'pt-br', 'pt-pt', 'nl', 'pl', 'ru', 'zh-cn', 'id', 'th',
+];
 
 // TCGDex uses 'ja' for Japanese and 'zh-tw' for Traditional Chinese, but our
 // internal labels (and entity field names like name_norm_jp / name_norm_zh)

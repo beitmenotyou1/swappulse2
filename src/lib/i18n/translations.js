@@ -29,7 +29,7 @@ export const SUPPORTED_LOCALES = [
 export const LOCALE_TO_TCGDEX = {
   'en-GB': 'en', 'en-US': 'en', 'es-ES': 'es', 'fr-FR': 'fr', 'de-DE': 'de',
   'it-IT': 'it', 'pt-BR': 'pt', 'ja-JP': 'jp', 'zh-CN': 'zh', 'ko-KR': 'ko',
-  'ar-SA': 'en', 'hi-IN': 'en', 'ru-RU': 'en',
+  'ar-SA': 'en', 'hi-IN': 'en', 'ru-RU': 'ru',
 };
 
 export const translations = {

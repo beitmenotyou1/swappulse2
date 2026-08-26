@@ -4,11 +4,16 @@ import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 
 const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 
-// TCGDex serves per-language catalogs at /v2/{lang}/... (en, fr, de, it, es, pt, jp, zh, ko).
-const TCGDEX_LANGS = ['en', 'fr', 'de', 'it', 'es', 'pt', 'jp', 'zh', 'ko'];
+// TCGDex serves per-language catalogs at /v2/{lang}/... (17 languages).
+// https://tcgdex.dev/errors/language-invalid
+const TCGDEX_LANGS = [
+  'en', 'fr', 'de', 'it', 'es', 'pt', 'jp', 'zh', 'ko',
+  'pt-br', 'pt-pt', 'nl', 'pl', 'ru', 'zh-cn', 'id', 'th',
+];
 const LOCALE_TO_TCGDEX = {
   'en-GB': 'en', 'en-US': 'en', 'es-ES': 'es', 'fr-FR': 'fr', 'de-DE': 'de',
   'it-IT': 'it', 'pt-BR': 'pt', 'ja-JP': 'jp', 'zh-CN': 'zh', 'ko-KR': 'ko',
+  'ru-RU': 'ru',
 };
 
 /** Map a user locale (e.g. fr-FR) to a TCGDex language code; unknown -> en. */

@@ -2,7 +2,7 @@
   "name": "TcgdexCard",
   "type": "object",
   "title": "TcgdexCard",
-  "description": "org.swappulse.tcgdexCard \u2014 a locally-synced TCGDex catalogue card used by the scanner to resolve candidates without a live per-scan TCGDex search. One record per TCGDex card id (global across languages). name_norm_{lang} fields hold language-specific normalised names for fast exact-match lookup; names holds display names per language. phash holds a 64-bit perceptual hash (8\u00d78 grayscale average hash) computed from the card image for the scanner fast-path. Synced by the sync-tcgdex-catalogue backend function.",
+  "description": "org.swappulse.tcgdexCard \u2014 a locally-synced TCGDex catalogue card used by the scanner to resolve candidates without a live per-scan TCGDex search. One record per TCGDex card id (global across languages). name_norm_{lang} fields hold language-specific normalised names for fast exact-match lookup across all 17 TCGDex-supported languages; names holds display names per language. phash holds a 64-bit perceptual hash (8\u00d78 grayscale average hash) computed from the card image for the scanner fast-path. Synced by the sync-tcgdex-catalogue backend function.",
   "properties": {
     "card_id": {
       "type": "string",
@@ -15,6 +15,10 @@
     "set_name": {
       "type": "string",
       "description": "Set name in English (for display)"
+    },
+    "set_lang": {
+      "type": "string",
+      "description": "Language code of the set this card was first synced from (e.g. en, fr, ja)"
     },
     "local_id": {
       "type": "string",
@@ -58,7 +62,7 @@
     },
     "name_norm_pt": {
       "type": "string",
-      "description": "Normalised Portuguese name"
+      "description": "Normalised Portuguese (generic) name"
     },
     "name_norm_jp": {
       "type": "string",
@@ -66,16 +70,48 @@
     },
     "name_norm_zh": {
       "type": "string",
-      "description": "Normalised Chinese name"
+      "description": "Normalised Chinese (Traditional) name"
     },
     "name_norm_ko": {
       "type": "string",
       "description": "Normalised Korean name"
     },
+    "name_norm_pt-br": {
+      "type": "string",
+      "description": "Normalised Brazilian Portuguese name"
+    },
+    "name_norm_pt-pt": {
+      "type": "string",
+      "description": "Normalised European Portuguese name"
+    },
+    "name_norm_nl": {
+      "type": "string",
+      "description": "Normalised Dutch name"
+    },
+    "name_norm_pl": {
+      "type": "string",
+      "description": "Normalised Polish name"
+    },
+    "name_norm_ru": {
+      "type": "string",
+      "description": "Normalised Russian name"
+    },
+    "name_norm_zh-cn": {
+      "type": "string",
+      "description": "Normalised Simplified Chinese name"
+    },
+    "name_norm_id": {
+      "type": "string",
+      "description": "Normalised Indonesian name"
+    },
+    "name_norm_th": {
+      "type": "string",
+      "description": "Normalised Thai name"
+    },
     "names": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Display names keyed by language code (en, fr, de, it, es, pt, jp, zh, ko)"
+      "description": "Display names keyed by TCGDex language code (en, fr, de, it, es, pt, jp, zh, ko, pt-br, pt-pt, nl, pl, ru, zh-cn, id, th)"
     },
     "last_synced_at": {
       "type": "string",
