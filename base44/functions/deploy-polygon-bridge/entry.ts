@@ -5,6 +5,7 @@ import {
   POLYGON_BRIDGE_ABI,
   POLYGON_BRIDGE_BYTECODE,
 } from '../../shared/pulseCompiledArtifacts.ts';
+import { upsertContract } from '../../shared/contractRegistry.ts';
 
 // Admin-only: deploys the PolygonBridge contract on Polygon. This contract
 // locks Polygon NFTs when bridging to PulseChain (lockForBridge) and mints
@@ -67,6 +68,14 @@ export default async function (req: Request): Promise<Response> {
     const bridgeContract = await BridgeFactory.deploy(spunAddress, spcdAddress);
     await bridgeContract.waitForDeployment();
     const bridgeAddress = await bridgeContract.getAddress();
+
+    // Persist deployed address so it survives page refreshes.
+    const polygonExplorer = secrets.get('POLYGON_EXPLORER_URL') || 'https://amoy.polygonscan.com';
+    await upsertContract(base44, {
+      chain: 'polygon', contract_key: 'polygon_bridge', contract_name: 'PolygonBridge',
+      address: bridgeAddress, deployed_by: wallet.address,
+      explorer_url: `${polygonExplorer}/address/${bridgeAddress}`,
+    });
 
     return Response.json({
       status: 'deployed',

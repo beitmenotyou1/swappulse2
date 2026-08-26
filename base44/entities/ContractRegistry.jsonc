@@ -1,0 +1,73 @@
+{
+  "name": "ContractRegistry",
+  "type": "object",
+  "title": "ContractRegistry",
+  "description": "org.swappulse.contractRegistry \u2014 a persistent record of every deployed SwapPulse smart contract address (Polygon, PulseChain, LayerZero OFT, Card Metadata Anchor). Written by the deploy-* backend functions after successful on-chain deployment so the admin dashboard can display deployed contracts across page refreshes without prompting for redeployment. Admin-only access.",
+  "properties": {
+    "chain": {
+      "type": "string",
+      "enum": [
+        "polygon",
+        "pulse"
+      ],
+      "description": "Chain the contract was deployed on"
+    },
+    "contract_key": {
+      "type": "string",
+      "description": "Unique stable key for this contract (e.g. polygon_username, pulse_card, polygon_bridge, oft_pulse, oft_polygon, card_metadata_anchor). Used to upsert on re-deploy so each contract has at most one record."
+    },
+    "contract_name": {
+      "type": "string",
+      "description": "Human-readable contract name for display in the admin dashboard"
+    },
+    "address": {
+      "type": "string",
+      "description": "Deployed contract address (checksummed)"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "On-chain deployment transaction hash"
+    },
+    "explorer_url": {
+      "type": "string",
+      "description": "Direct explorer URL to the deployed contract address"
+    },
+    "deployed_by": {
+      "type": "string",
+      "description": "Deployer wallet address that sent the deployment transaction"
+    },
+    "deployed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the contract was deployed (set on create/update)"
+    }
+  },
+  "required": [
+    "chain",
+    "contract_key",
+    "contract_name",
+    "address"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

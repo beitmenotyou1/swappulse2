@@ -13,6 +13,7 @@ import {
   CARD_METADATA_ANCHOR_BYTECODE,
 } from '../../shared/cardMetadataAnchorArtifacts.ts';
 import { getPulseMintWallet, getPulseExplorerUrl } from '../../shared/pulseClient.ts';
+import { upsertContract } from '../../shared/contractRegistry.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -46,6 +47,17 @@ export default async function (req: Request): Promise<Response> {
 
     // Verify the admin was set correctly (should be the deployer)
     const admin = await contract.admin();
+
+    // Persist deployed address so it survives page refreshes.
+    await upsertContract(base44, {
+      chain: 'pulse',
+      contract_key: 'card_metadata_anchor',
+      contract_name: 'CardMetadataAnchor',
+      address: contractAddress,
+      tx_hash: tx?.hash || '',
+      deployed_by: wallet.address,
+      explorer_url: `${getPulseExplorerUrl()}/address/${contractAddress}`,
+    });
 
     return Response.json({
       success: true,

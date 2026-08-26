@@ -7,6 +7,7 @@ import {
   CARD_ABI,
   CARD_BYTECODE,
 } from '../../shared/polygonCompiledArtifacts.ts';
+import { upsertContract } from '../../shared/contractRegistry.ts';
 
 // Admin-only: deploys the SwapPulseUsername (soulbound) and SwapPulseCardNFT
 // (transferable) contracts to Polygon using the deployer wallet configured in
@@ -57,6 +58,19 @@ export default async function (req: Request): Promise<Response> {
     const cardContract = await CardFactory.deploy(usernameAddress);
     await cardContract.waitForDeployment();
     const cardAddress = await cardContract.getAddress();
+
+    // Persist deployed addresses so they survive page refreshes.
+    const polygonExplorer = secrets.get('POLYGON_EXPLORER_URL') || 'https://amoy.polygonscan.com';
+    await upsertContract(base44, {
+      chain: 'polygon', contract_key: 'polygon_username', contract_name: 'SwapPulseUsername',
+      address: usernameAddress, deployed_by: wallet.address,
+      explorer_url: `${polygonExplorer}/address/${usernameAddress}`,
+    });
+    await upsertContract(base44, {
+      chain: 'polygon', contract_key: 'polygon_card', contract_name: 'SwapPulseCardNFT',
+      address: cardAddress, deployed_by: wallet.address,
+      explorer_url: `${polygonExplorer}/address/${cardAddress}`,
+    });
 
     return Response.json({
       success: true,

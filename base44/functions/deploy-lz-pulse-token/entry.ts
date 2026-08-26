@@ -10,6 +10,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
 import { OFT_PULSE_TOKEN_ABI, OFT_PULSE_TOKEN_BYTECODE } from '../../shared/oftPulseTokenArtifacts.ts';
+import { upsertContract } from '../../shared/contractRegistry.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -75,6 +76,16 @@ export default async function (req: Request): Promise<Response> {
     const address = await contract.getAddress();
 
     const secretName = chain === 'pulse' ? 'OFT_PULSE_TOKEN_CONTRACT' : 'OFT_POLYGON_TOKEN_CONTRACT';
+
+    // Persist deployed address so it survives page refreshes.
+    await upsertContract(base44, {
+      chain,
+      contract_key: chain === 'pulse' ? 'oft_pulse' : 'oft_polygon',
+      contract_name: 'OFTPulseToken',
+      address,
+      deployed_by: wallet.address,
+      explorer_url: `${explorerUrl || ''}/address/${address}`,
+    });
 
     return Response.json({
       status: 'deployed',

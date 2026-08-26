@@ -9,6 +9,7 @@ import {
   PULSE_BRIDGE_ABI,
   PULSE_BRIDGE_BYTECODE,
 } from '../../shared/pulseCompiledArtifacts.ts';
+import { upsertContract } from '../../shared/contractRegistry.ts';
 
 // Admin-only: deploys the SwapPulseUsernameV2 (soulbound, sourceChain-aware),
 // SwapPulseCardNFTV2 (transferable, verificationLevel + sourceChain), and
@@ -94,6 +95,24 @@ export default async function (req: Request): Promise<Response> {
     //    SPCD.setBridgeContract(bridge)
     const spcd = new ethers.Contract(cardAddress, PULSE_CARD_ABI, wallet);
     await (await spcd.setBridgeContract(bridgeAddress)).wait();
+
+    // Persist deployed addresses so they survive page refreshes.
+    const pulseExplorer = secrets.get('PULSE_EXPLORER_URL') || '';
+    await upsertContract(base44, {
+      chain: 'pulse', contract_key: 'pulse_username', contract_name: 'SwapPulseUsernameV2',
+      address: usernameAddress, deployed_by: wallet.address,
+      explorer_url: `${pulseExplorer}/address/${usernameAddress}`,
+    });
+    await upsertContract(base44, {
+      chain: 'pulse', contract_key: 'pulse_card', contract_name: 'SwapPulseCardNFTV2',
+      address: cardAddress, deployed_by: wallet.address,
+      explorer_url: `${pulseExplorer}/address/${cardAddress}`,
+    });
+    await upsertContract(base44, {
+      chain: 'pulse', contract_key: 'pulse_bridge', contract_name: 'PulseChainBridge',
+      address: bridgeAddress, deployed_by: wallet.address,
+      explorer_url: `${pulseExplorer}/address/${bridgeAddress}`,
+    });
 
     return Response.json({
       status: 'deployed',
