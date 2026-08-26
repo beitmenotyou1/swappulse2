@@ -50,6 +50,7 @@
     "@stripe/react-stripe-js": "^3.0.0",
     "@stripe/stripe-js": "^5.2.0",
     "@tanstack/react-query": "^5.84.1",
+    "@tcgdex/sdk": "^2.9.0",
     "@walletconnect/sign-client": "^2.23.10",
     "@walletconnect/utils": "^2.23.10",
     "bip39": "^3.1.0",
