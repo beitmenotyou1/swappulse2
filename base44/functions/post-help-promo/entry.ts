@@ -213,18 +213,12 @@ Deno.serve(async (req) => {
     const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
     const imageBlob = uploadResult.blob;
     session.accessJwt = uploadResult.accessJwt;
-    // Guard: never publish a text-only promo post. If the image blob upload
-    // failed, abort so the workflow retries on the next scheduled cycle
-    // instead of publishing a bare-text promo.
-    if (!imageBlob) {
-      console.error('post-help-promo: image blob upload failed — aborting post to prevent plain-text promo');
-      return Response.json({ error: 'Image upload failed — promo post aborted to prevent plain-text output' }, { status: 502 });
-    }
+    // If the image blob upload failed, publish without an embed — the link
+    // and hashtag facets still make the post functional (clickable URL + tags).
     const altText = `SwapPulse help guide: ${article.title}`;
-    const embed: any = {
-      $type: 'app.bsky.embed.images',
-      images: [{ alt: altText, image: imageBlob }],
-    };
+    const embed: any = imageBlob
+      ? { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] }
+      : null;
 
     // Create the post on the PDS
     const record: any = {
