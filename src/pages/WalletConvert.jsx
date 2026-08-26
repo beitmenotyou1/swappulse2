@@ -84,6 +84,23 @@ export default function WalletConvert() {
   const fee = numericAmount * FEE_RATE;
   const net = numericAmount * (1 - FEE_RATE);
 
+  // Estimated PULSE amount when target is PULSE (converted at market price)
+  const pulsePriceUsd = prices?.pulse?.usd || 0;
+  const estimatedPulse = useMemo(() => {
+    if (pulsePriceUsd <= 0) return 0;
+    if (mode === 'fiat_to_crypto' && targetTok?.isPulse) {
+      const usdcRate = currency === 'GBP' ? (prices?.usdc?.gbp || 1) : currency === 'EUR' ? (prices?.usdc?.eur || 1) : 1;
+      const usdValue = numericAmount * usdcRate;
+      return (usdValue * (1 - FEE_RATE)) / pulsePriceUsd;
+    }
+    if (mode === 'crypto_to_crypto' && destTok?.isPulse) {
+      const srcPrice = prices?.[sourceTok?.symbol?.toLowerCase()]?.usd || 0;
+      const usdValue = numericAmount * srcPrice;
+      return (usdValue * (1 - FEE_RATE)) / pulsePriceUsd;
+    }
+    return 0;
+  }, [mode, targetTok, destTok, sourceTok, numericAmount, pulsePriceUsd, prices, currency]);
+
   // Estimated rate display using cached prices
   const rateLabel = useMemo(() => {
     if (mode === 'fiat_to_crypto') {
@@ -133,12 +150,16 @@ export default function WalletConvert() {
           fiat_cents: cents,
           target_token: targetToken,
           currency,
+          pulse_price_usd: targetTok?.isPulse ? (prices?.pulse?.usd || 0) : undefined,
         });
         if (res.data?.error) {
           toast({ title: 'Conversion failed', description: res.data.error, variant: 'destructive' });
           return;
         }
-        toast({ title: 'Converted!', description: `Successfully converted ${symbol}${(cents / 100).toFixed(2)} to ${targetTok?.symbol}.` });
+        const recvLabel = res.data?.pulse_amount
+          ? `${res.data.pulse_amount} PULSE`
+          : `${targetTok?.symbol}`;
+        toast({ title: 'Converted!', description: `Successfully converted ${symbol}${(cents / 100).toFixed(2)} to ${recvLabel}.` });
         navigate('/wallet');
       } else if (mode === 'crypto_to_crypto') {
         const amountWei = BigInt(Math.round(numericAmount * Math.pow(10, sourceTok.decimals))).toString();
@@ -148,6 +169,7 @@ export default function WalletConvert() {
           target_token: destToken,
           amount: amountWei,
           unlockCredential,
+          pulse_price_usd: destTok?.isPulse ? (prices?.pulse?.usd || 0) : undefined,
         });
         if (res.data?.requiresUnlock) {
           setUnlockState({ hasPasskey: res.data.hasPasskey, hasPin: res.data.hasPin });
@@ -158,7 +180,10 @@ export default function WalletConvert() {
           toast({ title: 'Swap failed', description: res.data.error, variant: 'destructive' });
           return;
         }
-        toast({ title: 'Swapped!', description: `Successfully converted ${sourceTok?.symbol} to ${destTok?.symbol}.` });
+        const recvLabel = res.data?.pulse_amount
+          ? `${res.data.pulse_amount} PULSE`
+          : `${destTok?.symbol}`;
+        toast({ title: 'Swapped!', description: `Successfully converted ${sourceTok?.symbol} to ${recvLabel}.` });
         navigate('/wallet');
       } else {
         const wei = BigInt(Math.round(numericAmount * 1_000_000)).toString();
@@ -308,7 +333,9 @@ export default function WalletConvert() {
                   {ALL_TARGET_TOKENS.map((t) => <option key={t.address} value={t.address}>{t.symbol} — {t.name}</option>)}
                 </select>
                 <div className="flex-1 rounded-xl bg-secondary px-3 py-3 text-right text-xl font-bold text-muted-foreground">
-                  {net > 0 ? net.toFixed(6) : '0.00'}
+                  {targetTok?.isPulse
+                    ? (estimatedPulse > 0 ? estimatedPulse.toFixed(6) : '0.00')
+                    : (net > 0 ? net.toFixed(6) : '0.00')}
                   <span className="ml-2 text-sm">{targetTok?.symbol}</span>
                 </div>
               </>
@@ -323,7 +350,9 @@ export default function WalletConvert() {
                   {ALL_TARGET_TOKENS.filter((t) => t.address !== sourceToken).map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
                 </select>
                 <div className="flex-1 rounded-xl bg-secondary px-3 py-3 text-right text-xl font-bold text-muted-foreground">
-                  {net > 0 ? net.toFixed(6) : '0.00'}
+                  {destTok?.isPulse
+                    ? (estimatedPulse > 0 ? estimatedPulse.toFixed(6) : '0.00')
+                    : (net > 0 ? net.toFixed(6) : '0.00')}
                   <span className="ml-2 text-sm">{destTok?.symbol}</span>
                 </div>
               </>
@@ -375,8 +404,9 @@ export default function WalletConvert() {
               <div className="mt-2 flex justify-between border-t border-border pt-2">
                 <span className="font-bold">You receive</span>
                 <span className="font-bold text-primary">
-                  {net.toFixed(mode === 'crypto_to_crypto' ? 6 : 2)}{' '}
-                  {mode === 'fiat_to_crypto' ? targetTok?.symbol : mode === 'crypto_to_crypto' ? destTok?.symbol : currency}
+                  {(mode === 'fiat_to_crypto' && targetTok?.isPulse) || (mode === 'crypto_to_crypto' && destTok?.isPulse)
+                    ? `${estimatedPulse.toFixed(6)} PULSE`
+                    : `${net.toFixed(mode === 'crypto_to_crypto' ? 6 : 2)} ${mode === 'fiat_to_crypto' ? targetTok?.symbol : mode === 'crypto_to_crypto' ? destTok?.symbol : currency}`}
                 </span>
               </div>
             </div>
