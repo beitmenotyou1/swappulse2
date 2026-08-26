@@ -34,12 +34,16 @@ const PULSE_PRICE_FALLBACK_USD = 0.00002;
  */
 async function fetchPulsePriceUsd(): Promise<number> {
   try {
-    const url = 'https://api.coinbase.com/v2/prices/PLS-USD/spot';
+    // Coinbase does not list PulseChain's native PLS token, so we use
+    // CoinGecko's `pulsechain` id instead. This is the same oracle approach
+    // as get-crypto-prices (server-side, trusted) — never accept a
+    // client-supplied price, which controls treasury disbursement.
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=pulsechain&vs_currencies=usd';
     await assertSafeHost(new URL(url).hostname);
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) return 0;
     const data = await res.json();
-    const price = parseFloat(data?.data?.amount || '0');
+    const price = parseFloat(data?.pulsechain?.usd || '0');
     // Sanity bounds: reject implausible oracle values (zero, negative, or
     // absurdly high) to protect the treasury even if the oracle is compromised.
     if (!isFinite(price) || price <= 0 || price > 1) return 0;
