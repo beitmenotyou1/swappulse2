@@ -220,18 +220,20 @@ function generateCommunityMessage(locale: string): PromoResult {
   const hashtagSet = pick(HASHTAG_SETS);
   const tags = parseTags(hashtagSet);
   const hashtags = hashtagSet;
-  const cta = pick(pools.ctas).replace(/\{SITE_BASE\}/g, withLangParam(SITE_BASE, locale));
+  const url = withLangParam(SITE_BASE, locale);
+  const cta = pick(pools.ctas).replace(/\{SITE_BASE\}/g, url);
+  const desc = `A decentralized social network for Pokémon TCG collectors. Free, open-source, and currently in ${BUILD_STATUS}.`;
+  // Trimming priority: keep URL + hashtags always; drop statusProp, then hook,
+  // then CTA text (falling back to raw URL) to fit 300 graphemes.
   let content = `${hook}\n\n${statusProp}\n\n${cta}\n\n${hashtags}`;
-  if (countGraphemes(content) > 300) {
-    content = `${hook}\n\n${statusProp}\n\n${hashtags}`;
-    if (countGraphemes(content) > 300) {
-      content = `${hook}\n\n${hashtags}`;
-      if (countGraphemes(content) > 300) {
-        content = content.slice(0, 297) + '...';
-      }
-    }
-  }
-  return { content, embedUrl: withLangParam(SITE_BASE, locale), embedTitle: 'SwapPulse', embedDescription: `A decentralized social network for Pokémon TCG collectors. Free, open-source, and currently in ${BUILD_STATUS}.`, tags };
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse', embedDescription: desc, tags };
+  content = `${hook}\n\n${cta}\n\n${hashtags}`;
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse', embedDescription: desc, tags };
+  content = `${cta}\n\n${hashtags}`;
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse', embedDescription: desc, tags };
+  content = `${url}\n\n${hashtags}`;
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse', embedDescription: desc, tags };
+  return { content: `${url}\n\n${hashtags}`.slice(0, 297) + '...', embedUrl: url, embedTitle: 'SwapPulse', embedDescription: desc, tags };
 }
 
 /** Type 4: First-to-join pitch — urges collectors to be early members in beta. */
@@ -243,18 +245,20 @@ function generateFirstJoinMessage(locale: string): PromoResult {
   const hashtagSet = pick(HASHTAG_SETS);
   const tags = parseTags(hashtagSet);
   const hashtags = hashtagSet;
-  const cta = pick(pools.ctas).replace(/\{SITE_BASE\}/g, withLangParam(SITE_BASE, locale));
+  const url = withLangParam(SITE_BASE, locale);
+  const cta = pick(pools.ctas).replace(/\{SITE_BASE\}/g, url);
+  const desc = `Be among the first to join. SwapPulse is in ${BUILD_STATUS}.`;
+  // Trimming priority: keep URL + hashtags always; drop statusProp, then hook,
+  // then CTA text (falling back to raw URL) to fit 300 graphemes.
   let content = `${hook}\n\n${statusProp}\n\n${cta}\n\n${hashtags}`;
-  if (countGraphemes(content) > 300) {
-    content = `${hook}\n\n${statusProp}\n\n${hashtags}`;
-    if (countGraphemes(content) > 300) {
-      content = `${hook}\n\n${hashtags}`;
-      if (countGraphemes(content) > 300) {
-        content = content.slice(0, 297) + '...';
-      }
-    }
-  }
-  return { content, embedUrl: withLangParam(SITE_BASE, locale), embedTitle: 'SwapPulse Beta', embedDescription: `Be among the first to join. SwapPulse is in ${BUILD_STATUS}.`, tags };
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse Beta', embedDescription: desc, tags };
+  content = `${hook}\n\n${cta}\n\n${hashtags}`;
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse Beta', embedDescription: desc, tags };
+  content = `${cta}\n\n${hashtags}`;
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse Beta', embedDescription: desc, tags };
+  content = `${url}\n\n${hashtags}`;
+  if (countGraphemes(content) <= 300) return { content, embedUrl: url, embedTitle: 'SwapPulse Beta', embedDescription: desc, tags };
+  return { content: `${url}\n\n${hashtags}`.slice(0, 297) + '...', embedUrl: url, embedTitle: 'SwapPulse Beta', embedDescription: desc, tags };
 }
 
 Deno.serve(async (req) => {
