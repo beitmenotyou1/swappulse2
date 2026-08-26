@@ -47,6 +47,7 @@ export const HELP_GUIDES = [
   { slug: 'pack-openings', title: 'Pack Openings', category: 'Social & Community', icon: Package, description: 'Share your pulls and follow collectors to see fresh pack openings in your feed.', relatedRoute: '/packs' },
   { slug: 'pack-parties', title: 'Pack Parties', category: 'Social & Community', icon: PartyPopper, description: 'Join synchronised pack-opening events and share reactions live.', relatedRoute: '/pack-parties' },
   { slug: 'pull-of-the-week', title: 'Pull of the Week', category: 'Social & Community', icon: Trophy, description: 'Nominate your best pull each week and vote on the community\'s top pulls.', relatedRoute: '/pull-of-the-week' },
+  { slug: 'weekly-digest', title: 'Weekly Digest', category: 'Social & Community', icon: CalendarDays, description: 'Automated weekly roundup of platform news and community highlights in your feed.', relatedRoute: '/' },
   { slug: 'predictions', title: 'Predictions & Polls', category: 'Social & Community', icon: Vote, description: 'Create and vote on community sentiment polls about cards and the meta.', relatedRoute: '/predictions' },
   { slug: 'notifications', title: 'Notifications', category: 'Social & Community', icon: Bell, description: 'See likes, replies, mentions, trade matches, price alerts, and follows in one feed.', relatedRoute: '/notifications' },
   { slug: 'messages', title: 'Direct Messages', category: 'Social & Community', icon: Mail, description: 'End-to-end encrypted 1:1 direct messages. Your keys never leave your device.', relatedRoute: '/messages' },

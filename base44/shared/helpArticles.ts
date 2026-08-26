@@ -44,6 +44,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'pack-openings', title: 'Pack Openings', category: 'Social & Community', description: 'Share your pulls and follow collectors to see fresh pack openings in your feed.' },
   { slug: 'pack-parties', title: 'Pack Parties', category: 'Social & Community', description: 'Join synchronised pack-opening events and share reactions live.' },
   { slug: 'pull-of-the-week', title: 'Pull of the Week', category: 'Social & Community', description: "Nominate your best pull each week and vote on the community's top pulls." },
+  { slug: 'weekly-digest', title: 'Weekly Digest', category: 'Social & Community', description: 'Automated weekly roundup of platform news and community highlights in your feed.' },
   { slug: 'predictions', title: 'Predictions & Polls', category: 'Social & Community', description: 'Create and vote on community sentiment polls about cards and the meta.' },
   { slug: 'notifications', title: 'Notifications', category: 'Social & Community', description: 'See likes, replies, mentions, trade matches, price alerts, and follows in one feed.' },
   { slug: 'messages', title: 'Direct Messages', category: 'Social & Community', description: 'End-to-end encrypted 1:1 direct messages. Your keys never leave your device.' },

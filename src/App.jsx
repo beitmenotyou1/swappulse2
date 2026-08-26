@@ -98,6 +98,7 @@ const HelpMeetups = lazy(() => import('@/pages/help/HelpMeetups'));
 const HelpPackOpenings = lazy(() => import('@/pages/help/HelpPackOpenings'));
 const HelpPackParties = lazy(() => import('@/pages/help/HelpPackParties'));
 const HelpPullOfTheWeek = lazy(() => import('@/pages/help/HelpPullOfTheWeek'));
+const HelpWeeklyDigest = lazy(() => import('@/pages/help/HelpWeeklyDigest'));
 const HelpPredictions = lazy(() => import('@/pages/help/HelpPredictions'));
 const HelpNotifications = lazy(() => import('@/pages/help/HelpNotifications'));
 const HelpMessages = lazy(() => import('@/pages/help/HelpMessages'));
@@ -274,6 +275,7 @@ const AuthenticatedApp = () => {
         <Route path="/help/pack-openings" element={<HelpPackOpenings />} />
         <Route path="/help/pack-parties" element={<HelpPackParties />} />
         <Route path="/help/pull-of-the-week" element={<HelpPullOfTheWeek />} />
+        <Route path="/help/weekly-digest" element={<HelpWeeklyDigest />} />
         <Route path="/help/predictions" element={<HelpPredictions />} />
         <Route path="/help/notifications" element={<HelpNotifications />} />
         <Route path="/help/messages" element={<HelpMessages />} />

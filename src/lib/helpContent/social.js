@@ -16,6 +16,7 @@ export const socialPages = {
           '<b>Live spaces:</b> Active voice spaces with a pulsing live ring when someone is broadcasting.',
           '<b>Pack openings:</b> Fresh pull posts from the community.',
           '<b>Card of the Day:</b> A featured card rotated daily.',
+          '<b>Weekly Digest:</b> Every Monday, an automated roundup of the week\'s community highlights.',
         ]},
       ]},
       { icon: 'TrendingUp', title: 'Trending Cards', blocks: [
@@ -26,6 +27,32 @@ export const socialPages = {
       ]},
       { icon: 'Sparkles', title: 'Making it yours', blocks: [
         { type: 'p', text: 'Your feed improves as you follow more collectors, follow hashtags, and interact with posts. The more you engage, the better SwapPulse gets at surfacing content you\'ll enjoy.' },
+      ]},
+    ],
+  },
+
+  'weekly-digest': {
+    title: 'Weekly Digest',
+    subtitle: 'Automated weekly community highlights',
+    sections: [
+      { icon: 'CalendarDays', title: 'What is the Weekly Digest?', blocks: [
+        { type: 'p', text: 'Every Monday, SwapPulse automatically posts a weekly digest to the feed summarising the past week\'s community activity. It highlights new members, pack openings, posts, trade listings, achievements, circles, and meetups in one place.' },
+      ]},
+      { title: 'What you\'ll see', blocks: [
+        { type: 'list', items: [
+          '<b>New members:</b> How many collectors joined this week.',
+          '<b>Pack openings:</b> Fresh pulls shared by the community.',
+          '<b>Posts:</b> Total posts published in the feed.',
+          '<b>Trade listings:</b> New cards listed for trade.',
+          '<b>Achievements:</b> Badges earned by collectors.',
+          '<b>Circles & meetups:</b> New community groups and events.',
+        ]},
+      ]},
+      { icon: 'Sparkles', title: 'How it works', blocks: [
+        { type: 'p', text: 'The digest is posted automatically every Monday at 9am by the SwapPulse official account. It only posts when there is new activity — if the platform was quiet for the week, no digest is published. This keeps the feed clean and relevant.' },
+      ]},
+      { icon: 'Bell', title: 'Finding it in your feed', blocks: [
+        { type: 'p', text: 'The weekly digest appears in your Home Feed like any other post, tagged with #WeeklyDigest and #PokemonTCG. Look for the SwapPulse author name to spot it quickly. You can like, reply, and share it just like any other post.' },
       ]},
     ],
   },
