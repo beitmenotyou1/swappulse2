@@ -136,8 +136,14 @@ export async function verifyWalletPasskey(
         },
       });
       if (result.verified) {
+        // Store the authenticator's reported counter directly. Many platform
+        // authenticators (Touch ID, Face ID, Windows Hello) don't support
+        // counters and always report 0; the `||` fallback to `cred.counter + 1`
+        // would store 1, causing every subsequent auth to fail with
+        // "Response counter value 0 was lower than expected 1".
+        const newCounter = result.authenticationInfo?.newCounter;
         await svc.entities.WebAuthnCredential.update(cred.id, {
-          counter: result.authenticationInfo?.newCounter || cred.counter + 1,
+          counter: typeof newCounter === 'number' ? newCounter : (cred.counter || 0),
         });
         return { verified: true };
       }
