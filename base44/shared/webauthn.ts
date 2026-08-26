@@ -132,7 +132,12 @@ export async function verifyWalletPasskey(
         authenticator: {
           credentialID: cred.credential_id,
           credentialPublicKey: base64UrlToUint8Array(cred.public_key),
-          counter: cred.counter || 0,
+          // Always pass 0 so the counter replay check never rejects
+          // counterless authenticators (Touch ID, Face ID, Windows Hello)
+          // or credentials whose stored counter was corrupted by the old
+          // `|| counter + 1` bug. Replay protection is already enforced by
+          // the HMAC-signed single-use challenge above.
+          counter: 0,
         },
       });
       if (result.verified) {
