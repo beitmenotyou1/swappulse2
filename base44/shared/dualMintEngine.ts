@@ -103,7 +103,7 @@ export async function mintUsernameDual(
           metadataURI,
           verificationLevel: 0,
           sourceTxHash: tx.hash,
-        });
+        }, svc);
 
         await svc.entities.OnChainAsset.update(result.polygonAsset.id, {
           bridge_status: 'confirmed',
@@ -135,7 +135,7 @@ export async function mintUsernameDual(
   } else {
     // --- PulseChain primary mint ---
     const pulseWallet = getPulseMintWallet();
-    const pulseContract = getPulseUsernameContract(pulseWallet);
+    const pulseContract = await getPulseUsernameContract(pulseWallet, svc);
 
     // sourceChain = 0 (native PulseChain mint, admin only)
     const tx = await pulseContract.mint(walletAddress, handle, did, metadataURI, 0);
@@ -246,7 +246,7 @@ export async function mintCardDual(
           metadataURI,
           verificationLevel,
           sourceTxHash: tx.hash,
-        });
+        }, svc);
 
         await svc.entities.OnChainAsset.update(result.polygonAsset.id, {
           bridge_status: 'confirmed',
@@ -278,7 +278,7 @@ export async function mintCardDual(
   } else {
     // --- PulseChain primary mint ---
     const pulseWallet = getPulseMintWallet();
-    const pulseContract = getPulseCardContract(pulseWallet);
+    const pulseContract = await getPulseCardContract(pulseWallet, svc);
 
     // sourceChain = 0 (native PulseChain mint)
     const tx = await pulseContract.mint(

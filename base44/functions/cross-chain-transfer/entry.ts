@@ -55,7 +55,7 @@ export default async function (req: Request): Promise<Response> {
     // --- QUOTE ACTION ---
     if (action === 'quote') {
       try {
-        const quote = await quoteCrossChainGas(fromChainKey, toChainKey, amountBig);
+        const quote = await quoteCrossChainGas(fromChainKey, toChainKey, amountBig, base44.asServiceRole);
 
         return Response.json({
           action: 'quote',
@@ -118,7 +118,7 @@ export default async function (req: Request): Promise<Response> {
       const signerWallet = new ethers.Wallet(privateKey, provider);
 
       // Execute the cross-chain send
-      const result = await sendCrossChain(fromChainKey, toChainKey, toAddress, amountBig, signerWallet);
+      const result = await sendCrossChain(fromChainKey, toChainKey, toAddress, amountBig, signerWallet, base44.asServiceRole);
 
       // Record in database
       await base44.asServiceRole.entities.CrossChainTransfer.create({
@@ -144,7 +144,7 @@ export default async function (req: Request): Promise<Response> {
       });
     } else {
       // --- Linked Wallet Flow (client-side signing via MetaMask) ---
-      const txData = buildSendTransactionData(fromChainKey, toChainKey, toAddress, amountBig);
+      const txData = await buildSendTransactionData(fromChainKey, toChainKey, toAddress, amountBig, base44.asServiceRole);
 
       // Record in database as pending (will be updated when tx is confirmed)
       const transferRecord = await base44.asServiceRole.entities.CrossChainTransfer.create({

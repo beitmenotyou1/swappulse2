@@ -43,13 +43,18 @@ export default async function(req) {
       return Response.json({ processed: 0, message: 'No pending meta-transactions' });
     }
 
-    // Check relay contract is configured
-    const relayAddress = secrets.get('META_RELAY_CONTRACT_ADDRESS');
+    // Resolve the relay contract address from the ContractRegistry (key
+    // 'meta_relay'). If not deployed yet, gracefully skip — the scheduled
+    // workflow should not error while the relay is unconfigured.
+    const relayRec = (await base44.asServiceRole.entities.ContractRegistry
+      .filter({ contract_key: 'meta_relay' }).catch(() => []))[0];
+    const relayAddress = relayRec?.address || '';
     if (!relayAddress) {
       return Response.json({
-        error: 'META_RELAY_CONTRACT_ADDRESS not configured. Deploy MetaTransactionRelay.sol and set the address.',
-        pending: pending.length,
-      }, { status: 500 });
+        processed: 0,
+        skipped: pending.length,
+        message: 'MetaTransactionRelay contract not deployed. Skipping pending meta-transactions. Deploy MetaTransactionRelay.sol and register it (contract_key: meta_relay) to enable processing.',
+      });
     }
 
     // Set up ethers provider and relayer signer

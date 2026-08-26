@@ -1,8 +1,9 @@
 // Shared PulseChain (EVM validium) client for SwapPulse backend functions.
 // Mirrors the pattern of polygonClient.ts but targets the PulseChain testnet.
 //
-// Contract addresses are read from secrets (set after deploy-pulse-contracts).
-// ABIs are imported from pulseCompiledArtifacts.ts (single source of truth).
+// Contract addresses are resolved from the ContractRegistry (populated by
+// deploy-pulse-contracts / deploy-card-metadata-anchor) so no per-contract
+// secrets are required. ABIs are imported from pulseCompiledArtifacts.ts.
 
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
@@ -12,6 +13,7 @@ import {
   PULSE_BRIDGE_ABI,
 } from './pulseCompiledArtifacts.ts';
 import { CARD_METADATA_ANCHOR_ABI } from './cardMetadataAnchorArtifacts.ts';
+import { resolveDeployedAddress } from './contractRegistry.ts';
 
 export function getPulseProvider(): ethers.JsonRpcProvider {
   const rpcUrl = secrets.get('PULSE_RPC_URL');
@@ -33,33 +35,39 @@ export function getPulseExplorerUrl(): string {
   return secrets.get('PULSE_EXPLORER_URL') || 'https://explorer-testnet.swappulse.org';
 }
 
-export function getPulseUsernameContractAddress(): string | null {
-  return secrets.get('PULSE_SPUN_CONTRACT') || null;
+// --- Address resolution (async, from ContractRegistry) ---
+
+export async function getPulseUsernameContractAddress(svc?: any): Promise<string | null> {
+  return resolveDeployedAddress(svc, 'pulse_username');
 }
 
-export function getPulseCardContractAddress(): string | null {
-  return secrets.get('PULSE_SPCD_CONTRACT') || null;
+export async function getPulseCardContractAddress(svc?: any): Promise<string | null> {
+  return resolveDeployedAddress(svc, 'pulse_card');
 }
 
-export function getPulseBridgeContractAddress(): string | null {
-  return secrets.get('PULSE_BRIDGE_CONTRACT') || null;
+export async function getPulseBridgeContractAddress(svc?: any): Promise<string | null> {
+  return resolveDeployedAddress(svc, 'pulse_bridge');
 }
 
-export function getPulseUsernameContract(signerOrProvider: any): ethers.Contract {
-  const address = getPulseUsernameContractAddress();
-  if (!address) throw new Error('Pulse username contract not deployed. Run deploy-pulse-contracts first and set PULSE_SPUN_CONTRACT secret.');
+export async function getPulseAnchorContractAddress(svc?: any): Promise<string | null> {
+  return resolveDeployedAddress(svc, 'card_metadata_anchor');
+}
+
+export async function getPulseUsernameContract(signerOrProvider: any, svc?: any): Promise<ethers.Contract> {
+  const address = await getPulseUsernameContractAddress(svc);
+  if (!address) throw new Error('Pulse username contract not deployed. Run deploy-pulse-contracts first.');
   return new ethers.Contract(address, PULSE_USERNAME_ABI, signerOrProvider);
 }
 
-export function getPulseCardContract(signerOrProvider: any): ethers.Contract {
-  const address = getPulseCardContractAddress();
-  if (!address) throw new Error('Pulse card contract not deployed. Run deploy-pulse-contracts first and set PULSE_SPCD_CONTRACT secret.');
+export async function getPulseCardContract(signerOrProvider: any, svc?: any): Promise<ethers.Contract> {
+  const address = await getPulseCardContractAddress(svc);
+  if (!address) throw new Error('Pulse card contract not deployed. Run deploy-pulse-contracts first.');
   return new ethers.Contract(address, PULSE_CARD_ABI, signerOrProvider);
 }
 
-export function getPulseBridgeContract(signerOrProvider: any): ethers.Contract {
-  const address = getPulseBridgeContractAddress();
-  if (!address) throw new Error('Pulse bridge contract not deployed. Run deploy-pulse-contracts first and set PULSE_BRIDGE_CONTRACT secret.');
+export async function getPulseBridgeContract(signerOrProvider: any, svc?: any): Promise<ethers.Contract> {
+  const address = await getPulseBridgeContractAddress(svc);
+  if (!address) throw new Error('Pulse bridge contract not deployed. Run deploy-pulse-contracts first.');
   return new ethers.Contract(address, PULSE_BRIDGE_ABI, signerOrProvider);
 }
 
@@ -76,12 +84,8 @@ export function parsePulseMintEvent(contract: ethers.Contract, receipt: any): { 
   };
 }
 
-export function getPulseAnchorContractAddress(): string | null {
-  return secrets.get('CARD_METADATA_ANCHOR_CONTRACT') || null;
-}
-
-export function getPulseAnchorContract(signerOrProvider: any): ethers.Contract {
-  const address = getPulseAnchorContractAddress();
-  if (!address) throw new Error('Card metadata anchor contract not deployed. Run deploy-card-metadata-anchor first and set CARD_METADATA_ANCHOR_CONTRACT secret.');
+export async function getPulseAnchorContract(signerOrProvider: any, svc?: any): Promise<ethers.Contract> {
+  const address = await getPulseAnchorContractAddress(svc);
+  if (!address) throw new Error('Card metadata anchor contract not deployed. Run deploy-card-metadata-anchor first.');
   return new ethers.Contract(address, CARD_METADATA_ANCHOR_ABI, signerOrProvider);
 }

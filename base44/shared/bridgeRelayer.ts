@@ -29,9 +29,9 @@ export interface BridgeMintResult {
   pulseBlockNumber: number;
 }
 
-export async function relayBridgeMint(request: BridgeMintRequest): Promise<BridgeMintResult> {
+export async function relayBridgeMint(request: BridgeMintRequest, svc?: any): Promise<BridgeMintResult> {
   const pulseWallet = getPulseMintWallet();
-  const bridge = getPulseBridgeContract(pulseWallet);
+  const bridge = await getPulseBridgeContract(pulseWallet, svc);
 
   const assetTypeNum = request.assetType === 'username' ? 0 : 1;
 

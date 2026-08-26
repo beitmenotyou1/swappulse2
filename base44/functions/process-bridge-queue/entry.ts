@@ -64,7 +64,7 @@ export default async function (req: Request): Promise<Response> {
           metadataURI: payload.metadataURI,
           verificationLevel: payload.verificationLevel || 0,
           sourceTxHash: item.source_tx_hash,
-        });
+        }, svc);
 
         // Mark confirmed
         await svc.entities.BridgeQueue.update(item.id, {

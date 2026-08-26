@@ -33,7 +33,10 @@ export default async function (req: Request): Promise<Response> {
     const nativeTokenAddr = chain === 'pulse'
       ? secrets.get('PULSE_TOKEN_CONTRACT')
       : secrets.get('PULSE_TOKEN_CONTRACT'); // Same $PULSE token address on both chains (OFT wraps it)
-    const endpointAddr = secrets.get('LAYERZERO_ENDPOINT_V2_ADDRESS');
+    // LayerZero V2 endpoint address for the target chain. Passed in the request
+    // body (endpoint) so no secret dependency. Find the address for your chain
+    // at https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts
+    const endpointAddr = body.endpoint || '';
 
     if (!rpcUrl || !privateKey) {
       return Response.json(
@@ -49,7 +52,7 @@ export default async function (req: Request): Promise<Response> {
     }
     if (!endpointAddr) {
       return Response.json(
-        { error: 'LAYERZERO_ENDPOINT_V2_ADDRESS secret not set. Get the endpoint address from https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts' },
+        { error: 'LayerZero V2 endpoint address required. Pass it in the request body as { "endpoint": "0x..." }. Find the address for your chain at https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts' },
         { status: 400 },
       );
     }

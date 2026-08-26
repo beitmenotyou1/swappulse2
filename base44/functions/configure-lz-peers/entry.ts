@@ -21,14 +21,22 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    const pulseOft = secrets.get('OFT_PULSE_TOKEN_CONTRACT');
-    const polygonOft = secrets.get('OFT_POLYGON_TOKEN_CONTRACT');
+    // Resolve OFT addresses from the ContractRegistry (populated by
+    // deploy-lz-pulse-token). OFT_POLYGON_TOKEN_CONTRACT secret is also
+    // checked as a fallback for manually-set Polygon addresses.
+    const pulseOftRec = (await base44.asServiceRole.entities.ContractRegistry
+      .filter({ contract_key: 'oft_pulse' }).catch(() => []))[0];
+    const pulseOft = pulseOftRec?.address || '';
+
+    const polygonOftRec = (await base44.asServiceRole.entities.ContractRegistry
+      .filter({ contract_key: 'oft_polygon' }).catch(() => []))[0];
+    const polygonOft = polygonOftRec?.address || secrets.get('OFT_POLYGON_TOKEN_CONTRACT') || '';
 
     if (!pulseOft) {
-      return Response.json({ error: 'OFT_PULSE_TOKEN_CONTRACT secret not set. Deploy on PulseChain first.' }, { status: 400 });
+      return Response.json({ error: 'OFT PulseToken not deployed on PulseChain. Run deploy-lz-pulse-token with chain=pulse first.' }, { status: 400 });
     }
     if (!polygonOft) {
-      return Response.json({ error: 'OFT_POLYGON_TOKEN_CONTRACT secret not set. Deploy on Polygon first.' }, { status: 400 });
+      return Response.json({ error: 'OFT PulseToken not deployed on Polygon. Run deploy-lz-pulse-token with chain=polygon first.' }, { status: 400 });
     }
 
     const pulseRpc = secrets.get('PULSE_RPC_URL');

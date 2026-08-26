@@ -37,3 +37,18 @@ export async function upsertContract(
     await base44.asServiceRole.entities.ContractRegistry.create(record);
   }
 }
+
+// Resolve a deployed contract address from the ContractRegistry by contract_key.
+// Returns null if not found. Used by shared modules to avoid depending on
+// per-contract secrets — the registry is the source of truth after deployment.
+// `svc` is the service-role client (base44.asServiceRole).
+export async function resolveDeployedAddress(
+  svc: any,
+  contractKey: string,
+): Promise<string | null> {
+  if (!svc) return null;
+  const rec = (await svc.entities.ContractRegistry
+    .filter({ contract_key: contractKey }, undefined, 1)
+    .catch(() => []))[0];
+  return rec?.address || null;
+}

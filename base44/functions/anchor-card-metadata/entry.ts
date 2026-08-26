@@ -46,10 +46,14 @@ export default async function (req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const svc = base44.asServiceRole;
 
-    const anchorAddress = secrets.get('CARD_METADATA_ANCHOR_CONTRACT');
+    // Resolve the anchor address from the ContractRegistry (populated by
+    // deploy-card-metadata-anchor). No secret dependency.
+    const anchorRec = (await svc.entities.ContractRegistry
+      .filter({ contract_key: 'card_metadata_anchor' }).catch(() => []))[0];
+    const anchorAddress = anchorRec?.address || '';
     if (!anchorAddress) {
       return Response.json({
-        error: 'CARD_METADATA_ANCHOR_CONTRACT secret not set. Run deploy-card-metadata-anchor first.',
+        error: 'CardMetadataAnchor not deployed. Run deploy-card-metadata-anchor first.',
       }, { status: 400 });
     }
 

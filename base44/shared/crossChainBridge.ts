@@ -2,11 +2,16 @@
 // Provides a unified interface for sending $PULSE between PulseChain and Polygon.
 // Uses the OFTPulseToken contract (OFT v2 pattern) under the hood.
 //
+// OFT addresses are resolved from the ContractRegistry (populated by
+// deploy-lz-pulse-token), with the OFT_POLYGON_TOKEN_CONTRACT secret as a
+// fallback for manually-set Polygon addresses.
+//
 // LayerZero OFT: https://layerzero.gitbook.io/docs/layerzero-v2-developer-docs/guides/basic/oft-overview
 
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
 import { OFT_PULSE_TOKEN_ABI } from './oftPulseTokenArtifacts.ts';
+import { resolveDeployedAddress } from './contractRegistry.ts';
 
 // Re-export for convenience so backend functions can import from one place
 export { OFT_PULSE_TOKEN_ABI } from './oftPulseTokenArtifacts.ts';
@@ -29,8 +34,10 @@ function getRpcUrl(chain: ChainKey): string {
   return secrets.get('POLYGON_RPC_URL') || '';
 }
 
-function getOftAddress(chain: ChainKey): string | null {
-  if (chain === 'pulse') return secrets.get('OFT_PULSE_TOKEN_CONTRACT') || null;
+// Resolve the OFT address: ContractRegistry for pulse, registered secret for
+// polygon. `svc` is the service-role client (base44.asServiceRole).
+async function getOftAddress(chain: ChainKey, svc?: any): Promise<string | null> {
+  if (chain === 'pulse') return resolveDeployedAddress(svc, 'oft_pulse');
   return secrets.get('OFT_POLYGON_TOKEN_CONTRACT') || null;
 }
 
@@ -39,9 +46,9 @@ function getExplorerUrl(chain: ChainKey): string {
   return secrets.get('POLYGON_EXPLORER_URL') || '';
 }
 
-export function getOftContract(signerOrProvider: any, chain: ChainKey): ethers.Contract {
-  const address = getOftAddress(chain);
-  if (!address) throw new Error(`OFT_${chain.toUpperCase()}_TOKEN_CONTRACT secret not set. Deploy the OFT contract on ${chain} first.`);
+export async function getOftContract(signerOrProvider: any, chain: ChainKey, svc?: any): Promise<ethers.Contract> {
+  const address = await getOftAddress(chain, svc);
+  if (!address) throw new Error(`OFT contract not deployed on ${chain}. Run deploy-lz-pulse-token with chain=${chain} first.`);
   return new ethers.Contract(address, OFT_PULSE_TOKEN_ABI, signerOrProvider);
 }
 
@@ -56,9 +63,10 @@ export async function quoteCrossChainGas(
   fromChain: ChainKey,
   toChain: ChainKey,
   amountWei: bigint,
+  svc?: any,
 ): Promise<{ lzGasCost: bigint; swapPulseFee: bigint; totalCost: bigint }> {
   const provider = new ethers.JsonRpcProvider(getRpcUrl(fromChain));
-  const contract = getOftContract(provider, fromChain);
+  const contract = await getOftContract(provider, fromChain, svc);
   const dstChainId = getLzChainId(toChain);
 
   const lzGas = await contract.quoteDestinationGas(dstChainId);
@@ -83,8 +91,9 @@ export async function sendCrossChain(
   toAddress: string,
   amountWei: bigint,
   wallet: ethers.Wallet,
+  svc?: any,
 ): Promise<{ txHash: string; explorerUrl: string; etaSeconds: number }> {
-  const contract = getOftContract(wallet, fromChain);
+  const contract = await getOftContract(wallet, fromChain, svc);
   const dstChainId = getLzChainId(toChain);
 
   // Check peer is configured
@@ -94,12 +103,12 @@ export async function sendCrossChain(
   }
 
   // Quote gas
-  const { lzGasCost, swapPulseFee } = await quoteCrossChainGas(fromChain, toChain, amountWei);
+  const { lzGasCost, swapPulseFee } = await quoteCrossChainGas(fromChain, toChain, amountWei, svc);
 
   // Approve the OFT contract to spend tokens (including fee)
   const oftAddress = await contract.getAddress();
   const tokenContract = new ethers.Contract(
-    secrets.get(fromChain === 'pulse' ? 'PULSE_TOKEN_CONTRACT' : 'POLYGON_USDC_CONTRACT') || oftAddress,
+    secrets.get('PULSE_TOKEN_CONTRACT') || oftAddress,
     ['function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)'],
     wallet,
   );
@@ -132,13 +141,14 @@ export async function sendCrossChain(
 /**
  * Build the raw transaction data for a cross-chain send (for client-side signing via MetaMask).
  */
-export function buildSendTransactionData(
+export async function buildSendTransactionData(
   fromChain: ChainKey,
   toChain: ChainKey,
   toAddress: string,
   amountWei: bigint,
-): { to: string; data: string; value: string } {
-  const oftAddress = getOftAddress(fromChain);
+  svc?: any,
+): Promise<{ to: string; data: string; value: string }> {
+  const oftAddress = await getOftAddress(fromChain, svc);
   if (!oftAddress) throw new Error(`OFT contract not deployed on ${fromChain}`);
 
   const dstChainId = getLzChainId(toChain);
