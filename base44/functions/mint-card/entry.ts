@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getMintWallet, getCardContract, getExplorerUrl, parseMintEvent } from '../../shared/polygonClient.ts';
+import { mintCardDual } from '../../shared/dualMintEngine.ts';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 import { verifySignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { verifyPin } from '../../shared/walletCrypto.ts';
@@ -99,37 +99,33 @@ export default async function(req: Request): Promise<Response> {
     const cardImage = entry.card_image || '';
     const metadataURI = `https://swappulse.org/card/${cardId}`;
 
-    const tx = await contract.mint(walletAddress, cardId, cardName, cardImage, metadataURI);
-    const receipt = await tx.wait();
-    const { tokenId } = parseMintEvent(contract, receipt);
+    // Read dual-chain preferences (default: Polygon-only until bridge is enabled)
+    const cryptoConfig = settingsList[0]?.config?.crypto;
+    const primaryChain = cryptoConfig?.primaryChain || 'polygon';
+    const bridgeToSecondary = cryptoConfig?.bridgeToPulse === true;
 
-    // Record the asset with minter username
-    const asset = await base44.asServiceRole.entities.OnChainAsset.create({
-      asset_type: 'card',
-      token_id: tokenId,
-      contract_address: await contract.getAddress(),
-      owner_did: did,
-      owner_wallet: walletAddress,
-      linked_card_id: cardId,
-      linked_card_name: cardName,
-      linked_card_image: cardImage,
-      linked_collection_entry_id: collectionEntryId,
-      minter_username: minterUsername,
-      minter_did: did,
-      mint_tx_hash: tx.hash,
-      mint_block_number: receipt.blockNumber,
-      minted_at: new Date().toISOString(),
-      transferable: true,
-      metadata_uri: metadataURI,
-      chain_id: '137',
-      verification_level: verificationLevel,
-      verification_session_id: verificationSessionId || '',
-    });
+    // Dual-mint: mints on the primary chain, then bridges to the secondary
+    const dualResult = await mintCardDual(
+      base44.asServiceRole,
+      walletAddress,
+      cardId,
+      cardName,
+      cardImage,
+      metadataURI,
+      minterUsername,
+      verificationLevel,
+      did,
+      { primaryChain, bridgeToSecondary, collectionEntryId, verificationSessionId },
+    );
 
+    const asset = dualResult.polygonAsset || dualResult.pulseAsset;
     return Response.json({
       asset,
-      txHash: tx.hash,
-      explorerUrl: `${getExplorerUrl()}/tx/${tx.hash}`,
+      txHash: dualResult.polygonTxHash || dualResult.pulseTxHash,
+      explorerUrl: dualResult.polygonScanUrl,
+      pulseScanUrl: dualResult.pulseScanUrl,
+      bridgeStatus: dualResult.bridgeStatus,
+      dualChain: true,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

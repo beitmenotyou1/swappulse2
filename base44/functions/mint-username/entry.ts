@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getMintWallet, getUsernameContract, getExplorerUrl, parseMintEvent } from '../../shared/polygonClient.ts';
+import { mintUsernameDual } from '../../shared/dualMintEngine.ts';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 import { verifySignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { verifyPin } from '../../shared/walletCrypto.ts';
@@ -87,31 +87,29 @@ export default async function(req: Request): Promise<Response> {
     const origin = `${reqUrl.protocol}//${reqUrl.host}`;
     const metadataURI = `${origin}/functions/username-nft-metadata?did=${encodeURIComponent(did)}`;
 
-    const tx = await contract.mint(walletAddress, handle, did, metadataURI);
-    const receipt = await tx.wait();
-    const { tokenId } = parseMintEvent(contract, receipt);
+    // Read dual-chain preferences (default: Polygon-only until bridge is enabled)
+    const cryptoConfig = settingsList[0]?.config?.crypto;
+    const primaryChain = cryptoConfig?.primaryChain || 'polygon';
+    const bridgeToSecondary = cryptoConfig?.bridgeToPulse === true;
 
-    // Record the asset
-    const asset = await base44.asServiceRole.entities.OnChainAsset.create({
-      asset_type: 'username',
-      token_id: tokenId,
-      contract_address: await contract.getAddress(),
-      owner_did: did,
-      owner_wallet: walletAddress,
+    // Dual-mint: mints on the primary chain, then bridges to the secondary
+    const dualResult = await mintUsernameDual(
+      base44.asServiceRole,
+      walletAddress,
       handle,
-      did_ref: did,
-      mint_tx_hash: tx.hash,
-      mint_block_number: receipt.blockNumber,
-      minted_at: new Date().toISOString(),
-      transferable: false,
-      metadata_uri: metadataURI,
-      chain_id: '137',
-    });
+      did,
+      metadataURI,
+      { primaryChain, bridgeToSecondary },
+    );
 
+    const asset = dualResult.polygonAsset || dualResult.pulseAsset;
     return Response.json({
       asset,
-      txHash: tx.hash,
-      explorerUrl: `${getExplorerUrl()}/tx/${tx.hash}`,
+      txHash: dualResult.polygonTxHash || dualResult.pulseTxHash,
+      explorerUrl: dualResult.polygonScanUrl,
+      pulseScanUrl: dualResult.pulseScanUrl,
+      bridgeStatus: dualResult.bridgeStatus,
+      dualChain: true,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

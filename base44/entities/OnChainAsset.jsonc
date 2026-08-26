@@ -2,7 +2,7 @@
   "name": "OnChainAsset",
   "type": "object",
   "title": "OnChainAsset",
-  "description": "org.swappulse.onChainAsset \u2014 a minted Polygon NFT tracked by SwapPulse. Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via backend functions; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse. Each transfer entry includes a 'verified' flag that is only set true once the physical card receipt is confirmed via the escrow system, ensuring the physical card and its NFT are treated as a single entity. minter_username stores the original minter's SwapPulse handle for transparency. verification_level (0\u20133) records the trust tier of the ownership proof, embedded in the NFT metadata so buyers and traders can see how much trust the on-chain proof carries.",
+  "description": "org.swappulse.onChainAsset \u2014 a minted NFT tracked by SwapPulse, dual-minted across Polygon (canonical) and PulseChain (mirrored via bridge). Covers two asset types: 'username' (soulbound, non-transferable ERC-721 linked to the collector's AT Protocol DID) and 'card' (transferable ERC-721 minted from a CollectionEntry as proof of ownership). The platform's minting wallet creates these via the dual-mint engine; transfer_history records on-chain ownership changes when a card is sold or traded through SwapPulse. Each transfer entry includes a 'verified' flag that is only set true once the physical card receipt is confirmed via the escrow system, ensuring the physical card and its NFT are treated as a single entity. minter_username stores the original minter's SwapPulse handle for transparency. verification_level (0\u20133) records the trust tier of the ownership proof, embedded in the NFT metadata so buyers and traders can see how much trust the on-chain proof carries. source_chain, bridge_status, pulsechain_token_id/tx_hash, polygon_token_id/tx_hash, and dual_chain track the cross-chain bridge state managed by the dual-mint engine and the process-bridge-queue retry workflow.",
   "properties": {
     "asset_type": {
       "type": "string",
@@ -14,11 +14,11 @@
     },
     "token_id": {
       "type": "integer",
-      "description": "On-chain ERC-721 token ID assigned by the contract"
+      "description": "On-chain ERC-721 token ID assigned by the contract on the primary chain"
     },
     "contract_address": {
       "type": "string",
-      "description": "Polygon contract address that minted this token"
+      "description": "Contract address that minted this token on the primary chain"
     },
     "owner_did": {
       "type": "string",
@@ -26,7 +26,7 @@
     },
     "owner_wallet": {
       "type": "string",
-      "description": "Polygon wallet address of the current on-chain owner"
+      "description": "Wallet address of the current on-chain owner"
     },
     "handle": {
       "type": "string",
@@ -62,11 +62,11 @@
     },
     "mint_tx_hash": {
       "type": "string",
-      "description": "Polygon transaction hash of the mint"
+      "description": "Primary-chain transaction hash of the mint"
     },
     "mint_block_number": {
       "type": "integer",
-      "description": "Block number the mint was confirmed in"
+      "description": "Block number the mint was confirmed in on the primary chain"
     },
     "minted_at": {
       "type": "string",
@@ -128,6 +128,43 @@
     "verification_session_id": {
       "type": "string",
       "description": "ID of the CardVerificationSession used for this mint (empty for Level 0 self-attested mints)"
+    },
+    "source_chain": {
+      "type": "string",
+      "default": "polygon",
+      "description": "Chain the NFT was minted on: 'polygon' (canonical) or 'pulse' (PulseChain native). Set by the dual-mint engine."
+    },
+    "bridge_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "pending",
+        "confirmed",
+        "failed"
+      ],
+      "default": "none",
+      "description": "Cross-chain bridge state: none (single-chain), pending (bridge in-flight), confirmed (mirrored on secondary), failed (queued for retry)"
+    },
+    "pulsechain_token_id": {
+      "type": "integer",
+      "description": "Token ID of the mirrored NFT on PulseChain (set on bridge success)"
+    },
+    "pulsechain_tx_hash": {
+      "type": "string",
+      "description": "PulseChain transaction hash of the bridge mint (set on bridge success)"
+    },
+    "polygon_token_id": {
+      "type": "integer",
+      "description": "Polygon token ID (explicit dual-chain field; equals token_id for polygon-primary mints)"
+    },
+    "polygon_tx_hash": {
+      "type": "string",
+      "description": "Polygon transaction hash (explicit dual-chain field; equals mint_tx_hash for polygon-primary mints)"
+    },
+    "dual_chain": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this asset is dual-minted across Polygon and PulseChain"
     }
   },
   "required": [

@@ -4,6 +4,23 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+// PulseChain native balance query (gracefully skips if PULSE_RPC_URL not set).
+async function getPulseBalance(walletAddress: string): Promise<{ native_balance: string; chain_id: string; explorer_url: string; is_native: boolean } | null> {
+  try {
+    const { getPulseProvider, getPulseChainId, getPulseExplorerUrl } = await import('../../shared/pulseClient.ts');
+    const provider = getPulseProvider();
+    const balance = await provider.getBalance(walletAddress).catch(() => 0n);
+    return {
+      native_balance: balance.toString(),
+      chain_id: getPulseChainId(),
+      explorer_url: getPulseExplorerUrl(),
+      is_native: true,
+    };
+  } catch {
+    return null; // PulseChain not configured yet — omit from response
+  }
+}
+
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -120,6 +137,7 @@ export default async function (req: Request): Promise<Response> {
         token_id: usernameNft.token_id,
         contract_address: usernameNft.contract_address,
       } : null,
+      pulse: defaultWalletAddress ? await getPulseBalance(defaultWalletAddress) : null,
     });
   } catch (error: any) {
     console.error('get-wallet-balance error:', error?.message || error);

@@ -1,11 +1,12 @@
 // Auto-mint logic for the "first top-up" welcome NFTs. Mints the soulbound
 // username NFT and a fixed platform "welcome" card NFT into the collector's
-// active wallet. Called from stripe-webhook on the user's first successful
+// active wallet via the dual-mint engine (Polygon primary, bridged to
+// PulseChain). Called from stripe-webhook on the user's first successful
 // top-up. Skips the username NFT if it has already been minted (manual mint
 // or a re-run of the webhook). The card NFT is a fixed platform card that
 // every collector receives on their first top-up.
 
-import { getMintWallet, getUsernameContract, getCardContract, parseMintEvent, getExplorerUrl } from './polygonClient.ts';
+import { mintUsernameDual, mintCardDual } from './dualMintEngine.ts';
 
 // The fixed welcome card details — every collector gets this card NFT on
 // their first successful top-up.
@@ -23,87 +24,59 @@ export async function mintWelcomeNfts(
 ): Promise<{ usernameAsset?: any; cardAsset?: any; usernameTxHash?: string; cardTxHash?: string; skipped: boolean }> {
   const result: any = { skipped: false };
 
-  // --- Username NFT (soulbound) ---
+  // --- Username NFT (dual-mint: Polygon primary, bridge to PulseChain) ---
   // Skip if already minted (manual mint or webhook re-run)
   const existingUsername = await svc.entities.OnChainAsset
     .filter({ owner_did: did, asset_type: 'username' }).catch(() => []);
   if (!existingUsername.length) {
     try {
-      const mintWallet = getMintWallet();
-      const contract = getUsernameContract(mintWallet);
-
       // Build the dynamic metadata URI (same as manual mint)
       const origin = reqUrl
         ? `${new URL(reqUrl).protocol}//${new URL(reqUrl).host}`
         : 'https://swappulse.org';
       const metadataURI = `${origin}/functions/username-nft-metadata?did=${encodeURIComponent(did)}`;
 
-      const tx = await contract.mint(walletAddress, handle, did, metadataURI);
-      const receipt = await tx.wait();
-      const { tokenId } = parseMintEvent(contract, receipt);
-
-      result.usernameAsset = await svc.entities.OnChainAsset.create({
-        asset_type: 'username',
-        token_id: tokenId,
-        contract_address: await contract.getAddress(),
-        owner_did: did,
-        owner_wallet: walletAddress,
-        handle,
-        did_ref: did,
-        mint_tx_hash: tx.hash,
-        mint_block_number: receipt.blockNumber,
-        minted_at: new Date().toISOString(),
-        transferable: false,
-        metadata_uri: metadataURI,
-        chain_id: '137',
+      // Welcome NFTs always mint on Polygon first (canonical security) then
+      // bridge to PulseChain.
+      const dualResult = await mintUsernameDual(svc, walletAddress, handle, did, metadataURI, {
+        primaryChain: 'polygon',
+        bridgeToSecondary: true,
       });
-      result.usernameTxHash = tx.hash;
+
+      result.usernameAsset = dualResult.polygonAsset || dualResult.pulseAsset;
+      result.usernameTxHash = dualResult.polygonTxHash || dualResult.pulseTxHash;
     } catch (e) {
       console.error('autoMint: username NFT failed:', (e as any)?.message || e);
+      // Non-blocking (same as previous implementation)
     }
   } else {
     result.skipped = true;
   }
 
-  // --- Welcome card NFT (transferable) ---
+  // --- Welcome card NFT (dual-mint: Polygon primary, bridge to PulseChain) ---
   // Skip if the collector already has a welcome card
   const existingCard = await svc.entities.OnChainAsset
     .filter({ owner_did: did, asset_type: 'card', linked_card_id: WELCOME_CARD_ID }).catch(() => []);
   if (!existingCard.length) {
     try {
-      const mintWallet = getMintWallet();
-      const contract = getCardContract(mintWallet);
-
-      const tx = await contract.mint(
+      const dualResult = await mintCardDual(
+        svc,
         walletAddress,
         WELCOME_CARD_ID,
         WELCOME_CARD_NAME,
         WELCOME_CARD_IMAGE,
         WELCOME_CARD_METADATA_URI,
+        handle,
+        0, // verification_level: self-attested
+        did,
+        {
+          primaryChain: 'polygon',
+          bridgeToSecondary: true,
+        },
       );
-      const receipt = await tx.wait();
-      const { tokenId } = parseMintEvent(contract, receipt);
 
-      result.cardAsset = await svc.entities.OnChainAsset.create({
-        asset_type: 'card',
-        token_id: tokenId,
-        contract_address: await contract.getAddress(),
-        owner_did: did,
-        owner_wallet: walletAddress,
-        linked_card_id: WELCOME_CARD_ID,
-        linked_card_name: WELCOME_CARD_NAME,
-        linked_card_image: WELCOME_CARD_IMAGE,
-        minter_username: handle,
-        minter_did: did,
-        mint_tx_hash: tx.hash,
-        mint_block_number: receipt.blockNumber,
-        minted_at: new Date().toISOString(),
-        transferable: true,
-        metadata_uri: WELCOME_CARD_METADATA_URI,
-        chain_id: '137',
-        verification_level: 0,
-      });
-      result.cardTxHash = tx.hash;
+      result.cardAsset = dualResult.polygonAsset || dualResult.pulseAsset;
+      result.cardTxHash = dualResult.polygonTxHash || dualResult.pulseTxHash;
     } catch (e) {
       console.error('autoMint: welcome card NFT failed:', (e as any)?.message || e);
     }

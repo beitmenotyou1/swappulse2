@@ -10,11 +10,15 @@ export interface ChainDef {
   symbol: string;
   type: 'evm' | 'solana' | 'bitcoin' | 'other';
   rpcSecret?: string;
+  isNative?: boolean;
+  supportsMinting?: boolean;
 }
 
 export const CHAINS: ChainDef[] = [
+  // SwapPulse native chain (PulseChain validium) — dual-mint target
+  { key: 'pulse', name: 'PulseChain', symbol: 'PULSE', type: 'evm', rpcSecret: 'PULSE_RPC_URL', isNative: true, supportsMinting: true },
   // Core chains
-  { key: 'polygon', name: 'Polygon', symbol: 'POL', type: 'evm', rpcSecret: 'POLYGON_RPC_URL' },
+  { key: 'polygon', name: 'Polygon', symbol: 'POL', type: 'evm', rpcSecret: 'POLYGON_RPC_URL', supportsMinting: true },
   { key: 'ethereum', name: 'Ethereum', symbol: 'ETH', type: 'evm', rpcSecret: 'ETHEREUM_RPC_URL' },
   { key: 'arbitrum', name: 'Arbitrum', symbol: 'ARB', type: 'evm', rpcSecret: 'ARBITRUM_RPC_URL' },
   { key: 'optimism', name: 'OP Mainnet', symbol: 'OP', type: 'evm', rpcSecret: 'OPTIMISM_RPC_URL' },

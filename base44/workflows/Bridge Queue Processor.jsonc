@@ -1,0 +1,45 @@
+{
+  "name": "Bridge Queue Processor",
+  "description": "Every 5 minutes, retries failed Polygon to PulseChain bridge relays from the dual-mint flow. Loads queued BridgeQueue items, attempts the relay via the PulseChainBridge contract, marks confirmed on success (and updates the matching OnChainAsset), and permanently fails items that exceed max retries.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "bridge_queue_processor",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "process_queue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "process-bridge-queue",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Process bridge queue",
+            "description": "Retries failed Polygon to PulseChain bridge relays"
+          }
+        }
+      }
+    ]
+  }
+}
