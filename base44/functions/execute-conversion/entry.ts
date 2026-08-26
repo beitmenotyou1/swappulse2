@@ -289,16 +289,25 @@ export default async function (req: Request): Promise<Response> {
 
         const userWallet = new ethers.Wallet(privateKey, getProvider());
 
-        // Step 1: Swap source token to USDC on Polygon via DEX
-        const quote = await fetchDexQuote({
-          srcToken: source_token,
-          destToken: USDC_CONTRACT_ADDRESS,
-          amount: amount,
-          network: POLYGON_CHAIN_ID,
-        });
-        const swapResult = await executeDexSwap(userWallet, quote);
+        // Step 1: Obtain USDC on Polygon. If the source token is already USDC,
+        // no DEX swap is needed (Velora rejects src==dest quotes). Otherwise,
+        // swap the source token to USDC via the DEX aggregator.
+        let usdcReceived: bigint;
+        let swapTxHash = '';
+        if (source_token.toLowerCase() === USDC_CONTRACT_ADDRESS.toLowerCase()) {
+          usdcReceived = BigInt(amount);
+        } else {
+          const quote = await fetchDexQuote({
+            srcToken: source_token,
+            destToken: USDC_CONTRACT_ADDRESS,
+            amount: amount,
+            network: POLYGON_CHAIN_ID,
+          });
+          const swapResult = await executeDexSwap(userWallet, quote);
+          usdcReceived = BigInt(quote.destAmount);
+          swapTxHash = swapResult.txHash;
+        }
 
-        const usdcReceived = BigInt(quote.destAmount);
         const feeWei = calculateFee(usdcReceived);
         const netUsdcWei = usdcReceived - feeWei;
         const netUsdc = Number(netUsdcWei) / 1_000_000;
