@@ -16,9 +16,38 @@ import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
 import { verifyWalletPasskey } from '../../shared/webauthn.ts';
 import { fetchDexQuote, executeDexSwap } from '../../shared/dexAggregator.ts';
 import { getPulseMintWallet } from '../../shared/pulseClient.ts';
+import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 
 const POLYGON_CHAIN_ID = 137;
 const PULSE_SENTINEL = 'PULSE';
+
+// Conservative fallback if the price oracle is unreachable. Kept low so a
+// failed oracle can never cause an over-issuance of treasury PULSE.
+const PULSE_PRICE_FALLBACK_USD = 0.00002;
+
+/**
+ * Fetches the current PULSE (PLS) spot price in USD from Coinbase — the same
+ * oracle used by get-crypto-prices. NEVER trust a client-supplied price for
+ * treasury disbursement: an attacker could set pulse_price_usd near zero and
+ * drain the platform's PulseChain treasury. Returns 0 on failure so callers
+ * can reject the conversion rather than fall back to an unsafe value.
+ */
+async function fetchPulsePriceUsd(): Promise<number> {
+  try {
+    const url = 'https://api.coinbase.com/v2/prices/PLS-USD/spot';
+    await assertSafeHost(new URL(url).hostname);
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    const price = parseFloat(data?.data?.amount || '0');
+    // Sanity bounds: reject implausible oracle values (zero, negative, or
+    // absurdly high) to protect the treasury even if the oracle is compromised.
+    if (!isFinite(price) || price <= 0 || price > 1) return 0;
+    return price;
+  } catch {
+    return 0;
+  }
+}
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -56,7 +85,10 @@ export default async function (req: Request): Promise<Response> {
       // treasury. Fiat is debited and converted to USDC (platform revenue);
       // PULSE is sent from the platform PulseChain wallet to the user's address.
       if (target_token === PULSE_SENTINEL) {
-        const pulsePriceUsd = body.pulse_price_usd || 0;
+        // SECURITY: fetch the PULSE price from a trusted server-side oracle.
+        // Never accept pulse_price_usd from the client — it controls the
+        // treasury disbursement amount and could drain the platform wallet.
+        const pulsePriceUsd = await fetchPulsePriceUsd();
         if (pulsePriceUsd <= 0) {
           return Response.json({ error: 'PULSE price unavailable. Try again in a moment.' }, { status: 400 });
         }
@@ -271,8 +303,10 @@ export default async function (req: Request): Promise<Response> {
         const netUsdcWei = usdcReceived - feeWei;
         const netUsdc = Number(netUsdcWei) / 1_000_000;
 
-        // Step 2: Calculate PULSE amount from market price
-        const pulsePriceUsd = body.pulse_price_usd || 0;
+        // Step 2: Calculate PULSE amount from market price.
+        // SECURITY: fetch from trusted server-side oracle — never trust the
+        // client-supplied pulse_price_usd, which controls treasury disbursement.
+        const pulsePriceUsd = await fetchPulsePriceUsd();
         if (pulsePriceUsd <= 0) {
           return Response.json({ error: 'PULSE price unavailable. Try again in a moment.' }, { status: 400 });
         }
