@@ -35,6 +35,7 @@ export const DEFAULT_SETTINGS = {
   },
   accessibility: { theme: 'dark', reduceMotion: false, highContrast: false, fontSize: 'medium' },
   crypto: { enabled: true, display_currency: 'USDC' },
+  wallet: { default_wallet: 'custodial', receive_strict_mode: true },
   challenges: {
     leaderboardOptIn: false,
     leaderboardCategories: [],
