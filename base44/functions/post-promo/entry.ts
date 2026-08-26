@@ -181,7 +181,11 @@ function generateCardMessage(card: FeaturedCard, locale: string): PromoResult {
   const intro = infoLine ? `${hook}\n\n${infoLine}` : hook;
   const essential = `${intro}\n\n${cardLine}\n\n${hashtags}`;
   if (countGraphemes(essential) > 300) {
-    return { content: essential.slice(0, 297) + '...', embedUrl: cardUrl, embedTitle: card.name, embedDescription: infoLine || 'Pokémon TCG card', tags };
+    // URL + hashtags always present; trim intro to fit.
+    const minimal = `${cardLine}\n\n${hashtags}`;
+    const budget = 300 - countGraphemes(minimal) - 3;
+    const trimmed = budget > 10 ? `${intro.slice(0, budget)}...\n\n` : '';
+    return { content: `${trimmed}${minimal}`, embedUrl: cardUrl, embedTitle: card.name, embedDescription: infoLine || 'Pokémon TCG card', tags };
   }
   const valueProp = pick(pools.valueProps);
   const full = `${intro}\n\n${valueProp}\n\n${cardLine}\n\n${hashtags}`;
@@ -202,7 +206,11 @@ function generateFeatureMessage(feature: { name: string; path: string; descripti
   const featureLine = `${featureUrl}`;
   const essential = `${hook}\n\n${featureLine}\n\n${hashtags}`;
   if (countGraphemes(essential) > 300) {
-    return { content: essential.slice(0, 297) + '...', embedUrl: featureUrl, embedTitle: feature.name, embedDescription: feature.description, tags };
+    // URL + hashtags always present; trim hook to fit.
+    const minimal = `${featureLine}\n\n${hashtags}`;
+    const budget = 300 - countGraphemes(minimal) - 3;
+    const trimmed = budget > 10 ? `${hook.slice(0, budget)}...\n\n` : '';
+    return { content: `${trimmed}${minimal}`, embedUrl: featureUrl, embedTitle: feature.name, embedDescription: feature.description, tags };
   }
   const valueProp = pick(pools.valueProps);
   const full = `${hook}\n\n${valueProp}\n\n${featureLine}\n\n${hashtags}`;
@@ -309,10 +317,6 @@ Deno.serve(async (req) => {
     // Uploads the poster once, then publishes one post per locale.
     if (forcedPromoType === 'first_join_all') {
       const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
-      if (!uploadResult.blob) {
-        console.error('post-promo: first_join_all image upload failed');
-        return Response.json({ error: 'Image upload failed' }, { status: 502 });
-      }
       session.accessJwt = uploadResult.accessJwt;
       const imageBlob = uploadResult.blob;
       const altText = 'SwapPulse Beta';
@@ -325,8 +329,10 @@ Deno.serve(async (req) => {
           text: content,
           createdAt: new Date().toISOString(),
           langs: [loc.bcp47],
-          embed: { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] },
         };
+        if (imageBlob) {
+          record.embed = { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] };
+        }
         if (tags.length > 0) record.tags = tags;
         const facets = buildRichTextFacets(content);
         if (facets.length > 0) record.facets = facets;
@@ -413,17 +419,11 @@ Deno.serve(async (req) => {
       imageBlob = uploadResult.blob;
       session.accessJwt = uploadResult.accessJwt;
     }
-    // Guard: never publish a text-only promo post. If the image blob upload
-    // failed, abort so the workflow retries on the next scheduled cycle
-    // instead of publishing a bare-text promo.
-    if (!imageBlob) {
-      console.error('post-promo: image blob upload failed — aborting post to prevent plain-text promo');
-      return Response.json({ error: 'Image upload failed — promo post aborted to prevent plain-text output' }, { status: 502 });
-    }
-    const embed: any = {
-      $type: 'app.bsky.embed.images',
-      images: [{ alt: altText, image: imageBlob }],
-    };
+    // If the image blob upload failed, publish without an embed — the link
+    // and hashtag facets still make the post functional (clickable URL + tags).
+    const embed: any = imageBlob
+      ? { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] }
+      : null;
 
     // Create the post directly on the PDS (no local Post record)
     const record: any = {
