@@ -27,6 +27,18 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Invalid chain (must be "pulse" or "polygon")' }, { status: 400 });
     }
 
+    // PulseChain is NOT a LayerZero V2 supported chain. LayerZero V2 endpoints
+    // are deployed on 150+ networks (Polygon, Ethereum, Arbitrum, Base, …) but
+    // not on PulseChain — see https://docs.layerzero.network/v2/deployments/deployed-contracts.
+    // The OFT wrapper therefore only makes sense on Polygon (and other LZ V2
+    // chains). PulseChain ↔ Polygon asset bridging uses the custom
+    // PolygonBridge / PulseChainBridge contracts for NFTs, not LayerZero.
+    if (chain === 'pulse') {
+      return Response.json({
+        error: 'PulseChain is not a LayerZero V2 supported chain — there is no V2 endpoint to deploy the OFT against. Deploy the OFT on Polygon only (chain: "polygon") using the Polygon V2 endpoint 0x1a44076050125825900e736c501f859c50fE728c. PulseChain asset bridging uses the custom NFT bridge contracts instead. See https://docs.layerzero.network/v2/deployments/deployed-contracts',
+      }, { status: 400 });
+    }
+
     const rpcUrl = chain === 'pulse' ? secrets.get('PULSE_RPC_URL') : secrets.get('POLYGON_RPC_URL');
     const privateKey = chain === 'pulse' ? secrets.get('PULSE_PRIVATE_KEY') : secrets.get('POLYGON_PRIVATE_KEY');
     const explorerUrl = chain === 'pulse' ? secrets.get('PULSE_EXPLORER_URL') : secrets.get('POLYGON_EXPLORER_URL');

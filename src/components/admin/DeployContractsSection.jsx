@@ -258,8 +258,10 @@ function DeployCard({
 // Specialised card for the LayerZero OFT PulseToken, which takes a `chain`
 // parameter (pulse or polygon) and can be deployed on either chain.
 function OftDeployCard({ deployed, onDeployed }) {
-  const [chain, setChain] = useState('pulse');
-  const [endpoint, setEndpoint] = useState('');
+  const [chain, setChain] = useState('polygon');
+  // Polygon mainnet LayerZero V2 endpoint (same address on most EVM mainnets).
+  // See https://docs.layerzero.network/v2/deployments/deployed-contracts
+  const [endpoint, setEndpoint] = useState('0x1a44076050125825900e736c501f859c50fE728c');
   const [deploying, setDeploying] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -270,7 +272,7 @@ function OftDeployCard({ deployed, onDeployed }) {
 
   const deploy = async () => {
     if (!endpoint || !/^0x[a-fA-F0-9]{40}$/.test(endpoint.trim())) {
-      setError('Enter the LayerZero V2 endpoint address (0x…) for the selected chain. Find it at https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts');
+      setError('Enter the LayerZero V2 endpoint address (0x…) for the selected chain. Find it at https://docs.layerzero.network/v2/deployments/deployed-contracts');
       return;
     }
     if (!window.confirm(`Deploy the OFT PulseToken on ${chain}? This will spend gas from the ${chain} deployer wallet.`)) return;
@@ -307,22 +309,15 @@ function OftDeployCard({ deployed, onDeployed }) {
         )}
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        OFTPulseToken wraps the native $PULSE ERC-20 for cross-chain transfers via LayerZero V2. Deploy on each chain you want to bridge between, then run configure-lz-peers.
+        OFTPulseToken wraps the native $PULSE ERC-20 for cross-chain transfers via LayerZero V2. Deploy on Polygon (the only LayerZero V2 chain in SwapPulse), then configure peers to other LayerZero V2 chains you want to bridge to. PulseChain uses the custom NFT bridge, not LayerZero.
       </p>
 
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs font-semibold text-muted-foreground">Chain:</span>
-        <div className="inline-flex rounded-lg border border-border p-0.5">
-          {['pulse', 'polygon'].map((c) => (
-            <button
-              key={c}
-              onClick={() => setChain(c)}
-              className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition-colors ${chain === c ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-secondary'}`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <span className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Polygon</span>
+        <span className="text-[10px] text-muted-foreground">
+          PulseChain isn't a LayerZero V2 chain — use the custom NFT bridge for PulseChain assets.
+        </span>
       </div>
 
       {!isDeployed && (
@@ -339,7 +334,7 @@ function OftDeployCard({ deployed, onDeployed }) {
           />
           <p className="mt-1 text-[10px] text-muted-foreground">
             Find the endpoint for your chain at{' '}
-            <a href="https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            <a href="https://docs.layerzero.network/v2/deployments/deployed-contracts" target="_blank" rel="noopener noreferrer" className="text-primary underline">
               LayerZero docs
             </a>
           </p>
