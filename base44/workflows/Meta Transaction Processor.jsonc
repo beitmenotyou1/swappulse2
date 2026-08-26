@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Meta Transaction Processor",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "meta_tx_processor",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "process_meta_txs": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "process-meta-transactions",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Process meta-transactions",
+            "description": "Relay queued gas-less txs to Polygon"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Gas Station Service \u2014 processes queued gas-less meta-transactions every 5 minutes by relaying signed EIP-712 messages to the MetaTransactionRelay contract on Polygon"
+}

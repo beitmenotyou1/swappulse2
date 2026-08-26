@@ -1,0 +1,119 @@
+{
+  "name": "MetaTransaction",
+  "type": "object",
+  "title": "MetaTransaction",
+  "description": "org.swappulse.metaTransaction \u2014 a queued meta-transaction for gas-less execution. Users sign transaction data off-chain with EIP-712 typed data; relayers submit the transaction on-chain with their own gas. Processed by the process-meta-transactions scheduled function every 5 minutes.",
+  "properties": {
+    "user_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who signed the meta-transaction"
+    },
+    "user_address": {
+      "type": "string",
+      "description": "Wallet address of the signing user"
+    },
+    "target_contract": {
+      "type": "string",
+      "description": "Target contract address for the meta-transaction call"
+    },
+    "function_name": {
+      "type": "string",
+      "description": "Name of the function to execute on the target contract"
+    },
+    "args": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Encoded function arguments (ABI-encoded)"
+    },
+    "signature": {
+      "type": "string",
+      "description": "User's EIP-712 signature over the meta-transaction typed data"
+    },
+    "nonce": {
+      "type": "integer",
+      "default": 0,
+      "description": "User's nonce at the time of signing (replay protection)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "processed",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Processing status: pending (queued), processing (relayer picked up), processed (on-chain tx confirmed), failed (error)"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "On-chain transaction hash once the meta-transaction is processed"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if processing failed"
+    },
+    "gas_cost_wei": {
+      "type": "string",
+      "default": "0",
+      "description": "Gas cost paid by the relayer for this meta-transaction (in wei)"
+    },
+    "relayer_fee_wei": {
+      "type": "string",
+      "default": "0",
+      "description": "Relayer fee charged for processing this meta-transaction (in wei)"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the meta-transaction was processed on-chain"
+    }
+  },
+  "required": [
+    "user_did",
+    "user_address",
+    "target_contract",
+    "function_name",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.user_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.user_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
