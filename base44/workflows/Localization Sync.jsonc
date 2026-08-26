@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "localization_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_localizations": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sync-localizations",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Localize cards",
+            "description": "Fetch 17 languages for cards missing translations"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Localization Sync",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "15 */2 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Fetches all 17 TCGDex language translations for cards with incomplete localizations. Runs every 2 hours, processing up to 5 cards per run (85 API calls, ~9 seconds)."
+}
