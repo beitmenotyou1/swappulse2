@@ -4,6 +4,7 @@
 
 // Human-readable ABI (ethers.js v6 compatible)
 export const PULSE_TOKEN_ABI = [
+  'constructor(address admin, address minter, uint256 initialSupply)',
   'function name() view returns (string)',
   'function symbol() view returns (string)',
   'function decimals() view returns (uint8)',

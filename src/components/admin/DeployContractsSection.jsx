@@ -106,18 +106,8 @@ export default function DeployContractsSection() {
       />
 
       {/* Base $PULSE ERC-20 token (must be deployed before the OFT wrapper) */}
-      <DeployCard
-        title="PulseChain · $PULSE ERC-20 Token"
-        icon={Coins}
-        description="Base SwapPulse $PULSE governance/utility token (1B supply, 40% usage-mining, 15% reserve). The LayerZero OFT wrapper wraps this token, so it must be deployed first. After deploying, save the address as the PULSE_TOKEN_CONTRACT secret."
-        functionName="deploy-pulse-token"
-        confirmMessage="Deploy the SwapPulse $PULSE ERC-20 token on PulseChain? This will spend gas from the PulseChain deployer wallet."
-        extractResults={(r) => [
-          { label: 'PulseToken', address: r.address, secret: 'PULSE_TOKEN_CONTRACT' },
-        ]}
-        deployedAddresses={[
-          { label: 'PulseToken', ...pulse.token, secret: 'PULSE_TOKEN_CONTRACT' },
-        ]}
+      <PulseTokenDeployCard
+        deployed={{ pulse: pulse.token, polygon: poly.token }}
         onDeployed={fetchAddresses}
       />
 
@@ -363,6 +353,129 @@ function OftDeployCard({ deployed, onDeployed }) {
         <div className="mt-4 flex items-start gap-2 rounded-lg bg-success/10 p-3 text-sm text-success">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <p className="font-semibold">Deployment successful — address saved automatically.</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">Deployment failed</p>
+            <p className="text-xs opacity-80 whitespace-pre-wrap">{error}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Chain-switching card for the base $PULSE ERC-20 token. Deploys on polygon
+// (where POL gas is available) or pulse (requires PLS gas) via deploy-pulse-token.
+function PulseTokenDeployCard({ deployed, onDeployed }) {
+  const [chain, setChain] = useState('polygon');
+  const [deploying, setDeploying] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState('');
+
+  const current = deployed[chain] || {};
+  const isDeployed = !!current.address;
+
+  const deploy = async () => {
+    if (!window.confirm(`Deploy the SwapPulse $PULSE ERC-20 token on ${chain}? This will spend gas from the ${chain} deployer wallet.`)) return;
+    setDeploying(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await base44.functions.invoke('deploy-pulse-token', { chain });
+      setResult(res.data);
+      if (onDeployed) onDeployed();
+    } catch (e) {
+      setError(e.response?.data?.error || e.message || 'Deployment failed');
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  const copy = (label, value) => {
+    navigator.clipboard.writeText(value);
+    setCopied(label);
+    setTimeout(() => setCopied(''), 1500);
+  };
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Coins className="h-5 w-5 text-primary" />
+        <h3 className="font-bold">$PULSE ERC-20 Token</h3>
+        {isDeployed && (
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-bold text-success">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Deployed
+          </span>
+        )}
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Base SwapPulse $PULSE governance/utility token (1B supply, 40% usage-mining, 15% reserve). The LayerZero OFT wrapper wraps this token, so it must be deployed first. Deploy on Polygon (you have POL gas) or PulseChain (requires PLS gas). After deploying, save the address as the PULSE_TOKEN_CONTRACT secret.
+      </p>
+
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs font-semibold text-muted-foreground">Chain:</span>
+        <div className="inline-flex rounded-lg border border-border p-0.5">
+          {['polygon', 'pulse'].map((c) => (
+            <button
+              key={c}
+              onClick={() => setChain(c)}
+              className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition-colors ${chain === c ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-secondary'}`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {current.address ? (
+        <div className="mb-4 space-y-2">
+          <ContractAddressRow
+            label={`PulseToken (${chain})`}
+            address={current.address}
+            secret="PULSE_TOKEN_CONTRACT"
+            explorerUrl={current.explorerUrl}
+            txHash={current.txHash}
+            deployedAt={current.deployedAt}
+            copied={copied === `pulse-token-${chain}`}
+            onCopy={() => copy(`pulse-token-${chain}`, current.address)}
+            isNew={!!result?.address && chain === result?.chain}
+          />
+        </div>
+      ) : (
+        <p className="mb-4 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
+          Not yet deployed on {chain}.
+        </p>
+      )}
+
+      <button
+        onClick={deploy}
+        disabled={deploying}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+      >
+        {deploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+        {deploying ? 'Deploying…' : `Deploy on ${chain}`}
+      </button>
+
+      {result?.address && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-success/10 p-3 text-sm text-success">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="font-semibold">Deployment successful — address saved automatically.</p>
+        </div>
+      )}
+
+      {result?.nextSteps?.length > 0 && result?.address && (
+        <div className="mt-3 rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
+          <p className="font-semibold text-foreground">Next steps</p>
+          <ul className="mt-1 list-inside list-disc space-y-0.5">
+            {result.nextSteps.map((s, i) => <li key={i}>{s}</li>)}
+          </ul>
         </div>
       )}
 

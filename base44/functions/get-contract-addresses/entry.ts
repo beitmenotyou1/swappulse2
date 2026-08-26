@@ -52,6 +52,7 @@ export default async function (req: Request): Promise<Response> {
         card: resolve('polygon_card', 'POLYGON_CARD_CONTRACT', polygonExplorer),
         bridge: resolve('polygon_bridge', 'POLYGON_BRIDGE_CONTRACT', polygonExplorer),
         oft: resolve('oft_polygon', 'OFT_POLYGON_TOKEN_CONTRACT', polygonExplorer),
+        token: resolve('polygon_token', 'PULSE_TOKEN_CONTRACT', polygonExplorer),
         explorerUrl: polygonExplorer,
       },
       pulse: {
