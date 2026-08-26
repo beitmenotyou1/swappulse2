@@ -1,27 +1,42 @@
 import React from 'react';
-import { Wallet as WalletIcon, Coins } from 'lucide-react';
+import { Wallet as WalletIcon, Coins, Zap } from 'lucide-react';
 import ChainAssetList from '@/components/wallet/ChainAssetList';
 
 // MetaMask-style asset rows: each balance is a row with icon, name, amount,
 // and a subtitle — cleaner than separate cards and familiar to wallet users.
-export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, formatFiat, formatUsdc, cryptoDisplay, chainBalances, cryptoPrices }) {
+export default function AssetList({ balance, cryptoEnabled, onChainUsdcWei, formatFiat, formatUsdc, cryptoDisplay, chainBalances, cryptoPrices, pulse, pulsePrice }) {
   const fiatCents = balance?.fiat_cents || 0;
   const currency = balance?.currency || 'GBP';
   const usdcWei = balance?.usdc_wei || '0';
 
-  const rows = [
-    {
-      icon: WalletIcon,
-      iconBg: 'bg-secondary',
-      iconColor: 'text-foreground',
-      name: currency,
-      subtitle: 'Fiat · Stripe',
-      value: formatFiat(fiatCents, currency),
-      subValue: balance && (balance.total_topup_cents || 0) > 0
-        ? `Refundable ${formatFiat(balance.total_topup_cents, currency)}`
-        : null,
-    },
-  ];
+  const rows = [];
+
+  // $PULSE native token — shown first (prominently) when available
+  if (cryptoEnabled && pulse) {
+    const pulseCoins = Number(BigInt(pulse.native_balance || '0')) / 1e18;
+    const pulseUsd = pulseCoins * (pulsePrice?.usd || 0);
+    rows.push({
+      icon: Zap,
+      iconBg: 'bg-accent/15',
+      iconColor: 'text-accent',
+      name: 'PULSE',
+      subtitle: 'PulseChain · Native',
+      value: `${pulseCoins.toLocaleString('en-US', { maximumFractionDigits: 6 })} PULSE`,
+      subValue: pulseUsd > 0 && formatFiat ? `≈ ${formatFiat(Math.round(pulseUsd * 100), 'USD')}` : null,
+    });
+  }
+
+  rows.push({
+    icon: WalletIcon,
+    iconBg: 'bg-secondary',
+    iconColor: 'text-foreground',
+    name: currency,
+    subtitle: 'Fiat · Stripe',
+    value: formatFiat(fiatCents, currency),
+    subValue: balance && (balance.total_topup_cents || 0) > 0
+      ? `Refundable ${formatFiat(balance.total_topup_cents, currency)}`
+      : null,
+  });
 
   if (cryptoEnabled) {
     const displayLabel = cryptoDisplay?.label || 'USDC';

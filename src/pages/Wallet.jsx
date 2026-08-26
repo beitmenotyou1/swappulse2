@@ -10,6 +10,7 @@ import PageHeader from '@/components/PageHeader';
 import TotalBalanceCard from '@/components/wallet/TotalBalanceCard';
 import AssetList from '@/components/wallet/AssetList';
 import TopUpModal from '@/components/wallet/TopUpModal';
+import PulseTokenCard from '@/components/wallet/PulseTokenCard';
 import SendCryptoModal from '@/components/wallet/SendCryptoModal';
 import RefundModal from '@/components/wallet/RefundModal';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
@@ -49,6 +50,7 @@ export default function Wallet() {
   const [showSend, setShowSend] = useState(false);
   // Convert now navigates to the dedicated conversion page
   const [showRefund, setShowRefund] = useState(false);
+  const [sendToken, setSendToken] = useState('usdc');
 
   useSEO({
     title: 'Wallet',
@@ -108,6 +110,19 @@ export default function Wallet() {
     <div>
       <PageHeader title="Wallet" subtitle="Top up, send, receive, and convert your funds" />
 
+      {/* $PULSE token — prominently displayed at the top */}
+      {cryptoEnabled && walletData?.pulse && (
+        <div className="mb-4">
+          <PulseTokenCard
+            pulse={walletData.pulse}
+            pulsePrice={prices?.pulse}
+            formatFiat={formatFiat}
+            hasWallet={hasWallet}
+            onSend={() => { setSendToken('pulse'); setShowSend(true); }}
+          />
+        </div>
+      )}
+
       {/* Hero balance card with action buttons (MetaMask/Brave style) */}
       <TotalBalanceCard
         balance={balance}
@@ -116,7 +131,7 @@ export default function Wallet() {
         formatFiat={formatFiat}
         formatUsdc={formatUsdc}
         onTopUp={() => setShowTopUp(true)}
-        onSend={() => setShowSend(true)}
+        onSend={() => { setSendToken('usdc'); setShowSend(true); }}
         onReceive={() => navigate('/wallet/receive')}
         onConvert={() => navigate('/wallet/convert')}
         onRefund={() => setShowRefund(true)}
@@ -162,6 +177,8 @@ export default function Wallet() {
               cryptoDisplay={cryptoDisplay}
               chainBalances={activeChain === 'all' ? chainBalances : chainBalances.filter(cb => cb.chain === activeChain)}
               cryptoPrices={prices}
+              pulse={walletData?.pulse}
+              pulsePrice={prices?.pulse}
             />
             {balance && (
               <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
@@ -247,7 +264,7 @@ export default function Wallet() {
 
       {/* Modals */}
       {showTopUp && <TopUpModal onClose={reloadAfterModal} />}
-      {showSend && <SendCryptoModal wallet={walletData?.custodial_wallet} onClose={reloadAfterModal} />}
+      {showSend && <SendCryptoModal wallet={walletData?.custodial_wallet} token={sendToken} pulseBalance={walletData?.pulse?.native_balance || '0'} onClose={reloadAfterModal} />}
 
       {showRefund && <RefundModal balance={balance} topups={walletData?.topups || []} onClose={reloadAfterModal} />}
     </div>

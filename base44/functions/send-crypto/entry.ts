@@ -22,11 +22,13 @@ export default async function (req: Request): Promise<Response> {
     if (!did) return Response.json({ error: 'No DID found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const { to_address, usdc_wei, unlockCredential, pin } = body;
+    const { to_address, usdc_wei, unlockCredential, pin, token, amount_wei } = body;
+    const isPulse = token === 'pulse';
+    const transferAmount = isPulse ? (amount_wei || usdc_wei) : usdc_wei;
     if (!to_address || !ethers.isAddress(to_address)) {
       return Response.json({ error: 'Invalid recipient address' }, { status: 400 });
     }
-    if (!usdc_wei || BigInt(usdc_wei) <= 0n) {
+    if (!transferAmount || BigInt(transferAmount) <= 0n) {
       return Response.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
@@ -34,6 +36,139 @@ export default async function (req: Request): Promise<Response> {
     const settingsList = await base44.asServiceRole.entities.SettingsConfig
       .filter({ did }, '-updated_date', 1).catch(() => []);
     const defaultWalletPref = settingsList[0]?.config?.wallet?.default_wallet || 'custodial';
+
+    // --- Native $PULSE transfer on PulseChain ---
+    if (isPulse) {
+      if (defaultWalletPref === 'linked') {
+        return Response.json({
+          error: 'Sending $PULSE from a linked wallet requires switching your browser wallet to PulseChain. Use a custodial wallet for $PULSE sends.',
+        }, { status: 400 });
+      }
+
+      const wallets = await base44.asServiceRole.entities.CustodialWallet
+        .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+      if (!wallets.length) return Response.json({ error: 'No active wallet found' }, { status: 400 });
+      const wallet = wallets[0];
+
+      const pulseAmount = BigInt(transferAmount);
+      const fee = calculateFee(pulseAmount);
+      const totalDebit = pulseAmount + fee;
+
+      let pulseProvider;
+      try {
+        const { getPulseProvider } = await import('../../shared/pulseClient.ts');
+        pulseProvider = getPulseProvider();
+      } catch {
+        return Response.json({ error: 'PulseChain RPC not configured' }, { status: 400 });
+      }
+
+      const onChainBalance = await pulseProvider.getBalance(wallet.wallet_address).catch(() => 0n);
+      if (onChainBalance < totalDebit) {
+        return Response.json({ error: 'Insufficient $PULSE for amount + fee + gas' }, { status: 400 });
+      }
+
+      // Unlock the wallet (passkey or PIN)
+      let privateKey: string;
+      if (unlockCredential) {
+        const creds = await base44.asServiceRole.entities.WebAuthnCredential
+          .filter({ user_id: user.id }, '-created_date', 50).catch(() => []);
+        const validCreds = creds.filter((c: any) => c.credential_id);
+        if (!validCreds.length) return Response.json({ error: 'No passkey enrolled' }, { status: 400 });
+
+        const { assertion, challenge, challenge_signature } = unlockCredential;
+        if (!assertion || !challenge || !challenge_signature) {
+          return Response.json({ error: 'Missing unlock credentials' }, { status: 400 });
+        }
+
+        const sigValid = await verifySignedChallenge(
+          Deno.env.get('BACKEND_FUNCTION_SECRET')!, challenge, challenge_signature,
+        );
+        if (!sigValid) return Response.json({ error: 'Invalid challenge' }, { status: 403 });
+
+        let verified = false;
+        for (const cred of validCreds) {
+          try {
+            const result = await verifyAuthenticationResponse({
+              response: assertion,
+              expectedChallenge: challenge,
+              expectedOrigin: new URL(req.url).origin,
+              expectedRPID: new URL(req.url).hostname,
+              authenticator: {
+                credentialID: cred.credential_id,
+                credentialPublicKey: cred.public_key,
+                counter: cred.counter || 0,
+              },
+            });
+            if (result.verified) {
+              verified = true;
+              await base44.asServiceRole.entities.WebAuthnCredential.update(cred.id, {
+                counter: result.authenticationInfo?.newCounter || cred.counter + 1,
+              });
+              break;
+            }
+          } catch {}
+        }
+        if (!verified) return Response.json({ error: 'Passkey verification failed' }, { status: 403 });
+        privateKey = await decryptPrivateKey(wallet);
+      } else if (pin) {
+        const pinValid = await verifyPin(wallet, pin);
+        if (!pinValid) return Response.json({ error: 'Invalid PIN' }, { status: 403 });
+        privateKey = await decryptPrivateKey(wallet, pin);
+      } else {
+        return Response.json({
+          requiresUnlock: true,
+          hasPasskey: wallet.has_passkey,
+          hasPin: wallet.has_pin,
+        });
+      }
+
+      // Send native $PULSE on PulseChain
+      const userWallet = new ethers.Wallet(privateKey, pulseProvider);
+      const sendTx = await userWallet.sendTransaction({ to: to_address, value: pulseAmount });
+      await sendTx.wait();
+
+      // Send 2% fee to platform fee wallet on PulseChain
+      let feeTxHash = '';
+      try {
+        const feeTx = await userWallet.sendTransaction({ to: PLATFORM_FEE_WALLET, value: fee });
+        await feeTx.wait();
+        feeTxHash = feeTx.hash;
+      } catch (e) {
+        console.error('PULSE fee transfer failed:', (e as any)?.message);
+      }
+
+      // Record the transfer
+      await base44.entities.CryptoTransfer.create({
+        did,
+        transfer_type: 'send',
+        from_address: wallet.wallet_address,
+        to_address,
+        amount_wei: pulseAmount.toString(),
+        fee_wei: fee.toString(),
+        tx_hash: sendTx.hash,
+        fee_tx_hash: feeTxHash,
+        status: 'confirmed',
+        description: `Sent PULSE to ${to_address.slice(0, 8)}…${to_address.slice(-6)}`,
+      });
+
+      await base44.asServiceRole.entities.FeeLedger.create({
+        fee_source: 'send',
+        source_did: did,
+        original_amount_wei: pulseAmount.toString(),
+        fee_usdc_wei: fee.toString(),
+        fee_tx_hash: feeTxHash,
+        swept: !!feeTxHash,
+        swept_at: feeTxHash ? new Date().toISOString() : undefined,
+      });
+
+      return Response.json({
+        success: true,
+        tx_hash: sendTx.hash,
+        fee_tx_hash: feeTxHash,
+        fee_wei: fee.toString(),
+        token: 'pulse',
+      });
+    }
 
     // If the default wallet is a linked (external/hardware) wallet, the send
     // must be signed client-side (MetaMask/Ledger) — we can't decrypt a private

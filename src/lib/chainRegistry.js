@@ -8,7 +8,7 @@ export const MINTING_CHAIN = 'polygon'; // Only Polygon supports NFT minting
 
 export const CHAINS = [
   // --- SwapPulse native chain (PulseChain validium) — dual-mint target ---
-  { key: 'pulse', name: 'PulseChain', symbol: 'PULSE', type: 'evm', chainId: 9999, rpcSecret: 'PULSE_RPC_URL', explorer: 'https://explorer-testnet.swappulse.org', isNative: true, badge: 'SWAP', sortOrder: 0, minting: true },
+  { key: 'pulse', name: 'PulseChain', symbol: 'PULSE', type: 'evm', chainId: 943, rpcSecret: 'PULSE_RPC_URL', explorer: 'https://scan.v4.testnet.pulsechain.com', isNative: true, badge: 'SWAP', sortOrder: 0, minting: true },
   // --- Core chains (with configured RPC secrets) ---
   { key: 'polygon', name: 'Polygon', symbol: 'POL', type: 'evm', chainId: 137, rpcSecret: 'POLYGON_RPC_URL', explorer: 'https://polygonscan.com', minting: true, sortOrder: 1 },
   { key: 'ethereum', name: 'Ethereum', symbol: 'ETH', type: 'evm', chainId: 1, rpcSecret: 'ETHEREUM_RPC_URL', explorer: 'https://etherscan.io' },

@@ -10,6 +10,7 @@ import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 const SYMBOLS = [
   'POL', 'MATIC', 'ETH', 'BTC', 'SOL', 'USDC', 'USDT',
   'AVAX', 'BNB', 'ARB', 'OP', 'DAI', 'WBTC', 'LINK', 'UNI',
+  'PLS',
 ];
 
 const FALLBACK_RATES: Record<string, { usd: number; gbp: number; eur: number }> = {
@@ -22,6 +23,7 @@ const FALLBACK_RATES: Record<string, { usd: number; gbp: number; eur: number }> 
   usdt: { usd: 1.0, gbp: 0.79, eur: 0.92 },
   dai: { usd: 1.0, gbp: 0.79, eur: 0.92 },
   wbtc: { usd: 60000, gbp: 47400, eur: 55200 },
+  pls: { usd: 0.00002, gbp: 0.000016, eur: 0.000018 },
 };
 
 export default async function (req: Request): Promise<Response> {
@@ -72,9 +74,16 @@ export default async function (req: Request): Promise<Response> {
       };
     });
 
+    // Alias PLS (Coinbase ticker) to 'pulse' (chain registry key) so the
+    // wallet UI can look up the PulseChain native token price by chain key.
+    if (prices.pls && !prices.pulse) {
+      prices.pulse = prices.pls;
+    }
+
     return Response.json({ prices, fetched_at: new Date().toISOString() });
   } catch (error: any) {
     console.error('get-crypto-prices error:', error?.message || error);
-    return Response.json({ prices: FALLBACK_RATES, fallback: true, fetched_at: new Date().toISOString() });
+    const fallbackWithAlias = { ...FALLBACK_RATES, pulse: FALLBACK_RATES.pls };
+    return Response.json({ prices: fallbackWithAlias, fallback: true, fetched_at: new Date().toISOString() });
   }
 }
