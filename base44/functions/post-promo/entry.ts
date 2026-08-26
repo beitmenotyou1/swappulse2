@@ -316,9 +316,17 @@ Deno.serve(async (req) => {
     // Special campaign mode: post first-join beta messages in ALL languages.
     // Uploads the poster once, then publishes one post per locale.
     if (forcedPromoType === 'first_join_all') {
-      const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+      let uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
       session.accessJwt = uploadResult.accessJwt;
-      const imageBlob = uploadResult.blob;
+      let imageBlob = uploadResult.blob;
+      // Retry the banner upload if it failed — all campaign posts depend on
+      // this single blob, so a failure here would make every post text-only.
+      if (!imageBlob) {
+        console.log('post-promo: first_join_all banner upload failed, retrying');
+        uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+        session.accessJwt = uploadResult.accessJwt;
+        imageBlob = uploadResult.blob;
+      }
       const altText = 'SwapPulse Beta';
       const results: any[] = [];
       for (const loc of PROMO_LOCALES) {
@@ -413,14 +421,31 @@ Deno.serve(async (req) => {
         session.accessJwt = uploadResult.accessJwt;
       }
       altText = card.name + (card.setName ? ` (${card.setName})` : '');
+      // Fallback: if the card image upload failed (WebP, too large, fetch
+      // error), use the branded banner so the post still has a visual embed
+      // on Bluesky — never publish a card post as plain text.
+      if (!imageBlob) {
+        console.log('post-promo: card image upload failed, falling back to branded banner');
+        const fallbackResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+        imageBlob = fallbackResult.blob;
+        session.accessJwt = fallbackResult.accessJwt;
+        altText = `SwapPulse — ${card.name}`;
+      }
     } else {
       // Feature and community posts: attach the branded SwapPulse banner.
       const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
       imageBlob = uploadResult.blob;
       session.accessJwt = uploadResult.accessJwt;
+      // Retry the banner once more if it failed (ensures visual consistency)
+      if (!imageBlob) {
+        console.log('post-promo: banner upload failed, retrying');
+        const retryResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+        imageBlob = retryResult.blob;
+        session.accessJwt = retryResult.accessJwt;
+      }
     }
-    // If the image blob upload failed, publish without an embed — the link
-    // and hashtag facets still make the post functional (clickable URL + tags).
+    // If the image blob upload failed (even after fallbacks), publish without
+    // an embed — the link and hashtag facets still make the post functional.
     const embed: any = imageBlob
       ? { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] }
       : null;

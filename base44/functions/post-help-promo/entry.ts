@@ -209,12 +209,17 @@ Deno.serve(async (req) => {
     // Compose the message
     const { content, tags } = generateMessage(article, promoLocale.locale);
 
-    // Upload the branded banner image
-    const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
-    const imageBlob = uploadResult.blob;
+    // Upload the branded banner image — retry once if it fails so the post
+    // always has a visual embed on Bluesky (never plain text).
+    let uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+    let imageBlob = uploadResult.blob;
     session.accessJwt = uploadResult.accessJwt;
-    // If the image blob upload failed, publish without an embed — the link
-    // and hashtag facets still make the post functional (clickable URL + tags).
+    if (!imageBlob) {
+      console.log('post-help-promo: banner upload failed, retrying');
+      uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
+      imageBlob = uploadResult.blob;
+      session.accessJwt = uploadResult.accessJwt;
+    }
     const altText = `SwapPulse help guide: ${article.title}`;
     const embed: any = imageBlob
       ? { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] }
