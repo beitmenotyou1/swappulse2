@@ -20,6 +20,8 @@ import PolygonSettingsSection from '@/components/blockchain/PolygonSettingsSecti
 import EscrowTradeList from '@/components/wallet/EscrowTradeList';
 import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
+import UniswapPoolCard from '@/components/wallet/UniswapPoolCard';
+import PulseTokenMonitorCard from '@/components/wallet/PulseTokenMonitorCard';
 import NftPortfolioTab from '@/components/wallet/NftPortfolioTab';
 import DappBrowserTab from '@/components/wallet/DappBrowserTab';
 import ChainTabBar from '@/components/wallet/ChainTabBar';
@@ -179,6 +181,8 @@ export default function Wallet() {
               pulse={walletData?.pulse}
               pulsePrice={prices?.pulse}
             />
+            <UniswapPoolCard />
+            <PulseTokenMonitorCard />
             {balance && (
               <LowBalanceAlertCard balance={balance} onUpdated={loadWallet} />
             )}
