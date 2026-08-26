@@ -179,4 +179,36 @@ export const tradingPages = {
       ]},
     ],
   },
+
+  'trade-templates': {
+    title: 'Trade Templates',
+    subtitle: 'Save and reuse trade listings',
+    sections: [
+      { icon: 'Copy', title: 'What are Trade Templates?', blocks: [
+        { type: 'p', text: 'Trade Templates let you save reusable trade listing structures so you do not have to re-enter the same cards and wants every time. If you frequently list the same types of cards or make the same trade offers, templates save you time.' },
+      ]},
+      { title: 'What you can do', blocks: [
+        { type: 'list', items: [
+          '<b>Create templates:</b> Define a template with pre-filled "have" and "want" card slots.',
+          '<b>Apply a template:</b> When creating a new trade listing, pick a template to pre-fill the form.',
+          '<b>Edit and delete:</b> Manage your templates from the Trade Templates page.',
+        ]},
+      ]},
+      { icon: 'ArrowLeftRight', title: 'Using templates', blocks: [
+        { type: 'steps', items: [
+          'Go to Trade Templates from the navigation or Trade Dashboard.',
+          'Click New Template.',
+          'Name the template and add the cards you typically offer and want.',
+          'Save. Next time you create a trade listing, select this template to pre-fill the form.',
+          'Edit the listing as needed before publishing.',
+        ]},
+      ]},
+      { variant: 'primary', title: 'Tips', blocks: [
+        { type: 'list', items: [
+          'Create templates for recurring trade patterns, like "modern holos for vintage base set".',
+          'Templates are private to you, they do not appear on the Trade Board until you publish a listing from them.',
+        ]},
+      ]},
+    ],
+  },
 };

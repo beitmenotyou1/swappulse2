@@ -4,6 +4,7 @@ import {
   Hash, User, BookOpen, Users, CalendarDays, Package, PartyPopper, Trophy,
   Vote, Bell, Mail, UserPlus, Share2, Radio, Mic, Target, Medal, Sparkles,
   Settings, LogIn, Activity, ShieldAlert, Gavel, Heart,
+  Wallet, Rss, Bookmark, Tags, Search, Copy, UserCheck,
 } from 'lucide-react';
 
 export const HELP_CATEGORIES = [
@@ -32,6 +33,7 @@ export const HELP_GUIDES = [
   { slug: 'trade-threads', title: 'Trade Threads', category: 'Trading', icon: MessageSquare, description: 'Negotiate trades in private threaded chats with fairness scoring and trade chains.', relatedRoute: '/trade' },
   { slug: 'trade-dashboard', title: 'Trade Dashboard', category: 'Trading', icon: LayoutDashboard, description: 'Manage active trades, track shipping, and view your trade history in one place.', relatedRoute: '/trade-dashboard' },
   { slug: 'trust', title: 'Trust & Reputation', category: 'Trading', icon: ShieldCheck, description: 'Build reputation through vouches and trading feedback, your trusted-trader score.', relatedRoute: '/trust' },
+  { slug: 'trade-templates', title: 'Trade Templates', category: 'Trading', icon: Copy, description: 'Save reusable trade listing templates to quickly post common offers and wants.', relatedRoute: '/trade-templates' },
 
   // Social & Community
   { slug: 'home-feed', title: 'Home Feed', category: 'Social & Community', icon: HomeIcon, description: 'Your personalised feed of posts, pulls, pack openings, and trending cards.', relatedRoute: '/' },
@@ -53,6 +55,10 @@ export const HELP_GUIDES = [
   { slug: 'messages', title: 'Direct Messages', category: 'Social & Community', icon: Mail, description: 'End-to-end encrypted 1:1 direct messages. Your keys never leave your device.', relatedRoute: '/messages' },
   { slug: 'who-to-follow', title: 'Who to Follow', category: 'Social & Community', icon: UserPlus, description: 'Discover collectors to follow based on your collection, trades, and interests.', relatedRoute: '/who-to-follow' },
   { slug: 'share', title: 'Share', category: 'Social & Community', icon: Share2, description: 'Share cards, posts, and profile links inside and outside SwapPulse.', relatedRoute: '/share' },
+  { slug: 'feeds', title: 'Custom Feeds', category: 'Social & Community', icon: Rss, description: 'Browse and pin custom feeds built by the community and the SwapPulse feed generator.', relatedRoute: '/feeds' },
+  { slug: 'bookmark-boards', title: 'Bookmark Boards', category: 'Social & Community', icon: Bookmark, description: 'Organise saved posts, cards, and trade listings into themed bookmark boards.', relatedRoute: '/boards' },
+  { slug: 'search', title: 'Search', category: 'Social & Community', icon: Search, description: 'Find cards, collectors, posts, trades, and journals across SwapPulse in one place.', relatedRoute: '/search' },
+  { slug: 'online-now', title: 'Online Now', category: 'Social & Community', icon: UserCheck, description: 'See which collectors are online right now and start a chat or trade.', relatedRoute: '/online-now' },
 
   // Voice & Podcasts
   { slug: 'voice-spaces', title: 'Voice Spaces', category: 'Voice & Podcasts', icon: Radio, description: 'Go live with an external stream or host an in-platform WebRTC audio space.', relatedRoute: '/spaces' },
@@ -74,12 +80,14 @@ export const HELP_GUIDES = [
   { slug: 'settings', title: 'Settings', category: 'Account & Settings', icon: Settings, description: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.', relatedRoute: '/settings' },
   { slug: 'your-profile', title: 'Your Profile', category: 'Account & Settings', icon: User, description: 'Set up your collector profile, avatar, handle, bio, and display preferences.', relatedRoute: '/profile' },
   { slug: 'account', title: 'Account & Login', category: 'Account & Settings', icon: LogIn, description: 'Passwordless login, activation, 2FA, and managing your SwapPulse account.', relatedRoute: '/login' },
+  { slug: 'wallet', title: 'Wallet', category: 'Account & Settings', icon: Wallet, description: 'Custodial multi-chain wallet, fiat top-ups, USDC conversions, sends, escrow, and bank accounts.', relatedRoute: '/wallet' },
 
   // Platform
   { slug: 'status', title: 'System Status', category: 'Platform', icon: Activity, description: 'Check if any SwapPulse service is down, degraded, or under maintenance.', relatedRoute: '/status' },
   { slug: 'admin', title: 'Admin', category: 'Platform', icon: Gavel, description: 'Admin dashboard for health, metrics, services, incidents, and federation diagnostics.', relatedRoute: '/admin' },
   { slug: 'moderation', title: 'Moderation', category: 'Platform', icon: ShieldAlert, description: 'Moderation tools for flagged posts, bot protection, trade disputes, and enforcement.', relatedRoute: '/moderation' },
   { slug: 'donations', title: 'Donations', category: 'Platform', icon: Heart, description: 'How to donate to SwapPulse by card or cryptocurrency, fees, and limitations.', relatedRoute: '/donate' },
+  { slug: 'labelers', title: 'Community Labelers', category: 'Platform', icon: Tags, description: 'Subscribe to community labelers for curated content labels and moderation signals.', relatedRoute: '/labelers' },
 ];
 
 export function getGuideBySlug(slug) {

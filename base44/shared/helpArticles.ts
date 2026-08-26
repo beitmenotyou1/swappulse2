@@ -30,6 +30,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'trade-threads', title: 'Trade Threads', category: 'Trading', description: 'Negotiate trades in private threaded chats with fairness scoring and trade chains.' },
   { slug: 'trade-dashboard', title: 'Trade Dashboard', category: 'Trading', description: 'Manage active trades, track shipping, and view your trade history in one place.' },
   { slug: 'trust', title: 'Trust & Reputation', category: 'Trading', description: 'Build reputation through vouches and trading feedback, your trusted-trader score.' },
+  { slug: 'trade-templates', title: 'Trade Templates', category: 'Trading', description: 'Save reusable trade listing templates to quickly post common offers and wants.' },
 
   // Social & Community
   { slug: 'home-feed', title: 'Home Feed', category: 'Social & Community', description: 'Your personalised feed of posts, pulls, pack openings, and trending cards.' },
@@ -50,6 +51,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'messages', title: 'Direct Messages', category: 'Social & Community', description: 'End-to-end encrypted 1:1 direct messages. Your keys never leave your device.' },
   { slug: 'who-to-follow', title: 'Who to Follow', category: 'Social & Community', description: 'Discover collectors to follow based on your collection, trades, and interests.' },
   { slug: 'share', title: 'Share', category: 'Social & Community', description: 'Share cards, posts, and profile links inside and outside SwapPulse.' },
+  { slug: 'feeds', title: 'Custom Feeds', category: 'Social & Community', description: 'Browse and pin custom feeds built by the community and the SwapPulse feed generator.' },
+  { slug: 'bookmark-boards', title: 'Bookmark Boards', category: 'Social & Community', description: 'Organise saved posts, cards, and trade listings into themed bookmark boards.' },
+  { slug: 'search', title: 'Search', category: 'Social & Community', description: 'Find cards, collectors, posts, trades, and journals across SwapPulse in one place.' },
+  { slug: 'online-now', title: 'Online Now', category: 'Social & Community', description: 'See which collectors are online right now and start a chat or trade.' },
 
   // Voice & Podcasts
   { slug: 'voice-spaces', title: 'Voice Spaces', category: 'Voice & Podcasts', description: 'Go live with an external stream or host an in-platform WebRTC audio space.' },
@@ -71,10 +76,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'settings', title: 'Settings', category: 'Account & Settings', description: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.' },
   { slug: 'your-profile', title: 'Your Profile', category: 'Account & Settings', description: 'Set up your collector profile, avatar, handle, bio, and display preferences.' },
   { slug: 'account', title: 'Account & Login', category: 'Account & Settings', description: 'Passwordless login, activation, 2FA, and managing your SwapPulse account.' },
+  { slug: 'wallet', title: 'Wallet', category: 'Account & Settings', description: 'Custodial multi-chain wallet, fiat top-ups, USDC conversions, sends, escrow, and bank accounts.' },
 
   // Platform
   { slug: 'status', title: 'System Status', category: 'Platform', description: 'Check if any SwapPulse service is down, degraded, or under maintenance.' },
   { slug: 'admin', title: 'Admin', category: 'Platform', description: 'Admin dashboard for health, metrics, services, incidents, and federation diagnostics.' },
   { slug: 'moderation', title: 'Moderation', category: 'Platform', description: 'Moderation tools for flagged posts, bot protection, trade disputes, and enforcement.' },
   { slug: 'donations', title: 'Donations', category: 'Platform', description: 'How to donate to SwapPulse by card or cryptocurrency, fees, and limitations.' },
+  { slug: 'labelers', title: 'Community Labelers', category: 'Platform', description: 'Subscribe to community labelers for curated content labels and moderation signals.' },
 ];

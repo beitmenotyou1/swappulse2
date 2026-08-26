@@ -423,6 +423,53 @@ export const accountPages = {
       ]},
     ],
   },
+
+  wallet: {
+    title: 'Wallet',
+    subtitle: 'Custodial multi-chain wallet and payments',
+    sections: [
+      { icon: 'Wallet', title: 'What is the SwapPulse Wallet?', blocks: [
+        { type: 'p', text: 'The SwapPulse Wallet is a custodial multi-chain wallet that lets you hold fiat and cryptocurrency for trades, purchases, and conversions. It supports EVM chains (Polygon, Ethereum, Arbitrum, Optimism, Base), Solana, and Bitcoin-family coins (BTC, BCH, DOGE, LTC). All private keys are AES-256 encrypted and gated by passkey or optional PIN.' },
+      ]},
+      { icon: 'CreditCard', title: 'Fiat top-ups', blocks: [
+        { type: 'steps', items: [
+          'Go to your Wallet and click Top Up.',
+          'Choose an amount in GBP, EUR, or USD (minimum £5).',
+          'Pay by card via Stripe. A 2% platform fee is collected on every top-up.',
+          'The fiat balance appears in your wallet and can be used for trades or converted to USDC.',
+        ]},
+      ]},
+      { icon: 'ArrowLeftRight', title: 'Converting fiat to USDC', blocks: [
+        { type: 'p', text: 'Convert your fiat balance to USDC on Polygon using the built-in DEX aggregator. A 2% fee applies to every conversion. USDC can be used for on-chain trades, card purchases via escrow, and sends to external wallets.' },
+      ]},
+      { icon: 'Send', title: 'Sending crypto', blocks: [
+        { type: 'p', text: 'Send USDC or native tokens to any compatible wallet address. Sends require a one-time code (second factor) displayed in-app with a 60-second TTL. The code is bound to the specific recipient, amount, and chain to prevent replay or substitution.' },
+      ]},
+      { icon: 'ShieldCheck', title: 'Escrow for card purchases', blocks: [
+        { type: 'p', text: 'When buying a card with USDC, funds are locked in the platform escrow wallet until you confirm physical receipt. The seller is paid on release. A 2% fee is collected on release. If something goes wrong, you can file a dispute for moderator review.' },
+      ]},
+      { icon: 'Key', title: 'Security: passkey and PIN', blocks: [
+        { type: 'list', items: [
+          '<b>Passkey:</b> WebAuthn passkey gates access to your encrypted private key. Enroll a passkey for secure, passwordless wallet unlock.',
+          '<b>PIN (optional):b> Set a PIN as an alternative unlock method. The PIN derives an encryption key via PBKDF2.',
+          '<b>Seed phrase:</b> A 24-word mnemonic is encrypted as a backup. You can view it after authenticating.',
+        ]},
+      ]},
+      { icon: 'Landmark', title: 'Bank account (fiat mode)', blocks: [
+        { type: 'p', text: 'If you prefer not to use crypto features, you can link a bank account (IBAN + BIC). Top-ups route to your bank account and trade payments pull from it via Stripe. Bank details are AES-256 encrypted and shown masked in the UI.' },
+      ]},
+      { icon: 'Globe', title: 'Multi-chain support', blocks: [
+        { type: 'p', text: 'Enable multi-chain support to get a single wallet with addresses across EVM chains, Solana, and Bitcoin-family coins. All addresses are derived from the same 24-word mnemonic. You can upgrade an existing custodial wallet to multi-chain at any time.' },
+      ]},
+      { variant: 'warning', title: 'Important notes', blocks: [
+        { type: 'list', items: [
+          'Only original fiat top-up amounts are refundable. Converted USDC cannot be refunded.',
+          'You pay native chain gas for your own transactions.',
+          'A 2% platform fee applies to all top-ups, conversions, sends, and escrow purchases.',
+        ]},
+      ]},
+    ],
+  },
 };
 
 export const platformPages = {
@@ -564,6 +611,30 @@ export const platformPages = {
           'Minimum donation is £0.50 (card) or $0.50 (crypto).',
           'Donations are not tax-deductible.',
         ]},
+      ]},
+    ],
+  },
+
+  labelers: {
+    title: 'Community Labelers',
+    subtitle: 'Curated content labels and moderation',
+    sections: [
+      { icon: 'Tags', title: 'What are Community Labelers?', blocks: [
+        { type: 'p', text: 'Community Labelers are accounts that apply labels to content across the AT Protocol. Labels can flag content as sensitive, categorise it by topic, or signal trustworthiness. SwapPulse subscribes to labelers and applies their labels to posts, profiles, and media you see in your feed.' },
+      ]},
+      { title: 'What you can do', blocks: [
+        { type: 'list', items: [
+          '<b>Browse labelers:</b> See all available community labelers on the Labelers page.',
+          '<b>Subscribe:</b> Subscribe to labelers whose labels you want applied to your feed.',
+          '<b>Label content:</b> If you run a labeler, apply labels to posts and profiles from the label button.',
+          '<b>Filter:</b> Labels from subscribed labelers automatically filter or warn about content in your feed.',
+        ]},
+      ]},
+      { icon: 'ShieldCheck', title: 'How labels work', blocks: [
+        { type: 'p', text: 'Labels are AT Protocol records published by labeler accounts. When you subscribe to a labeler, SwapPulse fetches their labels and uses them to filter, warn, or categorise content. Labels are transparent, you can see which labeler applied a label and why.' },
+      ]},
+      { icon: 'Users', title: 'Running a labeler', blocks: [
+        { type: 'p', text: 'Any collector can run a community labeler. Set up a labeler in Settings, define your labeling policies, and start applying labels. Other collectors can subscribe to your labeler to benefit from your curation.' },
       ]},
     ],
   },

@@ -359,4 +359,92 @@ export const socialPages = {
       ]},
     ],
   },
+
+  feeds: {
+    title: 'Custom Feeds',
+    subtitle: 'Community-built and platform feeds',
+    sections: [
+      { icon: 'Rss', title: 'What are Custom Feeds?', blocks: [
+        { type: 'p', text: 'Custom Feeds are curated content streams built by the community or by SwapPulse. Each feed applies its own ranking algorithm or filter, so you can browse posts by niche, rarity, trade activity, or any theme the feed author defines. Feeds are powered by the SwapPulse feed generator and are portable via the AT Protocol.' },
+      ]},
+      { title: 'What you can do', blocks: [
+        { type: 'list', items: [
+          '<b>Browse:</b> Open the Feeds page to see all available custom feeds.',
+          '<b>Pin:</b> Pin feeds to your sidebar for quick access.',
+          '<b>Preview:</b> See a sample of each feed before subscribing.',
+          '<b>Subscribe:</b> Subscribe to feeds you want in your Home Feed rotation.',
+        ]},
+      ]},
+      { icon: 'Sparkles', title: 'How feeds work', blocks: [
+        { type: 'p', text: 'Each feed is defined by a feed generator that filters and ranks posts. SwapPulse hosts its own feed generator, and community members can create feeds too. Feeds are mirrored to the AT Protocol so they work across instances.' },
+      ]},
+    ],
+  },
+
+  'bookmark-boards': {
+    title: 'Bookmark Boards',
+    subtitle: 'Organise saved content into collections',
+    sections: [
+      { icon: 'Bookmark', title: 'What are Bookmark Boards?', blocks: [
+        { type: 'p', text: 'Bookmark Boards let you save and organise posts, cards, trade listings, and journals into themed collections. Think of them as Pinterest-style boards for Pokémon TCG content. Boards are mirrored to the AT Protocol and can be public or private.' },
+      ]},
+      { title: 'What you can do', blocks: [
+        { type: 'list', items: [
+          '<b>Create boards:</b> Make themed boards like "Charizard Collection", "Trade Targets", or "Grail Cards".',
+          '<b>Save content:</b> Use the bookmark button on any post, card, or trade listing to save it to a board.',
+          '<b>Share boards:</b> Public boards are visible on your profile and can be featured in starter packs.',
+          '<b>Reorder:</b> Drag and drop items within a board to prioritise your favourites.',
+        ]},
+      ]},
+      { icon: 'Package', title: 'Featuring in starter packs', blocks: [
+        { type: 'p', text: 'You can feature a bookmark board in a starter pack to help newcomers discover curated content. The board appears on the pack detail page for anyone viewing the pack.' },
+      ]},
+    ],
+  },
+
+  search: {
+    title: 'Search',
+    subtitle: 'Find anything on SwapPulse',
+    sections: [
+      { icon: 'Search', title: 'What can I search for?', blocks: [
+        { type: 'p', text: 'The Search page lets you find cards, collectors, posts, trade listings, and journals across SwapPulse in one place. Search is federated, meaning it also includes content from connected AT Protocol instances.' },
+      ]},
+      { title: 'Search types', blocks: [
+        { type: 'list', items: [
+          '<b>Cards:</b> Search by card name, set, or TCGDex ID.',
+          '<b>Collectors:</b> Find collectors by handle, display name, or DID.',
+          '<b>Posts:</b> Full-text search across posts in the firehose.',
+          '<b>Trade listings:</b> Find cards offered or wanted in active trades.',
+          '<b>Journals:</b> Search long-form journal entries.',
+        ]},
+      ]},
+      { icon: 'Hash', title: 'Hashtag search', blocks: [
+        { type: 'p', text: 'You can also search by hashtag. Type a hashtag in the search bar or click any hashtag on a post to see all posts with that tag. Follow hashtags to surface relevant content in your For You feed.' },
+      ]},
+      { icon: 'Bookmark', title: 'Saved searches', blocks: [
+        { type: 'p', text: 'Save frequent searches for quick re-access. Saved searches appear in your sidebar and can be scoped to specific content types.' },
+      ]},
+    ],
+  },
+
+  'online-now': {
+    title: 'Online Now',
+    subtitle: 'See who is active right now',
+    sections: [
+      { icon: 'UserCheck', title: 'What is Online Now?', blocks: [
+        { type: 'p', text: 'The Online Now page shows collectors who are currently active on SwapPulse. Presence is tracked in real time via a live presence system. Use it to find someone to trade with, chat with, or join a voice space.' },
+      ]},
+      { title: 'What you can do', blocks: [
+        { type: 'list', items: [
+          '<b>See active collectors:</b> Browse a list of online collectors with their avatars and handles.',
+          '<b>Start a chat:</b> Click Message to open a direct message thread with an online collector.',
+          '<b>Start a trade:</b> Click Trade to open a trade thread directly.',
+          '<b>Join a space:</b> If a collector is hosting a live voice space, you can join from their card.',
+        ]},
+      ]},
+      { icon: 'ShieldCheck', title: 'Privacy', blocks: [
+        { type: 'p', text: 'Your presence is only visible when you are actively using SwapPulse. You can disable presence tracking in Settings if you prefer to browse privately. When disabled, you will not appear in the Online Now list.' },
+      ]},
+    ],
+  },
 };

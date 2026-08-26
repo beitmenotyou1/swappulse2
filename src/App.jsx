@@ -120,6 +120,13 @@ const HelpAccount = lazy(() => import('@/pages/help/HelpAccount'));
 const HelpStatus = lazy(() => import('@/pages/help/HelpStatus'));
 const HelpAdmin = lazy(() => import('@/pages/help/HelpAdmin'));
 const HelpModeration = lazy(() => import('@/pages/help/HelpModeration'));
+const HelpWallet = lazy(() => import('@/pages/help/HelpWallet'));
+const HelpFeeds = lazy(() => import('@/pages/help/HelpFeeds'));
+const HelpBookmarkBoards = lazy(() => import('@/pages/help/HelpBookmarkBoards'));
+const HelpLabelers = lazy(() => import('@/pages/help/HelpLabelers'));
+const HelpSearch = lazy(() => import('@/pages/help/HelpSearch'));
+const HelpTradeTemplates = lazy(() => import('@/pages/help/HelpTradeTemplates'));
+const HelpOnlineNow = lazy(() => import('@/pages/help/HelpOnlineNow'));
 const HandleProfile = lazy(() => import('@/pages/HandleProfile'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const Moderation = lazy(() => import('@/pages/Moderation'));
@@ -297,6 +304,13 @@ const AuthenticatedApp = () => {
         <Route path="/help/status" element={<HelpStatus />} />
         <Route path="/help/admin" element={<HelpAdmin />} />
         <Route path="/help/moderation" element={<HelpModeration />} />
+        <Route path="/help/wallet" element={<HelpWallet />} />
+        <Route path="/help/feeds" element={<HelpFeeds />} />
+        <Route path="/help/bookmark-boards" element={<HelpBookmarkBoards />} />
+        <Route path="/help/labelers" element={<HelpLabelers />} />
+        <Route path="/help/search" element={<HelpSearch />} />
+        <Route path="/help/trade-templates" element={<HelpTradeTemplates />} />
+        <Route path="/help/online-now" element={<HelpOnlineNow />} />
         <Route path="/about" element={<About />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
