@@ -65,6 +65,7 @@ const SpaceRoom = lazy(() => import('@/pages/SpaceRoom'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
 const WalletConvert = lazy(() => import('@/pages/WalletConvert'));
+const WalletBridge = lazy(() => import('@/pages/WalletBridge'));
 const WalletReceive = lazy(() => import('@/pages/WalletReceive'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Help = lazy(() => import('@/pages/Help'));
@@ -339,6 +340,7 @@ const AuthenticatedApp = () => {
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/wallet/convert" element={<WalletConvert />} />
+          <Route path="/wallet/bridge" element={<WalletBridge />} />
           <Route path="/wallet/receive" element={<WalletReceive />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
