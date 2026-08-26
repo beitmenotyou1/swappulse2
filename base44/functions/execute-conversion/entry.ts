@@ -16,8 +16,10 @@ import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
 import { verifySignedChallenge } from '../../shared/webauthn.ts';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 import { fetchDexQuote, executeDexSwap } from '../../shared/dexAggregator.ts';
+import { getPulseMintWallet } from '../../shared/pulseClient.ts';
 
 const POLYGON_CHAIN_ID = 137;
+const PULSE_SENTINEL = 'PULSE';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -50,6 +52,78 @@ export default async function (req: Request): Promise<Response> {
       const usdcWei = fiatCentsToUsdcWei(fiat_cents);
       const feeWei = calculateFee(usdcWei);
       const netWei = usdcWei - feeWei;
+
+      // If target is native PULSE, the platform sells PULSE from its PulseChain
+      // treasury. Fiat is debited and converted to USDC (platform revenue);
+      // PULSE is sent from the platform PulseChain wallet to the user's address.
+      if (target_token === PULSE_SENTINEL) {
+        const pulsePriceUsd = body.pulse_price_usd || 0;
+        if (pulsePriceUsd <= 0) {
+          return Response.json({ error: 'PULSE price unavailable. Try again in a moment.' }, { status: 400 });
+        }
+
+        // Convert fiat to USDC value (net of 2% fee)
+        const usdcWei = fiatCentsToUsdcWei(fiat_cents);
+        const feeWei = calculateFee(usdcWei);
+        const netUsdcWei = usdcWei - feeWei;
+        const netUsdc = Number(netUsdcWei) / 1_000_000;
+
+        // Calculate how much PULSE the user receives
+        const pulseAmount = netUsdc / pulsePriceUsd;
+        const pulseWei = BigInt(Math.floor(pulseAmount * 1e18));
+
+        if (pulseWei <= 0n) {
+          return Response.json({ error: 'Amount too small to purchase PULSE' }, { status: 400 });
+        }
+
+        // Debit fiat from user's balance
+        await updateBalance(base44, balance.id, {
+          fiat_cents: balance.fiat_cents - fiat_cents,
+          total_fees_paid_wei: (BigInt(balance.total_fees_paid_wei || '0') + feeWei).toString(),
+        });
+
+        // Send PULSE from platform treasury to user's PulseChain address
+        let pulseTxHash = '';
+        try {
+          const pulseWallet = getPulseMintWallet();
+          const tx = await pulseWallet.sendTransaction({
+            to: walletAddress,
+            value: pulseWei,
+          });
+          const receipt = await tx.wait();
+          pulseTxHash = receipt?.hash || tx.hash;
+        } catch (e) {
+          // Refund the fiat debit if the PULSE send fails
+          await updateBalance(base44, balance.id, {
+            fiat_cents: balance.fiat_cents,
+            total_fees_paid_wei: balance.total_fees_paid_wei,
+          });
+          return Response.json({ error: 'PULSE transfer failed: ' + (e as any)?.message }, { status: 500 });
+        }
+
+        await base44.entities.CryptoTransfer.create({
+          did, transfer_type: 'fiat_to_usdc',
+          from_address: 'platform_treasury', to_address: walletAddress,
+          amount_wei: pulseWei.toString(), fee_wei: feeWei.toString(),
+          tx_hash: pulseTxHash, status: 'confirmed',
+          description: `Converted ${(fiat_cents / 100).toFixed(2)} ${currency || 'GBP'} to ${pulseAmount.toFixed(6)} PULSE`,
+        });
+
+        await base44.asServiceRole.entities.FeeLedger.create({
+          fee_source: 'fiat_to_usdc', source_did: did,
+          original_amount_cents: fiat_cents, original_amount_wei: usdcWei.toString(),
+          fee_usdc_wei: feeWei.toString(),
+          swept: true, swept_at: new Date().toISOString(),
+        });
+
+        return Response.json({
+          success: true,
+          pulse_amount: pulseAmount.toFixed(6),
+          pulse_wei: pulseWei.toString(),
+          fee_wei: feeWei.toString(),
+          tx_hash: pulseTxHash,
+        });
+      }
 
       // If target is USDC (or not specified), credit USDC directly from reserve
       if (!target_token || target_token.toLowerCase() === USDC_CONTRACT_ADDRESS.toLowerCase()) {
@@ -152,6 +226,159 @@ export default async function (req: Request): Promise<Response> {
       }
       if (source_token.toLowerCase() === target_token.toLowerCase()) {
         return Response.json({ error: 'Source and target must be different' }, { status: 400 });
+      }
+
+      // --- Special case: target is native PULSE ---
+      // Swap source token to USDC on Polygon (from user's wallet), then the
+      // platform sends PULSE from its PulseChain treasury to the user.
+      if (target_token === PULSE_SENTINEL) {
+        // Unlock the wallet
+        let privateKey: string;
+        const walletRecord = activeWallet.wallet_record;
+
+        if (unlockCredential) {
+          const creds = await base44.asServiceRole.entities.WebAuthnCredential
+            .filter({ user_id: user.id }, '-created_date', 50).catch(() => []);
+          const validCreds = creds.filter((c: any) => c.credential_id);
+          if (!validCreds.length) return Response.json({ error: 'No passkey enrolled' }, { status: 400 });
+
+          const { assertion, challenge, challenge_signature } = unlockCredential;
+          if (!assertion || !challenge || !challenge_signature) {
+            return Response.json({ error: 'Missing unlock credentials' }, { status: 400 });
+          }
+
+          const sigValid = await verifySignedChallenge(
+            Deno.env.get('BACKEND_FUNCTION_SECRET')!, challenge, challenge_signature,
+          );
+          if (!sigValid) return Response.json({ error: 'Invalid challenge' }, { status: 403 });
+
+          let verified = false;
+          for (const cred of validCreds) {
+            try {
+              const result = await verifyAuthenticationResponse({
+                response: assertion,
+                expectedChallenge: challenge,
+                expectedOrigin: new URL(req.url).origin,
+                expectedRPID: new URL(req.url).hostname,
+                authenticator: {
+                  credentialID: cred.credential_id,
+                  credentialPublicKey: cred.public_key,
+                  counter: cred.counter || 0,
+                },
+              });
+              if (result.verified) {
+                verified = true;
+                await base44.asServiceRole.entities.WebAuthnCredential.update(cred.id, {
+                  counter: result.authenticationInfo?.newCounter || cred.counter + 1,
+                });
+                break;
+              }
+            } catch {}
+          }
+          if (!verified) return Response.json({ error: 'Passkey verification failed' }, { status: 403 });
+          privateKey = await decryptPrivateKey(walletRecord);
+        } else if (pin) {
+          const pinValid = await verifyPin(walletRecord, pin);
+          if (!pinValid) return Response.json({ error: 'Invalid PIN' }, { status: 403 });
+          privateKey = await decryptPrivateKey(walletRecord, pin);
+        } else {
+          return Response.json({
+            requiresUnlock: true,
+            hasPasskey: walletRecord.has_passkey,
+            hasPin: walletRecord.has_pin,
+          });
+        }
+
+        const userWallet = new ethers.Wallet(privateKey, getProvider());
+
+        // Step 1: Swap source token to USDC on Polygon via DEX
+        const quote = await fetchDexQuote({
+          srcToken: source_token,
+          destToken: USDC_CONTRACT_ADDRESS,
+          amount: amount,
+          network: POLYGON_CHAIN_ID,
+        });
+        const swapResult = await executeDexSwap(userWallet, quote);
+
+        const usdcReceived = BigInt(quote.destAmount);
+        const feeWei = calculateFee(usdcReceived);
+        const netUsdcWei = usdcReceived - feeWei;
+        const netUsdc = Number(netUsdcWei) / 1_000_000;
+
+        // Step 2: Calculate PULSE amount from market price
+        const pulsePriceUsd = body.pulse_price_usd || 0;
+        if (pulsePriceUsd <= 0) {
+          return Response.json({ error: 'PULSE price unavailable. Try again in a moment.' }, { status: 400 });
+        }
+
+        const pulseAmount = netUsdc / pulsePriceUsd;
+        const pulseWei = BigInt(Math.floor(pulseAmount * 1e18));
+
+        if (pulseWei <= 0n) {
+          return Response.json({ error: 'Swap amount too small to purchase PULSE' }, { status: 400 });
+        }
+
+        // Step 3: Send 2% fee in USDC to platform fee wallet
+        let feeTxHash = '';
+        try {
+          const usdcContract = getUsdcContract(userWallet);
+          const feeTx = await usdcContract.transfer(PLATFORM_FEE_WALLET, feeWei);
+          await feeTx.wait();
+          feeTxHash = feeTx.hash;
+        } catch (e) {
+          console.error('Fee transfer failed:', (e as any)?.message);
+        }
+
+        // Step 4: Send PULSE from platform treasury to user's PulseChain address
+        let pulseTxHash = '';
+        try {
+          const pulseWallet = getPulseMintWallet();
+          const tx = await pulseWallet.sendTransaction({
+            to: walletAddress,
+            value: pulseWei,
+          });
+          const receipt = await tx.wait();
+          pulseTxHash = receipt?.hash || tx.hash;
+        } catch (e) {
+          return Response.json({ error: 'PULSE transfer failed: ' + (e as any)?.message }, { status: 500 });
+        }
+
+        // Update balance if source was USDC
+        const balance = await getOrCreateWalletBalance(base44, did, walletAddress);
+        if (source_token.toLowerCase() === USDC_CONTRACT_ADDRESS.toLowerCase()) {
+          await updateBalance(base44, balance.id, {
+            usdc_wei: (BigInt(balance.usdc_wei || '0') - BigInt(amount)).toString(),
+            total_fees_paid_wei: (BigInt(balance.total_fees_paid_wei || '0') + feeWei).toString(),
+          });
+        } else {
+          await updateBalance(base44, balance.id, {
+            total_fees_paid_wei: (BigInt(balance.total_fees_paid_wei || '0') + feeWei).toString(),
+          });
+        }
+
+        await base44.entities.CryptoTransfer.create({
+          did, transfer_type: 'token_convert',
+          from_address: walletAddress, to_address: walletAddress,
+          amount_wei: pulseWei.toString(), fee_wei: feeWei.toString(),
+          tx_hash: pulseTxHash, status: 'confirmed',
+          description: `Swapped to ${pulseAmount.toFixed(6)} PULSE via DEX + treasury`,
+        });
+
+        await base44.asServiceRole.entities.FeeLedger.create({
+          fee_source: 'token_convert', source_did: did,
+          original_amount_wei: amount,
+          fee_usdc_wei: feeWei.toString(),
+          fee_tx_hash: feeTxHash,
+          swept: !!feeTxHash, swept_at: feeTxHash ? new Date().toISOString() : undefined,
+        });
+
+        return Response.json({
+          success: true,
+          pulse_amount: pulseAmount.toFixed(6),
+          pulse_wei: pulseWei.toString(),
+          fee_wei: feeWei.toString(),
+          tx_hash: pulseTxHash,
+        });
       }
 
       // Unlock the wallet

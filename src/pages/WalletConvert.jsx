@@ -191,6 +191,8 @@ export default function WalletConvert() {
 
   const switchTokens = () => {
     if (mode !== 'crypto_to_crypto') return;
+    // Don't switch if dest is PULSE (native token can't be a swap source here)
+    if (destToken === PULSE_SENTINEL) return;
     setSourceToken(destToken);
     setDestToken(sourceToken);
     setAmount('');
@@ -318,7 +320,7 @@ export default function WalletConvert() {
                   onChange={(e) => setDestToken(e.target.value)}
                   className="rounded-xl border border-border bg-secondary px-3 py-3 text-sm font-bold outline-none focus:border-primary"
                 >
-                  {POLYGON_TOKENS.filter((t) => t.address !== sourceToken).map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
+                  {ALL_TARGET_TOKENS.filter((t) => t.address !== sourceToken).map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
                 </select>
                 <div className="flex-1 rounded-xl bg-secondary px-3 py-3 text-right text-xl font-bold text-muted-foreground">
                   {net > 0 ? net.toFixed(6) : '0.00'}
