@@ -9,6 +9,8 @@
 // assertion plus the signed challenge, the server verifies the HMAC signature
 // before passing the challenge to @simplewebauthn/server's verify function.
 
+import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -88,6 +90,59 @@ export function getRpConfig(req: Request): { origin: string; rpId: string } | nu
     return { origin: `${protocol}://${host}`, rpId: host.split(':')[0] };
   }
   return null;
+}
+
+// Verify a wallet-unlock passkey assertion. Used by send-crypto,
+// execute-conversion, and execute-usdc-to-fiat to consistently verify the
+// WebAuthn assertion against the user's enrolled credentials. Centralises
+// the RP-ID/origin extraction (getRpConfig), challenge-signature check, and
+// public-key format conversion so every wallet unlock path matches the
+// registration and login flows exactly.
+export async function verifyWalletPasskey(
+  req: Request,
+  svc: any,
+  userId: string,
+  assertion: any,
+  challenge: string,
+  challengeSignature: string,
+): Promise<{ verified: boolean; error?: string; status?: number }> {
+  const rpConfig = getRpConfig(req);
+  if (!rpConfig) return { verified: false, error: 'Could not determine origin', status: 400 };
+
+  const sigValid = await verifySignedChallenge(
+    process.env.BACKEND_FUNCTION_SECRET!,
+    challenge,
+    challengeSignature,
+  );
+  if (!sigValid) return { verified: false, error: 'Invalid challenge', status: 403 };
+
+  const creds = await svc.entities.WebAuthnCredential
+    .filter({ user_id: userId }, '-created_date', 50).catch(() => []);
+  const validCreds = creds.filter((c: any) => c.credential_id);
+  if (!validCreds.length) return { verified: false, error: 'No passkey enrolled', status: 400 };
+
+  for (const cred of validCreds) {
+    try {
+      const result = await verifyAuthenticationResponse({
+        response: assertion,
+        expectedChallenge: challenge,
+        expectedOrigin: rpConfig.origin,
+        expectedRPID: rpConfig.rpId,
+        authenticator: {
+          credentialID: cred.credential_id,
+          credentialPublicKey: base64UrlToUint8Array(cred.public_key),
+          counter: cred.counter || 0,
+        },
+      });
+      if (result.verified) {
+        await svc.entities.WebAuthnCredential.update(cred.id, {
+          counter: result.authenticationInfo?.newCounter || cred.counter + 1,
+        });
+        return { verified: true };
+      }
+    } catch {}
+  }
+  return { verified: false, error: 'Passkey verification failed', status: 403 };
 }
 
 // Convert a base64url string to a Uint8Array (for @simplewebauthn/server interop).

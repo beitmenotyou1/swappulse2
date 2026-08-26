@@ -13,8 +13,7 @@ import {
   USDC_CONTRACT_ADDRESS, PLATFORM_FEE_WALLET,
 } from '../../shared/walletEscrow.ts';
 import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
-import { verifySignedChallenge } from '../../shared/webauthn.ts';
-import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
+import { verifyWalletPasskey } from '../../shared/webauthn.ts';
 import { fetchDexQuote, executeDexSwap } from '../../shared/dexAggregator.ts';
 import { getPulseMintWallet } from '../../shared/pulseClient.ts';
 
@@ -237,45 +236,12 @@ export default async function (req: Request): Promise<Response> {
         const walletRecord = activeWallet.wallet_record;
 
         if (unlockCredential) {
-          const creds = await base44.asServiceRole.entities.WebAuthnCredential
-            .filter({ user_id: user.id }, '-created_date', 50).catch(() => []);
-          const validCreds = creds.filter((c: any) => c.credential_id);
-          if (!validCreds.length) return Response.json({ error: 'No passkey enrolled' }, { status: 400 });
-
           const { assertion, challenge, challenge_signature } = unlockCredential;
           if (!assertion || !challenge || !challenge_signature) {
             return Response.json({ error: 'Missing unlock credentials' }, { status: 400 });
           }
-
-          const sigValid = await verifySignedChallenge(
-            Deno.env.get('BACKEND_FUNCTION_SECRET')!, challenge, challenge_signature,
-          );
-          if (!sigValid) return Response.json({ error: 'Invalid challenge' }, { status: 403 });
-
-          let verified = false;
-          for (const cred of validCreds) {
-            try {
-              const result = await verifyAuthenticationResponse({
-                response: assertion,
-                expectedChallenge: challenge,
-                expectedOrigin: new URL(req.url).origin,
-                expectedRPID: new URL(req.url).hostname,
-                authenticator: {
-                  credentialID: cred.credential_id,
-                  credentialPublicKey: cred.public_key,
-                  counter: cred.counter || 0,
-                },
-              });
-              if (result.verified) {
-                verified = true;
-                await base44.asServiceRole.entities.WebAuthnCredential.update(cred.id, {
-                  counter: result.authenticationInfo?.newCounter || cred.counter + 1,
-                });
-                break;
-              }
-            } catch {}
-          }
-          if (!verified) return Response.json({ error: 'Passkey verification failed' }, { status: 403 });
+          const result = await verifyWalletPasskey(req, base44.asServiceRole, user.id, assertion, challenge, challenge_signature);
+          if (!result.verified) return Response.json({ error: result.error }, { status: result.status });
           privateKey = await decryptPrivateKey(walletRecord);
         } else if (pin) {
           const pinValid = await verifyPin(walletRecord, pin);
@@ -386,45 +352,12 @@ export default async function (req: Request): Promise<Response> {
       const walletRecord = activeWallet.wallet_record;
 
       if (unlockCredential) {
-        const creds = await base44.asServiceRole.entities.WebAuthnCredential
-          .filter({ user_id: user.id }, '-created_date', 50).catch(() => []);
-        const validCreds = creds.filter((c: any) => c.credential_id);
-        if (!validCreds.length) return Response.json({ error: 'No passkey enrolled' }, { status: 400 });
-
         const { assertion, challenge, challenge_signature } = unlockCredential;
         if (!assertion || !challenge || !challenge_signature) {
           return Response.json({ error: 'Missing unlock credentials' }, { status: 400 });
         }
-
-        const sigValid = await verifySignedChallenge(
-          Deno.env.get('BACKEND_FUNCTION_SECRET')!, challenge, challenge_signature,
-        );
-        if (!sigValid) return Response.json({ error: 'Invalid challenge' }, { status: 403 });
-
-        let verified = false;
-        for (const cred of validCreds) {
-          try {
-            const result = await verifyAuthenticationResponse({
-              response: assertion,
-              expectedChallenge: challenge,
-              expectedOrigin: new URL(req.url).origin,
-              expectedRPID: new URL(req.url).hostname,
-              authenticator: {
-                credentialID: cred.credential_id,
-                credentialPublicKey: cred.public_key,
-                counter: cred.counter || 0,
-              },
-            });
-            if (result.verified) {
-              verified = true;
-              await base44.asServiceRole.entities.WebAuthnCredential.update(cred.id, {
-                counter: result.authenticationInfo?.newCounter || cred.counter + 1,
-              });
-              break;
-            }
-          } catch {}
-        }
-        if (!verified) return Response.json({ error: 'Passkey verification failed' }, { status: 403 });
+        const result = await verifyWalletPasskey(req, base44.asServiceRole, user.id, assertion, challenge, challenge_signature);
+        if (!result.verified) return Response.json({ error: result.error }, { status: result.status });
         privateKey = await decryptPrivateKey(walletRecord);
       } else if (pin) {
         const pinValid = await verifyPin(walletRecord, pin);
