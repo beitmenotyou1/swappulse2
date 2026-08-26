@@ -2,7 +2,7 @@
 // and generates AgentInsight records via LLM. Admin-gated; runs on the daily
 // Agent Learning Loop workflow. Uses the shared agentLearningLoop module.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { processFeedback } from '../../shared/agentLearningLoop.ts';
+import { processFeedback, processModerationDecisionFeedback } from '../../shared/agentLearningLoop.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -25,7 +25,12 @@ Deno.serve(async (req) => {
     const entries = await Promise.all(
       agentNames.map(async (name) => {
         try {
-          return [name, await processFeedback(svc, name)] as const;
+          // Process both traditional AgentFeedback and ModerationDecisionLog feedback
+          const [feedbackResult, decisionResult] = await Promise.all([
+            processFeedback(svc, name),
+            name === 'moderation_agent' ? processModerationDecisionFeedback(svc, name) : Promise.resolve({ processed: 0, insights_generated: 0 }),
+          ]);
+          return [name, { ...feedbackResult, decision_feedback: decisionResult }] as const;
         } catch (e) {
           console.error(`processAgentFeedback: failed for ${name}`, e?.message || e);
           return [name, { error: e?.message || 'failed' }] as const;

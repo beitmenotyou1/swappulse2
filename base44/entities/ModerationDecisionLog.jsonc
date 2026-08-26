@@ -1,0 +1,192 @@
+{
+  "name": "ModerationDecisionLog",
+  "type": "object",
+  "title": "ModerationDecisionLog",
+  "description": "org.swappulse.moderationDecisionLog \u2014 a structured record of every autonomous moderation decision the AI agent makes, the admin override (if any), the eventual trade outcome, and the user fairness rating. Feeds the three-signal learning loop (admin overrides, trade outcomes, user feedback) so the agent's risk thresholds and escalation criteria calibrate over time. One record per moderated case (escrow dispute, flagged post, trade listing, or user report).",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "ID of the entity the decision applies to (EscrowTrade id, Post id, TradeListing id, TradeDispute id, etc.)"
+    },
+    "case_type": {
+      "type": "string",
+      "enum": [
+        "escrow_dispute",
+        "post",
+        "trade_listing",
+        "trade_message",
+        "user_report",
+        "profile"
+      ],
+      "description": "What kind of case was moderated"
+    },
+    "agent_name": {
+      "type": "string",
+      "default": "moderation_agent",
+      "description": "Name of the agent that made the decision"
+    },
+    "agent_decision": {
+      "type": "string",
+      "enum": [
+        "release",
+        "refund",
+        "cancel",
+        "hide",
+        "warn",
+        "dismiss",
+        "allow",
+        "escalate"
+      ],
+      "description": "The action the agent took or recommended"
+    },
+    "agent_reasoning": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "The agent's explanation for its decision"
+    },
+    "risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Composite risk score (0-1) computed from value, confidence, evidence conflict, and party risk"
+    },
+    "triggers_fired": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "high_value",
+          "low_confidence",
+          "evidence_conflict",
+          "new_party",
+          "repeat_offender",
+          "novel_pattern"
+        ]
+      },
+      "description": "Which escalation triggers fired (empty = auto-resolved safely)"
+    },
+    "auto_resolved": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if the agent resolved this autonomously without manual review"
+    },
+    "admin_decision": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "overridden",
+        "pending",
+        "n/a"
+      ],
+      "default": "pending",
+      "description": "Whether the admin confirmed or overrode the agent's decision (pending = not yet reviewed, n/a = auto-resolved without review)"
+    },
+    "admin_id": {
+      "type": "string",
+      "description": "Platform user id of the admin who reviewed the case"
+    },
+    "admin_override_direction": {
+      "type": "string",
+      "description": "When overridden, what the admin decided instead (e.g. 'release' when agent said 'refund')"
+    },
+    "admin_rationale": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "The admin's required short rationale for the override (becomes learning data)"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the case was finally resolved (by agent or admin)"
+    },
+    "trade_outcome": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "disputed",
+        "refunded",
+        "released",
+        "cancelled",
+        "pending",
+        "n/a"
+      ],
+      "default": "pending",
+      "description": "The eventual outcome of the trade/case \u2014 ground truth for the learning loop. 'n/a' for non-trade content moderation."
+    },
+    "trade_outcome_settled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the trade outcome was determined (e.g. when an escrow was released or refunded)"
+    },
+    "user_fairness_rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "1-5 star fairness rating from the affected user(s) after resolution (averaged if both parties rate)"
+    },
+    "user_fairness_comment": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Optional comment accompanying the fairness rating"
+    },
+    "fairness_rating_submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "feedback_processed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the learning loop has ingested this record's feedback signals (admin override, trade outcome, fairness rating)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "case_id",
+    "case_type",
+    "agent_decision",
+    "risk_score"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "moderator"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

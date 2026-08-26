@@ -13,6 +13,7 @@ import BulkActions from '@/components/moderation/BulkActions';
 import TradeDisputesSection from '@/components/moderation/TradeDisputesSection';
 import AccountEnforcementSection from '@/components/moderation/AccountEnforcementSection';
 import BotAttemptsSection from '@/components/moderation/BotAttemptsSection';
+import ManualReviewQueue from '@/components/moderation/ManualReviewQueue';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
@@ -158,6 +159,7 @@ export default function Moderation() {
       <div className="mx-auto max-w-7xl space-y-4 p-4">
         <div className="flex gap-2 border-b border-border">
           {[
+            ['review', 'AI Review Queue'],
             ['posts', t('moderation.tab.posts')],
             ['disputes', t('moderation.tab.disputes')],
             ['enforcement', t('moderation.tab.enforcement')],
@@ -174,7 +176,9 @@ export default function Moderation() {
           ))}
         </div>
 
-        {tab === 'disputes' ? (
+        {tab === 'review' ? (
+          <ManualReviewQueue />
+        ) : tab === 'disputes' ? (
           <TradeDisputesSection />
         ) : tab === 'enforcement' ? (
           <AccountEnforcementSection />
