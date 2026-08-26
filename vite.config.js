@@ -15,5 +15,12 @@ export default defineConfig({
       visualEditAgent: true
     }),
     react(),
-  ]
+  ],
+  resolve: {
+    alias: {
+      // base44:runtime is a backend-only virtual module; mock it so Vite can
+      // resolve shared modules that import it during the frontend build.
+      'base44:runtime': '/src/base44-runtime-mock.js',
+    },
+  },
 });
