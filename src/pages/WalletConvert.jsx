@@ -19,7 +19,18 @@ const POLYGON_TOKENS = [
   { symbol: 'DAI', name: 'Dai Stablecoin', address: '0x8f3Cf7ad23Cd3CaDbD9735AfF958023239c6A063', decimals: 18 },
 ];
 
-const getToken = (addr) => POLYGON_TOKENS.find((t) => t.address.toLowerCase() === addr.toLowerCase());
+// Sentinel for native $PULSE (PulseChain native token). The platform sells
+// PULSE from its treasury — no DEX or bridge required.
+const PULSE_SENTINEL = 'PULSE';
+const PULSE_TOKEN = { symbol: 'PULSE', name: 'PulseChain Native', address: PULSE_SENTINEL, decimals: 18, isPulse: true };
+
+// All selectable target tokens (Polygon ERC20s + native PULSE)
+const ALL_TARGET_TOKENS = [PULSE_TOKEN, ...POLYGON_TOKENS];
+
+const getToken = (addr) =>
+  addr === PULSE_SENTINEL
+    ? PULSE_TOKEN
+    : POLYGON_TOKENS.find((t) => t.address.toLowerCase() === addr.toLowerCase());
 const FEE_RATE = 0.02;
 
 export default function WalletConvert() {
@@ -32,9 +43,9 @@ export default function WalletConvert() {
   const [executing, setExecuting] = useState(false);
   const [mode, setMode] = useState('fiat_to_crypto');
   const [amount, setAmount] = useState('');
-  const [targetToken, setTargetToken] = useState(POLYGON_TOKENS[0].address);
+  const [targetToken, setTargetToken] = useState(PULSE_SENTINEL);
   const [sourceToken, setSourceToken] = useState(POLYGON_TOKENS[1].address);
-  const [destToken, setDestToken] = useState(POLYGON_TOKENS[0].address);
+  const [destToken, setDestToken] = useState(PULSE_SENTINEL);
   const [unlockState, setUnlockState] = useState(null);
 
   useSEO({
@@ -77,6 +88,14 @@ export default function WalletConvert() {
   const rateLabel = useMemo(() => {
     if (mode === 'fiat_to_crypto') {
       const usdcRate = currency === 'GBP' ? (prices?.usdc?.gbp || 1) : currency === 'EUR' ? (prices?.usdc?.eur || 1) : 1;
+      if (targetTok?.isPulse) {
+        const pulsePriceUsd = prices?.pulse?.usd || 0;
+        if (pulsePriceUsd > 0) {
+          const fiatPerPulse = currency === 'GBP' ? pulsePriceUsd * (prices?.usdc?.gbp || 1) : currency === 'EUR' ? pulsePriceUsd * (prices?.usdc?.eur || 1) : pulsePriceUsd;
+          return `1 PULSE ≈ ${symbol}${fiatPerPulse.toFixed(6)}`;
+        }
+        return 'Rate available at execution';
+      }
       if (targetTok?.symbol === 'USDC') return `1 ${currency} ≈ ${(1 / usdcRate).toFixed(4)} USDC`;
       const tokPriceUsd = prices?.[targetTok?.symbol?.toLowerCase()]?.usd || 0;
       if (tokPriceUsd > 0) return `1 ${targetTok?.symbol} ≈ $${tokPriceUsd.toFixed(4)}`;
@@ -84,7 +103,9 @@ export default function WalletConvert() {
     }
     if (mode === 'crypto_to_crypto') {
       const srcPrice = prices?.[sourceTok?.symbol?.toLowerCase()]?.usd || 0;
-      const dstPrice = prices?.[destTok?.symbol?.toLowerCase()]?.usd || 0;
+      const dstPrice = destTok?.isPulse
+        ? (prices?.pulse?.usd || 0)
+        : (prices?.[destTok?.symbol?.toLowerCase()]?.usd || 0);
       if (srcPrice > 0 && dstPrice > 0) return `1 ${sourceTok?.symbol} ≈ ${(srcPrice / dstPrice).toFixed(6)} ${destTok?.symbol}`;
       return 'Live DEX rate at execution';
     }
@@ -282,7 +303,7 @@ export default function WalletConvert() {
                   onChange={(e) => setTargetToken(e.target.value)}
                   className="rounded-xl border border-border bg-secondary px-3 py-3 text-sm font-bold outline-none focus:border-primary"
                 >
-                  {POLYGON_TOKENS.map((t) => <option key={t.address} value={t.address}>{t.symbol} — {t.name}</option>)}
+                  {ALL_TARGET_TOKENS.map((t) => <option key={t.address} value={t.address}>{t.symbol} — {t.name}</option>)}
                 </select>
                 <div className="flex-1 rounded-xl bg-secondary px-3 py-3 text-right text-xl font-bold text-muted-foreground">
                   {net > 0 ? net.toFixed(6) : '0.00'}

@@ -118,7 +118,6 @@ export default function Wallet() {
             pulsePrice={prices?.pulse}
             formatFiat={formatFiat}
             hasWallet={hasWallet}
-            onSend={() => { setSendToken('pulse'); setShowSend(true); }}
           />
         </div>
       )}
