@@ -1,0 +1,142 @@
+{
+  "name": "CrossChainTransfer",
+  "type": "object",
+  "title": "CrossChainTransfer",
+  "description": "org.swappulse.crossChainTransfer - tracks a LayerZero OFT cross-chain $PULSE transfer between PulseChain and Polygon (or other supported chains). Created when a user initiates a send via the cross-chain-transfer backend function, and updated by the monitor-lz-transfers scheduled function when delivery is confirmed or fails. Stores the source/destination chains, LayerZero chain IDs, sender/recipient addresses, amount, fees, on-chain tx hash, and delivery status. Admin-only write; public read is restricted to the transfer owner and admins.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who initiated the transfer"
+    },
+    "from_chain": {
+      "type": "string",
+      "enum": [
+        "pulse",
+        "polygon"
+      ],
+      "description": "Source chain key"
+    },
+    "to_chain": {
+      "type": "string",
+      "enum": [
+        "pulse",
+        "polygon"
+      ],
+      "description": "Destination chain key"
+    },
+    "from_lz_chain_id": {
+      "type": "integer",
+      "description": "LayerZero V2 chain ID of the source chain"
+    },
+    "to_lz_chain_id": {
+      "type": "integer",
+      "description": "LayerZero V2 chain ID of the destination chain"
+    },
+    "from_address": {
+      "type": "string",
+      "description": "Sender wallet address on the source chain"
+    },
+    "to_address": {
+      "type": "string",
+      "description": "Recipient wallet address on the destination chain"
+    },
+    "amount_wei": {
+      "type": "string",
+      "description": "Amount of $PULSE transferred in base units (18 decimals), stored as string to avoid overflow"
+    },
+    "lz_gas_cost_wei": {
+      "type": "string",
+      "description": "LayerZero network gas cost paid by the sender (in native gas units)"
+    },
+    "swap_pulse_fee_wei": {
+      "type": "string",
+      "description": "SwapPulse platform fee collected (base fee + variable fee) in $PULSE base units"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "On-chain transaction hash of the send() call on the source chain"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "delivered",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Transfer status: pending (sent but not yet received), delivered (minted on destination), failed (timed out or reverted)"
+    },
+    "message_id": {
+      "type": "string",
+      "description": "LayerZero message ID (keccak256 hash of the payload) for cross-chain tracking"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the transfer was initiated on the source chain"
+    },
+    "delivered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the transfer was confirmed on the destination chain"
+    },
+    "failed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the transfer was marked as failed"
+    },
+    "failure_reason": {
+      "type": "string",
+      "description": "Reason for failure (e.g. 'Timeout', 'Reverted on destination')"
+    }
+  },
+  "required": [
+    "did",
+    "from_chain",
+    "to_chain",
+    "from_address",
+    "to_address",
+    "amount_wei",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
