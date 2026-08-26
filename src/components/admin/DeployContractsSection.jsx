@@ -259,6 +259,7 @@ function DeployCard({
 // parameter (pulse or polygon) and can be deployed on either chain.
 function OftDeployCard({ deployed, onDeployed }) {
   const [chain, setChain] = useState('pulse');
+  const [endpoint, setEndpoint] = useState('');
   const [deploying, setDeploying] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -268,12 +269,16 @@ function OftDeployCard({ deployed, onDeployed }) {
   const isDeployed = !!current.address;
 
   const deploy = async () => {
+    if (!endpoint || !/^0x[a-fA-F0-9]{40}$/.test(endpoint.trim())) {
+      setError('Enter the LayerZero V2 endpoint address (0x…) for the selected chain. Find it at https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts');
+      return;
+    }
     if (!window.confirm(`Deploy the OFT PulseToken on ${chain}? This will spend gas from the ${chain} deployer wallet.`)) return;
     setDeploying(true);
     setError('');
     setResult(null);
     try {
-      const res = await base44.functions.invoke('deploy-lz-pulse-token', { chain });
+      const res = await base44.functions.invoke('deploy-lz-pulse-token', { chain, endpoint: endpoint.trim() });
       setResult(res.data);
       if (onDeployed) onDeployed();
     } catch (e) {
@@ -319,6 +324,27 @@ function OftDeployCard({ deployed, onDeployed }) {
           ))}
         </div>
       </div>
+
+      {!isDeployed && (
+        <div className="mb-4">
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+            LayerZero V2 Endpoint Address
+          </label>
+          <input
+            type="text"
+            value={endpoint}
+            onChange={(e) => setEndpoint(e.target.value)}
+            placeholder="0x… (LayerZero V2 endpoint on the selected chain)"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+          />
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            Find the endpoint for your chain at{' '}
+            <a href="https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+              LayerZero docs
+            </a>
+          </p>
+        </div>
+      )}
 
       {current.address ? (
         <div className="mb-4 space-y-2">

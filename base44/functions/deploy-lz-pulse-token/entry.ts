@@ -67,7 +67,7 @@ export default async function (req: Request): Promise<Response> {
     const balance = await provider.getBalance(wallet.address);
     if (balance === 0n) {
       return Response.json(
-        { error: `Deployer wallet has no native gas tokens on ${chain}. Fund it first.` },
+        { error: `Deployer wallet ${wallet.address} has no native gas tokens on ${chain}. Send ${chain === 'pulse' ? 'PLS' : 'POL'} to this address first${explorerUrl ? ` — ${explorerUrl}/address/${wallet.address}` : ''}.` },
         { status: 400 },
       );
     }

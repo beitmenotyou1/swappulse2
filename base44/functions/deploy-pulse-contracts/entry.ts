@@ -59,8 +59,9 @@ export default async function (req: Request): Promise<Response> {
     // Sanity-check the deployer can pay for gas before sending transactions.
     const balance = await provider.getBalance(wallet.address);
     if (balance === 0n) {
+      const explorer = secrets.get('PULSE_EXPLORER_URL') || '';
       return Response.json(
-        { error: 'Deployer wallet has no $PULSE for gas. Fund it first.' },
+        { error: `Deployer wallet ${wallet.address} has no $PULSE for gas. Send PLS to this address first${explorer ? ` — ${explorer}/address/${wallet.address}` : ''}.` },
         { status: 400 },
       );
     }
