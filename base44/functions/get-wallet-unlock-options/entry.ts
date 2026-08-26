@@ -17,12 +17,18 @@ export default async function (req: Request): Promise<Response> {
     const did = user.did;
     if (!did) return Response.json({ error: 'No DID found' }, { status: 400 });
 
-    // Find the user's active custodial wallet
-    const wallets = await base44.entities.CustodialWallet.filter({ did, active: true });
-    if (!wallets.length) {
+    // Find the user's active wallet — check MultiChainWallet first, then
+    // fall back to legacy CustodialWallet. Both store passkey_credential_ids
+    // and has_passkey/has_pin flags identically.
+    const multiWallets = await base44.asServiceRole.entities.MultiChainWallet
+      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+    const custodialWallets = await base44.asServiceRole.entities.CustodialWallet
+      .filter({ did, active: true }, '-created_date', 1).catch(() => []);
+
+    const wallet = multiWallets[0] || custodialWallets[0];
+    if (!wallet) {
       return Response.json({ error: 'No custodial wallet found' }, { status: 404 });
     }
-    const wallet = wallets[0];
 
     const rpConfig = getRpConfig(req);
     if (!rpConfig) return Response.json({ error: 'Could not determine origin' }, { status: 400 });
