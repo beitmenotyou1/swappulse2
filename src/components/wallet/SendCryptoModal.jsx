@@ -110,7 +110,8 @@ export default function SendCryptoModal({ wallet, token: initialToken = 'usdc', 
           toast({ title: `${tokenSymbol} sent!`, description: 'Transaction confirmed.' });
           onClose();
         } catch (e) {
-          toast({ title: 'Send failed', description: e.message, variant: 'destructive' });
+          const errBody = e?.response?.data?.error || e?.data?.error || e?.error || null;
+          toast({ title: 'Send failed', description: errBody || e.message, variant: 'destructive' });
         } finally {
           setLoading(false);
         }
@@ -123,7 +124,8 @@ export default function SendCryptoModal({ wallet, token: initialToken = 'usdc', 
       toast({ title: `${tokenSymbol} sent!`, description: 'Transaction confirmed.' });
       onClose();
     } catch (e) {
-      toast({ title: 'Send failed', description: e.message, variant: 'destructive' });
+      const errBody = e?.response?.data?.error || e?.data?.error || e?.error || null;
+      toast({ title: 'Send failed', description: errBody || e.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }

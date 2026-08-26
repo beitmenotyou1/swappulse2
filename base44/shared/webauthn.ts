@@ -121,6 +121,7 @@ export async function verifyWalletPasskey(
   const validCreds = creds.filter((c: any) => c.credential_id);
   if (!validCreds.length) return { verified: false, error: 'No passkey enrolled', status: 400 };
 
+  let lastError = '';
   for (const cred of validCreds) {
     try {
       const result = await verifyAuthenticationResponse({
@@ -140,9 +141,26 @@ export async function verifyWalletPasskey(
         });
         return { verified: true };
       }
-    } catch {}
+    } catch (e: any) {
+      lastError = e?.message || String(e);
+      console.error('[verifyWalletPasskey] cred verification error:', lastError);
+    }
   }
-  return { verified: false, error: 'Passkey verification failed', status: 403 };
+  console.error('[verifyWalletPasskey] FAILED', {
+    rpId: rpConfig.rpId,
+    origin: rpConfig.origin,
+    credCount: validCreds.length,
+    lastError,
+    assertionOrigin: assertion?.response?.clientExtensionResults,
+    assertionRpId: assertion?.response?.rpId,
+  });
+  // Include diagnostic detail in the error so the frontend can surface it
+  // during debugging (RP mismatch is the most common cause of 403s).
+  return {
+    verified: false,
+    error: `Passkey verification failed (rpId=${rpConfig.rpId}, origin=${rpConfig.origin}, creds=${validCreds.length}, err=${lastError || 'no-match'})`,
+    status: 403,
+  };
 }
 
 // Convert a base64url string to a Uint8Array (for @simplewebauthn/server interop).

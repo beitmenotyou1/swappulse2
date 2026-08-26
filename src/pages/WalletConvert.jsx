@@ -203,7 +203,8 @@ export default function WalletConvert() {
         navigate('/wallet');
       }
     } catch (e) {
-      toast({ title: 'Conversion failed', description: e.message, variant: 'destructive' });
+      const errBody = e?.response?.data?.error || e?.data?.error || e?.error || null;
+      toast({ title: 'Conversion failed', description: errBody || e.message, variant: 'destructive' });
     } finally {
       setExecuting(false);
     }
