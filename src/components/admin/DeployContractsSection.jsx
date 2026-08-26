@@ -105,6 +105,22 @@ export default function DeployContractsSection() {
         onDeployed={fetchAddresses}
       />
 
+      {/* Base $PULSE ERC-20 token (must be deployed before the OFT wrapper) */}
+      <DeployCard
+        title="PulseChain · $PULSE ERC-20 Token"
+        icon={Coins}
+        description="Base SwapPulse $PULSE governance/utility token (1B supply, 40% usage-mining, 15% reserve). The LayerZero OFT wrapper wraps this token, so it must be deployed first. After deploying, save the address as the PULSE_TOKEN_CONTRACT secret."
+        functionName="deploy-pulse-token"
+        confirmMessage="Deploy the SwapPulse $PULSE ERC-20 token on PulseChain? This will spend gas from the PulseChain deployer wallet."
+        extractResults={(r) => [
+          { label: 'PulseToken', address: r.address, secret: 'PULSE_TOKEN_CONTRACT' },
+        ]}
+        deployedAddresses={[
+          { label: 'PulseToken', ...pulse.token, secret: 'PULSE_TOKEN_CONTRACT' },
+        ]}
+        onDeployed={fetchAddresses}
+      />
+
       {/* LayerZero OFT PulseToken */}
       <OftDeployCard
         deployed={{ pulse: pulse.oft, polygon: poly.oft }}

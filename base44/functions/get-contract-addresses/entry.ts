@@ -59,6 +59,7 @@ export default async function (req: Request): Promise<Response> {
         card: resolve('pulse_card', 'PULSE_SPCD_CONTRACT', pulseExplorer),
         bridge: resolve('pulse_bridge', 'PULSE_BRIDGE_CONTRACT', pulseExplorer),
         oft: resolve('oft_pulse', 'OFT_PULSE_TOKEN_CONTRACT', pulseExplorer),
+        token: resolve('pulse_token', 'PULSE_TOKEN_CONTRACT', pulseExplorer),
         cardMetadataAnchor: resolve('card_metadata_anchor', 'CARD_METADATA_ANCHOR_CONTRACT', pulseExplorer),
         explorerUrl: pulseExplorer,
       },
