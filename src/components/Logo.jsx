@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image } from '@/components/ui/image';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/fc2637b08_screen.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/9c6b5d870_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.svg';
 
 export default function Logo({ size = 32, withText = false }) {
   return (

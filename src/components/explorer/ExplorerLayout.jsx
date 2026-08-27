@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Activity, Zap, Database, Bookmark, X } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/32ce16a82_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/9c6b5d870_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.svg';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber } from '@/lib/explorerFormat';
