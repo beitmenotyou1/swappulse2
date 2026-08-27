@@ -11,10 +11,10 @@ function getContrastText(hex) {
   return lum > 0.6 ? '#1e293b' : '#ffffff';
 }
 
-// Renders a branded circular letter-mark in the chain's brand colour.
-// 100% local — no external fetch, never breaks. Each chain is identified by
-// its official brand colour and first letter, a recognisable fallback used
-// by many explorers for chains without a bundled logo.
+// Renders a chain's logo as a branded circular letter-mark in the chain's
+// official brand colour. 100% local (no external fetch, no npm icon pack) so
+// it never breaks. The chain name is always shown alongside in the UI, so the
+// letter + brand colour is enough to distinguish chains at a glance.
 export default function ChainLogo({ chainKey, size = 20, className = '' }) {
   const meta = getChainMeta(chainKey);
   const letter = (meta?.name || chainKey).charAt(0).toUpperCase();
