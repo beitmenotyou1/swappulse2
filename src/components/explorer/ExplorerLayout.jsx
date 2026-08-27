@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Activity, Boxes, Zap, Database } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -14,16 +14,18 @@ import ExplorerSearchBar from './ExplorerSearchBar';
 export default function ExplorerLayout() {
   const t = useT();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const chainKey = searchParams.get('chain') || 'pulse';
   const [stats, setStats] = useState(null);
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await base44.functions.invoke('pulse-explorer-home', {});
+      const res = await base44.functions.invoke('multi-chain-explorer', { chain: chainKey, stats_only: true });
       setStats(res.data);
     } catch {
       /* non-fatal — strip just stays empty */
     }
-  }, []);
+  }, [chainKey]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
@@ -32,6 +34,7 @@ export default function ExplorerLayout() {
 
   const cursor = stats?.cursor;
   const chainHead = stats?.chain_head;
+  const chainInfo = stats?.chain;
   const blocksBehind = cursor && chainHead != null ? chainHead - cursor.last_indexed_block : null;
 
   return (
@@ -69,28 +72,46 @@ export default function ExplorerLayout() {
         </div>
 
         {/* Chain stat strip */}
-        {cursor && (
+        {stats && (
           <div className="border-t border-border bg-secondary/30">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 text-xs sm:gap-x-6 sm:px-4">
-              <span className="inline-flex items-center gap-1.5 font-medium">
-                <Activity className="h-3.5 w-3.5 text-success" />
-                {t('explorer.chainHead')}:
-                <span className="font-bold text-foreground">#{formatNumber(chainHead ?? cursor.chain_head_at_last_run)}</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                <Database className="h-3.5 w-3.5 text-primary" />
-                {t('explorer.indexedTo')}:
-                <span className="font-semibold text-foreground">#{formatNumber(cursor.last_indexed_block)}</span>
-              </span>
-              {blocksBehind != null && (
-                <span className={`inline-flex items-center gap-1.5 font-medium ${blocksBehind > 5 ? 'text-warning' : 'text-success'}`}>
-                  <Zap className="h-3.5 w-3.5" />
-                  {blocksBehind > 0 ? t('explorer.blocksBehind', { count: formatNumber(blocksBehind) }) : t('explorer.upToDate')}
+              {chainInfo && (
+                <span className="inline-flex items-center gap-1.5 font-bold text-foreground">
+                  {chainInfo.isMain && <span className="text-primary">★</span>}
+                  {chainInfo.name}
                 </span>
               )}
-              <span className="ml-auto text-muted-foreground">
-                {formatNumber(cursor.blocks_indexed_total || 0)} {t('explorer.stat.blocks')} · {formatNumber(cursor.txs_indexed_total || 0)} {t('explorer.stat.txs')}
-              </span>
+              {chainHead != null && (
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <Activity className="h-3.5 w-3.5 text-success" />
+                  {t('explorer.chainHead')}:
+                  <span className="font-bold text-foreground">#{formatNumber(chainHead)}</span>
+                </span>
+              )}
+              {chainInfo && !cursor && (
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  {t('explorer.chainId')}: <span className="font-semibold text-foreground">{chainInfo.chainId}</span>
+                  · {chainInfo.symbol}
+                </span>
+              )}
+              {cursor && (
+                <>
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <Database className="h-3.5 w-3.5 text-primary" />
+                    {t('explorer.indexedTo')}:
+                    <span className="font-semibold text-foreground">#{formatNumber(cursor.last_indexed_block)}</span>
+                  </span>
+                  {blocksBehind != null && (
+                    <span className={`inline-flex items-center gap-1.5 font-medium ${blocksBehind > 5 ? 'text-warning' : 'text-success'}`}>
+                      <Zap className="h-3.5 w-3.5" />
+                      {blocksBehind > 0 ? t('explorer.blocksBehind', { count: formatNumber(blocksBehind) }) : t('explorer.upToDate')}
+                    </span>
+                  )}
+                  <span className="ml-auto text-muted-foreground">
+                    {formatNumber(cursor.blocks_indexed_total || 0)} {t('explorer.stat.blocks')} · {formatNumber(cursor.txs_indexed_total || 0)} {t('explorer.stat.txs')}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         )}

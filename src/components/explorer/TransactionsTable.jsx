@@ -22,7 +22,7 @@ function getNftImage(tx) {
 // Compact table of transactions — Etherscan-style. Responsive: on mobile,
 // collapses to stacked cards. Shows status badge (success/failed/pending)
 // and NFT image thumbnail for NFT transactions.
-export default function TransactionsTable({ transactions = [], showDirection = false }) {
+export default function TransactionsTable({ transactions = [], showDirection = false, symbol = 'PLS' }) {
   const t = useT();
   if (!transactions.length) {
     return <p className="py-8 text-center text-sm text-muted-foreground">{t('explorer.noTxs')}</p>;
@@ -85,7 +85,7 @@ export default function TransactionsTable({ transactions = [], showDirection = f
                         </div>
                       </div>
                     ) : (
-                      <span className="font-mono tabular-nums whitespace-nowrap">{formatPls(tx.value_wei)} PLS</span>
+                      <span className="font-mono tabular-nums whitespace-nowrap">{formatPls(tx.value_wei)} {symbol}</span>
                     )}
                   </td>
                   <td className="px-4 py-3"><TxActionLinks txHash={tx.tx_hash} /></td>
@@ -141,7 +141,7 @@ export default function TransactionsTable({ transactions = [], showDirection = f
                 </div>
               ) : (
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="font-mono text-sm font-semibold">{formatPls(tx.value_wei)} PLS</span>
+                  <span className="font-mono text-sm font-semibold">{formatPls(tx.value_wei)} {symbol}</span>
                   <TxActionLinks txHash={tx.tx_hash} />
                 </div>
               )}
