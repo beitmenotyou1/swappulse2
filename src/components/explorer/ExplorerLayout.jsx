@@ -1,0 +1,105 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { ArrowLeft, Activity, Boxes, Zap, Database } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { formatNumber } from '@/lib/explorerFormat';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ExplorerSearchBar from './ExplorerSearchBar';
+
+// Standalone full-screen layout for the blockchain explorer. Escapes the
+// main app shell entirely — own top nav (logo, global search, language
+// switcher, back-to-SwapPulse link) and a live chain stat strip. All child
+// explorer routes render via <Outlet />.
+export default function ExplorerLayout() {
+  const t = useT();
+  const location = useLocation();
+  const [stats, setStats] = useState(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await base44.functions.invoke('pulse-explorer-home', {});
+      setStats(res.data);
+    } catch {
+      /* non-fatal — strip just stays empty */
+    }
+  }, []);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  // Refetch stats when navigating between explorer pages so the strip stays fresh
+  useEffect(() => { fetchStats(); /* light refresh on route change */ }, [location.pathname, fetchStats]);
+
+  const cursor = stats?.cursor;
+  const chainHead = stats?.chain_head;
+  const blocksBehind = cursor && chainHead != null ? chainHead - cursor.last_indexed_block : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Top nav */}
+      <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+          {/* Logo */}
+          <Link to="/blockchain" className="flex shrink-0 items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-hover text-white shadow-raised sm:h-9 sm:w-9 sm:rounded-xl">
+              <Boxes className="h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
+            <span className="hidden text-lg font-extrabold tracking-tight md:inline">
+              <span className="text-gradient-pulse">PulseChain</span> Explorer
+            </span>
+          </Link>
+
+          {/* Global search — center, grows */}
+          <div className="min-w-0 flex-1">
+            <ExplorerSearchBar />
+          </div>
+
+          {/* Right actions */}
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <LanguageSwitcher compact />
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-full p-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              title={t('explorer.backToApp')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden lg:inline">{t('explorer.backToApp')}</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Chain stat strip */}
+        {cursor && (
+          <div className="border-t border-border bg-secondary/30">
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 text-xs sm:gap-x-6 sm:px-4">
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <Activity className="h-3.5 w-3.5 text-success" />
+                {t('explorer.chainHead')}:
+                <span className="font-bold text-foreground">#{formatNumber(chainHead ?? cursor.chain_head_at_last_run)}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <Database className="h-3.5 w-3.5 text-primary" />
+                {t('explorer.indexedTo')}:
+                <span className="font-semibold text-foreground">#{formatNumber(cursor.last_indexed_block)}</span>
+              </span>
+              {blocksBehind != null && (
+                <span className={`inline-flex items-center gap-1.5 font-medium ${blocksBehind > 5 ? 'text-warning' : 'text-success'}`}>
+                  <Zap className="h-3.5 w-3.5" />
+                  {blocksBehind > 0 ? t('explorer.blocksBehind', { count: formatNumber(blocksBehind) }) : t('explorer.upToDate')}
+                </span>
+              )}
+              <span className="ml-auto text-muted-foreground">
+                {formatNumber(cursor.blocks_indexed_total || 0)} {t('explorer.stat.blocks')} · {formatNumber(cursor.txs_indexed_total || 0)} {t('explorer.stat.txs')}
+              </span>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Page content */}
+      <main className="mx-auto max-w-7xl px-4 py-6">
+        <Outlet />
+      </main>
+    </div>
+  );
+}

@@ -21,16 +21,16 @@ export default async function (req: Request): Promise<Response> {
     if (/^0x[a-f0-9]{64}$/.test(q)) {
       const indexed = await svc.entities.PulseTransaction.filter({ tx_hash: q }, '-block_number', 1).catch(() => []);
       if (indexed.length) {
-        return Response.json({ type: 'tx', hash: q, redirect: `/pulse-explorer/tx/${q}` });
+        return Response.json({ type: 'tx', hash: q, redirect: `/blockchain/tx/${q}` });
       }
       const liveTx = await getTransactionByHash(q).catch(() => null);
-      if (liveTx) return Response.json({ type: 'tx', hash: q, redirect: `/pulse-explorer/tx/${q}` });
+      if (liveTx) return Response.json({ type: 'tx', hash: q, redirect: `/blockchain/tx/${q}` });
       return Response.json({ type: 'not_found', message: 'Transaction not found' });
     }
 
     // Address: 0x + 40 hex chars.
     if (/^0x[a-f0-9]{40}$/.test(q)) {
-      return Response.json({ type: 'address', address: q, redirect: `/pulse-explorer/address/${q}` });
+      return Response.json({ type: 'address', address: q, redirect: `/blockchain/address/${q}` });
     }
 
     // Block number: pure integer.
@@ -38,11 +38,11 @@ export default async function (req: Request): Promise<Response> {
       const num = parseInt(query, 10);
       const indexed = await svc.entities.PulseBlock.filter({ block_number: num }, '-block_number', 1).catch(() => []);
       if (indexed.length) {
-        return Response.json({ type: 'block', block_number: num, redirect: `/pulse-explorer/block/${num}` });
+        return Response.json({ type: 'block', block_number: num, redirect: `/blockchain/block/${num}` });
       }
       const liveBlock = await getBlockByNumber(num, false).catch(() => null);
       if (liveBlock && liveBlock.number) {
-        return Response.json({ type: 'block', block_number: num, redirect: `/pulse-explorer/block/${num}` });
+        return Response.json({ type: 'block', block_number: num, redirect: `/blockchain/block/${num}` });
       }
       return Response.json({ type: 'not_found', message: 'Block not found' });
     }

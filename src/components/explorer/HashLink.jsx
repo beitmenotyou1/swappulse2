@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Check } from 'lucide-react';
+import { useT } from '@/lib/i18n/I18nProvider';
 import { truncateHash } from '@/lib/explorerFormat';
 
 // Truncated monospace hash with a copy button and a link to a detail page.
 export default function HashLink({ hash, to, prefixLen = 10, suffixLen = 8, className = '' }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   if (!hash) return <span className="text-muted-foreground text-xs">—</span>;
 
@@ -21,11 +23,11 @@ export default function HashLink({ hash, to, prefixLen = 10, suffixLen = 8, clas
       <Link to={to} className="text-primary hover:underline break-all">{truncateHash(hash, prefixLen, suffixLen)}</Link>
       <button
         onClick={copy}
-        className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        title="Copy to clipboard"
-        aria-label="Copy to clipboard"
+        className="text-muted-foreground transition-colors hover:text-foreground shrink-0"
+        title={t('explorer.copyToClipboard')}
+        aria-label={t('explorer.copyToClipboard')}
       >
-        {copied ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3" />}
+        {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
       </button>
     </span>
   );

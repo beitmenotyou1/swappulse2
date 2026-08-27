@@ -13,6 +13,7 @@ import { LivePresenceProvider } from '@/lib/livePresence';
 import { PodcastPlayerProvider } from '@/lib/podcastPlayer';
 import { MembershipProvider } from '@/lib/membershipContext';
 import Layout from '@/components/Layout';
+import ExplorerLayout from '@/components/explorer/ExplorerLayout';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
 import { LightboxProvider } from '@/lib/lightboxContext';
@@ -327,10 +328,13 @@ const AuthenticatedApp = () => {
         <Route path="/circles-directory" element={<CircleDirectory />} />
         <Route path="/labelers" element={<Labelers />} />
         <Route path="/search" element={<SearchPage />} />
-        <Route path="/pulse-explorer" element={<PulseExplorer />} />
-        <Route path="/pulse-explorer/address/:address" element={<PulseExplorerAddress />} />
-        <Route path="/pulse-explorer/tx/:txHash" element={<PulseExplorerTx />} />
-        <Route path="/pulse-explorer/block/:blockNumber" element={<PulseExplorerBlock />} />
+      </Route>
+      {/* Standalone blockchain explorer — own full-screen layout, escapes the main app shell */}
+      <Route element={<ExplorerLayout />}>
+        <Route path="/blockchain" element={<PulseExplorer />} />
+        <Route path="/blockchain/address/:address" element={<PulseExplorerAddress />} />
+        <Route path="/blockchain/tx/:txHash" element={<PulseExplorerTx />} />
+        <Route path="/blockchain/block/:blockNumber" element={<PulseExplorerBlock />} />
       </Route>
       {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
