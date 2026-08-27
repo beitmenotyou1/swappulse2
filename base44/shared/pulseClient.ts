@@ -12,6 +12,7 @@ import {
   PULSE_CARD_ABI,
   PULSE_BRIDGE_ABI,
 } from './pulseCompiledArtifacts.ts';
+import { PULSE_TOKEN_ABI } from './pulseTokenArtifacts.ts';
 import { CARD_METADATA_ANCHOR_ABI } from './cardMetadataAnchorArtifacts.ts';
 import { resolveDeployedAddress } from './contractRegistry.ts';
 
@@ -27,13 +28,44 @@ export function getPulseMintWallet(): ethers.Wallet {
   return new ethers.Wallet(privateKey, getPulseProvider());
 }
 
-// Returns the native PULSE balance (wei) of the platform treasury wallet on
-// PulseChain. Used as a pre-flight check before disbursing PULSE from the
-// treasury in conversions — aborts cleanly if the treasury is unfunded
-// instead of collecting USDC from the user and then failing on the send.
+// The $PULSE ERC-20 token contract (PulseToken) deployed on PulseChain. The
+// treasury holds the token supply here — NOT as native gas coin. Conversions
+// disburse PULSE by calling transfer() on this contract, not by sending native
+// value. Address is the PULSE_TOKEN_CONTRACT secret.
+export function getPulseTokenContract(signer?: any): ethers.Contract {
+  const address = secrets.get('PULSE_TOKEN_CONTRACT');
+  if (!address) throw new Error('PULSE_TOKEN_CONTRACT secret not set');
+  return new ethers.Contract(address, PULSE_TOKEN_ABI, signer ?? getPulseProvider());
+}
+
+// Returns the treasury's ERC-20 PULSE balance (wei). This is the token the
+// conversion disburses — the native gas coin (PLS) is only for gas, not the
+// $PULSE token itself. Pre-flight check uses this to abort cleanly if the
+// treasury can't cover the disbursement.
 export async function getPulseTreasuryBalanceWei(): Promise<bigint> {
   const wallet = getPulseMintWallet();
-  return wallet.provider.getBalance(wallet.address);
+  const token = getPulseTokenContract(wallet);
+  return token.balanceOf(wallet.address);
+}
+
+// Pre-flight: verify the treasury can both cover the ERC-20 PULSE disbursement
+// AND pay for the gas of the transfer transaction. Returns null if OK, or a
+// human-readable error string if the treasury is unfunded (ERC-20) or out of
+// native gas. Used by execute-conversion so it aborts BEFORE collecting USDC.
+export async function assertPulseTreasuryCanDisburse(pulseWei: bigint): Promise<string | null> {
+  const wallet = getPulseMintWallet();
+  const token = getPulseTokenContract(wallet);
+  const [tokenBalance, nativeBalance] = await Promise.all([
+    token.balanceOf(wallet.address).catch(() => 0n),
+    wallet.provider.getBalance(wallet.address).catch(() => 0n),
+  ]);
+  if (tokenBalance < pulseWei) {
+    return 'PULSE treasury temporarily unfunded. Please try again later or contact support.';
+  }
+  if (nativeBalance === 0n) {
+    return 'PULSE treasury has no native gas for the transfer. Please fund the treasury wallet with native PLS for gas and try again.';
+  }
+  return null;
 }
 
 export function getPulseChainId(): string {

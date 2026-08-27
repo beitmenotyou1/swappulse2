@@ -15,7 +15,7 @@ import {
 import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
 import { verifyWalletPasskey } from '../../shared/webauthn.ts';
 import { fetchDexQuote, executeDexSwap } from '../../shared/dexAggregator.ts';
-import { getPulseMintWallet, getPulseTreasuryBalanceWei } from '../../shared/pulseClient.ts';
+import { getPulseMintWallet, getPulseTokenContract, assertPulseTreasuryCanDisburse } from '../../shared/pulseClient.ts';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 import { readPulseUsdcPoolPrice } from '../../shared/uniswapPoolPrice.ts';
 
@@ -141,11 +141,9 @@ export default async function (req: Request): Promise<Response> {
         // BEFORE debiting fiat. Aborts cleanly if the treasury is unfunded
         // rather than taking the user's fiat and failing on the send.
         try {
-          const treasuryBalance = await getPulseTreasuryBalanceWei();
-          if (treasuryBalance < pulseWei) {
-            return Response.json({
-              error: 'PULSE treasury temporarily unfunded. Please try again later or contact support.',
-            }, { status: 503 });
+          const treasuryError = await assertPulseTreasuryCanDisburse(pulseWei);
+          if (treasuryError) {
+            return Response.json({ error: treasuryError }, { status: 503 });
           }
         } catch (e) {
           return Response.json({ error: 'Unable to verify PULSE treasury: ' + (e as any)?.message }, { status: 503 });
@@ -161,10 +159,8 @@ export default async function (req: Request): Promise<Response> {
         let pulseTxHash = '';
         try {
           const pulseWallet = getPulseMintWallet();
-          const tx = await pulseWallet.sendTransaction({
-            to: walletAddress,
-            value: pulseWei,
-          });
+          const pulseToken = getPulseTokenContract(pulseWallet);
+          const tx = await pulseToken.transfer(walletAddress, pulseWei);
           const receipt = await tx.wait();
           pulseTxHash = receipt?.hash || tx.hash;
         } catch (e) {
@@ -380,11 +376,9 @@ export default async function (req: Request): Promise<Response> {
         // BEFORE collecting any USDC from the user. Without this, a failed PULSE
         // send after USDC collection would leave the user paid but empty-handed.
         try {
-          const treasuryBalance = await getPulseTreasuryBalanceWei();
-          if (treasuryBalance < pulseWei) {
-            return Response.json({
-              error: 'PULSE treasury temporarily unfunded. Please try again later or contact support.',
-            }, { status: 503 });
+          const treasuryError = await assertPulseTreasuryCanDisburse(pulseWei);
+          if (treasuryError) {
+            return Response.json({ error: treasuryError }, { status: 503 });
           }
         } catch (e) {
           return Response.json({ error: 'Unable to verify PULSE treasury: ' + (e as any)?.message }, { status: 503 });
@@ -423,10 +417,8 @@ export default async function (req: Request): Promise<Response> {
         let pulseTxHash = '';
         try {
           const pulseWallet = getPulseMintWallet();
-          const tx = await pulseWallet.sendTransaction({
-            to: walletAddress,
-            value: pulseWei,
-          });
+          const pulseToken = getPulseTokenContract(pulseWallet);
+          const tx = await pulseToken.transfer(walletAddress, pulseWei);
           const receipt = await tx.wait();
           pulseTxHash = receipt?.hash || tx.hash;
         } catch (e) {
