@@ -84,7 +84,7 @@ export default function PulseExplorerBlock() {
               <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Blocks className="h-4 w-4 text-primary" /> {t('explorer.block')} #{block.block_number}</h2>
             </div>
             <div className="divide-y divide-border">
-              <Row label={t('explorer.blockHeight')}><span className="font-mono font-medium">#{formatNumber(block.block_number)}</span></Row>
+              <Row icon={Blocks} label={t('explorer.blockHeight')}><span className="font-mono font-medium">#{formatNumber(block.block_number)}</span></Row>
               <Row icon={Hash} label={t('explorer.blockHash')}>
                 <span className="flex items-center gap-2"><span className="font-mono text-xs break-all">{block.hash}</span><HashLink hash={block.hash} to={`/blockchain/block/${block.block_number}`} /></span>
               </Row>
@@ -98,8 +98,8 @@ export default function PulseExplorerBlock() {
                 <HashLink hash={block.miner} to={`/blockchain/address/${block.miner}`} />
               </Row>
               <Row icon={Fuel} label={t('explorer.gasUsed')}><span className="font-mono">{formatNumber(block.gas_used)}</span></Row>
-              <Row label={t('explorer.size')}><span className="font-mono">{formatNumber(block.size)} {t('explorer.bytes')}</span></Row>
-              <Row label={t('explorer.transactions')}><span className="font-mono">{formatNumber(block.tx_count)}</span></Row>
+              <Row icon={HardDrive} label={t('explorer.size')}><span className="font-mono">{formatNumber(block.size)} {t('explorer.bytes')}</span></Row>
+              <Row icon={ArrowRightLeft} label={t('explorer.transactions')}><span className="font-mono">{formatNumber(block.tx_count)}</span></Row>
               {block.extra_data && (
                 <div className="px-4 py-3">
                   <span className="inline-flex items-center gap-2 text-sm text-muted-foreground mb-2"><FileCode2 className="h-4 w-4" /> {t('explorer.extraData')}</span>
@@ -113,7 +113,7 @@ export default function PulseExplorerBlock() {
 
           <div className="rounded-xl border border-border bg-card shadow-base">
             <div className="border-b border-border px-4 py-3">
-              <h2 className="text-sm font-semibold">{t('explorer.transactionsInBlock', { number: block.block_number })}</h2>
+              <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><ArrowRightLeft className="h-4 w-4 text-primary" /> {t('explorer.transactionsInBlock', { number: block.block_number })}</h2>
             </div>
             <TransactionsTable transactions={data.transactions || []} symbol={symbol} />
           </div>
