@@ -21,6 +21,7 @@ import EscrowTradeList from '@/components/wallet/EscrowTradeList';
 import LowBalanceAlertCard from '@/components/wallet/LowBalanceAlertCard';
 import WalletTrendsChart from '@/components/wallet/WalletTrendsChart';
 import UniswapPoolCard from '@/components/wallet/UniswapPoolCard';
+import TrailsFundCard from '@/components/wallet/TrailsFundCard';
 import PulseTokenMonitorCard from '@/components/wallet/PulseTokenMonitorCard';
 import NftPortfolioTab from '@/components/wallet/NftPortfolioTab';
 import DappBrowserTab from '@/components/wallet/DappBrowserTab';
@@ -181,6 +182,9 @@ export default function Wallet() {
               pulse={walletData?.pulse}
               pulsePrice={prices?.pulse}
             />
+            {cryptoEnabled && (
+              <TrailsFundCard walletAddress={walletData?.custodial_wallet?.address} />
+            )}
             <UniswapPoolCard />
             <PulseTokenMonitorCard />
             {balance && (
