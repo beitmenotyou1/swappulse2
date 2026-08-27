@@ -5,6 +5,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
+import { readPulseUsdcPoolPrice } from '../../shared/uniswapPoolPrice.ts';
 
 // All major crypto symbols supported across the chain registry
 const SYMBOLS = [
@@ -78,6 +79,22 @@ export default async function (req: Request): Promise<Response> {
     // wallet UI can look up the PulseChain native token price by chain key.
     if (prices.pls && !prices.pulse) {
       prices.pulse = prices.pls;
+    }
+
+    // Override PULSE price with the authoritative on-chain Uniswap v4 pool
+    // price (position #134728). Coinbase doesn't list PLS, so the fallback
+    // above is stale; the pool is the trusted market price the conversion
+    // backend uses, so the UI displays the same rate the user will receive.
+    try {
+      const pool = await readPulseUsdcPoolPrice();
+      if (pool.priceUsdcPerPulse > 0) {
+        const usdPrice = pool.priceUsdcPerPulse;
+        const pulsePrice = { usd: usdPrice, gbp: usdPrice * usdToGbp, eur: usdPrice * usdToEur };
+        prices.pulse = pulsePrice;
+        prices.pls = pulsePrice;
+      }
+    } catch (e) {
+      console.error('PULSE pool price override failed:', (e as any)?.message);
     }
 
     return Response.json({ prices, fetched_at: new Date().toISOString() });

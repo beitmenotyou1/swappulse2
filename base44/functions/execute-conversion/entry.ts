@@ -10,7 +10,7 @@ import {
   resolveActiveWallet, getOrCreateWalletBalance, updateBalance,
   creditUsdcFromReserve, calculateFee,
   fiatCentsToUsdcWei, getProvider, getUsdcContract, getPlatformWallet,
-  USDC_CONTRACT_ADDRESS, PLATFORM_FEE_WALLET,
+  USDC_CONTRACT_ADDRESS, PLATFORM_FEE_WALLET, ensureGasFunds,
 } from '../../shared/walletEscrow.ts';
 import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
 import { verifyWalletPasskey } from '../../shared/webauthn.ts';
@@ -319,6 +319,11 @@ export default async function (req: Request): Promise<Response> {
 
         const userWallet = new ethers.Wallet(privateKey, getProvider());
 
+        // Ensure the user's custodial wallet has POL for gas before any on-chain
+        // transfer (the USDC send to the platform reserve needs gas). The platform
+        // wallet funds a small stipend if the balance is below the threshold.
+        await ensureGasFunds(walletAddress);
+
         // Step 1: Obtain USDC on Polygon. If the source token is already USDC,
         // no DEX swap is needed (Velora rejects src==dest quotes). Otherwise,
         // swap the source token to USDC via the DEX aggregator.
@@ -463,6 +468,9 @@ export default async function (req: Request): Promise<Response> {
       }
 
       const userWallet = new ethers.Wallet(privateKey, getProvider());
+
+      // Ensure the user's custodial wallet has POL for gas before the DEX swap.
+      await ensureGasFunds(walletAddress);
 
       // Fetch DEX quote
       const quote = await fetchDexQuote({

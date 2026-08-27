@@ -281,6 +281,30 @@ export async function sweepFeeToPlatformWallet(
   return transferUsdc(platformWallet, PLATFORM_FEE_WALLET, amountWei);
 }
 
+// --- Gas funding for custodial wallets ---
+
+// Minimum POL balance a user's custodial wallet needs for gas. If below this,
+// the platform wallet sends a small stipend so on-chain transfers (USDC sends,
+// DEX swaps) don't fail with "insufficient funds for intrinsic transaction".
+// A custodial wallet holds tokens but no native gas, so the platform sponsors it.
+const MIN_GAS_POL = 10_000_000_000_000_000_000n; // 0.01 POL threshold (1 POL = 1e18 wei)
+const GAS_STIPEND_POL = 50_000_000_000_000_000_000n; // 0.05 POL stipend (covers a swap + transfer)
+
+// Ensure a user's custodial wallet has enough POL for gas. If the balance is
+// below the threshold, send a small stipend from the platform wallet. Idempotent
+// — only tops up when needed. Returns whether gas was funded and the funding tx.
+export async function ensureGasFunds(
+  userAddress: string,
+): Promise<{ funded: boolean; txHash?: string }> {
+  const provider = getProvider();
+  const balance = await provider.getBalance(userAddress);
+  if (balance >= MIN_GAS_POL) return { funded: false };
+  const platformWallet = getPlatformWallet();
+  const tx = await platformWallet.sendTransaction({ to: userAddress, value: GAS_STIPEND_POL });
+  await tx.wait();
+  return { funded: true, txHash: tx.hash };
+}
+
 // --- Mask helpers (for bank account display) ---
 
 export function maskIban(iban: string): string {
