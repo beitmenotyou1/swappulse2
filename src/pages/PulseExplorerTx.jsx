@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   CheckCircle2, XCircle, HelpCircle, ArrowRight, Coins,
   Fuel, Hash, Blocks, Clock, ArrowDownLeft, ArrowUpRight, FileCode2,
+  Gauge, ListOrdered,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -129,10 +130,10 @@ export default function PulseExplorerTx() {
               <Row icon={Fuel} label={t('explorer.gasUsed')} t={t}>
                 <span className="font-mono">{formatNumber(data.gas_used)} <span className="text-muted-foreground">({formatGwei(data.gas_price)} Gwei)</span></span>
               </Row>
-              <Row label={t('explorer.gasLimit')} t={t}>
+              <Row icon={Gauge} label={t('explorer.gasLimit')} t={t}>
                 <span className="font-mono">{formatNumber(data.gas_limit)}</span>
               </Row>
-              <Row label={t('explorer.nonce')} t={t}>
+              <Row icon={ListOrdered} label={t('explorer.nonce')} t={t}>
                 <span className="font-mono">{formatNumber(data.nonce)}</span>
               </Row>
               <div className="px-4 py-3">
@@ -148,7 +149,7 @@ export default function PulseExplorerTx() {
           {data.token_transfers?.length > 0 && (
             <div className="rounded-xl border border-border bg-card shadow-base">
               <div className="border-b border-border px-4 py-3">
-                <h2 className="text-sm font-semibold">{t('explorer.tokenTransfersCount', { count: data.token_transfers.length })}</h2>
+                <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Coins className="h-4 w-4 text-primary" /> {t('explorer.tokenTransfersCount', { count: data.token_transfers.length })}</h2>
               </div>
               <div className="divide-y divide-border">
                 {data.token_transfers.map((tr, i) => (

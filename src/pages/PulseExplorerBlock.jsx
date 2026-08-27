@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { Blocks, Clock, Fuel, Hash, ArrowRight, FileCode2 } from 'lucide-react';
+import { Blocks, Clock, Fuel, Hash, ArrowRight, FileCode2, HardDrive, ArrowRightLeft } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
