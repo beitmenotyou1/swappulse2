@@ -331,10 +331,28 @@ export default async function (req: Request): Promise<Response> {
           return Response.json({ error: 'Swap amount too small to purchase PULSE' }, { status: 400 });
         }
 
-        // Step 3: Send 2% fee in USDC to platform fee wallet
+        // Step 3: Collect the source USDC from the user's wallet BEFORE any
+        // treasury disbursement. The principal (net of fee) goes to the
+        // platform reserve wallet; the 2% fee goes to the platform fee wallet.
+        // Without this on-chain transfer, a client could claim an arbitrary
+        // USDC amount and receive treasury PULSE without paying (treasury drain).
+        // This covers both the direct-USDC source and the DEX-swapped source
+        // (in the latter case the swapped USDC lands in the user's wallet first).
+        const usdcContract = getUsdcContract(userWallet);
+        const platformWallet = getPlatformWallet();
+
+        // Principal: net USDC → platform reserve. Abort if this fails so no
+        // PULSE is disbursed without collecting payment.
+        try {
+          const principalTx = await usdcContract.transfer(platformWallet.address, netUsdcWei);
+          await principalTx.wait();
+        } catch (e) {
+          return Response.json({ error: 'USDC transfer failed: ' + (e as any)?.message }, { status: 500 });
+        }
+
+        // Fee: 2% USDC → platform fee wallet (best-effort, like other paths).
         let feeTxHash = '';
         try {
-          const usdcContract = getUsdcContract(userWallet);
           const feeTx = await usdcContract.transfer(PLATFORM_FEE_WALLET, feeWei);
           await feeTx.wait();
           feeTxHash = feeTx.hash;
