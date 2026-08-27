@@ -253,11 +253,6 @@ export default function BrandVerificationSection() {
           </div>
         )}
 
-        {result?.status === 'failed' && verifyResults[Object.keys(verifyResults)[0]]?.error && (
-          <div className="mt-3 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
-            {Object.values(verifyResults).find((r) => r?.error)?.error}
-          </div>
-        )}
       </div>
 
       {/* Token profile enrichment */}

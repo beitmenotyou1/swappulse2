@@ -34,7 +34,23 @@ export default async function (req: Request): Promise<Response> {
     }
 
     const svc = base44.asServiceRole;
-    const address = await resolveDeployedAddress(svc, contract_key);
+    let address = await resolveDeployedAddress(svc, contract_key);
+    // Fall back to secrets for contracts deployed before the registry existed.
+    if (!address) {
+      const SECRET_MAP: Record<string, string> = {
+        polygon_username: 'POLYGON_USERNAME_CONTRACT',
+        polygon_card: 'POLYGON_CARD_CONTRACT',
+        polygon_bridge: 'POLYGON_BRIDGE_CONTRACT',
+        polygon_token: 'PULSE_TOKEN_CONTRACT',
+        pulse_username: 'PULSE_SPUN_CONTRACT',
+        pulse_card: 'PULSE_SPCD_CONTRACT',
+        pulse_bridge: 'PULSE_BRIDGE_CONTRACT',
+        pulse_token: 'PULSE_TOKEN_CONTRACT',
+        oft_polygon: 'OFT_POLYGON_TOKEN_CONTRACT',
+        card_metadata_anchor: 'CARD_METADATA_ANCHOR_CONTRACT',
+      };
+      address = secrets.get(SECRET_MAP[contract_key] || '') || null;
+    }
     if (!address) {
       return Response.json({ error: `Contract "${contract_key}" is not deployed yet` }, { status: 400 });
     }
@@ -100,7 +116,21 @@ export default async function (req: Request): Promise<Response> {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: submitBody.toString(),
     });
-    const submitData = await submitRes.json();
+    const submitText = await submitRes.text();
+    let submitData: any;
+    try {
+      submitData = JSON.parse(submitText);
+    } catch {
+      return Response.json({
+        status: 'failed',
+        contract_key,
+        chain,
+        address,
+        error: `Explorer API returned a non-JSON response (possibly a rate limit or challenge page). Try manual verification.`,
+        manual_verify_url: `${explorerSite}/verifyContract?a=${address}`,
+        explorer_url: `${explorerSite}/address/${address}`,
+      }, { status: 200 });
+    }
 
     if (submitData.status !== '1') {
       return Response.json({

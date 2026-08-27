@@ -24,6 +24,7 @@ import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import TrustTierSection from '@/components/admin/TrustTierSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import DeployContractsSection from '@/components/admin/DeployContractsSection';
+import BrandVerificationSection from '@/components/admin/BrandVerificationSection';
 import PulseTreasuryFundingSection from '@/components/admin/PulseTreasuryFundingSection';
 import FeeRevenueSection from '@/components/admin/FeeRevenueSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Boxes, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
@@ -121,6 +122,7 @@ export default function Admin() {
           <>
             <PulseTreasuryFundingSection />
             <DeployContractsSection />
+            <BrandVerificationSection />
             <FeeRevenueSection />
             <TrustTierSection />
           </>

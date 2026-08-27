@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Coins, Loader2, ExternalLink, AlertTriangle, RefreshCw, Fish } from 'lucide-react';
 
+const LOGO_SVG_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/083cc4953_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.svg';
+
 // Shows live $PULSE ERC-20 token stats from Etherscan (holders, top holders,
 // price) + on-chain RPC (supply, recent transfers, whale moves). Reads via the
 // get-pulse-token-stats backend function. Admin-only — silently hides on 403.
@@ -64,7 +66,7 @@ export default function PulseTokenMonitorCard() {
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Coins className="h-5 w-5 text-primary" />
+          <img src={LOGO_SVG_URL} alt="SwapPulse" className="h-5 w-5 rounded-full" />
           <div>
             <h3 className="text-sm font-bold">$PULSE Token</h3>
             <p className="text-[11px] text-muted-foreground">

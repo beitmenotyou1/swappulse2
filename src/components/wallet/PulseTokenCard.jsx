@@ -1,6 +1,8 @@
 import React from 'react';
 import { Zap, ExternalLink } from 'lucide-react';
 
+const LOGO_SVG_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/083cc4953_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.svg';
+
 // $PULSE token display card shown at the top of the wallet. Displays the
 // native PulseChain $PULSE balance and a link to the explorer. Action
 // buttons (Send/Receive/Swap) are handled by the main wallet interface
@@ -21,9 +23,11 @@ export default function PulseTokenCard({ pulse, pulsePrice, formatFiat, hasWalle
     <div className="overflow-hidden rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/15 via-card to-card shadow-raised">
       <div className="flex items-center justify-between px-5 pt-4">
         <div className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent to-amber-500 text-sm font-extrabold text-accent-foreground shadow-md">
-            Ξ
-          </div>
+          <img
+            src={LOGO_SVG_URL}
+            alt="SwapPulse"
+            className="h-9 w-9 rounded-full bg-gradient-to-br from-accent to-amber-500 p-0.5 shadow-md"
+          />
           <div>
             <p className="text-sm font-extrabold text-foreground">$PULSE</p>
             <p className="text-[10px] font-medium text-muted-foreground">PulseChain Native</p>
