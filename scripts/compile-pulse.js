@@ -396,6 +396,116 @@ contract PolygonBridge {
 }
 `;
 
+const PULSE_GASLESS_RELAY_SOURCE = `
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity ^0.8.20;
+
+contract PulseGaslessRelay {
+    address public admin;
+    mapping(address => uint256) public nonces;
+
+    bytes32 private constant META_TX_TYPEHASH = keccak256(
+        "MetaTx(address user,address target,uint256 nonce,bytes data)"
+    );
+    bytes32 private constant EIP712_DOMAIN_TYPEHASH = keccak256(
+        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+    );
+
+    bytes32 private immutable _domainSeparator;
+    string public constant NAME = "SwapPulse Gasless Relay";
+    string public constant VERSION = "1";
+
+    event Executed(address indexed user, address indexed target, uint256 nonce);
+    event AdminChanged(address oldAdmin, address newAdmin);
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin");
+        _;
+    }
+
+    constructor() {
+        admin = msg.sender;
+        uint256 chainId;
+        assembly { chainId := chainid() }
+        _domainSeparator = keccak256(abi.encode(
+            EIP712_DOMAIN_TYPEHASH,
+            keccak256(bytes(NAME)),
+            keccak256(bytes(VERSION)),
+            chainId,
+            address(this)
+        ));
+    }
+
+    function domainSeparator() external view returns (bytes32) {
+        return _domainSeparator;
+    }
+
+    function _hash(address user, address target, uint256 nonce, bytes memory data) internal view returns (bytes32) {
+        bytes32 structHash = keccak256(abi.encode(
+            META_TX_TYPEHASH,
+            user,
+            target,
+            nonce,
+            keccak256(data)
+        ));
+        return keccak256(abi.encodePacked("\\x19\\x01", _domainSeparator, structHash));
+    }
+
+    function execute(
+        address user,
+        address target,
+        bytes calldata data,
+        uint256 nonce,
+        bytes calldata signature
+    ) external onlyAdmin returns (bytes memory) {
+        require(data.length > 0, "Empty data");
+        require(nonce == nonces[user], "Invalid nonce");
+
+        bytes32 digest = _hash(user, target, nonce, data);
+        address recovered = _recover(digest, signature);
+        require(recovered == user, "Invalid signature");
+
+        nonces[user] = nonce + 1;
+        (bool ok, bytes memory ret) = target.call(data);
+        require(ok, "Target call failed");
+        emit Executed(user, target, nonce);
+        return ret;
+    }
+
+    function _recover(bytes32 digest, bytes calldata sig) internal pure returns (address) {
+        if (sig.length != 65) revert("Bad signature length");
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := calldataload(sig.offset)
+            s := calldataload(add(sig.offset, 32))
+            v := byte(0, calldataload(add(sig.offset, 64)))
+        }
+        if (v < 27) v += 27;
+        return ecrecover(digest, v, r, s);
+    }
+
+    function setAdmin(address newAdmin) external onlyAdmin {
+        require(newAdmin != address(0), "Zero address");
+        emit AdminChanged(admin, newAdmin);
+        admin = newAdmin;
+    }
+}
+`;
+
+const PULSE_GASLESS_RELAY_ABI = [
+  'function admin() view returns (address)',
+  'function nonces(address) view returns (uint256)',
+  'function domainSeparator() view returns (bytes32)',
+  'function NAME() view returns (string)',
+  'function VERSION() view returns (string)',
+  'function execute(address user, address target, bytes data, uint256 nonce, bytes signature) returns (bytes)',
+  'function setAdmin(address newAdmin)',
+  'event Executed(address indexed user, address indexed target, uint256 nonce)',
+  'event AdminChanged(address oldAdmin, address newAdmin)',
+];
+
 function compile(source, contractName) {
   const input = {
     language: 'Solidity',
@@ -494,6 +604,8 @@ function main() {
   const pulseBridge = compile(PULSE_BRIDGE_SOURCE, 'PulseChainBridge');
   console.log('Compiling PolygonBridge…');
   const polygonBridge = compile(POLYGON_BRIDGE_SOURCE, 'PolygonBridge');
+  console.log('Compiling PulseGaslessRelay…');
+  const gaslessRelay = compile(PULSE_GASLESS_RELAY_SOURCE, 'PulseGaslessRelay');
 
   const file = `// Pre-compiled SwapPulse PulseChain + bridge contract artifacts (ABI + bytecode).
 //
@@ -512,6 +624,9 @@ export const PULSE_BRIDGE_BYTECODE = '${pulseBridge.bytecode}';
 
 ${abiToTs('POLYGON_BRIDGE_ABI', POLYGON_BRIDGE_ABI)}
 export const POLYGON_BRIDGE_BYTECODE = '${polygonBridge.bytecode}';
+
+${abiToTs('PULSE_GASLESS_RELAY_ABI', PULSE_GASLESS_RELAY_ABI)}
+export const PULSE_GASLESS_RELAY_BYTECODE = '${gaslessRelay.bytecode}';
 `;
 
   const outPath = path.join(__dirname, '..', 'base44', 'shared', 'pulseCompiledArtifacts.ts');

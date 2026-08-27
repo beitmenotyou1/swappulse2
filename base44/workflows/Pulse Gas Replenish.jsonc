@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/10 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Pulse Gas Replenish",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "pulse_gas_replenish",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "replenish_gas": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "replenish-pulse-gas",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Replenish relayer PLS",
+            "description": "Swap collected $PULSE fees to native PLS via PulseX when the relayer gas balance is low"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Auto-replenishes the PulseChain relayer wallet's native PLS gas by swapping collected $PULSE fees through PulseX every 10 minutes. Skips (never halts) if PulseX is unconfigured or the pool lacks liquidity."
+}

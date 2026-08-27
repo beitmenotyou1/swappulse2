@@ -4,6 +4,7 @@ import {
   Fuel, Loader2, AlertCircle, CheckCircle2, Wallet, ExternalLink, Copy,
   Zap, RefreshCw,
 } from 'lucide-react';
+import PulseGaslessRelayStats from './PulseGaslessRelayStats';
 
 // Admin-only: shows the PulseChain treasury wallet's native PLS (gas) and
 // ERC-20 PULSE token balances. If the treasury is low on gas, the admin can
@@ -224,6 +225,8 @@ export default function PulseTreasuryFundingSection({ pendingAction }) {
           <p className="mt-1 text-lg font-bold">{status?.pulse_token_balance || '0'} <span className="text-xs font-normal text-muted-foreground">PULSE</span></p>
         </div>
       </div>
+
+      <PulseGaslessRelayStats />
 
       {/* Funding action */}
       {needsFunding && (

@@ -42,6 +42,13 @@ export default async function (req: Request): Promise<Response> {
     // Native PLS is only for gas; the user's custodial wallet is auto-funded
     // with a small PLS stipend if needed before the transfer.
     if (isPulse) {
+      // Gasless path: queue a meta-transaction for the relayer to submit, so
+      // the user's wallet never needs native PLS gas. The treasury relayer
+      // pays gas and is auto-replenished via PulseX (replenish-pulse-gas).
+      if (body.gasless && defaultWalletPref !== 'linked') {
+        const { queuePulseGaslessTransfer } = await import('../../shared/pulseGaslessQueue.ts');
+        return await queuePulseGaslessTransfer(base44, req, user, { to_address, amount_wei: transferAmount.toString(), unlockCredential, pin });
+      }
       if (defaultWalletPref === 'linked') {
         return Response.json({
           error: 'Sending $PULSE from a linked wallet requires switching your browser wallet to PulseChain. Use a custodial wallet for $PULSE sends.',
