@@ -24,6 +24,7 @@ import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import TrustTierSection from '@/components/admin/TrustTierSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import DeployContractsSection from '@/components/admin/DeployContractsSection';
+import PulseTreasuryFundingSection from '@/components/admin/PulseTreasuryFundingSection';
 import FeeRevenueSection from '@/components/admin/FeeRevenueSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Boxes, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
@@ -118,6 +119,7 @@ export default function Admin() {
         )}
         {tab === 'blockchain' && (
           <>
+            <PulseTreasuryFundingSection />
             <DeployContractsSection />
             <FeeRevenueSection />
             <TrustTierSection />

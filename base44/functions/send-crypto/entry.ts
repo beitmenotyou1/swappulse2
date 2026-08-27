@@ -36,7 +36,11 @@ export default async function (req: Request): Promise<Response> {
       .filter({ did }, '-updated_date', 1).catch(() => []);
     const defaultWalletPref = settingsList[0]?.config?.wallet?.default_wallet || 'custodial';
 
-    // --- Native $PULSE transfer on PulseChain ---
+    // --- ERC-20 $PULSE token transfer on PulseChain ---
+    // PULSE is an ERC-20 token (PulseToken contract), NOT native PLS gas coin.
+    // This matches execute-conversion, which disburses PULSE as ERC-20 tokens.
+    // Native PLS is only for gas; the user's custodial wallet is auto-funded
+    // with a small PLS stipend if needed before the transfer.
     if (isPulse) {
       if (defaultWalletPref === 'linked') {
         return Response.json({
@@ -53,17 +57,23 @@ export default async function (req: Request): Promise<Response> {
       const fee = calculateFee(pulseAmount);
       const totalDebit = pulseAmount + fee;
 
-      let pulseProvider;
+      // Resolve PulseChain clients
+      let pulseProvider, getPulseTokenContract, ensurePulseGasFunds, pulseTreasuryAddress;
       try {
-        const { getPulseProvider } = await import('../../shared/pulseClient.ts');
-        pulseProvider = getPulseProvider();
+        const pulse = await import('../../shared/pulseClient.ts');
+        pulseProvider = pulse.getPulseProvider();
+        getPulseTokenContract = pulse.getPulseTokenContract;
+        ensurePulseGasFunds = pulse.ensurePulseGasFunds;
+        pulseTreasuryAddress = pulse.getPulseMintWallet().address;
       } catch {
         return Response.json({ error: 'PulseChain RPC not configured' }, { status: 400 });
       }
 
-      const onChainBalance = await pulseProvider.getBalance(wallet.wallet_address).catch(() => 0n);
-      if (onChainBalance < totalDebit) {
-        return Response.json({ error: 'Insufficient $PULSE for amount + fee + gas' }, { status: 400 });
+      // Check ERC-20 PULSE token balance (not native PLS)
+      const tokenContract = getPulseTokenContract(pulseProvider);
+      const tokenBalance = await tokenContract.balanceOf(wallet.wallet_address).catch(() => 0n);
+      if (tokenBalance < totalDebit) {
+        return Response.json({ error: 'Insufficient PULSE token balance for amount + fee' }, { status: 400 });
       }
 
       // Unlock the wallet (passkey or PIN)
@@ -88,15 +98,26 @@ export default async function (req: Request): Promise<Response> {
         });
       }
 
-      // Send native $PULSE on PulseChain
+      // Ensure the user's custodial wallet has native PLS for gas before the
+      // ERC-20 transfer. The treasury auto-funds a small stipend if needed.
+      try {
+        await ensurePulseGasFunds(wallet.wallet_address);
+      } catch (e) {
+        console.error('PULSE gas stipend failed:', (e as any)?.message);
+        // Continue — the user may already have enough gas
+      }
+
+      // Send ERC-20 PULSE tokens to the recipient
       const userWallet = new ethers.Wallet(privateKey, pulseProvider);
-      const sendTx = await userWallet.sendTransaction({ to: to_address, value: pulseAmount });
+      const userTokenContract = getPulseTokenContract(userWallet);
+      const sendTx = await userTokenContract.transfer(to_address, pulseAmount);
       await sendTx.wait();
 
-      // Send 2% fee to platform fee wallet on PulseChain
+      // Send 2% fee as ERC-20 PULSE to the PulseChain treasury wallet (not the
+      // Polygon PLATFORM_FEE_WALLET, which is on a different chain)
       let feeTxHash = '';
       try {
-        const feeTx = await userWallet.sendTransaction({ to: PLATFORM_FEE_WALLET, value: fee });
+        const feeTx = await userTokenContract.transfer(pulseTreasuryAddress, fee);
         await feeTx.wait();
         feeTxHash = feeTx.hash;
       } catch (e) {

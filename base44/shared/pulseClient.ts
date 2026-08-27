@@ -130,3 +130,28 @@ export async function getPulseAnchorContract(signerOrProvider: any, svc?: any): 
   if (!address) throw new Error('Card metadata anchor contract not deployed. Run deploy-card-metadata-anchor first.');
   return new ethers.Contract(address, CARD_METADATA_ANCHOR_ABI, signerOrProvider);
 }
+
+// --- Gas funding for custodial wallets on PulseChain ---
+
+// Minimum native PLS a user's custodial wallet needs for gas on PulseChain.
+// If below this, the platform treasury sends a small stipend so ERC-20 PULSE
+// transfers don't fail with "insufficient funds for intrinsic transaction".
+// Mirrors the Polygon ensureGasFunds helper in walletEscrow.ts.
+const MIN_GAS_PLS = 10_000_000_000_000_000_000n; // 0.01 PLS threshold (1 PLS = 1e18 wei)
+const PLS_GAS_STIPEND = 50_000_000_000_000_000_000n; // 0.05 PLS stipend (covers a transfer)
+
+// Ensure a user's custodial wallet has enough native PLS for gas on PulseChain.
+// If the balance is below the threshold, send a small stipend from the
+// treasury wallet. Idempotent — only tops up when needed. Returns whether gas
+// was funded and the funding tx hash.
+export async function ensurePulseGasFunds(
+  userAddress: string,
+): Promise<{ funded: boolean; txHash?: string }> {
+  const provider = getPulseProvider();
+  const balance = await provider.getBalance(userAddress).catch(() => 0n);
+  if (balance >= MIN_GAS_PLS) return { funded: false };
+  const treasury = getPulseMintWallet();
+  const tx = await treasury.sendTransaction({ to: userAddress, value: PLS_GAS_STIPEND });
+  await tx.wait();
+  return { funded: true, txHash: tx.hash };
+}
