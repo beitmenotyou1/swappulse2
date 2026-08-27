@@ -1,50 +1,5 @@
 import React from 'react';
-import {
-  NetworkEthereum, NetworkPolygonPos, NetworkBase, NetworkArbitrumOne,
-  NetworkOptimism, NetworkBinanceSmartChain, NetworkAvalanche, NetworkGnosis,
-  NetworkLinea, NetworkZksync, NetworkScroll, NetworkMetisAndromeda,
-  NetworkCelo, NetworkMoonbeam, NetworkMode, NetworkUnichain, NetworkXLayer,
-  NetworkBoba, NetworkZora, NetworkBlast, NetworkKaia, NetworkCronos,
-  NetworkSonic, NetworkMantle, NetworkZetaChain, NetworkAstar, NetworkRootstock,
-  NetworkBob, NetworkFraxtal, NetworkWorld,
-} from '@web3icons/react';
 import { getChainMeta } from '@/lib/explorerChains';
-
-// chainKey -> web3icons Network icon component. Chains not listed here
-// (pulse, flowevm, opbnb, shape, berachain, ink) fall back to a branded
-// circular letter-mark using the chain's brandColor.
-const NETWORK_ICONS = {
-  ethereum: NetworkEthereum,
-  polygon: NetworkPolygonPos,
-  base: NetworkBase,
-  arbitrum: NetworkArbitrumOne,
-  optimism: NetworkOptimism,
-  bnb: NetworkBinanceSmartChain,
-  avalanche: NetworkAvalanche,
-  gnosis: NetworkGnosis,
-  linea: NetworkLinea,
-  zksync: NetworkZksync,
-  scroll: NetworkScroll,
-  metis: NetworkMetisAndromeda,
-  celo: NetworkCelo,
-  moonbeam: NetworkMoonbeam,
-  mode: NetworkMode,
-  unichain: NetworkUnichain,
-  xlayer: NetworkXLayer,
-  boba: NetworkBoba,
-  zora: NetworkZora,
-  blast: NetworkBlast,
-  kaia: NetworkKaia,
-  cronos: NetworkCronos,
-  sonic: NetworkSonic,
-  mantle: NetworkMantle,
-  zetachain: NetworkZetaChain,
-  astar: NetworkAstar,
-  rootstock: NetworkRootstock,
-  bob: NetworkBob,
-  frax: NetworkFraxtal,
-  worldchain: NetworkWorld,
-};
 
 // Pick black or white text for a given hex background for readable contrast.
 function getContrastText(hex) {
@@ -56,17 +11,12 @@ function getContrastText(hex) {
   return lum > 0.6 ? '#1e293b' : '#ffffff';
 }
 
-// Renders a chain's network logo from the bundled @web3icons/react pack
-// (local SVG, no external fetch — never breaks). For chains without a pack
-// icon, renders a branded circular letter-mark in the chain's brand colour.
+// Renders a branded circular letter-mark in the chain's brand colour.
+// 100% local — no external fetch, never breaks. Each chain is identified by
+// its official brand colour and first letter, a recognisable fallback used
+// by many explorers for chains without a bundled logo.
 export default function ChainLogo({ chainKey, size = 20, className = '' }) {
   const meta = getChainMeta(chainKey);
-  const Icon = NETWORK_ICONS[chainKey];
-
-  if (Icon) {
-    return <Icon variant="branded" size={size} className={className} role="img" aria-label={meta?.name} />;
-  }
-
   const letter = (meta?.name || chainKey).charAt(0).toUpperCase();
   const bg = meta?.brandColor || '#64748b';
   return (
