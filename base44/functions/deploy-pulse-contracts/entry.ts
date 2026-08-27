@@ -100,7 +100,7 @@ export default async function (req: Request): Promise<Response> {
         PulseChainBridge: bridgeAddress,
       },
       chain: {
-        rpcUrl,
+        rpcUrl: secrets.get('PULSE_RPC_URL') || '',
         chainId: secrets.get('PULSE_CHAIN_ID') || '9999',
         explorerUrl: secrets.get('PULSE_EXPLORER_URL') || '',
       },
