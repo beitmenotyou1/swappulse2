@@ -10,6 +10,8 @@ import ExplainBox from '@/components/explorer/ExplainBox';
 import ChainSelector from '@/components/explorer/ChainSelector';
 import ChainOverview from '@/components/explorer/ChainOverview';
 import ExplorerCharts from '@/components/explorer/ExplorerCharts';
+import ChainComparisonTable from '@/components/explorer/ChainComparisonTable';
+import PulseChainSummary from '@/components/explorer/PulseChainSummary';
 import { formatNumber } from '@/lib/explorerFormat';
 import { getChainMeta } from '@/lib/explorerChains';
 
@@ -90,6 +92,12 @@ export default function PulseExplorer() {
 
       {/* Multi-chain overview */}
       {overview?.chains?.length > 0 && <ChainOverview chains={overview.chains} />}
+
+      {/* Chain comparison table */}
+      <ChainComparisonTable />
+
+      {/* PulseChain activity summary */}
+      <PulseChainSummary />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

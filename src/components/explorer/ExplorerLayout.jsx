@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Activity, Boxes, Zap, Database } from 'lucide-react';
+import { ArrowLeft, Activity, Boxes, Zap, Database, Bookmark, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber } from '@/lib/explorerFormat';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ExplorerSearchBar from './ExplorerSearchBar';
 import ExplorerChainDropdown from './ExplorerChainDropdown';
+import BookmarkPanel from './BookmarkPanel';
 import { getActiveChain } from '@/lib/explorerChain';
 
 // Standalone full-screen layout for the blockchain explorer. Escapes the
@@ -19,6 +20,7 @@ export default function ExplorerLayout() {
   const [searchParams] = useSearchParams();
   const chainKey = getActiveChain(searchParams);
   const [stats, setStats] = useState(null);
+  const [showBookmarks, setShowBookmarks] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -62,6 +64,14 @@ export default function ExplorerLayout() {
           {/* Right actions */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
             <ExplorerChainDropdown />
+            <button
+              onClick={() => setShowBookmarks(true)}
+              className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground lg:hidden"
+              title={t('explorer.bookmarkedAddresses')}
+              aria-label={t('explorer.bookmarkedAddresses')}
+            >
+              <Bookmark className="h-4 w-4" />
+            </button>
             <LanguageSwitcher compact />
             <Link
               to="/"
@@ -121,9 +131,34 @@ export default function ExplorerLayout() {
       </header>
 
       {/* Page content */}
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        <Outlet />
-      </main>
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        <div className="flex gap-6">
+          <main className="min-w-0 flex-1">
+            <Outlet />
+          </main>
+          <aside className="hidden w-72 shrink-0 lg:block">
+            <div className="sticky top-24 space-y-4">
+              <BookmarkPanel />
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      {/* Mobile bookmark slide-in panel */}
+      {showBookmarks && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowBookmarks(false)} />
+          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-background p-4 shadow-elevated">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">{t('explorer.bookmarkedAddresses')}</h2>
+              <button onClick={() => setShowBookmarks(false)} className="rounded-lg p-1.5 hover:bg-secondary">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <BookmarkPanel />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

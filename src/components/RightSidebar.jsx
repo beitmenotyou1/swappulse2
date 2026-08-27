@@ -190,6 +190,7 @@ export default function RightSidebar({ online = [] }) {
           <Link to="/status" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.status')}</Link>
           <Link to="/explore" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.explore')}</Link>
           <Link to="/donate" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.donate')}</Link>
+          <Link to="/blockchain" className="text-xs font-medium transition-colors hover:text-foreground">{tr('footer.blockchainExplorer')}</Link>
         </nav>
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
           {tr('footer.disclaimer')}

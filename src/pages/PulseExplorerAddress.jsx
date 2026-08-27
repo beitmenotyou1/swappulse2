@@ -8,6 +8,7 @@ import TransactionsTable from '@/components/explorer/TransactionsTable';
 import HashLink from '@/components/explorer/HashLink';
 import AddressTokens from '@/components/explorer/AddressTokens';
 import AddressNfts from '@/components/explorer/AddressNfts';
+import BookmarkButton from '@/components/explorer/BookmarkButton';
 import { getActiveChain } from '@/lib/explorerChain';
 import { getChainMeta } from '@/lib/explorerChains';
 import { formatPls, formatNumber } from '@/lib/explorerFormat';
@@ -63,8 +64,9 @@ export default function PulseExplorerAddress() {
         <>
           {/* Address overview card */}
           <div className="rounded-xl border border-border bg-card shadow-base">
-            <div className="border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold">{t('explorer.addressOverview')}</h2>
+              <BookmarkButton address={data.address} chain={chainKey} />
             </div>
             <div className="divide-y divide-border">
               <div className="flex items-start justify-between gap-4 px-4 py-3">
