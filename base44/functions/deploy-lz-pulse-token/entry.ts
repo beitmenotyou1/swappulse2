@@ -9,17 +9,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
+import { authorizeDeployment } from '../../shared/deploymentAuthority.ts';
 import { OFT_PULSE_TOKEN_ABI, OFT_PULSE_TOKEN_BYTECODE } from '../../shared/oftPulseTokenArtifacts.ts';
 import { upsertContract } from '../../shared/contractRegistry.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch(() => null);
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin only' }, { status: 403 });
-    }
-
     const body = await req.json().catch(() => ({}));
     const chain = body.chain || 'pulse';
 
@@ -39,23 +34,16 @@ export default async function (req: Request): Promise<Response> {
       }, { status: 400 });
     }
 
-    const rpcUrl = chain === 'pulse' ? secrets.get('PULSE_RPC_URL') : secrets.get('POLYGON_RPC_URL');
-    const privateKey = chain === 'pulse' ? secrets.get('PULSE_PRIVATE_KEY') : secrets.get('POLYGON_PRIVATE_KEY');
-    const explorerUrl = chain === 'pulse' ? secrets.get('PULSE_EXPLORER_URL') : secrets.get('POLYGON_EXPLORER_URL');
-    const nativeTokenAddr = chain === 'pulse'
-      ? secrets.get('PULSE_TOKEN_CONTRACT')
-      : secrets.get('PULSE_TOKEN_CONTRACT'); // Same $PULSE token address on both chains (OFT wraps it)
+    const auth = await authorizeDeployment(req, 'polygon');
+    if (!auth.ok) return auth.response;
+    const { base44, wallet, provider, explorerUrl } = auth.authority;
+
+    const nativeTokenAddr = secrets.get('PULSE_TOKEN_CONTRACT');
     // LayerZero V2 endpoint address for the target chain. Passed in the request
     // body (endpoint) so no secret dependency. Find the address for your chain
     // at https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts
     const endpointAddr = body.endpoint || '';
 
-    if (!rpcUrl || !privateKey) {
-      return Response.json(
-        { error: `${chain.toUpperCase()}_RPC_URL and ${chain.toUpperCase()}_PRIVATE_KEY secrets must be set` },
-        { status: 400 },
-      );
-    }
     if (!nativeTokenAddr) {
       return Response.json(
         { error: 'PULSE_TOKEN_CONTRACT secret not set. Deploy the PulseToken ERC-20 first.' },
@@ -70,18 +58,6 @@ export default async function (req: Request): Promise<Response> {
     }
     if (!OFT_PULSE_TOKEN_BYTECODE || OFT_PULSE_TOKEN_BYTECODE === '0x') {
       return Response.json({ error: 'Contract bytecode is empty. Compile the OFT contract first.' }, { status: 400 });
-    }
-
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const wallet = new ethers.Wallet(privateKey, provider);
-
-    // Check deployer has gas
-    const balance = await provider.getBalance(wallet.address);
-    if (balance === 0n) {
-      return Response.json(
-        { error: `Deployer wallet ${wallet.address} has no native ${chain === 'pulse' ? 'PLS' : 'POL'} for gas. PulseToken (ERC-20) is NOT the same as native gas — you need ${chain === 'pulse' ? 'PLS' : 'POL'} (the chain's gas coin) to deploy. Send it to this address first${explorerUrl ? ` — ${explorerUrl}/address/${wallet.address}` : ''}.` },
-        { status: 400 },
-      );
     }
 
     // Deploy OFTPulseToken(nativeToken, endpoint)

@@ -8,6 +8,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
+import { authorizeDeployment } from '../../shared/deploymentAuthority.ts';
 import {
   CARD_METADATA_ANCHOR_ABI,
   CARD_METADATA_ANCHOR_BYTECODE,
@@ -17,19 +18,9 @@ import { upsertContract } from '../../shared/contractRegistry.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
-    const base44 = createClientFromRequest(req);
-    const caller = await base44.auth.me().catch(() => null);
-    if (!caller || caller.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    const wallet = getPulseMintWallet();
-    const balance = await wallet.provider.getBalance(wallet.address);
-    if (balance === 0n) {
-      return Response.json({
-        error: 'Deployer wallet has no PULSE for gas. Fund the wallet at ' + wallet.address,
-      }, { status: 400 });
-    }
+    const auth = await authorizeDeployment(req, 'pulse');
+    if (!auth.ok) return auth.response;
+    const { base44, wallet } = auth.authority;
 
     // Deploy the contract
     const factory = new ethers.ContractFactory(

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
+import { authorizeDeployment } from '../../shared/deploymentAuthority.ts';
 import {
   PULSE_USERNAME_ABI,
   PULSE_USERNAME_BYTECODE,
@@ -30,38 +31,14 @@ import { upsertContract } from '../../shared/contractRegistry.ts';
 //   3. Fund the mint wallet with $PULSE for gas.
 export default async function (req: Request): Promise<Response> {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch(() => null);
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin only' }, { status: 403 });
-    }
-
-    const privateKey = secrets.get('PULSE_PRIVATE_KEY');
-    const rpcUrl = secrets.get('PULSE_RPC_URL');
-    if (!privateKey || !rpcUrl) {
-      return Response.json(
-        { error: 'PULSE_PRIVATE_KEY and PULSE_RPC_URL secrets must be set first' },
-        { status: 400 },
-      );
-    }
+    const auth = await authorizeDeployment(req, 'pulse');
+    if (!auth.ok) return auth.response;
+    const { base44, wallet, provider } = auth.authority;
 
     // Guard against empty bytecode (compile script not yet run)
     if (!PULSE_USERNAME_BYTECODE || !PULSE_CARD_BYTECODE || !PULSE_BRIDGE_BYTECODE) {
       return Response.json(
         { error: 'Contract bytecode is empty. Run scripts/compile-pulse.js locally first to populate pulseCompiledArtifacts.ts with compiled bytecode.' },
-        { status: 400 },
-      );
-    }
-
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const wallet = new ethers.Wallet(privateKey, provider);
-
-    // Sanity-check the deployer can pay for gas before sending transactions.
-    const balance = await provider.getBalance(wallet.address);
-    if (balance === 0n) {
-      const explorer = secrets.get('PULSE_EXPLORER_URL') || '';
-      return Response.json(
-        { error: `Deployer wallet ${wallet.address} has no native PLS for gas. PulseToken (ERC-20) is NOT the same as native PLS — you need native PLS (the chain's gas coin) to deploy. Send PLS to this address first${explorer ? ` — ${explorer}/address/${wallet.address}` : ''}.` },
         { status: 400 },
       );
     }

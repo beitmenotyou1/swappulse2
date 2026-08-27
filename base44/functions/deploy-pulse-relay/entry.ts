@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { ethers } from 'npm:ethers@6.13.4';
 import { secrets } from 'base44:runtime';
+import { authorizeDeployment } from '../../shared/deploymentAuthority.ts';
 import { PULSE_GASLESS_RELAY_ABI, PULSE_GASLESS_RELAY_BYTECODE } from '../../shared/pulseCompiledArtifacts.ts';
 import { upsertContract } from '../../shared/contractRegistry.ts';
 
@@ -24,37 +25,13 @@ import { upsertContract } from '../../shared/contractRegistry.ts';
 // because the Base44 backend runtime blocks WebAssembly/solc).
 export default async function (req: Request): Promise<Response> {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch(() => null);
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin only' }, { status: 403 });
-    }
-
-    const privateKey = secrets.get('PULSE_PRIVATE_KEY');
-    const rpcUrl = secrets.get('PULSE_RPC_URL');
-    if (!privateKey || !rpcUrl) {
-      return Response.json(
-        { error: 'PULSE_PRIVATE_KEY and PULSE_RPC_URL secrets must be set' },
-        { status: 400 },
-      );
-    }
+    const auth = await authorizeDeployment(req, 'pulse');
+    if (!auth.ok) return auth.response;
+    const { base44, wallet, provider } = auth.authority;
 
     if (!PULSE_GASLESS_RELAY_BYTECODE) {
       return Response.json(
         { error: 'Relay bytecode is empty. Run scripts/compile-pulse.js locally first to populate PULSE_GASLESS_RELAY_BYTECODE.' },
-        { status: 400 },
-      );
-    }
-
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const wallet = new ethers.Wallet(privateKey, provider);
-
-    // The treasury must hold native PLS to pay deployment gas.
-    const balance = await provider.getBalance(wallet.address);
-    if (balance === 0n) {
-      const explorer = secrets.get('PULSE_EXPLORER_URL') || '';
-      return Response.json(
-        { error: `Treasury ${wallet.address} has no native PLS for deployment gas. Fund it first${explorer ? ` — ${explorer}/address/${wallet.address}` : ''}.` },
         { status: 400 },
       );
     }
