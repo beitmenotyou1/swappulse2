@@ -36,8 +36,8 @@ export default async function (req: Request): Promise<Response> {
       if (user.role !== 'admin') return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    const batchSize = parseInt(secrets.get('PULSE_INDEXER_BATCH_SIZE') || '', 10) || DEFAULT_BATCH;
-    const lookback = parseInt(secrets.get('PULSE_INDEXER_LOOKBACK') || '', 10) || DEFAULT_LOOKBACK;
+    const batchSize = DEFAULT_BATCH;
+    const lookback = DEFAULT_LOOKBACK;
 
     const chainHead = await getBlockNumber();
 
