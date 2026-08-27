@@ -649,6 +649,10 @@ const en = {
   'explainer.block.summary': 'Block #{number} contains {txCount} transactions and used {gasUsed} gas. It was produced by {miner}.',
   'explainer.block.empty': 'Block #{number} is empty — it contains no transactions.',
   'explainer.home.summary': 'PulseChain is currently at block #{chainHead}. The indexer has processed {blocks} blocks and {txs} transactions so far.',
+  'explorer.chart.txCount': 'Transactions per day',
+  'explorer.chart.gasUsed': 'Gas used per day',
+  'explorer.tokenBalances': 'Token Balances',
+  'explorer.nftCollection': 'NFT Collection',
 };
 
 export default en;

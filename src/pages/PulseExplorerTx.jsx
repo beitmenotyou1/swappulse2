@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   CheckCircle2, XCircle, HelpCircle, ArrowRight, Coins,
   Fuel, Hash, Blocks, Clock, ArrowDownLeft, ArrowUpRight, FileCode2,
@@ -13,6 +13,8 @@ import ExplainBox from '@/components/explorer/ExplainBox';
 import StatusBadge from '@/components/explorer/StatusBadge';
 import { Image } from '@/components/ui/image';
 import { explainTransaction } from '@/lib/explorerExplain';
+import { getActiveChain } from '@/lib/explorerChain';
+import { getChainMeta } from '@/lib/explorerChains';
 import {
   formatPls, formatGwei, formatNumber, formatTimestamp, formatAge, formatTokenAmount,
 } from '@/lib/explorerFormat';
@@ -31,6 +33,9 @@ function Row({ icon: Icon, label, children, t }) {
 export default function PulseExplorerTx() {
   const t = useT();
   const { txHash } = useParams();
+  const [searchParams] = useSearchParams();
+  const chainKey = getActiveChain(searchParams);
+  const chainMeta = getChainMeta(chainKey);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,11 +49,13 @@ export default function PulseExplorerTx() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    base44.functions.invoke('pulse-explorer-tx', { hash: txHash })
+    base44.functions.invoke('multi-chain-tx', { chain: chainKey, hash: txHash })
       .then((res) => setData(res.data))
       .catch((e) => setError(e?.response?.data?.error || e?.message || t('explorer.loadFailed')))
       .finally(() => setLoading(false));
-  }, [txHash, t]);
+  }, [txHash, chainKey, t]);
+
+  const symbol = data?.chain?.symbol || chainMeta.symbol;
 
   const explanation = data ? explainTransaction(data, t) : '';
 
@@ -113,7 +120,7 @@ export default function PulseExplorerTx() {
                 </Row>
               )}
               <Row icon={Coins} label={t('explorer.value')} t={t}>
-                <span className="font-mono">{formatPls(data.value_wei)} PLS</span>
+                <span className="font-mono">{formatPls(data.value_wei)} {symbol}</span>
               </Row>
               <Row icon={Fuel} label={t('explorer.gasUsed')} t={t}>
                 <span className="font-mono">{formatNumber(data.gas_used)} <span className="text-muted-foreground">({formatGwei(data.gas_price)} Gwei)</span></span>
@@ -143,14 +150,26 @@ export default function PulseExplorerTx() {
                 {data.token_transfers.map((tr, i) => (
                   <div key={i} className="px-4 py-3 text-sm">
                     {tr.is_nft && tr.nft_image ? (
-                      <div className="mb-3 flex items-center gap-3">
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
+                      <div className="mb-3 flex items-center gap-4">
+                        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-border bg-secondary shadow-raised">
                           <Image src={tr.nft_image} alt={tr.nft_name || `NFT #${tr.token_id}`} fittingType="fill" className="h-full w-full" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold">{tr.nft_name || `NFT #${tr.token_id}`}</p>
+                          <p className="font-semibold text-sm">{tr.nft_name || `NFT #${tr.token_id}`}</p>
                           <p className="text-xs text-muted-foreground">Token ID: {tr.token_id}</p>
-                          <HashLink hash={tr.token_contract} to={`/blockchain/address/${tr.token_contract}`} prefixLen={8} suffixLen={6} />
+                          <div className="mt-1">
+                            <HashLink hash={tr.token_contract} to={`/blockchain/address/${tr.token_contract}`} prefixLen={8} suffixLen={6} />
+                          </div>
+                        </div>
+                      </div>
+                    ) : tr.is_nft ? (
+                      <div className="mb-3 flex items-center gap-3 rounded-lg border border-border bg-secondary/30 p-3">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary">
+                          <FileCode2 className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm">NFT #{tr.token_id}</p>
+                          <p className="text-xs text-muted-foreground">Metadata unavailable</p>
                         </div>
                       </div>
                     ) : null}

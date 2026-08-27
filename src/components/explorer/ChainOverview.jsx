@@ -4,21 +4,17 @@ import { Activity, AlertCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber } from '@/lib/explorerFormat';
 import { OVERVIEW_CHAIN_KEYS, getChainMeta } from '@/lib/explorerChains';
+import { getActiveChain, setActiveChain } from '@/lib/explorerChain';
 
 // Grid of chain cards showing each chain's current block height.
 // Gives a quick multi-chain overview on the explorer homepage.
 export default function ChainOverview({ chains = [] }) {
   const t = useT();
   const [searchParams, setSearchParams] = useSearchParams();
-  const selected = searchParams.get('chain') || 'pulse';
+  const selected = getActiveChain(searchParams);
 
   const handleSelect = (key) => {
-    if (key === 'pulse') {
-      searchParams.delete('chain');
-    } else {
-      searchParams.set('chain', key);
-    }
-    setSearchParams(searchParams, { replace: true });
+    setActiveChain(key, searchParams, setSearchParams);
   };
 
   // Build a map of chain data from the overview response

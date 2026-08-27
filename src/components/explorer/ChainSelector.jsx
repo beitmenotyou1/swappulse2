@@ -2,20 +2,16 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { EXPLORER_CHAINS } from '@/lib/explorerChains';
+import { getActiveChain, setActiveChain } from '@/lib/explorerChain';
 
 // Horizontal scrollable chain selector — pills for each supported chain.
-// PulseChain is first (main chain). Updates the ?chain= URL search param.
+// PulseChain is first (main chain). Persists selection to URL + localStorage.
 export default function ChainSelector() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const selected = searchParams.get('chain') || 'pulse';
+  const selected = getActiveChain(searchParams);
 
   const handleSelect = (key) => {
-    if (key === 'pulse') {
-      searchParams.delete('chain');
-    } else {
-      searchParams.set('chain', key);
-    }
-    setSearchParams(searchParams, { replace: true });
+    setActiveChain(key, searchParams, setSearchParams);
   };
 
   return (

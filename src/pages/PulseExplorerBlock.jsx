@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Blocks, Clock, Fuel, Hash, ArrowRight, FileCode2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -8,6 +8,8 @@ import TransactionsTable from '@/components/explorer/TransactionsTable';
 import HashLink from '@/components/explorer/HashLink';
 import ExplainBox from '@/components/explorer/ExplainBox';
 import { explainBlock } from '@/lib/explorerExplain';
+import { getActiveChain } from '@/lib/explorerChain';
+import { getChainMeta } from '@/lib/explorerChains';
 import { formatNumber, formatTimestamp, formatAge } from '@/lib/explorerFormat';
 
 function Row({ icon: Icon, label, children }) {
@@ -24,6 +26,9 @@ function Row({ icon: Icon, label, children }) {
 export default function PulseExplorerBlock() {
   const t = useT();
   const { blockNumber } = useParams();
+  const [searchParams] = useSearchParams();
+  const chainKey = getActiveChain(searchParams);
+  const chainMeta = getChainMeta(chainKey);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,11 +42,13 @@ export default function PulseExplorerBlock() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    base44.functions.invoke('pulse-explorer-block', { block_number: parseInt(blockNumber, 10) })
+    base44.functions.invoke('multi-chain-block', { chain: chainKey, block_number: parseInt(blockNumber, 10) })
       .then((res) => setData(res.data))
       .catch((e) => setError(e?.response?.data?.error || e?.message || t('explorer.loadFailed')))
       .finally(() => setLoading(false));
-  }, [blockNumber, t]);
+  }, [blockNumber, chainKey, t]);
+
+  const symbol = data?.chain?.symbol || chainMeta.symbol;
 
   const block = data?.block;
   const explanation = block ? explainBlock(block, t) : '';
@@ -106,7 +113,7 @@ export default function PulseExplorerBlock() {
             <div className="border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold">{t('explorer.transactionsInBlock', { number: block.block_number })}</h2>
             </div>
-            <TransactionsTable transactions={data.transactions || []} />
+            <TransactionsTable transactions={data.transactions || []} symbol={symbol} />
           </div>
         </>
       )}

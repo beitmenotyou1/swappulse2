@@ -6,6 +6,8 @@ import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber } from '@/lib/explorerFormat';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ExplorerSearchBar from './ExplorerSearchBar';
+import ExplorerChainDropdown from './ExplorerChainDropdown';
+import { getActiveChain } from '@/lib/explorerChain';
 
 // Standalone full-screen layout for the blockchain explorer. Escapes the
 // main app shell entirely — own top nav (logo, global search, language
@@ -15,7 +17,7 @@ export default function ExplorerLayout() {
   const t = useT();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const chainKey = searchParams.get('chain') || 'pulse';
+  const chainKey = getActiveChain(searchParams);
   const [stats, setStats] = useState(null);
 
   const fetchStats = useCallback(async () => {
@@ -58,7 +60,8 @@ export default function ExplorerLayout() {
           </div>
 
           {/* Right actions */}
-          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+            <ExplorerChainDropdown />
             <LanguageSwitcher compact />
             <Link
               to="/"

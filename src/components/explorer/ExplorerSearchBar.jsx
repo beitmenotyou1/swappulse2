@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { getActiveChain } from '@/lib/explorerChain';
 
 // Top search bar — accepts an address, transaction hash, or block number,
 // calls the pulse-explorer-search backend function to detect the type, and
@@ -13,6 +14,8 @@ export default function ExplorerSearchBar() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const chain = getActiveChain(searchParams);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -21,7 +24,7 @@ export default function ExplorerSearchBar() {
     setLoading(true);
     setError('');
     try {
-      const res = await base44.functions.invoke('pulse-explorer-search', { query: q });
+      const res = await base44.functions.invoke('pulse-explorer-search', { query: q, chain });
       const data = res.data;
       if (data?.redirect) {
         navigate(data.redirect);

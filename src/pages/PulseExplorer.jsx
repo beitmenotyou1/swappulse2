@@ -9,6 +9,7 @@ import TransactionsTable from '@/components/explorer/TransactionsTable';
 import ExplainBox from '@/components/explorer/ExplainBox';
 import ChainSelector from '@/components/explorer/ChainSelector';
 import ChainOverview from '@/components/explorer/ChainOverview';
+import ExplorerCharts from '@/components/explorer/ExplorerCharts';
 import { formatNumber } from '@/lib/explorerFormat';
 import { getChainMeta } from '@/lib/explorerChains';
 
@@ -97,6 +98,9 @@ export default function PulseExplorer() {
         <StatCard icon={Zap} value={formatNumber(avgGas)} label={t('explorer.stat.avgGas')} accent="warning" />
         <StatCard icon={Hash} value={chain?.chainId ?? chainMeta.chainId} label={t('explorer.chainId')} accent="primary" />
       </div>
+
+      {/* 7-day activity charts */}
+      <ExplorerCharts chainKey={chainKey} />
 
       {/* Plain-language overview */}
       {explanation && <ExplainBox title={t('explorer.whatHappened')}>{explanation}</ExplainBox>}

@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Wallet2, FileCode2, Hash } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 import TransactionsTable from '@/components/explorer/TransactionsTable';
 import HashLink from '@/components/explorer/HashLink';
+import AddressTokens from '@/components/explorer/AddressTokens';
+import AddressNfts from '@/components/explorer/AddressNfts';
+import { getActiveChain } from '@/lib/explorerChain';
+import { getChainMeta } from '@/lib/explorerChains';
 import { formatPls, formatNumber } from '@/lib/explorerFormat';
 
 export default function PulseExplorerAddress() {
   const t = useT();
   const { address } = useParams();
+  const [searchParams] = useSearchParams();
+  const chainKey = getActiveChain(searchParams);
+  const chainMeta = getChainMeta(chainKey);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,11 +32,13 @@ export default function PulseExplorerAddress() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    base44.functions.invoke('pulse-explorer-address', { address, page, limit: 25 })
+    base44.functions.invoke('multi-chain-address', { chain: chainKey, address, page, limit: 25 })
       .then((res) => setData(res.data))
       .catch((e) => setError(e?.response?.data?.error || e?.message || t('explorer.loadFailed')))
       .finally(() => setLoading(false));
-  }, [address, page, t]);
+  }, [address, page, chainKey, t]);
+
+  const symbol = data?.chain?.symbol || chainMeta.symbol;
 
   return (
     <div className="space-y-4">
@@ -67,7 +76,7 @@ export default function PulseExplorerAddress() {
               </div>
               <div className="flex items-center justify-between gap-4 px-4 py-3">
                 <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Wallet2 className="h-4 w-4" /> {t('explorer.plsBalance')}</span>
-                <span className="font-mono text-sm font-semibold">{formatPls(data.balance_wei)} PLS</span>
+                <span className="font-mono text-sm font-semibold">{formatPls(data.balance_wei)} {symbol}</span>
               </div>
               <div className="flex items-center justify-between gap-4 px-4 py-3">
                 <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><FileCode2 className="h-4 w-4" /> {t('explorer.type')}</span>
@@ -86,12 +95,18 @@ export default function PulseExplorerAddress() {
             </div>
           </div>
 
+          {/* Token balances */}
+          <AddressTokens tokens={data.token_balances || []} />
+
+          {/* NFT collection */}
+          <AddressNfts nfts={data.nfts || []} />
+
           {/* Transaction history */}
           <div className="rounded-xl border border-border bg-card shadow-base">
             <div className="border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold">{t('explorer.transactionHistory')}</h2>
             </div>
-            <TransactionsTable transactions={data.transactions || []} showDirection />
+            <TransactionsTable transactions={data.transactions || []} showDirection symbol={symbol} />
             {data.pages > 1 && (
               <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">
                 <button
