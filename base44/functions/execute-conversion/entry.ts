@@ -17,6 +17,7 @@ import { verifyWalletPasskey } from '../../shared/webauthn.ts';
 import { fetchDexQuote, executeDexSwap } from '../../shared/dexAggregator.ts';
 import { getPulseMintWallet } from '../../shared/pulseClient.ts';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
+import { readPulseUsdcPoolPrice } from '../../shared/uniswapPoolPrice.ts';
 
 const POLYGON_CHAIN_ID = 137;
 const PULSE_SENTINEL = 'PULSE';
@@ -26,20 +27,29 @@ const PULSE_SENTINEL = 'PULSE';
 const PULSE_PRICE_FALLBACK_USD = 0.00002;
 
 /**
- * Fetches the current PULSE (PLS) spot price in USD using the same oracle
- * chain as get-crypto-prices: Coinbase PLS-USD spot first, then CoinGecko's
- * `pulsechain` id, then a conservative static fallback. NEVER trust a
- * client-supplied price for treasury disbursement: an attacker could set
- * pulse_price_usd near zero and drain the platform's PulseChain treasury.
- * All sources here are server-side and trusted. The static fallback matches
- * the wallet UI's display fallback (get-crypto-prices FALLBACK_RATES.pls.usd)
- * so the rate the user saw is the rate they receive, and conversions keep
- * working during oracle outages instead of hard-failing.
+ * Fetches the current PULSE spot price in USD. The authoritative source is the
+ * SwapPulse $PULSE/USDC Uniswap v4 pool on Polygon (position #134728), read
+ * on-chain via the StateView lens — this is the trusted market price that
+ * controls treasury disbursement. If the on-chain read fails (RPC outage),
+ * fall back to Coinbase PLS-USD spot, then CoinGecko's `pulsechain` id, then
+ * a conservative static rate so conversions keep working during outages.
+ *
+ * NEVER trust a client-supplied price for treasury disbursement: an attacker
+ * could set pulse_price_usd near zero and drain the platform's PulseChain
+ * treasury. Every source here is server-side and trusted.
  */
 async function fetchPulsePriceUsd(): Promise<number> {
   const isPlausible = (p: number) => isFinite(p) && p > 0 && p < 1;
 
-  // 1. Coinbase PLS-USD spot (same oracle as get-crypto-prices).
+  // 1. On-chain Uniswap v4 pool price (authoritative).
+  try {
+    const pool = await readPulseUsdcPoolPrice();
+    if (isPlausible(pool.priceUsdcPerPulse)) return pool.priceUsdcPerPulse;
+  } catch (e) {
+    console.error('Uniswap pool price read failed:', (e as any)?.message);
+  }
+
+  // 2. Coinbase PLS-USD spot (same oracle as get-crypto-prices).
   try {
     const url = 'https://api.coinbase.com/v2/prices/PLS-USD/spot';
     await assertSafeHost(new URL(url).hostname);
@@ -51,7 +61,7 @@ async function fetchPulsePriceUsd(): Promise<number> {
     }
   } catch { /* fall through to next source */ }
 
-  // 2. CoinGecko `pulsechain` id.
+  // 3. CoinGecko `pulsechain` id.
   try {
     const url = 'https://api.coingecko.com/api/v3/simple/price?ids=pulsechain&vs_currencies=usd';
     await assertSafeHost(new URL(url).hostname);
@@ -63,7 +73,7 @@ async function fetchPulsePriceUsd(): Promise<number> {
     }
   } catch { /* fall through to static fallback */ }
 
-  // 3. Conservative static fallback — matches the wallet UI fallback so the
+  // 4. Conservative static fallback — matches the wallet UI fallback so the
   // conversion amount the user saw is the amount they receive. Server-side,
   // trusted, and bounded so it can never drain the treasury.
   return PULSE_PRICE_FALLBACK_USD;
