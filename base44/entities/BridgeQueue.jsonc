@@ -1,0 +1,94 @@
+{
+  "name": "BridgeQueue",
+  "type": "object",
+  "title": "BridgeQueue",
+  "description": "org.swappulse.bridgeQueue \u2014 a queued cross-chain bridge relay that failed during the dual-mint flow and is awaiting retry by the process-bridge-queue scheduled function. Each item captures the asset type, source/target chain, the source-chain tx hash (idempotency key), the payload needed to re-attempt the relay, the retry state, and the last error. Admin-only access via RLS; created by the dual-mint engine (service role) when a Polygon\u2192PulseChain bridge attempt fails.",
+  "properties": {
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "username",
+        "card"
+      ],
+      "description": "Whether the bridged asset is a soulbound username NFT or a transferable card NFT"
+    },
+    "source_chain": {
+      "type": "string",
+      "default": "polygon",
+      "description": "Chain the original mint occurred on (polygon or pulse)"
+    },
+    "target_chain": {
+      "type": "string",
+      "default": "pulse",
+      "description": "Chain the relay targets (pulse or polygon)"
+    },
+    "source_tx_hash": {
+      "type": "string",
+      "description": "On-chain tx hash of the source-chain mint, used as the idempotency key for the bridge relay"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Structured payload needed to re-attempt the relay (to, handle/cardId, name, did/cardImage, metadataURI, verificationLevel)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "processing",
+        "confirmed",
+        "failed"
+      ],
+      "default": "queued",
+      "description": "Current relay state: queued (awaiting retry), processing (in-flight), confirmed (relay succeeded), failed (max retries exceeded)"
+    },
+    "retry_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of relay attempts made so far"
+    },
+    "max_retries": {
+      "type": "integer",
+      "default": 5,
+      "description": "Maximum relay attempts before the item is marked permanently failed"
+    },
+    "last_error": {
+      "type": "string",
+      "description": "Error message from the most recent failed relay attempt"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the relay was confirmed or permanently failed"
+    }
+  },
+  "required": [
+    "asset_type",
+    "source_chain",
+    "target_chain",
+    "source_tx_hash",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

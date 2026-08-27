@@ -1,0 +1,84 @@
+{
+  "name": "FeeLedger",
+  "type": "object",
+  "title": "FeeLedger",
+  "description": "org.swappulse.feeLedger \u2014 an immutable audit log of every 2% transaction fee collected by the platform. Each record captures the fee source (top-up, send, convert, trade), the original amount, the fee in USDC base units, the on-chain sweep tx hash, and the source user. Admin-only read; used for the admin fee revenue dashboard.",
+  "properties": {
+    "fee_source": {
+      "type": "string",
+      "enum": [
+        "topup",
+        "send",
+        "convert",
+        "escrow_purchase",
+        "fiat_to_usdc",
+        "usdc_to_fiat",
+        "token_convert"
+      ],
+      "description": "The transaction type that generated this fee"
+    },
+    "source_did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who paid the fee"
+    },
+    "original_amount_wei": {
+      "type": "string",
+      "description": "Original transaction amount in USDC base units (or fiat-converted equivalent)"
+    },
+    "original_amount_cents": {
+      "type": "integer",
+      "description": "Original fiat amount in cents (for fiat-sourced fees)"
+    },
+    "fee_usdc_wei": {
+      "type": "string",
+      "description": "Fee amount in USDC base units (2% of original)"
+    },
+    "fee_tx_hash": {
+      "type": "string",
+      "description": "On-chain tx hash of the fee USDC transfer to the platform fee wallet"
+    },
+    "swept": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the fee has been swept to the platform fee wallet on-chain"
+    },
+    "swept_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reference_id": {
+      "type": "string",
+      "description": "ID of the source entity (FiatTopUp, CryptoTransfer, or EscrowTrade)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "fee_source",
+    "fee_usdc_wei"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

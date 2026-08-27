@@ -1,0 +1,73 @@
+{
+  "name": "ReceiveAllowlist",
+  "type": "object",
+  "title": "ReceiveAllowlist",
+  "description": "org.swappulse.receiveAllowlist \u2014 a user's allowlist of sender addresses permitted to send crypto to their wallet. When the user enables strict receive mode (WalletBalance.receive_strict_mode), incoming transfers from addresses not on this list are blocked at the platform's watch layer. Traded contacts (derived from completed EscrowTrade history) are implicitly allowlisted even without an explicit entry. One entry per (did, address, chain).",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the wallet owner who added this allowlist entry"
+    },
+    "address": {
+      "type": "string",
+      "description": "Allowed sender address (lowercased for EVM, base58 for Solana)"
+    },
+    "chain": {
+      "type": "string",
+      "description": "Chain key this allowlist entry applies to. Empty string means all chains."
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Optional label for the allowed address (e.g. a contact name)"
+    },
+    "added_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "did",
+    "address"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
+    }
+  }
+}

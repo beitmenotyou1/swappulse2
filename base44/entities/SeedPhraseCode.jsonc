@@ -1,0 +1,78 @@
+{
+  "name": "SeedPhraseCode",
+  "type": "object",
+  "title": "SeedPhraseCode",
+  "description": "org.swappulse.seedPhraseCode \u2014 a single-use one-time code emailed to a collector as a verification factor before revealing their 24-word seed phrase. 6-digit code, 60-second TTL, stored hashed (SHA-256) so the plaintext code is never persisted. One code per request; superseded codes are marked used.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector who requested the seed phrase code"
+    },
+    "code_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the 6-digit one-time code (stored hashed, not plaintext)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the code expires (60 seconds after creation)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "did",
+    "code_hash",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

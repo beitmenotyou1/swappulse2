@@ -1,0 +1,119 @@
+{
+  "name": "CryptoTransfer",
+  "type": "object",
+  "title": "CryptoTransfer",
+  "description": "org.swappulse.cryptoTransfer \u2014 an on-chain USDC transfer record for a user's wallet. Covers sends, receives, conversions (fiat\u2192USDC, USDC\u2192fiat, token\u2192USDC), escrow locks, escrow releases, and fee sweeps. Each record stores the on-chain tx hash, from/to addresses, amount, fee, and transfer type for the user's transaction history.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the wallet owner this transfer belongs to"
+    },
+    "transfer_type": {
+      "type": "string",
+      "enum": [
+        "send",
+        "receive",
+        "fiat_to_usdc",
+        "usdc_to_fiat",
+        "token_convert",
+        "escrow_lock",
+        "escrow_release",
+        "fee_sweep",
+        "topup_credit"
+      ],
+      "description": "The type of crypto transfer"
+    },
+    "from_address": {
+      "type": "string",
+      "description": "Sender Polygon wallet address"
+    },
+    "to_address": {
+      "type": "string",
+      "description": "Recipient Polygon wallet address"
+    },
+    "amount_wei": {
+      "type": "string",
+      "description": "USDC amount in base units (6 decimals)"
+    },
+    "fee_wei": {
+      "type": "string",
+      "default": "0",
+      "description": "2% fee in USDC base units collected on this transfer"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "On-chain Polygon transaction hash"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "escrow_trade_id": {
+      "type": "string",
+      "description": "EscrowTrade id if this transfer is part of an escrow"
+    },
+    "fiat_topup_id": {
+      "type": "string",
+      "description": "FiatTopUp id if this is a top-up credit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "did",
+    "transfer_type",
+    "amount_wei",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

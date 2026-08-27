@@ -1,0 +1,102 @@
+{
+  "name": "SendCode",
+  "type": "object",
+  "title": "SendCode",
+  "description": "org.swappulse.sendCode \u2014 a single-use one-time code issued as a second factor for outgoing crypto sends. After the user unlocks their custodial wallet via passkey/PIN (first factor), the backend issues a random 6-digit code displayed in-app with a 60-second TTL. The user must enter the code before the transaction is broadcast. Each code is bound to a specific (did, to_address, amount_wei, chain) tuple to prevent replay or substitution.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the user who requested the send code"
+    },
+    "code_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the 6-digit one-time code (stored hashed, not plaintext)"
+    },
+    "purpose": {
+      "type": "string",
+      "default": "send_crypto",
+      "description": "What the code is for (currently only send_crypto)"
+    },
+    "to_address": {
+      "type": "string",
+      "description": "Recipient address this code is bound to (must match at verification)"
+    },
+    "amount_wei": {
+      "type": "string",
+      "description": "Amount in base units this code is bound to (must match at verification)"
+    },
+    "chain": {
+      "type": "string",
+      "description": "Chain key this code is bound to (must match at verification)"
+    },
+    "asset": {
+      "type": "string",
+      "description": "Asset being sent (native symbol or USDC) \u2014 bound to the code"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the code expires (60 seconds after creation)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "did",
+    "code_hash",
+    "to_address",
+    "amount_wei",
+    "chain",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
