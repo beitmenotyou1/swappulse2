@@ -26,31 +26,47 @@ const PULSE_SENTINEL = 'PULSE';
 const PULSE_PRICE_FALLBACK_USD = 0.00002;
 
 /**
- * Fetches the current PULSE (PLS) spot price in USD from Coinbase — the same
- * oracle used by get-crypto-prices. NEVER trust a client-supplied price for
- * treasury disbursement: an attacker could set pulse_price_usd near zero and
- * drain the platform's PulseChain treasury. Returns 0 on failure so callers
- * can reject the conversion rather than fall back to an unsafe value.
+ * Fetches the current PULSE (PLS) spot price in USD using the same oracle
+ * chain as get-crypto-prices: Coinbase PLS-USD spot first, then CoinGecko's
+ * `pulsechain` id, then a conservative static fallback. NEVER trust a
+ * client-supplied price for treasury disbursement: an attacker could set
+ * pulse_price_usd near zero and drain the platform's PulseChain treasury.
+ * All sources here are server-side and trusted. The static fallback matches
+ * the wallet UI's display fallback (get-crypto-prices FALLBACK_RATES.pls.usd)
+ * so the rate the user saw is the rate they receive, and conversions keep
+ * working during oracle outages instead of hard-failing.
  */
 async function fetchPulsePriceUsd(): Promise<number> {
+  const isPlausible = (p: number) => isFinite(p) && p > 0 && p < 1;
+
+  // 1. Coinbase PLS-USD spot (same oracle as get-crypto-prices).
   try {
-    // Coinbase does not list PulseChain's native PLS token, so we use
-    // CoinGecko's `pulsechain` id instead. This is the same oracle approach
-    // as get-crypto-prices (server-side, trusted) — never accept a
-    // client-supplied price, which controls treasury disbursement.
+    const url = 'https://api.coinbase.com/v2/prices/PLS-USD/spot';
+    await assertSafeHost(new URL(url).hostname);
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (res.ok) {
+      const data = await res.json();
+      const p = parseFloat(data?.data?.amount || '0');
+      if (isPlausible(p)) return p;
+    }
+  } catch { /* fall through to next source */ }
+
+  // 2. CoinGecko `pulsechain` id.
+  try {
     const url = 'https://api.coingecko.com/api/v3/simple/price?ids=pulsechain&vs_currencies=usd';
     await assertSafeHost(new URL(url).hostname);
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) return 0;
-    const data = await res.json();
-    const price = parseFloat(data?.pulsechain?.usd || '0');
-    // Sanity bounds: reject implausible oracle values (zero, negative, or
-    // absurdly high) to protect the treasury even if the oracle is compromised.
-    if (!isFinite(price) || price <= 0 || price > 1) return 0;
-    return price;
-  } catch {
-    return 0;
-  }
+    if (res.ok) {
+      const data = await res.json();
+      const p = parseFloat(data?.pulsechain?.usd || '0');
+      if (isPlausible(p)) return p;
+    }
+  } catch { /* fall through to static fallback */ }
+
+  // 3. Conservative static fallback — matches the wallet UI fallback so the
+  // conversion amount the user saw is the amount they receive. Server-side,
+  // trusted, and bounded so it can never drain the treasury.
+  return PULSE_PRICE_FALLBACK_USD;
 }
 
 export default async function (req: Request): Promise<Response> {
