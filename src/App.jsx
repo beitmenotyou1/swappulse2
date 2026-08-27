@@ -155,6 +155,10 @@ const SitemapXml = lazy(() => import('@/pages/SitemapXml'));
 const RobotsTxt = lazy(() => import('@/pages/RobotsTxt'));
 const JournalDetail = lazy(() => import('@/pages/JournalDetail'));
 const HashtagPage = lazy(() => import('@/pages/HashtagPage'));
+const PulseExplorer = lazy(() => import('@/pages/PulseExplorer'));
+const PulseExplorerAddress = lazy(() => import('@/pages/PulseExplorerAddress'));
+const PulseExplorerTx = lazy(() => import('@/pages/PulseExplorerTx'));
+const PulseExplorerBlock = lazy(() => import('@/pages/PulseExplorerBlock'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -323,6 +327,10 @@ const AuthenticatedApp = () => {
         <Route path="/circles-directory" element={<CircleDirectory />} />
         <Route path="/labelers" element={<Labelers />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/pulse-explorer" element={<PulseExplorer />} />
+        <Route path="/pulse-explorer/address/:address" element={<PulseExplorerAddress />} />
+        <Route path="/pulse-explorer/tx/:txHash" element={<PulseExplorerTx />} />
+        <Route path="/pulse-explorer/block/:blockNumber" element={<PulseExplorerBlock />} />
       </Route>
       {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

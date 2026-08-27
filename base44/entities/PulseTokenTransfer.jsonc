@@ -1,0 +1,68 @@
+{
+  "name": "PulseTokenTransfer",
+  "type": "object",
+  "title": "PulseTokenTransfer",
+  "description": "org.swappulse.pulseTokenTransfer \u2014 an ERC-20 (or ERC-721) token transfer parsed from a PulseChain transaction receipt's Transfer event logs. Cached by the pulse-explorer-tx function on first detail view so repeated views are fast. One record per (tx_hash, log_index). Public read for the explorer UI.",
+  "properties": {
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash this transfer belongs to"
+    },
+    "log_index": {
+      "type": "integer",
+      "description": "Log index within the transaction receipt (unique per tx)"
+    },
+    "token_contract": {
+      "type": "string",
+      "description": "Token contract address (0x\u2026, lowercased)"
+    },
+    "from_address": {
+      "type": "string",
+      "description": "Sender of the transfer (0x\u2026)"
+    },
+    "to_address": {
+      "type": "string",
+      "description": "Recipient of the transfer (0x\u2026)"
+    },
+    "value": {
+      "type": "string",
+      "default": "0",
+      "description": "Amount transferred (base units, stored as string)"
+    },
+    "token_symbol": {
+      "type": "string",
+      "description": "Token symbol (e.g. PULSE, USDC) \u2014 fetched from the contract, cached here"
+    },
+    "token_decimals": {
+      "type": "integer",
+      "default": 18,
+      "description": "Token decimals (fetched from the contract, cached here)"
+    }
+  },
+  "required": [
+    "tx_hash",
+    "log_index",
+    "token_contract",
+    "from_address",
+    "to_address",
+    "value"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
