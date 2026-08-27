@@ -155,8 +155,9 @@ export default function PulseTreasuryFundingSection({ pendingAction }) {
   }
 
   const needsFunding = status?.needs_funding;
+  const explorerBase = status?.network_params?.blockExplorerUrls?.[0] || 'https://explorer.pulsechain.com';
   const explorerUrl = status?.treasury_address
-    ? `https://explorer.pulsechain.com/address/${status.treasury_address}`
+    ? `${explorerBase}/address/${status.treasury_address}`
     : null;
 
   return (

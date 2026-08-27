@@ -42,12 +42,13 @@ export default async function (req: Request): Promise<Response> {
     const rpcUrl = secrets.get('PULSE_RPC_URL') || '';
     const explorerUrl = secrets.get('PULSE_EXPLORER_URL') || '';
 
-    // PulseChain native currency metadata for MetaMask network addition (EIP-3085)
+    // PulseChain native currency metadata for MetaMask network addition (EIP-3085).
+    // Mainnet (369) uses PLS; V4 testnet (943) uses tPLS — mismatch causes MetaMask warnings.
     const isTestnet = chainId === 943;
     const network_params = {
       chainId: `0x${chainId.toString(16)}`,
       chainName: isTestnet ? 'PulseChain V4 Testnet' : 'PulseChain',
-      nativeCurrency: { name: 'Pulse', symbol: 'PLS', decimals: 18 },
+      nativeCurrency: { name: isTestnet ? 'Test Pulse' : 'Pulse', symbol: isTestnet ? 'tPLS' : 'PLS', decimals: 18 },
       rpcUrls: [rpcUrl],
       blockExplorerUrls: explorerUrl ? [explorerUrl] : [],
     };
