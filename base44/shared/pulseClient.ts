@@ -27,6 +27,15 @@ export function getPulseMintWallet(): ethers.Wallet {
   return new ethers.Wallet(privateKey, getPulseProvider());
 }
 
+// Returns the native PULSE balance (wei) of the platform treasury wallet on
+// PulseChain. Used as a pre-flight check before disbursing PULSE from the
+// treasury in conversions — aborts cleanly if the treasury is unfunded
+// instead of collecting USDC from the user and then failing on the send.
+export async function getPulseTreasuryBalanceWei(): Promise<bigint> {
+  const wallet = getPulseMintWallet();
+  return wallet.provider.getBalance(wallet.address);
+}
+
 export function getPulseChainId(): string {
   return secrets.get('PULSE_CHAIN_ID') || '9999';
 }

@@ -15,7 +15,7 @@ import {
 import { decryptPrivateKey, verifyPin } from '../../shared/walletCrypto.ts';
 import { verifyWalletPasskey } from '../../shared/webauthn.ts';
 import { fetchDexQuote, executeDexSwap } from '../../shared/dexAggregator.ts';
-import { getPulseMintWallet } from '../../shared/pulseClient.ts';
+import { getPulseMintWallet, getPulseTreasuryBalanceWei } from '../../shared/pulseClient.ts';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 import { readPulseUsdcPoolPrice } from '../../shared/uniswapPoolPrice.ts';
 
@@ -135,6 +135,20 @@ export default async function (req: Request): Promise<Response> {
 
         if (pulseWei <= 0n) {
           return Response.json({ error: 'Amount too small to purchase PULSE' }, { status: 400 });
+        }
+
+        // Pre-flight: verify the PulseChain treasury can cover the disbursement
+        // BEFORE debiting fiat. Aborts cleanly if the treasury is unfunded
+        // rather than taking the user's fiat and failing on the send.
+        try {
+          const treasuryBalance = await getPulseTreasuryBalanceWei();
+          if (treasuryBalance < pulseWei) {
+            return Response.json({
+              error: 'PULSE treasury temporarily unfunded. Please try again later or contact support.',
+            }, { status: 503 });
+          }
+        } catch (e) {
+          return Response.json({ error: 'Unable to verify PULSE treasury: ' + (e as any)?.message }, { status: 503 });
         }
 
         // Debit fiat from user's balance
@@ -360,6 +374,20 @@ export default async function (req: Request): Promise<Response> {
 
         if (pulseWei <= 0n) {
           return Response.json({ error: 'Swap amount too small to purchase PULSE' }, { status: 400 });
+        }
+
+        // Pre-flight: verify the PulseChain treasury can cover the disbursement
+        // BEFORE collecting any USDC from the user. Without this, a failed PULSE
+        // send after USDC collection would leave the user paid but empty-handed.
+        try {
+          const treasuryBalance = await getPulseTreasuryBalanceWei();
+          if (treasuryBalance < pulseWei) {
+            return Response.json({
+              error: 'PULSE treasury temporarily unfunded. Please try again later or contact support.',
+            }, { status: 503 });
+          }
+        } catch (e) {
+          return Response.json({ error: 'Unable to verify PULSE treasury: ' + (e as any)?.message }, { status: 503 });
         }
 
         // Step 3: Collect the source USDC from the user's wallet BEFORE any
