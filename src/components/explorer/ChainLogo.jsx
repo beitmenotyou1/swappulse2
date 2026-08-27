@@ -1,5 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getChainMeta } from '@/lib/explorerChains';
+
+// Official branded network SVG logos are served from the @web3icons/core
+// icon set via jsDelivr's GitHub CDN — no npm install needed (the React
+// package was too heavy for the platform build optimizer). Each chain's
+// logoSlug in explorerChains.js maps to the kebab-case filename.
+const LOGO_CDN_BASE =
+  'https://cdn.jsdelivr.net/gh/0xa3k5/web3icons@main/packages/core/src/svgs/networks/branded/';
 
 // Pick black or white text for a given hex background for readable contrast.
 function getContrastText(hex) {
@@ -11,12 +18,9 @@ function getContrastText(hex) {
   return lum > 0.6 ? '#1e293b' : '#ffffff';
 }
 
-// Renders a chain's logo as a branded circular letter-mark in the chain's
-// official brand colour. 100% local (no external fetch, no npm icon pack) so
-// it never breaks. The chain name is always shown alongside in the UI, so the
-// letter + brand colour is enough to distinguish chains at a glance.
-export default function ChainLogo({ chainKey, size = 20, className = '' }) {
-  const meta = getChainMeta(chainKey);
+// Branded circular letter-mark — used when a chain has no official SVG in
+// the @web3icons set (logoSlug is null) or the CDN image fails to load.
+function LetterMark({ meta, chainKey, size, className }) {
   const letter = (meta?.name || chainKey).charAt(0).toUpperCase();
   const bg = meta?.brandColor || '#64748b';
   return (
@@ -28,5 +32,32 @@ export default function ChainLogo({ chainKey, size = 20, className = '' }) {
     >
       {letter}
     </span>
+  );
+}
+
+// Renders a chain's official branded SVG logo from the @web3icons/core icon
+// set (served via jsDelivr CDN). Falls back to a branded circular letter-mark
+// if the chain has no official icon (logoSlug is null) or the CDN image
+// fails to load, so the UI never breaks.
+export default function ChainLogo({ chainKey, size = 20, className = '' }) {
+  const meta = getChainMeta(chainKey);
+  const [failed, setFailed] = useState(false);
+  const slug = meta?.logoSlug;
+
+  if (!slug || failed) {
+    return <LetterMark meta={meta} chainKey={chainKey} size={size} className={className} />;
+  }
+
+  return (
+    <img
+      src={`${LOGO_CDN_BASE}${slug}.svg`}
+      alt={meta?.name}
+      width={size}
+      height={size}
+      loading="lazy"
+      className={`inline-block shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+      onError={() => setFailed(true)}
+    />
   );
 }
