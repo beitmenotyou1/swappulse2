@@ -11,11 +11,17 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await req.json();
-    const { address, signature, message, nonce, did, hardware, wallet_type } = body;
+    // Use the authenticated user's own DID — never trust a client-supplied
+    // DID. Letting the caller choose the DID would allow linking a wallet
+    // to another user's account or creating duplicate links under a victim's DID.
+    const did = user.data?.did || user.did;
+    if (!did) return Response.json({ error: 'No DID found for your account' }, { status: 400 });
 
-    if (!address || !signature || !message || !did) {
-      return Response.json({ error: 'Missing address, signature, message, or did' }, { status: 400 });
+    const body = await req.json();
+    const { address, signature, message, nonce, hardware, wallet_type } = body;
+
+    if (!address || !signature || !message) {
+      return Response.json({ error: 'Missing address, signature, or message' }, { status: 400 });
     }
 
     // Verify the signature was produced by the claimed wallet

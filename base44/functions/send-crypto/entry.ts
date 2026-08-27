@@ -146,6 +146,16 @@ export default async function (req: Request): Promise<Response> {
 
       // If the client already signed and broadcast, record the transfer.
       if (body.client_tx_hash) {
+        // Verify the client-signed tx actually exists on-chain and was sent
+        // from the linked wallet — prevents fabricated transfer/fee records.
+        const provider = getProvider();
+        const receipt = await provider.getTransactionReceipt(body.client_tx_hash).catch(() => null);
+        if (!receipt || receipt.status !== 1) {
+          return Response.json({ error: 'Transaction not found or failed on-chain' }, { status: 400 });
+        }
+        if (receipt.from.toLowerCase() !== linkedWallet.wallet_address.toLowerCase()) {
+          return Response.json({ error: 'Transaction was not sent from your linked wallet' }, { status: 400 });
+        }
         const amountWei = BigInt(usdc_wei);
         const feeWei = calculateFee(amountWei);
         await base44.entities.CryptoTransfer.create({
