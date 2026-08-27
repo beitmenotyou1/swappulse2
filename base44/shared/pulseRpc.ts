@@ -137,17 +137,24 @@ export async function getTokenMetadata(contractAddress: string): Promise<{ symbo
   return { symbol, decimals };
 }
 
-// Decode a Transfer event log into { from, to, value }.
-// Transfer(address indexed from, address indexed to, uint256 value)
-// topic[0] = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
-export function decodeTransferLog(log: any): { from: string; to: string; value: string } | null {
+// Decode a Transfer event log into { from, to, value, is_nft, token_id }.
+// ERC-20:  Transfer(address indexed from, address indexed to, uint256 value)      — 3 topics, value in data
+// ERC-721: Transfer(address indexed from, address indexed to, uint256 indexed tokenId) — 4 topics, data empty
+// topic[0] = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef (same for both)
+export function decodeTransferLog(log: any): { from: string; to: string; value: string; is_nft: boolean; token_id: string | null } | null {
   const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
   if (!log || !log.topics || log.topics[0]?.toLowerCase() !== TRANSFER_TOPIC) return null;
   if (log.topics.length < 3) return null;
   const from = '0x' + log.topics[1].slice(26);
   const to = '0x' + log.topics[2].slice(26);
+  // ERC-721: tokenId is indexed as topics[3] (4 topics total)
+  if (log.topics.length >= 4) {
+    const tokenId = BigInt(log.topics[3]).toString();
+    return { from, to, value: '1', is_nft: true, token_id: tokenId };
+  }
+  // ERC-20: value in data
   const value = log.data && log.data !== '0x' ? BigInt(log.data).toString() : '0';
-  return { from, to, value };
+  return { from, to, value, is_nft: false, token_id: null };
 }
 
 // Convert a hex string to a UTF-8 string (for input-data decoding attempts).
@@ -157,5 +164,75 @@ export function hexToUtf8(hex: string): string {
     return Buffer.from(clean, 'hex').toString('utf8');
   } catch {
     return '';
+  }
+}
+
+// Batch-fetch transaction receipts in a single HTTP round-trip.
+export async function getTransactionReceiptsBatch(hashes: string[]): Promise<any[]> {
+  return rpcBatch(
+    hashes.map((h) => ({ method: 'eth_getTransactionReceipt', params: [h] })),
+  );
+}
+
+// Decode an ABI-encoded string from hex return data (offset + length + data).
+function decodeAbiString(hex: string): string {
+  if (!hex || hex === '0x') return '';
+  const h = hex.slice(2);
+  if (h.length < 128) return '';
+  try {
+    const offset = parseInt(h.slice(0, 64), 16);
+    const len = parseInt(h.slice(offset * 2, offset * 2 + 64), 16);
+    const strHex = h.slice(offset * 2 + 64, offset * 2 + 64 + len * 2);
+    return Buffer.from(strHex, 'hex').toString('utf8').replace(/\u0000/g, '');
+  } catch {
+    return '';
+  }
+}
+
+// Fetch NFT metadata (name, image) for an ERC-721 token by calling tokenURI(uint256)
+// (or uri(uint256) as fallback) and resolving the returned URI to JSON metadata.
+// Best-effort with a 5-second timeout — returns empty strings on any failure.
+export async function getNftMetadata(contractAddress: string, tokenId: string): Promise<{ name: string; image: string }> {
+  try {
+    const tokenIdHex = BigInt(tokenId).toString(16).padStart(64, '0');
+    // Try tokenURI(uint256) — selector 0xc87b56dd
+    let uriHex = await rpcCall('eth_call', [{ to: contractAddress, data: '0xc87b56dd' + tokenIdHex }, 'latest']).catch(() => null);
+    // Fallback: uri(uint256) — selector 0x0e89341c
+    if (!uriHex || uriHex === '0x') {
+      uriHex = await rpcCall('eth_call', [{ to: contractAddress, data: '0x0e89341c' + tokenIdHex }, 'latest']).catch(() => null);
+    }
+    if (!uriHex || uriHex === '0x') return { name: '', image: '' };
+
+    const uri = decodeAbiString(uriHex);
+    if (!uri) return { name: '', image: '' };
+
+    let metadata: any;
+    if (uri.startsWith('data:')) {
+      const commaIdx = uri.indexOf(',');
+      const encoded = uri.slice(commaIdx + 1);
+      if (uri.includes('base64')) {
+        metadata = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
+      } else {
+        metadata = JSON.parse(decodeURIComponent(encoded));
+      }
+    } else {
+      let url = uri;
+      if (uri.startsWith('ipfs://')) {
+        url = uri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+      }
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000), headers: { 'Accept': 'application/json' } });
+      metadata = await res.json();
+    }
+
+    let image = metadata.image || metadata.image_url || metadata.imageUrl || '';
+    if (typeof image === 'object' && image !== null) {
+      image = (image as any).url || '';
+    }
+    if (image.startsWith('ipfs://')) {
+      image = image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    }
+    return { name: metadata.name || '', image };
+  } catch {
+    return { name: '', image: '' };
   }
 }

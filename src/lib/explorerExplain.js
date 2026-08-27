@@ -19,9 +19,21 @@ export function explainTransaction(tx, t) {
     return t('explainer.tx.contractCreation', { address: tx.created_contract || '—' });
   }
 
+  // Pending transaction (not yet mined)
+  if (tx.status === 'pending') {
+    return t('explainer.tx.pending');
+  }
+
   // Failed transaction
   if (tx.status === 'failed') {
     return t('explainer.tx.failed');
+  }
+
+  // NFT transfer
+  const nftTransfer = (tx.token_transfers || []).find((tr) => tr.is_nft);
+  if (nftTransfer) {
+    const nftName = nftTransfer.nft_name || `#${nftTransfer.token_id}`;
+    return t('explainer.tx.nft', { from, to, name: nftName });
   }
 
   // Zero-value contract interaction

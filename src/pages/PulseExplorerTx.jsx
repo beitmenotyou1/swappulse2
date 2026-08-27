@@ -10,16 +10,12 @@ import useSEO from '@/hooks/useSEO';
 import HashLink from '@/components/explorer/HashLink';
 import TxActionLinks from '@/components/explorer/TxActionLinks';
 import ExplainBox from '@/components/explorer/ExplainBox';
+import StatusBadge from '@/components/explorer/StatusBadge';
+import { Image } from '@/components/ui/image';
 import { explainTransaction } from '@/lib/explorerExplain';
 import {
   formatPls, formatGwei, formatNumber, formatTimestamp, formatAge, formatTokenAmount,
 } from '@/lib/explorerFormat';
-
-function StatusBadge({ status, t }) {
-  if (status === 'success') return <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success"><CheckCircle2 className="h-3.5 w-3.5" /> {t('explorer.success')}</span>;
-  if (status === 'failed') return <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive"><XCircle className="h-3.5 w-3.5" /> {t('explorer.failed')}</span>;
-  return <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground"><HelpCircle className="h-3.5 w-3.5" /> {t('explorer.unknown')}</span>;
-}
 
 function Row({ icon: Icon, label, children, t }) {
   return (
@@ -89,7 +85,7 @@ export default function PulseExplorerTx() {
           <div className="rounded-xl border border-border bg-card shadow-base">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold">{t('explorer.transactionDetails')}</h2>
-              <StatusBadge status={data.status} t={t} />
+              <StatusBadge status={data.status} />
             </div>
             <div className="divide-y divide-border">
               <Row icon={Hash} label={t('explorer.txnHash')} t={t}>
@@ -146,6 +142,18 @@ export default function PulseExplorerTx() {
               <div className="divide-y divide-border">
                 {data.token_transfers.map((tr, i) => (
                   <div key={i} className="px-4 py-3 text-sm">
+                    {tr.is_nft && tr.nft_image ? (
+                      <div className="mb-3 flex items-center gap-3">
+                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
+                          <Image src={tr.nft_image} alt={tr.nft_name || `NFT #${tr.token_id}`} fittingType="fill" className="h-full w-full" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold">{tr.nft_name || `NFT #${tr.token_id}`}</p>
+                          <p className="text-xs text-muted-foreground">Token ID: {tr.token_id}</p>
+                          <HashLink hash={tr.token_contract} to={`/blockchain/address/${tr.token_contract}`} prefixLen={8} suffixLen={6} />
+                        </div>
+                      </div>
+                    ) : null}
                     <div className="flex items-center gap-2 mb-1">
                       <ArrowDownLeft className="h-3.5 w-3.5 text-success" />
                       <span className="text-muted-foreground">{t('explorer.from')}</span>
@@ -158,7 +166,14 @@ export default function PulseExplorerTx() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">{t('explorer.for')}</span>
-                      <span className="font-mono font-medium">{formatTokenAmount(tr.value, tr.token_decimals)} {tr.token_symbol}</span>
+                      {tr.is_nft ? (
+                        <>
+                          <span className="font-mono font-medium">NFT #{tr.token_id}</span>
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">NFT</span>
+                        </>
+                      ) : (
+                        <span className="font-mono font-medium">{formatTokenAmount(tr.value, tr.token_decimals)} {tr.token_symbol}</span>
+                      )}
                       <span className="text-muted-foreground">·</span>
                       <HashLink hash={tr.token_contract} to={`/blockchain/address/${tr.token_contract}`} prefixLen={8} suffixLen={6} />
                     </div>

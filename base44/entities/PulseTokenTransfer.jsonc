@@ -2,7 +2,7 @@
   "name": "PulseTokenTransfer",
   "type": "object",
   "title": "PulseTokenTransfer",
-  "description": "org.swappulse.pulseTokenTransfer \u2014 an ERC-20 (or ERC-721) token transfer parsed from a PulseChain transaction receipt's Transfer event logs. Cached by the pulse-explorer-tx function on first detail view so repeated views are fast. One record per (tx_hash, log_index). Public read for the explorer UI.",
+  "description": "org.swappulse.pulseTokenTransfer \u2014 an ERC-20 or ERC-721 (NFT) token transfer parsed from a PulseChain transaction receipt's Transfer event logs. Cached by the pulse-explorer-tx function on first detail view so repeated views are fast. One record per (tx_hash, log_index). For ERC-721 transfers, is_nft is true, token_id holds the NFT token ID, and nft_name/nft_image hold metadata fetched from the contract's tokenURI. Public read for the explorer UI.",
   "properties": {
     "tx_hash": {
       "type": "string",
@@ -27,16 +27,33 @@
     "value": {
       "type": "string",
       "default": "0",
-      "description": "Amount transferred (base units, stored as string)"
+      "description": "Amount transferred (base units for ERC-20, '1' for ERC-721, stored as string)"
     },
     "token_symbol": {
       "type": "string",
-      "description": "Token symbol (e.g. PULSE, USDC) \u2014 fetched from the contract, cached here"
+      "description": "Token symbol (e.g. PULSE, USDC) \u2014 fetched from the contract, cached here. 'NFT' for ERC-721 transfers."
     },
     "token_decimals": {
       "type": "integer",
       "default": 18,
-      "description": "Token decimals (fetched from the contract, cached here)"
+      "description": "Token decimals (fetched from the contract, cached here). 0 for ERC-721 transfers."
+    },
+    "is_nft": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this is an ERC-721 (NFT) transfer. ERC-721 Transfer events have 4 indexed topics (from, to, tokenId) vs ERC-20's 3 (from, to)."
+    },
+    "token_id": {
+      "type": "string",
+      "description": "NFT token ID (for ERC-721 transfers). Empty for ERC-20 transfers."
+    },
+    "nft_name": {
+      "type": "string",
+      "description": "NFT name from metadata (for ERC-721 transfers). Fetched from the contract's tokenURI JSON. Empty for ERC-20."
+    },
+    "nft_image": {
+      "type": "string",
+      "description": "NFT image URL from metadata (for ERC-721 transfers). Fetched from the contract's tokenURI JSON. Empty for ERC-20."
     }
   },
   "required": [

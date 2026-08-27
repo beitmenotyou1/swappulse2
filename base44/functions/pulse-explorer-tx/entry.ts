@@ -8,7 +8,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import {
   getTransactionByHash, getTransactionReceipt, getBlockByNumber,
-  getTokenMetadata, decodeTransferLog,
+  getTokenMetadata, decodeTransferLog, getNftMetadata,
 } from '../../shared/pulseRpc.ts';
 
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
@@ -78,17 +78,44 @@ export default async function (req: Request): Promise<Response> {
         if (cached) {
           tokenTransfers.push(cached);
         } else {
-          const meta = await getTokenMetadata(log.address.toLowerCase()).catch(() => ({ symbol: '???', decimals: 18 }));
-          const record = {
-            tx_hash: hash,
-            log_index: logIndex,
-            token_contract: log.address.toLowerCase(),
-            from_address: decoded.from,
-            to_address: decoded.to,
-            value: decoded.value,
-            token_symbol: meta.symbol,
-            token_decimals: meta.decimals,
-          };
+          const contractAddr = log.address.toLowerCase();
+          let record: any;
+
+          if (decoded.is_nft) {
+            // ERC-721 transfer — fetch NFT metadata (name, image)
+            const nftMeta = await getNftMetadata(contractAddr, decoded.token_id!).catch(() => ({ name: '', image: '' }));
+            record = {
+              tx_hash: hash,
+              log_index: logIndex,
+              token_contract: contractAddr,
+              from_address: decoded.from,
+              to_address: decoded.to,
+              value: decoded.value,
+              token_symbol: 'NFT',
+              token_decimals: 0,
+              is_nft: true,
+              token_id: decoded.token_id,
+              nft_name: nftMeta.name,
+              nft_image: nftMeta.image,
+            };
+          } else {
+            // ERC-20 transfer — fetch token symbol + decimals
+            const meta = await getTokenMetadata(contractAddr).catch(() => ({ symbol: '???', decimals: 18 }));
+            record = {
+              tx_hash: hash,
+              log_index: logIndex,
+              token_contract: contractAddr,
+              from_address: decoded.from,
+              to_address: decoded.to,
+              value: decoded.value,
+              token_symbol: meta.symbol,
+              token_decimals: meta.decimals,
+              is_nft: false,
+              token_id: '',
+              nft_name: '',
+              nft_image: '',
+            };
+          }
           tokenTransfers.push(record);
           try { await svc.entities.PulseTokenTransfer.create(record); } catch { /* best-effort cache */ }
         }
@@ -123,7 +150,7 @@ export default async function (req: Request): Promise<Response> {
       timestamp,
       token_transfers: tokenTransfers,
       wallet_url: '/wallet',
-      explorer_url: `/pulse-explorer/tx/${hash}`,
+      explorer_url: `/blockchain/tx/${hash}`,
     });
   } catch (error: any) {
     return Response.json({ error: error?.message || 'Internal error' }, { status: 500 });
