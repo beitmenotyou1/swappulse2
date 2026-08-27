@@ -16,7 +16,15 @@ export default defineConfig({
     }),
     react(),
   ],
+  // Force re-optimization of deps on every server start to prevent stale
+  // chunks from creating duplicate React copies.
+  optimizeDeps: {
+    force: true,
+  },
   resolve: {
+    // Force a single copy of React/ReactDOM — prevents "Invalid hook call"
+    // crashes caused by duplicate React copies (stale Vite dep cache, etc.).
+    dedupe: ['react', 'react-dom'],
     alias: {
       // base44:runtime is a backend-only virtual module; mock it so Vite can
       // resolve shared modules that import it during the frontend build.

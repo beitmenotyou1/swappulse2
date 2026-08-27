@@ -1,5 +1,5 @@
 // SwapPulse Service Worker — PWA caching + web push notifications
-const CACHE_NAME = 'swappulse-v2';
+const CACHE_NAME = 'swappulse-v3';
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -16,9 +16,34 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Dev-asset bypass: never cache Vite dev-server assets. Serving stale chunks
+// from cache while the HTML loads fresh ones creates duplicate React copies
+// and "Invalid hook call" crashes. Pass these straight to the network.
+function isDevAsset(url) {
+  return (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules/') ||
+    url.pathname.startsWith('/@vite/') ||
+    url.pathname.startsWith('/@react-refresh') ||
+    url.pathname.includes('.vite/deps/') ||
+    /\.(m?js|jsx|ts|tsx|css|map)$/.test(url.pathname) ||
+    url.searchParams.has('v') ||
+    url.searchParams.has('t')
+  );
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // Dev assets: always network-only, never cache.
+  if (isDevAsset(url)) {
+    event.respondWith(fetch(request).catch(() => Response.error()));
+    return;
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(() => caches.match('/index.html')));
     return;
