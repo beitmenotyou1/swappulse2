@@ -90,11 +90,11 @@ export default function PulseExplorerAddress() {
                 </span>
               </div>
               <div className="flex items-center justify-between gap-4 px-4 py-3">
-                <span className="text-sm text-muted-foreground">{t('explorer.nonce')}</span>
+                <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><ListOrdered className="h-4 w-4" /> {t('explorer.nonce')}</span>
                 <span className="font-mono text-sm">{formatNumber(data.nonce)}</span>
               </div>
               <div className="flex items-center justify-between gap-4 px-4 py-3">
-                <span className="text-sm text-muted-foreground">{t('explorer.transactions')}</span>
+                <span className="inline-flex items-center gap-2 text-sm text-muted-foreground"><ArrowRightLeft className="h-4 w-4" /> {t('explorer.transactions')}</span>
                 <span className="font-mono text-sm">{formatNumber(data.total)} ({formatNumber(data.pages)} {data.pages === 1 ? t('explorer.pageSingular') : t('explorer.pagePlural')})</span>
               </div>
             </div>
@@ -109,7 +109,7 @@ export default function PulseExplorerAddress() {
           {/* Transaction history */}
           <div className="rounded-xl border border-border bg-card shadow-base">
             <div className="border-b border-border px-4 py-3">
-              <h2 className="text-sm font-semibold">{t('explorer.transactionHistory')}</h2>
+              <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><ArrowRightLeft className="h-4 w-4 text-primary" /> {t('explorer.transactionHistory')}</h2>
             </div>
             <TransactionsTable transactions={data.transactions || []} showDirection symbol={symbol} />
             {data.pages > 1 && (
@@ -117,17 +117,17 @@ export default function PulseExplorerAddress() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs transition-colors hover:bg-secondary disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs transition-colors hover:bg-secondary disabled:opacity-40"
                 >
-                  ← {t('explorer.prev')}
+                  <ChevronLeft className="h-3.5 w-3.5" /> {t('explorer.prev')}
                 </button>
                 <span className="text-muted-foreground">{t('explorer.pageOf', { page: data.page, pages: data.pages })}</span>
                 <button
                   onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
                   disabled={page >= data.pages}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs transition-colors hover:bg-secondary disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs transition-colors hover:bg-secondary disabled:opacity-40"
                 >
-                  {t('explorer.next')} →
+                  {t('explorer.next')} <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}
