@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Activity, Boxes, Zap, Database, Bookmark, X } from 'lucide-react';
+import { ArrowLeft, Activity, Zap, Database, Bookmark, X } from 'lucide-react';
+import { Image } from '@/components/ui/image';
+
+const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/32ce16a82_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.png';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber } from '@/lib/explorerFormat';
@@ -48,9 +51,12 @@ export default function ExplorerLayout() {
         <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
           {/* Logo */}
           <Link to="/blockchain" className="flex shrink-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-hover text-white shadow-raised sm:h-9 sm:w-9 sm:rounded-xl">
-              <Boxes className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
+            <Image
+              src={LOGO_URL}
+              alt="SwapPulse"
+              fittingType="fit"
+              className="h-8 w-8 rounded-lg sm:h-9 sm:w-9"
+            />
             <span className="hidden text-lg font-extrabold tracking-tight md:inline">
               <span className="text-gradient-pulse">PulseChain</span> Explorer
             </span>

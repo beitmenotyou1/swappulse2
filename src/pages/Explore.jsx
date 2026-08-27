@@ -3,6 +3,7 @@ import { Search, Loader2, Flame, CheckSquare, Square, Heart, X } from 'lucide-re
 import { searchCardsMulti, getSets, localeToTcgdexLang, rarityKey } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
+import { Image } from '@/components/ui/image';
 import { Link, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -25,6 +26,7 @@ import PullToRefresh from '@/components/PullToRefresh';
 
 export default function Explore() {
   const tr = useT();
+  const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/32ce16a82_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.png';
   useSEO({
     title: 'Explore Cards',
     description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
@@ -203,7 +205,18 @@ export default function Explore() {
 
   return (
     <div>
-      <PageHeader title={tr('page.explore.title')} subtitle={tr('page.explore.subtitle')} />
+      <PageHeader
+        title={tr('page.explore.title')}
+        subtitle={tr('page.explore.subtitle')}
+        icon={
+          <Image
+            src={LOGO_URL}
+            alt="SwapPulse"
+            fittingType="fit"
+            className="h-9 w-9 rounded-lg"
+          />
+        }
+      />
       <PullToRefresh onRefresh={handleRefresh}>
       <div className="border-b border-border p-4 space-y-3">
         <div className="flex gap-1 rounded-full bg-secondary p-1">

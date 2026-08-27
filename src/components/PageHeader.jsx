@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 
 const HIDE_BACK_PATHS = ['/', '/explore', '/trades', '/collection'];
 
-export default function PageHeader({ title, subtitle, children }) {
+export default function PageHeader({ title, subtitle, icon, children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const canGoBack = !HIDE_BACK_PATHS.includes(location.pathname);
@@ -21,6 +21,7 @@ export default function PageHeader({ title, subtitle, children }) {
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
+          {icon && <div className="shrink-0">{icon}</div>}
           <div className="min-w-0">
             <h1 className="truncate text-xl font-extrabold tracking-tight">{title}</h1>
             {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
