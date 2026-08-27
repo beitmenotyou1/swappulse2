@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { EXPLORER_CHAINS, getChainMeta } from '@/lib/explorerChains';
 import { getActiveChain, setActiveChain } from '@/lib/explorerChain';
+import ChainLogo from './ChainLogo';
 
 // Compact chain selector dropdown for the explorer top navigation.
 // Shows the current chain name + symbol; opens a dropdown to switch.
@@ -42,6 +43,7 @@ export default function ExplorerChainDropdown() {
         aria-expanded={open}
       >
         {meta.isMain && <Check className="h-3 w-3 text-primary" />}
+        <ChainLogo chainKey={selected} size={16} />
         <span className="max-w-[80px] truncate sm:max-w-none">{meta.name}</span>
         <span className="hidden text-[10px] text-muted-foreground sm:inline">{meta.symbol}</span>
         <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -66,6 +68,7 @@ export default function ExplorerChainDropdown() {
               >
                 <span className="flex items-center gap-2">
                   {chain.isMain && <span className="text-primary">★</span>}
+                  <ChainLogo chainKey={chain.key} size={16} />
                   {chain.name}
                 </span>
                 <span className="flex items-center gap-1.5">

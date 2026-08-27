@@ -6,6 +6,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber, formatGwei, formatPls } from '@/lib/explorerFormat';
 import { getActiveChain, setActiveChain } from '@/lib/explorerChain';
 import { getChainMeta } from '@/lib/explorerChains';
+import ChainLogo from './ChainLogo';
 
 // Collapsible comparison table showing gas price and recent transaction
 // volume for all supported chains. Helps users pick the best chain for
@@ -126,6 +127,7 @@ export default function ChainComparisonTable() {
                           <td className="px-4 py-3">
                             <span className="inline-flex items-center gap-2">
                               {chain.isMain && <span className="text-primary">★</span>}
+                              <ChainLogo chainKey={chain.key} size={18} />
                               <span className="font-semibold">{chain.name}</span>
                               {isBest && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
@@ -178,6 +180,7 @@ export default function ChainComparisonTable() {
                       <div className="flex items-center justify-between">
                         <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
                           {chain.isMain && <span className="text-primary">★</span>}
+                          <ChainLogo chainKey={chain.key} size={16} />
                           {chain.name}
                           {isBest && <Trophy className="h-3.5 w-3.5 text-primary" />}
                         </span>

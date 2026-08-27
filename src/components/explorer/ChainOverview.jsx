@@ -5,6 +5,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 import { formatNumber } from '@/lib/explorerFormat';
 import { OVERVIEW_CHAIN_KEYS, getChainMeta } from '@/lib/explorerChains';
 import { getActiveChain, setActiveChain } from '@/lib/explorerChain';
+import ChainLogo from './ChainLogo';
 
 // Grid of chain cards showing each chain's current block height.
 // Gives a quick multi-chain overview on the explorer homepage.
@@ -38,7 +39,8 @@ export default function ChainOverview({ chains = [] }) {
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-bold ${meta.isMain ? 'text-primary' : 'text-foreground'}`}>
+              <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${meta.isMain ? 'text-primary' : 'text-foreground'}`}>
+                <ChainLogo chainKey={key} size={16} />
                 {meta.isMain && `${t('explorer.main')} · `}{meta.name}
               </span>
               {isUnreachable ? (

@@ -11,6 +11,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ExplorerSearchBar from './ExplorerSearchBar';
 import ExplorerChainDropdown from './ExplorerChainDropdown';
 import BookmarkPanel from './BookmarkPanel';
+import ChainLogo from './ChainLogo';
 import { getActiveChain } from '@/lib/explorerChain';
 
 // Standalone full-screen layout for the blockchain explorer. Escapes the
@@ -96,6 +97,7 @@ export default function ExplorerLayout() {
             <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 text-xs sm:gap-x-6 sm:px-4">
               {chainInfo && (
                 <span className="inline-flex items-center gap-1.5 font-bold text-foreground">
+                  <ChainLogo chainKey={chainKey} size={16} />
                   {chainInfo.isMain && <span className="text-primary">★</span>}
                   {chainInfo.name}
                 </span>

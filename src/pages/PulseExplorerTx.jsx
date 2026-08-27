@@ -15,6 +15,7 @@ import { Image } from '@/components/ui/image';
 import { explainTransaction } from '@/lib/explorerExplain';
 import { getActiveChain } from '@/lib/explorerChain';
 import { getChainMeta } from '@/lib/explorerChains';
+import ChainLogo from '@/components/explorer/ChainLogo';
 import {
   formatPls, formatGwei, formatNumber, formatTimestamp, formatAge, formatTokenAmount,
 } from '@/lib/explorerFormat';
@@ -65,6 +66,7 @@ export default function PulseExplorerTx() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link to="/blockchain" className="hover:text-foreground">{t('explorer.title')}</Link>
         <span>/</span>
+        <ChainLogo chainKey={chainKey} size={16} />
         <span className="text-foreground">{t('explorer.transaction')}</span>
       </div>
 
@@ -91,7 +93,9 @@ export default function PulseExplorerTx() {
           {/* Transaction detail card */}
           <div className="rounded-xl border border-border bg-card shadow-base">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h2 className="text-sm font-semibold">{t('explorer.transactionDetails')}</h2>
+              <h2 className="inline-flex items-center gap-2 text-sm font-semibold">
+                <ChainLogo chainKey={chainKey} size={20} /> {t('explorer.transactionDetails')}
+              </h2>
               <StatusBadge status={data.status} />
             </div>
             <div className="divide-y divide-border">

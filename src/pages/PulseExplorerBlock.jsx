@@ -10,6 +10,7 @@ import ExplainBox from '@/components/explorer/ExplainBox';
 import { explainBlock } from '@/lib/explorerExplain';
 import { getActiveChain } from '@/lib/explorerChain';
 import { getChainMeta } from '@/lib/explorerChains';
+import ChainLogo from '@/components/explorer/ChainLogo';
 import { formatNumber, formatTimestamp, formatAge } from '@/lib/explorerFormat';
 
 function Row({ icon: Icon, label, children }) {
@@ -59,6 +60,7 @@ export default function PulseExplorerBlock() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link to="/blockchain" className="hover:text-foreground">{t('explorer.title')}</Link>
         <span>/</span>
+        <ChainLogo chainKey={chainKey} size={16} />
         <span className="text-foreground">{t('explorer.block')} #{blockNumber}</span>
       </div>
 

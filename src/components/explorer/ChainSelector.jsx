@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { EXPLORER_CHAINS } from '@/lib/explorerChains';
 import { getActiveChain, setActiveChain } from '@/lib/explorerChain';
+import ChainLogo from './ChainLogo';
 
 // Horizontal scrollable chain selector — pills for each supported chain.
 // PulseChain is first (main chain). Persists selection to URL + localStorage.
@@ -29,6 +30,7 @@ export default function ChainSelector() {
             }`}
           >
             {chain.isMain && <Check className="h-3 w-3" />}
+            <ChainLogo chainKey={chain.key} size={16} />
             {chain.name}
             <span className={`text-[10px] ${isActive ? 'text-primary-foreground/70' : 'text-muted-foreground/60'}`}>
               {chain.symbol}

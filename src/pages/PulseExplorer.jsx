@@ -14,6 +14,7 @@ import ChainComparisonTable from '@/components/explorer/ChainComparisonTable';
 import PulseChainSummary from '@/components/explorer/PulseChainSummary';
 import { formatNumber } from '@/lib/explorerFormat';
 import { getChainMeta } from '@/lib/explorerChains';
+import ChainLogo from '@/components/explorer/ChainLogo';
 
 function StatCard({ icon: Icon, value, label, accent = 'primary' }) {
   const accentClasses = {
@@ -130,7 +131,7 @@ export default function PulseExplorer() {
               <h2 className="inline-flex items-center gap-2 text-sm font-semibold">
                 <Boxes className="h-4 w-4 text-primary" /> {t('explorer.latestBlocks')}
               </h2>
-              <span className="text-xs text-muted-foreground">{chain?.name}</span>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><ChainLogo chainKey={chainKey} size={14} /> {chain?.name}</span>
             </div>
             <BlocksTable blocks={blocks} />
           </section>
@@ -140,7 +141,7 @@ export default function PulseExplorer() {
               <h2 className="inline-flex items-center gap-2 text-sm font-semibold">
                 <ArrowRightLeft className="h-4 w-4 text-primary" /> {t('explorer.latestTransactions')}
               </h2>
-              <span className="text-xs text-muted-foreground">{chain?.name}</span>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><ChainLogo chainKey={chainKey} size={14} /> {chain?.name}</span>
             </div>
             <TransactionsTable transactions={txs} symbol={symbol} />
           </section>

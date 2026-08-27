@@ -11,6 +11,7 @@ import AddressNfts from '@/components/explorer/AddressNfts';
 import BookmarkButton from '@/components/explorer/BookmarkButton';
 import { getActiveChain } from '@/lib/explorerChain';
 import { getChainMeta } from '@/lib/explorerChains';
+import ChainLogo from '@/components/explorer/ChainLogo';
 import { formatPls, formatNumber } from '@/lib/explorerFormat';
 
 export default function PulseExplorerAddress() {
@@ -65,7 +66,9 @@ export default function PulseExplorerAddress() {
           {/* Address overview card */}
           <div className="rounded-xl border border-border bg-card shadow-base">
             <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-              <h2 className="text-sm font-semibold">{t('explorer.addressOverview')}</h2>
+              <h2 className="inline-flex items-center gap-2 text-sm font-semibold">
+                <ChainLogo chainKey={chainKey} size={20} /> {t('explorer.addressOverview')}
+              </h2>
               <BookmarkButton address={data.address} chain={chainKey} />
             </div>
             <div className="divide-y divide-border">
