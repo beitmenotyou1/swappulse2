@@ -79,13 +79,16 @@ export default function PulseTreasuryFundingSection({ pendingAction }) {
               params: [{ chainId: targetChainId }],
             });
           } catch (switchError) {
-            // Chain not added to MetaMask — try to add it
-            if (switchError.code === 4902) {
-              setError('PulseChain network not found in MetaMask. Please add the PulseChain network manually, then try again.');
-              setFunding(false);
-              return;
+            // Chain not added to MetaMask (error 4902) — auto-add it via EIP-3085
+            if (switchError.code === 4902 && status.network_params) {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [status.network_params],
+              });
+              // MetaMask auto-switches to the newly added chain
+            } else {
+              throw switchError;
             }
-            throw switchError;
           }
         }
       }

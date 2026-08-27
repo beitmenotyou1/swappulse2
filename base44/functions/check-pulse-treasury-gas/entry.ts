@@ -39,6 +39,19 @@ export default async function (req: Request): Promise<Response> {
     const recommendedFundWei = BigInt(Math.ceil(GAS_PER_TX_PLS * RECOMMENDED_TX_COUNT * 1e18));
     const needsFunding = nativeBalance < recommendedFundWei;
 
+    const rpcUrl = secrets.get('PULSE_RPC_URL') || '';
+    const explorerUrl = secrets.get('PULSE_EXPLORER_URL') || '';
+
+    // PulseChain native currency metadata for MetaMask network addition (EIP-3085)
+    const isTestnet = chainId === 943;
+    const network_params = {
+      chainId: `0x${chainId.toString(16)}`,
+      chainName: isTestnet ? 'PulseChain V4 Testnet' : 'PulseChain',
+      nativeCurrency: { name: 'Pulse', symbol: 'PLS', decimals: 18 },
+      rpcUrls: [rpcUrl],
+      blockExplorerUrls: explorerUrl ? [explorerUrl] : [],
+    };
+
     return Response.json({
       treasury_address: wallet.address,
       chain_id: chainId,
@@ -49,7 +62,8 @@ export default async function (req: Request): Promise<Response> {
       needs_funding: needsFunding,
       recommended_fund_wei: recommendedFundWei.toString(),
       recommended_fund_pls: Number(ethers.formatEther(recommendedFundWei)).toFixed(4),
-      rpc_url_configured: !!secrets.get('PULSE_RPC_URL'),
+      rpc_url_configured: !!rpcUrl,
+      network_params,
     });
   } catch (error: any) {
     console.error('check-pulse-treasury-gas error:', error?.message || error);
