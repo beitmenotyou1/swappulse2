@@ -2,7 +2,7 @@
   "name": "WalletBalance",
   "type": "object",
   "title": "WalletBalance",
-  "description": "org.swappulse.walletBalance \u2014 a collector's dual-currency wallet balance tracking fiat_cents (from Stripe top-ups, pre-conversion) and usdc_wei (USDC on Polygon, post-conversion or received). Linked to the user's CustodialWallet by did + wallet_address. One record per user. All balance mutations go through backend functions to ensure atomicity and fee collection. Includes a user-configurable low_balance_threshold_cents for automated low-balance alerts.",
+  "description": "DEPRECATED / QUARANTINED legacy custodial wallet balance entity. Not part of the current SwapPulse architecture. Retained only for audit/history; user access and creation are disabled.",
   "properties": {
     "did": {
       "type": "string",
