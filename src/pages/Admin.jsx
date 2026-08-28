@@ -10,6 +10,7 @@ import IncidentsSection from '@/components/admin/IncidentsSection';
 import ServicesSection from '@/components/admin/ServicesSection';
 import MaintenanceSection from '@/components/admin/MaintenanceSection';
 import BackfillSection from '@/components/admin/BackfillSection';
+import PrivacyAuditSection from '@/components/admin/PrivacyAuditSection';
 import ProvisionIdentitiesSection from '@/components/admin/ProvisionIdentitiesSection';
 import ConsolidateIdentitySection from '@/components/admin/ConsolidateIdentitySection';
 import SyncProfilesSection from '@/components/admin/SyncProfilesSection';
@@ -118,6 +119,7 @@ export default function Admin() {
             <ProvisionIdentitiesSection />
             <ConsolidateIdentitySection />
             <FederationDiagnosticsSection />
+            <PrivacyAuditSection />
             <SyncProfilesSection />
             <BackfillSection />
           </>
