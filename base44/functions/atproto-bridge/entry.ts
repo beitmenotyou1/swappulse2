@@ -110,13 +110,16 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'You can only delete your own records' }, { status: 403 });
       }
       const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
+      if (repoDidFromUri !== session.did) {
+        return Response.json({ error: 'Record repository does not match authenticated PDS identity' }, { status: 403 });
+      }
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.deleteRecord',
         { repo: session.did, collection: collectionFromUri, rkey },
       );
       if (result?.error && result.status === 401) {
         clearPdsSession();
-        const fresh = await resolveBridgeSession(req);
+        const fresh = await resolveCallerBridgeSession(req, caller);
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.deleteRecord',
           { repo: fresh.session.did, collection: collectionFromUri, rkey },
@@ -154,13 +157,16 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'You can only update your own records' }, { status: 403 });
       }
       const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
+      if (repoDidFromUri !== session.did) {
+        return Response.json({ error: 'Record repository does not match authenticated PDS identity' }, { status: 403 });
+      }
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord',
         { repo: session.did, collection, rkey, record },
       );
       if (result?.error && result.status === 401) {
         clearPdsSession();
-        const fresh = await resolveBridgeSession(req);
+        const fresh = await resolveCallerBridgeSession(req, caller);
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.putRecord',
           { repo: fresh.session.did, collection, rkey, record },
@@ -187,7 +193,7 @@ Deno.serve(async (req) => {
       );
       if (result?.error && result.status === 401) {
         clearPdsSession();
-        const fresh = await resolveBridgeSession(req);
+        const fresh = await resolveCallerBridgeSession(req, caller);
         result = await pdsRequest(
           fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.label.emitLabels',
           { labels },
@@ -282,14 +288,14 @@ Deno.serve(async (req) => {
     if (collection === 'app.bsky.feed.post') {
       attachRichTextFacets(record);
     }
-    const { pdsUrl, session } = await resolveBridgeSession(req);
+    const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
     let result: any = await pdsRequest(
       pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord',
       { repo: session.did, collection, record },
     );
     if (result?.error && result.status === 401) {
       clearPdsSession();
-      const fresh = await resolveBridgeSession(req);
+      const fresh = await resolveCallerBridgeSession(req, caller);
       result = await pdsRequest(
         fresh.pdsUrl, fresh.session.accessJwt, 'com.atproto.repo.createRecord',
         { repo: fresh.session.did, collection, record },
