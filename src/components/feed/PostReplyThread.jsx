@@ -63,11 +63,18 @@ export default function PostReplyThread({ parentPost, showFullThreadLink = true,
     try {
       // Fetch all descendants: posts whose root_uri points at this post, plus
       // direct replies (reply_to) for threads where root_uri is not set.
-      const [byRoot, byReply, byParent] = await Promise.all([
-        base44.entities.Post.filter({ root_uri: parentPost.at_uri || '' }, '-created_date', 200).catch(() => []),
-        base44.entities.Post.filter({ reply_to: parentPost.id }, '-created_date', 200).catch(() => []),
-        base44.entities.Post.filter({ parent_uri: parentPost.at_uri || '' }, '-created_date', 200).catch(() => []),
+      const [byRootRes, byReplyRes, byParentRes] = await Promise.all([
+        parentPost.at_uri
+          ? base44.functions.invoke('get-visible-posts', { root_uri: parentPost.at_uri, limit: 100 }).catch(() => null)
+          : Promise.resolve(null),
+        base44.functions.invoke('get-visible-posts', { reply_to: parentPost.id, limit: 100 }).catch(() => null),
+        parentPost.at_uri
+          ? base44.functions.invoke('get-visible-posts', { parent_uri: parentPost.at_uri, limit: 100 }).catch(() => null)
+          : Promise.resolve(null),
       ]);
+      const byRoot = byRootRes?.data?.items || [];
+      const byReply = byReplyRes?.data?.items || [];
+      const byParent = byParentRes?.data?.items || [];
       const merge = new Map();
       [...byRoot, ...byReply, ...byParent].forEach((p) => merge.set(p.id, p));
       const list = Array.from(merge.values()).sort((a, b) => {
