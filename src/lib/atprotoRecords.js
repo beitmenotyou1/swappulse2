@@ -5,42 +5,12 @@
 // via the atproto-bridge backend function. On success the entity's at_uri +
 // cid are updated with the real PDS values, marking the record as bridged.
 //
-// Usage (frontend, after creating/updating an entity):
-//   import { bridgeCollectionEntry, bridgeTradeListing } from '@/lib/atprotoRecords';
-//   const bridged = await bridgeCollectionEntry(entry);
-//   if (bridged) await base44.entities.CollectionEntry.update(entry.id, bridged);
+// Privacy note: raw CollectionEntry records are private application data and
+// are not serialized to AT Protocol. Public collection federation will use a
+// sanitised projection in Phase 1.
 
 import { base44 } from '@/api/base44Client';
 import { NSID, ensureUserDid, stampRecord } from '@/lib/atproto';
-
-// --- CollectionEntry: entity row → AT Protocol record ---
-
-export function buildCollectionEntryRecord(entry, authorDid = '', authorName = '', authorHandle = '', authorAvatar = '') {
-  return {
-    $type: NSID.COLLECTION_ENTRY,
-    cardUri: entry.card_id || '',
-    cardName: entry.card_name || '',
-    setName: entry.set_name || '',
-    setCode: entry.set_id || '',
-    cardNumber: entry.local_id || '',
-    rarity: entry.rarity || '',
-    category: entry.category || '',
-    imageUrl: entry.card_image || '',
-    condition: entry.condition || 'near_mint',
-    variant: entry.variant || 'normal',
-    acquisitionDate: entry.acquisition_date || '',
-    purchasePrice: entry.purchase_price ?? 0,
-    marketValue: entry.market_value ?? 0,
-    notes: entry.notes || '',
-    showcased: entry.showcased ?? false,
-    binderIndex: entry.binder_index ?? 0,
-    authorDid: authorDid || '',
-    authorName: authorName || '',
-    authorHandle: authorHandle || '',
-    authorAvatar: authorAvatar || '',
-    createdAt: entry.created_date || new Date().toISOString(),
-  };
-}
 
 // --- TradeListing: entity row → AT Protocol record ---
 
@@ -94,7 +64,7 @@ async function bridgeRecord(entityName, record, nsid, entityId) {
   return stamped;
 }
 
-export async function bridgeCollectionEntry(entry) {
+export async function bridgeCollectionEntry() {
   // Privacy containment: CollectionEntry is private Base44 source data.
   // Public federation will use a sanitised projection in Phase 1.
   return { bridged: false, privacy_mode: true };
@@ -150,7 +120,7 @@ export async function updateBridgedTradeListing(listing) {
 // copy reflects the new state. The at_uri stays the same (putRecord replaces in
 // place); only the cid changes. Author fields are re-read from the current user
 // so the federated record keeps its author metadata. No-op if not bridged.
-export async function updateBridgedCollectionEntry(entry) {
+export async function updateBridgedCollectionEntry() {
   // Privacy containment: raw collection entries are no longer updated on PDS.
   return null;
 }
