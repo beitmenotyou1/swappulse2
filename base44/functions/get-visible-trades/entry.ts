@@ -29,6 +29,8 @@ export default async function (req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const listingId = String(body.listing_id || body.listingId || '').trim();
     const status = body.status ? String(body.status) : '';
+    const did = body.did ? String(body.did).trim() : '';
+    const cardId = body.card_id ? String(body.card_id).trim() : '';
     const limit = Math.min(Math.max(Number(body.limit) || 50, 1), 100);
 
     const wishlist = viewer?.did
@@ -45,12 +47,19 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ listing });
     }
 
-    const query: any = status ? { status } : {};
-    const rows = await svc.entities.TradeListing.filter(query, '-created_date', Math.min(limit * 4, 400)).catch(() => []);
+    const query: any = {};
+    if (status) query.status = status;
+    if (did) query.did = did;
+    const rows = await svc.entities.TradeListing.filter(query, '-created_date', Math.min(limit * 6, 500)).catch(() => []);
     const now = Date.now();
     const visible: any[] = [];
     for (const row of rows || []) {
       if (row.expires_at && new Date(row.expires_at).getTime() < now) continue;
+      if (cardId) {
+        const offered = Array.isArray(row.offer_card_ids) && row.offer_card_ids.includes(cardId);
+        const wanted = Array.isArray(row.wanted_card_ids) && row.wanted_card_ids.includes(cardId);
+        if (!offered && !wanted) continue;
+      }
       if (await canViewListing(svc, row, viewer, wishlistIds)) visible.push(row);
       if (visible.length >= limit) break;
     }
