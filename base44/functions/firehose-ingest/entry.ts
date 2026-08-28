@@ -26,6 +26,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
+import { shouldIngestFederatedRecord, isNeverFederated } from '../../shared/federationPolicy.ts';
 import { blobRefCid, pullProfileFromPds, constructBskyCdnUrl } from '../../shared/profileSync.ts';
 import { getUserIdentity } from '../../shared/userIdentity.ts';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
@@ -611,10 +612,9 @@ export default async function(req: Request): Promise<Response> {
     const collectionStats: Record<string, number> = {};
 
     for (const [collection, entityName] of Object.entries(COLLECTIONS)) {
-      // Privacy containment: CollectionEntry is no longer federated source
-      // data in either direction. Historical PDS copies are removed by
-      // outbound-reconcile; do not ingest or re-create them locally.
-      if (collection === 'org.swappulse.collectionEntry') continue;
+      // Private/local-only collections never participate in the public AT repo
+      // sync. Historical PDS copies are removed by outbound-reconcile.
+      if (isNeverFederated(collection)) continue;
       const mapper = FIELD_MAPPERS[collection];
       if (!mapper) continue;
       collectionStats[collection] = 0;
@@ -705,6 +705,10 @@ export default async function(req: Request): Promise<Response> {
                 if (existing && existing.length > 0) continue;
               }
 
+              if (!shouldIngestFederatedRecord(collection, val)) {
+                records_skipped++;
+                continue;
+              }
               const mapped = mapper(val, atUri, repoDid, profile);
               const { created: isNew, id: createdId } = await upsertEntity(svc, entityName, mapped, atUri);
               if (isNew) ingested++; else updated++;
