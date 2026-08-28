@@ -25,6 +25,11 @@ pub mod SwapPulseAccount {
 
     use super::ISwapPulseAccount;
 
+    // Recovery delays are constrained on-chain, not just in the website UI.
+    // Thirty days is intentionally generous for the private testnet while
+    // preventing accidental effectively-permanent recovery locks.
+    const MAX_RECOVERY_DELAY_SECONDS: u64 = 2_592_000;
+
     component!(path: AccountComponent, storage: account, event: AccountEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
@@ -103,6 +108,7 @@ pub mod SwapPulseAccount {
         recovery_delay: u64,
     ) {
         assert(public_key != 0, 'INVALID_PUBLIC_KEY');
+        assert(recovery_delay <= MAX_RECOVERY_DELAY_SECONDS, 'RECOVERY_DELAY_TOO_LONG');
         self.account.initializer(public_key);
         self.recovery_controller.write(recovery_controller);
         self.recovery_delay.write(recovery_delay);
@@ -138,6 +144,7 @@ pub mod SwapPulseAccount {
 
         fn set_recovery_delay(ref self: ContractState, delay_seconds: u64) {
             self.account.assert_only_self();
+            assert(delay_seconds <= MAX_RECOVERY_DELAY_SECONDS, 'RECOVERY_DELAY_TOO_LONG');
             let old_delay = self.recovery_delay.read();
             self.recovery_delay.write(delay_seconds);
             self.emit(RecoveryDelayChanged { old_delay, new_delay: delay_seconds });
