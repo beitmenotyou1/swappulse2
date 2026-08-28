@@ -1,0 +1,35 @@
+{
+  "name": "ScannerFixSentinel",
+  "type": "object",
+  "title": "ScannerFixSentinel",
+  "description": "DEPRECATED empty verification sentinel accidentally created during the 2026-08-28 security audit. Contains no records or application data. Admin-only and unused; remove when schema deletion is available.",
+  "properties": {
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "required": []
+}
