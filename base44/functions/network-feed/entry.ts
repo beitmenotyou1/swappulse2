@@ -89,10 +89,13 @@ Deno.serve(async (req) => {
     const { pdsUrl, session } = await getSession();
     const svc = base44.asServiceRole;
 
-    const collections =
-      type === 'trades' ? ['org.swappulse.tradeListing']
-      : type === 'collections' ? ['org.swappulse.collectionEntry']
-      : ['org.swappulse.tradeListing', 'org.swappulse.collectionEntry'];
+    // Privacy containment: raw CollectionEntry records are no longer a public
+    // federation surface. Historical PDS copies may still exist until the
+    // remediation pass completes, so never return them through this API.
+    if (type === 'collections') {
+      return Response.json({ items: [], total: 0, source: 'privacy-contained', privacy_mode: true });
+    }
+    const collections = ['org.swappulse.tradeListing'];
 
     // Fetch recent records from the PDS in parallel
     const fetches = collections.map((col) =>
@@ -111,12 +114,8 @@ Deno.serve(async (req) => {
     const uriSet = new Set(allRecords.map((r) => r.uri));
     const entityMap = new Map<string, any>();
     if (uriSet.size) {
-      const [trades, entries] = await Promise.all([
-        svc.entities.TradeListing.list('-created_date', 500).catch(() => []),
-        svc.entities.CollectionEntry.list('-created_date', 500).catch(() => []),
-      ]);
+      const trades = await svc.entities.TradeListing.list('-created_date', 500).catch(() => []);
       for (const t of trades) if (t.at_uri && uriSet.has(t.at_uri)) entityMap.set(t.at_uri, t);
-      for (const c of entries) if (c.at_uri && uriSet.has(c.at_uri)) entityMap.set(c.at_uri, c);
     }
 
     // Build enriched feed items
