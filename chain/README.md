@@ -88,12 +88,15 @@ At minimum:
 
 `REGISTERED` is reserved for a later reconciliation worker that reads `IdentityRegistry` from the testnet. Base44 must not promote itself to blockchain authority.
 
-Required backend configuration after the contracts are compiled and deployed:
+Required network configuration after the contracts are compiled and deployed is stored in the admin-only `ChainNetworkConfig` entity and managed through `chain-identity-admin`:
 
-- `SWAPPULSE_ACCOUNT_CLASS_HASH`
-- `SWAPPULSE_IDENTITY_REGISTRY_ADDRESS`
-- `SWAPPULSE_RECOVERY_CONTROLLER` (optional during early testing; zero disables recovery)
-- `SWAPPULSE_RECOVERY_DELAY_SECONDS` (defaults to 172800 / 48 hours)
+- `account_class_hash`
+- `identity_registry_address`
+- `recovery_controller` (optional during early testing; empty disables recovery)
+- `recovery_delay_seconds` (defaults to 172800 / 48 hours)
+- optional public `rpc_url` and `explorer_url`
+
+These values are public blockchain deployment metadata, not secrets. Private RPC credentials, private keys, seed phrases, and passkey secret material must never be stored in `ChainNetworkConfig`.
 
 ## Next milestone
 
