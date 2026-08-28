@@ -79,20 +79,8 @@ export default function WebAuthnSection() {
     setError("");
     try {
       await base44.entities.WebAuthnCredential.delete(cred.id);
-      // Also remove from any active CustodialWallet (unified passkey list)
-      const userDid = user?.data?.did || user?.did;
-      if (userDid) {
-        try {
-          const wallets = await base44.entities.CustodialWallet.filter({ did: userDid, active: true });
-          for (const w of wallets) {
-            const updated = (w.passkey_credential_ids || []).filter((id) => id !== cred.credential_id);
-            await base44.entities.CustodialWallet.update(w.id, {
-              passkey_credential_ids: updated,
-              has_passkey: updated.length > 0,
-            });
-          }
-        } catch {}
-      }
+      // Account passkeys are intentionally independent from the quarantined
+      // legacy custodial-wallet subsystem.
       await loadCredentials();
       // If no credentials remain, clear webauthn_enabled
       if (credentials.length <= 1) {
