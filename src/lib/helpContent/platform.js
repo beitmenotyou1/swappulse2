@@ -424,52 +424,6 @@ export const accountPages = {
     ],
   },
 
-  wallet: {
-    title: 'Wallet',
-    subtitle: 'Custodial multi-chain wallet and payments',
-    sections: [
-      { icon: 'Wallet', title: 'What is the SwapPulse Wallet?', blocks: [
-        { type: 'p', text: 'The SwapPulse Wallet is a custodial multi-chain wallet that lets you hold fiat and cryptocurrency for trades, purchases, and conversions. It supports EVM chains (Polygon, Ethereum, Arbitrum, Optimism, Base), Solana, and Bitcoin-family coins (BTC, BCH, DOGE, LTC). All private keys are AES-256 encrypted and gated by passkey or optional PIN.' },
-      ]},
-      { icon: 'CreditCard', title: 'Fiat top-ups', blocks: [
-        { type: 'steps', items: [
-          'Go to your Wallet and click Top Up.',
-          'Choose an amount in GBP, EUR, or USD (minimum £5).',
-          'Pay by card via Stripe. A 2% platform fee is collected on every top-up.',
-          'The fiat balance appears in your wallet and can be used for trades or converted to USDC.',
-        ]},
-      ]},
-      { icon: 'ArrowLeftRight', title: 'Converting fiat to USDC', blocks: [
-        { type: 'p', text: 'Convert your fiat balance to USDC on Polygon using the built-in DEX aggregator. A 2% fee applies to every conversion. USDC can be used for on-chain trades, card purchases via escrow, and sends to external wallets.' },
-      ]},
-      { icon: 'Send', title: 'Sending crypto', blocks: [
-        { type: 'p', text: 'Send USDC or native tokens to any compatible wallet address. Sends require a one-time code (second factor) displayed in-app with a 60-second TTL. The code is bound to the specific recipient, amount, and chain to prevent replay or substitution.' },
-      ]},
-      { icon: 'ShieldCheck', title: 'Escrow for card purchases', blocks: [
-        { type: 'p', text: 'When buying a card with USDC, funds are locked in the platform escrow wallet until you confirm physical receipt. The seller is paid on release. A 2% fee is collected on release. If something goes wrong, you can file a dispute for moderator review.' },
-      ]},
-      { icon: 'Key', title: 'Security: passkey and PIN', blocks: [
-        { type: 'list', items: [
-          '<b>Passkey:</b> WebAuthn passkey gates access to your encrypted private key. Enroll a passkey for secure, passwordless wallet unlock.',
-          '<b>PIN (optional):b> Set a PIN as an alternative unlock method. The PIN derives an encryption key via PBKDF2.',
-          '<b>Seed phrase:</b> A 24-word mnemonic is encrypted as a backup. You can view it after authenticating.',
-        ]},
-      ]},
-      { icon: 'Landmark', title: 'Bank account (fiat mode)', blocks: [
-        { type: 'p', text: 'If you prefer not to use crypto features, you can link a bank account (IBAN + BIC). Top-ups route to your bank account and trade payments pull from it via Stripe. Bank details are AES-256 encrypted and shown masked in the UI.' },
-      ]},
-      { icon: 'Globe', title: 'Multi-chain support', blocks: [
-        { type: 'p', text: 'Enable multi-chain support to get a single wallet with addresses across EVM chains, Solana, and Bitcoin-family coins. All addresses are derived from the same 24-word mnemonic. You can upgrade an existing custodial wallet to multi-chain at any time.' },
-      ]},
-      { variant: 'warning', title: 'Important notes', blocks: [
-        { type: 'list', items: [
-          'Only original fiat top-up amounts are refundable. Converted USDC cannot be refunded.',
-          'You pay native chain gas for your own transactions.',
-          'A 2% platform fee applies to all top-ups, conversions, sends, and escrow purchases.',
-        ]},
-      ]},
-    ],
-  },
 };
 
 export const platformPages = {
@@ -583,32 +537,14 @@ export const platformPages = {
           'You\'ll be redirected back to SwapPulse and receive a receipt by email.',
         ]},
       ]},
-      { icon: 'Bitcoin', title: 'Donate by cryptocurrency', blocks: [
-        { type: 'steps', items: [
-          'Go to the donate page and choose "Cryptocurrency".',
-          'Enter an amount in USD and select a coin (stablecoins, privacy coins, or major coins).',
-          'Click Donate. We\'ll generate a unique deposit address for your donation.',
-          'Send the exact crypto amount to the deposit address.',
-          'The page checks every 5 seconds and shows a confirmation when the payment is detected.',
-        ]},
-      ]},
-      { title: 'Accepted currencies & networks', blocks: [
-        { type: 'list', items: [
-          '<b>Stablecoins:</b> USDC and USDT on Solana, Ethereum, and Polygon.',
-          '<b>Privacy coins:</b> Monero (XMR), Zcash (ZEC), Dash (DASH).',
-          '<b>Major coins:</b> Bitcoin (BTC), Ethereum (ETH), Solana (SOL), Polygon (MATIC).',
-        ]},
-      ]},
       { title: 'Fees', blocks: [
         { type: 'list', items: [
           '<b>Card (Stripe):</b> 2.9% + £0.20 per transaction (UK domestic cards). No monthly fees.',
-          '<b>Crypto (NowPayments):</b> 0.5% for same-currency, 1% for converted. Network gas fees are separate.',
         ]},
       ]},
       { variant: 'warning', title: 'Known limitations', blocks: [
         { type: 'list', items: [
-          'Cryptocurrency donations cannot be refunded once sent.',
-          'Minimum donation is £0.50 (card) or $0.50 (crypto).',
+          'Minimum donation is £0.50.',
           'Donations are not tax-deductible.',
         ]},
       ]},

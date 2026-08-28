@@ -76,12 +76,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'settings', title: 'Settings', category: 'Account & Settings', description: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.' },
   { slug: 'your-profile', title: 'Your Profile', category: 'Account & Settings', description: 'Set up your collector profile, avatar, handle, bio, and display preferences.' },
   { slug: 'account', title: 'Account & Login', category: 'Account & Settings', description: 'Passwordless login, activation, 2FA, and managing your SwapPulse account.' },
-  { slug: 'wallet', title: 'Wallet', category: 'Account & Settings', description: 'Custodial multi-chain wallet, fiat top-ups, USDC conversions, sends, escrow, and bank accounts.' },
-
   // Platform
   { slug: 'status', title: 'System Status', category: 'Platform', description: 'Check if any SwapPulse service is down, degraded, or under maintenance.' },
   { slug: 'admin', title: 'Admin', category: 'Platform', description: 'Admin dashboard for health, metrics, services, incidents, and federation diagnostics.' },
   { slug: 'moderation', title: 'Moderation', category: 'Platform', description: 'Moderation tools for flagged posts, bot protection, trade disputes, and enforcement.' },
-  { slug: 'donations', title: 'Donations', category: 'Platform', description: 'How to donate to SwapPulse by card or cryptocurrency, fees, and limitations.' },
+  { slug: 'donations', title: 'Donations', category: 'Platform', description: 'How to donate to SwapPulse by card, fees, and limitations.' },
   { slug: 'labelers', title: 'Community Labelers', category: 'Platform', description: 'Subscribe to community labelers for curated content labels and moderation signals.' },
 ];

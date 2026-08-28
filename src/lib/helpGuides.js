@@ -4,7 +4,7 @@ import {
   Hash, User, BookOpen, Users, CalendarDays, Package, PartyPopper, Trophy,
   Vote, Bell, Mail, UserPlus, Share2, Radio, Mic, Target, Medal, Sparkles,
   Settings, LogIn, Activity, ShieldAlert, Gavel, Heart,
-  Wallet, Rss, Bookmark, Tags, Search, Copy, UserCheck,
+  Rss, Bookmark, Tags, Search, Copy, UserCheck,
 } from 'lucide-react';
 
 export const HELP_CATEGORIES = [
@@ -80,13 +80,11 @@ export const HELP_GUIDES = [
   { slug: 'settings', title: 'Settings', category: 'Account & Settings', icon: Settings, description: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.', relatedRoute: '/settings' },
   { slug: 'your-profile', title: 'Your Profile', category: 'Account & Settings', icon: User, description: 'Set up your collector profile, avatar, handle, bio, and display preferences.', relatedRoute: '/profile' },
   { slug: 'account', title: 'Account & Login', category: 'Account & Settings', icon: LogIn, description: 'Passwordless login, activation, 2FA, and managing your SwapPulse account.', relatedRoute: '/login' },
-  { slug: 'wallet', title: 'Wallet', category: 'Account & Settings', icon: Wallet, description: 'Custodial multi-chain wallet, fiat top-ups, USDC conversions, sends, escrow, and bank accounts.', relatedRoute: '/wallet' },
-
   // Platform
   { slug: 'status', title: 'System Status', category: 'Platform', icon: Activity, description: 'Check if any SwapPulse service is down, degraded, or under maintenance.', relatedRoute: '/status' },
   { slug: 'admin', title: 'Admin', category: 'Platform', icon: Gavel, description: 'Admin dashboard for health, metrics, services, incidents, and federation diagnostics.', relatedRoute: '/admin' },
   { slug: 'moderation', title: 'Moderation', category: 'Platform', icon: ShieldAlert, description: 'Moderation tools for flagged posts, bot protection, trade disputes, and enforcement.', relatedRoute: '/moderation' },
-  { slug: 'donations', title: 'Donations', category: 'Platform', icon: Heart, description: 'How to donate to SwapPulse by card or cryptocurrency, fees, and limitations.', relatedRoute: '/donate' },
+  { slug: 'donations', title: 'Donations', category: 'Platform', icon: Heart, description: 'How to donate to SwapPulse by card, fees, and limitations.', relatedRoute: '/donate' },
   { slug: 'labelers', title: 'Community Labelers', category: 'Platform', icon: Tags, description: 'Subscribe to community labelers for curated content labels and moderation signals.', relatedRoute: '/labelers' },
 ];
 

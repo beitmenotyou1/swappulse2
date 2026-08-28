@@ -72,7 +72,6 @@ const ENTITY_CLEANUP = [
   { name: 'InviteCode' },
   { name: 'Activation' },
   { name: 'Wishlist' },
-  { name: 'MarketListing' },
   { name: 'Document' },
 ];
 

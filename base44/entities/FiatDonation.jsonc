@@ -2,7 +2,7 @@
   "name": "FiatDonation",
   "type": "object",
   "title": "FiatDonation",
-  "description": "org.swappulse.fiatDonation \u2014 a fiat (card) donation via Stripe Checkout. Created pending by the create-fiat-donation backend function and marked completed by the stripe-webhook on checkout.session.completed. Public read; writes restricted to admins (the service role creates/updates via backend functions).",
+  "description": "org.swappulse.fiatDonation \u2014 a fiat (card) donation via Stripe Checkout. Created pending by the create-fiat-donation backend function. Public read; writes restricted to admins (the service role creates/updates via backend functions).",
   "properties": {
     "stripe_session_id": {
       "type": "string",

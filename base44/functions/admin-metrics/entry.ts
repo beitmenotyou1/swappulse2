@@ -17,13 +17,12 @@ export default async function (req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-    const [tcgdex, database, users, trades, collections, market, posts, circles, invites] = await Promise.all([
+    const [tcgdex, database, users, trades, collections, posts, circles, invites] = await Promise.all([
       checkTcgdex(),
       checkDatabase(base44),
       count(base44, 'User'),
       count(base44, 'TradeListing', { status: 'open' }),
       count(base44, 'CollectionEntry'),
-      count(base44, 'MarketListing', { status: 'active' }),
       count(base44, 'Post'),
       count(base44, 'Circle'),
       count(base44, 'InviteCode', { status: 'active' }),
@@ -31,7 +30,7 @@ export default async function (req) {
 
     return Response.json({
       health: { tcgdex, database },
-      counts: { users, trades, collections, market, posts, circles, invites },
+      counts: { users, trades, collections, posts, circles, invites },
       generated_at: new Date().toISOString(),
     });
   } catch (e) {
