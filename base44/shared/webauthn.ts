@@ -1,13 +1,7 @@
-// Shared WebAuthn utilities — used by the webauthn-* backend functions for
-// stateless challenge tracking and origin/RP-ID extraction.
-//
-// Challenge tracking: WebAuthn requires the server to verify that the
-// challenge in the client's response matches the one it sent. Since Base44
-// backend functions are stateless, we use an HMAC-signed challenge: the
-// server generates a random challenge, signs it with BACKEND_FUNCTION_SECRET,
-// and returns both to the client. When the client sends back the attestation/
-// assertion plus the signed challenge, the server verifies the HMAC signature
-// before passing the challenge to @simplewebauthn/server's verify function.
+// Shared WebAuthn utilities used by registration, login and wallet ceremonies.
+// Challenges are random, HMAC-authenticated, stored server-side, short-lived,
+// and single-use. This prevents replay even for authenticators that do not
+// implement signature counters.
 
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 
@@ -72,24 +66,101 @@ export async function verifySignedChallenge(
   }
 }
 
-// Extract the origin and RP ID from the request headers.
-// The RP ID must be a registrable domain suffix of the origin.
+const WEBAUTHN_ALLOWED_ORIGINS = new Set([
+  'https://swappulse.org',
+  'https://www.swappulse.org',
+  'http://localhost:3000',
+  'http://localhost:5173',
+]);
+
+function addConfiguredOrigin(): void {
+  const configured = Deno.env.get('WIX_CHECKOUT_APP_URL') || Deno.env.get('APP_URL') || '';
+  if (!configured) return;
+  try {
+    const u = new URL(configured);
+    if (u.protocol === 'https:' || (u.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(u.hostname))) {
+      WEBAUTHN_ALLOWED_ORIGINS.add(u.origin);
+    }
+  } catch {}
+}
+addConfiguredOrigin();
+
+// Resolve WebAuthn origin/RP only from an explicit allowlist. Request headers
+// are caller-controlled and therefore may select only an already-approved
+// origin, never create a new trusted origin dynamically.
 export function getRpConfig(req: Request): { origin: string; rpId: string } | null {
-  const origin = req.headers.get('Origin') || req.headers.get('Referer');
-  if (origin) {
+  const candidates = [req.headers.get('Origin'), req.headers.get('Referer')];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
     try {
-      const url = new URL(origin);
-      return { origin: url.origin, rpId: url.hostname };
+      const u = new URL(candidate);
+      if (WEBAUTHN_ALLOWED_ORIGINS.has(u.origin)) return { origin: u.origin, rpId: u.hostname };
     } catch {}
   }
-  // Fallback: construct from Host header when Origin/Referer are absent
-  // (some proxies or preview environments strip the Origin header).
+
   const host = req.headers.get('Host');
   if (host) {
-    const protocol = host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https';
-    return { origin: `${protocol}://${host}`, rpId: host.split(':')[0] };
+    const hostname = host.split(':')[0];
+    const protocol = ['localhost', '127.0.0.1'].includes(hostname) ? 'http' : 'https';
+    const candidate = `${protocol}://${host}`;
+    if (WEBAUTHN_ALLOWED_ORIGINS.has(candidate)) return { origin: candidate, rpId: hostname };
   }
   return null;
+}
+
+async function sha256Base64Url(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(value));
+  return bytesToBase64Url(digest);
+}
+
+export async function issueWebAuthnChallenge(
+  svc: any,
+  secret: string,
+  purpose: 'authentication' | 'registration' | 'wallet',
+  subject: string,
+  rpConfig: { origin: string; rpId: string },
+  ttlMs = 5 * 60 * 1000,
+): Promise<{ challenge: string; signature: string }> {
+  const signed = await generateSignedChallenge(secret);
+  const challengeHash = await sha256Base64Url(signed.challenge);
+  await svc.entities.WebAuthnChallenge.create({
+    challenge_hash: challengeHash,
+    purpose,
+    subject,
+    origin: rpConfig.origin,
+    rp_id: rpConfig.rpId,
+    expires_at: new Date(Date.now() + ttlMs).toISOString(),
+  });
+  return signed;
+}
+
+export async function consumeWebAuthnChallenge(
+  svc: any,
+  secret: string,
+  challenge: string,
+  signature: string,
+  purpose: 'authentication' | 'registration' | 'wallet',
+  subject: string,
+  rpConfig: { origin: string; rpId: string },
+): Promise<boolean> {
+  if (!(await verifySignedChallenge(secret, challenge, signature))) return false;
+  const challengeHash = await sha256Base64Url(challenge);
+  const rows = await svc.entities.WebAuthnChallenge
+    .filter({ challenge_hash: challengeHash, purpose, subject }, '-created_date', 5)
+    .catch(() => []);
+  const row = (rows || []).find((r: any) =>
+    !r.used_at &&
+    r.origin === rpConfig.origin &&
+    r.rp_id === rpConfig.rpId &&
+    r.expires_at &&
+    new Date(r.expires_at).getTime() > Date.now()
+  );
+  if (!row) return false;
+
+  // Consume before credential verification. A failed assertion burns only its
+  // own challenge, preventing replay at the cost of requiring a fresh ceremony.
+  await svc.entities.WebAuthnChallenge.update(row.id, { used_at: new Date().toISOString() });
+  return true;
 }
 
 // Verify a wallet-unlock passkey assertion. Used by send-crypto,
@@ -109,10 +180,14 @@ export async function verifyWalletPasskey(
   const rpConfig = getRpConfig(req);
   if (!rpConfig) return { verified: false, error: 'Could not determine origin', status: 400 };
 
-  const sigValid = await verifySignedChallenge(
+  const sigValid = await consumeWebAuthnChallenge(
+    svc,
     process.env.BACKEND_FUNCTION_SECRET!,
     challenge,
     challengeSignature,
+    'wallet',
+    userId,
+    rpConfig,
   );
   if (!sigValid) return { verified: false, error: 'Invalid challenge', status: 403 };
 
@@ -132,11 +207,9 @@ export async function verifyWalletPasskey(
         authenticator: {
           credentialID: cred.credential_id,
           credentialPublicKey: base64UrlToUint8Array(cred.public_key),
-          // Always pass 0 so the counter replay check never rejects
-          // counterless authenticators (Touch ID, Face ID, Windows Hello)
-          // or credentials whose stored counter was corrupted by the old
-          // `|| counter + 1` bug. Replay protection is already enforced by
-          // the HMAC-signed single-use challenge above.
+          // Counterless platform authenticators may legitimately remain at 0.
+          // Replay protection is enforced independently by the server-side,
+          // expiring, single-use WebAuthn challenge.
           counter: 0,
         },
       });
