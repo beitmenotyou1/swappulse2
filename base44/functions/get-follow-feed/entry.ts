@@ -14,6 +14,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { enrichAuthorAvatars } from '../../shared/avatarEnrichment.ts';
 import { sortPostsDescending } from '../../shared/postSort.ts';
+import { filterVisiblePostsServer } from '../../shared/postVisibility.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -48,10 +49,11 @@ export default async function(req: Request): Promise<Response> {
 
     // 3. Member posts from the local DB
     if (memberDids.size) {
-      const posts = await base44.entities.Post
-        .filter({ did: { $in: Array.from(memberDids) } }, '-created_date', limit)
+      const posts = await svc.entities.Post
+        .filter({ did: { $in: Array.from(memberDids) } }, '-created_date', Math.min(limit * 4, 400))
         .catch(() => []);
-      for (const p of posts || []) items.push({ ...p, external: false });
+      const visibleLocal = await filterVisiblePostsServer(svc, posts || [], user);
+      for (const p of visibleLocal) items.push({ ...p, external: false });
     }
 
     // 4. External posts via the AppView getAuthorFeed
@@ -97,9 +99,10 @@ export default async function(req: Request): Promise<Response> {
     const tagFollows = await base44.entities.HashtagFollow.filter({ did: myDid }, '-created_date', 100).catch(() => []);
     const followedTags = Array.from(new Set((tagFollows || []).map((f: any) => f.tag).filter(Boolean).map((t: string) => t.toLowerCase())));
     if (followedTags.length) {
-      const recent = await base44.entities.Post.list('-created_date', Math.max(limit * 4, 200)).catch(() => []);
+      const recent = await svc.entities.Post.list('-created_date', Math.max(limit * 4, 200)).catch(() => []);
+      const visibleRecent = await filterVisiblePostsServer(svc, recent || [], user);
       const seen = new Set(items.map((i: any) => i.at_uri || i.id).filter(Boolean));
-      for (const p of recent || []) {
+      for (const p of visibleRecent) {
         const key = p.at_uri || p.id;
         if (key && seen.has(key)) continue;
         if (Array.isArray(p.canonical_tags) && p.canonical_tags.some((t: string) => followedTags.includes(t))) {
