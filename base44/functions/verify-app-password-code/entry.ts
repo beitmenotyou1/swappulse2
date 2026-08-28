@@ -1,10 +1,10 @@
 // verify-app-password-code — validates the 6-digit email code and returns a
 // short-lived HMAC-signed action token that manage-app-password consumes to
-// authorize the create/reveal/delete operation.
+// authorize deletion of a legacy SwapPulse app password.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { timingSafeEqual, signActionToken } from '../../shared/appPasswordCrypto.ts';
 
-const VALID_ACTIONS = new Set(['create', 'reveal', 'delete']);
+const VALID_ACTIONS = new Set(['delete']);
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -33,8 +33,8 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Invalid or expired code.' }, { status: 400 });
     }
 
-    // For reveal/delete, the code must be scoped to the same target.
-    if ((action === 'reveal' || action === 'delete') && targetId && active.target_id && active.target_id !== targetId) {
+    // The code must be scoped to the same deletion target.
+    if (action === 'delete' && targetId && active.target_id && active.target_id !== targetId) {
       return Response.json({ error: 'This code was not issued for that app password.' }, { status: 400 });
     }
 
