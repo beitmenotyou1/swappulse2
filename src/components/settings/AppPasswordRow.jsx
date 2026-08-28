@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 const SCOPE_STYLE = {
   read_only: { label: 'Read-only', cls: 'bg-success/15 text-success' },
@@ -7,7 +7,7 @@ const SCOPE_STYLE = {
   full_access: { label: 'Full access', cls: 'bg-destructive/15 text-destructive' },
 };
 
-export default function AppPasswordRow({ item, onReveal, onDelete }) {
+export default function AppPasswordRow({ item, onDelete }) {
   const style = SCOPE_STYLE[item.scope] || SCOPE_STYLE.read_only;
   const created = new Date(item.created_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   const lastUsed = item.last_used_at
@@ -24,10 +24,7 @@ export default function AppPasswordRow({ item, onReveal, onDelete }) {
         <p className="mt-0.5 text-xs text-muted-foreground">Created {created} · Last used {lastUsed}</p>
       </div>
       <div className="flex shrink-0 gap-1">
-        <button onClick={() => onReveal(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Reveal password" aria-label={`Reveal password for ${item.label}`}>
-          <Eye className="h-4 w-4" />
-        </button>
-        <button onClick={() => onDelete(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete password" aria-label={`Delete password for ${item.label}`}>
+        <button onClick={() => onDelete(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Revoke legacy password" aria-label={`Revoke legacy password for ${item.label}`}>
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
