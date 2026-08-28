@@ -34,8 +34,8 @@ export const DEFAULT_SETTINGS = {
     eventTypes: { trade_match: true, price_alert: true, mention: true, reaction: false, voice_live: true },
   },
   accessibility: { theme: 'dark', reduceMotion: false, highContrast: false, fontSize: 'medium' },
-  crypto: { enabled: true, display_currency: 'USDC' },
-  wallet: { default_wallet: 'custodial', receive_strict_mode: true },
+  crypto: { enabled: false, display_currency: 'USDC' },
+  wallet: { default_wallet: 'none', receive_strict_mode: true },
   challenges: {
     leaderboardOptIn: false,
     leaderboardCategories: [],
