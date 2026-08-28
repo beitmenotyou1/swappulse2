@@ -11,6 +11,10 @@
       ],
       "default": "SWAPPULSE_TESTNET"
     },
+    "chain_id": {
+      "type": "string",
+      "description": "Expected Starknet chain id returned by starknet_chainId, encoded as 0x-prefixed hex. Reconciliation fails closed if the RPC reports a different chain."
+    },
     "account_class_hash": {
       "type": "string",
       "description": "Declared SwapPulseAccount class hash for this network."
