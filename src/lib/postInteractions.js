@@ -21,7 +21,7 @@ function actorFromUser(me) {
   return {
     actorDid: me?.did,
     actorName: me?.display_name || me?.full_name,
-    actorHandle: me?.bsky_handle || me?.username || (me?.email ? me.email.split('@')[0] : ''),
+    actorHandle: me?.bsky_handle || me?.username || '',
     actorAvatar: me?.avatar,
   };
 }
@@ -92,6 +92,7 @@ export function normalizeRef(ref) {
     replies: ref.replies || 0,
     content: ref.content || '',
     reply_policy: ref.reply_policy || 'everybody',
+    visibility_scope: ref.visibility_scope || 'public',
     isLocal,
   };
 }
@@ -146,7 +147,7 @@ export async function createRepost(post) {
       post_uri: ref.at_uri,
       post_cid: ref.cid || '',
       reposter_name: me?.display_name || me?.full_name || '',
-      reposter_handle: me?.bsky_handle || me?.username || (me?.email ? me.email.split('@')[0] : ''),
+      reposter_handle: me?.bsky_handle || me?.username || '',
     },
     NSID.REPOST, did, signingKey,
   );
@@ -202,7 +203,7 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
     }
     if (ref.reply_policy === 'mentioned') {
       const content = ref.content || '';
-      const userHandle = user?.bsky_handle || user?.email?.split('@')[0] || '';
+      const userHandle = user?.bsky_handle || user?.username || '';
       if (!content.includes('@' + userHandle) && !content.includes(did)) {
         throw new Error('Only mentioned users can reply to this post.');
       }
@@ -228,7 +229,7 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
     content: text.trim(),
     post_type: 'text',
     author_name: user?.display_name || user?.full_name || 'Collector',
-    author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
+    author_handle: user?.bsky_handle || user?.username || '',
     author_avatar: user?.avatar || '',
     likes: 0, reposts: 0, replies: 0,
     hashtags,
@@ -247,7 +248,7 @@ export async function createReply(parentPost, text, user, extra = {}, localReply
   if (created?.id) {
     base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
   }
-  if (ref.bridged && parentUri && parentCid && rootUri && rootCid) {
+  if (ref.bridged && (!ref.isLocal || ref.visibility_scope === 'public') && parentUri && parentCid && rootUri && rootCid) {
     base44.functions.invoke('atproto-bridge', {
       collection: 'app.bsky.feed.post',
       record: {
@@ -329,7 +330,7 @@ export async function createQuoteRepost(post, text, user, extra = {}) {
     content: text.trim(),
     post_type: 'text',
     author_name: user?.display_name || user?.full_name || 'Collector',
-    author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
+    author_handle: user?.bsky_handle || user?.username || '',
     author_avatar: user?.avatar || '',
     likes: 0, reposts: 0, replies: 0,
     quote_of_id: ref.isLocal ? ref.id : (extra.quote_of_id || ''),
@@ -349,7 +350,7 @@ export async function createQuoteRepost(post, text, user, extra = {}) {
   if (created?.id) {
     base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
   }
-  if (ref.at_uri && ref.cid) {
+  if (ref.at_uri && ref.cid && (extra.visibility_scope || 'public') === 'public') {
     base44.functions.invoke('atproto-bridge', {
       collection: 'app.bsky.feed.post',
       record: {
