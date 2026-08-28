@@ -189,10 +189,15 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // Confirm the endpoint is actually a Starknet node before reading identity state.
-    const [specVersion, chainId] = await Promise.all([
+    const [specVersion, chainIdRaw] = await Promise.all([
       rpcCall(rpcUrl, 'starknet_specVersion', []),
       rpcCall(rpcUrl, 'starknet_chainId', []),
     ]);
+    const chainId = normalizeHex(chainIdRaw, 'RPC chain id');
+    const expectedChainId = normalizeHex(config.chain_id, 'configured chain id');
+    if (chainId !== expectedChainId) {
+      return jsonError('RPC chain id does not match SwapPulse Testnet configuration', 409, 'CHAIN_ID_MISMATCH');
+    }
 
     const recordId = String(body.record_id || '').trim();
     const requestedLimit = Math.max(1, Math.min(Number(body.limit) || 25, MAX_BATCH));
@@ -216,7 +221,7 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({
       ok: true,
       network: NETWORK,
-      rpc: { spec_version: String(specVersion || ''), chain_id: String(chainId || '') },
+      rpc: { spec_version: String(specVersion || ''), chain_id: chainId },
       processed: results.length,
       counts,
       results,
