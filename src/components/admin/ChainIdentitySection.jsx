@@ -432,8 +432,40 @@ export default function ChainIdentitySection() {
             </div>
           )}
 
+          {['DEPLOYED', 'REGISTERED', 'RECOVERED', 'MERGED'].includes(prepared.identity.status) && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={reconcile}
+                disabled={reconciling || !config?.rpc_url || !config?.chain_id}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
+              >
+                {reconciling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Blocks className="h-4 w-4" />}
+                {reconciling ? 'Checking chain…' : 'Reconcile From Chain'}
+              </button>
+              {reconcileResult?.rpc?.chain_id && (
+                <span className="text-xs text-muted-foreground">
+                  RPC chain {reconcileResult.rpc.chain_id}, spec {reconcileResult.rpc.spec_version || 'unknown'}
+                </span>
+              )}
+            </div>
+          )}
+
+          {reconcileResult?.results?.[0] && (
+            <div className="rounded-lg border border-border bg-background p-3 text-xs">
+              <p className="font-semibold">Last chain check: {reconcileResult.results[0].outcome}</p>
+              {reconcileResult.results[0].canonical_identity_id && (
+                <p className="mt-1 break-all font-mono text-muted-foreground">
+                  Canonical identity: {reconcileResult.results[0].canonical_identity_id}
+                </p>
+              )}
+              {reconcileResult.results[0].error && (
+                <p className="mt-1 text-destructive">{reconcileResult.results[0].error}</p>
+              )}
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground">
-            DEPLOYED is not treated as chain-authoritative registration. The later reconciliation worker must read IdentityRegistry before changing this mirror to REGISTERED.
+            DEPLOYED is not treated as chain-authoritative registration. Only a successful IdentityRegistry read-back can promote this mirror to REGISTERED or RECOVERED.
           </p>
         </div>
       )}
