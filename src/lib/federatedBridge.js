@@ -522,6 +522,11 @@ export async function bridgeCardReview(review) {
 }
 
 export async function bridgeBinder(binder) {
+  // AT Protocol repositories are public-readable. Only explicitly public
+  // binders are eligible for federation; followers/private remain Base44-only.
+  if (binder?.visibility !== 'public') {
+    return { bridged: false };
+  }
   const { did } = await ensureUserDid();
   const me = await getMe();
   const record = buildBinderRecord(binder, did, me.name, me.handle);
