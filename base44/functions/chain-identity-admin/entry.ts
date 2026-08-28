@@ -40,6 +40,7 @@ async function networkConfig(svc: any) {
     .filter({ network: 'SWAPPULSE_TESTNET' }, '-updated_date', 1)
     .catch(() => []);
   const row = rows?.[0] || null;
+  const chainId = String(row?.chain_id || '').trim();
   const accountClassHash = String(row?.account_class_hash || '').trim();
   const identityRegistryAddress = String(row?.identity_registry_address || '').trim();
   const recoveryController = String(row?.recovery_controller || '').trim();
@@ -52,6 +53,7 @@ async function networkConfig(svc: any) {
   return {
     id: row?.id || '',
     network: 'SWAPPULSE_TESTNET',
+    chainId,
     accountClassHash,
     identityRegistryAddress,
     recoveryController,
@@ -59,7 +61,7 @@ async function networkConfig(svc: any) {
     rpcUrl: String(row?.rpc_url || '').trim(),
     explorerUrl: String(row?.explorer_url || '').trim(),
     status,
-    ready: status === 'CONFIGURED' && Boolean(accountClassHash && identityRegistryAddress),
+    ready: status === 'CONFIGURED' && Boolean(chainId && accountClassHash && identityRegistryAddress),
   };
 }
 
@@ -102,6 +104,7 @@ export default async function(req: Request): Promise<Response> {
         ok: true,
         config: {
           network: config.network,
+          chain_id: config.chainId,
           status: config.status,
           ready: config.ready,
           account_class_hash: config.accountClassHash,
@@ -126,10 +129,12 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Invalid config status', 400, 'INVALID_CONFIG_STATUS');
       }
 
+      let chainId = '';
       let accountClassHash = '';
       let identityRegistryAddress = '';
       let recoveryController = '';
       try {
+        if (body.chain_id) chainId = normalizeHex(body.chain_id, 'chain_id');
         if (body.account_class_hash) accountClassHash = normalizeHex(body.account_class_hash, 'account_class_hash');
         if (body.identity_registry_address) identityRegistryAddress = normalizeAddress(body.identity_registry_address, 'identity_registry_address');
         if (body.recovery_controller) recoveryController = normalizeAddress(body.recovery_controller, 'recovery_controller');
@@ -137,8 +142,8 @@ export default async function(req: Request): Promise<Response> {
         return jsonError(e?.message || 'Invalid chain configuration', 400, 'INVALID_CHAIN_CONFIG');
       }
 
-      if (status === 'CONFIGURED' && (!accountClassHash || !identityRegistryAddress)) {
-        return jsonError('Configured network requires account_class_hash and identity_registry_address', 400, 'INCOMPLETE_CHAIN_CONFIG');
+      if (status === 'CONFIGURED' && (!chainId || !accountClassHash || !identityRegistryAddress)) {
+        return jsonError('Configured network requires chain_id, account_class_hash and identity_registry_address', 400, 'INCOMPLETE_CHAIN_CONFIG');
       }
 
       const parsedDelay = Number(body.recovery_delay_seconds ?? 172800);
@@ -154,6 +159,7 @@ export default async function(req: Request): Promise<Response> {
 
       const payload = {
         network: 'SWAPPULSE_TESTNET',
+        chain_id: chainId,
         account_class_hash: accountClassHash,
         identity_registry_address: identityRegistryAddress,
         recovery_controller: recoveryController,
@@ -173,6 +179,7 @@ export default async function(req: Request): Promise<Response> {
         ok: true,
         config: {
           network: saved.network,
+          chain_id: saved.chainId,
           status: saved.status,
           ready: saved.ready,
           account_class_hash: saved.accountClassHash,
