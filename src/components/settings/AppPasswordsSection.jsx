@@ -12,8 +12,8 @@ export default function AppPasswordsSection() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await base44.entities.AppPassword.list('-created_date', 100);
-      setPasswords(list || []);
+      const res = await base44.functions.invoke('list-app-passwords', {});
+      setPasswords(res?.data?.items || []);
     } catch {
       setPasswords([]);
     } finally {
