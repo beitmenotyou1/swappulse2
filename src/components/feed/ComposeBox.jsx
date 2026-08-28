@@ -132,7 +132,10 @@ export default function ComposeBox({ onPosted, replyTo }) {
       // Hashtag abuse labeler - evaluates the new post and attaches moderation labels.
       if (created?.id) {
         base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
-        // AT Protocol PDS bridge — mirror as a real app.bsky.feed.post on the federated network.
+        const shouldFederate = visibilityScope === 'public';
+        // AT Protocol repositories are public. Followers/mentioned posts remain
+        // local-only and their media is not uploaded to the PDS.
+        // AT Protocol PDS bridge — mirror public posts only.
         const replyRef = parentUri && parentCid && rootUri && rootCid
           ? { root: { uri: rootUri, cid: rootCid }, parent: { uri: parentUri, cid: parentCid } }
           : undefined;
@@ -140,7 +143,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         // renders as a rich link card on Bluesky (app.bsky.embed.external).
         // Best-effort: fall back to a thumb-less embed or no embed on failure.
         let cardEmbed = null;
-        if (attachedCard) {
+        if (attachedCard && shouldFederate) {
           try {
             const imgUrl = cardImageUrl(attachedCard.image);
             const ext = (imgUrl.split('.').pop() || '').toLowerCase();
@@ -169,7 +172,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
         // Video/external: build app.bsky.embed.external (external videos can't be
         // PDS blobs). Falls back gracefully on any blob upload failure.
         let mediaEmbed = cardEmbed;
-        if (!mediaEmbed && (mediaFields.embed_images || mediaFields.embed_video || mediaFields.embed_external)) {
+        if (shouldFederate && !mediaEmbed && (mediaFields.embed_images || mediaFields.embed_video || mediaFields.embed_external)) {
           try {
             if (mediaFields.embed_images?.length > 0) {
               const imageBlobs = await Promise.all(
@@ -216,7 +219,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
             console.warn('media embed blob upload failed', e?.message || e);
           }
         }
-        base44.functions.invoke('atproto-bridge', {
+        if (shouldFederate) base44.functions.invoke('atproto-bridge', {
           collection: 'app.bsky.feed.post',
           record: {
             text: (content.trim() || stamped.card_name || 'New SwapPulse post').slice(0, 3000),
@@ -228,17 +231,11 @@ export default function ComposeBox({ onPosted, replyTo }) {
         }).then((res) => {
           if (res?.uri) {
             base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
-            // Bridge a postgate record for non-public visibility or non-default reply
-            // policy. Visibility takes precedence (a followers-only post is also
-            // reply-restricted to followers); reply_policy is used when the post is
-            // public but replies are gated.
-            const needsGate = visibilityScope !== 'public' || replyPolicy !== 'everybody';
+            // postgate controls interactions, not read visibility. Since only
+            // public posts are federated here, it is used solely for reply policy.
+            const needsGate = replyPolicy !== 'everybody';
             if (needsGate) {
-              const allowRules = visibilityScope === 'followers'
-                ? [{ $type: 'app.bsky.feed.postgate#followersRule' }]
-                : visibilityScope === 'mentioned'
-                ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
-                : replyPolicy === 'nobody'
+              const allowRules = replyPolicy === 'nobody'
                 ? [{ $type: 'app.bsky.feed.postgate#disableRule' }]
                 : replyPolicy === 'mentioned'
                 ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
