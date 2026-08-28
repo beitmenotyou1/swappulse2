@@ -16,6 +16,7 @@ import { clearPdsSession, pdsRequest } from '../../shared/pdsSession.ts';
 import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { attachRichTextFacets } from '../../shared/hashtagFacets.ts';
 import { computeContentHash } from '../../shared/bridgePublish.ts';
+import { isPublicationEligible } from '../../shared/federationPolicy.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Security: verify the caller owns the federated record identified by `uri`
@@ -41,18 +42,6 @@ const COLLECTION_ENTITY_MAP: Record<string, string> = {
   'org.swappulse.reaction': 'Reaction',
   'org.swappulse.vouch': 'Vouch',
 };
-
-// Privacy containment: private application collection data must not cross the
-// AT Protocol boundary. Raw CollectionEntry records can contain purchase price,
-// market value, acquisition date, and personal notes, so federation is disabled
-// until a sanitised public projection exists. Binders are eligible only when
-// explicitly public; "followers" is an application-layer visibility and AT
-// Protocol repositories are public-readable.
-function isPublicationEligible(collection: string, record: any): boolean {
-  if (collection === 'org.swappulse.collectionEntry') return false;
-  if (collection === 'org.swappulse.binder') return record?.visibility === 'public';
-  return true;
-}
 
 async function verifyOwnership(base44: any, caller: any, uri: string, collection: string): Promise<boolean> {
   if (caller?.role === 'admin') return true;
