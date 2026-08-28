@@ -13,6 +13,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
+import { consumeAuthAttempt, resetAuthAttempts } from '../../shared/authThrottle.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -69,10 +70,14 @@ async function resolveHandle(handle: string): Promise<string> {
   // Already a DID?
   if (handle.startsWith('did:')) return handle;
 
-  // Try bsky.social's resolveHandle XRPC (works for most users)
+  // Resolve through the public AT Protocol AppView rather than fetching an
+  // attacker-controlled handle hostname from this public authentication
+  // endpoint. This removes the handle-resolution SSRF/rebinding surface while
+  // retaining network-wide AT handle resolution.
   try {
     const res = await fetch(
-      `https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`,
+      `${APPVIEW}/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`,
+      { redirect: 'manual' },
     );
     if (res.ok) {
       const data = await res.json();
@@ -80,23 +85,7 @@ async function resolveHandle(handle: string): Promise<string> {
     }
   } catch {}
 
-  // Fallback: HTTPS well-known
-  try {
-    const base = handle.includes('.') ? `https://${handle}` : `https://${handle}.bsky.social`;
-    // Validate the hostname (blocks IPs, localhost, metadata endpoints) and
-    // use redirect: 'manual' to prevent redirect-based SSRF bypasses.
-    const validatedOrigin = await validatePdsUrl(base);
-    const res = await fetch(`${validatedOrigin}/.well-known/atproto-did`, { redirect: 'manual' });
-    if (res.status >= 300 && res.status < 400) {
-      throw new Error('Redirect not allowed for handle resolution.');
-    }
-    if (res.ok) {
-      const text = (await res.text()).trim();
-      if (text.startsWith('did:')) return text;
-    }
-  } catch {}
-
-  throw new Error('Could not resolve handle to a DID. Check the handle and try again.');
+  throw new Error('Could not resolve handle to a DID.');
 }
 
 async function resolvePdsUrl(did: string): Promise<string> {
@@ -341,6 +330,8 @@ async function sendLoginCode(svc: any, email: string): Promise<void> {
 
 Deno.serve(async (req) => {
   try {
+    const base44 = createClientFromRequest(req);
+    const svc = base44.asServiceRole;
     const body = await req.json().catch(() => ({}));
     const handle = String(body.handle || '').trim().replace(/^@/, '');
     const appPassword = String(body.appPassword || '').trim();
@@ -353,6 +344,19 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Public PDS-credential verification must be throttled by the account
+    // identifier. The stored throttle key is hashed and namespaced.
+    const throttle = await consumeAuthAttempt(svc, 'atproto-pds-auth', handle, {
+      maxAttempts: 5,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!throttle.allowed) {
+      return Response.json(
+        { error: 'Too many authentication attempts. Try again later.', retry_after: throttle.retryAfterSeconds },
+        { status: 429, headers: { 'Retry-After': String(throttle.retryAfterSeconds || 900) } },
+      );
+    }
+
     // 1. Resolve handle → DID
     const did = await resolveHandle(handle);
 
@@ -361,6 +365,7 @@ Deno.serve(async (req) => {
 
     // 3. Authenticate against the PDS
     const session = await createSession(pdsUrl, handle, appPassword);
+    await resetAuthAttempts(svc, 'atproto-pds-auth', handle).catch(() => {});
 
     // 4. Fetch full profile (including banner) from the AppView, with PDS fallback
     const profile = await getFullProfile(session.accessJwt, session.did, pdsUrl);
@@ -370,7 +375,6 @@ Deno.serve(async (req) => {
     //    Bluesky account). Stores the app password in PdsCredential (service
     //    role bypasses RLS) and sets the did:plc on the User record.
     if (mode === 'link') {
-      const base44 = createClientFromRequest(req);
       const me = await base44.auth.me().catch(() => null);
       if (!me) return Response.json({ error: 'Sign in to link your Bluesky account.' }, { status: 401 });
 
@@ -391,8 +395,6 @@ Deno.serve(async (req) => {
 
     // 6. For login mode: look up SwapPulse user by DID, send login code
     if (mode === 'login') {
-      const base44 = createClientFromRequest(req);
-      const svc = base44.asServiceRole;
       const users = await svc.entities.User.filter({ did: session.did }, '-created_date', 1);
       if (!users || users.length === 0) {
         return Response.json({
