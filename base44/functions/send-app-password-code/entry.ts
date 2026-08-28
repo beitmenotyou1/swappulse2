@@ -1,10 +1,10 @@
 // send-app-password-code — generates and emails a 6-digit verification code
-// required before creating, revealing, or deleting an app password.
+// required before deleting a legacy SwapPulse app password.
 // Requires an authenticated user; the code is sent to their email on file.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
-const VALID_ACTIONS = new Set(['create', 'reveal', 'delete']);
+const VALID_ACTIONS = new Set(['delete']);
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -21,8 +21,8 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Invalid action.' }, { status: 400 });
     }
 
-    // For reveal/delete, verify the target belongs to the caller before sending a code.
-    if ((action === 'reveal' || action === 'delete') && targetId) {
+    // Verify the target belongs to the caller before sending a deletion code.
+    if (action === 'delete' && targetId) {
       const svc = base44.asServiceRole;
       const existing = await svc.entities.AppPassword.filter({ id: targetId, created_by_id: user.id }, '-created_date', 1).catch(() => []);
       if (!existing || existing.length === 0) {
@@ -83,7 +83,7 @@ export default async function (req: Request): Promise<Response> {
       target_id: targetId || '',
     });
 
-    const actionLabel = action === 'create' ? 'create a new app password' : action === 'reveal' ? 'reveal an app password' : 'delete an app password';
+    const actionLabel = 'delete an app password';
 
     const subject = 'Your SwapPulse App Password Code';
     const textVersion =
