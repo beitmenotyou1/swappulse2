@@ -16,17 +16,29 @@ export default defineConfig({
     }),
     react(),
   ],
-  // Force re-optimization on every server start (new ?v= hash) so the browser
-  // can't serve stale dep chunks from a previous run. Explicitly include
-  // react/react-dom so Vite always pre-bundles them into a single dep chunk.
+  // Pre-bundle ALL React entry points so Vite never discovers one mid-session
+  // and triggers a re-optimization (which creates a new ?v= hash and mixes
+  // old + new dep chunks → duplicate React copies → "Cannot read properties
+  // of null (reading 'useState')"). NOTE: `force: true` is intentionally
+  // omitted — it regenerates the ?v= hash on every server restart, so any
+  // tab open across a restart ends up with chunks from two different
+  // optimization runs. Without it, the hash stays stable across restarts
+  // as long as dependencies don't change.
   optimizeDeps: {
-    force: true,
-    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],
+    include: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'react-dom/client',
+      'react-dom/test-utils',
+      'scheduler',
+    ],
   },
   resolve: {
     // Force a single copy of React/ReactDOM — prevents "Invalid hook call"
     // crashes caused by duplicate React copies (stale Vite dep cache, etc.).
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'scheduler'],
     alias: {
       // base44:runtime is a backend-only virtual module; mock it so Vite can
       // resolve shared modules that import it during the frontend build.
