@@ -39,7 +39,7 @@
         "mentioned"
       ],
       "default": "public",
-      "description": "Who can see this post. 'public' (default) is visible to everyone and federates publicly. 'followers' is visible only to accounts who follow the author. 'mentioned' is visible only to accounts whose DIDs are in mentioned_dids. Enforced on local feed and detail reads; mirrored to the PDS as an app.bsky.feed.postgate record so remote Bluesky clients enforce it. Independent of reply_policy (who can reply)."
+      "description": "Who can see this post locally. 'public' (default) is visible to everyone and may federate publicly. 'followers' is visible only to accounts who follow the author. 'mentioned' is visible only to accounts whose DIDs are in mentioned_dids. Non-public posts never federate because AT Protocol repositories are public. Independent of reply_policy (who can reply)."
     },
     "mentioned_dids": {
       "type": "array",
@@ -263,7 +263,7 @@
         "followers"
       ],
       "default": "everybody",
-      "description": "Who can reply to this post (postGate). Mirrored to the PDS as an.bsky.feed.postgate record. Enforced client-side on createReply; the bridged postgate is the source of truth for remote enforcement."
+      "description": "Who can reply to this post. Public federated posts mirror this policy using AT Protocol threadgate rules; it does not control who can read the post."
     },
     "reply_to": {
       "type": "string",
@@ -315,7 +315,21 @@
     "content"
   ],
   "rls": {
-    "read": {},
+    "read": {
+      "$or": [
+        {
+          "data.visibility_scope": "public"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
     "create": {
       "created_by_id": "{{user.id}}"
     },
