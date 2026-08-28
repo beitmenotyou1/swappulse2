@@ -1,6 +1,7 @@
 // Shared status notification helper — used by manage-incident and status-monitor
 // to email confirmed subscribers when incidents are created, updated, or resolved.
 import { sendBrandedEmail } from './smtpSender.ts';
+import { signStatusCapability } from './statusSubscriptionTokens.ts';
 
 export async function notifyStatusSubscribers(base44, incident, eventType) {
   try {
@@ -20,7 +21,9 @@ export async function notifyStatusSubscribers(base44, incident, eventType) {
 
     let notified = 0;
     for (const sub of confirmed) {
-      const unsubscribeUrl = `${statusUrl}?unsubscribe=${sub.unsubscribe_token || ''}`;
+      if (!sub.unsubscribe_token) continue;
+      const signedUnsubscribeToken = await signStatusCapability('unsubscribe', sub.unsubscribe_token);
+      const unsubscribeUrl = `${statusUrl}?unsubscribe=${signedUnsubscribeToken}`;
       const html = buildIncidentEmail(incident, eventType, statusUrl, unsubscribeUrl);
       const text = `${incident.title}, Status: ${incident.status}\n\nView: ${statusUrl}\n\nUnsubscribe: ${unsubscribeUrl}`;
       try {
