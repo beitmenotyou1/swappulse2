@@ -54,7 +54,8 @@ export default function PostDetail() {
             setError(body?.error || 'Post not found');
           }
         } else if (postId) {
-          const p = await base44.entities.Post.get(postId).catch(() => null);
+          const res = await base44.functions.invoke('get-visible-posts', { post_id: postId }).catch(() => null);
+          const p = res?.data?.post || null;
           if (!alive) return;
           setPost(p);
           if (!p) setError('Post not found');
@@ -84,9 +85,9 @@ export default function PostDetail() {
         seen.add(currentUri);
         let ancestor = null;
         try {
-          const local = await base44.entities.Post.filter({ at_uri: currentUri }, '-created_date', 1).catch(() => []);
-          if (local?.length) {
-            ancestor = local[0];
+          const localRes = await base44.functions.invoke('get-visible-posts', { at_uri: currentUri }).catch(() => null);
+          if (localRes?.data?.post) {
+            ancestor = localRes.data.post;
           } else {
             const res = await base44.functions.invoke('resolve-post-by-uri', { at_uri: currentUri }).catch(() => null);
             const body = res?.data ?? res;
