@@ -81,7 +81,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
         story_ref: s.at_uri || `at://${did}/${NSID.STORY}/${s.id}`,
         viewer_did: did,
         viewer_name: me?.full_name || '',
-        viewer_handle: me?.email?.split('@')[0] || '',
+        viewer_handle: me?.bsky_handle || me?.username || '',
         viewer_avatar: '',
         viewed_at: new Date().toISOString(),
       }, NSID.STORY_VIEW, did, signingKey);
@@ -145,7 +145,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
         post_id: story.id,
         reaction_type: type,
         reactor_name: me?.full_name || '',
-        reactor_handle: me?.email?.split('@')[0] || '',
+        reactor_handle: me?.bsky_handle || me?.username || '',
       }, NSID.REACTION, did, signingKey);
       await base44.entities.Reaction.create(stamped);
       toast({ title: `Sent @${story.author_handle || story.author_name || 'collector'} a reaction`, description: STORY_REACTIONS[type].label });
@@ -170,9 +170,10 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
   };
 
   const loadViewers = async () => {
-    if (!story) return;
-    const v = await base44.entities.StoryView.filter({ story_id: story.id }, '-viewed_at', 200).catch(() => []);
-    setViewers(v);
+    if (!story || !isOwn) return;
+    const res = await base44.functions.invoke('get-story-viewers', { story_id: story.id }).catch(() => null);
+    const data = res?.data ?? res;
+    setViewers(data?.viewers || []);
   };
 
   useEffect(() => { if (showSeenBy) loadViewers(); /* eslint-disable-next-line */ }, [showSeenBy, story?.id]);
