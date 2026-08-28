@@ -1,6 +1,6 @@
 {
   "trigger": {
-    "condition": null,
+    "condition": "${ false }",
     "config": {
       "trigger_type": "entity",
       "events": [
@@ -9,7 +9,7 @@
       "entity_name": "TradeListing"
     }
   },
-  "description": "Runs AI moderation analysis on new trade listings to detect scam language and misgrading",
+  "description": "SECURITY HOLD: automatic AI moderation trigger suspended until internal function calls have a platform-verifiable authentication mechanism.",
   "definition": {
     "document": {
       "dsl": "1.0.0",
