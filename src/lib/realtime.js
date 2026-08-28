@@ -113,11 +113,28 @@ class RealTimeManager {
       this.unsubs.push(u);
     };
     sub('Post', (e) => {
-      if (e.type === 'create') this.emit(e.data.post_type === 'pack_opening' ? 'feed.new_pull' : 'feed.new_post', e.data);
+      if (e.type !== 'create' || !e.data?.id) return;
+      // Treat realtime as invalidation only. Re-fetch through the server-side
+      // visibility gate before exposing the post body to UI listeners.
+      base44.functions.invoke('get-visible-posts', { post_id: e.data.id })
+        .then((res) => {
+          const post = res?.data?.post;
+          if (post) this.emit(post.post_type === 'pack_opening' ? 'feed.new_pull' : 'feed.new_post', post);
+        })
+        .catch(() => {});
     });
     sub('TradeListing', (e) => {
-      if (e.type === 'create') { this.emit('trade.new_listing', e.data); this.checkMatch(e.data); }
-      if (e.type === 'update') this.emit('trade.status_update', e.data);
+      if (!e.data?.id) return;
+      // Same rule for scoped trade listings: authorize the record first, then
+      // emit the validated projection to listeners.
+      base44.functions.invoke('get-visible-trades', { listing_id: e.data.id })
+        .then((res) => {
+          const listing = res?.data?.listing;
+          if (!listing) return;
+          if (e.type === 'create') { this.emit('trade.new_listing', listing); this.checkMatch(listing); }
+          if (e.type === 'update') this.emit('trade.status_update', listing);
+        })
+        .catch(() => {});
     });
     sub('CardPricing', (e) => {
       if (e.type === 'update') { this.emit('market.price_update', e.data); this.checkPriceAlert(e.data); }
@@ -199,8 +216,22 @@ class RealTimeManager {
       } catch {}
     };
     await Promise.all([
-      diff('Post', (it) => this.emit(it.post_type === 'pack_opening' ? 'feed.new_pull' : 'feed.new_post', it)),
-      diff('TradeListing', (it) => { this.emit('trade.new_listing', it); this.checkMatch(it); }),
+      diff('Post', (it) => {
+        base44.functions.invoke('get-visible-posts', { post_id: it.id })
+          .then((res) => {
+            const post = res?.data?.post;
+            if (post) this.emit(post.post_type === 'pack_opening' ? 'feed.new_pull' : 'feed.new_post', post);
+          })
+          .catch(() => {});
+      }),
+      diff('TradeListing', (it) => {
+        base44.functions.invoke('get-visible-trades', { listing_id: it.id })
+          .then((res) => {
+            const listing = res?.data?.listing;
+            if (listing) { this.emit('trade.new_listing', listing); this.checkMatch(listing); }
+          })
+          .catch(() => {});
+      }),
       diff('CardPricing', (it) => { this.emit('market.price_update', it); this.checkPriceAlert(it); }),
       diff('Reputation', (it) => this.emit('profile.reputation_update', it)),
       diff('TradeMessage', (it) => this.emit('trade.message', it)),
