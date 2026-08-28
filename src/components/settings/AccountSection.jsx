@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Clock, Fingerprint, Copy, Check } from 'lucide-react';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
+import ChainIdentityCard from '@/components/settings/ChainIdentityCard';
 import SettingRow from '@/components/settings/SettingRow';
 import SettingSelect from '@/components/settings/SettingSelect';
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
@@ -22,6 +23,7 @@ export default function AccountSection({ settings, update }) {
   return (
     <div className="space-y-4">
       <DomainHandleCard />
+      <ChainIdentityCard />
 
       <div className="rounded-xl border border-border bg-card p-3">
         <p className="flex items-center gap-2 text-sm font-bold"><Fingerprint className="h-4 w-4 text-primary" /> Permanent Account ID</p>
