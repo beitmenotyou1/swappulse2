@@ -24,6 +24,14 @@ const SKIP_COLLECTIONS = new Set([
 const TIME_BUDGET_MS = 100_000; // ~100s, leaving margin under the function limit
 const BATCH_LIMIT = 100; // records per collection per user per run
 
+// Privacy containment. Raw collection entries are private source data and must
+// never be bulk-federated. Only explicitly public binders may be published.
+function isPublicationEligible(collection: string, rec: any): boolean {
+  if (collection === 'org.swappulse.collectionEntry') return false;
+  if (collection === 'org.swappulse.binder') return rec?.visibility === 'public';
+  return true;
+}
+
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -93,6 +101,11 @@ export default async function (req: Request): Promise<Response> {
             .catch(() => []);
 
           for (const rec of records || []) {
+            if (!isPublicationEligible(collection, rec)) {
+              // Intentionally leave unbridged. A later sanitised public projection
+              // may become eligible, but private source entities never are.
+              continue;
+            }
             // Ensure the record's did is set to the user's DID before bridging
             const didWasUnset = !rec.did;
             if (didWasUnset) rec.did = identity.did;
