@@ -5,6 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { resolveAppUrl } from '../../shared/appUrl.ts';
 import { verifyTurnstile } from '../../shared/payments.ts';
+import { signStatusCapability } from '../../shared/statusSubscriptionTokens.ts';
 
 function randomToken() {
   const bytes = new Uint8Array(32);
@@ -61,7 +62,8 @@ export default async function(req) {
     }
 
     const origin = resolveAppUrl(req);
-    const confirmUrl = `${origin}/status?confirm=${confirmToken}`;
+    const signedConfirmToken = await signStatusCapability('confirm', confirmToken);
+    const confirmUrl = `${origin}/status?confirm=${signedConfirmToken}`;
 
     const html = `<!DOCTYPE html>
 <html>
