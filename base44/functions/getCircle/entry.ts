@@ -6,8 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await base44.auth.me().catch(() => null);
     const svc = base44.asServiceRole;
 
     const body = await req.json().catch(() => ({}));
@@ -17,13 +16,16 @@ Deno.serve(async (req) => {
     const circle = await svc.entities.Circle.get(circleId).catch(() => null);
     if (!circle) return Response.json({ error: 'Circle not found' }, { status: 404 });
 
-    const isCurator = circle.did === user.did;
-    const isMember = (circle.member_dids || []).includes(user.did);
+    const viewerDid = user?.did || '';
+    const isCurator = !!user && (circle.did === viewerDid || circle.created_by_id === user.id);
+    const isMember = !!viewerDid && (circle.member_dids || []).includes(viewerDid);
     const canSeeMembers = isCurator || isMember || circle.visibility === 'public';
 
     // Parallelize the two independent fetches (exit check + scoped trades).
     const [exits, scopedTrades] = await Promise.all([
-      svc.entities.CircleExit.filter({ circle_id: circleId, did: user.did }).catch(() => []),
+      viewerDid
+        ? svc.entities.CircleExit.filter({ circle_id: circleId, did: viewerDid }).catch(() => [])
+        : Promise.resolve([]),
       (isMember || isCurator)
         ? svc.entities.TradeListing.filter(
             { status: 'open', visibility: 'circle_scoped', circle_ref: circle.at_uri },
@@ -34,7 +36,7 @@ Deno.serve(async (req) => {
     ]);
     const hasExited = exits.length > 0;
 
-    const denied = circle.visibility === 'private' && !isMember && !isCurator;
+    const denied = circle.visibility !== 'public' && !isMember && !isCurator;
     const safeCircle = denied
       ? { id: circle.id, name: circle.name, visibility: circle.visibility, theme: circle.theme, member_count: circle.member_count }
       : circle;
