@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
-import { isPushSupported, getSubscriptionState, subscribePush, unsubscribePush } from '@/lib/push';
+import { getSubscriptionState, subscribePush, unsubscribePush } from '@/lib/push';
 
 export default function NotificationToggle() {
   const [supported, setSupported] = useState(true);

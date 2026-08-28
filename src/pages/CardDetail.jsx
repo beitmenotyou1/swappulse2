@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Loader2, ArrowLeft, Heart, Bookmark, ArrowLeftRight, Bell, Plus, ShieldCheck } from 'lucide-react';
-import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import { Loader2, ArrowLeft, Heart, ArrowLeftRight, Bell, Plus } from 'lucide-react';
+import { getCard, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Search, ShieldCheck, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, NSID } from '@/lib/atproto';
+import { ensureUserDid } from '@/lib/atproto';
 import { bridgeVouch } from '@/lib/federatedBridge';
 import Avatar from '@/components/Avatar';
 import SettingSelect from '@/components/settings/SettingSelect';

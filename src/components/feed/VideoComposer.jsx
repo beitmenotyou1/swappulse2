@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Video, Loader2, X, Upload } from 'lucide-react';
+import { Video, Loader2, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 

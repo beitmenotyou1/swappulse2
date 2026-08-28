@@ -3,7 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Loader2, Search, Ban, EyeOff, ShieldOff, History, Trash2, UserCheck, Eye, Plus, X } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import SuspendDialog from './SuspendDialog';

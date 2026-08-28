@@ -12,10 +12,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  BarChart,
-  Bar,
 } from 'recharts';
-import { base44 } from '@/api/base44Client';
 import { cardImageUrl, rarityKey } from '@/lib/tcgdex';
 import { formatPrice } from '@/lib/format';
 import { getSets } from '@/lib/tcgdex';

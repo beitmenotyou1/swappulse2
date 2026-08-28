@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Loader2, ShieldCheck, Plus } from 'lucide-react';
+import { Loader2, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import LabelerCard from '@/components/labelers/LabelerCard';

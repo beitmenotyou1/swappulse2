@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Image as ImageIcon, Sparkles, ArrowLeftRight, ExternalLink } from 'lucide-react';
+import { Loader2, Image as ImageIcon, Sparkles, ArrowLeftRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import LiveAvatar from '@/components/LiveAvatar';
 import ExternalIndicator from '@/components/ExternalIndicator';

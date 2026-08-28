@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, ShieldAlert, AlertTriangle, CheckCircle2, XCircle, Brain, TrendingUp } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2, XCircle, Brain } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';

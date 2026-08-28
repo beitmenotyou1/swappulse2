@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Send, ArrowLeft, Sparkles, Plus, MessageSquare, Radar } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Plus, MessageSquare, Radar } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';

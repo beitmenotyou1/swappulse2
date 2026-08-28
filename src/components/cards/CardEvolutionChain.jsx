@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Loader2, Dna } from 'lucide-react';
-import { searchCards, cardImageUrl } from '@/lib/tcgdex';
+import { searchCards } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 
 // CardEvolutionChain — shows the evolution line for a card by searching TCGDex

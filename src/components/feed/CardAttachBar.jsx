@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Image, FolderOpen, X } from 'lucide-react';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import CollectionPickerModal from '@/components/feed/CollectionPickerModal';
-import { cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import { rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 
 // Reusable attach bar shared by the post composer, comment composer, and

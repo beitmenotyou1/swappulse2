@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, Upload, Loader2, FileJson, FileSpreadsheet, FileCode } from 'lucide-react';
+import { Upload, Loader2, FileJson, FileSpreadsheet, FileCode } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 

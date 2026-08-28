@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Star, TrendingUp, CheckCircle2, XCircle, Award, MessageSquare } from 'lucide-react';
+import { Star, TrendingUp, CheckCircle2, Award, MessageSquare } from 'lucide-react';
 import { timeAgo } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 

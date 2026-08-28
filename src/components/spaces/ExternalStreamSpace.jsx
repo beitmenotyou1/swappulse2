@@ -155,7 +155,7 @@ export default function ExternalStreamSpace({ space: initialSpace }) {
       }
     })();
     return () => cleanupAudio();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [spaceId]);
 
   useEffect(() => {

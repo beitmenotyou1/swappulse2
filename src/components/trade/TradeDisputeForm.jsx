@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2, Flag, X, Upload, ImagePlus, AlertTriangle } from 'lucide-react';
+import { Loader2, Flag, X, ImagePlus, AlertTriangle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';

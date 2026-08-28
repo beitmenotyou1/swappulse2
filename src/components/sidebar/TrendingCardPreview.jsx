@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Globe, Loader2 } from 'lucide-react';
-import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import { getCard, rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { formatPrice } from '@/lib/format';
 import { useT } from '@/lib/i18n/I18nProvider';

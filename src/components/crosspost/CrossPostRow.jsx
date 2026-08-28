@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, FlaskConical, Loader2 } from 'lucide-react';
+import { FlaskConical, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { base44 } from '@/api/base44Client';
 import { platformMeta, contentTypeMeta, testCrossPost } from '@/lib/crosspost';

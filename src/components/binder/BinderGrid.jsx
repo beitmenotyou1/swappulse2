@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Star, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { cardImageUrl, rarityClasses, rarityKey } from '@/lib/tcgdex';
+import { rarityKey } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { formatPrice, conditionLabel } from '@/lib/format';
 

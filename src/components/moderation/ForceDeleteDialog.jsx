@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
-import { AlertTriangle, ShieldAlert, Loader2, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, Loader2 } from 'lucide-react';
 import SettingSelect from '@/components/settings/SettingSelect';
 
 const CONFIRM_WORD = 'DELETE';

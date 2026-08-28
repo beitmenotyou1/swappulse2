@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Trash2, CheckSquare, Square } from 'lucide-react';
-import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { rarityClasses } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { formatPrice, conditionLabel, variantLabel } from '@/lib/format';
 

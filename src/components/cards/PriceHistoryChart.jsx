@@ -1,7 +1,6 @@
 import React from 'react';
 import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { formatPrice } from '@/lib/format';
 
 // PriceHistoryChart — a compact trend chart showing a card's price changes
 // over time using the TCGDex pricing data already loaded on the card object.

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Target, ChevronDown, ChevronRight, CheckCircle2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
 import { getSets, getSet, cardImageUrl, rarityClasses } from '@/lib/tcgdex';
 import ChecklistDownloads from '@/components/collection/ChecklistDownloads';
 

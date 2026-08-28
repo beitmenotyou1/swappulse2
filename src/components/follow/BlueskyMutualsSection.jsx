@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, RefreshCw, UserPlus, UserCheck, ExternalLink, Loader2, Globe } from 'lucide-react';
+import { RefreshCw, UserPlus, UserCheck, ExternalLink, Loader2, Globe } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import Avatar from '@/components/Avatar';

@@ -7,7 +7,7 @@ import LiveBadge from '@/components/LiveBadge';
 import { useLivePresence } from '@/lib/livePresence';
 import ReactionBar from '@/components/feed/ReactionBar';
 import PostReplyThread from '@/components/feed/PostReplyThread';
-import { cardImageUrl, rarityClasses } from '@/lib/tcgdex';
+import { rarityClasses } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { timeAgo, formatNumber } from '@/lib/format';
 import { base44 } from '@/api/base44Client';

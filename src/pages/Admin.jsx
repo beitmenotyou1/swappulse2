@@ -22,7 +22,6 @@ import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection'
 import StandardSiteSection from '@/components/admin/StandardSiteSection';
 import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
-import TrustTierSection from '@/components/admin/TrustTierSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';

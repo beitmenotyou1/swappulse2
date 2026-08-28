@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Bell, TrendingUp, Repeat2, Mic, MessageCircle, Heart, Trophy, Gift, Star } from 'lucide-react';
-import { parseDeepLink, navigateFromDeepLink } from '@/lib/deepLinks';
+import { navigateFromDeepLink } from '@/lib/deepLinks';
 import { base44 } from '@/api/base44Client';
 
 const AUTO_DISMISS_MS = 30000;

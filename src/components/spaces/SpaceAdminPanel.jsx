@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Crown, Shield, Mic, MicOff, Hand, ArrowUpCircle, ArrowDownCircle, UserMinus } from 'lucide-react';
+import React from 'react';
+import { X, Crown, Shield, Mic, MicOff, ArrowUpCircle, ArrowDownCircle, UserMinus } from 'lucide-react';
 import LiveAvatar from '@/components/LiveAvatar';
 
 // Host/mod admin panel — a bottom sheet listing every participant with

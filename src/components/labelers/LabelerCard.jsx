@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShieldCheck, AlertTriangle, Award, Eye, Star, HelpCircle, Loader2, Check } from 'lucide-react';
+import React from 'react';
+import { ShieldCheck, AlertTriangle, Award, Eye, Star, HelpCircle } from 'lucide-react';
 import SubscribeLabelerButton from '@/components/labelers/SubscribeLabelerButton';
 
 const CATEGORY_ICON = {

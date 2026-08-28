@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Star, Send } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { cardImageUrl } from '@/lib/tcgdex';
 import { variantLabel } from '@/lib/format';
 import Avatar from '@/components/Avatar';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';

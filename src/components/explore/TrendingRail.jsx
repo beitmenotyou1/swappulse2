@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Flame, Loader2, TrendingUp, ArrowLeftRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import { rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 
 // TrendingRail — shows trending cards based on two signals: most-wishlisted

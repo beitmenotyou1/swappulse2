@@ -1,11 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Compass, Layers, BookOpen, ArrowLeftRight, Users, CalendarDays, Radio, Package,
-  BarChart3, Vote, Award, ShieldCheck, Settings as SettingsIcon, Heart, MessageSquare,
-  ChevronDown, FlaskConical, ScanLine, Search, Activity, Wrench, Code, ShieldAlert,
-  Library, LayoutDashboard, PartyPopper, Trophy, Target, Medal, MessageCircle, Bell,
-  UserPlus, Sparkles, Globe, TrendingUp, Image as ImageIcon,
+import { BookOpen, Heart, MessageSquare,
+  ChevronDown, FlaskConical, Search, Activity, Wrench, Code, ShieldAlert,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';

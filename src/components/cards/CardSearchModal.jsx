@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { searchCardsMulti, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import { searchCardsMulti, rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import LanguageFilter from '@/components/cards/LanguageFilter';
 import { useToast } from '@/components/ui/use-toast';

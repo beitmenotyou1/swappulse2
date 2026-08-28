@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Accessibility as AccessIcon, EyeOff, Type, Contrast } from 'lucide-react';
+import { Accessibility as AccessIcon, EyeOff, Type } from 'lucide-react';
 import SettingRow from '@/components/settings/SettingRow';
 import { applyAccessibility } from '@/hooks/useSettings';
 

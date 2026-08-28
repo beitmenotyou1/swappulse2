@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Loader2, Users, CreditCard, MessageCircle, ExternalLink, Globe } from 'lucide-react';
+import { Search, Loader2, Users, CreditCard, ExternalLink, Globe } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import LiveAvatar from '@/components/LiveAvatar';
 import ExternalIndicator from '@/components/ExternalIndicator';
@@ -8,7 +8,6 @@ import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { timeAgo } from '@/lib/format';
 import RarityFilterChips from '@/components/cards/RarityFilterChips';
 import { rarityKey } from '@/lib/tcgdex';
 

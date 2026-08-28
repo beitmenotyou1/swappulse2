@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Loader2, Download, Scissors, Plus, Trash2, UploadCloud, Rss } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
-import { bridgePodcastEpisode } from '@/lib/federatedBridge';
 import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { useToast } from '@/components/ui/use-toast';
 

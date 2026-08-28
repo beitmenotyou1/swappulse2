@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Bell, Plus, RefreshCw, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Bell, RefreshCw, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';

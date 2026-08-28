@@ -1,8 +1,7 @@
 import React, { useRef } from 'react';
-import { Image as ImageIcon, Video, X, Loader2, Link2, FileText } from 'lucide-react';
+import { Image as ImageIcon, Video, X, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { detectVideoPlatform } from '@/lib/mediaEmbed';
-import { Image } from '@/components/ui/image';
 
 // Media attachment UI for the composer: image picker (max 4 with alt text),
 // video URL field with alt text, and link preview card. State is managed by

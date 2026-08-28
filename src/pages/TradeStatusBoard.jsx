@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Loader2, ArrowLeftRight, Search, Filter } from 'lucide-react';
+import { Loader2, ArrowLeftRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
-import { TRADE_STATUS_LABELS, timeAgo } from '@/lib/format';
+import { timeAgo } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
 import GuideFooterLink from '@/components/help/GuideFooterLink';

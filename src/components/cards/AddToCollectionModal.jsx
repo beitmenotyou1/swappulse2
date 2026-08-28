@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
-import { cardImageUrl, cardSetName } from '@/lib/tcgdex';
+import { cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';

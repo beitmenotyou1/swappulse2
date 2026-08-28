@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { getCard, cardImageUrl, rarityClasses, cardSetName } from '@/lib/tcgdex';
+import { getCard, rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
 import { useT } from '@/lib/i18n/I18nProvider';
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Rss, Pin, Check, Loader2, ExternalLink } from 'lucide-react';
+import { Rss, Pin, Check, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import ExternalIndicator from '@/components/ExternalIndicator';

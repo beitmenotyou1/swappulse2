@@ -30,7 +30,7 @@ export default function AppPasswordModal({ action, target, onClose, onSuccess })
     if (action !== 'create' && target) {
       sendCode();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const sendCode = async () => {

@@ -124,7 +124,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
       if (elapsed >= total) { clearInterval(id); advance(); }
     }, step);
     return () => clearInterval(id);
-    /* eslint-disable-next-line */
+     
   }, [story?.id, segIdx, paused]);
 
   // Video element controls follow pause/mute state.
@@ -176,7 +176,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
     setViewers(data?.viewers || []);
   };
 
-  useEffect(() => { if (showSeenBy) loadViewers(); /* eslint-disable-next-line */ }, [showSeenBy, story?.id]);
+  useEffect(() => { if (showSeenBy) loadViewers();   }, [showSeenBy, story?.id]);
 
   const onPointerDown = (e) => { dragStartY.current = e.clientY; };
   const onPointerUp = (e) => {

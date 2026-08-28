@@ -138,7 +138,7 @@ export default function InPlatformSpace({ space: initialSpace }) {
       }
       cleanup();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [spaceId]);
 
   // Connect to every current stage speaker (mesh).

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Play } from 'lucide-react';
 import { detectVideoPlatform } from '@/lib/mediaEmbed';
-import { confirmExternalLink } from '@/lib/externalLink';
 
 // Inline video player for embeddable platforms (YouTube, TikTok, etc.).
 // Shows a thumbnail with a play button; clicking loads the iframe embed.

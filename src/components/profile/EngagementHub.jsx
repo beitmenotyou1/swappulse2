@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, MessageSquare, PenLine, BookOpen, Radio, Plus } from 'lucide-react';
+import { Users, MessageSquare, PenLine, BookOpen, Radio } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 // EngagementHub — surfaces a collector's communities (circles), recent

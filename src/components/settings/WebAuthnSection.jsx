@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Key, Plus, Trash2, Fingerprint, Check } from "lucide-react";
+import { Loader2, Key, Plus, Trash2, Fingerprint } from "lucide-react";
 import { startRegistration } from "@simplewebauthn/browser";
 
 // WebAuthnSection — Settings UI for managing WebAuthn/U2F security keys.

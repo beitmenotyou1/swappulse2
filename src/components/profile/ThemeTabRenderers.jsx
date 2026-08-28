@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Trophy, BarChart3, Star, Target, TrendingUp, Award, Play, Radio, Users, Image as ImageIcon, ArrowUpRight } from 'lucide-react';
+import { Loader2, Trophy, BarChart3, Star, Target, TrendingUp, Award, Play, Radio, ArrowUpRight } from 'lucide-react';
 import PostCard from '@/components/feed/PostCard';
 import Avatar from '@/components/Avatar';
 import { base44 } from '@/api/base44Client';

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Tag } from 'lucide-react';
-import { formatPrice } from '@/lib/format';
 
 // CardVariantPricing — full pricing breakdown across all variants and
 // timeframes from the TCGDex pricing object. Shows normal vs holofoil market

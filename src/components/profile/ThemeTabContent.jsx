@@ -8,7 +8,6 @@ import EngagementHub from '@/components/profile/EngagementHub';
 import ActivityTab from '@/components/profile/ActivityTab';
 import NetworkFeedSection from '@/components/feed/NetworkFeedSection';
 import InfiniteScrollSentinel from '@/components/feed/InfiniteScrollSentinel';
-import TradeActivityTab from '@/components/profile/TradeActivityTab';
 import ReputationDashboard from '@/components/profile/ReputationDashboard';
 import ReputationSummary from '@/components/profile/ReputationSummary';
 import FollowingTab from '@/components/profile/FollowingTab';
