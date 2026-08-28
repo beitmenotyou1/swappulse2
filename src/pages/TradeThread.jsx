@@ -44,12 +44,13 @@ export default function TradeThread() {
     (async () => {
       setLoading(true);
       try {
-        const [t, m, u, watches] = await Promise.all([
-          base44.entities.TradeListing.get(tradeId).catch(() => null),
+        const [tradeRes, m, u, watches] = await Promise.all([
+          base44.functions.invoke('get-visible-trades', { listing_id: tradeId }).catch(() => null),
           base44.entities.TradeMessage.filter({ trade_id: tradeId }, 'created_date', 200).catch(() => []),
           base44.auth.me().catch(() => null),
           base44.entities.TradeWatch.filter({ trade_id: tradeId }).catch(() => []),
         ]);
+        const t = tradeRes?.data?.listing || null;
         setTrade(t);
         setMessages(m);
         setMe(u);
