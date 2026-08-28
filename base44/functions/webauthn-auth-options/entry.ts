@@ -7,7 +7,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateAuthenticationOptions } from 'npm:@simplewebauthn/server@10';
-import { generateSignedChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
+import { issueWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -37,13 +37,19 @@ export default async function (req: Request): Promise<Response> {
         }));
     }
 
-    const { challenge, signature } = await generateSignedChallenge(process.env.BACKEND_FUNCTION_SECRET!);
+    const { challenge, signature } = await issueWebAuthnChallenge(
+      base44.asServiceRole,
+      process.env.BACKEND_FUNCTION_SECRET!,
+      'authentication',
+      email,
+      rpConfig,
+    );
 
     const options = await generateAuthenticationOptions({
       rpID: rpConfig.rpId,
       challenge: base64UrlToUint8Array(challenge),
       allowCredentials,
-      userVerification: 'preferred',
+      userVerification: 'required',
     });
 
     return Response.json({ options, challenge_signature: signature });
