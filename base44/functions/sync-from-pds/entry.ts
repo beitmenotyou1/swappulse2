@@ -9,14 +9,12 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Follows are locally authoritative — they persist until the user explicitly
-// unfollows via their profile. Never auto-delete local follows based on PDS
-// state (the bridge account repo is not a reliable source of truth for follows
-// once users have their own did:plc repos).
+// Some entities are locally authoritative and must never be deleted merely
+// because a PDS copy is missing. CollectionEntry is now private Base44 source
+// data, so it is intentionally excluded from this PDS-authoritative sync.
 const COLLECTION_MAP = [
   { collection: 'app.bsky.feed.post', entity: 'Post' },
   { collection: 'app.bsky.feed.repost', entity: 'Repost' },
-  { collection: 'org.swappulse.collectionEntry', entity: 'CollectionEntry' },
   { collection: 'org.swappulse.tradeListing', entity: 'TradeListing' },
 ];
 
