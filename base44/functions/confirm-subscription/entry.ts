@@ -15,6 +15,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_MATCHED_ATTEMPTS = 10;
+const CALLER_WINDOW_MS = 10 * 60 * 1000;
+const MAX_CALLER_ATTEMPTS = 30;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -22,6 +24,55 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+function callerFingerprint(req: Request): string {
+  // Base44 sits behind a reverse proxy. Prefer proxy-populated client IP
+  // headers; never store the address itself, only a SHA-256-derived throttle
+  // key. This is a secondary abuse control, not the capability-token auth.
+  const cfIp = req.headers.get('cf-connecting-ip')?.trim();
+  const realIp = req.headers.get('x-real-ip')?.trim();
+  const forwarded = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const ip = cfIp || realIp || forwarded || 'unknown';
+  const ua = (req.headers.get('user-agent') || '').slice(0, 160);
+  return `${ip}|${ua}`;
+}
+
+async function consumeCallerRateLimit(svc: any, req: Request): Promise<boolean> {
+  const digest = await sha256Hex(`status-confirm-caller:${callerFingerprint(req)}`);
+  const key = `status-confirm-caller:${digest}`;
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const rows = await svc.entities.AuthRateLimit.filter({ email: key }, '-created_date', 1).catch(() => []);
+  const row = rows?.[0];
+
+  if (!row) {
+    await svc.entities.AuthRateLimit.create({
+      email: key,
+      count: 1,
+      window_start: nowIso,
+      last_request_at: nowIso,
+    });
+    return true;
+  }
+
+  const windowStart = Date.parse(row.window_start || '');
+  if (!Number.isFinite(windowStart) || now - windowStart >= CALLER_WINDOW_MS) {
+    await svc.entities.AuthRateLimit.update(row.id, {
+      count: 1,
+      window_start: nowIso,
+      last_request_at: nowIso,
+    });
+    return true;
+  }
+
+  const count = Math.max(0, Number(row.count || 0));
+  if (count >= MAX_CALLER_ATTEMPTS) return false;
+  await svc.entities.AuthRateLimit.update(row.id, {
+    count: count + 1,
+    last_request_at: nowIso,
+  });
+  return true;
 }
 
 async function consumeRateLimit(svc: any, action: string, token: string): Promise<boolean> {
@@ -71,6 +122,15 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const base44 = createClientFromRequest(req);
+    const svc = base44.asServiceRole;
+
+    // Secondary abuse throttle for all calls, including malformed/random token
+    // spray. Capability possession remains the actual authorisation mechanism.
+    const callerAllowed = await consumeCallerRateLimit(svc, req);
+    if (!callerAllowed) {
+      return Response.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+    }
+
     const body = await req.json().catch(() => ({}));
     const token = String(body.token || '').trim().toLowerCase();
     const action = String(body.action || 'confirm').trim().toLowerCase();
@@ -81,8 +141,6 @@ export default async function(req: Request): Promise<Response> {
     if (!TOKEN_RE.test(token)) {
       return Response.json({ error: 'Invalid or expired token' }, { status: 400 });
     }
-
-    const svc = base44.asServiceRole;
 
     if (action === 'unsubscribe') {
       const matches = await svc.entities.StatusSubscriber
