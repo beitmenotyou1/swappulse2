@@ -136,8 +136,9 @@ export default function Explore() {
   useEffect(() => {
     (async () => {
       try {
-        const p = await base44.entities.Post.list('-created_date', 20);
-        setLatestPosts(sortPostsDescending(p || []));
+        const res = await base44.functions.invoke('get-explore-feed', { limit: 20 });
+        const p = res?.data?.items || [];
+        setLatestPosts(sortPostsDescending(p));
       } catch { setLatestPosts([]); }
     })();
   }, []);
