@@ -20,6 +20,17 @@ Deno.serve(async (req) => {
     if (binder.visibility === 'private' && !isOwner) {
       return Response.json({ error: 'Not available' }, { status: 403 });
     }
+    if (binder.visibility === 'followers' && !isOwner) {
+      if (!user.did || !binder.did) {
+        return Response.json({ error: 'Not available' }, { status: 403 });
+      }
+      const follows = await svc.entities.Follow
+        .filter({ did: user.did, subject_did: binder.did }, '-created_date', 1)
+        .catch(() => []);
+      if (!follows?.length) {
+        return Response.json({ error: 'Followers only' }, { status: 403 });
+      }
+    }
 
     // Resolve the owner's collection entries so slots can render card art.
     const ownerFilter = binder.did ? { did: binder.did } : { created_by_id: binder.created_by_id };
