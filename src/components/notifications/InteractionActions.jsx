@@ -23,9 +23,11 @@ export default function InteractionActions({ n, onResponded }) {
       // For comment notifications, prefer the local comment Post (has the
       // correct author did for notify); fall back to the external strongRef.
       if (isComment && n.metadata?.commentId) {
-        t = await base44.entities.Post.get(n.metadata.commentId).catch(() => null);
+        const res = await base44.functions.invoke('get-visible-posts', { post_id: n.metadata.commentId }).catch(() => null);
+        t = res?.data?.post || null;
       } else if (n.metadata?.postId) {
-        t = await base44.entities.Post.get(n.metadata.postId).catch(() => null);
+        const res = await base44.functions.invoke('get-visible-posts', { post_id: n.metadata.postId }).catch(() => null);
+        t = res?.data?.post || null;
       }
       if (!alive) return;
       if (!t && isComment && n.metadata?.commentUri) {
