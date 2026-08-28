@@ -35,22 +35,31 @@ function randomIdentityId(): string {
   return `0x${(n === 0n ? 1n : n).toString(16)}`;
 }
 
-function networkConfig() {
-  const accountClassHash = String(Deno.env.get('SWAPPULSE_ACCOUNT_CLASS_HASH') || '').trim();
-  const identityRegistryAddress = String(Deno.env.get('SWAPPULSE_IDENTITY_REGISTRY_ADDRESS') || '').trim();
-  const recoveryController = String(Deno.env.get('SWAPPULSE_RECOVERY_CONTROLLER') || '').trim();
-  const parsedDelay = Number(Deno.env.get('SWAPPULSE_RECOVERY_DELAY_SECONDS') || '172800');
+async function networkConfig(svc: any) {
+  const rows = await svc.entities.ChainNetworkConfig
+    .filter({ network: 'SWAPPULSE_TESTNET' }, '-updated_date', 1)
+    .catch(() => []);
+  const row = rows?.[0] || null;
+  const accountClassHash = String(row?.account_class_hash || '').trim();
+  const identityRegistryAddress = String(row?.identity_registry_address || '').trim();
+  const recoveryController = String(row?.recovery_controller || '').trim();
+  const parsedDelay = Number(row?.recovery_delay_seconds ?? 172800);
   const recoveryDelaySeconds = Number.isFinite(parsedDelay) && parsedDelay >= 0
-    ? Math.floor(parsedDelay)
+    ? Math.min(2592000, Math.floor(parsedDelay))
     : 172800;
+  const status = String(row?.status || 'UNCONFIGURED');
 
   return {
+    id: row?.id || '',
     network: 'SWAPPULSE_TESTNET',
     accountClassHash,
     identityRegistryAddress,
     recoveryController,
     recoveryDelaySeconds,
-    ready: Boolean(accountClassHash && identityRegistryAddress),
+    rpcUrl: String(row?.rpc_url || '').trim(),
+    explorerUrl: String(row?.explorer_url || '').trim(),
+    status,
+    ready: status === 'CONFIGURED' && Boolean(accountClassHash && identityRegistryAddress),
   };
 }
 
@@ -86,23 +95,94 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || 'config');
     const svc = base44.asServiceRole;
-    const config = networkConfig();
+    const config = await networkConfig(svc);
 
     if (action === 'config') {
       return Response.json({
         ok: true,
         config: {
           network: config.network,
+          status: config.status,
           ready: config.ready,
           account_class_hash: config.accountClassHash,
           identity_registry_address: config.identityRegistryAddress,
+          recovery_controller: config.recoveryController,
           recovery_controller_configured: Boolean(config.recoveryController),
           recovery_delay_seconds: config.recoveryDelaySeconds,
+          rpc_url: config.rpcUrl,
+          explorer_url: config.explorerUrl,
         },
         notes: [
+          'These are public blockchain configuration values stored in the admin-only ChainNetworkConfig entity, not secrets.',
           'This endpoint never returns a private key or passkey secret.',
           'Ordinary-user provisioning remains disabled until AgeStatus enforcement is implemented.',
         ],
+      });
+    }
+
+    if (action === 'save_config') {
+      const status = String(body.status || 'CONFIGURED').trim().toUpperCase();
+      if (!['UNCONFIGURED', 'CONFIGURED', 'PAUSED'].includes(status)) {
+        return jsonError('Invalid config status', 400, 'INVALID_CONFIG_STATUS');
+      }
+
+      let accountClassHash = '';
+      let identityRegistryAddress = '';
+      let recoveryController = '';
+      try {
+        if (body.account_class_hash) accountClassHash = normalizeHex(body.account_class_hash, 'account_class_hash');
+        if (body.identity_registry_address) identityRegistryAddress = normalizeAddress(body.identity_registry_address, 'identity_registry_address');
+        if (body.recovery_controller) recoveryController = normalizeAddress(body.recovery_controller, 'recovery_controller');
+      } catch (e: any) {
+        return jsonError(e?.message || 'Invalid chain configuration', 400, 'INVALID_CHAIN_CONFIG');
+      }
+
+      if (status === 'CONFIGURED' && (!accountClassHash || !identityRegistryAddress)) {
+        return jsonError('Configured network requires account_class_hash and identity_registry_address', 400, 'INCOMPLETE_CHAIN_CONFIG');
+      }
+
+      const parsedDelay = Number(body.recovery_delay_seconds ?? 172800);
+      if (!Number.isFinite(parsedDelay) || parsedDelay < 0 || parsedDelay > 2592000) {
+        return jsonError('recovery_delay_seconds must be between 0 and 2592000', 400, 'INVALID_RECOVERY_DELAY');
+      }
+
+      const rpcUrl = String(body.rpc_url || '').trim();
+      const explorerUrl = String(body.explorer_url || '').trim();
+      for (const [label, url] of [['rpc_url', rpcUrl], ['explorer_url', explorerUrl]] as const) {
+        if (url && !/^https:\/\//i.test(url)) return jsonError(`${label} must use https`, 400, 'INVALID_PUBLIC_URL');
+      }
+
+      const payload = {
+        network: 'SWAPPULSE_TESTNET',
+        account_class_hash: accountClassHash,
+        identity_registry_address: identityRegistryAddress,
+        recovery_controller: recoveryController,
+        recovery_delay_seconds: Math.floor(parsedDelay),
+        rpc_url: rpcUrl,
+        explorer_url: explorerUrl,
+        status,
+        updated_at: new Date().toISOString(),
+        updated_by: caller.id,
+      };
+
+      if (config.id) await svc.entities.ChainNetworkConfig.update(config.id, payload);
+      else await svc.entities.ChainNetworkConfig.create(payload);
+
+      const saved = await networkConfig(svc);
+      return Response.json({
+        ok: true,
+        config: {
+          network: saved.network,
+          status: saved.status,
+          ready: saved.ready,
+          account_class_hash: saved.accountClassHash,
+          identity_registry_address: saved.identityRegistryAddress,
+          recovery_controller: saved.recoveryController,
+          recovery_controller_configured: Boolean(saved.recoveryController),
+          recovery_delay_seconds: saved.recoveryDelaySeconds,
+          rpc_url: saved.rpcUrl,
+          explorer_url: saved.explorerUrl,
+        },
       });
     }
 
