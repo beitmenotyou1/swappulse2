@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { useAuth } from '@/lib/AuthContext';
 import { Users, LogOut, LogIn, Loader2, ArrowLeftRight, Lock } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import { cardImageUrl } from '@/lib/tcgdex';
-import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -46,22 +44,7 @@ export default function CircleDetail() {
   const join = async () => {
     setActing(true);
     try {
-      const { did } = await ensureUserDid();
-      const me = await base44.auth.me();
-      const c = data.circle;
-      const profile = { did, name: me?.full_name || '', handle: me?.email?.split('@')[0] || '', avatar: '' };
-      const members = [...(c.member_dids || []), did];
-      const profiles = [...(c.member_profiles || []), profile];
-      await base44.entities.Circle.update(c.id, {
-        member_dids: members,
-        member_profiles: profiles,
-        member_count: members.length,
-      });
-      if (c.at_uri) {
-        updateBridgedRecord({ id: c.id, at_uri: c.at_uri, bridged: true }, 'Circle').then((res) => {
-          if (res?.cid) base44.entities.Circle.update(c.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
-        }).catch(() => {});
-      }
+      await base44.functions.invoke('circle-membership', { circle_id: data.circle.id, action: 'join' });
       await load();
     } catch {
       /* ignore */
@@ -73,27 +56,7 @@ export default function CircleDetail() {
   const exit = async () => {
     setActing(true);
     try {
-      const { did, signingKey } = await ensureUserDid();
-      const c = data.circle;
-      const members = (c.member_dids || []).filter((d) => d !== did);
-      const profiles = (c.member_profiles || []).filter((p) => p.did !== did);
-      await base44.entities.Circle.update(c.id, {
-        member_dids: members,
-        member_profiles: profiles,
-        member_count: members.length,
-      });
-      if (c.at_uri) {
-        updateBridgedRecord({ id: c.id, at_uri: c.at_uri, bridged: true }, 'Circle').then((res) => {
-          if (res?.cid) base44.entities.Circle.update(c.id, { cid: res.cid, content_hash: res.content_hash || '' }).catch(() => {});
-        }).catch(() => {});
-      }
-      const stamped = await stampRecord(
-        { circle_ref: c.at_uri, circle_id: c.id, exited_at: new Date().toISOString() },
-        NSID.CIRCLE_EXIT,
-        did,
-        signingKey,
-      );
-      await base44.entities.CircleExit.create(stamped);
+      await base44.functions.invoke('circle-membership', { circle_id: data.circle.id, action: 'leave' });
       await load();
     } catch {
       /* ignore */
