@@ -13,6 +13,7 @@ import BackfillSection from '@/components/admin/BackfillSection';
 import PrivacyAuditSection from '@/components/admin/PrivacyAuditSection';
 import ProvisionIdentitiesSection from '@/components/admin/ProvisionIdentitiesSection';
 import ConsolidateIdentitySection from '@/components/admin/ConsolidateIdentitySection';
+import ChainIdentitySection from '@/components/admin/ChainIdentitySection';
 import SyncProfilesSection from '@/components/admin/SyncProfilesSection';
 import FederationDiagnosticsSection from '@/components/admin/FederationDiagnosticsSection';
 import SeoAuditSection from '@/components/admin/SeoAuditSection';
@@ -115,6 +116,7 @@ export default function Admin() {
         )}
         {tab === 'identity' && (
           <>
+            <ChainIdentitySection />
             <ProvisionIdentitiesSection />
             <ConsolidateIdentitySection />
             <FederationDiagnosticsSection />
