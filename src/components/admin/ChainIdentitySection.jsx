@@ -28,6 +28,8 @@ export default function ChainIdentitySection() {
   const [deploymentTxHash, setDeploymentTxHash] = useState('');
   const [registrationTxHash, setRegistrationTxHash] = useState('');
   const [recording, setRecording] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState(null);
 
   useEffect(() => {
     if (user?.id && !targetUserId) setTargetUserId(user.id);
@@ -166,6 +168,40 @@ export default function ChainIdentitySection() {
     }
   };
 
+  const reconcile = async () => {
+    if (!prepared?.identity?.id) return;
+    setReconciling(true);
+    setReconcileResult(null);
+    try {
+      const res = await base44.functions.invoke('chain-identity-reconcile', {
+        record_id: prepared.identity.id,
+      });
+      const data = res?.data || res;
+      setReconcileResult(data);
+      const outcome = data?.results?.[0]?.outcome || 'UNKNOWN';
+      toast({
+        title: 'Chain state checked',
+        description: `Reconciliation result: ${outcome}.`,
+        variant: outcome === 'ERROR' || outcome === 'REVERSE_MISMATCH' ? 'destructive' : undefined,
+      });
+      const refreshed = await base44.functions.invoke('chain-identity-admin', {
+        action: 'prepare',
+        target_user_id: targetUserId.trim(),
+        public_key: publicKey.trim(),
+      });
+      const refreshedData = refreshed?.data || refreshed;
+      if (refreshedData?.identity) setPrepared(refreshedData);
+    } catch (err) {
+      toast({
+        title: 'Chain reconciliation failed',
+        description: err?.response?.data?.error || err?.message || 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setReconciling(false);
+    }
+  };
+
   const copyDeployment = async () => {
     if (!deploymentJson) return;
     await navigator.clipboard?.writeText(deploymentJson);
@@ -239,6 +275,12 @@ export default function ChainIdentitySection() {
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <input
+              value={configDraft.chain_id}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, chain_id: e.target.value }))}
+              placeholder="Expected Starknet chain ID 0x…"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
               value={configDraft.account_class_hash}
               onChange={(e) => setConfigDraft((p) => ({ ...p, account_class_hash: e.target.value }))}
               placeholder="SwapPulseAccount class hash 0x…"
@@ -293,7 +335,7 @@ export default function ChainIdentitySection() {
         <div className="mt-3 flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            The Cairo source is present, but the testnet class hash and IdentityRegistry address have not been configured yet. You can reserve an identity now, but you cannot deploy it until the contracts are compiled, declared and deployed.
+            The Cairo source is present, but the chain ID, account class hash, and IdentityRegistry address have not all been configured yet. You can reserve an identity now, but you cannot deploy it until the contracts are compiled, declared and deployed.
           </p>
         </div>
       )}
