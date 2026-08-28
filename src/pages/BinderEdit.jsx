@@ -106,12 +106,14 @@ export default function BinderEdit() {
           record_type: existing.record_type,
           sig: existing.sig,
         });
-        if (existing.bridged && existing.at_uri) {
-          if (visibility === 'public') {
+        if (visibility === 'public') {
+          if (existing.bridged && existing.at_uri) {
             updateBridgedRecord({ id: binderId, at_uri: existing.at_uri, bridged: true }, 'Binder').catch(() => {});
-          } else {
-            // Privacy containment: AT Protocol repositories are public-readable.
-            // Followers/private binders must remove any existing PDS copy.
+          }
+        } else {
+          // Privacy containment: AT Protocol repositories are public-readable.
+          // Followers/private binders must remove every public federation copy.
+          if (existing.bridged && existing.at_uri) {
             base44.functions.invoke('atproto-bridge', { action: 'delete', uri: existing.at_uri })
               .then(() => base44.entities.Binder.update(binderId, {
                 bridged: false,
@@ -120,6 +122,17 @@ export default function BinderEdit() {
                 content_hash: '',
               }))
               .catch((e) => console.error('binder privacy unbridge failed', e));
+          }
+          if (existing.standard_doc_uri) {
+            base44.functions.invoke('publish-standard-document', {
+              action: 'delete',
+              documentUri: existing.standard_doc_uri,
+            }).then((res) => {
+              const data = res?.data ?? res;
+              if (data?.deleted || data?.ok) {
+                base44.entities.Binder.update(binderId, { standard_doc_uri: '' }).catch(() => {});
+              }
+            }).catch((e) => console.error('binder standard.site privacy delete failed', e));
           }
         }
         navigate(`/binder/${binderId}`);
