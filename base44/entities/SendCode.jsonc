@@ -2,7 +2,7 @@
   "name": "SendCode",
   "type": "object",
   "title": "SendCode",
-  "description": "org.swappulse.sendCode \u2014 a single-use one-time code issued as a second factor for outgoing crypto sends. After the user unlocks their custodial wallet via passkey/PIN (first factor), the backend issues a random 6-digit code displayed in-app with a 60-second TTL. The user must enter the code before the transaction is broadcast. Each code is bound to a specific (did, to_address, amount_wei, chain) tuple to prevent replay or substitution.",
+  "description": "DEPRECATED / QUARANTINED legacy custodial-wallet send-code entity. Not part of the current SwapPulse architecture. Retained only for audit/history; user access and creation are disabled.",
   "properties": {
     "did": {
       "type": "string",
@@ -61,37 +61,19 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "user_condition": {
