@@ -34,7 +34,6 @@ export default function TradeBoard() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [initialOffers, setInitialOffers] = useState([]);
-  const [myCircleUris, setMyCircleUris] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [trustedDids, setTrustedDids] = useState(new Set());
   const [trustedOnly, setTrustedOnly] = useState(false);
@@ -106,16 +105,9 @@ export default function TradeBoard() {
     }
   }, []);
 
-  // §2.7 circle-scoped trades are only visible to members of the referenced circle.
   useEffect(() => {
     (async () => {
       try { setCurrentUser(await base44.auth.me()); } catch { setCurrentUser(null); }
-      try {
-        const res = await base44.functions.invoke('getMyCircles', {});
-        setMyCircleUris(new Set((res.data?.circles || []).map((c) => c.at_uri).filter(Boolean)));
-      } catch {
-        setMyCircleUris(new Set());
-      }
     })();
   }, []);
 
