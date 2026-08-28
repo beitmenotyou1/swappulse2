@@ -95,24 +95,9 @@ async function bridgeRecord(entityName, record, nsid, entityId) {
 }
 
 export async function bridgeCollectionEntry(entry) {
-  const { did } = await ensureUserDid();
-  let authorName = '', authorHandle = '', authorAvatar = '';
-  try {
-    const me = await base44.auth.me();
-    authorName = me?.full_name || '';
-    authorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
-    authorAvatar = me?.avatar || '';
-  } catch {}
-  const record = buildCollectionEntryRecord(entry, did, authorName, authorHandle, authorAvatar);
-  const stamped = await bridgeRecord('CollectionEntry', record, NSID.COLLECTION_ENTRY, entry.id);
-  return {
-    did: stamped.did,
-    at_uri: stamped.at_uri,
-    cid: stamped.cid,
-    record_type: stamped.record_type,
-    sig: stamped.sig,
-    bridged: stamped.bridged ?? false,
-  };
+  // Privacy containment: CollectionEntry is private Base44 source data.
+  // Public federation will use a sanitised projection in Phase 1.
+  return { bridged: false, privacy_mode: true };
 }
 
 export async function bridgeTradeListing(listing) {
@@ -166,31 +151,8 @@ export async function updateBridgedTradeListing(listing) {
 // place); only the cid changes. Author fields are re-read from the current user
 // so the federated record keeps its author metadata. No-op if not bridged.
 export async function updateBridgedCollectionEntry(entry) {
-  if (!entry?.at_uri || !entry?.bridged) return null;
-  const { did } = await ensureUserDid().catch(() => ({ did: '' }));
-  let authorName = '', authorHandle = '', authorAvatar = '';
-  try {
-    const me = await base44.auth.me();
-    authorName = me?.full_name || '';
-    authorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
-    authorAvatar = me?.avatar || '';
-  } catch {}
-  const record = buildCollectionEntryRecord(entry, did, authorName, authorHandle, authorAvatar);
-  try {
-    const res = await base44.functions.invoke('atproto-bridge', {
-      action: 'update',
-      collection: NSID.COLLECTION_ENTRY,
-      record,
-      uri: entry.at_uri,
-    });
-    if (res?.uri && res?.cid) {
-      return { cid: res.cid, content_hash: res.content_hash || '', bridged: true };
-    }
-    return null;
-  } catch (err) {
-    console.error('atprotoRecords: update collection entry failed', err);
-    return null;
-  }
+  // Privacy containment: raw collection entries are no longer updated on PDS.
+  return null;
 }
 
 // Delete a bridged record from the PDS. Call before deleting the local entity
