@@ -8,6 +8,7 @@
 // issuing the actual session token after this validation passes.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyPassword } from '../../shared/appPasswordCrypto.ts';
+import { consumeAuthAttempt, resetAuthAttempts } from '../../shared/authThrottle.ts';
 
 async function resolveHandle(handle: string): Promise<string> {
   if (handle.startsWith('did:')) return handle;
@@ -56,16 +57,32 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ valid: false, error: 'Handle and app password are required.' }, { status: 400 });
     }
 
-    // 1. Resolve handle → DID.
+    // Account-keyed throttling protects this unauthenticated credential check
+    // against brute force and password spraying without trusting caller-supplied
+    // IP headers. The key is SHA-256-derived before storage.
+    const throttle = await consumeAuthAttempt(svc, 'swap-app-password', handle, {
+      maxAttempts: 5,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!throttle.allowed) {
+      return Response.json(
+        { valid: false, error: 'Too many authentication attempts. Try again later.', retry_after: throttle.retryAfterSeconds },
+        { status: 429, headers: { 'Retry-After': String(throttle.retryAfterSeconds || 900) } },
+      );
+    }
+
+    // 1. Resolve handle → DID. Do not distinguish resolution/account failures
+    // from a bad password: public authentication endpoints should not provide
+    // a useful account-enumeration oracle.
     const did = await resolveHandle(handle).catch(() => null);
     if (!did) {
-      return Response.json({ valid: false, error: 'Could not resolve handle.' }, { status: 400 });
+      return Response.json({ valid: false, error: 'Invalid credentials.' }, { status: 401 });
     }
 
     // 2. Find the SwapPulse user by DID.
     const users = await svc.entities.User.filter({ did }, '-created_date', 1).catch(() => []);
     if (!users || users.length === 0) {
-      return Response.json({ valid: false, error: 'No SwapPulse account for this identity.' }, { status: 404 });
+      return Response.json({ valid: false, error: 'Invalid credentials.' }, { status: 401 });
     }
     const user = users[0];
 
@@ -84,6 +101,9 @@ export default async function (req: Request): Promise<Response> {
     if (!matched) {
       return Response.json({ valid: false, error: 'Invalid credentials.' }, { status: 401 });
     }
+
+    // Successful credential verification clears the failed-attempt window.
+    await resetAuthAttempts(svc, 'swap-app-password', handle).catch(() => {});
 
     // 4. Scope enforcement.
     if (requestedOperation && !scopeAllows(matched.scope, requestedOperation)) {
@@ -104,9 +124,7 @@ export default async function (req: Request): Promise<Response> {
     return Response.json({
       valid: true,
       did,
-      user_id: user.id,
       scope: matched.scope,
-      label: matched.label,
     });
   } catch (error) {
     console.error('validate-app-password error:', error?.message || error);
