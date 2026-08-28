@@ -1,0 +1,122 @@
+{
+  "name": "ChainIdentity",
+  "type": "object",
+  "title": "ChainIdentity",
+  "description": "Private Base44 mirror of a SwapPulse Network identity. The blockchain is authoritative. Contains no private keys, seed phrases, WebAuthn secret material, email address, date of birth, or AT Protocol credentials.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Private Base44 user id mapped to this chain identity. Never written on-chain."
+    },
+    "chain_identity_id": {
+      "type": "string",
+      "description": "Opaque public felt252 identity identifier, encoded as 0x-prefixed hex."
+    },
+    "account_address": {
+      "type": "string",
+      "description": "SwapPulse smart-account contract address on the configured testnet."
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "SWAPPULSE_TESTNET"
+      ],
+      "default": "SWAPPULSE_TESTNET"
+    },
+    "account_class_hash": {
+      "type": "string",
+      "description": "Declared SwapPulseAccount class hash used for this account deployment."
+    },
+    "identity_registry_address": {
+      "type": "string",
+      "description": "IdentityRegistry contract address for this network."
+    },
+    "deployment_tx_hash": {
+      "type": "string",
+      "description": "Deploy-account transaction hash, when known."
+    },
+    "registration_tx_hash": {
+      "type": "string",
+      "description": "IdentityRegistry registration transaction hash, when known."
+    },
+    "signer_version": {
+      "type": "string",
+      "enum": [
+        "STARK_V1",
+        "P256_WEBAUTHN_V2"
+      ],
+      "default": "STARK_V1",
+      "description": "Public signer scheme version only. No signer secret is stored."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "DEPLOYED",
+        "REGISTERED",
+        "MERGED",
+        "RECOVERY_PENDING",
+        "RECOVERED",
+        "FAILED"
+      ],
+      "default": "PENDING"
+    },
+    "canonical_identity_id": {
+      "type": "string",
+      "description": "Canonical chain identity id after an exceptional admin merge. Normally equal to chain_identity_id."
+    },
+    "recovery_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_reconciled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "failure_code": {
+      "type": "string",
+      "maxLength": 120,
+      "description": "Non-sensitive machine-readable provisioning/reconciliation failure code."
+    }
+  },
+  "required": [
+    "user_id",
+    "chain_identity_id",
+    "network",
+    "signer_version",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
