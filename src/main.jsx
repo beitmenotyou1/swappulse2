@@ -51,25 +51,6 @@ async function bootstrap() {
     } catch { /* ignore */ }
   }
 
-  // Runtime safety net: detect duplicate React copies (the root cause of
-  // "Cannot read properties of null (reading 'useState')"). If the dev server
-  // restarted and the browser mixed chunks from two optimization runs, React's
-  // internal __SECRET_INTERNALS__ would differ between the react and react-dom
-  // copies. Force a cache-busting reload to get onto a single consistent set.
-  try {
-    const reactMod = await import('react');
-    const reactDomMod = await import('react-dom');
-    const reactInternals = reactMod.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-    const reactDomInternals = reactDomMod.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-    if (reactInternals && reactDomInternals && reactInternals.ReactCurrentOwner !== reactDomInternals.ReactCurrentOwner) {
-      // Duplicate React copies detected — reload with cache-bust.
-      const url = new URL(window.location.href);
-      url.searchParams.set('_dc', Date.now().toString());
-      window.location.replace(url.toString());
-      return;
-    }
-  } catch { /* ignore detection failure */ }
-
   ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   )
