@@ -10,8 +10,9 @@
 //   5. If any trigger fired → sets the escrow to 'disputed' (manual review)
 //      and logs a ModerationDecisionLog with auto_resolved=false, admin_decision='pending'.
 //
-// Admin-gated for manual invocation; also callable by the internal service
-// role (workflow trigger on dispute filing).
+// LEGACY / QUARANTINED: autonomous escrow resolution is disabled.
+// This endpoint now performs strict admin/internal authentication and then
+// returns 410 without reading or mutating escrow/trade/payment records.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getActiveInsights } from '../../shared/agentLearningLoop.ts';
@@ -29,26 +30,26 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const caller = await base44.auth.me().catch(() => null);
 
-    // Auth gate: admin/moderator or internal service call
-    let isInternalCall = false;
-    const svcHeader = req.headers.get('base44-service-authorization') || req.headers.get('Base44-Service-Authorization');
-    if (svcHeader && svcHeader.startsWith('Bearer ')) {
-      try {
-        await base44.asServiceRole.entities.Post.list('-created_date', 1);
-        isInternalCall = true;
-      } catch { /* invalid token */ }
-    }
-    if (!isInternalCall) {
-      const { secrets } = await import('base44:runtime');
-      const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
-      const provided = req.headers.get('x-backend-function-secret');
-      if (sharedSecret && provided && timingSafeEqual(provided, sharedSecret)) {
-        isInternalCall = true;
-      }
-    }
-    if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
+    // Strict auth gate. Never infer trust from the presence of a service-style
+    // header or from a service-role query made by this function itself.
+    const { secrets } = await import('base44:runtime');
+    const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
+    const provided = req.headers.get('x-backend-function-secret');
+    const isInternalCall = Boolean(
+      sharedSecret && provided && timingSafeEqual(provided, sharedSecret),
+    );
+
+    if ((!caller || caller.role !== 'admin') && !isInternalCall) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    // Escrow is outside the current SwapPulse architecture and its data model
+    // is quarantined. Keeping this legacy resolver executable creates an
+    // unnecessary financial-control surface, so fail closed even for admins.
+    return Response.json({
+      error: 'Legacy autonomous escrow moderation is disabled',
+      code: 'LEGACY_ESCROW_DISABLED',
+    }, { status: 410 });
 
     const body = await req.json().catch(() => ({}));
     const { escrow_id } = body;
