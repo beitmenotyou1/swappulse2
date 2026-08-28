@@ -17,6 +17,7 @@ import { resolveBridgeSession } from '../../shared/bridgeSession.ts';
 import { attachRichTextFacets } from '../../shared/hashtagFacets.ts';
 import { computeContentHash } from '../../shared/bridgePublish.ts';
 import { isPublicationEligible } from '../../shared/federationPolicy.ts';
+import { COLLECTIONS } from '../../shared/firehoseMappers.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Security: verify the caller owns the federated record identified by `uri`
@@ -24,6 +25,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 // could delete or mutate another user's records stored in the shared bridge
 // repo. Ownership is proven by a local entity record whose at_uri matches and
 // whose created_by_id/did matches the caller. Admins bypass (moderation).
+const ALLOWED_WRITE_COLLECTIONS = new Set([
+  ...Object.keys(COLLECTIONS),
+  'app.bsky.feed.postgate',
+]);
+
 const COLLECTION_ENTITY_MAP: Record<string, string> = {
   'app.bsky.feed.post': 'Post',
   'app.bsky.graph.follow': 'Follow',
@@ -42,6 +48,16 @@ const COLLECTION_ENTITY_MAP: Record<string, string> = {
   'org.swappulse.reaction': 'Reaction',
   'org.swappulse.vouch': 'Vouch',
 };
+
+async function resolveCallerBridgeSession(req: Request, caller: any) {
+  const resolved = await resolveBridgeSession(req);
+  if (caller?.role !== 'admin') {
+    if (!caller?.did || resolved.session?.did !== caller.did) {
+      throw new Error('A valid personal AT Protocol identity is required for federation');
+    }
+  }
+  return resolved;
+}
 
 async function verifyOwnership(base44: any, caller: any, uri: string, collection: string): Promise<boolean> {
   if (caller?.role === 'admin') return true;
@@ -83,6 +99,7 @@ Deno.serve(async (req) => {
       }
       // at://did:plc:abc/app.bsky.graph.follow/rkey → strip prefix, then [did, collection, rkey]
       const segs = uri.replace(/^at:\/\//, '').split('/');
+      const repoDidFromUri = segs[0];
       const collectionFromUri = segs[1];
       const rkey = segs[2];
       if (!rkey || !collectionFromUri) {
@@ -92,7 +109,7 @@ Deno.serve(async (req) => {
       if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
         return Response.json({ error: 'You can only delete your own records' }, { status: 403 });
       }
-      const { pdsUrl, session } = await resolveBridgeSession(req);
+      const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.deleteRecord',
         { repo: session.did, collection: collectionFromUri, rkey },
@@ -120,6 +137,7 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'uri, collection, and record are required for update' }, { status: 400 });
       }
       const segs = uri.replace(/^at:\/\//, '').split('/');
+      const repoDidFromUri = segs[0];
       const collectionFromUri = segs[1];
       const rkey = segs[2];
       if (!rkey || !collectionFromUri) {
@@ -135,7 +153,7 @@ Deno.serve(async (req) => {
       if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
         return Response.json({ error: 'You can only update your own records' }, { status: 403 });
       }
-      const { pdsUrl, session } = await resolveBridgeSession(req);
+      const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.repo.putRecord',
         { repo: session.did, collection, rkey, record },
@@ -162,7 +180,7 @@ Deno.serve(async (req) => {
       if (!Array.isArray(labels) || labels.length === 0) {
         return Response.json({ error: 'labels array is required for emitLabels' }, { status: 400 });
       }
-      const { pdsUrl, session } = await resolveBridgeSession(req);
+      const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
       let result: any = await pdsRequest(
         pdsUrl, session.accessJwt, 'com.atproto.label.emitLabels',
         { labels },
@@ -216,7 +234,7 @@ Deno.serve(async (req) => {
       if (!ALLOWED_IMAGE_HOSTS.has(hostname)) {
         return Response.json({ error: 'imageUrl hostname is not allowed' }, { status: 400 });
       }
-      const { pdsUrl, session } = await resolveBridgeSession(req);
+      const { pdsUrl, session } = await resolveCallerBridgeSession(req, caller);
       // SSRF: fetch with redirect:'manual' (the runtime does not support
       // 'error') and reject any 3xx, so an allowlisted public URL can't 302
       // to an internal or cloud-metadata endpoint.
@@ -250,6 +268,9 @@ Deno.serve(async (req) => {
     // --- create action (default) ---
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });
+    }
+    if (!ALLOWED_WRITE_COLLECTIONS.has(collection)) {
+      return Response.json({ error: 'Unsupported AT Protocol collection' }, { status: 400 });
     }
     if (!isPublicationEligible(collection, record)) {
       return Response.json({ error: 'Record is not eligible for public federation' }, { status: 409 });

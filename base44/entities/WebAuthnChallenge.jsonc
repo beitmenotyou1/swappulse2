@@ -1,0 +1,67 @@
+{
+  "name": "WebAuthnChallenge",
+  "type": "object",
+  "title": "WebAuthnChallenge",
+  "description": "Short-lived, single-use server-side WebAuthn ceremony state. Never exposed to end users.",
+  "properties": {
+    "challenge_hash": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "authentication",
+        "registration",
+        "wallet"
+      ]
+    },
+    "subject": {
+      "type": "string",
+      "description": "Normalised email for unauthenticated login or user id for authenticated ceremonies."
+    },
+    "origin": {
+      "type": "string"
+    },
+    "rp_id": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "challenge_hash",
+    "purpose",
+    "subject",
+    "origin",
+    "rp_id",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
