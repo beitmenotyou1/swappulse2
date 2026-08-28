@@ -2,7 +2,7 @@
   "name": "StatusSubscriber",
   "type": "object",
   "title": "StatusSubscriber",
-  "description": "org.swappulse.statusSubscriber \u2014 a status page subscriber who receives email notifications when incidents occur or resolve. Uses double-opt-in confirmation.",
+  "description": "org.swappulse.statusSubscriber \u2014 a status page subscriber who receives email notifications when incidents occur or resolve. Uses double-opt-in confirmation with an expiring single-use confirmation token and a persistent high-entropy unsubscribe token.",
   "properties": {
     "email": {
       "type": "string",
@@ -10,7 +10,17 @@
     },
     "confirm_token": {
       "type": "string",
-      "description": "One-time token for double-opt-in confirmation"
+      "description": "High-entropy single-use confirmation token. Cleared after successful confirmation."
+    },
+    "confirm_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiry time for the confirmation token. Confirmation links are valid for 24 hours."
+    },
+    "confirm_consumed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the confirmation capability token was consumed."
     },
     "confirmed_at": {
       "type": "string",
@@ -19,7 +29,7 @@
     },
     "unsubscribe_token": {
       "type": "string",
-      "description": "Token for one-click unsubscribe from status emails"
+      "description": "High-entropy persistent token for one-click unsubscribe from status emails"
     },
     "preferences": {
       "type": "object",
@@ -45,7 +55,7 @@
   },
   "required": [
     "email",
-    "confirm_token"
+    "unsubscribe_token"
   ],
   "rls": {
     "create": {
