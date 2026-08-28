@@ -2,7 +2,7 @@
   "name": "ReceiveAllowlist",
   "type": "object",
   "title": "ReceiveAllowlist",
-  "description": "org.swappulse.receiveAllowlist \u2014 a user's allowlist of sender addresses permitted to send crypto to their wallet. When the user enables strict receive mode (WalletBalance.receive_strict_mode), incoming transfers from addresses not on this list are blocked at the platform's watch layer. Traded contacts (derived from completed EscrowTrade history) are implicitly allowlisted even without an explicit entry. One entry per (did, address, chain).",
+  "description": "DEPRECATED / QUARANTINED legacy custodial-wallet receive allowlist. Not part of the current SwapPulse architecture. Retained only for audit/history; user access and creation are disabled.",
   "properties": {
     "did": {
       "type": "string",
@@ -32,42 +32,24 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
