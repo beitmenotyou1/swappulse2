@@ -32,46 +32,24 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 // Security: ai-moderation applies tiered enforcement (hide/strike/restrict) via
 // the service role, so it must not be callable by unauthenticated public
-// callers. Allowed callers: (1) platform-internal invocations (workflow
-// runtime, agent runtime) carrying the `base44-service-authorization`
-// internal service token, or (2) an authenticated admin/moderator user.
+// callers. Allowed callers are an authenticated admin or a caller presenting
+// the registered BACKEND_FUNCTION_SECRET in x-backend-function-secret.
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth gate. Legitimate callers are (1) platform-internal invocations
-    // (entity-trigger workflows + the moderation agent runtime) and (2)
-    // authenticated admin/moderator users. We must NOT trust the
-    // base44-service-authorization header's JWT payload by decoding it
-    // ourselves — an external attacker can craft an unsigned token with
-    // arbitrary claims. Instead we verify the token through the platform
-    // itself: the platform signs it and validates it server-side on every
-    // asServiceRole API call, so a successful lightweight service-role read
-    // proves the call carries a valid platform-issued credential. A forged
-    // token is rejected by the API and the probe throws. A shared secret
-    // (BACKEND_FUNCTION_SECRET) is also accepted for manual/script internal
-    // callers, compared in constant time to avoid timing leaks.
+    // Fail-closed auth gate. Do not treat a service-looking request header as
+    // proof of an internal invocation: this function's own asServiceRole client
+    // is privileged regardless of who called the endpoint.
     let caller: any;
     try { caller = await base44.auth.me(); } catch { caller = null; }
-    let isInternalCall = false;
-    const svcHeader =
-      req.headers.get('base44-service-authorization') ||
-      req.headers.get('Base44-Service-Authorization');
-    if (svcHeader && svcHeader.startsWith('Bearer ')) {
-      try {
-        // Trivial service-role read — the platform validates the token here.
-        await base44.asServiceRole.entities.Post.list('-created_date', 1);
-        isInternalCall = true;
-      } catch { /* invalid/forged token */ }
-    }
-    if (!isInternalCall) {
-      const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
-      const provided = req.headers.get('x-backend-function-secret');
-      if (sharedSecret && provided && timingSafeEqual(provided, sharedSecret)) {
-        isInternalCall = true;
-      }
-    }
-    if ((!caller || !['admin', 'moderator'].includes(caller.role)) && !isInternalCall) {
+    const sharedSecret = secrets.get('BACKEND_FUNCTION_SECRET');
+    const provided = req.headers.get('x-backend-function-secret');
+    const hasBackendSecret = Boolean(
+      sharedSecret && provided && timingSafeEqual(provided, sharedSecret),
+    );
+
+    if ((!caller || caller.role !== 'admin') && !hasBackendSecret) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
