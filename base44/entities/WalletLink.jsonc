@@ -2,7 +2,7 @@
   "name": "WalletLink",
   "type": "object",
   "title": "WalletLink",
-  "description": "org.swappulse.walletLink \u2014 a collector's verified Polygon wallet link. The wallet address is verified via EIP-4361 (Sign-In with Ethereum) signature verification in the link-wallet backend function, so SwapPulse knows the collector owns the wallet without ever holding their private key. One active wallet link per user; the linked wallet serves as the on-chain identity for minting and the crypto send/receive address. Supports both browser-extension wallets (MetaMask) and hardware wallets (Ledger, with Tangem and others to follow).",
+  "description": "DEPRECATED / QUARANTINED legacy Polygon external-wallet identity link. The current V1 direction is a passkey-created SwapPulse smart account; external wallets may be evaluated later only as additional signers. Retained only for audit/history; user access and creation are disabled.",
   "properties": {
     "wallet_address": {
       "type": "string",
@@ -55,44 +55,24 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
