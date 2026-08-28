@@ -107,7 +107,20 @@ export default function BinderEdit() {
           sig: existing.sig,
         });
         if (existing.bridged && existing.at_uri) {
-          updateBridgedRecord({ id: binderId, at_uri: existing.at_uri, bridged: true }, 'Binder').catch(() => {});
+          if (visibility === 'public') {
+            updateBridgedRecord({ id: binderId, at_uri: existing.at_uri, bridged: true }, 'Binder').catch(() => {});
+          } else {
+            // Privacy containment: AT Protocol repositories are public-readable.
+            // Followers/private binders must remove any existing PDS copy.
+            base44.functions.invoke('atproto-bridge', { action: 'delete', uri: existing.at_uri })
+              .then(() => base44.entities.Binder.update(binderId, {
+                bridged: false,
+                at_uri: '',
+                cid: '',
+                content_hash: '',
+              }))
+              .catch((e) => console.error('binder privacy unbridge failed', e));
+          }
         }
         navigate(`/binder/${binderId}`);
       } else {
