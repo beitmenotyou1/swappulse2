@@ -16,10 +16,13 @@ export default defineConfig({
     }),
     react(),
   ],
-  // Force re-optimization of deps on every server start to prevent stale
-  // chunks from creating duplicate React copies.
+  // Keep a stable dep cache across dev server restarts. `force: true` was
+  // previously set to "prevent stale chunks", but it actually CAUSES duplicate
+  // React copies: each restart generates a new ?v= hash, so the browser's
+  // HTTP-cached chunks from the old hash get served alongside fresh ones.
+  // With a stable hash + dedupe below, the browser caches one consistent set.
   optimizeDeps: {
-    force: true,
+    include: ['react', 'react-dom'],
   },
   resolve: {
     // Force a single copy of React/ReactDOM — prevents "Invalid hook call"
