@@ -2,13 +2,8 @@
 // by the "Story Expiry" workflow.
 //
 // Security: this maintenance endpoint deletes records via the service role, so
-// it must not be callable by arbitrary internet callers. The app is public (no
-// signed-in user to check), so the caller is verified via the platform's
-// internal service token: the `base44-service-authorization` JWT that the
-// platform injects on internal calls (workflow runtime, function-to-function).
-// We decode the payload and require `internal_service_token === "true"` and
-// `caller === "backend_functions"`. A public internet caller has no such
-// token and is rejected with 403.
+// it is intentionally admin-only. Do not infer internal trust from service-like
+// request headers; callers without an authenticated admin session are rejected.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function (req: Request): Promise<Response> {
