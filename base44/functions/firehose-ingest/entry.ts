@@ -611,6 +611,10 @@ export default async function(req: Request): Promise<Response> {
     const collectionStats: Record<string, number> = {};
 
     for (const [collection, entityName] of Object.entries(COLLECTIONS)) {
+      // Privacy containment: CollectionEntry is no longer federated source
+      // data in either direction. Historical PDS copies are removed by
+      // outbound-reconcile; do not ingest or re-create them locally.
+      if (collection === 'org.swappulse.collectionEntry') continue;
       const mapper = FIELD_MAPPERS[collection];
       if (!mapper) continue;
       collectionStats[collection] = 0;
