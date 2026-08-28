@@ -42,6 +42,18 @@ const COLLECTION_ENTITY_MAP: Record<string, string> = {
   'org.swappulse.vouch': 'Vouch',
 };
 
+// Privacy containment: private application collection data must not cross the
+// AT Protocol boundary. Raw CollectionEntry records can contain purchase price,
+// market value, acquisition date, and personal notes, so federation is disabled
+// until a sanitised public projection exists. Binders are eligible only when
+// explicitly public; "followers" is an application-layer visibility and AT
+// Protocol repositories are public-readable.
+function isPublicationEligible(collection: string, record: any): boolean {
+  if (collection === 'org.swappulse.collectionEntry') return false;
+  if (collection === 'org.swappulse.binder') return record?.visibility === 'public';
+  return true;
+}
+
 async function verifyOwnership(base44: any, caller: any, uri: string, collection: string): Promise<boolean> {
   if (caller?.role === 'admin') return true;
   const entityName = COLLECTION_ENTITY_MAP[collection];
@@ -126,6 +138,9 @@ Deno.serve(async (req) => {
       }
       if (collectionFromUri !== collection) {
         return Response.json({ error: 'collection mismatch with uri' }, { status: 400 });
+      }
+      if (!isPublicationEligible(collection, record)) {
+        return Response.json({ error: 'Record is not eligible for public federation' }, { status: 409 });
       }
       // Verify the caller owns the target record before updating on the PDS.
       if (!(await verifyOwnership(base44Auth, caller, uri, collectionFromUri))) {
@@ -246,6 +261,9 @@ Deno.serve(async (req) => {
     // --- create action (default) ---
     if (!collection || !record) {
       return Response.json({ error: 'collection and record are required' }, { status: 400 });
+    }
+    if (!isPublicationEligible(collection, record)) {
+      return Response.json({ error: 'Record is not eligible for public federation' }, { status: 409 });
     }
     // Attach hashtag + link facets to posts so #hashtags render as clickable
     // tags and https:// URLs render as clickable links on Bluesky (the `tags`
