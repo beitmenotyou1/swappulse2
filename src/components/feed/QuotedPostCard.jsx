@@ -26,7 +26,8 @@ export default function QuotedPostCard({ quoteOfId, quoteRef }) {
       setLoading(true);
       try {
         if (quoteOfId) {
-          const p = await base44.entities.Post.get(quoteOfId).catch(() => null);
+          const res = await base44.functions.invoke('get-visible-posts', { post_id: quoteOfId }).catch(() => null);
+          const p = res?.data?.post || null;
           if (alive && p) { setQuoted(p); setLoading(false); return; }
         }
         if (quoteRef) {
