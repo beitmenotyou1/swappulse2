@@ -6,7 +6,6 @@ import CardImage from '@/components/cards/CardImage';
 import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { createEntry } from '@/lib/offlineSync';
-import { bridgeCollectionEntry } from '@/lib/atprotoRecords';
 import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function AddToCollectionModal({ open, onClose, card }) {
@@ -38,15 +37,8 @@ export default function AddToCollectionModal({ open, onClose, card }) {
         notes,
       }, NSID.COLLECTION_ENTRY, did, signingKey);
       const created = await createEntry(stamped);
-      // Mirror to AT Protocol PDS and persist the real at_uri/cid back to the entity
-      if (created?.id && !created._pending) {
-        try {
-          const bridged = await bridgeCollectionEntry(created);
-          await base44.entities.CollectionEntry.update(created.id, bridged);
-        } catch (e) {
-          console.error('atprotoRecords: bridge collection entry failed', e);
-        }
-      }
+      // Privacy containment: raw collection entries stay private in Base44.
+      // Public federation will use a sanitised projection in a later phase.
       onClose();
       setPrice('');
       setNotes('');
