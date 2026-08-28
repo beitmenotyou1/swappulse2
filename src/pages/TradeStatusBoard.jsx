@@ -43,13 +43,13 @@ export default function TradeStatusBoard() {
   const load = async () => {
     setLoading(true);
     try {
-      const [user, trades, enforced] = await Promise.all([
+      const [user, tradesRes, enforced] = await Promise.all([
         base44.auth.me().catch(() => null),
-        base44.entities.TradeListing.filter({}, '-updated_date', 200).catch(() => []),
+        base44.functions.invoke('get-visible-trades', { limit: 100 }).catch(() => ({ data: { listings: [] } })),
         base44.functions.invoke('get-enforced-dids', {}).catch(() => ({ data: { user_ids: [] } })),
       ]);
       setMe(user);
-      setAllTrades(trades);
+      setAllTrades(tradesRes?.data?.listings || []);
       setEnforcedIds(new Set(enforced.data?.user_ids || []));
     } finally {
       setLoading(false);
@@ -58,16 +58,10 @@ export default function TradeStatusBoard() {
 
   useEffect(() => { load(); }, []);
 
-  useRealtimeEvent('trade.status_update', (t) => {
-    setAllTrades((prev) => {
-      const exists = prev.some((x) => x.id === t.id);
-      if (exists) return prev.map((x) => (x.id === t.id ? t : x));
-      return [t, ...prev];
-    });
-  });
-  useRealtimeEvent('trade.new_listing', (t) => {
-    setAllTrades((prev) => (prev.some((x) => x.id === t.id) ? prev : [t, ...prev]));
-  });
+  // Re-fetch through the server visibility gate rather than trusting raw
+  // realtime entity payloads for scoped listings.
+  useRealtimeEvent('trade.status_update', () => { load(); });
+  useRealtimeEvent('trade.new_listing', () => { load(); });
 
   const filtered = useMemo(() => {
     let list = allTrades;
