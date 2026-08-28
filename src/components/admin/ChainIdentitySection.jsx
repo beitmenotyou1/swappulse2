@@ -9,6 +9,16 @@ export default function ChainIdentitySection() {
   const { toast } = useToast();
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [config, setConfig] = useState(null);
+  const [configDraft, setConfigDraft] = useState({
+    account_class_hash: '',
+    identity_registry_address: '',
+    recovery_controller: '',
+    recovery_delay_seconds: '172800',
+    rpc_url: '',
+    explorer_url: '',
+    status: 'UNCONFIGURED',
+  });
+  const [savingConfig, setSavingConfig] = useState(false);
   const [targetUserId, setTargetUserId] = useState('');
   const [publicKey, setPublicKey] = useState('');
   const [preparing, setPreparing] = useState(false);
@@ -28,7 +38,19 @@ export default function ChainIdentitySection() {
       setLoadingConfig(true);
       try {
         const res = await base44.functions.invoke('chain-identity-admin', { action: 'config' });
-        if (!cancelled) setConfig(res?.data?.config || res?.config || null);
+        const nextConfig = res?.data?.config || res?.config || null;
+        if (!cancelled) {
+          setConfig(nextConfig);
+          setConfigDraft({
+            account_class_hash: nextConfig?.account_class_hash || '',
+            identity_registry_address: nextConfig?.identity_registry_address || '',
+            recovery_controller: nextConfig?.recovery_controller || '',
+            recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
+            rpc_url: nextConfig?.rpc_url || '',
+            explorer_url: nextConfig?.explorer_url || '',
+            status: nextConfig?.status || 'UNCONFIGURED',
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           toast({
@@ -43,6 +65,43 @@ export default function ChainIdentitySection() {
     })();
     return () => { cancelled = true; };
   }, [toast]);
+
+  const saveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      const res = await base44.functions.invoke('chain-identity-admin', {
+        action: 'save_config',
+        ...configDraft,
+        recovery_delay_seconds: Number(configDraft.recovery_delay_seconds || 0),
+      });
+      const nextConfig = res?.data?.config || res?.config || null;
+      setConfig(nextConfig);
+      setConfigDraft((prev) => ({
+        ...prev,
+        account_class_hash: nextConfig?.account_class_hash || '',
+        identity_registry_address: nextConfig?.identity_registry_address || '',
+        recovery_controller: nextConfig?.recovery_controller || '',
+        recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
+        rpc_url: nextConfig?.rpc_url || '',
+        explorer_url: nextConfig?.explorer_url || '',
+        status: nextConfig?.status || 'UNCONFIGURED',
+      }));
+      toast({
+        title: 'SwapPulse Testnet configuration saved',
+        description: nextConfig?.ready
+          ? 'Contract configuration is ready for identity deployment.'
+          : 'Configuration saved, but the network is not yet marked ready.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Could not save testnet configuration',
+        description: err?.response?.data?.error || err?.message || 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
   const deploymentJson = useMemo(() => {
     if (!prepared?.deployment) return '';
@@ -151,6 +210,75 @@ export default function ChainIdentitySection() {
             <p className="text-muted-foreground">Recovery delay</p>
             <p className="mt-1 font-semibold">{config?.recovery_delay_seconds ?? 172800}s</p>
           </div>
+        </div>
+      )}
+
+      {!loadingConfig && (
+        <div className="mt-4 rounded-xl border border-border bg-secondary/20 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">Public testnet configuration</p>
+              <p className="text-xs text-muted-foreground">These are public chain coordinates, not secrets. Never paste private RPC credentials or signer keys here.</p>
+            </div>
+            <select
+              value={configDraft.status}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, status: e.target.value }))}
+              className="rounded-lg border border-border bg-background px-2 py-2 text-xs"
+            >
+              <option value="UNCONFIGURED">Unconfigured</option>
+              <option value="CONFIGURED">Configured</option>
+              <option value="PAUSED">Paused</option>
+            </select>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            <input
+              value={configDraft.account_class_hash}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, account_class_hash: e.target.value }))}
+              placeholder="SwapPulseAccount class hash 0x…"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
+              value={configDraft.identity_registry_address}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, identity_registry_address: e.target.value }))}
+              placeholder="IdentityRegistry address 0x…"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
+              value={configDraft.recovery_controller}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, recovery_controller: e.target.value }))}
+              placeholder="Recovery controller 0x… (optional)"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
+              type="number"
+              min="0"
+              max="2592000"
+              value={configDraft.recovery_delay_seconds}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, recovery_delay_seconds: e.target.value }))}
+              placeholder="Recovery delay seconds"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-xs"
+            />
+            <input
+              value={configDraft.rpc_url}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, rpc_url: e.target.value }))}
+              placeholder="Public HTTPS RPC URL (optional)"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
+              value={configDraft.explorer_url}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, explorer_url: e.target.value }))}
+              placeholder="Public explorer URL (optional)"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+          </div>
+          <button
+            onClick={saveConfig}
+            disabled={savingConfig}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
+          >
+            {savingConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            {savingConfig ? 'Saving…' : 'Save Testnet Configuration'}
+          </button>
         </div>
       )}
 
