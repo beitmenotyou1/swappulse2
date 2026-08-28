@@ -9,8 +9,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyPassword } from '../../shared/appPasswordCrypto.ts';
 
-const APPVIEW = 'https://public.api.bsky.app';
-
 async function resolveHandle(handle: string): Promise<string> {
   if (handle.startsWith('did:')) return handle;
   try {
@@ -22,14 +20,9 @@ async function resolveHandle(handle: string): Promise<string> {
       if (data?.did) return data.did;
     }
   } catch {}
-  try {
-    const base = handle.includes('.') ? `https://${handle}` : `https://${handle}.bsky.social`;
-    const res = await fetch(`${base}/.well-known/atproto-did`, { redirect: 'follow' });
-    if (res.ok) {
-      const text = (await res.text()).trim();
-      if (text.startsWith('did:')) return text;
-    }
-  } catch {}
+  // Do not fetch the handle's hostname directly. Handle resolution is delegated
+  // to the official AT Protocol resolver above so untrusted input cannot turn
+  // this public endpoint into an SSRF primitive.
   throw new Error('Could not resolve handle to a DID.');
 }
 
