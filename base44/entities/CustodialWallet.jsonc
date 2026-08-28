@@ -2,7 +2,7 @@
   "name": "CustodialWallet",
   "type": "object",
   "title": "CustodialWallet",
-  "description": "org.swappulse.custodialWallet \u2014 a custodial Polygon wallet generated for a collector who enables crypto features. The private key is encrypted (AES-256-GCM) and stored server-side; the 24-word mnemonic is also encrypted as a backup. Unlock is gated by a passkey (WebAuthn) and/or an optional PIN. The wallet address is also recorded in WalletLink so existing mint flows work. One active custodial wallet per user.",
+  "description": "DEPRECATED / QUARANTINED legacy custodial Polygon wallet entity. Not part of the current SwapPulse architecture. Retained only for audit/history; user access and creation are disabled.",
   "properties": {
     "wallet_address": {
       "type": "string",
