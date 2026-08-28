@@ -19,6 +19,10 @@
       "type": "string",
       "description": "Declared SwapPulseAccount class hash for this network."
     },
+    "identity_registry_class_hash": {
+      "type": "string",
+      "description": "Declared IdentityRegistry class hash expected at identity_registry_address. Reconciliation verifies this before trusting registry reads."
+    },
     "identity_registry_address": {
       "type": "string",
       "description": "Deployed IdentityRegistry contract address."
