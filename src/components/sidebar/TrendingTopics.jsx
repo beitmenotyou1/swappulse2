@@ -178,8 +178,8 @@ export default function TrendingTopics() {
     // doesn't require authentication.
     const loadPosts = async () => {
       try {
-        const list = await base44.entities.Post.list('-created_date', 200).catch(() => []);
-        setPosts(list || []);
+        const res = await base44.functions.invoke('get-explore-feed', { limit: 100 }).catch(() => null);
+        setPosts(res?.data?.items || []);
       } catch {
         setPosts([]);
       } finally {
