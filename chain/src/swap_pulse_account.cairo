@@ -18,7 +18,8 @@ pub mod SwapPulseAccount {
     use core::num::traits::Zero;
     use openzeppelin_account::AccountComponent;
     use openzeppelin_introspection::src5::SRC5Component;
-    use openzeppelin_upgrades::{interface::IUpgradeable, UpgradeableComponent};
+    use openzeppelin_interfaces::upgrades::IUpgradeable;
+    use openzeppelin_upgrades::UpgradeableComponent;
     use starknet::{
         get_block_timestamp, get_caller_address, get_contract_address, ClassHash, ContractAddress,
     };
