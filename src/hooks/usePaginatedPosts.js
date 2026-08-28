@@ -24,8 +24,8 @@ export function usePaginatedPosts(did, isExternal) {
       const data = res?.data ?? res;
       return data?.items || [];
     }
-    return base44.entities.Post.filter({ did }, '-created_date', BATCH_SIZE, skip)
-      .then((posts) => sortPostsDescending(posts || []))
+    return base44.functions.invoke('get-visible-posts', { did, limit: BATCH_SIZE, skip })
+      .then((res) => sortPostsDescending(res?.data?.items || res?.items || []))
       .catch(() => []);
   }, [did, isExternal]);
 
