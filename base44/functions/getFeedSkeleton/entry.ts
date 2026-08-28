@@ -311,7 +311,10 @@ export default async function (req: Request): Promise<Response> {
       svc.entities.User.list('-created_date', 2000),
       svc.entities.Vouch.list('-created_date', 2000),
       svc.entities.Follow.list('-created_date', 2000),
-      svc.entities.CollectionEntry.list('-updated_date', 2000),
+      // Privacy containment: do not use private collection holdings for
+      // cross-user recommendation profiling. Phase 1 will supply only explicit
+      // public projection data here.
+      Promise.resolve([]),
       svc.entities.RecommendationPreference.filter({ did: actorDid }, '-updated_date', 1),
     ]);
 
