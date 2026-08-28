@@ -39,7 +39,8 @@ export default function JournalDetail() {
       if (!journalId) return;
       setLoading(true);
       try {
-        const j = await base44.entities.Journal.get(journalId);
+        const res = await base44.functions.invoke('get-journal', { journal_id: journalId });
+        const j = res?.data?.journal || null;
         if (alive) setJournal(j);
       } catch (e) {
         if (alive) setError(e.message || 'Journal not found');
