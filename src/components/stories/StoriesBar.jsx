@@ -10,12 +10,6 @@ import StoryCamera from './StoryCamera';
 import { useAuth } from '@/lib/AuthContext';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-// Returns the set of DIDs the current user follows (outgoing follows).
-async function followedDids(me) {
-  const follows = await base44.entities.Follow.filter({ did: me }).catch(() => []);
-  return new Set(follows.map((f) => f.subject_did).filter(Boolean));
-}
-
 export default function StoriesBar() {
   const [stories, setStories] = useState([]);
   const [myDid, setMyDid] = useState('');
@@ -29,17 +23,11 @@ export default function StoriesBar() {
   const myAvatar = user?.avatar || '';
 
   const load = async (did) => {
-    const cutoff = new Date().toISOString();
-    // Parallelize the three independent fetches (Story, mutual friends, StoryView).
-    const [active, follows, views] = await Promise.all([
-      base44.entities.Story.filter({ expires_at: { $gte: cutoff } }, '-created_date', 100).catch(() => []),
-      did ? followedDids(did) : Promise.resolve(new Set()),
-      did ? base44.entities.StoryView.filter({ viewer_did: did }).catch(() => []) : Promise.resolve([]),
-    ]);
-    // Only show stories from collectors the user follows (plus their own).
-    const visible = active.filter((s) => s.did === did || follows.has(s.did));
-    setStories(visible);
-    if (did) setSeenIds(new Set(views.map((v) => v.story_id)));
+    if (!did) { setStories([]); setSeenIds(new Set()); return; }
+    const res = await base44.functions.invoke('get-visible-stories', {}).catch(() => null);
+    const data = res?.data ?? res;
+    setStories(data?.stories || []);
+    setSeenIds(new Set(data?.seen_story_ids || []));
   };
 
   useEffect(() => {
@@ -51,10 +39,9 @@ export default function StoriesBar() {
       const d = did || me?.did || '';
       if (active) setMyDid(d);
       await load(d);
-      if (active) {
-        unsubs.push(base44.entities.Story.subscribe(() => { if (active) load(d); }));
-        unsubs.push(base44.entities.StoryView.subscribe(() => { if (active) load(d); }));
-      }
+      // Private/friends story visibility is now resolved by an authorised
+      // backend read. Refresh after local view/create actions instead of
+      // subscribing to globally-readable source entities.
     })();
     return () => { active = false; unsubs.forEach((u) => { try { u(); } catch {} }); };
   }, []);
