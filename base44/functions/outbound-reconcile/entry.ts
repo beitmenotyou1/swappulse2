@@ -12,6 +12,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
+import { isPublicationEligible } from '../../shared/federationPolicy.ts';
 import { computeContentHash } from '../../shared/bridgePublish.ts';
 import { getConsentMap, isDoNotSell } from '../../shared/consentCheck.ts';
 
@@ -24,15 +25,6 @@ const SKIP_FOR_RECONCILE = new Set([
   'app.bsky.feed.like',
   'app.bsky.graph.follow',
 ]);
-
-// Privacy containment. CollectionEntry is private source data and must not be
-// federated raw. Binders are eligible only when explicitly public; followers
-// visibility is Base44-only because AT Protocol repositories are public-readable.
-function isPublicationEligible(collection: string, rec: any): boolean {
-  if (collection === 'org.swappulse.collectionEntry') return false;
-  if (collection === 'org.swappulse.binder') return rec?.visibility === 'public';
-  return true;
-}
 
 async function listPdsRecords(pdsUrl: string, accessJwt: string, did: string, collection: string) {
   const all: any[] = [];
