@@ -73,7 +73,7 @@
         "followers",
         "private"
       ],
-      "default": "public"
+      "default": "private"
     },
     "standard_doc_uri": {
       "type": "string",
@@ -140,7 +140,16 @@
     "visibility"
   ],
   "rls": {
-    "read": {},
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.visibility": "public"
+        }
+      ]
+    },
     "create": {
       "created_by_id": "{{user.id}}"
     },
