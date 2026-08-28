@@ -1,0 +1,84 @@
+{
+  "name": "ChainNetworkConfig",
+  "type": "object",
+  "title": "ChainNetworkConfig",
+  "description": "Admin-managed public configuration for SwapPulse Network test environments. Contains only public blockchain configuration, never private keys, seed phrases, API secrets, or passkey secret material.",
+  "properties": {
+    "network": {
+      "type": "string",
+      "enum": [
+        "SWAPPULSE_TESTNET"
+      ],
+      "default": "SWAPPULSE_TESTNET"
+    },
+    "account_class_hash": {
+      "type": "string",
+      "description": "Declared SwapPulseAccount class hash for this network."
+    },
+    "identity_registry_address": {
+      "type": "string",
+      "description": "Deployed IdentityRegistry contract address."
+    },
+    "recovery_controller": {
+      "type": "string",
+      "description": "Public recovery-controller contract/account address. Empty disables recovery controller at deployment."
+    },
+    "recovery_delay_seconds": {
+      "type": "integer",
+      "default": 172800,
+      "minimum": 0,
+      "maximum": 2592000
+    },
+    "rpc_url": {
+      "type": "string",
+      "description": "Optional public RPC endpoint for read-only reconciliation. Do not store authenticated/private RPC URLs here."
+    },
+    "explorer_url": {
+      "type": "string",
+      "description": "Optional public explorer base URL."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "UNCONFIGURED",
+        "CONFIGURED",
+        "PAUSED"
+      ],
+      "default": "UNCONFIGURED"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Base44 admin user id that last changed the configuration."
+    }
+  },
+  "required": [
+    "network",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
