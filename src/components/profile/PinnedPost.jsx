@@ -26,7 +26,8 @@ export default function PinnedPost({ pinnedPostId, posts = [], onUnpin }) {
     setLoading(true);
     (async () => {
       try {
-        const p = await base44.entities.Post.get(pinnedPostId);
+        const res = await base44.functions.invoke('get-visible-posts', { post_id: pinnedPostId });
+        const p = res?.data?.post || null;
         if (active) setFetched(p);
       } catch {
         if (active) setFetched(null);
