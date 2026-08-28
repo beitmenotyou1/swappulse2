@@ -16,6 +16,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { FIELD_MAPPERS } from '../../shared/firehoseMappers.ts';
+import { canViewPostServer } from '../../shared/postVisibility.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
 
@@ -72,8 +73,9 @@ export default async function(req: Request): Promise<Response> {
     // HTTP fetches, so it must not be callable by unauthenticated strangers.
     // Require an authenticated app user — guests can still read already-local
     // posts via /post/:postId; only the on-demand resolution path is gated.
+    let caller: any;
     try {
-      await base44.auth.me();
+      caller = await base44.auth.me();
     } catch {
       return Response.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -89,6 +91,9 @@ export default async function(req: Request): Promise<Response> {
     try {
       const existing = await svc.entities.Post.filter({ at_uri }, '-created_date', 1);
       if (existing && existing.length > 0) {
+        if (!(await canViewPostServer(svc, existing[0], caller))) {
+          return Response.json({ error: 'Post not available' }, { status: 403 });
+        }
         return Response.json({ postId: existing[0].id, post: existing[0] });
       }
     } catch (e) {
@@ -135,6 +140,9 @@ export default async function(req: Request): Promise<Response> {
       try {
         const retry = await svc.entities.Post.filter({ at_uri }, '-created_date', 1);
         if (retry && retry.length > 0) {
+          if (!(await canViewPostServer(svc, retry[0], caller))) {
+            return Response.json({ error: 'Post not available' }, { status: 403 });
+          }
           return Response.json({ postId: retry[0].id, post: retry[0] });
         }
       } catch {}
