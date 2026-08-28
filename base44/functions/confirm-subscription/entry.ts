@@ -1,22 +1,16 @@
-// confirm-subscription — public capability-token endpoint for status email
-// confirmation and one-click unsubscribe.
+// confirm-subscription — public, server-signed capability endpoint for status
+// email confirmation and one-click unsubscribe.
 //
-// This endpoint is intentionally usable without a logged-in account: possession
-// of the 256-bit token sent to the subscriber's email is the authorisation.
-// Security properties:
-// - exact 64-hex token format (32 random bytes)
-// - confirmation token expires after 24 hours
-// - confirmation token is cleared after first successful use
-// - no full-table scan; lookup is by exact capability token
-// - matched tokens are throttled using a SHA-256-derived AuthRateLimit key
-// - responses never expose subscriber email or other subscription data
+// No login is required because the email link itself is the authorisation, but
+// the presented capability must carry a valid HMAC-SHA256 signature produced
+// with BACKEND_FUNCTION_SECRET before any subscription record is read/mutated.
+// Confirmation capabilities additionally expire after 24 hours and are cleared
+// after first successful use. Matched capabilities are rate-limited.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { verifyStatusCapability } from '../../shared/statusSubscriptionTokens.ts';
 
-const TOKEN_RE = /^[0-9a-f]{64}$/;
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_MATCHED_ATTEMPTS = 10;
-const CALLER_WINDOW_MS = 10 * 60 * 1000;
-const MAX_CALLER_ATTEMPTS = 30;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -26,59 +20,10 @@ async function sha256Hex(value: string): Promise<string> {
     .join('');
 }
 
-function callerFingerprint(req: Request): string {
-  // Base44 sits behind a reverse proxy. Prefer proxy-populated client IP
-  // headers; never store the address itself, only a SHA-256-derived throttle
-  // key. This is a secondary abuse control, not the capability-token auth.
-  const cfIp = req.headers.get('cf-connecting-ip')?.trim();
-  const realIp = req.headers.get('x-real-ip')?.trim();
-  const forwarded = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  const ip = cfIp || realIp || forwarded || 'unknown';
-  const ua = (req.headers.get('user-agent') || '').slice(0, 160);
-  return `${ip}|${ua}`;
-}
-
-async function consumeCallerRateLimit(svc: any, req: Request): Promise<boolean> {
-  const digest = await sha256Hex(`status-confirm-caller:${callerFingerprint(req)}`);
-  const key = `status-confirm-caller:${digest}`;
-  const now = Date.now();
-  const nowIso = new Date(now).toISOString();
-  const rows = await svc.entities.AuthRateLimit.filter({ email: key }, '-created_date', 1).catch(() => []);
-  const row = rows?.[0];
-
-  if (!row) {
-    await svc.entities.AuthRateLimit.create({
-      email: key,
-      count: 1,
-      window_start: nowIso,
-      last_request_at: nowIso,
-    });
-    return true;
-  }
-
-  const windowStart = Date.parse(row.window_start || '');
-  if (!Number.isFinite(windowStart) || now - windowStart >= CALLER_WINDOW_MS) {
-    await svc.entities.AuthRateLimit.update(row.id, {
-      count: 1,
-      window_start: nowIso,
-      last_request_at: nowIso,
-    });
-    return true;
-  }
-
-  const count = Math.max(0, Number(row.count || 0));
-  if (count >= MAX_CALLER_ATTEMPTS) return false;
-  await svc.entities.AuthRateLimit.update(row.id, {
-    count: count + 1,
-    last_request_at: nowIso,
-  });
-  return true;
-}
-
-async function consumeRateLimit(svc: any, action: string, token: string): Promise<boolean> {
-  // Only call this after a token has matched a real subscription. That avoids
-  // letting random internet garbage create unbounded throttle rows.
-  const digest = await sha256Hex(`${action}:${token}`);
+async function consumeRateLimit(svc: any, action: string, rawToken: string): Promise<boolean> {
+  // This is only reached after the HMAC signature has verified, so arbitrary
+  // garbage cannot create unbounded throttle records.
+  const digest = await sha256Hex(`${action}:${rawToken}`);
   const key = `status-capability:${digest}`;
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
@@ -122,57 +67,48 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const base44 = createClientFromRequest(req);
-    const svc = base44.asServiceRole;
-
-    // Secondary abuse throttle for all calls, including malformed/random token
-    // spray. Capability possession remains the actual authorisation mechanism.
-    const callerAllowed = await consumeCallerRateLimit(svc, req);
-    if (!callerAllowed) {
-      return Response.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
-    }
-
     const body = await req.json().catch(() => ({}));
-    const token = String(body.token || '').trim().toLowerCase();
+    const presentedToken = String(body.token || '').trim();
     const action = String(body.action || 'confirm').trim().toLowerCase();
 
     if (!['confirm', 'unsubscribe'].includes(action)) {
       return Response.json({ error: 'Invalid action' }, { status: 400 });
     }
-    if (!TOKEN_RE.test(token)) {
+
+    // Verify cryptographic caller capability before obtaining service-role data.
+    const rawToken = await verifyStatusCapability(
+      action as 'confirm' | 'unsubscribe',
+      presentedToken,
+    );
+    if (!rawToken) {
       return Response.json({ error: 'Invalid or expired token' }, { status: 400 });
+    }
+
+    const svc = base44.asServiceRole;
+    const allowed = await consumeRateLimit(svc, action, rawToken);
+    if (!allowed) {
+      return Response.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
     }
 
     if (action === 'unsubscribe') {
       const matches = await svc.entities.StatusSubscriber
-        .filter({ unsubscribe_token: token }, '-created_date', 1)
+        .filter({ unsubscribe_token: rawToken }, '-created_date', 1)
         .catch(() => []);
       const sub = matches?.[0];
       if (!sub) return Response.json({ error: 'Invalid or expired token' }, { status: 400 });
-
-      const allowed = await consumeRateLimit(svc, action, token);
-      if (!allowed) {
-        return Response.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
-      }
 
       await svc.entities.StatusSubscriber.delete(sub.id);
       return Response.json({ ok: true, unsubscribed: true });
     }
 
     const matches = await svc.entities.StatusSubscriber
-      .filter({ confirm_token: token }, '-created_date', 1)
+      .filter({ confirm_token: rawToken }, '-created_date', 1)
       .catch(() => []);
     const sub = matches?.[0];
     if (!sub) return Response.json({ error: 'Invalid or expired token' }, { status: 400 });
 
-    const allowed = await consumeRateLimit(svc, action, token);
-    if (!allowed) {
-      return Response.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
-    }
-
     const expiresAt = Date.parse(sub.confirm_expires_at || '');
     if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) {
-      // Destroy the expired capability so it cannot become valid later through
-      // accidental clock/config changes.
       await svc.entities.StatusSubscriber.update(sub.id, { confirm_token: '' }).catch(() => {});
       return Response.json({ error: 'Invalid or expired token' }, { status: 400 });
     }
