@@ -45,11 +45,11 @@ export default function TradeBoard() {
   const load = async () => {
     setLoading(true);
     try {
-      const [trades, enforced] = await Promise.all([
-        base44.entities.TradeListing.filter({ status: 'open' }, '-created_date', 50).catch(() => []),
+      const [tradesRes, enforced] = await Promise.all([
+        base44.functions.invoke('get-visible-trades', { status: 'open', limit: 50 }).catch(() => ({ data: { listings: [] } })),
         base44.functions.invoke('get-enforced-dids', {}).catch(() => ({ data: { user_ids: [] } })),
       ]);
-      setListings(trades);
+      setListings(tradesRes?.data?.listings || []);
       setEnforcedIds(new Set(enforced.data?.user_ids || []));
     } catch {
       setListings([]);
@@ -119,28 +119,18 @@ export default function TradeBoard() {
     })();
   }, []);
 
-  // §9.1 live board: append new open listings, update/remove on status change.
-  useRealtimeEvent('trade.new_listing', (t) => {
-    if (t.status !== 'open') return;
-    setListings((prev) => (prev.some((x) => x.id === t.id) ? prev : [t, ...prev]));
-  });
-  useRealtimeEvent('trade.status_update', (t) => {
-    setListings((prev) => {
-      if (!prev.some((x) => x.id === t.id)) return prev;
-      if (t.status === 'open') return prev.map((x) => (x.id === t.id ? t : x));
-      return prev.filter((x) => x.id !== t.id);
-    });
-  });
+  // Re-fetch through the server-side visibility gate for realtime changes.
+  // Raw realtime payloads are not a confidentiality boundary and may describe
+  // circle- or wishlist-scoped listings the current viewer cannot access.
+  useRealtimeEvent('trade.new_listing', () => { load(); });
+  useRealtimeEvent('trade.status_update', () => { load(); });
 
   const now = Date.now();
   const visibleListings = listings.filter((t) => {
     if (enforcedIds.has(t.created_by_id) && (!currentUser || t.created_by_id !== currentUser.id)) return false;
     if (t.expires_at && new Date(t.expires_at).getTime() < now) return false;
-    if (t.visibility !== 'circle_scoped' || myCircleUris.has(t.circle_ref)) {
-      if (trustedOnly && !trustedDids.has(t.did)) return false;
-      return true;
-    }
-    return false;
+    if (trustedOnly && !trustedDids.has(t.did)) return false;
+    return true;
   });
 
   return (
