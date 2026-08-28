@@ -25,6 +25,16 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'set_id is required' }, { status: 400 });
     }
 
+    // Privacy containment: private CollectionEntry data must not be used to
+    // reveal other collectors' holdings. This feature will return once it can
+    // read from the explicit public projection introduced in Phase 1.
+    return Response.json({
+      buddies: [],
+      total_collectors: 0,
+      privacy_mode: true,
+      message: 'Set Buddies is temporarily unavailable while collection privacy controls are being upgraded.',
+    });
+
     const svc = base44.asServiceRole;
 
     // Fetch all collection entries for this set across all users
