@@ -76,7 +76,7 @@ export async function bridgeTradeListing(listing) {
   try {
     const me = await base44.auth.me();
     authorName = me?.full_name || '';
-    authorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    authorHandle = me?.custom_handle || (me?.custom_handle || me?.username || me?.bsky_handle || '');
     authorAvatar = me?.avatar || '';
   } catch {}
   const record = buildTradeListingRecord(listing, did, authorName, authorHandle, authorAvatar);

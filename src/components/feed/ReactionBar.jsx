@@ -86,7 +86,7 @@ export default function ReactionBar({ post, initial }) {
             reaction_type: type,
             target_card_uri: post.card_id || undefined,
             reactor_name: me?.full_name || '',
-            reactor_handle: me?.email?.split('@')[0] || '',
+            reactor_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
           },
           NSID.REACTION,
           did,

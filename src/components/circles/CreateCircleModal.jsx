@@ -40,7 +40,7 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
     try {
       const { did, signingKey } = await ensureUserDid();
       const me = await base44.auth.me();
-      const profile = { did, name: me?.full_name || '', handle: me?.email?.split('@')[0] || '', avatar: '' };
+      const profile = { did, name: me?.full_name || '', handle: me?.custom_handle || me?.username || me?.bsky_handle || '', avatar: '' };
       const stamped = await stampRecord(
         {
           name: name.trim(),
@@ -52,7 +52,7 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
           member_profiles: [profile],
           member_count: 1,
           author_name: me?.full_name || '',
-          author_handle: me?.email?.split('@')[0] || '',
+          author_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
         },
         NSID.CIRCLE,
         did,

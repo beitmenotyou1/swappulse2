@@ -150,8 +150,8 @@ function CreatePartyModal({ user, onClose, onCreated }) {
         set_name: setName,
         scheduled_at: new Date(scheduledAt).toISOString(),
         status: 'scheduled',
-        host_name: user.full_name || user.email?.split('@')[0] || 'Collector',
-        host_handle: user.email?.split('@')[0] || '',
+        host_name: user.full_name || user.custom_handle || user.username || user.bsky_handle || 'Collector',
+        host_handle: user.custom_handle || user.username || user.bsky_handle || '',
         max_participants: maxParticipants,
       });
       onCreated();

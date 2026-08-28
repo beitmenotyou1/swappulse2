@@ -79,7 +79,7 @@ export default function MeetupDetail() {
             bringing_trade_binder: bringingBinder,
             looking_for_cards: cards,
             attendee_name: me?.full_name || '',
-            attendee_handle: me?.email?.split('@')[0] || '',
+            attendee_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
             attendee_avatar: '',
           },
           NSID.MEETUP_RSVP,

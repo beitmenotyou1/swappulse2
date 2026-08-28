@@ -78,7 +78,7 @@ export async function sendDirectMessage(conversation, text, user) {
     recipient_did: recipientDid,
     body: storedBody,
     author_name: user?.display_name || user?.full_name || 'Collector',
-    author_handle: user?.bsky_handle || user?.username || (user?.email ? user.email.split('@')[0] : ''),
+    author_handle: user?.bsky_handle || user?.username || (user?.custom_handle || user?.username || user?.bsky_handle || ''),
     author_avatar: user?.avatar || '',
     read: false,
   }, NSID.DIRECT_MESSAGE, did, signingKey);

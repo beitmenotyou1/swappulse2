@@ -92,7 +92,7 @@ export default function GoLiveModal({ onClose, onLive }) {
       const { did, signingKey } = await ensureUserDid();
       const now = new Date();
       const autoEnd = new Date(now.getTime() + effectiveDuration * 60000);
-      const handle = user?.email?.split('@')[0] || 'collector';
+      const handle = user?.custom_handle || user?.username || user?.bsky_handle || 'collector';
       const payload = {
         title: title.trim(),
         description: description.trim().slice(0, 1000),

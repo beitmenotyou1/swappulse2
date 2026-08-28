@@ -88,7 +88,7 @@ export default function BinderEdit() {
         visibility,
         pages,
         author_name: me?.full_name || '',
-        author_handle: me?.email?.split('@')[0] || '',
+        author_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
         author_avatar: me?.avatar_url || '',
       };
       const stamped = await stampRecord(record, NSID.BINDER, did, signingKey);

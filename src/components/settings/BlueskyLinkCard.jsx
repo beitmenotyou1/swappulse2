@@ -97,7 +97,7 @@ export default function BlueskyLinkCard() {
   const steps = user?.migration_steps || {};
   const hasFailedSteps = Object.values(steps).some((s) => s?.status === 'failed');
 
-  const defaultHandle = user?.username || user?.email?.split('@')[0] || 'collector';
+  const defaultHandle = user?.username || user?.custom_handle || user?.username || user?.bsky_handle || 'collector';
 
   // Loop a backfill function until hasMore is false so the user's full
   // history for that collection is synced into SwapPulse. Used for posts,

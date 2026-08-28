@@ -43,7 +43,7 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
           creator_did: did,
           rsvp_count: 0,
           author_name: me?.full_name || '',
-          author_handle: me?.email?.split('@')[0] || '',
+          author_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
         },
         NSID.MEETUP,
         did,

@@ -30,7 +30,7 @@ export default function CreateSpaceModal({ onClose, onCreated }) {
         max_listeners: 100,
         topic_tags: tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 5),
         host_name: user?.full_name || 'Collector',
-        host_handle: user?.email?.split('@')[0] || 'collector',
+        host_handle: user?.custom_handle || user?.username || user?.bsky_handle || 'collector',
         host_avatar: user?.avatar_url || '',
       };
       const stamped = await stampRecord(payload, NSID.VOICE_SPACE, did, signingKey);

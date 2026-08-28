@@ -11,7 +11,7 @@ export default function DomainHandleCard() {
   const [open, setOpen] = useState(false);
   const custom = user?.custom_handle;
   const verified = user?.handle_verified;
-  const defaultHandle = user?.email?.split('@')[0] || 'collector';
+  const defaultHandle = user?.custom_handle || user?.username || user?.bsky_handle || 'collector';
 
   return (
     <div className="rounded-xl border border-border bg-card p-3">

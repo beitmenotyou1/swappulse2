@@ -69,7 +69,7 @@ export default function VouchForm({ onCreated }) {
         context: context.trim(),
         revocable: true,
         voucher_name: me?.full_name || '',
-        voucher_handle: me?.custom_handle || (me?.email?.split('@')[0] || ''),
+        voucher_handle: me?.custom_handle || (me?.custom_handle || me?.username || me?.bsky_handle || ''),
       };
       // bridgeVouch stamps the record locally AND creates it on the PDS
       const bridgedFields = await bridgeVouch(vouchData);

@@ -71,7 +71,7 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
           description: description.trim(),
           photo_urls: photoUrls,
           filed_by_name: me?.full_name || 'Collector',
-          filed_by_handle: me?.email?.split('@')[0] || 'collector',
+          filed_by_handle: me?.custom_handle || me?.username || me?.bsky_handle || 'collector',
           filed_by_avatar: '',
         },
         NSID.TRADE_DISPUTE,

@@ -72,7 +72,7 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
         }))
         .filter((c) => Number.isFinite(c.timestamp_seconds) && c.timestamp_seconds >= 0);
 
-      const handle = user?.email?.split('@')[0] || 'collector';
+      const handle = user?.custom_handle || user?.username || user?.bsky_handle || 'collector';
       const payload = {
         title: title.trim(),
         description: description.trim().slice(0, 2000),

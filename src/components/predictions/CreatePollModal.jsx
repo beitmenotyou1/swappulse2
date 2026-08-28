@@ -80,7 +80,7 @@ export default function CreatePollModal({ open, onClose, onCreated }) {
           vote_counts: { bullish: 0, bearish: 0, neutral: 0 },
           total_votes: 0,
           author_name: me?.full_name || '',
-          author_handle: me?.email?.split('@')[0] || '',
+          author_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
         },
         NSID.SENTIMENT_POLL,
         did,

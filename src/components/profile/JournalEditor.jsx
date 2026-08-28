@@ -63,7 +63,7 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
         visibility,
         embedded_stats: stats,
         author_name: me?.full_name || '',
-        author_handle: me?.email?.split('@')[0] || '',
+        author_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
       };
       if (initial?.id) {
         await base44.entities.Journal.update(initial.id, {

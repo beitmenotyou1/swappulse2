@@ -94,7 +94,7 @@ export async function bridgeVouch(vouch) {
   try {
     const me = await base44.auth.me();
     voucherName = me?.full_name || '';
-    voucherHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    voucherHandle = me?.custom_handle || (me?.custom_handle || me?.username || me?.bsky_handle || '');
   } catch {}
   const record = buildVouchRecord(vouch, did, voucherName, voucherHandle);
   const stamped = await bridgeRecord(record, NSID.VOUCH);
@@ -114,7 +114,7 @@ export async function bridgeWishlist(wishlist) {
   try {
     const me = await base44.auth.me();
     ownerName = me?.full_name || '';
-    ownerHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    ownerHandle = me?.custom_handle || (me?.custom_handle || me?.username || me?.bsky_handle || '');
   } catch {}
   const record = buildWishlistRecord(wishlist, did, ownerName, ownerHandle);
   const stamped = await bridgeRecord(record, NSID.WISHLIST);
@@ -134,7 +134,7 @@ export async function bridgeCircle(circle) {
   try {
     const me = await base44.auth.me();
     curatorName = me?.full_name || '';
-    curatorHandle = me?.custom_handle || (me?.email?.split('@')[0] || '');
+    curatorHandle = me?.custom_handle || (me?.custom_handle || me?.username || me?.bsky_handle || '');
   } catch {}
   const record = buildCircleRecord(circle, did, curatorName, curatorHandle);
   const stamped = await bridgeRecord(record, NSID.CIRCLE);
@@ -277,7 +277,7 @@ async function getMe() {
     const me = await base44.auth.me();
     return {
       name: me?.full_name || '',
-      handle: me?.custom_handle || (me?.email?.split('@')[0] || ''),
+      handle: me?.custom_handle || (me?.custom_handle || me?.username || me?.bsky_handle || ''),
     };
   } catch {
     return { name: '', handle: '' };

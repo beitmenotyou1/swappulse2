@@ -57,7 +57,7 @@ export default function PullOfTheWeek() {
       await base44.entities.PullVote.create({
         week_key: weekKey,
         nomination_id: nominationId,
-        voter_name: user.full_name || user.email?.split('@')[0] || 'Collector',
+        voter_name: user.full_name || user.custom_handle || user.username || user.bsky_handle || 'Collector',
       });
       await base44.entities.PullNomination.update(nominationId, {
         vote_count: (nominations.find((n) => n.id === nominationId)?.vote_count || 0) + 1,
@@ -181,8 +181,8 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
         card_image: cardImage,
         card_rarity: cardRarity,
         set_name: setName,
-        nominator_name: user.full_name || user.email?.split('@')[0] || 'Collector',
-        nominator_handle: user.email?.split('@')[0] || '',
+        nominator_name: user.full_name || user.custom_handle || user.username || user.bsky_handle || 'Collector',
+        nominator_handle: user.custom_handle || user.username || user.bsky_handle || '',
       }, NSID.PULL_NOMINATION, did, signingKey);
       await base44.entities.PullNomination.create(stamped);
       // Bridge to PDS (non-fatal)

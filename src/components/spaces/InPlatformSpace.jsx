@@ -89,7 +89,7 @@ export default function InPlatformSpace({ space: initialSpace }) {
           muted: s.did === did ? false : true,
           joined_at: new Date().toISOString(),
           participant_name: user?.full_name || 'Collector',
-          participant_handle: user?.email?.split('@')[0] || 'collector',
+          participant_handle: user?.custom_handle || user?.username || user?.bsky_handle || 'collector',
           participant_avatar: user?.avatar_url || '',
         }, NSID.SPACE_PARTICIPANT, did, signingKey);
         myPart = await base44.entities.SpaceParticipant.create(stamped);

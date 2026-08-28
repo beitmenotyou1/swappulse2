@@ -108,7 +108,7 @@ export default function CardReviews({ card }) {
         review_text: form.review_text.trim(),
         variant: form.variant,
         author_name: me?.full_name || 'Collector',
-        author_handle: me?.email?.split('@')[0] || 'collector',
+        author_handle: me?.custom_handle || me?.username || me?.bsky_handle || 'collector',
       }, NSID.CARD_REVIEW, did, signingKey);
       const created = await base44.entities.CardReview.create(stamped);
       bridgeCardReview(stamped).then((res) => {

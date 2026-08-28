@@ -27,7 +27,7 @@ export function usePresence() {
           const payload = {
             last_seen: new Date().toISOString(),
             did,
-            handle: me.username || (me.email || '').split('@')[0],
+            handle: me.custom_handle || me.username || me.bsky_handle || 'collector',
             name: me.display_name || me.full_name || '',
             avatar: me.avatar || '',
           };

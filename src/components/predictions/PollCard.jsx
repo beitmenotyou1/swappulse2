@@ -80,7 +80,7 @@ export default function PollCard({ poll, myVote, myVoteId, user }) {
             poll_id: poll.id,
             vote: key,
             voter_name: user?.full_name || '',
-            voter_handle: user?.email?.split('@')[0] || '',
+            voter_handle: user?.custom_handle || user?.username || user?.bsky_handle || '',
           },
           NSID.SENTIMENT_VOTE,
           did,
