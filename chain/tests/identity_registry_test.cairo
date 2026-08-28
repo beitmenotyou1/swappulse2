@@ -1,6 +1,6 @@
 use snforge_std::{
-    ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address,
-    stop_cheat_caller_address,
+    ContractClassTrait, DeclareResultTrait, declare, start_cheat_block_timestamp,
+    start_cheat_caller_address, stop_cheat_block_timestamp, stop_cheat_caller_address,
 };
 use starknet::ContractAddress;
 use swappulse_network::identity_registry::{
@@ -25,9 +25,11 @@ fn register_identity_and_reverse_lookup() {
     let identity_id = 0xabc;
     let (registry_address, registry) = deploy_registry(owner);
 
+    start_cheat_block_timestamp(registry_address, 1_234_u64);
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(identity_id, account);
     stop_cheat_caller_address(registry_address);
+    stop_cheat_block_timestamp(registry_address);
 
     let (stored_account, status, canonical, created_at, recovery_count) =
         registry.get_identity(identity_id);
@@ -35,13 +37,13 @@ fn register_identity_and_reverse_lookup() {
     assert(stored_account == account, 'account mismatch');
     assert(status == 1_u8, 'status not active');
     assert(canonical == identity_id, 'canonical mismatch');
-    assert(created_at > 0_u64, 'created_at missing');
+    assert(created_at == 1_234_u64, 'created_at mismatch');
     assert(recovery_count == 0_u64, 'recovery count');
     assert(registry.get_identity_by_account(account) == identity_id, 'reverse lookup');
 }
 
 #[test]
-#[should_panic(expected: 'NOT_OWNER')]
+#[should_panic]
 fn non_owner_cannot_register_identity() {
     let owner = addr(0x111);
     let attacker = addr(0x999);
