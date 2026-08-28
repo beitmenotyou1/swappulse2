@@ -29,7 +29,7 @@ export default function BinderEdit() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [theme, setTheme] = useState('classic_purple');
-  const [visibility, setVisibility] = useState('public');
+  const [visibility, setVisibility] = useState('private');
   const [cover, setCover] = useState('');
   const [pages, setPages] = useState([emptyPage(1)]);
   const [entries, setEntries] = useState([]);
@@ -49,7 +49,7 @@ export default function BinderEdit() {
           setTitle(b.title || '');
           setDescription(b.description || '');
           setTheme(b.theme || 'classic_purple');
-          setVisibility(b.visibility || 'public');
+          setVisibility(b.visibility || 'private');
           setCover(b.cover_image_uri || '');
           setPages(b.pages?.length ? b.pages : [emptyPage(1)]);
         }
