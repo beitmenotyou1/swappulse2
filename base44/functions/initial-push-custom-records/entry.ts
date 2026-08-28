@@ -12,6 +12,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { COLLECTIONS, buildRecord } from '../../shared/firehoseMappers.ts';
+import { isPublicationEligible } from '../../shared/federationPolicy.ts';
 import { getConsentMap, isDoNotSell } from '../../shared/consentCheck.ts';
 
 const SKIP_COLLECTIONS = new Set([
@@ -23,14 +24,6 @@ const SKIP_COLLECTIONS = new Set([
 
 const TIME_BUDGET_MS = 100_000; // ~100s, leaving margin under the function limit
 const BATCH_LIMIT = 100; // records per collection per user per run
-
-// Privacy containment. Raw collection entries are private source data and must
-// never be bulk-federated. Only explicitly public binders may be published.
-function isPublicationEligible(collection: string, rec: any): boolean {
-  if (collection === 'org.swappulse.collectionEntry') return false;
-  if (collection === 'org.swappulse.binder') return rec?.visibility === 'public';
-  return true;
-}
 
 export default async function (req: Request): Promise<Response> {
   try {
