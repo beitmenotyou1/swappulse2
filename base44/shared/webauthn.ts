@@ -3,8 +3,6 @@
 // and single-use. This prevents replay even for authenticators that do not
 // implement signature counters.
 
-import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
-
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -116,7 +114,7 @@ async function sha256Base64Url(value: string): Promise<string> {
 export async function issueWebAuthnChallenge(
   svc: any,
   secret: string,
-  purpose: 'authentication' | 'registration' | 'wallet',
+  purpose: 'authentication' | 'registration',
   subject: string,
   rpConfig: { origin: string; rpId: string },
   ttlMs = 5 * 60 * 1000,
@@ -139,7 +137,7 @@ export async function consumeWebAuthnChallenge(
   secret: string,
   challenge: string,
   signature: string,
-  purpose: 'authentication' | 'registration' | 'wallet',
+  purpose: 'authentication' | 'registration',
   subject: string,
   rpConfig: { origin: string; rpId: string },
 ): Promise<boolean> {
@@ -161,90 +159,6 @@ export async function consumeWebAuthnChallenge(
   // own challenge, preventing replay at the cost of requiring a fresh ceremony.
   await svc.entities.WebAuthnChallenge.update(row.id, { used_at: new Date().toISOString() });
   return true;
-}
-
-// Verify a wallet-unlock passkey assertion. Used by send-crypto,
-// execute-conversion, and execute-usdc-to-fiat to consistently verify the
-// WebAuthn assertion against the user's enrolled credentials. Centralises
-// the RP-ID/origin extraction (getRpConfig), challenge-signature check, and
-// public-key format conversion so every wallet unlock path matches the
-// registration and login flows exactly.
-export async function verifyWalletPasskey(
-  req: Request,
-  svc: any,
-  userId: string,
-  assertion: any,
-  challenge: string,
-  challengeSignature: string,
-): Promise<{ verified: boolean; error?: string; status?: number }> {
-  const rpConfig = getRpConfig(req);
-  if (!rpConfig) return { verified: false, error: 'Could not determine origin', status: 400 };
-
-  const sigValid = await consumeWebAuthnChallenge(
-    svc,
-    process.env.BACKEND_FUNCTION_SECRET!,
-    challenge,
-    challengeSignature,
-    'wallet',
-    userId,
-    rpConfig,
-  );
-  if (!sigValid) return { verified: false, error: 'Invalid challenge', status: 403 };
-
-  const creds = await svc.entities.WebAuthnCredential
-    .filter({ user_id: userId }, '-created_date', 50).catch(() => []);
-  const validCreds = creds.filter((c: any) => c.credential_id);
-  if (!validCreds.length) return { verified: false, error: 'No passkey enrolled', status: 400 };
-
-  let lastError = '';
-  for (const cred of validCreds) {
-    try {
-      const result = await verifyAuthenticationResponse({
-        response: assertion,
-        expectedChallenge: challenge,
-        expectedOrigin: rpConfig.origin,
-        expectedRPID: rpConfig.rpId,
-        authenticator: {
-          credentialID: cred.credential_id,
-          credentialPublicKey: base64UrlToUint8Array(cred.public_key),
-          // Counterless platform authenticators may legitimately remain at 0.
-          // Replay protection is enforced independently by the server-side,
-          // expiring, single-use WebAuthn challenge.
-          counter: 0,
-        },
-      });
-      if (result.verified) {
-        // Store the authenticator's reported counter directly. Many platform
-        // authenticators (Touch ID, Face ID, Windows Hello) don't support
-        // counters and always report 0; the `||` fallback to `cred.counter + 1`
-        // would store 1, causing every subsequent auth to fail with
-        // "Response counter value 0 was lower than expected 1".
-        const newCounter = result.authenticationInfo?.newCounter;
-        await svc.entities.WebAuthnCredential.update(cred.id, {
-          counter: typeof newCounter === 'number' ? newCounter : (cred.counter || 0),
-        });
-        return { verified: true };
-      }
-    } catch (e: any) {
-      lastError = e?.message || String(e);
-      console.error('[verifyWalletPasskey] cred verification error:', lastError);
-    }
-  }
-  console.error('[verifyWalletPasskey] FAILED', {
-    rpId: rpConfig.rpId,
-    origin: rpConfig.origin,
-    credCount: validCreds.length,
-    lastError,
-    assertionOrigin: assertion?.response?.clientExtensionResults,
-    assertionRpId: assertion?.response?.rpId,
-  });
-  // Include diagnostic detail in the error so the frontend can surface it
-  // during debugging (RP mismatch is the most common cause of 403s).
-  return {
-    verified: false,
-    error: `Passkey verification failed (rpId=${rpConfig.rpId}, origin=${rpConfig.origin}, creds=${validCreds.length}, err=${lastError || 'no-match'})`,
-    status: 403,
-  };
 }
 
 // Convert a base64url string to a Uint8Array (for @simplewebauthn/server interop).
