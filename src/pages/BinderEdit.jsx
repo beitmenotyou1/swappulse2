@@ -144,7 +144,7 @@ export default function BinderEdit() {
         dispatchCrossPost('binder', created.id, {
           url: window.location.origin + '/binder/' + created.id,
           authorName: me?.full_name,
-          authorHandle: me?.email?.split('@')[0],
+          authorHandle: me?.custom_handle || me?.username || me?.bsky_handle || '',
         });
         // Publish as a site.standard.document for interoperable long-form
         // discovery (public binders with a description only).

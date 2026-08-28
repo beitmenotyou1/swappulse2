@@ -93,7 +93,7 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
         dispatchCrossPost('journal', created.id, {
           url: window.location.origin + '/profile',
           authorName: me?.full_name,
-          authorHandle: me?.email?.split('@')[0],
+          authorHandle: me?.custom_handle || me?.username || me?.bsky_handle || '',
         });
         // Publish as a site.standard.document for interoperable long-form
         // discovery (public journals only).
