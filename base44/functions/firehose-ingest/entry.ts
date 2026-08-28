@@ -785,6 +785,20 @@ export default async function(req: Request): Promise<Response> {
                     }
                   }
                 }
+                // Privacy containment: CollectionEntry is private application
+                // source data, not a federated source of truth. Removing an old
+                // public PDS copy must never erase the user's local collection.
+                // Likewise a non-public Binder may be intentionally unbridged.
+                if (entityName === 'CollectionEntry' || (entityName === 'Binder' && local.visibility !== 'public')) {
+                  await svc.entities[entityName].update(local.id, {
+                    bridged: false,
+                    at_uri: '',
+                    cid: '',
+                    content_hash: '',
+                  }).catch(() => {});
+                  deleted++;
+                  continue;
+                }
                 await svc.entities[entityName].delete(local.id).catch(() => {});
                 deleted++;
               }
