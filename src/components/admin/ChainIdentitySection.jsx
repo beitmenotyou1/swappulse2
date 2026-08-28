@@ -10,6 +10,7 @@ export default function ChainIdentitySection() {
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [config, setConfig] = useState(null);
   const [configDraft, setConfigDraft] = useState({
+    chain_id: '',
     account_class_hash: '',
     identity_registry_address: '',
     recovery_controller: '',
@@ -42,6 +43,7 @@ export default function ChainIdentitySection() {
         if (!cancelled) {
           setConfig(nextConfig);
           setConfigDraft({
+            chain_id: nextConfig?.chain_id || '',
             account_class_hash: nextConfig?.account_class_hash || '',
             identity_registry_address: nextConfig?.identity_registry_address || '',
             recovery_controller: nextConfig?.recovery_controller || '',
@@ -78,6 +80,7 @@ export default function ChainIdentitySection() {
       setConfig(nextConfig);
       setConfigDraft((prev) => ({
         ...prev,
+        chain_id: nextConfig?.chain_id || '',
         account_class_hash: nextConfig?.account_class_hash || '',
         identity_registry_address: nextConfig?.identity_registry_address || '',
         recovery_controller: nextConfig?.recovery_controller || '',
@@ -197,6 +200,10 @@ export default function ChainIdentitySection() {
           <div className="rounded-lg bg-secondary/50 p-3">
             <p className="text-muted-foreground">Network</p>
             <p className="mt-1 font-mono font-semibold">{config?.network || 'SWAPPULSE_TESTNET'}</p>
+          </div>
+          <div className="rounded-lg bg-secondary/50 p-3">
+            <p className="text-muted-foreground">Chain ID</p>
+            <p className="mt-1 truncate font-mono">{config?.chain_id || 'Not pinned'}</p>
           </div>
           <div className="rounded-lg bg-secondary/50 p-3">
             <p className="text-muted-foreground">Account class</p>
