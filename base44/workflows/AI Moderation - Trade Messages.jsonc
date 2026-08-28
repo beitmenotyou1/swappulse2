@@ -1,6 +1,6 @@
 {
   "name": "AI Moderation - Trade Messages",
-  "description": "Runs AI moderation analysis on new trade messages to detect scam attempts and abuse in negotiations",
+  "description": "SECURITY HOLD: automatic AI moderation trigger suspended until internal function calls have a platform-verifiable authentication mechanism.",
   "trigger": {
     "config": {
       "trigger_type": "entity",
@@ -9,7 +9,7 @@
         "create"
       ]
     },
-    "condition": "${ (.trigger.data.body // \"\") | length > 10 }"
+    "condition": "${ false }"
   },
   "definition": {
     "document": {
