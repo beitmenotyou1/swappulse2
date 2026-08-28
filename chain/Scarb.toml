@@ -1,0 +1,14 @@
+[package]
+name = "swappulse_network"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = "2.13.1"
+openzeppelin_account = "3.0.0"
+openzeppelin_access = "3.0.0"
+openzeppelin_introspection = "3.0.0"
+openzeppelin_upgrades = "3.0.0"
+
+[[target.starknet-contract]]
+sierra = true
