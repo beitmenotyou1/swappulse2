@@ -21,7 +21,9 @@ export default async function(req: Request): Promise<Response> {
     // 1. Fetch recent local posts (everybody feed), then re-sort by
     //    original_created_at (falling back to created_date) so imported
     //    Bluesky posts appear in their original chronological order.
-    const posts = await base44.entities.Post.list('-created_date', limit).catch(() => []);
+    const posts = await svc.entities.Post
+      .filter({ visibility_scope: 'public' }, '-created_date', limit)
+      .catch(() => []);
     const items = sortPostsDescending(posts || []).map((p: any) => ({ ...p, external: false }));
 
     // 2. Enrich with current avatars from the User table
