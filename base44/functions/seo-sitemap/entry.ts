@@ -57,11 +57,13 @@ export default async function(req: Request): Promise<Response> {
       urls.push(urlEntry(`${origin}${route}`, now, 'daily', '0.8'));
     }
 
-    // Dynamic entity-backed pages (service role — sitemap is public).
+    // Dynamic entity-backed pages. The sitemap is public, so service-role reads
+    // MUST apply the same publication boundary explicitly. Never emit the id of
+    // a followers-only/private record merely because the backend can see it.
     const [posts, binders, circles, meetups, challenges, spaces] = await Promise.all([
-      base44.asServiceRole.entities.Post.list('-created_date', 500).catch(() => []),
-      base44.asServiceRole.entities.Binder.list('-created_date', 500).catch(() => []),
-      base44.asServiceRole.entities.Circle.list('-created_date', 500).catch(() => []),
+      base44.asServiceRole.entities.Post.filter({ visibility_scope: 'public' }, '-created_date', 500).catch(() => []),
+      base44.asServiceRole.entities.Binder.filter({ visibility: 'public' }, '-created_date', 500).catch(() => []),
+      base44.asServiceRole.entities.Circle.filter({ visibility: 'public' }, '-created_date', 500).catch(() => []),
       base44.asServiceRole.entities.Meetup.list('-created_date', 500).catch(() => []),
       base44.asServiceRole.entities.Challenge.list('-created_date', 500).catch(() => []),
       base44.asServiceRole.entities.VoiceSpace.list('-created_date', 500).catch(() => []),
