@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ArrowLeft } from 'lucide-react';
 import Logo from '@/components/Logo';
-import DonationToggle from '@/components/donate/DonationToggle';
 import FiatDonationForm from '@/components/donate/FiatDonationForm';
-import CryptoDonationForm from '@/components/donate/CryptoDonationForm';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -12,17 +10,16 @@ export default function Donate() {
   const t = useT();
   useSEO({
     title: 'Support SwapPulse',
-    description: 'Donate to SwapPulse by card or cryptocurrency. Every contribution keeps the platform free and open-source.',
+    description: 'Donate to SwapPulse by card. Every contribution keeps the platform free and open-source.',
     canonicalPath: '/donate',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
       name: 'Support SwapPulse',
-      description: 'Donate to SwapPulse by card or cryptocurrency. Every contribution keeps the platform free and open-source.',
+      description: 'Donate to SwapPulse by card. Every contribution keeps the platform free and open-source.',
       url: 'https://swappulse.org/donate',
     },
   });
-  const [method, setMethod] = useState('card');
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -53,10 +50,8 @@ export default function Donate() {
           self-sovereign.
         </p>
 
-        <DonationToggle method={method} onChange={setMethod} />
-
         <div className="mt-5">
-          {method === 'card' ? <FiatDonationForm /> : <CryptoDonationForm />}
+          <FiatDonationForm />
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">

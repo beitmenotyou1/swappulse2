@@ -17,11 +17,6 @@ import { formatPrice } from '@/lib/format';
 import useSEO from '@/hooks/useSEO';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import CardSocialTabs from '@/components/cards/CardSocialTabs';
-import OnChainBadge from '@/components/blockchain/OnChainBadge';
-import MintOnPolygonButton from '@/components/blockchain/MintOnPolygonButton';
-import CardNftTracker from '@/components/wallet/CardNftTracker';
-import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
-
 export default function CardDetail() {
   const { cardId } = useParams();
   const [card, setCard] = useState(null);
@@ -38,11 +33,9 @@ export default function CardDetail() {
   const [wishlisted, setWishlisted] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [tab, setTab] = useState('overview');
-  const [onChainAsset, setOnChainAsset] = useState(null);
   const [myEntry, setMyEntry] = useState(null);
   const { toast } = useToast();
   const { t, locale } = useI18n();
-  const { cryptoEnabled } = useCryptoEnabled();
 
   useEffect(() => {
     (async () => {
@@ -77,13 +70,7 @@ export default function CardDetail() {
 
   useEffect(() => {
     if (!card) return;
-    (async () => {
-      try {
-        const res = await base44.functions.invoke('get-on-chain-assets', { cardId: card.id });
-        setOnChainAsset(res.data.assets[0] || null);
-      } catch {}
-      refreshMyEntry();
-    })();
+    refreshMyEntry();
   }, [card]);
 
   if (loading) {
@@ -138,7 +125,6 @@ export default function CardDetail() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-bold leading-tight">{card.name}</h1>
-            {onChainAsset && <OnChainBadge verificationLevel={onChainAsset.verification_level} />}
           </div>
           <p className="text-xs text-muted-foreground">{card.set?.name} · #{card.localId}</p>
         </div>
@@ -263,18 +249,6 @@ export default function CardDetail() {
           <button onClick={() => setShowAlert(true)} className="flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-secondary">
             <Bell className="h-4 w-4" /> {t('card.priceAlert')}
           </button>
-          {cryptoEnabled && myEntry && (
-            <MintOnPolygonButton collectionEntryId={myEntry.id} cardName={card.name} cardImage={card.image} />
-          )}
-          {cryptoEnabled && !myEntry && (
-            <button
-              onClick={() => setShowAdd(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Mint on Polygon
-            </button>
-          )}
         </div>
 
         {avg != null && (
@@ -369,13 +343,6 @@ export default function CardDetail() {
       </div>
 
       {tab === 'overview' && <CardSocialTabs card={card} />}
-
-      {/* On-Chain NFT Tracking — visible even when crypto is disabled */}
-      {tab === 'overview' && (
-        <div className="mt-5 px-4">
-          <CardNftTracker cardId={card.id} cardName={card.name} cardImage={card.image} />
-        </div>
-      )}
 
       {tab === 'discussion' && <DiscussionTab card={card} />}
 

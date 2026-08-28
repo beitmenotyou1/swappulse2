@@ -13,7 +13,6 @@ import { LivePresenceProvider } from '@/lib/livePresence';
 import { PodcastPlayerProvider } from '@/lib/podcastPlayer';
 import { MembershipProvider } from '@/lib/membershipContext';
 import Layout from '@/components/Layout';
-import ExplorerLayout from '@/components/explorer/ExplorerLayout';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
 import { LightboxProvider } from '@/lib/lightboxContext';
@@ -64,10 +63,6 @@ const UserProfile = lazy(() => import('@/pages/UserProfile'));
 const VoiceSpaces = lazy(() => import('@/pages/VoiceSpaces'));
 const SpaceRoom = lazy(() => import('@/pages/SpaceRoom'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
-const Wallet = lazy(() => import('@/pages/Wallet'));
-const WalletConvert = lazy(() => import('@/pages/WalletConvert'));
-const WalletBridge = lazy(() => import('@/pages/WalletBridge'));
-const WalletReceive = lazy(() => import('@/pages/WalletReceive'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Help = lazy(() => import('@/pages/Help'));
 const Status = lazy(() => import('@/pages/Status'));
@@ -156,11 +151,6 @@ const SitemapXml = lazy(() => import('@/pages/SitemapXml'));
 const RobotsTxt = lazy(() => import('@/pages/RobotsTxt'));
 const JournalDetail = lazy(() => import('@/pages/JournalDetail'));
 const HashtagPage = lazy(() => import('@/pages/HashtagPage'));
-const PulseExplorer = lazy(() => import('@/pages/PulseExplorer'));
-const PulseExplorerAddress = lazy(() => import('@/pages/PulseExplorerAddress'));
-const PulseExplorerTx = lazy(() => import('@/pages/PulseExplorerTx'));
-const PulseExplorerBlock = lazy(() => import('@/pages/PulseExplorerBlock'));
-
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
@@ -329,13 +319,6 @@ const AuthenticatedApp = () => {
         <Route path="/labelers" element={<Labelers />} />
         <Route path="/search" element={<SearchPage />} />
       </Route>
-      {/* Standalone blockchain explorer — own full-screen layout, escapes the main app shell */}
-      <Route element={<ExplorerLayout />}>
-        <Route path="/blockchain" element={<PulseExplorer />} />
-        <Route path="/blockchain/address/:address" element={<PulseExplorerAddress />} />
-        <Route path="/blockchain/tx/:txHash" element={<PulseExplorerTx />} />
-        <Route path="/blockchain/block/:blockNumber" element={<PulseExplorerBlock />} />
-      </Route>
       {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
@@ -350,10 +333,6 @@ const AuthenticatedApp = () => {
           <Route path="/trade-templates" element={<TradeTemplates />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/wallet/convert" element={<WalletConvert />} />
-          <Route path="/wallet/bridge" element={<WalletBridge />} />
-          <Route path="/wallet/receive" element={<WalletReceive />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />

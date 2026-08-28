@@ -1,23 +1,25 @@
-// cryptoCompare — constant-time string comparison to resist timing attacks.
-// Used by stripe-webhook (HMAC-SHA-256), nowpayments-ipn (HMAC-SHA-512),
-// verify-2fa (TOTP), and verify-login-code (6-digit code) so secret
-// comparisons don't leak match/mismatch via response-time differences.
-//
-// Always iterates over the longer of the two inputs, accumulating XOR of
-// char codes. Returns false on length mismatch without short-circuiting
-// (the length difference is folded into the same accumulator so the loop
-// still runs for the full max length).
-
-export function timingSafeEqual(a: string, b: string): boolean {
-  if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const aLen = a.length;
-  const bLen = b.length;
-  let result = aLen ^ bLen;
-  const maxLen = Math.max(aLen, bLen);
-  for (let i = 0; i < maxLen; i++) {
-    const ac = i < aLen ? a.charCodeAt(i) : 0;
-    const bc = i < bLen ? b.charCodeAt(i) : 0;
-    result |= ac ^ bc;
+// timingSafeEqual — constant-time string comparison to prevent timing
+// attacks on OTP/2FA code verification. Shared by verify-2fa and
+// verify-login-code. This is a general security utility, NOT crypto/wallet
+// infrastructure.
+export async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+  if (a.length !== b.length) return false;
+  const encoder = new TextEncoder();
+  const aBuf = encoder.encode(a);
+  const bBuf = encoder.encode(b);
+  // HMAC both inputs with the same random key, then compare the MACs.
+  // This leaks no timing information about the plaintext.
+  const key = crypto.getRandomValues(new Uint8Array(32));
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign'],
+  );
+  const aSig = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, aBuf));
+  const bSig = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, bBuf));
+  let diff = 0;
+  for (let i = 0; i < aSig.length; i++) {
+    diff |= aSig[i] ^ bSig[i];
   }
-  return result === 0;
+  return diff === 0;
 }

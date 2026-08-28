@@ -39,8 +39,6 @@ import { themeGradient, DEFAULT_OWNER_SECTIONS, ALL_TAB_LABELS } from '@/lib/pro
 import RichText from '@/components/RichText';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import MovedFromBlueskyBadge from '@/components/profile/MovedFromBlueskyBadge';
-import OnChainBadge from '@/components/blockchain/OnChainBadge';
-import DynamicNftAvatar from '@/components/blockchain/DynamicNftAvatar';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -72,7 +70,6 @@ export default function Profile() {
   const [showEdit, setShowEdit] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [ending, setEnding] = useState(false);
-  const [onChainAssets, setOnChainAssets] = useState([]);
   const reverted = !!user?.migration_reverted;
 
   // Merged profile overlays live Bluesky identity (remote wins for shared
@@ -87,20 +84,18 @@ export default function Profile() {
     try {
       const { did: myDid } = await ensureUserDid();
       setDid(myDid);
-      const [c, t, r, j, vs, oa] = await Promise.all([
+      const [c, t, r, j, vs] = await Promise.all([
         base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100),
         base44.entities.TradeListing.filter({ created_by_id: user.id }, '-created_date', 20),
         base44.entities.Reputation.filter({ did: myDid }, '-created_date', 50).catch(() => []),
         base44.entities.Journal.filter({ created_by_id: user.id }, '-created_date', 50),
         base44.entities.VoiceSpace.filter({ did: myDid, status: 'live' }, '-created_date', 1).catch(() => []),
-        base44.entities.OnChainAsset.filter({ owner_did: myDid }, '-minted_at', 50).catch(() => []),
       ]);
       setCollection(c);
       setTrades(t);
       setReputation(r);
       setJournals(j);
       setLiveSpace(vs[0] || null);
-      setOnChainAssets(oa);
     } catch {} finally {
       setLoading(false);
     }
@@ -222,7 +217,6 @@ export default function Profile() {
           badges={
             <>
               {user?.migrated_from_bluesky && <MovedFromBlueskyBadge size="md" />}
-              {onChainAssets.length > 0 && <OnChainBadge />}
             </>
           }
           extra={
@@ -244,36 +238,6 @@ export default function Profile() {
           onReload={load}
         />
       )}
-
-      {/* Dynamic NFT avatar — shows when the collector has minted a username NFT.
-          The @username appears at the top and the visual updates automatically
-          whenever profile details or avatar change (via username-nft-metadata). */}
-      {!loading && (() => {
-        const usernameNft = onChainAssets.find(a => a.asset_type === 'username');
-        if (!usernameNft) return null;
-        return (
-          <div className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-raised">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase text-muted-foreground">Dynamic NFT Avatar</h3>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">Live</span>
-            </div>
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
-              <DynamicNftAvatar
-                handle={usernameNft.handle || user?.bsky_handle || user?.username || ''}
-                displayName={merged?.name || user?.display_name || user?.full_name}
-                avatar={merged?.avatar || user?.avatar}
-                memberSince={user?.created_date}
-                did={did}
-                size="md"
-              />
-              <div className="flex-1 text-sm text-muted-foreground">
-                <p>Your profile avatar is minted as a soulbound NFT on Polygon. The @username appears at the top and the visual updates automatically whenever you edit your profile details or avatar — no re-minting needed.</p>
-                <p className="mt-2 text-xs">Token ID: #{usernameNft.token_id} · Contract: {usernameNft.contract_address?.slice(0, 10)}…</p>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {showGoLive && (
         <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />

@@ -11,7 +11,6 @@ const FOOTER_LINKS = [
   { tKey: 'footer.status', to: '/status' },
   { tKey: 'footer.explore', to: '/explore' },
   { tKey: 'footer.donate', to: '/donate' },
-  { tKey: 'footer.blockchainExplorer', to: '/blockchain' },
 ];
 
 export default function Footer() {

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -10,17 +10,14 @@ import { PopoverTrigger } from '@/components/ui/popover';
 import NotificationPopover from '@/components/notifications/NotificationPopover';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useT } from '@/lib/i18n/I18nProvider';
-import { useCryptoEnabled } from '@/hooks/useCryptoEnabled';
-
 const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
-  { to: '/wallet', icon: Wallet, label: 'Wallet', tKey: 'nav.wallet', authOnly: true, cryptoOnly: true },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
 ];
 
-const TAB_ROOTS = ['/', '/explore', '/trades', '/collection', '/wallet'];
+const TAB_ROOTS = ['/', '/explore', '/trades', '/collection'];
 
 // Determine which primary tab owns a given pathname.
 // Sub-pages not matching any tab root fall back to the last active tab.
@@ -74,7 +71,6 @@ export default function MobileNav() {
   const unread = useUnreadCount();
   const unreadDMs = useUnreadDMCount();
   const { user, isAuthenticated, logout } = useAuth();
-  const { cryptoEnabled } = useCryptoEnabled();
   const t = useT();
 
   // --- Native-style tab navigation: per-tab scroll + history preservation ---
@@ -111,7 +107,7 @@ export default function MobileNav() {
         </Link>
       )}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-1 py-1.5 pb-[env(safe-area-inset-bottom,16px)] backdrop-blur md:hidden">
-        {primary.filter((i) => (!i.authOnly || isAuthenticated) && (!i.cryptoOnly || cryptoEnabled)).map((item) => {
+        {primary.filter((i) => !i.authOnly || isAuthenticated).map((item) => {
           const active = owningTab === item.to;
           return (
             <Link

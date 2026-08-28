@@ -23,18 +23,13 @@ import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import TrustTierSection from '@/components/admin/TrustTierSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
-import DeployContractsSection from '@/components/admin/DeployContractsSection';
-import BrandVerificationSection from '@/components/admin/BrandVerificationSection';
-import PulseTreasuryFundingSection from '@/components/admin/PulseTreasuryFundingSection';
-import FeeRevenueSection from '@/components/admin/FeeRevenueSection';
-import { Loader2, ShieldAlert, LayoutDashboard, Boxes, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldAlert, LayoutDashboard, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
 const TABS = [
   { key: 'overview', label: 'Overview', Icon: LayoutDashboard },
-  { key: 'blockchain', label: 'Blockchain', Icon: Boxes },
   { key: 'identity', label: 'Identity & Federation', Icon: Network },
   { key: 'platform', label: 'Platform & Content', Icon: Globe2 },
   { key: 'system', label: 'System & Infrastructure', Icon: Server },
@@ -116,15 +111,6 @@ export default function Admin() {
                 <DsarSummaryCard />
               </>
             )}
-          </>
-        )}
-        {tab === 'blockchain' && (
-          <>
-            <PulseTreasuryFundingSection />
-            <DeployContractsSection />
-            <BrandVerificationSection />
-            <FeeRevenueSection />
-            <TrustTierSection />
           </>
         )}
         {tab === 'identity' && (

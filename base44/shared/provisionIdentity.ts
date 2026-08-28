@@ -183,43 +183,6 @@ export async function provisionIdentityForUser(
   await setUserIdentity(svc, userId, did, pdsUrl, appPassword);
   await svc.entities.User.update(userId, { bsky_handle: finalHandle });
 
-  // Auto-generate a 24-word mnemonic + EVM keypair at registration so the
-  // seed phrase exists from day one and is portable to other apps. Stored as
-  // an inactive CustodialWallet (active=false) until the user explicitly
-  // enables crypto features. Non-fatal: if this fails, the user can still
-  // create a wallet later via create-custodial-wallet.
-  try {
-    const existingWallets = await svc.entities.CustodialWallet.filter({ did }).catch(() => []);
-    if (!existingWallets.length) {
-      const { ethers } = await import('npm:ethers@6.13.4');
-      const { encryptWithServerKey } = await import('./walletCrypto.ts');
-      const entropy = crypto.getRandomValues(new Uint8Array(32));
-      const mnemonicInstance = ethers.Mnemonic.fromEntropy(entropy);
-      const w = ethers.Wallet.fromPhrase(mnemonicInstance.phrase);
-      const mnemonic = mnemonicInstance.phrase;
-      const privateKey = w.privateKey;
-      const address = w.address.toLowerCase();
-
-      const encryptedPrivateKey = await encryptWithServerKey(privateKey);
-      const mnemonicCipher = await encryptWithServerKey(mnemonic);
-
-      await svc.entities.CustodialWallet.create({
-        wallet_address: address,
-        did,
-        encrypted_private_key: encryptedPrivateKey,
-        encryption_method: 'server',
-        mnemonic_cipher: mnemonicCipher,
-        passkey_credential_ids: [],
-        has_passkey: false,
-        has_pin: false,
-        active: false,
-        created_at: new Date().toISOString(),
-      });
-    }
-  } catch (e) {
-    console.error('provisionIdentity: auto-wallet generation failed:', (e as any)?.message || e);
-  }
-
   return { did, handle: finalHandle };
 }
 

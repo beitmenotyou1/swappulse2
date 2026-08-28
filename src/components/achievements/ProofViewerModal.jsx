@@ -6,11 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import AchievementBadge from './AchievementBadge';
 import ProofList from './ProofList';
 import ExportProofButton from './ExportProofButton';
-import { useFirehoseExplorer } from '@/hooks/useFirehoseExplorer';
 import { ShieldCheck, ShieldAlert, Clock } from 'lucide-react';
 
 export default function ProofViewerModal({ spec, achievement, onClose }) {
-  const { generateVerifierLink } = useFirehoseExplorer();
   const open = !!spec;
   const revoked = achievement?.status === 'revoked';
   const pending = !revoked && !!achievement?.pending_revocation_at;
@@ -66,7 +64,7 @@ export default function ProofViewerModal({ spec, achievement, onClose }) {
             <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">{meta.proofSummary}</div>
           )}
 
-          <ProofList records={proofRecords} generateVerifierLink={generateVerifierLink} />
+          <ProofList records={proofRecords} />
 
           <div className="flex flex-col gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
             {achievement?.unlocked_at && (

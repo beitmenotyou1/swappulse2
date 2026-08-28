@@ -21,7 +21,6 @@ import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import DataPrivacy from '@/components/profile/DataPrivacy';
-import OnChainActivityTab from '@/components/blockchain/OnChainActivityTab';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -238,9 +237,6 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
 
   // Boards — curation boards (owner sees all, visitors see public via RLS)
   if (tabKey === 'Boards') return <BoardsTab did={did} isOwner={isOwner} />;
-
-  // On-Chain — Polygon NFT activity (username + card NFTs)
-  if (tabKey === 'OnChain') return <OnChainActivityTab did={did} />;
 
   // Cross-Posting (owner only)
   if (tabKey === 'Cross-Posting') return <CrossPostTab />;
