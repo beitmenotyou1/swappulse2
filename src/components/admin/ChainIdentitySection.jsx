@@ -12,6 +12,7 @@ export default function ChainIdentitySection() {
   const [configDraft, setConfigDraft] = useState({
     chain_id: '',
     account_class_hash: '',
+    identity_registry_class_hash: '',
     identity_registry_address: '',
     recovery_controller: '',
     recovery_delay_seconds: '172800',
@@ -47,6 +48,7 @@ export default function ChainIdentitySection() {
           setConfigDraft({
             chain_id: nextConfig?.chain_id || '',
             account_class_hash: nextConfig?.account_class_hash || '',
+            identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
             identity_registry_address: nextConfig?.identity_registry_address || '',
             recovery_controller: nextConfig?.recovery_controller || '',
             recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
@@ -84,6 +86,7 @@ export default function ChainIdentitySection() {
         ...prev,
         chain_id: nextConfig?.chain_id || '',
         account_class_hash: nextConfig?.account_class_hash || '',
+        identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
         identity_registry_address: nextConfig?.identity_registry_address || '',
         recovery_controller: nextConfig?.recovery_controller || '',
         recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
@@ -246,6 +249,10 @@ export default function ChainIdentitySection() {
             <p className="mt-1 truncate font-mono">{config?.account_class_hash || 'Not declared'}</p>
           </div>
           <div className="rounded-lg bg-secondary/50 p-3">
+            <p className="text-muted-foreground">Registry class</p>
+            <p className="mt-1 truncate font-mono">{config?.identity_registry_class_hash || 'Not declared'}</p>
+          </div>
+          <div className="rounded-lg bg-secondary/50 p-3">
             <p className="text-muted-foreground">Identity registry</p>
             <p className="mt-1 truncate font-mono">{config?.identity_registry_address || 'Not deployed'}</p>
           </div>
@@ -284,6 +291,12 @@ export default function ChainIdentitySection() {
               value={configDraft.account_class_hash}
               onChange={(e) => setConfigDraft((p) => ({ ...p, account_class_hash: e.target.value }))}
               placeholder="SwapPulseAccount class hash 0x…"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
+              value={configDraft.identity_registry_class_hash}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, identity_registry_class_hash: e.target.value }))}
+              placeholder="IdentityRegistry class hash 0x…"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
             />
             <input
@@ -335,7 +348,7 @@ export default function ChainIdentitySection() {
         <div className="mt-3 flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            The Cairo source is present, but the chain ID, account class hash, and IdentityRegistry address have not all been configured yet. You can reserve an identity now, but you cannot deploy it until the contracts are compiled, declared and deployed.
+            The Cairo source is present, but the chain ID, account class hash, registry class hash, and IdentityRegistry address have not all been configured yet. You can reserve an identity now, but you cannot deploy it until the contracts are compiled, declared and deployed.
           </p>
         </div>
       )}
