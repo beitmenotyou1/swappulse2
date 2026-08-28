@@ -25,16 +25,26 @@ try {
 // BEFORE React renders — then reload to fetch clean chunks without SW
 // interference. In production, the SW registers normally after load.
 async function bootstrap() {
-  if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  if (import.meta.env.DEV) {
     try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      if (regs.length > 0) {
+      // Always unregister any service worker in dev — a production SW can
+      // cache-serve stale Vite dep chunks and cause duplicate React copies.
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
-        if ('caches' in window) {
-          const keys = await caches.keys();
+      }
+      // Always clear the Cache API in dev, even with no active SW — stale
+      // entries from a previously-unregistered SW can still be served.
+      let hadStaleCache = false;
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        if (keys.length > 0) {
+          hadStaleCache = true;
           await Promise.all(keys.map((k) => caches.delete(k)));
         }
-        // Reload to get fresh chunks without the stale SW cache.
+      }
+      if (hadStaleCache) {
+        // Reload to get fresh chunks without any stale cache interference.
         window.location.reload();
         return; // Don't render — page is reloading.
       }
