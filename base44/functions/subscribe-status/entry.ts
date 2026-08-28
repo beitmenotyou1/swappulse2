@@ -38,16 +38,21 @@ export default async function(req) {
 
     const confirmToken = randomToken();
     const unsubscribeToken = randomToken();
+    const confirmExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
     if (sub) {
       await svc.entities.StatusSubscriber.update(sub.id, {
         confirm_token: confirmToken,
+        confirm_expires_at: confirmExpiresAt,
+        confirm_consumed_at: '',
         unsubscribe_token: unsubscribeToken,
       });
     } else {
       await svc.entities.StatusSubscriber.create({
         email,
         confirm_token: confirmToken,
+        confirm_expires_at: confirmExpiresAt,
+        confirm_consumed_at: '',
         unsubscribe_token: unsubscribeToken,
         preferences: { incidents: true, resolutions: true, maintenance: true },
       });
