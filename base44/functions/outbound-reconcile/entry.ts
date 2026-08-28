@@ -25,6 +25,15 @@ const SKIP_FOR_RECONCILE = new Set([
   'app.bsky.graph.follow',
 ]);
 
+// Privacy containment. CollectionEntry is private source data and must not be
+// federated raw. Binders are eligible only when explicitly public; followers
+// visibility is Base44-only because AT Protocol repositories are public-readable.
+function isPublicationEligible(collection: string, rec: any): boolean {
+  if (collection === 'org.swappulse.collectionEntry') return false;
+  if (collection === 'org.swappulse.binder') return rec?.visibility === 'public';
+  return true;
+}
+
 async function listPdsRecords(pdsUrl: string, accessJwt: string, did: string, collection: string) {
   const all: any[] = [];
   let cursor: string | null = null;
@@ -97,6 +106,39 @@ export default async function (req: Request): Promise<Response> {
           for (const rec of local) {
             if (!rec.at_uri) continue;
             const pdsCid = pdsByUri.get(rec.at_uri);
+
+            // Privacy must be evaluated before drift. If a previously bridged
+            // record is no longer eligible, remove the public PDS copy and mark
+            // the local source unbridged so this reconciler cannot recreate it.
+            if (!isPublicationEligible(collection, rec)) {
+              const rkey = rec.at_uri.split('/').pop();
+              try {
+                if (pdsCid) {
+                  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
+                    body: JSON.stringify({ repo: session.did, collection, rkey }),
+                  });
+                  if (!res.ok && res.status !== 404) {
+                    errors++;
+                    console.error('outbound-reconcile: privacy deleteRecord failed', collection, res.status);
+                    continue;
+                  }
+                  deleted++; reconciled++; userReconciled++;
+                }
+                await svc.entities[entityName].update(rec.id, {
+                  bridged: false,
+                  at_uri: '',
+                  cid: '',
+                  content_hash: '',
+                }).catch(() => {});
+              } catch (e: any) {
+                errors++;
+                console.error('outbound-reconcile: privacy deleteRecord error', collection, e?.message || e);
+              }
+              continue;
+            }
+
             const record = buildRecord(rec, collection);
             const newHash = await computeContentHash(record).catch(() => '');
             const hashDrift = rec.content_hash ? (rec.content_hash !== newHash) : false;
