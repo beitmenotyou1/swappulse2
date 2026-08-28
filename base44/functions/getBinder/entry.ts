@@ -5,8 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const user = await base44.auth.me().catch(() => null);
     const svc = base44.asServiceRole;
 
     const body = await req.json().catch(() => ({}));
@@ -16,12 +15,12 @@ Deno.serve(async (req) => {
     const binder = await svc.entities.Binder.get(binderId);
     if (!binder) return Response.json({ error: 'Binder not found' }, { status: 404 });
 
-    const isOwner = binder.created_by_id === user.id || (!!binder.did && binder.did === user.did);
+    const isOwner = !!user && (binder.created_by_id === user.id || (!!binder.did && binder.did === user.did));
     if (binder.visibility === 'private' && !isOwner) {
       return Response.json({ error: 'Not available' }, { status: 403 });
     }
     if (binder.visibility === 'followers' && !isOwner) {
-      if (!user.did || !binder.did) {
+      if (!user?.did || !binder.did) {
         return Response.json({ error: 'Not available' }, { status: 403 });
       }
       const follows = await svc.entities.Follow
