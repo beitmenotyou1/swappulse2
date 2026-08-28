@@ -23,7 +23,8 @@ pub trait IIdentityRegistry<TContractState> {
 pub mod IdentityRegistry {
     use core::num::traits::Zero;
     use openzeppelin_access::ownable::OwnableComponent;
-    use openzeppelin_upgrades::{interface::IUpgradeable, UpgradeableComponent};
+    use openzeppelin_interfaces::upgrades::IUpgradeable;
+    use openzeppelin_upgrades::UpgradeableComponent;
     use starknet::storage::{Map, StorageMapReadAccess, StorageMapWriteAccess};
     use starknet::{get_block_timestamp, ClassHash, ContractAddress};
 
