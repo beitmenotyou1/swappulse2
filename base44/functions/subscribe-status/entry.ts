@@ -29,8 +29,10 @@ export default async function(req) {
     }
 
     const svc = base44.asServiceRole;
-    const existing = await svc.entities.StatusSubscriber.list('-created_date', 500);
-    const sub = existing.find((s) => (s.email || '').toLowerCase() === email);
+    const existing = await svc.entities.StatusSubscriber
+      .filter({ email }, '-created_date', 1)
+      .catch(() => []);
+    const sub = existing?.[0] || null;
 
     if (sub && sub.confirmed_at) {
       return Response.json({ ok: true, alreadySubscribed: true });
