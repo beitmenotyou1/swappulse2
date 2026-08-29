@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { hash } from 'npm:starknet@10.0.2';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
 const ACTIVE_STATUSES = new Set([
@@ -152,6 +153,7 @@ function safeIdentity(row: any) {
     network: row.network,
     account_class_hash: row.account_class_hash || '',
     identity_registry_address: row.identity_registry_address || '',
+    signer_public_key: row.signer_public_key || '',
     deployment_tx_hash: row.deployment_tx_hash || '',
     registration_tx_hash: row.registration_tx_hash || '',
     signer_version: row.signer_version,
@@ -432,9 +434,14 @@ export default async function(req: Request): Promise<Response> {
       const current = existing.find((row: any) => ACTIVE_STATUSES.has(String(row?.status || '')));
       if (current) {
         if (String(current.status || '') === 'PENDING') {
+          const existingPublicKey = String(current.signer_public_key || '').trim();
+          if (existingPublicKey && normalizeHex(existingPublicKey, 'reserved signer_public_key') !== publicKey) {
+            return jsonError('This pending identity was reserved for a different public key', 409, 'SIGNER_PUBLIC_KEY_MISMATCH');
+          }
           const refreshedFields = {
             account_class_hash: config.accountClassHash,
             identity_registry_address: config.identityRegistryAddress,
+            signer_public_key: publicKey,
             failure_code: '',
           };
           await svc.entities.ChainIdentity.update(current.id, refreshedFields);
