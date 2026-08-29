@@ -203,6 +203,8 @@ if (finalController !== desiredController || finalDelay !== desiredRecoveryDelay
 }
 
 console.log(JSON.stringify({
+  schema_version: 1,
+  kind: 'SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT',
   ok: true,
   network: manifest.network,
   chain_id: chainId,
