@@ -2,6 +2,7 @@ use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_block_timestamp,
     start_cheat_caller_address, stop_cheat_block_timestamp, stop_cheat_caller_address,
 };
+use openzeppelin_interfaces::upgrades::{IUpgradeableDispatcher, IUpgradeableDispatcherTrait};
 use starknet::ContractAddress;
 use swappulse_network::swap_pulse_account::{
     ISwapPulseAccountDispatcher, ISwapPulseAccountDispatcherTrait,
@@ -179,4 +180,37 @@ fn self_call_cannot_set_delay_above_contract_maximum() {
 
     start_cheat_caller_address(account_address, account_address);
     account.set_recovery_delay(MAX_RECOVERY_DELAY_SECONDS + 1);
+}
+
+#[test]
+#[should_panic]
+fn external_caller_cannot_change_recovery_controller() {
+    let controller = addr(0x777);
+    let attacker = addr(0x999);
+    let (account_address, account) = deploy_account(0x12345, controller, 60);
+
+    start_cheat_caller_address(account_address, attacker);
+    account.set_recovery_controller(addr(0x888));
+}
+
+#[test]
+#[should_panic]
+fn external_caller_cannot_change_recovery_delay() {
+    let controller = addr(0x777);
+    let attacker = addr(0x999);
+    let (account_address, account) = deploy_account(0x12345, controller, 60);
+
+    start_cheat_caller_address(account_address, attacker);
+    account.set_recovery_delay(120);
+}
+
+#[test]
+#[should_panic]
+fn external_caller_cannot_upgrade_account() {
+    let zero = addr(0);
+    let (account_address, _) = deploy_account(0x12345, zero, 0);
+    let upgradeable = IUpgradeableDispatcher { contract_address: account_address };
+
+    start_cheat_caller_address(account_address, addr(0x999));
+    upgradeable.upgrade(0x123.try_into().unwrap());
 }
