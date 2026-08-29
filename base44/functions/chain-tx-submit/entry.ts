@@ -239,7 +239,7 @@ export default async function(req: Request): Promise<Response> {
       if (constructor.length !== 1 || constructor[0] !== publicKey) return jsonError('Constructor must contain the reserved public key only', 409, 'PUBLIC_KEY_MISMATCH');
       if (normalizeHex(tx.contract_address_salt, 'contract_address_salt') !== publicKey) return jsonError('Account salt must equal the reserved public key', 409, 'ACCOUNT_SALT_MISMATCH');
       const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
-      if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action, signingHash))) {
+      if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action as ChainDraftAction, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
 
@@ -271,7 +271,7 @@ export default async function(req: Request): Promise<Response> {
       const actualCalldata = feltArray(tx.calldata, 'calldata');
       if (!sameFelts(actualCalldata, expectedCalldata)) return jsonError('Only the configured recovery setup calls are allowed', 403, 'RECOVERY_CALLDATA_MISMATCH');
       const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
-      if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action, signingHash))) {
+      if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action as ChainDraftAction, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
 
