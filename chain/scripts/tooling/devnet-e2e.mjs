@@ -1,12 +1,12 @@
 import { Buffer } from 'node:buffer';
-import { Devnet } from 'starknet-devnet';
+import { spawnDevnet } from './devnet-process.mjs';
 import { Account, ec, hash } from 'starknet';
 import { loadArtifacts, normalizeHex, declareClass, wait } from './common.mjs';
 
-const devnet = await Devnet.spawnVersion('latest', { stdout: 'ignore', stderr: 'ignore' });
+const devnet = await spawnDevnet();
 try {
-  const provider = new (await import('starknet')).RpcProvider({ nodeUrl: devnet.provider.url });
-  const [predeployed] = await devnet.provider.getPredeployedAccounts({ withBalance: true });
+  const provider = new (await import('starknet')).RpcProvider({ nodeUrl: devnet.url });
+  const [predeployed] = await devnet.getPredeployedAccounts();
   if (!predeployed) throw new Error('Devnet returned no predeployed account');
 
   const deployer = new Account({
@@ -37,7 +37,7 @@ try {
     'user account address',
   );
 
-  await devnet.provider.mint(userAccountAddress, 10n ** 20n, 'FRI');
+  await devnet.mint(userAccountAddress, 10n ** 20n, 'FRI');
   const userAccount = new Account({ provider, address: userAccountAddress, signer: userPrivateKey });
   const accountDeployment = await userAccount.deployAccount({
     classHash: accountDeclaration.class_hash,
@@ -108,5 +108,5 @@ try {
     note: 'Ephemeral devnet only. The generated test private key remains in process memory and is never printed or persisted.',
   }, null, 2));
 } finally {
-  devnet.kill();
+  await devnet.stop();
 }
