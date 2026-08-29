@@ -26,12 +26,6 @@ export default async function (req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const pdsUrl = Deno.env.get('PDS_URL');
-    if (!pdsUrl) {
-      console.error('pds-blob-upload: PDS_URL not configured');
-      return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
-    }
-
     const body = await req.json().catch(() => ({}));
     const { mimeType, base64 } = body as any;
     if (!base64 || !mimeType) {
@@ -41,15 +35,18 @@ export default async function (req: Request): Promise<Response> {
     // Resolve session: per-user credential if the user has a real did:plc,
     // otherwise the shared bridge account.
     let session: { accessJwt: string; did: string };
+    let targetPdsUrl = '';
     try {
       const { getUserIdentity } = await import('../../shared/userIdentity.ts');
       const identity = user.did?.startsWith('did:plc:')
         ? await getUserIdentity(base44.asServiceRole, user) : null;
       if (identity) {
         const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
+        targetPdsUrl = s.pdsUrl;
         session = { accessJwt: s.session.accessJwt, did: s.session.did };
       } else {
         const s = await getPdsSession();
+        targetPdsUrl = s.pdsUrl;
         session = { accessJwt: s.session.accessJwt, did: s.session.did };
       }
     } catch (e: any) {
@@ -59,8 +56,9 @@ export default async function (req: Request): Promise<Response> {
 
     const bytes = decodeBase64(base64);
 
-    const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+    const res = await fetch(`${targetPdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
       method: 'POST',
+      redirect: 'error',
       headers: {
         'Content-Type': mimeType,
         'Authorization': `Bearer ${session.accessJwt}`,
@@ -82,7 +80,7 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'PDS returned no blob cid' }, { status: 502 });
     }
 
-    const blobUrl = `${pdsUrl}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(session.did)}&cid=${encodeURIComponent(blobCid)}`;
+    const blobUrl = `${targetPdsUrl}/xrpc/com.atproto.sync.getBlob?did=${encodeURIComponent(session.did)}&cid=${encodeURIComponent(blobCid)}`;
 
     return Response.json({
       blobCid,
