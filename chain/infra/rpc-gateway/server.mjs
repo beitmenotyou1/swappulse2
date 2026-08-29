@@ -10,9 +10,14 @@ const rateLimitPerMinute = Math.max(30, Math.min(10_000, Number(process.env.RATE
 const allowedMethods = new Set([
   'starknet_specVersion',
   'starknet_chainId',
+  'starknet_blockNumber',
   'starknet_getClassHashAt',
   'starknet_getClass',
   'starknet_call',
+  'starknet_getNonce',
+  'starknet_estimateFee',
+  'starknet_getTransactionReceipt',
+  'starknet_getTransactionStatus',
 ]);
 
 const windows = new Map();
