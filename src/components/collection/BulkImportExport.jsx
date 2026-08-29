@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Upload, Loader2, FileJson, FileSpreadsheet, FileCode } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { assertCollectionImport } from '@/lib/uploadGuard';
 
 const COLLECTION_FIELDS = [
   'card_id', 'card_name', 'card_image', 'set_id', 'set_name', 'local_id',
@@ -103,6 +104,7 @@ export default function BulkImportExport({ items, onImported }) {
     setBusy(true);
     setMsg(null);
     try {
+      assertCollectionImport(file);
       const ext = file.name.split('.').pop()?.toLowerCase();
       let rows = [];
 
@@ -133,6 +135,9 @@ export default function BulkImportExport({ items, onImported }) {
         setMsg({ type: 'err', text: 'No rows detected in the uploaded file.' });
         setBusy(false);
         return;
+      }
+      if (rows.length > 5000) {
+        throw new Error('Import contains too many rows. Split it into files of 5,000 cards or fewer.');
       }
       const { did, signingKey } = await ensureUserDid();
       const stamped = [];
