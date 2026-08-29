@@ -88,7 +88,8 @@ Before persistent deployment, build the Cairo contracts and compile their Sierra
 
 Persistent deployment requires these environment values to be injected by the operator or a secret manager, never committed to the repository:
 
-- `SWAPPULSE_RPC_URL` — persistent HTTPS Starknet JSON-RPC endpoint
+- `SWAPPULSE_RPC_URL` — private/write-capable RPC used by the deployment process (localhost HTTP is allowed for Devnet)
+- `SWAPPULSE_PUBLIC_RPC_URL` — public read-only HTTPS gateway written into the Base44-facing manifest
 - `SWAPPULSE_DEPLOYER_ADDRESS` — funded deployment account address
 - `SWAPPULSE_DEPLOYER_PRIVATE_KEY` — deployment signer secret, process-only
 
@@ -106,7 +107,7 @@ node deploy-network.mjs
 node verify-network.mjs ../../deployments/swappulse-testnet.json
 ```
 
-`deploy-network.mjs` writes a **public-only** deployment manifest. It never serialises the deployment private key. A Node 22 smoke test on 29 August 2026 successfully declared both classes, deployed `IdentityRegistry`, verified the generated manifest against the node and confirmed that deployment output did not contain the private key.
+`deploy-network.mjs` writes a **public-only** deployment manifest. It never serialises the deployment private key, and the manifest's `rpc_url` comes from `SWAPPULSE_PUBLIC_RPC_URL` rather than the private deployment RPC when that value is supplied. A Node 22 smoke test on 29 August 2026 successfully declared both classes, deployed `IdentityRegistry`, verified the generated manifest against the node and confirmed that deployment output did not contain the private key.
 
 For local E2E with a standalone devnet binary:
 
@@ -163,7 +164,9 @@ The smart-account constructor accepts only `public_key`, matching OpenZeppelin's
 
 These values are public blockchain deployment metadata, not secrets. Private RPC credentials, private keys, seed phrases, and passkey secret material must never be stored in `ChainNetworkConfig`.
 
-Saving these values creates or updates a **draft**, not a trusted network. `chain-network-verify` must independently query the HTTPS RPC, verify the chain ID, verify the `IdentityRegistry` class hash and owner at the configured address, and confirm that the configured `SwapPulseAccount` class is declared. Only that RPC verification can set `status = CONFIGURED`. Changing the RPC, chain ID, registry address/owner or either class hash invalidates the previous verification. Identity reconciliation re-checks the registry owner as well, so a later ownership change fails closed.
+Saving these values creates or updates a **draft**, not a trusted network. The admin UI can import the public `schema_version: 1` deployment manifest directly; the importer rejects secret-looking fields, wrong network/schema and non-HTTPS public RPC URLs, then still saves the result only as `UNCONFIGURED`. `chain-network-verify` must independently query the HTTPS RPC, verify the chain ID, verify the `IdentityRegistry` class hash and owner at the configured address, and confirm that the configured `SwapPulseAccount` class is declared. Only that RPC verification can set `status = CONFIGURED`. Changing the RPC, chain ID, registry address/owner or either class hash invalidates the previous verification. Identity reconciliation re-checks the registry owner as well, so a later ownership change fails closed.
+
+For the first admin-only test identity, `create-test-signer.mjs` can generate a temporary Stark signer into a local mode-`0600` file while printing only its public key. After that public key is used with Base44 **Prepare Test Identity**, `provision-test-identity.mjs` (or the host wrapper in `chain/infra`) deploys the smart account, applies recovery configuration and registers the returned opaque identity ID. The provisioning flow is idempotent: a second run submits no transactions when the chain already matches, and its smoke test verifies that neither registry-admin nor user private keys appear in output.
 
 ## Next milestone
 
