@@ -154,6 +154,29 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
 
     if (chainStatus === 2) {
       if (canonical === '0x0' || canonical === identityId) throw new Error('Merged identity has invalid canonical target');
+
+      if (chainAccount !== '0x0') {
+        const expectedAccountClassHash = normalizeHex(config.account_class_hash, 'configured account class hash');
+        const historicalAccountClassHash = await getClassHashAt(rpcUrl, chainAccount);
+        if (historicalAccountClassHash !== expectedAccountClassHash) {
+          await svc.entities.ChainIdentity.update(row.id, {
+            last_reconciled_at: now,
+            failure_code: 'CHAIN_ACCOUNT_CLASS_HASH_MISMATCH',
+          });
+          return { id: row.id, outcome: 'ACCOUNT_CLASS_MISMATCH' };
+        }
+      }
+
+      // The registry resolves chained merges to the final active identity. Verify
+      // the canonical target is itself active before accepting the Base44 mirror.
+      const canonicalValues = await starknetCall(rpcUrl, registry, 'get_identity', [canonical]);
+      if (canonicalValues.length < 5 || asNumber(canonicalValues[1], 'canonical status') !== 1) {
+        throw new Error('Merged identity canonical target is not active');
+      }
+      if (normalizeHex(canonicalValues[2], 'canonical target') !== canonical) {
+        throw new Error('Merged identity canonical target is not canonical');
+      }
+
       await svc.entities.ChainIdentity.update(row.id, {
         account_address: chainAccount === '0x0' ? String(row.account_address || '') : chainAccount,
         identity_registry_address: registry,
