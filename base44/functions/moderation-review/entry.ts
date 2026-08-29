@@ -4,8 +4,8 @@
 //    An admin confirms or overrides the agent's decision on an escalated case.
 //    The override (agreement or reversal) is logged to ModerationDecisionLog
 //    with the admin's rationale, so the learning loop can learn from the
-//    correction. If the case is an escrow dispute, the resolution is executed
-//    via resolve-escrow-dispute.
+//    correction. Legacy escrow disputes are quarantined and cannot execute a
+//    release/refund through this endpoint.
 //
 // 2. User fairness rating (op: 'fairness'):
 //    After a case is resolved, the affected user submits a 1-5 star fairness
@@ -65,6 +65,16 @@ Deno.serve(async (req) => {
       const log = await svc.entities.ModerationDecisionLog.get(decision_log_id).catch(() => null);
       if (!log) return Response.json({ error: 'Decision log not found' }, { status: 404 });
 
+      // Escrow is intentionally disabled in SwapPulse V1. Fail before mutating
+      // the review log so an old case cannot look resolved when no financial
+      // action was actually possible.
+      if (log.case_type === 'escrow_dispute' && admin_decision === 'overridden') {
+        return Response.json({
+          error: 'Legacy escrow resolution is disabled',
+          code: 'LEGACY_ESCROW_DISABLED',
+        }, { status: 410 });
+      }
+
       // Update the decision log with the admin's decision
       await svc.entities.ModerationDecisionLog.update(decision_log_id, {
         admin_decision,
@@ -73,25 +83,6 @@ Deno.serve(async (req) => {
         admin_rationale: (admin_rationale || '').slice(0, 1000),
         resolved_at: new Date().toISOString(),
       });
-
-      // If this is an escrow dispute and the admin overrode the agent, execute the override
-      if (log.case_type === 'escrow_dispute' && admin_decision === 'overridden') {
-        try {
-          const resolveRes: any = await svc.functions.invoke('resolve-escrow-dispute', {
-            escrow_id: log.case_id,
-            resolution: admin_override_direction,
-            notes: `Admin override of agent decision. Rationale: ${admin_rationale}`,
-          });
-          // Update the decision log with the outcome
-          await svc.entities.ModerationDecisionLog.update(decision_log_id, {
-            trade_outcome: admin_override_direction === 'release' ? 'released' : admin_override_direction === 'refund' ? 'refunded' : 'cancelled',
-            trade_outcome_settled_at: new Date().toISOString(),
-          });
-          return Response.json({ ok: true, admin_decision, resolved: true, resolve_result: resolveRes });
-        } catch (e: any) {
-          return Response.json({ ok: true, admin_decision, resolved: false, error: e?.message }, { status: 500 });
-        }
-      }
 
       return Response.json({ ok: true, admin_decision, resolved: true });
     }
