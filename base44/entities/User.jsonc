@@ -89,16 +89,42 @@
     "moderation_strikes": {
       "type": "integer",
       "default": 0,
-      "description": "Number of toxic-content moderation strikes accumulated by this user"
+      "description": "Number of toxic-content moderation strikes accumulated by this user",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "restricted": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the user's account access has been restricted due to repeated moderation violations"
+      "description": "Whether the user's account access has been restricted due to repeated moderation violations",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "login_key": {
       "type": "string",
-      "description": "Random password used for passwordless email-code login"
+      "description": "Random password used for the Base44 passwordless-login bridge. Backend-only secret material.",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "did": {
       "type": "string",
@@ -110,11 +136,30 @@
     },
     "pds_url": {
       "type": "string",
-      "description": "AT Protocol PDS base URL this user's identity authenticates against."
+      "description": "Validated AT Protocol PDS origin used by backend federation sessions.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "pds_app_password": {
       "type": "string",
-      "description": "AES-GCM encrypted PDS app password for bridge sessions. Encrypted with APP_PASSWORD_ENCRYPTION_KEY; decrypted on read by the shared userIdentity helper. Never returned in API responses."
+      "description": "AES-GCM encrypted PDS app password for backend bridge sessions. Backend-only secret material.",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "signing_key": {
       "type": "string",
