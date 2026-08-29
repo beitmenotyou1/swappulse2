@@ -10,6 +10,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
 import { shouldDeliverNotification } from '../../shared/notificationFilter.ts';
+import { updateStarterPack } from '../../shared/bridgePublish.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -66,7 +67,9 @@ export default async function (req: Request): Promise<Response> {
       // Auto-promote: add to member_dids immediately and re-bridge.
       const nextMembers = [...members, targetDid].slice(0, 100);
       await svc.entities.StarterPack.update(packId, { member_dids: nextMembers });
-      base44.functions.invoke('bridge-record', { action: 'update', entityName: 'StarterPack', recordId: packId }).catch(() => {});
+      await updateStarterPack(base44, packId).catch((e) => {
+        console.error('add-starter-pack-member: starter pack federation update failed', e?.message || e);
+      });
       return Response.json({ ok: true, autoAccepted: true });
     }
 
