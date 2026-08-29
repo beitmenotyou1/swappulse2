@@ -21,6 +21,8 @@ export default function ChainIdentitySection() {
     status: 'UNCONFIGURED',
   });
   const [savingConfig, setSavingConfig] = useState(false);
+  const [verifyingNetwork, setVerifyingNetwork] = useState(false);
+  const [networkVerifyResult, setNetworkVerifyResult] = useState(null);
   const [targetUserId, setTargetUserId] = useState('');
   const [publicKey, setPublicKey] = useState('');
   const [preparing, setPreparing] = useState(false);
@@ -108,6 +110,44 @@ export default function ChainIdentitySection() {
       });
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const verifyNetwork = async () => {
+    setVerifyingNetwork(true);
+    setNetworkVerifyResult(null);
+    try {
+      const res = await base44.functions.invoke('chain-network-verify', {});
+      const data = res?.data || res;
+      setNetworkVerifyResult(data);
+
+      const refreshed = await base44.functions.invoke('chain-identity-admin', { action: 'config' });
+      const nextConfig = refreshed?.data?.config || refreshed?.config || null;
+      setConfig(nextConfig);
+      setConfigDraft((prev) => ({
+        ...prev,
+        chain_id: nextConfig?.chain_id || '',
+        account_class_hash: nextConfig?.account_class_hash || '',
+        identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
+        identity_registry_address: nextConfig?.identity_registry_address || '',
+        recovery_controller: nextConfig?.recovery_controller || '',
+        recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
+        rpc_url: nextConfig?.rpc_url || '',
+        explorer_url: nextConfig?.explorer_url || '',
+        status: nextConfig?.status || 'UNCONFIGURED',
+      }));
+      toast({
+        title: 'SwapPulse Testnet verified',
+        description: `RPC confirmed chain ${data?.rpc?.chain_id || 'ID'} and both contract classes.`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Testnet verification failed',
+        description: err?.response?.data?.error || err?.message || 'Unknown verification error',
+        variant: 'destructive',
+      });
+    } finally {
+      setVerifyingNetwork(false);
     }
   };
 
@@ -275,8 +315,8 @@ export default function ChainIdentitySection() {
               onChange={(e) => setConfigDraft((p) => ({ ...p, status: e.target.value }))}
               className="rounded-lg border border-border bg-background px-2 py-2 text-xs"
             >
-              <option value="UNCONFIGURED">Unconfigured</option>
-              <option value="CONFIGURED">Configured</option>
+              <option value="UNCONFIGURED">Draft / unverified</option>
+              <option value="CONFIGURED" disabled>Configured (RPC verified)</option>
               <option value="PAUSED">Paused</option>
             </select>
           </div>
@@ -333,14 +373,35 @@ export default function ChainIdentitySection() {
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
             />
           </div>
-          <button
-            onClick={saveConfig}
-            disabled={savingConfig}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
-          >
-            {savingConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            {savingConfig ? 'Saving…' : 'Save Testnet Configuration'}
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              onClick={saveConfig}
+              disabled={savingConfig}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
+            >
+              {savingConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              {savingConfig ? 'Saving…' : 'Save Configuration Draft'}
+            </button>
+            <button
+              onClick={verifyNetwork}
+              disabled={verifyingNetwork || savingConfig || !configDraft.rpc_url || !configDraft.chain_id || !configDraft.account_class_hash || !configDraft.identity_registry_class_hash || !configDraft.identity_registry_address}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {verifyingNetwork ? <Loader2 className="h-4 w-4 animate-spin" /> : <Blocks className="h-4 w-4" />}
+              {verifyingNetwork ? 'Verifying RPC…' : 'Verify & Activate'}
+            </button>
+            {config?.last_verified_at && (
+              <span className="text-xs text-muted-foreground">
+                Last verified {new Date(config.last_verified_at).toLocaleString()}
+              </span>
+            )}
+          </div>
+          {networkVerifyResult?.ok && (
+            <div className="mt-3 rounded-lg border border-success/30 bg-success/10 p-3 text-xs">
+              <p className="font-semibold text-success">RPC verification passed</p>
+              <p className="mt-1 font-mono text-muted-foreground">Chain {networkVerifyResult.rpc?.chain_id} · registry {networkVerifyResult.contracts?.identity_registry_address}</p>
+            </div>
+          )}
         </div>
       )}
 
