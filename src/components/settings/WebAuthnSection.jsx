@@ -133,6 +133,7 @@ export default function WebAuthnSection({ managementToken, securityUnlocked, onS
                 <label className="sr-only" htmlFor={`key-label-${cred.id}`}>Security key name</label>
                 <input
                   id={`key-label-${cred.id}`}
+                  aria-label="Security key name"
                   type="text"
                   defaultValue={cred.label || "Security Key"}
                   onBlur={(e) => renameCredential(cred, e.target.value)}
