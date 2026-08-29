@@ -17,6 +17,18 @@ const COLLECTION_MAP = [
   { collection: 'app.bsky.feed.repost', entity: 'Repost' },
   { collection: 'org.swappulse.tradeListing', entity: 'TradeListing' },
 ];
+const PDS_FETCH_TIMEOUT_MS = 10_000;
+const MAX_PDS_PAGES = 20;
+
+async function fetchWithTimeout(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PDS_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function getSession() {
   const pdsUrl = Deno.env.get('PDS_URL');
@@ -25,7 +37,7 @@ async function getSession() {
   if (!pdsUrl || !identifier || !password) {
     throw new Error('PDS not configured. Set PDS_URL, PDS_IDENTIFIER, PDS_APP_PASSWORD secrets.');
   }
-  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
+  const res = await fetchWithTimeout(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
@@ -38,25 +50,39 @@ async function getSession() {
   return { pdsUrl, accessJwt: data.accessJwt, did: data.did };
 }
 
-async function listRecords(pdsUrl: string, accessJwt: string, repoDid: string, collection: string) {
+async function listRecords(pdsUrl: string, accessJwt: string, repoDid: string, collection: string): Promise<any[] | null> {
   const all: any[] = [];
+  const seenCursors = new Set<string>();
   let cursor: string | null = null;
+  let pages = 0;
   do {
+    if (cursor) {
+      if (seenCursors.has(cursor)) {
+        console.error(`[sync-from-pds] repeated cursor for ${collection}; refusing partial sync`);
+        return null;
+      }
+      seenCursors.add(cursor);
+    }
     const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.listRecords`);
     url.searchParams.set('repo', repoDid);
     url.searchParams.set('collection', collection);
     url.searchParams.set('limit', '100');
     if (cursor) url.searchParams.set('cursor', cursor);
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: { 'Authorization': `Bearer ${accessJwt}` },
     });
     if (!res.ok) {
       console.error(`[sync-from-pds] listRecords failed for ${collection}: ${res.status}`);
-      return all;
+      return null;
     }
     const data = await res.json();
     all.push(...(data.records || []));
     cursor = data.cursor || null;
+    pages += 1;
+    if (cursor && pages >= MAX_PDS_PAGES) {
+      console.error(`[sync-from-pds] page cap reached for ${collection}; refusing partial sync`);
+      return null;
+    }
   } while (cursor);
   return all;
 }
@@ -75,6 +101,10 @@ export default async function (req: Request): Promise<Response> {
     const results: any[] = [];
     for (const { collection, entity } of COLLECTION_MAP) {
       const pdsRecords = await listRecords(pdsUrl, accessJwt, did, collection);
+      if (!pdsRecords) {
+        results.push({ collection, entity, skipped: true, reason: 'PDS_LIST_INCOMPLETE' });
+        continue;
+      }
       const pdsUriSet = new Set(pdsRecords.map((r: any) => r.uri));
 
       const localRecords = await svc.entities[entity].filter({ bridged: true }, '-updated_date', 500);
