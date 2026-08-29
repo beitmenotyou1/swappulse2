@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@/components/Avatar';
 import { useLivePresence } from '@/lib/livePresence';
+import { getSafeHttpUrl } from '@/lib/externalLink';
 
 // §Alpha 1.4 - wraps an avatar with a pulsing red ring when the user is live
 // (hosting a voice space or streaming externally). Clicking opens the live
@@ -19,7 +20,10 @@ export default function LiveAvatar({ did, name, src, size = 40, className = '', 
   const open = (e) => {
     e?.stopPropagation?.();
     if (info.sourceType === 'voice_space' && info.spaceId) navigate(`/spaces/${info.spaceId}`);
-    else if (info.url) window.open(info.url, '_blank', 'noopener,noreferrer');
+    else {
+      const safeUrl = getSafeHttpUrl(info.url);
+      if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const startedMins = info.startedAt
