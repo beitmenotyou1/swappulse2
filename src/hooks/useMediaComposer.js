@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { detectVideoPlatform, findPreviewableUrl } from '@/lib/mediaEmbed';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 // Manages all media attachment state for the post composer:
 // - Up to 4 images (each with alt text), stored as object URLs before upload
@@ -23,6 +24,7 @@ export function useMediaComposer() {
   const lastPreviewUrl = useRef('');
 
   const addImage = useCallback((file) => {
+    assertImageUpload(file);
     setImages((prev) => {
       if (prev.length >= MAX_IMAGES) return prev;
       return [...prev, { file, previewUrl: URL.createObjectURL(file), alt: '' }];
@@ -90,6 +92,7 @@ export function useMediaComposer() {
     if (images.length > 0) {
       const uploaded = await Promise.all(
         images.map(async (img) => {
+          assertImageUpload(img.file);
           const { file_url } = await base44.integrations.Core.UploadFile({ file: img.file });
           return { url: file_url, alt: img.alt || '' };
         })
