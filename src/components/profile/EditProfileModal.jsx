@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { assertImageUpload } from '@/lib/uploadGuard';
 // Avatars are stored as a reliable, publicly-accessible external URL
 // (UploadFile → media.base44.com) so they render on the site immediately.
 // sync-profile-records then fetches this URL and pushes it to the PDS as a
@@ -35,12 +36,14 @@ export default function EditProfileModal({ onClose, onSaved }) {
     if (!file) return;
     setUploading(true);
     try {
+      assertImageUpload(file);
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setAvatar(file_url);
-    } catch {
-      toast({ title: 'Upload failed', description: 'Could not upload image', variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Upload failed', description: error?.message || 'Could not upload image', variant: 'destructive' });
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -49,12 +52,14 @@ export default function EditProfileModal({ onClose, onSaved }) {
     if (!file) return;
     setUploadingHeader(true);
     try {
+      assertImageUpload(file);
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setHeader(file_url);
-    } catch {
-      toast({ title: 'Upload failed', description: 'Could not upload image', variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Upload failed', description: error?.message || 'Could not upload image', variant: 'destructive' });
     } finally {
       setUploadingHeader(false);
+      e.target.value = '';
     }
   };
 
