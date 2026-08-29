@@ -1,28 +1,35 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 
-// Server-side passwordless setup. The caller passes the emailed reset token
-// (proof of email ownership) and the backend validates it via the platform's
-// resetPassword, generates the login_key itself, and persists it — so no
-// unauthenticated caller can ever overwrite a user's login_key.
+// Server-side passwordless recovery. Requires BOTH the platform reset token
+// and a short-lived setup capability issued only after SwapPulse login-factor
+// verification. The capability binds the operation to one user/email; after
+// resetting, the backend also proves the new password authenticates that same
+// account before persisting login_key.
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole;
 
     const body = await req.json().catch(() => ({}));
-    const resetToken = (body.reset_token || body.resetToken || '').trim();
-    const email = (body.email || '').trim().toLowerCase();
-    if (!resetToken || !email) {
-      return Response.json({ error: 'reset_token and email are required' }, { status: 400 });
+    const resetToken = String(body.reset_token || body.resetToken || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
+    const setupToken = String(body.setup_token || body.setupToken || '').trim();
+    if (!resetToken || !email || !setupToken) {
+      return Response.json({ error: 'Invalid or expired setup link' }, { status: 403 });
     }
 
-    // Find user by email (service role). Fail fast — don't consume a reset
-    // token for an account that doesn't exist in this app.
-    const users = await svc.entities.User.filter({ email }, '-created_date', 1);
-    if (!users || users.length === 0) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
+    // Look up the claimed email, but return the same generic failure for an
+    // unknown account or invalid capability so this endpoint is not an account
+    // enumeration oracle.
+    const users = await svc.entities.User.filter({ email }, '-created_date', 1).catch(() => []);
+    const user = users?.[0] || null;
+    if (!user) return Response.json({ error: 'Invalid or expired setup link' }, { status: 403 });
+
+    const capability = await verifyActionToken(setupToken, 'login_key_setup', user.id);
+    if (!capability.valid || capability.targetId !== email) {
+      return Response.json({ error: 'Invalid or expired setup link' }, { status: 403 });
     }
-    const user = users[0];
 
     // Generate a strong random password server-side. The client never sees
     // or chooses this value until the reset token has been validated.
@@ -30,18 +37,27 @@ export default async function(req) {
       .map((b) => b.toString(36).padStart(2, '0')).join('') + '!A1';
 
     // Validate the reset token and bind the platform password in one step.
-    // If the token is invalid/expired, the platform rejects and we do NOT
-    // write the login_key.
     try {
       await base44.auth.resetPassword({ resetToken, newPassword: randomPassword });
     } catch (e) {
       console.error('store-login-key: resetPassword failed:', e?.response?.data || e?.message || e);
-      return Response.json({ error: 'Invalid or expired reset link' }, { status: 403 });
+      return Response.json({ error: 'Invalid or expired setup link' }, { status: 403 });
     }
 
-    // Only after the platform accepts the reset, persist the login_key.
-    await svc.entities.User.update(user.id, { login_key: randomPassword });
+    // Prove the reset token belonged to the same email/account before updating
+    // the persistent login_key. A token for some other account may change that
+    // other account's password, but cannot desynchronise this target user.
+    try {
+      const login = await base44.auth.loginViaEmailPassword(email, randomPassword);
+      if (login?.user?.id && login.user.id !== user.id) {
+        throw new Error('Account mismatch');
+      }
+    } catch (e) {
+      console.error('store-login-key: post-reset account binding failed:', e?.message || e);
+      return Response.json({ error: 'Invalid or expired setup link' }, { status: 403 });
+    }
 
+    await svc.entities.User.update(user.id, { login_key: randomPassword });
     return Response.json({ success: true, login_key: randomPassword });
   } catch (error) {
     console.error('store-login-key error:', error);
