@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import UsernameField from "@/components/auth/UsernameField";
 import { uploadMedia } from "@/lib/pdsBlob";
+import { assertImageUpload } from "@/lib/uploadGuard";
 
 export default function ProfileSetup({ onDone, initialUsername, initialFullName, initialAvatar, initialDescription, initialHeader }) {
   const [username, setUsername] = useState(initialUsername || "");
@@ -19,6 +20,7 @@ export default function ProfileSetup({ onDone, initialUsername, initialFullName,
   const headerRef = useRef(null);
 
   const uploadImage = async (file) => {
+    assertImageUpload(file);
     return await uploadMedia(file);
   };
 
