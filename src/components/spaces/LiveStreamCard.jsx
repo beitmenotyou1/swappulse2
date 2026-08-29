@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, Twitch, Youtube, MonitorPlay } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import { getSafeHttpUrl } from '@/lib/externalLink';
 
 // Platform → brand icon + thumbnail placeholder gradient.
 const PLATFORM_META = {
@@ -20,10 +21,11 @@ export default function LiveStreamCard({ space }) {
   const handle = space.host_handle
     || String(space.host_name || 'collector').toLowerCase().replace(/\s+/g, '');
   const viewers = space.viewer_count_estimate || 0;
+  const safeStreamUrl = getSafeHttpUrl(space.stream_url);
 
   const open = (e) => {
     e.preventDefault();
-    if (space.stream_url) window.open(space.stream_url, '_blank', 'noopener,noreferrer');
+    if (safeStreamUrl) window.open(safeStreamUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -50,7 +52,7 @@ export default function LiveStreamCard({ space }) {
         </span>
         <button
           onClick={open}
-          disabled={!space.stream_url}
+          disabled={!safeStreamUrl}
           className="mt-1 w-full rounded-md bg-destructive py-1.5 text-xs font-bold text-white disabled:opacity-50"
         >
           Watch Stream
