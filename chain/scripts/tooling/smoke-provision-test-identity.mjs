@@ -58,6 +58,10 @@ try {
   const second = JSON.parse(secondRun.stdout);
 
   if (!first.ok || !second.ok) throw new Error('Provisioning did not return ok');
+  if (first.schema_version !== 1 || second.schema_version !== 1) throw new Error('Provisioning result schema version mismatch');
+  if (first.kind !== 'SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT' || second.kind !== 'SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT') {
+    throw new Error('Provisioning result kind mismatch');
+  }
   if (first.identity_id !== second.identity_id || first.account_address !== second.account_address || first.public_key !== second.public_key) {
     throw new Error('Idempotent provisioning returned different public identity data');
   }
@@ -70,6 +74,8 @@ try {
 
   console.log(JSON.stringify({
     ok: true,
+    schema_version: first.schema_version,
+    kind: first.kind,
     identity_id: first.identity_id,
     account_address: first.account_address,
     public_key: first.public_key,
