@@ -587,33 +587,63 @@ export default function ChainIdentitySection() {
           )}
 
           {prepared.identity.status === 'PENDING' && (
-            <div className="grid gap-2 md:grid-cols-3">
-              <input
-                value={accountAddress}
-                onChange={(e) => setAccountAddress(e.target.value)}
-                placeholder="Deployed account address 0x…"
-                className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-              />
-              <input
-                value={deploymentTxHash}
-                onChange={(e) => setDeploymentTxHash(e.target.value)}
-                placeholder="Deploy tx hash (optional)"
-                className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-              />
-              <input
-                value={registrationTxHash}
-                onChange={(e) => setRegistrationTxHash(e.target.value)}
-                placeholder="Registry tx hash (optional)"
-                className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-              />
-              <button
-                onClick={recordDeployment}
-                disabled={recording || !accountAddress.trim()}
-                className="md:col-span-3 inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
-              >
-                {recording ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                {recording ? 'Recording…' : 'Record Deployment'}
-              </button>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border bg-background/70 p-3">
+                <p className="text-sm font-semibold">Import public provisioning result</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Paste the JSON printed by provision-test-identity.mjs. SwapPulse verifies the reserved signer, derived account address, chain, contract classes, registry owner and recovery policy before recording DEPLOYED.
+                </p>
+                <textarea
+                  value={provisioningResultText}
+                  onChange={(e) => setProvisioningResultText(e.target.value)}
+                  placeholder={'{\n  "schema_version": 1,\n  "kind": "SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT",\n  ...\n}'}
+                  className="mt-2 min-h-40 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                  spellCheck={false}
+                />
+                <button
+                  onClick={importProvisioningResult}
+                  disabled={importingProvisioningResult || !provisioningResultText.trim()}
+                  className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {importingProvisioningResult ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clipboard className="h-4 w-4" />}
+                  {importingProvisioningResult ? 'Verifying result…' : 'Import Provisioning Result'}
+                </button>
+              </div>
+
+              <details className="rounded-lg border border-border bg-background/50 p-3">
+                <summary className="cursor-pointer text-xs font-semibold">Manual deployment recording fallback</summary>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Prefer the signed-key-bound provisioning result above. This manual path exists for recovery/debugging and still cannot promote the identity beyond DEPLOYED.
+                </p>
+                <div className="mt-2 grid gap-2 md:grid-cols-3">
+                  <input
+                    value={accountAddress}
+                    onChange={(e) => setAccountAddress(e.target.value)}
+                    placeholder="Deployed account address 0x…"
+                    className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                  />
+                  <input
+                    value={deploymentTxHash}
+                    onChange={(e) => setDeploymentTxHash(e.target.value)}
+                    placeholder="Deploy tx hash (optional)"
+                    className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                  />
+                  <input
+                    value={registrationTxHash}
+                    onChange={(e) => setRegistrationTxHash(e.target.value)}
+                    placeholder="Registry tx hash (optional)"
+                    className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+                  />
+                  <button
+                    onClick={recordDeployment}
+                    disabled={recording || !accountAddress.trim()}
+                    className="md:col-span-3 inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
+                  >
+                    {recording ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    {recording ? 'Recording…' : 'Record Deployment Manually'}
+                  </button>
+                </div>
+              </details>
             </div>
           )}
 
