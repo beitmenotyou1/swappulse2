@@ -43,9 +43,16 @@ function normalizeArray(values, field) {
   return values.map((v, i) => normalizeZeroableHex(v, `${field}[${i}]`));
 }
 
+function normalizeNumberish(value, field = 'felt') {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (/^0x[0-9a-f]+$/.test(raw)) return `0x${BigInt(raw).toString(16)}`;
+  if (/^[0-9]+$/.test(raw)) return `0x${BigInt(raw).toString(16)}`;
+  throw new Error(`${field} must be a hexadecimal or decimal felt`);
+}
+
 function sameFelts(a, b) {
   if (a.length !== b.length) return false;
-  return a.every((value, i) => normalizeZeroableHex(value) === normalizeZeroableHex(b[i]));
+  return a.every((value, i) => normalizeNumberish(value) === normalizeNumberish(b[i]));
 }
 
 function clientIp(req) {
