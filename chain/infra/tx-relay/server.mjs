@@ -9,6 +9,8 @@ const accountClassHash = normalizeHex(process.env.ACCOUNT_CLASS_HASH || '', 'ACC
 const identityRegistryClassHash = normalizeHex(process.env.IDENTITY_REGISTRY_CLASS_HASH || '', 'IDENTITY_REGISTRY_CLASS_HASH');
 const identityRegistryAddress = normalizeHex(process.env.IDENTITY_REGISTRY_ADDRESS || '', 'IDENTITY_REGISTRY_ADDRESS');
 const identityRegistryOwner = normalizeHex(process.env.IDENTITY_REGISTRY_OWNER || '', 'IDENTITY_REGISTRY_OWNER');
+const registryAdminAddress = normalizeHex(process.env.REGISTRY_ADMIN_ADDRESS || '', 'REGISTRY_ADMIN_ADDRESS');
+const registryAdminPrivateKey = normalizeHex(process.env.REGISTRY_ADMIN_PRIVATE_KEY || '', 'REGISTRY_ADMIN_PRIVATE_KEY');
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
 const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 5_000_000_000_000_000);
@@ -18,6 +20,7 @@ const timeoutMs = 10_000;
 const rateLimitPerMinute = Math.max(5, Math.min(600, Number(process.env.RATE_LIMIT_PER_MINUTE || 60)));
 
 if (relayToken.length < 32) throw new Error('RELAY_TOKEN must be at least 32 characters');
+if (registryAdminAddress !== identityRegistryOwner) throw new Error('REGISTRY_ADMIN_ADDRESS must equal IDENTITY_REGISTRY_OWNER');
 if (!Number.isInteger(recoveryDelaySeconds) || recoveryDelaySeconds < 0 || recoveryDelaySeconds > 2_592_000) {
   throw new Error('RECOVERY_DELAY_SECONDS must be an integer from 0 to 2592000');
 }
@@ -27,6 +30,7 @@ if (!Number.isSafeInteger(deployMintAmount) || deployMintAmount <= 0) {
 
 const windows = new Map();
 const provider = new RpcProvider({ nodeUrl: upstream.toString() });
+const registryAdmin = new Account({ provider, address: registryAdminAddress, signer: registryAdminPrivateKey });
 let registrationBusy = false;
 
 function normalizeHex(value, field = 'felt') {
@@ -276,15 +280,6 @@ async function registerIdentity(body) {
     throw new Error('REGISTRATION_RECOVERY_DELAY_MISMATCH');
   }
 
-  const predeployed = await rpc('devnet_getPredeployedAccounts', { with_balance: true });
-  if (predeployed?.error || !Array.isArray(predeployed?.result)) throw new Error('REGISTRATION_OWNER_KEY_UNAVAILABLE');
-  const ownerAccount = predeployed.result.find((entry) => {
-    try { return normalizeHex(entry?.address, 'predeployed address') === identityRegistryOwner; } catch { return false; }
-  });
-  const ownerPrivateKey = String(ownerAccount?.private_key || '');
-  if (!ownerPrivateKey) throw new Error('REGISTRATION_OWNER_KEY_UNAVAILABLE');
-
-  const registryAdmin = new Account({ provider, address: identityRegistryOwner, signer: ownerPrivateKey });
   const registered = await registryAdmin.execute({
     contractAddress: identityRegistryAddress,
     entrypoint: 'register_identity',
@@ -372,4 +367,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, '0.0.0.0', () => {
   console.log(`SwapPulse provisioning transaction relay listening on :${port}`);
   console.log('Allowed write methods: starknet_addDeployAccountTransaction, starknet_addInvokeTransaction');
+  console.log('Owner operation: POST /register -> IdentityRegistry.register_identity only');
 });
