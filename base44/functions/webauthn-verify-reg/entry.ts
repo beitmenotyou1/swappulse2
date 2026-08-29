@@ -5,6 +5,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyRegistrationResponse } from 'npm:@simplewebauthn/server@10';
 import { consumeWebAuthnChallenge, getRpConfig, uint8ArrayToBase64Url } from '../../shared/webauthn.ts';
+import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -16,7 +17,9 @@ export default async function (req: Request): Promise<Response> {
     if (!rpConfig) return Response.json({ error: 'Could not determine origin' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const { attestation, challenge, challenge_signature, label } = body;
+    const { attestation, challenge, challenge_signature, label, management_token } = body;
+    const authz = await verifyActionToken(String(management_token || ''), 'security-factor-management', user.id);
+    if (!authz.valid) return Response.json({ error: 'Fresh email verification is required.' }, { status: 403 });
     if (!attestation || !challenge || !challenge_signature) {
       return Response.json({ error: 'Missing attestation or challenge' }, { status: 400 });
     }
