@@ -3,6 +3,7 @@ import { X, Loader2, Download, Scissors, Plus, Trash2, UploadCloud, Rss } from '
 import { base44 } from '@/api/base44Client';
 import { updateBridgedRecord } from '@/lib/atprotoRecords';
 import { useToast } from '@/components/ui/use-toast';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 function parseTs(str) {
   const parts = String(str || '').split(':').map((n) => Number(n) || 0);
@@ -166,6 +167,7 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
       let finalCover = coverUrl;
       if (coverFile) {
         try {
+          assertImageUpload(coverFile);
           const r = await base44.integrations.Core.UploadFile({ file: coverFile });
           finalCover = r.file_url;
         } catch { /* cover optional */ }
@@ -257,7 +259,20 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
           <div>
             <label className="mb-1 block text-xs font-semibold text-muted-foreground">Cover image</label>
             <div onClick={() => coverInput.current?.click()} className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/50 p-3 hover:border-primary">
-              <input ref={coverInput} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setCoverFile(f); setCoverUrl(URL.createObjectURL(f)); } }} />
+              <input ref={coverInput} type="file" accept="image/*" className="hidden" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  assertImageUpload(file);
+                  setCoverFile(file);
+                  setCoverUrl(URL.createObjectURL(file));
+                } catch (error) {
+                  setCoverFile(null);
+                  toast({ title: 'Cover rejected', description: error?.message || 'Choose a smaller image file.', variant: 'destructive' });
+                } finally {
+                  e.target.value = '';
+                }
+              }} />
               {coverUrl ? (
                 <img src={coverUrl} alt="cover" className="h-12 w-12 rounded-lg object-cover" />
               ) : (
