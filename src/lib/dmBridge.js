@@ -1,14 +1,9 @@
-// Shared direct-message helpers that bridge to the AT Protocol PDS.
-//
-// startOrFindConversation: finds an existing Conversation between the current
-//   user and a target DID (checking both directions), or creates a new one and
-//   bridges it to the PDS. Returns the Conversation record.
-// sendDirectMessage: stamps + creates a DirectMessage entity, updates the
-//   Conversation's last_message_at/preview, bridges the message to the PDS, and
-//   fires notify-interaction so the recipient gets a 'message' notification.
+// Shared direct-message helpers. Direct messages are intentionally local-only:
+// AT Protocol repositories are public, so Conversation and DirectMessage must
+// never cross the PDS boundary. Message bodies are stored only as E2EE ciphertext.
 
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
+import { ensureUserDid } from '@/lib/atproto';
 import { encryptMessage, publishPublicKey } from '@/lib/e2ee';
 
 // Find an existing conversation between two DIDs (either direction), or null.
@@ -21,7 +16,7 @@ async function findConversation(myDid, theirDid) {
 }
 
 export async function startOrFindConversation(targetDid, targetName, targetHandle, targetAvatar) {
-  const { did, signingKey } = await ensureUserDid();
+  const { did } = await ensureUserDid();
   const me = await base44.auth.me().catch(() => null);
 
   // Reuse an existing conversation if one already exists between this pair.
@@ -29,7 +24,8 @@ export async function startOrFindConversation(targetDid, targetName, targetHandl
   if (existing) return existing;
 
   const participantDids = [did, targetDid].sort();
-  const stamped = await stampRecord({
+  return base44.entities.Conversation.create({
+    did,
     recipient_did: targetDid,
     participant_dids: participantDids,
     recipient_name: targetName || '',
@@ -38,28 +34,12 @@ export async function startOrFindConversation(targetDid, targetName, targetHandl
     last_message_at: new Date().toISOString(),
     last_message_preview: '',
     last_message_did: '',
-  }, NSID.CONVERSATION, did, signingKey);
-
-  const created = await base44.entities.Conversation.create(stamped);
-
-  // Bridge the conversation record to the PDS (fire-and-forget, non-fatal).
-  base44.functions.invoke('atproto-bridge', {
-    collection: NSID.CONVERSATION,
-    record: {
-      participantDids,
-      createdAt: new Date().toISOString(),
-    },
-  }).then((res) => {
-    const uri = res?.uri;
-    const cid = res?.cid;
-    if (uri) base44.entities.Conversation.update(created.id, { at_uri: uri, cid: cid || '', bridged: true }).catch(() => {});
-  }).catch(() => {});
-
-  return created;
+    bridged: false,
+  });
 }
 
 export async function sendDirectMessage(conversation, text, user) {
-  const { did, signingKey } = await ensureUserDid();
+  const { did } = await ensureUserDid();
   const recipientDid = conversation.did === did ? conversation.recipient_did : conversation.did;
   const trimmed = text.trim().slice(0, 2000);
   if (!trimmed) return null;
@@ -67,55 +47,30 @@ export async function sendDirectMessage(conversation, text, user) {
   // Ensure my ECDH public key is published so the recipient can decrypt.
   await publishPublicKey().catch(() => {});
 
-  // End-to-end encrypt the body (falls back to plaintext if the recipient
-  // hasn't published a key yet, so the conversation still works on first contact).
-  const { body: storedBody, encrypted } = await encryptMessage(trimmed, did, recipientDid);
+  // End-to-end encryption is mandatory. encryptMessage throws before any
+  // record is created if the recipient has no usable public key.
+  const { body: storedBody } = await encryptMessage(trimmed, did, recipientDid);
 
-  const stamped = await stampRecord({
+  const created = await base44.entities.DirectMessage.create({
     conversation_id: conversation.id,
-    conversation_ref: conversation.at_uri || '',
+    conversation_ref: '',
     did,
     recipient_did: recipientDid,
     body: storedBody,
     author_name: user?.display_name || user?.full_name || 'Collector',
-    author_handle: user?.bsky_handle || user?.username || (user?.custom_handle || user?.username || user?.bsky_handle || ''),
+    author_handle: user?.bsky_handle || user?.username || user?.custom_handle || '',
     author_avatar: user?.avatar || '',
     read: false,
-  }, NSID.DIRECT_MESSAGE, did, signingKey);
-
-  const created = await base44.entities.DirectMessage.create(stamped);
-
-  // Escrow an admin-encrypted copy of the plaintext so moderators can review
-  // reported messages and the user can recover history on a new device. The
-  // E2EE body above is never sent in plaintext; this is a separate, encrypted
-  // field populated by a backend function (fire-and-forget, non-fatal).
-  if (encrypted) {
-    base44.functions.invoke('escrow-dm-key', { messageId: created.id, plaintext: trimmed }).catch(() => {});
-  }
+    bridged: false,
+  });
 
   // Update the conversation's last-message metadata. The preview is masked
   // when encrypted so the list view never leaks plaintext.
-  const preview = encrypted ? '🔒 Encrypted message' : trimmed.slice(0, 200);
+  const preview = '🔒 Encrypted message';
   base44.entities.Conversation.update(conversation.id, {
     last_message_at: new Date().toISOString(),
     last_message_preview: preview,
     last_message_did: did,
-  }).catch(() => {});
-
-  // Bridge the ciphertext to the PDS (fire-and-forget, non-fatal).
-  base44.functions.invoke('atproto-bridge', {
-    collection: NSID.DIRECT_MESSAGE,
-    record: {
-      conversationRef: conversation.at_uri || '',
-      recipientDid,
-      body: storedBody,
-      encrypted,
-      createdAt: new Date().toISOString(),
-    },
-  }).then((res) => {
-    const uri = res?.uri;
-    const cid = res?.cid;
-    if (uri) base44.entities.DirectMessage.update(created.id, { at_uri: uri, cid: cid || '', bridged: true }).catch(() => {});
   }).catch(() => {});
 
   // Notify the recipient — never leak plaintext in the notification payload.
@@ -127,8 +82,8 @@ export async function sendDirectMessage(conversation, text, user) {
       actorName: user?.display_name || user?.full_name || '',
       actorHandle: user?.bsky_handle || user?.username || '',
       actorAvatar: user?.avatar || '',
-      post: { id: conversation.id, at_uri: conversation.at_uri, cid: conversation.cid, content: encrypted ? '🔒 Encrypted message' : trimmed.slice(0, 80) },
-      postUri: conversation.at_uri,
+      post: { id: conversation.id, content: '🔒 Encrypted message' },
+      postUri: '',
       origin: 'local',
       commentText: preview,
     }).catch(() => {});
@@ -137,17 +92,9 @@ export async function sendDirectMessage(conversation, text, user) {
   return created;
 }
 
-// Mark all messages in a conversation as read (called when the recipient opens the thread).
-export async function markConversationRead(conversationId, myDid) {
-  try {
-    const unread = await base44.entities.DirectMessage.filter(
-      { conversation_id: conversationId, recipient_did: myDid, read: false },
-      '-created_date',
-      200,
-    );
-    if (!unread.length) return;
-    await base44.entities.DirectMessage.bulkUpdate(
-      unread.map((m) => ({ id: m.id, read: true })),
-    );
-  } catch {}
+// Mark recipient messages as read through a backend membership check. Direct
+// entity updates are intentionally blocked so recipients cannot rewrite bodies.
+export async function markConversationRead(conversationId) {
+  if (!conversationId) return;
+  await base44.functions.invoke('mark-dm-read', { conversationId }).catch(() => {});
 }
