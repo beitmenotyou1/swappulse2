@@ -77,7 +77,7 @@ export default function NotificationPopover({ trigger, onNavigate, side = 'right
     setOpen(false);
     if (!n.is_read) {
       try {
-        await base44.entities.Notification.update(n.id, { is_read: true, read_at: new Date().toISOString() });
+        await base44.functions.invoke('mark-notifications-read', { notificationId: n.id });
       } catch {}
     }
     const route = resolveNotificationRoute(n);
