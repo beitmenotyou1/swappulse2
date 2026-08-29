@@ -21,13 +21,14 @@ readarray -t VALUES < <(
   MANIFEST="$MANIFEST" "$NODE_BIN" --input-type=module <<'NODE'
 import fs from 'node:fs';
 const m = JSON.parse(fs.readFileSync(process.env.MANIFEST, 'utf8'));
-const required = ['account_class_hash', 'identity_registry_address', 'identity_registry_owner'];
+const required = ['account_class_hash', 'identity_registry_class_hash', 'identity_registry_address', 'identity_registry_owner'];
 for (const key of required) {
   if (!m[key]) throw new Error(`Manifest is missing ${key}`);
 }
 const delay = Number(m.recovery_delay_seconds ?? 172800);
 if (!Number.isInteger(delay) || delay < 0 || delay > 2592000) throw new Error('Invalid recovery_delay_seconds');
 console.log(String(m.account_class_hash));
+console.log(String(m.identity_registry_class_hash));
 console.log(String(m.identity_registry_address));
 console.log(String(m.identity_registry_owner));
 console.log(String(m.recovery_controller || '0x0'));
@@ -36,10 +37,11 @@ NODE
 )
 
 ACCOUNT_CLASS_HASH="${VALUES[0]:-}"
-IDENTITY_REGISTRY_ADDRESS="${VALUES[1]:-}"
-IDENTITY_REGISTRY_OWNER="${VALUES[2]:-}"
-RECOVERY_CONTROLLER="${VALUES[3]:-0x0}"
-RECOVERY_DELAY_SECONDS="${VALUES[4]:-172800}"
+IDENTITY_REGISTRY_CLASS_HASH="${VALUES[1]:-}"
+IDENTITY_REGISTRY_ADDRESS="${VALUES[2]:-}"
+IDENTITY_REGISTRY_OWNER="${VALUES[3]:-}"
+RECOVERY_CONTROLLER="${VALUES[4]:-0x0}"
+RECOVERY_DELAY_SECONDS="${VALUES[5]:-172800}"
 
 if command -v openssl >/dev/null 2>&1; then
   RELAY_TOKEN="$(openssl rand -hex 32)"
@@ -51,6 +53,7 @@ umask 077
 cat > "$OUT" <<EOF
 RELAY_TOKEN=$RELAY_TOKEN
 ACCOUNT_CLASS_HASH=$ACCOUNT_CLASS_HASH
+IDENTITY_REGISTRY_CLASS_HASH=$IDENTITY_REGISTRY_CLASS_HASH
 IDENTITY_REGISTRY_ADDRESS=$IDENTITY_REGISTRY_ADDRESS
 IDENTITY_REGISTRY_OWNER=$IDENTITY_REGISTRY_OWNER
 RECOVERY_CONTROLLER=$RECOVERY_CONTROLLER
