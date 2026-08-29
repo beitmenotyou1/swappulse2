@@ -91,7 +91,7 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
   const cacheKey = `${userDid}|${safePdsUrl}`;
   const cached = userSessions.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
-    return { pdsUrl, session: cached };
+    return { pdsUrl: safePdsUrl, session: cached };
   }
 
   // Try refresh first
