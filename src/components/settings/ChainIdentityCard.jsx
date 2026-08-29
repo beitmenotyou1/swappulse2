@@ -158,7 +158,7 @@ export default function ChainIdentityCard() {
       }
 
       setSetupStep('Registering your identity…');
-      await invokeData('chain-tx-submit', { action: 'register_identity', record_id: identity.id });
+      await invokeData('chain-identity-register', { record_id: identity.id });
       setSetupStep('Verifying identity from public chain state…');
       const reconciled = await invokeData('chain-identity-reconcile', { record_id: identity.id });
       const outcome = reconciled?.results?.[0]?.outcome || '';
