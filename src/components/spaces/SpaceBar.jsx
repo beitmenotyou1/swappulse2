@@ -3,6 +3,7 @@ import { Radio } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { getSafeHttpUrl } from '@/lib/externalLink';
 
 // Discovery bar of live streams, surfaced on the home feed. Each entry links
 // directly to the collector's external stream URL.
@@ -13,7 +14,7 @@ export default function SpaceBar() {
     (async () => {
       try {
         const all = await base44.entities.VoiceSpace.filter({ status: 'live' }, '-created_date', 30);
-        setSpaces(all.filter((s) => s.stream_url).slice(0, 10));
+        setSpaces(all.filter((s) => getSafeHttpUrl(s.stream_url)).slice(0, 10));
       } catch {
         setSpaces([]);
       }
@@ -30,7 +31,7 @@ export default function SpaceBar() {
         {spaces.map((s) => (
           <a
             key={s.id}
-            href={s.stream_url}
+            href={getSafeHttpUrl(s.stream_url) || undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="flex shrink-0 flex-col items-center gap-1"
