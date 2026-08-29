@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { CheckCircle2, ChevronDown, ChevronUp, Copy, Fingerprint, KeyRound, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
-import { createDeviceTestSigner, getDeviceTestSigner } from '@/lib/testnetSignerVault';
+import { createDeviceTestSigner, getDeviceTestSigner, signTestnetHash } from '@/lib/testnetSignerVault';
 
 function shortHex(value) {
   if (!value || value.length < 18) return value || '—';
@@ -22,6 +22,7 @@ export default function ChainIdentityCard() {
   const [provisioningResult, setProvisioningResult] = useState('');
   const [importingResult, setImportingResult] = useState(false);
   const [reconciling, setReconciling] = useState(false);
+  const [automaticSetup, setAutomaticSetup] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,6 +94,78 @@ export default function ChainIdentityCard() {
       toast({ title: 'Identity setup blocked', description: message, variant: 'destructive' });
     } finally {
       setPreparing(false);
+    }
+  };
+
+  const invokeData = async (name, payload) => {
+    const res = await base44.functions.invoke(name, payload);
+    return res?.data || res;
+  };
+
+  const getDraft = async (action) => invokeData('chain-tx-draft', { action, record_id: identity.id });
+
+  const signAndSubmitDraft = async (draft) => {
+    if (draft?.already_complete) return draft;
+    if (!user?.id || !draft?.transaction || !draft?.signing_hash || !draft?.draft_token) {
+      throw new Error('SwapPulse returned an incomplete testnet transaction draft.');
+    }
+    const signature = await signTestnetHash(user.id, draft.signing_hash);
+    const transaction = { ...draft.transaction, signature: [signature.r, signature.s] };
+    return invokeData('chain-tx-submit', {
+      action: draft.action,
+      record_id: identity.id,
+      draft_token: draft.draft_token,
+      transaction,
+    });
+  };
+
+  const waitForStep = async (action, attempts = 12) => {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        const draft = await getDraft(action);
+        if (draft?.already_complete) return draft;
+      } catch (error) {
+        const code = error?.response?.data?.code || '';
+        if (code !== 'ACCOUNT_NOT_READY' && attempt === attempts - 1) throw error;
+      }
+    }
+    throw new Error('The public testnet RPC has not confirmed the transaction yet. Try again shortly.');
+  };
+
+  const secureIdentityAutomatically = async () => {
+    if (!identity?.id || !signerMatchesIdentity || !user?.id) return;
+    setAutomaticSetup(true);
+    try {
+      const deployDraft = await getDraft('deploy_account');
+      if (!deployDraft?.already_complete) {
+        await signAndSubmitDraft(deployDraft);
+        await waitForStep('deploy_account');
+      }
+
+      const recoveryDraft = await getDraft('configure_recovery');
+      if (!recoveryDraft?.already_complete) {
+        await signAndSubmitDraft(recoveryDraft);
+        await waitForStep('configure_recovery');
+      }
+
+      await invokeData('chain-tx-submit', { action: 'register_identity', record_id: identity.id });
+      const reconciled = await invokeData('chain-identity-reconcile', { record_id: identity.id });
+      const outcome = reconciled?.results?.[0]?.outcome || '';
+      await load();
+      if (!['REGISTERED', 'RECOVERED'].includes(outcome)) {
+        throw new Error(`The chain registration completed, but final reconciliation returned ${outcome || 'no result'}.`);
+      }
+      toast({
+        title: 'Identity secured',
+        description: 'Your account was signed on this device, registered on SwapPulse Testnet and independently verified from the public chain state.',
+      });
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Could not complete automatic testnet identity setup.';
+      await load().catch(() => {});
+      toast({ title: 'Testnet setup paused', description: message, variant: 'destructive' });
+    } finally {
+      setAutomaticSetup(false);
     }
   };
 
@@ -242,9 +315,28 @@ export default function ChainIdentityCard() {
         </div>
       )}
 
+      {identity?.status === 'PENDING' && signerMatchesIdentity && (
+        <div className="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
+          <p className="text-xs font-bold">Finish testnet identity setup</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            SwapPulse will prepare short-lived transaction drafts. This device signs them locally, then the server verifies and relays only the approved account deployment and recovery setup. The registry owner remains on the private testnet host.
+          </p>
+          <button
+            type="button"
+            onClick={secureIdentityAutomatically}
+            disabled={automaticSetup}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+          >
+            {automaticSetup && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {automaticSetup ? 'Securing identity…' : 'Secure My Testnet Identity'}
+          </button>
+          <p className="mt-2 text-[10px] text-muted-foreground">Testnet only. No value-bearing features are enabled by this process.</p>
+        </div>
+      )}
+
       {identity?.status === 'PENDING' && status?.provisioning && (
         <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-3">
-          <p className="text-xs font-bold">External testnet deployment</p>
+          <p className="text-xs font-bold">Manual operator fallback</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             Copy the public provisioning request for the SwapPulse testnet operator. It contains no private key. After deployment, paste the public provisioning-result JSON returned by the operator.
           </p>
