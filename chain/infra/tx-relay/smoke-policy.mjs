@@ -114,7 +114,10 @@ try {
   const allowedInvoke = await post(relayUrl, {
     jsonrpc: '2.0', id: 3, method: 'starknet_addInvokeTransaction', params: { invoke_transaction: invokeTx },
   }, token);
-  if (allowedInvoke.status !== 200 || allowedInvoke.body?.result?.transaction_hash !== '0xbbb') throw new Error('Allowed recovery invoke was not forwarded');
+  if (allowedInvoke.status !== 200 || allowedInvoke.body?.result?.transaction_hash !== '0xbbb') {
+    console.error('ALLOWED_INVOKE_DEBUG', JSON.stringify(allowedInvoke));
+    throw new Error('Allowed recovery invoke was not forwarded');
+  }
 
   const badInvoke = await post(relayUrl, {
     jsonrpc: '2.0', id: 4, method: 'starknet_addInvokeTransaction',
