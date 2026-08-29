@@ -155,8 +155,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (result?.error) {
-      console.error('post-test-standard: createRecord failed', result.status, result.body);
+    if (result?.error || !result?.uri) {
+      console.error('post-test-standard: createRecord failed', result?.status, result?.body);
+      return Response.json({
+        error: `createRecord failed (${result?.status || 'unknown'})`,
+        code: 'PROMO_POST_CREATE_FAILED',
+      }, { status: 502 });
     }
 
     // Track as a PromoPost so firehose-ingest skips it
@@ -176,11 +180,11 @@ Deno.serve(async (req) => {
       documentUri: docUri,
       publicationUri: authorPubUri,
       sitePublicationUri: sitePub.uri,
-      postUri: result?.uri || null,
+      postUri: result.uri,
       postText,
-      blueskyUrl: result?.uri
-        ? `https://bsky.app/profile/${botDid}/post/${result.uri.split('/').pop()}`
-        : null,
+      hasEmbed: true,
+      embedType: 'app.bsky.embed.external',
+      blueskyUrl: `https://bsky.app/profile/${botDid}/post/${result.uri.split('/').pop()}`,
     });
   } catch (error) {
     console.error('post-test-standard error:', error?.message || error);
