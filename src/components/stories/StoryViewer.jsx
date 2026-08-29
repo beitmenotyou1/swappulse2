@@ -295,7 +295,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
                 placeholder={`Reply to @${story.author_handle || story.author_name || 'collector'}…`}
                 className="flex-1 rounded-full border border-white/30 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-white/60 outline-none backdrop-blur"
-              />
+               aria-label={`Reply to @${story.author_handle || story.author_name || 'collector'}…`}/>
               <button
                 onClick={sendReply}
                 disabled={sendingReply || !replyText.trim()}

@@ -156,7 +156,7 @@ export default function FeedbackButton() {
                   maxLength={200}
                   placeholder={t('feedback.titlePlaceholder')}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                />
+                 aria-label={t('feedback.titlePlaceholder')}/>
               </div>
 
               <div className="mb-4">
@@ -197,7 +197,7 @@ export default function FeedbackButton() {
                   maxLength={5000}
                   placeholder={t('feedback.commentsPlaceholder')}
                   className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                />
+                 aria-label={t('feedback.commentsPlaceholder')}/>
                 <p className="mt-1 text-right text-xs text-muted-foreground">{comment.length}/5000</p>
               </div>
 

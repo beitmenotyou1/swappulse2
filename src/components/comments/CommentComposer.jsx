@@ -101,7 +101,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
         placeholder={replyTarget ? 'Write a reply…' : 'Share your thoughts on this card…'}
         rows={2}
         className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-      />
+       aria-label={replyTarget ? 'Write a reply…' : 'Share your thoughts on this card…'}/>
       <CardAttachBar value={attachedCard} onChange={setAttachedCard} compact />
       <div className="mt-2 flex items-center justify-between">
         <span className={`text-xs ${MAX_LEN - text.length < 20 ? 'text-destructive' : MAX_LEN - text.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>

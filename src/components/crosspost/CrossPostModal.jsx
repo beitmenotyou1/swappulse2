@@ -95,9 +95,9 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
             </div>
           </div>
           <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Handle / display name (e.g. @collector)" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label="Handle / display name (e.g. @collector)"/>
-          <input value={credential} onChange={(e) => setCredential(e.target.value)} placeholder={meta.credLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+          <input value={credential} onChange={(e) => setCredential(e.target.value)} placeholder={meta.credLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={meta.credLabel}/>
           {meta.extraLabel && (
-            <input value={extra} onChange={(e) => setExtra(e.target.value)} placeholder={meta.extraLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+            <input value={extra} onChange={(e) => setExtra(e.target.value)} placeholder={meta.extraLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={meta.extraLabel}/>
           )}
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Content types</span>
@@ -107,7 +107,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
               ))}
             </div>
           </div>
-          <textarea value={template} onChange={(e) => setTemplate(e.target.value)} maxLength={500} rows={2} placeholder={`Custom template (default: ${TEMPLATES[contentTypes[0]] || TEMPLATES.pack_opening})`} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+          <textarea value={template} onChange={(e) => setTemplate(e.target.value)} maxLength={500} rows={2} placeholder={`Custom template (default: ${TEMPLATES[contentTypes[0]] || TEMPLATES.pack_opening})`} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={`Custom template (default: ${TEMPLATES[contentTypes[0]] || TEMPLATES.pack_opening})`}/>
           <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
             <span className="text-sm">Include card image reference</span>
             <Switch checked={includeCard} onCheckedChange={setIncludeCard} />

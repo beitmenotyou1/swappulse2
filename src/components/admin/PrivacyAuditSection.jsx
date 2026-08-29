@@ -203,7 +203,7 @@ export default function PrivacyAuditSection() {
                   placeholder={CONFIRM_PHRASE}
                   autoComplete="off"
                   className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                />
+                 aria-label={CONFIRM_PHRASE}/>
                 <button
                   onClick={runRemediationBatch}
                   disabled={remediationRunning || confirmation !== CONFIRM_PHRASE}

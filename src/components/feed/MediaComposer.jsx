@@ -45,7 +45,7 @@ export default function MediaComposer({ media, content }) {
                   onChange={(e) => media.setImageAlt(i, e.target.value.slice(0, 500))}
                   placeholder={t('compose.imageAltPlaceholder')}
                   className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
+                 aria-label={t('compose.imageAltPlaceholder')}/>
                 <button
                   onClick={() => media.removeImage(i)}
                   className="mt-1 flex items-center gap-1 text-xs text-destructive hover:underline"
@@ -76,14 +76,14 @@ export default function MediaComposer({ media, content }) {
             onChange={(e) => media.setVideoUrl(e.target.value)}
             placeholder={t('compose.videoUrlPlaceholder')}
             className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
+           aria-label={t('compose.videoUrlPlaceholder')}/>
           <input
             type="text"
             value={media.videoAlt}
             onChange={(e) => media.setVideoAlt(e.target.value.slice(0, 500))}
             placeholder={t('compose.imageAltPlaceholder')}
             className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
+           aria-label={t('compose.imageAltPlaceholder')}/>
         </div>
       ) : null}
 

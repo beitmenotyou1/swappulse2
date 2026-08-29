@@ -411,7 +411,7 @@ export default function ChainIdentitySection() {
               placeholder={'{\n  "schema_version": 1,\n  "network": "SWAPPULSE_TESTNET",\n  ...\n}'}
               className="mt-2 min-h-40 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
               spellCheck={false}
-            />
+             aria-label={'{\n  "schema_version": 1,\n  "network": "SWAPPULSE_TESTNET",\n  ...\n}'}/>
             <button
               onClick={importManifest}
               disabled={importingManifest || !manifestText.trim()}
@@ -599,7 +599,7 @@ export default function ChainIdentitySection() {
                   placeholder={'{\n  "schema_version": 1,\n  "kind": "SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT",\n  ...\n}'}
                   className="mt-2 min-h-40 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
                   spellCheck={false}
-                />
+                 aria-label={'{\n  "schema_version": 1,\n  "kind": "SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT",\n  ...\n}'}/>
                 <button
                   onClick={importProvisioningResult}
                   disabled={importingProvisioningResult || !provisioningResultText.trim()}

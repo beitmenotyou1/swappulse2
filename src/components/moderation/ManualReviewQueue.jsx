@@ -245,7 +245,7 @@ export default function ManualReviewQueue() {
               placeholder={adminDecision === 'overridden' ? 'Explain why you are overriding the agent. This trains the learning loop.' : 'Optional notes…'}
               rows={4}
               className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-             id="a11y-b0d3f608ba"/>
+             id="a11y-b0d3f608ba" aria-label={adminDecision === 'overridden' ? 'Explain why you are overriding the agent. This trains the learning loop.' : 'Optional notes…'}/>
           </div>
 
           <DialogFooter>

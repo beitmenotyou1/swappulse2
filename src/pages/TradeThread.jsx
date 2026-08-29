@@ -251,7 +251,7 @@ export default function TradeThread() {
                 placeholder={t('tradeThread.messagePlaceholder')}
                 className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              />
+               aria-label={t('tradeThread.messagePlaceholder')}/>
               <button onClick={send} disabled={sending || !body.trim()} className="rounded-full bg-primary p-2.5 text-white disabled:opacity-50">
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>

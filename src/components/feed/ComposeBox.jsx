@@ -308,7 +308,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
             maxLength={300}
             placeholder={replyTo ? t('compose.placeholder.reply') : t('compose.placeholder.post')}
             className="w-full resize-none bg-transparent text-lg outline-none placeholder:text-muted-foreground"
-          />
+           aria-label={replyTo ? t('compose.placeholder.reply') : t('compose.placeholder.post')}/>
           <div className={`text-right text-xs ${300 - content.length < 20 ? 'text-destructive' : 300 - content.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
             {300 - content.length} {t('compose.charsLeft')}
           </div>
@@ -343,7 +343,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
                   onChange={(e) => setCardAltText(e.target.value.slice(0, 300))}
                   placeholder={t('compose.altTextPlaceholder')}
                   className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                 id="a11y-2e726f4c25"/>
+                 id="a11y-2e726f4c25" aria-label={t('compose.altTextPlaceholder')}/>
               </div>
             </>
           )}

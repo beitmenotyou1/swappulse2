@@ -135,7 +135,7 @@ export default function TradeTemplateEditor({ template, open, onClose, onSaved }
             <SettingSelect value={visibility} onChange={setVisibility} label={tr('trade.visibility')} options={[{value:'public',label:tr('trade.public')},{value:'wishlist_only',label:tr('trade.wishlistOnly')},{value:'circle_scoped',label:tr('trade.circleOnly')}]} />
           </div>
 
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder={tr('trade.notesPlaceholder')} className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder={tr('trade.notesPlaceholder')} className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={tr('trade.notesPlaceholder')}/>
         </div>
 
         <div className="mt-5 flex gap-2">

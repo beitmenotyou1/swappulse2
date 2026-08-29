@@ -158,7 +158,7 @@ export default function Grading() {
                         defaultValue={sub.received_grade || ''}
                         onBlur={(e) => { if (e.target.value && e.target.value !== sub.received_grade) setGrade(sub, e.target.value); }}
                         className="rounded-full border border-border bg-background px-3 py-1.5 text-xs"
-                      />
+                       aria-label={t('grading.gradePlaceholder')}/>
                     )}
                   </div>
                 )}

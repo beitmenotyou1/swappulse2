@@ -103,7 +103,7 @@ export default function TradeStatusBoard() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('tradeStatus.searchPlaceholder')}
               className="w-full rounded-full border border-border bg-background pl-9 pr-4 py-2 text-sm outline-none focus:border-primary"
-            />
+             aria-label={t('tradeStatus.searchPlaceholder')}/>
           </div>
           <div className="flex items-center rounded-full border border-border bg-background p-0.5">
             <button

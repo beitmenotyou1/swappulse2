@@ -534,7 +534,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
             </div>
           )}
 
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder={tr('trade.notesPlaceholder')} className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} placeholder={tr('trade.notesPlaceholder')} className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={tr('trade.notesPlaceholder')}/>
         </div>
 
         {showSaveTemplate ? (
@@ -545,7 +545,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
               placeholder={tr('trade.templateNamePlaceholder')}
               maxLength={100}
               className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+             aria-label={tr('trade.templateNamePlaceholder')}/>
             <button onClick={saveTemplate} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">{tr('trade.save')}</button>
             <button onClick={() => { setShowSaveTemplate(false); setTemplateName(''); }} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary">{tr('common.cancel')}</button>
           </div>

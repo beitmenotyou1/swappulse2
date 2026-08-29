@@ -182,7 +182,7 @@ export default function GoLiveModal({ onClose, onLive }) {
               placeholder={mode === 'in_platform' ? "What's your Space about?" : 'What are you streaming today?'}
               maxLength={120}
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-             id="a11y-889ad65d38"/>
+             id="a11y-889ad65d38" aria-label={mode === 'in_platform' ? "What's your Space about?" : 'What are you streaming today?'}/>
           </div>
 
           {mode === 'in_platform' && (

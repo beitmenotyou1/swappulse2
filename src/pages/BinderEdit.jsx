@@ -206,14 +206,14 @@ export default function BinderEdit() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('binder.titlePlaceholder')}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-          />
+           aria-label={t('binder.titlePlaceholder')}/>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('binder.descPlaceholder')}
             rows={2}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label={t('binder.descPlaceholder')}/>
           <div className="grid grid-cols-2 gap-3">
             <label className="text-xs">
               <span className="text-muted-foreground">{t('binder.theme')}</span>
@@ -247,7 +247,7 @@ export default function BinderEdit() {
             onChange={(e) => setCover(e.target.value)}
             placeholder={t('binder.coverPlaceholder')}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label={t('binder.coverPlaceholder')}/>
         </div>
 
         {pages.map((page, pgIdx) => (
@@ -305,7 +305,7 @@ export default function BinderEdit() {
                       placeholder={t('binder.captionPlaceholder')}
                       maxLength={100}
                       className="w-full rounded border border-border bg-background px-1 py-0.5 text-[10px] outline-none focus:border-primary"
-                    />
+                     aria-label={t('binder.captionPlaceholder')}/>
                   </div>
                 );
               })}

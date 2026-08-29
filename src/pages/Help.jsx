@@ -260,7 +260,7 @@ export default function Help() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('help.searchPlaceholder')}
             className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm outline-none focus:border-primary"
-          />
+           aria-label={t('help.searchPlaceholder')}/>
         </div>
 
         {/* Status link */}

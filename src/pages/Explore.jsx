@@ -250,7 +250,7 @@ export default function Explore() {
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={tr('explore.searchPlaceholder')}
                   className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
-                />
+                 aria-label={tr('explore.searchPlaceholder')}/>
               </div>
               <SetQuickFilter value={filters.set} onChange={(s) => setFilters((f) => ({ ...f, set: s }))} />
               <FilterPanel onApply={setFilters} activeFilters={filters} />

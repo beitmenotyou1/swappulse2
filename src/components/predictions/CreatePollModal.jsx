@@ -186,7 +186,7 @@ export default function CreatePollModal({ open, onClose, onCreated }) {
                 rows={2}
                 className="w-full resize-none rounded-xl border border-border bg-secondary p-2.5 text-sm outline-none focus:border-primary"
                 placeholder={t('poll.questionPlaceholder')}
-               id="a11y-092ffc0351"/>
+               id="a11y-092ffc0351" aria-label={t('poll.questionPlaceholder')}/>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

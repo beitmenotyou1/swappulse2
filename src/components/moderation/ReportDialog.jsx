@@ -133,7 +133,7 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
               maxLength={1000}
               placeholder={t('report.detailsPlaceholder')}
               className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+             aria-label={t('report.detailsPlaceholder')}/>
           </div>
 
           <div>
