@@ -144,14 +144,16 @@ async function deriveSharedKey(privateKey, theirPublicJwk) {
   );
 }
 
-// Encrypt plaintext for a conversation partner. Returns { body, encrypted }.
-// Falls back to plaintext if the recipient has no published key yet, so the
-// conversation still works on first contact (later messages encrypt once both
-// parties have published keys).
+// Encrypt plaintext for a conversation partner. DMs fail closed: plaintext is
+// never persisted or sent when an E2EE session cannot be established.
 export async function encryptMessage(plaintext, myDid, theirDid) {
+  const theirKey = await fetchPublicKey(theirDid);
+  if (!theirKey) {
+    const error = new Error('This collector has not enabled encrypted messaging on a device yet. Ask them to open Messages, then try again.');
+    error.code = 'DM_RECIPIENT_KEY_UNAVAILABLE';
+    throw error;
+  }
   try {
-    const theirKey = await fetchPublicKey(theirDid);
-    if (!theirKey) return { body: plaintext, encrypted: false };
     const { privateKey } = await getOrCreateKeyPair();
     const shared = await deriveSharedKey(privateKey, theirKey);
     const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -159,7 +161,9 @@ export async function encryptMessage(plaintext, myDid, theirDid) {
     const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, shared, enc.encode(plaintext));
     return { body: `${PREFIX}${bufToBase64(iv.buffer)}:${bufToBase64(ct)}`, encrypted: true };
   } catch {
-    return { body: plaintext, encrypted: false };
+    const error = new Error('Could not establish encrypted messaging. Nothing was sent.');
+    error.code = 'DM_ENCRYPTION_FAILED';
+    throw error;
   }
 }
 
