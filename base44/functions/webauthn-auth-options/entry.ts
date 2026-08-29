@@ -9,6 +9,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateAuthenticationOptions } from 'npm:@simplewebauthn/server@10';
 import { issueWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 
+function randomCredentialId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -23,19 +30,24 @@ export default async function (req: Request): Promise<Response> {
     const users = await base44.asServiceRole.entities.User.filter({ email }, '-created_date', 1);
     const user = users && users[0];
 
-    // Get the user's registered credentials (empty if user not found or no keys)
-    let allowCredentials: { id: string; type: 'public-key' }[] = [];
-    if (user) {
-      const creds = await base44.asServiceRole.entities.WebAuthnCredential
-        .filter({ user_id: user.id }, '-created_date', 20)
-        .catch(() => []);
-      allowCredentials = (creds || [])
-        .filter((c) => c.credential_id)
-        .map((c) => ({
-          id: c.credential_id,
-          type: 'public-key' as const,
-        }));
-    }
+    // Return a fixed-size allowCredentials list so the options response does
+    // not reveal whether the email exists or how many security keys it has.
+    // Authenticators simply ignore the random padding IDs.
+    const creds = user
+      ? await base44.asServiceRole.entities.WebAuthnCredential
+          .filter({ user_id: user.id }, '-created_date', 20)
+          .catch(() => [])
+      : [];
+    const realIds = (creds || [])
+      .filter((c) => c.credential_id)
+      .slice(0, 20)
+      .map((c) => String(c.credential_id));
+    const paddedIds = [...realIds];
+    while (paddedIds.length < 20) paddedIds.push(randomCredentialId());
+    const allowCredentials: { id: string; type: 'public-key' }[] = paddedIds.map((id) => ({
+      id,
+      type: 'public-key' as const,
+    }));
 
     const { challenge, signature } = await issueWebAuthnChallenge(
       base44.asServiceRole,
