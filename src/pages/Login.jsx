@@ -27,7 +27,7 @@ export default function Login() {
 
   const [email, setEmail] = useState(initialEmail);
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState(initialEmail ? "code" : "email"); // email | code | twofactor | setup
+  const [step, setStep] = useState("email"); // email | code | twofactor | setup
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -62,20 +62,8 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("send-login-code", { email });
-      if (res.data?.not_found) {
-        setError("not_found");
-        return;
-      }
-      if (res.data?.needs_setup) {
-        try {
-          await base44.auth.resetPasswordRequest(email);
-          localStorage.setItem("swappulse_setup_email", email);
-        } catch {}
-        setStep("setup");
-        return;
-      }
       setStep("code");
-      setInfo(t('auth.login.codeSent').replace('{email}', email));
+      setInfo(`If an account exists for ${email}, a 6-digit code has been sent. If nothing arrives, check the address or create an account.`);
     } catch (err) {
       setError(err.response?.data?.error || err.data?.error || err.message || t('auth.login.couldNotSend'));
     } finally {
@@ -166,21 +154,8 @@ export default function Login() {
         </>
       }
     >
-      {error && error !== "not_found" && (
+      {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
-      )}
-      {error === "not_found" && (
-        <div className="mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-3">
-          <p className="text-sm text-destructive font-medium">
-            {t('auth.login.notFoundTitle')}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('auth.login.notFoundDesc')}
-          </p>
-          <Link to={`/register?email=${encodeURIComponent(email)}`} className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-            {t('auth.login.createAccount')} <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
       )}
       {info && (step === "code" || step === "setup") && (
         <div className="mb-4 p-3 rounded-lg bg-primary/10 text-primary text-sm">{info}</div>
@@ -249,13 +224,16 @@ export default function Login() {
               t('auth.login.verifyLogin')
             )}
           </Button>
-          <div className="flex justify-between text-xs">
+          <div className="flex justify-between gap-3 text-xs">
             <button type="button" onClick={() => { setStep("email"); setOtp(""); setError(""); setInfo(""); }} className="text-muted-foreground hover:text-foreground">
               {t('auth.login.changeEmail')}
             </button>
-            <button type="button" onClick={sendCode} disabled={loading} className="text-primary hover:underline disabled:opacity-50">
-              {t('auth.login.resendCode')}
-            </button>
+            <div className="flex items-center gap-3">
+              <Link to={`/register?email=${encodeURIComponent(email)}`} className="text-muted-foreground hover:text-foreground">Create account</Link>
+              <button type="button" onClick={sendCode} disabled={loading} className="text-primary hover:underline disabled:opacity-50">
+                {t('auth.login.resendCode')}
+              </button>
+            </div>
           </div>
         </div>
       )}
