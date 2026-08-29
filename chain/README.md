@@ -154,6 +154,7 @@ Required network configuration after the contracts are compiled and deployed is 
 - `account_class_hash`
 - `identity_registry_class_hash`
 - `identity_registry_address`
+- `identity_registry_owner`
 - `recovery_controller` (optional during early testing; empty disables recovery)
 - `recovery_delay_seconds` (defaults to 172800 / 48 hours)
 - optional public `rpc_url` and `explorer_url`
@@ -162,7 +163,7 @@ The smart-account constructor accepts only `public_key`, matching OpenZeppelin's
 
 These values are public blockchain deployment metadata, not secrets. Private RPC credentials, private keys, seed phrases, and passkey secret material must never be stored in `ChainNetworkConfig`.
 
-Saving these values creates or updates a **draft**, not a trusted network. `chain-network-verify` must independently query the HTTPS RPC, verify the chain ID, verify the `IdentityRegistry` class hash at the configured address, and confirm that the configured `SwapPulseAccount` class is declared. Only that RPC verification can set `status = CONFIGURED`. Changing the RPC, chain ID, registry address or either class hash invalidates the previous verification.
+Saving these values creates or updates a **draft**, not a trusted network. `chain-network-verify` must independently query the HTTPS RPC, verify the chain ID, verify the `IdentityRegistry` class hash and owner at the configured address, and confirm that the configured `SwapPulseAccount` class is declared. Only that RPC verification can set `status = CONFIGURED`. Changing the RPC, chain ID, registry address/owner or either class hash invalidates the previous verification. Identity reconciliation re-checks the registry owner as well, so a later ownership change fails closed.
 
 ## Next milestone
 
