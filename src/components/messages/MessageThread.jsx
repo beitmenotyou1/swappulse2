@@ -11,6 +11,7 @@ export default function MessageThread({ conversation, myDid, onBack }) {
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
   const [decrypted, setDecrypted] = useState({});
   const scrollRef = useRef(null);
 
@@ -34,7 +35,7 @@ export default function MessageThread({ conversation, myDid, onBack }) {
     setLoading(true);
     refresh();
     // Mark messages as read when the thread is opened.
-    if (myDid) markConversationRead(conversation.id, myDid).then(refresh).catch(() => {});
+    if (myDid) markConversationRead(conversation.id).then(refresh).catch(() => {});
     // Live subscription for real-time delivery.
     let unsub;
     try {
@@ -68,14 +69,16 @@ export default function MessageThread({ conversation, myDid, onBack }) {
   const handleSend = async () => {
     if (!text.trim() || sending) return;
     setSending(true);
+    setSendError('');
     setText('');
     try {
       const me = await base44.auth.me().catch(() => null);
       await sendDirectMessage(conversation, text, me);
       await refresh();
-    } catch {
-      // Rollback text so the user can retry.
+    } catch (error) {
+      // Roll back text so the user can retry, and explain fail-closed E2EE.
       setText(text);
+      setSendError(error?.message || 'Could not send this encrypted message. Nothing was sent.');
     } finally {
       setSending(false);
     }
@@ -125,6 +128,11 @@ export default function MessageThread({ conversation, myDid, onBack }) {
       </div>
 
       {/* Composer */}
+      {sendError && (
+        <div role="alert" className="border-t border-border bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {sendError}
+        </div>
+      )}
       <div className="flex items-center gap-2 border-t border-border p-3">
         <textarea
           value={text}
