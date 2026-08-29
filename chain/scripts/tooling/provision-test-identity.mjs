@@ -84,7 +84,7 @@ try {
   accountDeployed = true;
 } catch (error) {
   const message = String(error?.message || error);
-  if (!/contract|class hash|not found|uninitialized|20/i.test(message)) throw error;
+  if (!/(contract[^\n]*not found|contract address[^\n]*(not found|unavailable)|uninitialized contract)/i.test(message)) throw error;
 }
 
 if (!accountDeployed) {
