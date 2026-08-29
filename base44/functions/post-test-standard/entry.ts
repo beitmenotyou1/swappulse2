@@ -15,10 +15,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSession, pdsRequest, clearPdsSession } from '../../shared/pdsSession.ts';
 import { ensureSitePublication, ensureAuthorPublication, publishDocument } from '../../shared/standardSite.ts';
+import { uploadPromoImage } from '../../shared/promoImageUpload.ts';
+import { buildPromoExternalEmbed, assertPromoPresentation } from '../../shared/promoPresentation.ts';
 import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
-import { resolveAppUrl } from '../../shared/appUrl.ts';
 
 const SITE_BASE = 'https://swappulse.org';
+const PROMO_BANNER_URL = 'https://base44.app/api/apps/6a63d9d64a4d65d370c70892/files/mp/public/6a63d9d64a4d65d370c70892/2f59cf64f_swappulse-poster-promo.jpg';
 
 const TEST_JOURNAL = {
   title: 'Chasing the Rainbow: My First Special Illustration Rare',
@@ -53,7 +55,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
     const svc = base44.asServiceRole;
-    const appUrl = resolveAppUrl(req);
 
     // 1. Ensure the SwapPulse site publication
     const sitePub = await ensureSitePublication(base44);
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
       name: 'SwapPulse',
       handle: 'swappulse',
       avatar: '',
-      profileUrl: `${appUrl}/u/swappulse`,
+      profileUrl: `${SITE_BASE}/u/swappulse`,
     });
 
     // 5. Publish as a site.standard.document
@@ -105,17 +106,33 @@ Deno.serve(async (req) => {
     }
 
     // 6. Post to the bot account on Bluesky
-    const journalUrl = `${appUrl}/journal/${journal.id}`;
+    const journalUrl = `${SITE_BASE}/journal/${journal.id}`;
     const postText = `New journal post: "${TEST_JOURNAL.title}"\n\n${journalUrl}\n\n#PokemonTCG #PullOfTheWeek`;
     const facets = buildRichTextFacets(postText);
+    const expectedTags = ['PokemonTCG', 'PullOfTheWeek'];
+
+    const uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, {
+      did: botDid,
+      app_password: String(Deno.env.get('PDS_APP_PASSWORD') || ''),
+    });
+    session.accessJwt = uploadResult.accessJwt;
+    if (!uploadResult.blob) {
+      return Response.json({
+        error: 'Promo artwork unavailable; test-standard announcement was not published',
+        code: 'PROMO_MEDIA_REQUIRED',
+      }, { status: 502 });
+    }
 
     const record: any = {
       $type: 'app.bsky.feed.post',
       text: postText,
       createdAt: new Date().toISOString(),
       langs: ['en'],
+      tags: expectedTags,
+      embed: buildPromoExternalEmbed(journalUrl, TEST_JOURNAL.title, TEST_JOURNAL.subtitle, uploadResult.blob),
     };
     if (facets.length > 0) record.facets = facets;
+    assertPromoPresentation(record, journalUrl, expectedTags);
 
     let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
       repo: botDid,
