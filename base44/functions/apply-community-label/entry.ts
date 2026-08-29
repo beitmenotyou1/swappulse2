@@ -5,7 +5,7 @@
 // service role, since CommunityLabel RLS restricts mutations to admins).
 //
 // After applying, the labeler's label_count is incremented and the record is
-// fire-and-forget bridged to the PDS via bridge-record.
+// published through the canonical federation bridge helper.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { deleteBridgedRecord, publishRecord } from '../../shared/bridgePublish.ts';
