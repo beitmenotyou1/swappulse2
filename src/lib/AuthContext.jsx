@@ -108,15 +108,6 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
       setAuthChecked(true);
-
-      // Fire-and-forget: re-bridge the user's existing federated content from
-      // the shared bridge account to their own did:plc repo. Runs once per
-      // browser session; the function is idempotent and skips users with no
-      // did:plc. See re-bridge-content backend function.
-      if (currentUser?.id && !sessionStorage.getItem('swappulse_rebridge_triggered')) {
-        sessionStorage.setItem('swappulse_rebridge_triggered', '1');
-        base44.functions.invoke('re-bridge-content', {}).catch(() => {});
-      }
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
@@ -140,7 +131,6 @@ export const AuthProvider = ({ children }) => {
     try {
       sessionStorage.removeItem("base44_access_token");
       sessionStorage.removeItem("swappulse_session_only");
-      sessionStorage.removeItem("swappulse_rebridge_triggered");
     } catch {}
     
     if (shouldRedirect) {
