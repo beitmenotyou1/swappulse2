@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import { Download, Loader2, ArrowRightLeft, Upload, ShieldAlert } from 'lucide-react';
+import { Download, Loader2, Upload, ShieldAlert } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogAction, AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
 import BlueskyLinkCard from '@/components/settings/BlueskyLinkCard';
 import SyncDashboard from '@/components/settings/SyncDashboard';
 
