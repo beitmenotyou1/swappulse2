@@ -45,36 +45,17 @@ export default async function (req: Request): Promise<Response> {
     );
     if (!valid) return Response.json({ error: 'Invalid or expired challenge' }, { status: 403 });
 
-    // Find user
-    const users = await svc.entities.User.filter({ email }, '-created_date', 1);
-    if (!users || users.length === 0) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
-    }
-    const user = users[0];
-
-    // Check suspension
-    const suspension = await getActiveSuspension(svc, user.id);
-    if (suspension) {
-      return Response.json({
-        suspended: true,
-        reason: suspension.suspension_reason || 'Your account has been suspended.',
-        suspended_until: suspension.suspended_until || null,
-      });
-    }
-
-    if (!user.login_key) {
-      return Response.json({ needs_setup: true });
-    }
-
-    // Find the credential matching the assertion's credential ID
-    const credentialId = assertion.id; // base64url
-    const creds = await svc.entities.WebAuthnCredential
-      .filter({ user_id: user.id, credential_id: credentialId }, '-created_date', 1)
-      .catch(() => []);
-    if (!creds || creds.length === 0) {
-      return Response.json({ error: 'Credential not found' }, { status: 400 });
-    }
-    const credential = creds[0];
+    // Find the account and the asserted credential, but do not reveal account
+    // existence or account state until after cryptographic verification.
+    const users = await svc.entities.User.filter({ email }, '-created_date', 1).catch(() => []);
+    const user = users?.[0] || null;
+    const credentialId = String(assertion.id || ''); // base64url
+    const creds = user
+      ? await svc.entities.WebAuthnCredential
+          .filter({ user_id: user.id, credential_id: credentialId }, '-created_date', 1)
+          .catch(() => [])
+      : [];
+    const credential = creds?.[0] || null;
 
     // Rate limit
     const limit = await getTotpRateLimit(svc, email);
@@ -86,22 +67,32 @@ export default async function (req: Request): Promise<Response> {
       }
     }
 
-    const verification = await verifyAuthenticationResponse({
-      response: assertion,
-      expectedChallenge: challenge,
-      expectedOrigin: rpConfig.origin,
-      expectedRPID: rpConfig.rpId,
-      authenticator: {
-        credentialID: credential.credential_id,
-        credentialPublicKey: base64UrlToUint8Array(credential.public_key),
-        counter: credential.counter || 0,
-        transports: credential.transports || [],
-      },
-    });
+    if (!user || !credential) {
+      await recordTotpFailedAttempt(svc, email);
+      return Response.json({ error: 'Invalid credentials.' }, { status: 401 });
+    }
+
+    let verification;
+    try {
+      verification = await verifyAuthenticationResponse({
+        response: assertion,
+        expectedChallenge: challenge,
+        expectedOrigin: rpConfig.origin,
+        expectedRPID: rpConfig.rpId,
+        authenticator: {
+          credentialID: credential.credential_id,
+          credentialPublicKey: base64UrlToUint8Array(credential.public_key),
+          counter: credential.counter || 0,
+          transports: credential.transports || [],
+        },
+      });
+    } catch {
+      verification = { verified: false };
+    }
 
     if (!verification.verified) {
       await recordTotpFailedAttempt(svc, email);
-      return Response.json({ error: 'Security key verification failed' }, { status: 400 });
+      return Response.json({ error: 'Invalid credentials.' }, { status: 401 });
     }
 
     // Update the counter (replay detection)
@@ -111,6 +102,17 @@ export default async function (req: Request): Promise<Response> {
     });
 
     await resetTotpRateLimit(svc, email);
+
+    // Only a proven credential may reveal post-authentication account state.
+    const suspension = await getActiveSuspension(svc, user.id);
+    if (suspension) {
+      return Response.json({
+        suspended: true,
+        reason: suspension.suspension_reason || 'Your account has been suspended.',
+        suspended_until: suspension.suspended_until || null,
+      });
+    }
+    if (!user.login_key) return Response.json({ needs_setup: true });
 
     return Response.json({ login_key: user.login_key });
   } catch (error: any) {
