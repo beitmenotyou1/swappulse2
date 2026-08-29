@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 const REASONS = [
   { value: 'spam', labelKey: 'report.reason.spam.label', descKey: 'report.reason.spam.desc' },
@@ -36,6 +37,7 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
     setUploading(true);
     try {
       for (const file of files) {
+        assertImageUpload(file);
         const res = await base44.integrations.Core.UploadFile({ file });
         if (res?.file_url) setEvidenceUrls((prev) => [...prev, res.file_url]);
       }
