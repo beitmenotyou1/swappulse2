@@ -300,7 +300,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/healthz') {
     return json(res, 200, { ok: true, purpose: 'swappulse-testnet-provisioning-relay' });
   }
-  if (req.method !== 'POST' || req.url !== '/rpc') return json(res, 404, { error: 'Not found' });
+  if (req.method !== 'POST' || !['/rpc', '/register'].includes(req.url || '')) return json(res, 404, { error: 'Not found' });
   if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
 
   const ip = clientIp(req);
@@ -308,6 +308,13 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const payload = JSON.parse(await readBody(req));
+
+    if (req.url === '/register') {
+      const result = await registerIdentity(payload);
+      console.log(`register_identity accepted ${ip} ${result.identity_id} ${result.account_address} idempotent=${result.idempotent}`);
+      return json(res, 200, { ok: true, ...result });
+    }
+
     if (Array.isArray(payload)) return json(res, 400, { error: 'JSON-RPC batch requests are disabled' });
     if (!payload || payload.jsonrpc !== '2.0' || typeof payload.method !== 'string') {
       return json(res, 400, { error: 'Invalid JSON-RPC request' });
@@ -336,9 +343,9 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { ...upstreamPayload, id: payload.id ?? upstreamPayload.id ?? null });
   } catch (error) {
     const code = String(error?.message || 'TX_RELAY_ERROR').replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 120);
-    const status = code === 'BODY_TOO_LARGE' ? 413 : code.includes('NOT_ALLOWED') || code.includes('MUST_') || code.includes('ONLY_') || code.includes('WRONG_') ? 403 : 400;
+    const status = code === 'BODY_TOO_LARGE' ? 413 : code.includes('NOT_ALLOWED') || code.includes('MUST_') || code.includes('ONLY_') || code.includes('WRONG_') || code.includes('MISMATCH') || code.includes('ALREADY_BOUND') || code.includes('NOT_AVAILABLE') ? 403 : 400;
     console.warn(`Provisioning relay rejected request from ${clientIp(req)}: ${code}`);
-    return json(res, status, { error: 'Provisioning transaction rejected', code });
+    return json(res, status, { error: 'Provisioning request rejected', code });
   }
 });
 
