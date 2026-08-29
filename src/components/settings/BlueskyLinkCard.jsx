@@ -74,7 +74,6 @@ export default function BlueskyLinkCard() {
   const t = useT();
   const { user, checkUserAuth } = useAuth();
   const { toast } = useToast();
-  const [rebridging, setRebridging] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillCount, setBackfillCount] = useState(0);
@@ -148,20 +147,6 @@ export default function BlueskyLinkCard() {
     });
     setShowForm(false);
     await checkUserAuth?.();
-
-    // Fire-and-forget re-bridge of existing content to the new DID
-    setRebridging(true);
-    try {
-      await base44.functions.invoke('re-bridge-content', {});
-      toast({
-        title: t('migration.contentMigratedTitle'),
-        description: t('migration.contentMigratedDesc'),
-      });
-    } catch {
-      // non-fatal — re-bridge is best-effort
-    } finally {
-      setRebridging(false);
-    }
 
     // Auto-migrate: pull profile, trigger backfill + notifications, update
     // handle, post + pin announcement (gated on critical step success).
@@ -415,14 +400,12 @@ export default function BlueskyLinkCard() {
           <RefreshCw className="h-4 w-4" /> {t('migration.relink')}
         </button>
 
-        {(rebridging || migrating || backfilling) && (
+        {(migrating || backfilling) && (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
             {backfilling
               ? t('migration.syncingPosts', { count: backfillCount })
-              : migrating
-                ? t('migration.migratingStatus')
-                : t('migration.rebridgingStatus')}
+              : t('migration.migratingStatus')}
           </p>
         )}
       </div>
