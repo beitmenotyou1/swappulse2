@@ -63,8 +63,8 @@ interface FeaturedCard {
 
 /**
  * Fetch a random card from TCGDex by picking a random popular set, then a
- * random card from that set. Returns null if the fetch fails (caller falls
- * back to a text-only post without a card).
+ * random card from that set. Returns null if the fetch fails, in which case
+ * the caller switches to a community promo with the branded rich-card image.
  */
 async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null> {
   // Try up to 4 different sets before giving up (some sets may return empty)
@@ -109,7 +109,7 @@ async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null>
             const enFull: any = await fetchTcgdex(`/cards/${encodeURIComponent(card.id)}`, 'en');
             imageField = enFull?.image || null;
           } catch {
-            // keep null — post will be text-only
+            // keep null; the caller will fall back to branded promo artwork
           }
         }
         return {
@@ -128,7 +128,7 @@ async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null>
           try {
             const enFull: any = await fetchTcgdex(`/cards/${encodeURIComponent(fallback.id)}`, 'en');
             fallbackImage = enFull?.image || null;
-          } catch { /* text-only fallback */ }
+          } catch { /* caller will use branded promo artwork */ }
         }
         return {
           id: fallback.id,
@@ -334,8 +334,8 @@ Deno.serve(async (req) => {
       let uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
       session.accessJwt = uploadResult.accessJwt;
       let imageBlob = uploadResult.blob;
-      // Retry the banner upload if it failed — all campaign posts depend on
-      // this single blob, so a failure here would make every post text-only.
+      // Retry the banner upload if it failed. All campaign posts depend on
+      // this single blob, and the campaign aborts rather than publishing bare text.
       if (!imageBlob) {
         console.log('post-promo: first_join_all banner upload failed, retrying');
         uploadResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
