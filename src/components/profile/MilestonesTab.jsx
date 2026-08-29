@@ -43,7 +43,7 @@ export default function MilestonesTab({ draft, update }) {
               <div className="flex-1">
                 <SettingSelect value={m.milestone_type || 'custom'} options={TYPES} onChange={(v) => setM(i, { milestone_type: v })} label="Milestone type" />
               </div>
-              <input type="date" value={m.date || ''} onChange={(e) => setM(i, { date: e.target.value })} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />
+              <input aria-label="Milestone date" type="date" value={m.date || ''} onChange={(e) => setM(i, { date: e.target.value })} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />
             </div>
             <textarea value={m.description || ''} onChange={(e) => setM(i, { description: e.target.value })} rows={2} placeholder="What happened?" className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary"  aria-label="What happened?"/>
           </div>
