@@ -27,6 +27,7 @@ if (!Number.isSafeInteger(deployMintAmount) || deployMintAmount <= 0) {
 
 const windows = new Map();
 const provider = new RpcProvider({ nodeUrl: upstream.toString() });
+let registrationBusy = false;
 
 function normalizeHex(value, field = 'felt') {
   const raw = String(value || '').trim().toLowerCase();
@@ -323,9 +324,15 @@ const server = http.createServer(async (req, res) => {
     const payload = JSON.parse(await readBody(req));
 
     if (req.url === '/register') {
-      const result = await registerIdentity(payload);
-      console.log(`register_identity accepted ${ip} ${result.identity_id} ${result.account_address} idempotent=${result.idempotent}`);
-      return json(res, 200, { ok: true, ...result });
+      if (registrationBusy) return json(res, 409, { error: 'Registration already in progress', code: 'REGISTRATION_BUSY' });
+      registrationBusy = true;
+      try {
+        const result = await registerIdentity(payload);
+        console.log(`register_identity accepted ${ip} ${result.identity_id} ${result.account_address} idempotent=${result.idempotent}`);
+        return json(res, 200, { ok: true, ...result });
+      } finally {
+        registrationBusy = false;
+      }
     }
 
     if (Array.isArray(payload)) return json(res, 400, { error: 'JSON-RPC batch requests are disabled' });
