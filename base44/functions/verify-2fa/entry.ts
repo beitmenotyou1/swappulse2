@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
+import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 import {
   generateTotp,
   TOTP_RATE_LIMIT_MAX,
@@ -16,49 +17,23 @@ export default async function (req) {
 
   try {
     if (mode === 'check') {
-      // Check if 2FA is required for an email (login flow, no auth needed).
-      // Rate-limited to prevent email/2FA-status enumeration.
-      const email = String(body.email || '').toLowerCase().trim();
-      if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
-
-      const rlKey = `2fa-check:${email}`;
-      const rlRecords = await base44.asServiceRole.entities.AuthRateLimit
-        .filter({ email: rlKey }, '-created_date', 1).catch(() => []);
-      const rl = rlRecords?.[0];
-      const now = Date.now();
-      if (rl) {
-        const elapsed = now - new Date(rl.window_start || rl.created_date).getTime();
-        if (elapsed < 3_600_000 && (rl.count || 0) >= 20) {
-          return Response.json({ error: 'Too many requests' }, { status: 429 });
-        }
-        await base44.asServiceRole.entities.AuthRateLimit.update(rl.id, {
-          last_request_at: new Date(now).toISOString(),
-          count: elapsed < 3_600_000 ? (rl.count || 0) + 1 : 1,
-          window_start: elapsed < 3_600_000 ? rl.window_start : new Date(now).toISOString(),
-        }).catch(() => {});
-      } else {
-        await base44.asServiceRole.entities.AuthRateLimit.create({
-          email: rlKey,
-          last_request_at: new Date(now).toISOString(),
-          window_start: new Date(now).toISOString(),
-          count: 1,
-        }).catch(() => {});
-      }
-
-      const users = await base44.asServiceRole.entities.User.filter({ email });
-      if (users.length === 0) return Response.json({ requires_2fa: false });
-      return Response.json({ requires_2fa: !!users[0].two_factor_enabled });
+      // This unauthenticated status-probe used to reveal whether an arbitrary
+      // email had TOTP enabled. The login flow no longer uses it, so fail closed.
+      return Response.json({ error: 'Unsupported mode' }, { status: 400 });
     }
 
     if (mode === 'setup') {
-      // Verify code against provided secret, then save (auth required)
+      // Enabling a new second factor is a persistence-sensitive security change:
+      // require a fresh email step-up token, not merely an existing session.
       const user = await base44.auth.me();
       if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-      const { secret, code } = body;
-      if (!secret || !code) return Response.json({ error: 'Secret and code required' }, { status: 400 });
+      const { secret, code, management_token } = body;
+      if (!secret || !code || !management_token) return Response.json({ error: 'Fresh security verification is required' }, { status: 400 });
+      const authz = await verifyActionToken(String(management_token), 'security-factor-management', user.id);
+      if (!authz.valid) return Response.json({ error: 'Fresh security verification is required' }, { status: 403 });
       const expected = await generateTotp(secret);
       if (!timingSafeEqual(code, expected)) return Response.json({ verified: false, error: 'Invalid code' });
-      await base44.auth.updateMe({ two_factor_enabled: true, two_factor_secret: secret });
+      await base44.asServiceRole.entities.User.update(user.id, { two_factor_enabled: true, two_factor_secret: secret });
       return Response.json({ verified: true });
     }
 
