@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-import { Devnet } from 'starknet-devnet';
+import { spawnDevnet } from './devnet-process.mjs';
 
 function runNode(script, args, env) {
   return new Promise((resolve, reject) => {
@@ -23,15 +23,15 @@ function runNode(script, args, env) {
   });
 }
 
-const devnet = await Devnet.spawnVersion('latest', { stdout: 'ignore', stderr: 'ignore' });
+const devnet = await spawnDevnet();
 const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'swappulse-network-smoke-'));
 const manifest = path.join(tmpDir, 'deployment.json');
 try {
-  const [admin] = await devnet.provider.getPredeployedAccounts({ withBalance: true });
+  const [admin] = await devnet.getPredeployedAccounts();
   if (!admin) throw new Error('No predeployed devnet admin');
 
   const deployment = await runNode('./deploy-network.mjs', [], {
-    SWAPPULSE_RPC_URL: devnet.provider.url,
+    SWAPPULSE_RPC_URL: devnet.url,
     SWAPPULSE_DEPLOYER_ADDRESS: admin.address,
     SWAPPULSE_DEPLOYER_PRIVATE_KEY: admin.private_key,
     SWAPPULSE_DEPLOYMENT_MANIFEST: manifest,
@@ -52,6 +52,6 @@ try {
     deploy_log_contains_private_key: deployment.stdout.includes(admin.private_key),
   }, null, 2));
 } finally {
-  devnet.kill();
+  await devnet.stop();
   await fs.rm(tmpDir, { recursive: true, force: true });
 }
