@@ -13,7 +13,18 @@ export interface BlobRef {
   size: number;
 }
 
-const MAX_IMAGE_BYTES = 1_000_000; // Bluesky's app.bsky.embed.images limit
+const MAX_IMAGE_BYTES = 1_000_000; // AT Protocol promo thumbnail limit
+const MEDIA_REQUEST_TIMEOUT_MS = 12_000;
+
+async function fetchWithTimeout(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), MEDIA_REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
  * Detect the image format from magic bytes. Returns the canonical mimeType
@@ -75,7 +86,7 @@ export async function uploadPromoImage(
       // Bluesky's app.bsky.embed.images lexicon only accepts JPEG and PNG;
       // a WebP blob uploads to the PDS but the AppView strips the embed,
       // rendering the post as plain text on Bluesky.
-      const imgRes = await fetch(imageUrl, {
+      const imgRes = await fetchWithTimeout(imageUrl, {
         headers: { 'Accept': 'image/png, image/jpeg' },
       });
       if (!imgRes.ok) {
@@ -110,7 +121,7 @@ export async function uploadPromoImage(
       // Use the magic-byte-detected type for the upload header (authoritative)
       const uploadMime = detectedType;
 
-      const uploadRes = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
+      const uploadRes = await fetchWithTimeout(`${pdsUrl}/xrpc/com.atproto.repo.uploadBlob`, {
         method: 'POST',
         headers: {
           'Content-Type': uploadMime,
