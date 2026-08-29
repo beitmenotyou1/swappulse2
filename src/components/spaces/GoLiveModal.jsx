@@ -281,6 +281,7 @@ export default function GoLiveModal({ onClose, onLive }) {
             {customMode && (
               <div className="mt-2 flex items-center gap-2">
                 <input
+                  aria-label="Custom planned duration in minutes"
                   type="number"
                   min={15}
                   max={480}
