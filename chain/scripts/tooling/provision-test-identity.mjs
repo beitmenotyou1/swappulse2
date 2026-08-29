@@ -91,9 +91,13 @@ if (!accountDeployed) {
   if (!allowDevnetMint) {
     throw new Error('Smart account is not deployed. Set SWAPPULSE_ALLOW_DEVNET_MINT=true for the private Devnet funding path.');
   }
+  const fundingAmount = Number(process.env.SWAPPULSE_TEST_ACCOUNT_FUNDING || '100000000000000000000');
+  if (!Number.isFinite(fundingAmount) || fundingAmount <= 0) {
+    throw new Error('SWAPPULSE_TEST_ACCOUNT_FUNDING must be a positive JSON number for Devnet minting');
+  }
   await rawRpc('devnet_mint', {
     address: accountAddress,
-    amount: String(process.env.SWAPPULSE_TEST_ACCOUNT_FUNDING || '100000000000000000000'),
+    amount: fundingAmount,
     unit: 'FRI',
   });
   const deployed = await userAccount.deployAccount({
