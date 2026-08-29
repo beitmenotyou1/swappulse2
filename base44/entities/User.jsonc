@@ -18,7 +18,24 @@
     },
     "push_subscription": {
       "type": "string",
-      "description": "Serialized PushSubscription JSON for Web Push notifications"
+      "description": "Serialized Web Push subscription. Backend-managed sensitive endpoint/key material.",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "username": {
       "type": "string",
