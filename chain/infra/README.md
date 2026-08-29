@@ -162,7 +162,9 @@ The host wrapper reads the local registry-admin test key from the loopback-only 
 
 The provisioning code is idempotent. Its automated smoke test runs it twice: the first run deploys/configures/registers, the second submits no transactions, and the test fails if either private key appears in output.
 
-Back in SwapPulse Admin, copy the public `account_address`, `account_deploy` transaction hash and `identity_register` transaction hash into **Record Deployment**, then run **Reconcile From Chain**. Only successful chain read-back may promote the private mirror to `REGISTERED` and show **Identity secured**.
+Back in SwapPulse Admin, paste the script's complete public JSON into **Import public provisioning result**. The backend verifies the result format, reserved signer public key, deterministically derived account address, chain ID, class hash, registry address/owner and recovery policy before recording `DEPLOYED`. The manual recording section remains a debugging fallback but is subject to the same reserved-key address derivation check.
+
+Then run **Reconcile From Chain**. Only successful chain read-back may promote the private mirror to `REGISTERED` and show **Identity secured**.
 
 ## Backups and upgrades
 
