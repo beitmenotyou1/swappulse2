@@ -554,6 +554,10 @@ export default async function(req: Request): Promise<Response> {
       const rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       const record = rows?.[0];
       if (!record) return jsonError('ChainIdentity not found', 404);
+      const currentAgeStatus = await ageEligibilityForUser(svc, String(record.user_id || ''));
+      if (!currentAgeStatus.eligible) {
+        return jsonError('This user is no longer eligible for SwapPulse Testnet identity provisioning', 403, 'AGE_ELIGIBILITY_REQUIRED');
+      }
       if (['REGISTERED', 'MERGED', 'RECOVERED'].includes(String(record.status || ''))) {
         return jsonError('This identity is already chain-authoritative and cannot be overwritten from a provisioning result', 409, 'CHAIN_STATE_PROTECTED');
       }
@@ -649,6 +653,10 @@ export default async function(req: Request): Promise<Response> {
       const rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       const record = rows?.[0];
       if (!record) return jsonError('ChainIdentity not found', 404);
+      const currentAgeStatus = await ageEligibilityForUser(svc, String(record.user_id || ''));
+      if (!currentAgeStatus.eligible) {
+        return jsonError('This user is no longer eligible for SwapPulse Testnet identity provisioning', 403, 'AGE_ELIGIBILITY_REQUIRED');
+      }
       if (!['PENDING', 'FAILED'].includes(String(record.status || ''))) {
         return jsonError('Identity is not awaiting deployment', 409, 'INVALID_STATE');
       }
