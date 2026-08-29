@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { ec, hash, transaction } from 'npm:starknet@10.0.2';
+import { hash, transaction } from 'npm:starknet@10.0.2';
+import { Point, Signature, verify as verifyStarkSignature } from 'npm:@scure/starknet@2.4.0';
 import { secrets } from 'base44:runtime';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
@@ -51,15 +52,16 @@ function sameFelts(a: string[], b: unknown[]): boolean {
 
 function verifyReservedSignature(signature: string[], signingHash: string, publicKey: string): boolean {
   if (signature.length !== 2) return false;
-  const sig = { r: BigInt(signature[0]), s: BigInt(signature[1]) };
+  const sig = new Signature(BigInt(signature[0]), BigInt(signature[1]));
   const x = normalizeHex(publicKey, 'reserved public key').slice(2).padStart(64, '0');
-  // Starknet account public keys store the x-coordinate. Try both valid point
-  // parities for that x-coordinate and accept only a real Stark-curve signature.
+  // Starknet accounts store only the Stark public-key x-coordinate. Rebuild
+  // both possible curve points for that x and accept only a valid signature.
   for (const prefix of ['02', '03']) {
     try {
-      if (ec.starkCurve.verify(sig, signingHash, `${prefix}${x}`)) return true;
+      const fullPublicKey = Point.fromHex(`${prefix}${x}`).toBytes(false);
+      if (verifyStarkSignature(sig, signingHash, fullPublicKey)) return true;
     } catch {
-      // Invalid compressed point/parity, try the other parity.
+      // Invalid point/parity or signature, try the other possible point.
     }
   }
   return false;
