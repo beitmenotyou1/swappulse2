@@ -34,6 +34,8 @@ export default function ChainIdentitySection() {
   const [deploymentTxHash, setDeploymentTxHash] = useState('');
   const [registrationTxHash, setRegistrationTxHash] = useState('');
   const [recording, setRecording] = useState(false);
+  const [provisioningResultText, setProvisioningResultText] = useState('');
+  const [importingProvisioningResult, setImportingProvisioningResult] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [reconcileResult, setReconcileResult] = useState(null);
 
@@ -225,6 +227,35 @@ export default function ChainIdentitySection() {
       });
     } finally {
       setPreparing(false);
+    }
+  };
+
+  const importProvisioningResult = async () => {
+    if (!prepared?.identity?.id) return;
+    setImportingProvisioningResult(true);
+    try {
+      const res = await base44.functions.invoke('chain-identity-admin', {
+        action: 'import_provisioning_result',
+        record_id: prepared.identity.id,
+        result: provisioningResultText,
+      });
+      const data = res?.data || res;
+      setPrepared((prev) => ({ ...prev, identity: data.identity }));
+      setAccountAddress(data?.identity?.account_address || '');
+      setDeploymentTxHash(data?.identity?.deployment_tx_hash || '');
+      setRegistrationTxHash(data?.identity?.registration_tx_hash || '');
+      toast({
+        title: 'Provisioning result accepted',
+        description: 'Public deployment data matches the reserved signer and verified network. Reconcile From Chain is still required.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Provisioning result rejected',
+        description: err?.response?.data?.error || err?.message || 'Invalid provisioning result',
+        variant: 'destructive',
+      });
+    } finally {
+      setImportingProvisioningResult(false);
     }
   };
 
@@ -536,6 +567,10 @@ export default function ChainIdentitySection() {
             <div>
               <p className="text-muted-foreground">Account address</p>
               <p className="break-all font-mono">{prepared.identity.account_address || 'Awaiting deployment'}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Reserved signer public key</p>
+              <p className="break-all font-mono">{prepared.identity.signer_public_key || publicKey || 'Not bound'}</p>
             </div>
           </div>
 
