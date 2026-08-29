@@ -631,6 +631,17 @@ export default async function(req: Request): Promise<Response> {
       if (record.identity_registry_address && normalizeAddress(record.identity_registry_address, 'record identity_registry_address') !== config.identityRegistryAddress) {
         return jsonError('Reserved identity uses a different IdentityRegistry', 409, 'REGISTRY_CHANGED');
       }
+      if (!record.signer_public_key) {
+        return jsonError('Reserved identity has no bound signer public key. Prepare the identity again before recording deployment.', 409, 'SIGNER_PUBLIC_KEY_NOT_BOUND');
+      }
+      const reservedPublicKey = normalizeHex(record.signer_public_key, 'reserved signer public key');
+      const expectedAccountAddress = normalizeAddress(
+        hash.calculateContractAddressFromHash(reservedPublicKey, config.accountClassHash, [reservedPublicKey], 0),
+        'expected account address',
+      );
+      if (accountAddress !== expectedAccountAddress) {
+        return jsonError('Account address does not derive from the reserved signer public key', 409, 'ACCOUNT_ADDRESS_DERIVATION_MISMATCH');
+      }
 
       const deploymentTxHash = body.deployment_tx_hash
         ? normalizeHex(body.deployment_tx_hash, 'deployment_tx_hash')
