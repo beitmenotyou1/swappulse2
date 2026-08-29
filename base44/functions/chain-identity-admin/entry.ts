@@ -252,8 +252,11 @@ export default async function(req: Request): Promise<Response> {
           account_class_hash: config.accountClassHash,
           constructor: {
             public_key: publicKey,
+          },
+          post_deploy_account_calls: {
             recovery_controller: config.recoveryController || '0x0',
             recovery_delay_seconds: config.recoveryDelaySeconds,
+            note: 'Recovery is disabled at construction. Configure these values through signed account self-calls after deployment.',
           },
           identity_registry_address: config.identityRegistryAddress,
           register_identity_calldata: {
