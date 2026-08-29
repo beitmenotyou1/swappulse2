@@ -138,68 +138,6 @@ async function forward(method: string, params: Record<string, unknown>) {
   }
 }
 
-async function forwardRegistration(payload: Record<string, unknown>) {
-  const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
-  if (token.length < 32) throw new Error('TX_RELAY_TOKEN_NOT_CONFIGURED');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const response = await fetch(await relayUrl('/register'), {
-      method: 'POST',
-      redirect: 'error',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-    const result = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(String(result?.code || result?.error || `TX_RELAY_HTTP_${response.status}`));
-    if (!result?.ok) throw new Error('TX_RELAY_REGISTRATION_FAILED');
-    return result;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function publicRpc(config: any, method: string, params: unknown[]) {
-  const url = new URL(String(config.rpc_url || '').trim());
-  if (url.protocol !== 'https:') throw new Error('VERIFIED_RPC_MUST_USE_HTTPS');
-  if (url.username || url.password) throw new Error('VERIFIED_RPC_MUST_NOT_CONTAIN_CREDENTIALS');
-  await assertSafeHost(url.hostname);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const response = await fetch(url.toString(), {
-      method: 'POST',
-      redirect: 'error',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }),
-      signal: controller.signal,
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(`PUBLIC_RPC_HTTP_${response.status}`);
-    if (payload?.error) throw new Error(`PUBLIC_RPC_${method}_${payload.error?.code ?? 'ERROR'}`);
-    return payload?.result;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function publicCall(config: any, contractAddress: string, entrypoint: string, calldata: string[] = []) {
-  const result = await publicRpc(config, 'starknet_call', [
-    {
-      contract_address: normalizeHex(contractAddress, 'contract address'),
-      entry_point_selector: hash.getSelectorFromName(entrypoint),
-      calldata: calldata.map((value, index) => normalizeZeroableHex(value, `${entrypoint} calldata[${index}]`)),
-    },
-    'latest',
-  ]);
-  if (!Array.isArray(result)) throw new Error(`PUBLIC_RPC_${entrypoint.toUpperCase()}_INVALID`);
-  return result.map((value, index) => normalizeZeroableHex(value, `${entrypoint} result[${index}]`));
-}
-
 function validateCommonV3(tx: any, expectedType: string) {
   if (!tx || typeof tx !== 'object' || Array.isArray(tx)) throw new Error('TRANSACTION_REQUIRED');
   if (tx.type && String(tx.type) !== expectedType) throw new Error('WRONG_TRANSACTION_TYPE');
@@ -223,12 +161,11 @@ export default async function(req: Request): Promise<Response> {
 
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || '').trim();
-    const signedAction = action === 'deploy_account' || action === 'configure_recovery';
     const recordId = String(body.record_id || '').trim();
     const draftToken = String(body.draft_token || '').trim();
+    if (action !== 'deploy_account' && action !== 'configure_recovery') return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
     if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
-    if (signedAction && !draftToken) return jsonError('A current server-issued transaction draft is required', 400, 'DRAFT_TOKEN_REQUIRED');
-    if (!signedAction && action !== 'register_identity') return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
+    if (!draftToken) return jsonError('A current server-issued transaction draft is required', 400, 'DRAFT_TOKEN_REQUIRED');
     const rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
     const identity = rows?.[0];
     if (!identity || String(identity.user_id || '') !== String(me.id)) return jsonError('Chain identity not found', 404, 'IDENTITY_NOT_FOUND');
@@ -307,53 +244,6 @@ export default async function(req: Request): Promise<Response> {
         failure_code: '',
       });
       return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: txHash });
-    }
-
-    if (action === 'register_identity') {
-      if (!['PENDING', 'FAILED', 'DEPLOYED'].includes(identityStatus)) return jsonError('Identity is not in a registrable state', 409, 'INVALID_STATE');
-      const registryAddress = normalizeHex(config.identity_registry_address, 'configured registry address');
-      const registryClassHash = normalizeHex(config.identity_registry_class_hash, 'configured registry class hash');
-      const registryOwner = normalizeHex(config.identity_registry_owner, 'configured registry owner');
-      const recoveryController = normalizeZeroableHex(config.recovery_controller || '0x0', 'configured recovery controller');
-      const recoveryDelay = Number(config.recovery_delay_seconds ?? 172800);
-      if (!Number.isInteger(recoveryDelay) || recoveryDelay < 0 || recoveryDelay > 2_592_000) return jsonError('Configured recovery delay is invalid', 409, 'RECOVERY_POLICY_INVALID');
-      const identityId = normalizeHex(identity.chain_identity_id, 'identity id');
-
-      const [registryHashRaw, accountHashRaw, ownerRead, controllerRead, delayRead, identityRead, reverseRead] = await Promise.all([
-        publicRpc(config, 'starknet_getClassHashAt', ['latest', registryAddress]),
-        publicRpc(config, 'starknet_getClassHashAt', ['latest', expectedAddress]),
-        publicCall(config, registryAddress, 'owner'),
-        publicCall(config, expectedAddress, 'get_recovery_controller'),
-        publicCall(config, expectedAddress, 'get_recovery_delay'),
-        publicCall(config, registryAddress, 'get_identity', [identityId]),
-        publicCall(config, registryAddress, 'get_identity_by_account', [expectedAddress]),
-      ]);
-      if (normalizeHex(registryHashRaw, 'registry class hash') !== registryClassHash) return jsonError('Registry class no longer matches the verified network', 409, 'REGISTRY_CLASS_MISMATCH');
-      if (normalizeHex(accountHashRaw, 'account class hash') !== accountClassHash) return jsonError('Account class does not match SwapPulseAccount', 409, 'ACCOUNT_CLASS_MISMATCH');
-      if (!ownerRead[0] || normalizeHex(ownerRead[0], 'registry owner') !== registryOwner) return jsonError('Registry owner no longer matches the verified network', 409, 'REGISTRY_OWNER_MISMATCH');
-      if (normalizeZeroableHex(controllerRead?.[0] || '0x0', 'recovery controller') !== recoveryController) return jsonError('Account recovery controller is not configured correctly', 409, 'RECOVERY_CONTROLLER_MISMATCH');
-      if (Number(BigInt(delayRead?.[0] || '0x0')) !== recoveryDelay) return jsonError('Account recovery delay is not configured correctly', 409, 'RECOVERY_DELAY_MISMATCH');
-
-      const chainAccount = normalizeZeroableHex(identityRead?.[0] || '0x0', 'chain account');
-      const chainStatus = Number(BigInt(identityRead?.[1] || '0x0'));
-      const reverseIdentity = normalizeZeroableHex(reverseRead?.[0] || '0x0', 'reverse identity');
-      if (chainStatus === 1) {
-        if (chainAccount !== expectedAddress || reverseIdentity !== identityId) return jsonError('Chain identity binding conflicts with this reservation', 409, 'IDENTITY_BINDING_CONFLICT');
-        await svc.entities.ChainIdentity.update(identity.id, { account_address: expectedAddress, status: 'DEPLOYED', failure_code: '' });
-        return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: '', idempotent: true, chain_authority_required: true });
-      }
-      if (chainStatus !== 0) return jsonError('Chain identity is not available for registration', 409, 'IDENTITY_NOT_AVAILABLE');
-      if (reverseIdentity !== '0x0') return jsonError('SwapPulse account is already bound to another identity', 409, 'ACCOUNT_ALREADY_BOUND');
-
-      const result = await forwardRegistration({ identity_id: identityId, public_key: publicKey, account_address: expectedAddress });
-      const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'registration transaction hash') : '';
-      await svc.entities.ChainIdentity.update(identity.id, {
-        account_address: expectedAddress,
-        registration_tx_hash: txHash || identity.registration_tx_hash || '',
-        status: 'DEPLOYED',
-        failure_code: '',
-      });
-      return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: txHash, idempotent: result.idempotent === true, chain_authority_required: true });
     }
 
     return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
