@@ -1,0 +1,64 @@
+{
+  "name": "SecurityActionCode",
+  "type": "object",
+  "title": "SecurityActionCode",
+  "description": "Short-lived backend-only email challenge used for security-factor changes. Stores only a keyed hash of the 6-digit code, never the plaintext code.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "manage_security_factors"
+      ]
+    },
+    "code_hash": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "failed_attempts": {
+      "type": "integer",
+      "default": 0
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "purpose",
+    "code_hash",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
