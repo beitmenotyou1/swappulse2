@@ -39,6 +39,7 @@ export default function BotAttemptsSection() {
         </div>
         <div className="flex items-center gap-2">
           <select
+            aria-label="Bot protection outcome filter"
             value={outcomeFilter}
             onChange={(e) => setOutcomeFilter(e.target.value)}
             className="rounded-md border border-border bg-background px-2 py-1 text-sm"
