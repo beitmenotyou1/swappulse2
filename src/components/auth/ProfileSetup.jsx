@@ -7,7 +7,7 @@ import { Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import UsernameField from "@/components/auth/UsernameField";
 import { uploadMedia } from "@/lib/pdsBlob";
 
-export default function ProfileSetup({ onDone, portedDid, initialUsername, initialFullName, initialAvatar, initialDescription, initialHeader }) {
+export default function ProfileSetup({ onDone, initialUsername, initialFullName, initialAvatar, initialDescription, initialHeader }) {
   const [username, setUsername] = useState(initialUsername || "");
   const [fullName, setFullName] = useState(initialFullName || "");
   const [description, setDescription] = useState(initialDescription || "");
@@ -64,18 +64,13 @@ export default function ProfileSetup({ onDone, portedDid, initialUsername, initi
         avatar,
         header,
       };
-      if (portedDid) {
-        updateData.did = portedDid;
-      }
       await base44.auth.updateMe(updateData);
-      // Provision a real AT Protocol DID on the PDS (unless the user ported
-      // an existing AT Protocol identity, which already has a real DID).
-      if (!portedDid) {
-        try {
-          await base44.functions.invoke('provision-identity', { username });
-        } catch (e) {
-          console.error('ProfileSetup: provision-identity failed (non-fatal)', e);
-        }
+      // Provision a real AT Protocol DID on the PDS. Identity fields are
+      // backend-managed, so profile setup never writes User.did directly.
+      try {
+        await base44.functions.invoke('provision-identity', { username });
+      } catch (e) {
+        console.error('ProfileSetup: provision-identity failed (non-fatal)', e);
       }
       // Push the profile (name, avatar, bio) to the PDS as an
       // app.bsky.actor.profile record so it's visible off-site on Bluesky.
