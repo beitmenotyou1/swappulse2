@@ -20,8 +20,10 @@ export default async function(req: Request): Promise<Response> {
     const username = String(body.username || body.handle || '').trim();
     if (!username) return Response.json({ error: 'username is required' }, { status: 400 });
 
-    // Already provisioned — skip
-    if (me.did?.startsWith('did:plc:')) {
+    // Skip only when the PLC DID is backed by an actual stored PDS identity.
+    // Older browser fallbacks once used a fake did:plc prefix; those must be
+    // repairable instead of being mistaken for successfully provisioned users.
+    if (me.did?.startsWith('did:plc:') && me.pds_url && me.pds_app_password) {
       return Response.json({ skipped: true, did: me.did, handle: me.bsky_handle || '' });
     }
 
