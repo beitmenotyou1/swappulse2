@@ -9,6 +9,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 import { consumeWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
+import { resetAuthAttempts } from '../../shared/authThrottle.ts';
 import {
   TOTP_RATE_LIMIT_MAX,
   TOTP_RATE_LIMIT_WINDOW_MS,
@@ -102,6 +103,7 @@ export default async function (req: Request): Promise<Response> {
     });
 
     await resetTotpRateLimit(svc, email);
+    await resetAuthAttempts(svc, 'webauthn-options', email).catch(() => {});
 
     // Only a proven credential may reveal post-authentication account state.
     const suspension = await getActiveSuspension(svc, user.id);
