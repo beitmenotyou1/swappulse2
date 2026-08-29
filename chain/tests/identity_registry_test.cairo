@@ -107,11 +107,14 @@ fn merge_preserves_source_history_and_resolves_canonical() {
     let target_account = addr(0x333);
     let (registry_address, registry) = deploy_registry(owner);
 
+    start_cheat_block_timestamp(registry_address, 2_000_u64);
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(source_id, source_account);
     registry.register_identity(target_id, target_account);
+    let (_, _, _, source_created_before, _) = registry.get_identity(source_id);
     registry.merge_identity(source_id, target_id);
     stop_cheat_caller_address(registry_address);
+    stop_cheat_block_timestamp(registry_address);
 
     let (stored_source_account, source_status, source_canonical, source_created_at, _) =
         registry.get_identity(source_id);
@@ -120,7 +123,7 @@ fn merge_preserves_source_history_and_resolves_canonical() {
     assert(stored_source_account == source_account, 'source history lost');
     assert(source_status == 2_u8, 'source not merged');
     assert(source_canonical == target_id, 'source canonical wrong');
-    assert(source_created_at > 0_u64, 'source created_at lost');
+    assert(source_created_at == source_created_before, 'source time changed');
     assert(target_status == 1_u8, 'target not active');
     assert(target_canonical == target_id, 'target canonical wrong');
     assert(registry.get_identity_by_account(source_account) == source_id, 'source reverse history lost');
