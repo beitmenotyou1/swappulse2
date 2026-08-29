@@ -169,12 +169,15 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const rpcUrl = await safePublicRpc(String(config.rpc_url));
-    const [accountHashRaw, registryHashRaw, ownerValues, controllerValues, delayValues] = await Promise.all([
+    const identityId = normalizeHex(identity.chain_identity_id, 'reserved identity id');
+    const [accountHashRaw, registryHashRaw, ownerValues, controllerValues, delayValues, identityValues, reverseValues] = await Promise.all([
       rpcCall(rpcUrl, 'starknet_getClassHashAt', ['latest', accountAddress]),
       rpcCall(rpcUrl, 'starknet_getClassHashAt', ['latest', normalizeHex(config.identity_registry_address, 'registry address')]),
       starknetCall(rpcUrl, config.identity_registry_address, 'owner', []),
       starknetCall(rpcUrl, accountAddress, 'get_recovery_controller', []),
       starknetCall(rpcUrl, accountAddress, 'get_recovery_delay', []),
+      starknetCall(rpcUrl, config.identity_registry_address, 'get_identity', [identityId]),
+      starknetCall(rpcUrl, config.identity_registry_address, 'get_identity_by_account', [accountAddress]),
     ]);
 
     if (normalizeHex(accountHashRaw, 'deployed account class hash') !== accountClassHash) {
@@ -195,8 +198,34 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('Account recovery policy is not configured yet', 409, 'RECOVERY_POLICY_NOT_CONFIGURED');
     }
 
+    const chainAccount = normalizeZeroableHex(identityValues?.[0] || '0x0', 'chain identity account');
+    const chainStatus = Number(BigInt(identityValues?.[1] || '0x0'));
+    const reverseIdentity = normalizeZeroableHex(reverseValues?.[0] || '0x0', 'reverse identity');
+    if (chainStatus === 1) {
+      if (chainAccount !== accountAddress || reverseIdentity !== identityId) {
+        return jsonError('Identity is already registered with a conflicting mapping', 409, 'IDENTITY_MAPPING_CONFLICT');
+      }
+      await svc.entities.ChainIdentity.update(identity.id, {
+        account_address: accountAddress,
+        status: 'DEPLOYED',
+        failure_code: '',
+      });
+      return Response.json({
+        ok: true,
+        identity_id: identityId,
+        account_address: accountAddress,
+        registration_tx_hash: String(identity.registration_tx_hash || ''),
+        idempotent: true,
+        status: 'DEPLOYED',
+        chain_authority_required: true,
+        note: 'Identity is already registered on chain. Public chain reconciliation is still required before REGISTERED.',
+      });
+    }
+    if (chainStatus !== 0) return jsonError('Identity is not available for registration', 409, 'IDENTITY_NOT_AVAILABLE');
+    if (reverseIdentity !== '0x0') return jsonError('Smart account is already bound to another identity', 409, 'ACCOUNT_ALREADY_BOUND');
+
     const result = await relayRegistration({
-      identity_id: normalizeHex(identity.chain_identity_id, 'reserved identity id'),
+      identity_id: identityId,
       public_key: publicKey,
       account_address: accountAddress,
     });
@@ -211,7 +240,7 @@ export default async function(req: Request): Promise<Response> {
 
     return Response.json({
       ok: true,
-      identity_id: normalizeHex(identity.chain_identity_id, 'identity id'),
+      identity_id: identityId,
       account_address: accountAddress,
       registration_tx_hash: registrationTxHash,
       idempotent: result.idempotent === true,
