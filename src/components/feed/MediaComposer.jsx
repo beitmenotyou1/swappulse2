@@ -2,17 +2,25 @@ import React, { useRef } from 'react';
 import { Image as ImageIcon, Video, X, Loader2 } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { detectVideoPlatform } from '@/lib/mediaEmbed';
+import { useToast } from '@/components/ui/use-toast';
 
 // Media attachment UI for the composer: image picker (max 4 with alt text),
 // video URL field with alt text, and link preview card. State is managed by
 // the useMediaComposer hook; this component renders the controls and previews.
 export default function MediaComposer({ media, content }) {
   const t = useT();
+  const { toast } = useToast();
   const fileInputRef = useRef(null);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files || []);
-    files.slice(0, media.maxImages - media.images.length).forEach(media.addImage);
+    for (const file of files.slice(0, media.maxImages - media.images.length)) {
+      try {
+        media.addImage(file);
+      } catch (error) {
+        toast({ title: 'Image rejected', description: error?.message || 'Choose a smaller image file.', variant: 'destructive' });
+      }
+    }
     e.target.value = '';
   };
 
