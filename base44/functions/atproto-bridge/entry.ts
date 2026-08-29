@@ -30,23 +30,12 @@ const ALLOWED_WRITE_COLLECTIONS = new Set([
   'app.bsky.feed.postgate',
 ]);
 
+// Keep ownership resolution in lockstep with the canonical federation map.
+// A hand-maintained subset previously caused newer record types to become
+// undeletable even though they were valid COLLECTIONS entries.
 const COLLECTION_ENTITY_MAP: Record<string, string> = {
-  'app.bsky.feed.post': 'Post',
-  'app.bsky.graph.follow': 'Follow',
-  'app.bsky.feed.like': 'Like',
-  'app.bsky.feed.repost': 'Repost',
-  'org.swappulse.conversation': 'Conversation',
-  'org.swappulse.directMessage': 'DirectMessage',
-  'org.swappulse.voiceSpace': 'VoiceSpace',
-  'org.swappulse.podcastEpisode': 'PodcastEpisode',
-  'org.swappulse.tradeListing': 'TradeListing',
-  'org.swappulse.binder': 'Binder',
-  'org.swappulse.journal': 'Journal',
-  'org.swappulse.cardReview': 'CardReview',
-  'org.swappulse.meetup': 'Meetup',
-  'org.swappulse.circle': 'Circle',
-  'org.swappulse.reaction': 'Reaction',
-  'org.swappulse.vouch': 'Vouch',
+  ...COLLECTIONS,
+  'app.bsky.feed.postgate': 'Post',
 };
 
 async function resolveCallerBridgeSession(req: Request, caller: any) {
