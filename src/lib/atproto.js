@@ -104,7 +104,7 @@ export const NSID = {
 const BASE32 = 'abcdefghijklmnopqrstuvwxyz234567';
 // base32-sortable alphabet per the TID spec (atproto.com/specs/tid)
 const BASE32_SORTABLE = '234567abcdefghijklmnopqrstuvwxyz';
-const PLC_PREFIX = 'did:plc:';
+const LOCAL_DID_PREFIX = 'did:swappulse:';
 
 function randomBase32(len) {
   const bytes = new Uint8Array(len);
@@ -115,7 +115,9 @@ function randomBase32(len) {
 }
 
 export function generateDid() {
-  return PLC_PREFIX + randomBase32(24);
+  // Local fallback identities must not use did:plc, otherwise backend code can
+  // mistake an unregistered browser-generated DID for a real PDS identity.
+  return LOCAL_DID_PREFIX + randomBase32(24);
 }
 
 export function generateSigningKey() {
@@ -212,20 +214,33 @@ export async function verifySignature(record, signature, signingKey) {
   return (await signRecord(record, signingKey)) === signature;
 }
 
-// Ensures the current user has a persistent DID + signing key on their
-// account. If the user already has a DID (e.g. from linking a Bluesky
-// account in Settings), returns it. Otherwise generates a simulated DID
-// so the app remains functional until they link a real account.
+// Ensures the current user has a persistent DID + signing key. Identity fields
+// are backend-managed: the browser asks an authenticated function for its own
+// material instead of writing User.did/signing_key directly.
+let _identityCache = null;
+let _identityPromise = null;
 export async function ensureUserDid() {
   const me = await base44.auth.me();
-  if (me?.did && me?.signing_key) return { did: me.did, signingKey: me.signing_key };
+  if (!me?.id) throw new Error('Authentication required');
 
-  // Simulated DID — users link a real Bluesky account in Settings to get a
-  // genuine did:plc. Until then, a local DID keeps the app functional.
-  const did = me?.did || generateDid();
-  const signingKey = generateSigningKey();
-  await base44.auth.updateMe({ did, signing_key: signingKey });
-  return { did, signingKey };
+  if (_identityCache?.userId === me.id && _identityCache?.did === me.did) {
+    return { did: _identityCache.did, signingKey: _identityCache.signingKey };
+  }
+  if (_identityPromise) return _identityPromise;
+
+  _identityPromise = (async () => {
+    const res = await base44.functions.invoke('ensure-local-identity', {});
+    const data = res?.data ?? res;
+    if (!data?.did || !data?.signingKey) throw new Error(data?.error || 'Could not initialise identity');
+    _identityCache = { userId: me.id, did: data.did, signingKey: data.signingKey };
+    return { did: data.did, signingKey: data.signingKey };
+  })();
+
+  try {
+    return await _identityPromise;
+  } finally {
+    _identityPromise = null;
+  }
 }
 
 // Stamps a record with AT Protocol metadata before persistence.
