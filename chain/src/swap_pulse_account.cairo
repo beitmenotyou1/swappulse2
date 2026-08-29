@@ -1,4 +1,4 @@
-use starknet::{ClassHash, ContractAddress};
+use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait ISwapPulseAccount<TContractState> {
@@ -20,6 +20,7 @@ pub mod SwapPulseAccount {
     use openzeppelin_introspection::src5::SRC5Component;
     use openzeppelin_interfaces::upgrades::IUpgradeable;
     use openzeppelin_upgrades::UpgradeableComponent;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::{
         get_block_timestamp, get_caller_address, get_contract_address, ClassHash, ContractAddress,
     };
@@ -102,17 +103,13 @@ pub mod SwapPulseAccount {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        public_key: felt252,
-        recovery_controller: ContractAddress,
-        recovery_delay: u64,
-    ) {
+    fn constructor(ref self: ContractState, public_key: felt252) {
         assert(public_key != 0, 'INVALID_PUBLIC_KEY');
-        assert(recovery_delay <= MAX_RECOVERY_DELAY_SECONDS, 'RECOVERY_DELAY_TOO_LONG');
         self.account.initializer(public_key);
-        self.recovery_controller.write(recovery_controller);
-        self.recovery_delay.write(recovery_delay);
+        // Recovery deliberately starts disabled. The freshly deployed account
+        // must configure controller + delay through signed account self-calls.
+        self.recovery_controller.write(Zero::zero());
+        self.recovery_delay.write(0_u64);
     }
 
     #[abi(embed_v0)]
