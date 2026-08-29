@@ -22,6 +22,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { uploadPromoImage } from '../../shared/promoImageUpload.ts';
+import { buildPromoExternalEmbed, assertPromoPresentation } from '../../shared/promoPresentation.ts';
 import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 import { HELP_ARTICLES } from '../../shared/helpArticles.ts';
 import {
@@ -46,7 +47,13 @@ interface Article {
   description: string;
 }
 
-function generateMessage(article: Article, locale: string): { content: string; tags: string[] } {
+function generateMessage(article: Article, locale: string): {
+  content: string;
+  tags: string[];
+  embedUrl: string;
+  embedTitle: string;
+  embedDescription: string;
+} {
   const pools = getPoolsForLocale(locale);
   const hook = pick(pools.helpHooks)
     .replace(/\{title\}/g, article.title);
@@ -55,31 +62,33 @@ function generateMessage(article: Article, locale: string): { content: string; t
   const hashtags = hashtagSet;
   const helpUrl = withLangParam(`${SITE_BASE}/help/${article.slug}`, locale);
   const cta = pick(pools.helpCtas)
-    .replace(/\{SITE_BASE\}\/help\/\{slug\}/g, withLangParam(`${SITE_BASE}/help/${article.slug}`, locale))
+    .replace(/\{SITE_BASE\}\/help\/\{slug\}/g, helpUrl)
     .replace(/\{SITE_BASE\}/g, SITE_BASE)
     .replace(/\{slug\}/g, article.slug);
   const descLine = article.description;
+  const presentation = {
+    tags,
+    embedUrl: helpUrl,
+    embedTitle: article.title,
+    embedDescription: article.description || `SwapPulse help guide: ${article.title}`,
+  };
 
-  // Try full message first, then trim if over 300 graphemes
+  // Try full message first, then progressively trim. URL + hashtags are never
+  // sliced away because the final fallback is built from them directly.
   const valueProp = pick(pools.helpValueProps);
   const full = `${hook}\n\n${descLine}\n\n${valueProp}\n\n${cta}\n\n${hashtags}`;
-  if (countGraphemes(full) <= 300) {
-    return { content: full, tags };
-  }
+  if (countGraphemes(full) <= 300) return { content: full, ...presentation };
 
-  // Drop the value prop
   const medium = `${hook}\n\n${descLine}\n\n${cta}\n\n${hashtags}`;
-  if (countGraphemes(medium) <= 300) {
-    return { content: medium, tags };
-  }
+  if (countGraphemes(medium) <= 300) return { content: medium, ...presentation };
 
-  // Drop the description too
   const essential = `${hook}\n\n${cta}\n\n${hashtags}`;
-  if (countGraphemes(essential) <= 300) {
-    return { content: essential, tags };
-  }
+  if (countGraphemes(essential) <= 300) return { content: essential, ...presentation };
 
-  return { content: essential.slice(0, 297) + '...', tags };
+  const minimal = `${helpUrl}\n\n${hashtags}`;
+  const available = 300 - countGraphemes(minimal) - 3;
+  const trimmedHook = available > 12 ? `${hook.slice(0, available)}...\n\n` : '';
+  return { content: `${trimmedHook}${minimal}`, ...presentation };
 }
 
 Deno.serve(async (req) => {
