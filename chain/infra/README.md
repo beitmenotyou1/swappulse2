@@ -4,20 +4,35 @@ This package turns the Milestone 1 contracts into a long-lived **development tes
 
 ## Security model
 
-There are two RPC surfaces:
+There are three deliberately separate chain surfaces:
 
 - **Raw Devnet RPC**: bound to `127.0.0.1:5050` by default. It supports deployment and privileged `devnet_*` methods. Never expose this port to the internet.
-- **Read-only RPC gateway**: bound to `127.0.0.1:8080` by default. Put the public HTTPS hostname/tunnel in front of this port. It exposes only the Starknet read methods currently required by Base44.
+- **Read-only RPC gateway**: bound to `127.0.0.1:8080` by default. Put a public HTTPS hostname/tunnel in front of this port. It is unauthenticated but exposes only the read/simulation methods required for network verification, transaction drafting and chain reconciliation.
+- **Provisioning transaction relay**: bound to `127.0.0.1:8081` and enabled only with the Compose `provisioning` profile after contracts are deployed. Publish it through a separate HTTPS hostname. It requires a strong bearer token and is called only by authenticated Base44 backend functions, never directly by browser JavaScript.
 
-Allowed public methods are:
+The read-only gateway allows only:
 
 - `starknet_specVersion`
 - `starknet_chainId`
 - `starknet_getClassHashAt`
 - `starknet_getClass`
 - `starknet_call`
+- `starknet_getNonce`
+- `starknet_estimateFee`
+- `starknet_getTransactionReceipt`
+- `starknet_getTransactionStatus`
 
-JSON-RPC batches and every `devnet_*` method are denied. The gateway also applies a request body cap, upstream response cap, timeout and per-IP rate limit.
+JSON-RPC batches and every `devnet_*` method are denied on the public read gateway.
+
+The provisioning relay accepts only the exact write operations needed for testnet identity setup:
+
+- V3 `starknet_addDeployAccountTransaction` for the verified `SwapPulseAccount` class, with constructor public key and address salt bound to the user's reserved public key.
+- V3 `starknet_addInvokeTransaction` where calldata is exactly the approved account-self recovery-controller and recovery-delay configuration.
+- `POST /register` for one owner-only `IdentityRegistry.register_identity(identityId, accountAddress)` operation after the relay independently verifies registry class/owner, account class, deterministic public-key address, recovery policy and existing identity/reverse mappings.
+
+The relay's privileged Devnet mint helper is not exposed as a faucet. It can mint only a fixed testnet amount to the exact counterfactual account implied by the approved class hash and public key. The registry-owner private key is obtained only inside the host from the private Devnet API, only after registration policy checks have passed, and is never returned to Base44.
+
+The relay bearer token and HTTPS URL are Base44 **server-side secrets** (`SWAPPULSE_TX_RELAY_TOKEN` and `SWAPPULSE_TX_RELAY_URL`). They must never appear in `ChainNetworkConfig`, frontend code or browser storage.
 
 ## Persistent state
 
@@ -77,7 +92,7 @@ curl -i http://127.0.0.1:8080/ \
 
 That request must return HTTP `403`.
 
-## 3. Publish only the read-only gateway over HTTPS
+## 3. Publish the read-only gateway over HTTPS
 
 Use your HTTPS reverse proxy or tunnel to publish:
 
@@ -87,7 +102,7 @@ http://127.0.0.1:8080
 
 Do **not** publish `127.0.0.1:5050`.
 
-The resulting public URL must be normal unauthenticated HTTPS because Base44's reconciler deliberately refuses embedded RPC credentials and performs SSRF checks. Security comes from the gateway's strict read-method allowlist, not from exposing Devnet's administrative API.
+The resulting read RPC must be normal unauthenticated HTTPS because Base44's verifier/reconciler deliberately refuses embedded RPC credentials and performs SSRF checks. Security comes from the gateway's strict read-method allowlist, not from exposing Devnet's administrative API.
 
 Example intended shape:
 
@@ -137,7 +152,65 @@ You can still enter the public fields manually if necessary. In either case use:
 
 Base44 independently verifies the RPC chain ID, registry address/class/owner and account class declaration before setting the network to `CONFIGURED`.
 
-## 6. Provision the first admin-only test identity
+## 6. Start the provisioning relay for self-service test identities
+
+After the deployment manifest exists, generate the relay's local environment from that verified public manifest:
+
+```bash
+cd chain/infra
+chmod +x setup-relay-env.sh
+./setup-relay-env.sh
+```
+
+This creates git-ignored `.env.relay` with mode `0600`. It contains a random bearer token plus the exact account class hash, registry class/address/owner and recovery policy from the deployment manifest.
+
+Start only the relay profile:
+
+```bash
+docker compose --env-file .env --env-file .env.relay \
+  --profile provisioning up -d --build tx-relay
+```
+
+Publish `127.0.0.1:8081` through a **separate** HTTPS hostname/tunnel, for example:
+
+```text
+https://tx-testnet.example.org  ->  127.0.0.1:8081
+```
+
+Do not expose the relay token to the browser. Configure the HTTPS relay URL and `.env.relay`'s `RELAY_TOKEN` as Base44 runtime secrets:
+
+```text
+SWAPPULSE_TX_RELAY_URL
+SWAPPULSE_TX_RELAY_TOKEN
+```
+
+The Base44 `chain-tx-submit` function authenticates the user, rechecks 18+ testnet eligibility, record ownership, current network verification pins and the transaction/account binding before adding the relay bearer token server-side. The host relay repeats the transaction/registration policy checks before touching the raw node.
+
+The relay policy smoke test is:
+
+```bash
+node chain/infra/tx-relay/smoke-policy.mjs
+```
+
+It must confirm that approved deploy/recovery operations pass while wrong account classes, arbitrary invokes, `devnet_*` calls and missing bearer tokens are blocked. Registration is idempotent when the correct binding already exists, and the smoke test verifies that the host owner key is not requested before registration policy checks pass.
+
+## 7. Adult self-service browser testnet identity
+
+For an eligible 18+ account, Settings now supports the testnet-only flow:
+
+1. Create a device test signer. The Stark private key is AES-GCM encrypted in IndexedDB with a non-extractable WebCrypto key; Base44 receives only the public Stark key.
+2. Reserve the one permanent testnet identity (`PENDING`).
+3. Choose **Secure My Testnet Identity**. Base44 returns five-minute, HMAC-bound V3 transaction drafts and signing hashes.
+4. The browser decrypts the test signer only in memory, signs the exact draft hash locally, zeroes the raw private-key bytes afterwards and sends the signature/transaction to Base44.
+5. Base44 verifies the draft token and exact transaction shape, then forwards the signed deploy/recovery transaction to the bearer-protected host relay.
+6. Base44 independently reads the public RPC to confirm account class and recovery policy, then requests the narrow host-side owner registration.
+7. The chain reconciler reads the public registry/account state. Only that read-back can promote the private mirror from `DEPLOYED` to `REGISTERED` and show **Identity secured**.
+
+This browser vault is deliberately **testnet-grade**. The decrypting WebCrypto key and ciphertext share the same web origin, so an active same-origin XSS could potentially invoke signing. It is not the future production/passkey custody design, and self-declared adults still have all value-bearing/Proof-of-Use eligibility disabled.
+
+The manual public provisioning JSON workflow remains available as an operator/debugging fallback.
+
+## 8. Provision the first admin-only test identity (manual fallback)
 
 Generate a temporary test signer locally. The private key is stored under the git-ignored `chain/infra/secrets/` directory with mode `0600`; only the public key is printed:
 
