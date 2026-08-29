@@ -20,12 +20,15 @@ const timeoutMs = 10_000;
 const rateLimitPerMinute = Math.max(5, Math.min(600, Number(process.env.RATE_LIMIT_PER_MINUTE || 60)));
 
 if (relayToken.length < 32) throw new Error('RELAY_TOKEN must be at least 32 characters');
-if (registryAdminAddress !== identityRegistryOwner) throw new Error('REGISTRY_ADMIN_ADDRESS must equal IDENTITY_REGISTRY_OWNER');
 if (!Number.isInteger(recoveryDelaySeconds) || recoveryDelaySeconds < 0 || recoveryDelaySeconds > 2_592_000) {
   throw new Error('RECOVERY_DELAY_SECONDS must be an integer from 0 to 2592000');
 }
 if (!Number.isSafeInteger(deployMintAmount) || deployMintAmount <= 0) {
   throw new Error('DEPLOY_MINT_AMOUNT must be a positive safe integer');
+}
+
+if (registryAdminAddress !== identityRegistryOwner) {
+  throw new Error('REGISTRY_ADMIN_ADDRESS must equal IDENTITY_REGISTRY_OWNER');
 }
 
 const windows = new Map();
@@ -367,5 +370,4 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, '0.0.0.0', () => {
   console.log(`SwapPulse provisioning transaction relay listening on :${port}`);
   console.log('Allowed write methods: starknet_addDeployAccountTransaction, starknet_addInvokeTransaction');
-  console.log('Owner operation: POST /register -> IdentityRegistry.register_identity only');
 });
