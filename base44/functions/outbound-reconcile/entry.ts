@@ -25,21 +25,48 @@ const SKIP_FOR_RECONCILE = new Set([
   'app.bsky.feed.like',
   'app.bsky.graph.follow',
 ]);
+const PDS_FETCH_TIMEOUT_MS = 10_000;
+const MAX_PDS_PAGES = 20;
+const MAX_LOCAL_RECORDS = 500;
 
-async function listPdsRecords(pdsUrl: string, accessJwt: string, did: string, collection: string) {
+async function fetchWithTimeout(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PDS_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function listPdsRecords(pdsUrl: string, accessJwt: string, did: string, collection: string): Promise<any[] | null> {
   const all: any[] = [];
+  const seenCursors = new Set<string>();
   let cursor: string | null = null;
+  let pages = 0;
   do {
+    if (cursor) {
+      if (seenCursors.has(cursor)) {
+        console.error('outbound-reconcile: repeated PDS cursor', collection, did);
+        return null;
+      }
+      seenCursors.add(cursor);
+    }
     const url = new URL(`${pdsUrl}/xrpc/com.atproto.repo.listRecords`);
     url.searchParams.set('repo', did);
     url.searchParams.set('collection', collection);
     url.searchParams.set('limit', '100');
     if (cursor) url.searchParams.set('cursor', cursor);
-    const res = await fetch(url, { redirect: 'error', headers: { Authorization: `Bearer ${accessJwt}` } });
-    if (!res.ok) return all;
+    const res = await fetchWithTimeout(url, { redirect: 'error', headers: { Authorization: `Bearer ${accessJwt}` } });
+    if (!res.ok) return null;
     const data = await res.json();
     all.push(...(data.records || []));
     cursor = data.cursor || null;
+    pages += 1;
+    if (cursor && pages >= MAX_PDS_PAGES) {
+      console.error('outbound-reconcile: PDS page cap reached', collection, did);
+      return null;
+    }
   } while (cursor);
   return all;
 }
@@ -86,10 +113,15 @@ export default async function (req: Request): Promise<Response> {
         if (SKIP_FOR_RECONCILE.has(collection)) continue;
         try {
           const local = await svc.entities[entityName]
-            .filter({ did: identity.did, bridged: true }, '-updated_date', 50).catch(() => []);
-          if (!local || local.length === 0) continue;
-
+            .filter({ did: identity.did, bridged: true }, '-updated_date', MAX_LOCAL_RECORDS).catch(() => []);
           const pdsRecords = await listPdsRecords(userPdsUrl, session.accessJwt, session.did, collection);
+          if (!pdsRecords) {
+            errors++;
+            console.error('outbound-reconcile: incomplete PDS listing; skipping collection', collection, identity.did);
+            continue;
+          }
+          if ((!local || local.length === 0) && pdsRecords.length === 0) continue;
+          const localListingComplete = (local || []).length < MAX_LOCAL_RECORDS;
           const pdsByUri = new Map(pdsRecords.map((r: any) => [r.uri, r.cid]));
 
           for (const rec of local) {
@@ -103,7 +135,7 @@ export default async function (req: Request): Promise<Response> {
               const rkey = rec.at_uri.split('/').pop();
               try {
                 if (pdsCid) {
-                  const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                  const res = await fetchWithTimeout(`${userPdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
                     redirect: 'error',
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
@@ -137,7 +169,7 @@ export default async function (req: Request): Promise<Response> {
               if (!pdsCid) {
                 // Missing on PDS → re-create
                 const rkey = rec.at_uri.split('/').pop();
-                const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.createRecord`, {
+                const res = await fetchWithTimeout(`${userPdsUrl}/xrpc/com.atproto.repo.createRecord`, {
                   redirect: 'error',
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
@@ -154,7 +186,7 @@ export default async function (req: Request): Promise<Response> {
               } else if (hashDrift || cidDrift) {
                 // Content-hash or CID mismatch → update in place
                 const rkey = rec.at_uri.split('/').pop();
-                const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.putRecord`, {
+                const res = await fetchWithTimeout(`${userPdsUrl}/xrpc/com.atproto.repo.putRecord`, {
                   redirect: 'error',
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
@@ -177,25 +209,30 @@ export default async function (req: Request): Promise<Response> {
               console.error('outbound-reconcile: record error', collection, e?.message || e);
             }
           }
-          // Tombstone PDS records whose local copy was deleted (delete backstop).
-          // Catches bulk deletes (e.g. expireStories) and any missed edit-site delete.
-          const localUris = new Set(local.map((r: any) => r.at_uri).filter(Boolean));
-          for (const [uri] of pdsByUri) {
-            if (localUris.has(uri)) continue;
-            const rkey = uri.split('/').pop();
-            try {
-              const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
-                redirect: 'error',
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
-                body: JSON.stringify({ repo: session.did, collection, rkey }),
-              });
-              if (res.ok) { deleted++; reconciled++; userReconciled++; }
-              else { errors++; console.error('outbound-reconcile: deleteRecord failed', collection, res.status); }
-            } catch (e: any) {
-              errors++;
-              console.error('outbound-reconcile: deleteRecord error', collection, e?.message || e);
+          // Tombstone PDS records whose local copy was deleted, but only when
+          // the local listing is known to be complete. The previous 50-record
+          // window could misclassify valid older PDS records as deleted.
+          if (localListingComplete) {
+            const localUris = new Set((local || []).map((r: any) => r.at_uri).filter(Boolean));
+            for (const [uri] of pdsByUri) {
+              if (localUris.has(uri)) continue;
+              const rkey = uri.split('/').pop();
+              try {
+                const res = await fetchWithTimeout(`${userPdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                  redirect: 'error',
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
+                  body: JSON.stringify({ repo: session.did, collection, rkey }),
+                });
+                if (res.ok || res.status === 404) { deleted++; reconciled++; userReconciled++; }
+                else { errors++; console.error('outbound-reconcile: deleteRecord failed', collection, res.status); }
+              } catch (e: any) {
+                errors++;
+                console.error('outbound-reconcile: deleteRecord error', collection, e?.message || e);
+              }
             }
+          } else {
+            console.log('outbound-reconcile: local record cap reached; skipping tombstone deletion', collection, identity.did);
           }
         } catch (e: any) {
           console.error('outbound-reconcile: collection error', collection, e?.message || e);
