@@ -6,6 +6,7 @@ import { bridgeStory } from '@/lib/federatedBridge';
 import { cardImageUrl } from '@/lib/tcgdex';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import { assertStoryMediaUpload } from '@/lib/uploadGuard';
+import { useToast } from '@/components/ui/use-toast';
 
 const COLORS = ['#6d4aff', '#10b981', '#fbbf24', '#ef4444', '#ec4899', '#1e293b'];
 const POSITIONS = [
@@ -27,6 +28,7 @@ const emptySeg = () => ({
 });
 
 export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
+  const { toast } = useToast();
   const [segments, setSegments] = useState([]);
   const [seg, setSeg] = useState(emptySeg());
   const [audience, setAudience] = useState('friends');
@@ -42,7 +44,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setSeg((s) => ({ ...s, media_blob: file_url, media_type: isVideo ? 'video' : 'image', duration: isVideo ? 15 : 5 }));
     } catch (error) {
-      console.error('Story upload rejected:', error?.message || error);
+      toast({ title: 'Upload rejected', description: error?.message || 'Choose a smaller image or video file.', variant: 'destructive' });
     } finally { setSaving(false); }
   };
 
