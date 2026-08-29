@@ -7,6 +7,7 @@ import { bridgeTradeDispute } from '@/lib/federatedBridge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 const REASONS = [
   { value: 'misgraded', label: 'Misgraded card', hint: 'Condition does not match what was agreed.' },
@@ -32,16 +33,26 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
   };
 
   const handlePhotos = async (files) => {
-    const list = Array.from(files || []);
-    if (list.length === 0) return;
+    const incoming = Array.from(files || []);
+    if (incoming.length === 0) return;
+    const remaining = Math.max(0, 8 - photoUrls.length);
+    if (remaining === 0) {
+      toast({ title: 'Up to 8 evidence photos', variant: 'destructive' });
+      return;
+    }
+    if (incoming.length > remaining) {
+      toast({ title: 'Some photos were skipped', description: `You can attach up to 8 photos. ${remaining} slot${remaining === 1 ? '' : 's'} remaining.` });
+    }
+    const list = incoming.slice(0, remaining);
     setUploading(true);
     try {
       const uploaded = [];
       for (const file of list) {
+        assertImageUpload(file);
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         uploaded.push(file_url);
       }
-      setPhotoUrls((prev) => [...prev, ...uploaded]);
+      setPhotoUrls((prev) => [...prev, ...uploaded].slice(0, 8));
     } catch (e) {
       toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
     } finally {
