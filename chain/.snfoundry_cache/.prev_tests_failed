@@ -1,2 +1,1 @@
-swappulse_network_integrationtest::identity_registry_test::merge_preserves_source_history_and_resolves_canonical
 swappulse_network_integrationtest::swap_pulse_account_test::constructor_rejects_zero_public_key
