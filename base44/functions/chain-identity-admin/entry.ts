@@ -476,6 +476,7 @@ export default async function(req: Request): Promise<Response> {
         network: config.network,
         account_class_hash: config.accountClassHash,
         identity_registry_address: config.identityRegistryAddress,
+        signer_public_key: publicKey,
         signer_version: 'STARK_V1',
         status: 'PENDING',
         canonical_identity_id: identityId,
