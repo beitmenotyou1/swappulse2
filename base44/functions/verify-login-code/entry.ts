@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
 import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
+import { signActionToken } from '../../shared/appPasswordCrypto.ts';
 import {
   generateTotp,
   TOTP_RATE_LIMIT_MAX,
@@ -58,11 +59,6 @@ export default async function(req) {
       });
     }
 
-    // If user has no login_key, they need a one-time setup via the reset flow
-    if (!user.login_key) {
-      return Response.json({ needs_setup: true });
-    }
-
     // 2FA gate: if the user has any second factor enabled (TOTP and/or
     // WebAuthn), the second factor MUST be verified before login_key is
     // released. The methods array tells the frontend which challenge UIs
@@ -106,11 +102,26 @@ export default async function(req) {
       await resetTotpRateLimit(svc, email);
     }
 
-    // Mark code as used
+    // Mark the first-factor code used before issuing a login or setup result.
     try {
       await svc.entities.LoginCode.update(active.id, { used: true });
     } catch (e) {
       console.error('verify-login-code: failed to mark code as used:', e?.message || e);
+      return Response.json({ error: 'Could not consume login code. Please request a new code.' }, { status: 500 });
+    }
+
+    // Passwordless bridge recovery is allowed only after all configured factors
+    // above have passed. The short-lived capability binds setup to this exact
+    // Base44 user + email, so a reset token cannot be used to rewrite another
+    // account's persistent login_key.
+    if (!user.login_key) {
+      const setupToken = await signActionToken({
+        userId: user.id,
+        action: 'login_key_setup',
+        targetId: email,
+        ttlMs: 30 * 60 * 1000,
+      });
+      return Response.json({ needs_setup: true, setup_token: setupToken });
     }
 
     return Response.json({ login_key: user.login_key });
