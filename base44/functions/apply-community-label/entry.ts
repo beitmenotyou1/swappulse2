@@ -8,6 +8,7 @@
 // fire-and-forget bridged to the PDS via bridge-record.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { deleteBridgedRecord, publishRecord } from '../../shared/bridgePublish.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -29,7 +30,13 @@ export default async function(req: Request): Promise<Response> {
       // Only the labeler author (or admin) may remove their own labels.
       const owns = caller.role === 'admin' || (label.did && caller.did && label.did === caller.did);
       if (!owns) return Response.json({ error: 'You can only remove your own labels' }, { status: 403 });
-      await svc.entities.CommunityLabel.delete(label_id).catch(() => {});
+      if (label.at_uri) {
+        const removed = await deleteBridgedRecord(base44, 'CommunityLabel', label_id);
+        if (!removed.ok) {
+          return Response.json({ error: 'Could not remove the federated label. Try again shortly.' }, { status: 502 });
+        }
+      }
+      await svc.entities.CommunityLabel.delete(label_id);
       // Decrement the labeler's label_count
       if (label.labeler_id) {
         const lrRows = await svc.entities.CommunityLabeler.filter({ id: label.labeler_id }, '-created_date', 1).catch(() => []);
@@ -38,8 +45,6 @@ export default async function(req: Request): Promise<Response> {
           await svc.entities.CommunityLabeler.update(lr.id, { label_count: lr.label_count - 1 }).catch(() => {});
         }
       }
-      // Fire-and-forget PDS delete
-      base44.functions.invoke('bridge-record', { action: 'delete', entityName: 'CommunityLabel', recordId: label_id }).catch(() => {});
       return Response.json({ ok: true, removed: label_id });
     }
 
@@ -90,10 +95,16 @@ export default async function(req: Request): Promise<Response> {
     // Increment the labeler's label_count.
     await svc.entities.CommunityLabeler.update(labeler_id, { label_count: (labeler.label_count || 0) + 1 }).catch(() => {});
 
-    // Fire-and-forget PDS bridge.
-    base44.functions.invoke('bridge-record', { action: 'create', entityName: 'CommunityLabel', recordId: created.id }).catch(() => {});
+    // Publish through the canonical bridge helper. A federation outage must not
+    // lose the local moderation action, so leave bridged=false and surface the
+    // pending state for a later retry.
+    const published = await publishRecord(base44, 'CommunityLabel', created.id);
 
-    return Response.json({ ok: true, label: created });
+    return Response.json({
+      ok: true,
+      label: created,
+      federation_pending: !published.ok,
+    });
   } catch (e: any) {
     console.error('apply-community-label error:', e?.message || e);
     return Response.json({ error: e?.message || 'Unknown error' }, { status: 500 });
