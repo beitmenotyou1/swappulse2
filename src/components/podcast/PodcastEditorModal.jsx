@@ -308,12 +308,12 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs">
                 <span className="w-10 text-muted-foreground">Start</span>
-                <input type="range" min={0} max={duration || 1} value={trimStart} onChange={(e) => setTrimStart(Number(e.target.value))} className="flex-1 accent-primary" />
+                <input aria-label="Trim start time" type="range" min={0} max={duration || 1} value={trimStart} onChange={(e) => setTrimStart(Number(e.target.value))} className="flex-1 accent-primary" />
                 <span className="w-12 font-mono text-right">{fmtTs(trimStart)}</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
                 <span className="w-10 text-muted-foreground">End</span>
-                <input type="range" min={1} max={duration || 1} value={trimEnd} onChange={(e) => setTrimEnd(Number(e.target.value))} className="flex-1 accent-primary" />
+                <input aria-label="Trim end time" type="range" min={1} max={duration || 1} value={trimEnd} onChange={(e) => setTrimEnd(Number(e.target.value))} className="flex-1 accent-primary" />
                 <span className="w-12 font-mono text-right">{fmtTs(trimEnd)}</span>
               </div>
               <p className="text-[11px] text-muted-foreground">Trimmed length: {fmtTs(Math.max(0, trimEnd - trimStart))} of {fmtTs(duration)}</p>
