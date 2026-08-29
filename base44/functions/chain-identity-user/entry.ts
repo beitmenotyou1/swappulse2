@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { hash } from 'npm:starknet@10.0.2';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
@@ -14,6 +15,24 @@ function normalizeHex(value: unknown, field: string): string {
   const n = BigInt(raw);
   if (n <= 0n || n >= STARK_FIELD_PRIME) throw new Error(`${field} is outside the Starknet felt252 field`);
   return `0x${n.toString(16)}`;
+}
+
+function findForbiddenResultKey(value: unknown, path = 'result'): string | null {
+  if (!value || typeof value !== 'object') return null;
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const found = findForbiddenResultKey(value[i], `${path}[${i}]`);
+      if (found) return found;
+    }
+    return null;
+  }
+  const forbidden = /(private[_-]?key|mnemonic|seed[_-]?phrase|password|secret|credential|bearer|api[_-]?key)/i;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (forbidden.test(key)) return `${path}.${key}`;
+    const found = findForbiddenResultKey(child, `${path}.${key}`);
+    if (found) return found;
+  }
+  return null;
 }
 
 function randomIdentityId(): string {
@@ -79,7 +98,9 @@ async function getNetwork(svc: any) {
     status,
     chain_id: chainId,
     account_class_hash: accountClassHash,
+    identity_registry_class_hash: registryClassHash,
     identity_registry_address: registryAddress,
+    identity_registry_owner: registryOwner,
     recovery_controller: String(row?.recovery_controller || '').trim(),
     recovery_delay_seconds: Number(row?.recovery_delay_seconds ?? 172800),
   };
