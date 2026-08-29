@@ -100,6 +100,7 @@ async function networkConfig(svc: any) {
     verifiedRegistryClassHash: String(row?.verified_identity_registry_class_hash || '').trim(),
     verifiedAccountClassHash: String(row?.verified_account_class_hash || '').trim(),
     verifiedRpcUrl: String(row?.verified_rpc_url || '').trim(),
+    verifiedBy: String(row?.verified_by || '').trim(),
     ready: status === 'CONFIGURED'
       && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress)
       && String(row?.verified_chain_id || '').trim() === chainId
@@ -239,7 +240,7 @@ export default async function(req: Request): Promise<Response> {
         verified_identity_registry_class_hash: trustedCoordinatesChanged ? '' : config.verifiedRegistryClassHash,
         verified_account_class_hash: trustedCoordinatesChanged ? '' : config.verifiedAccountClassHash,
         verified_rpc_url: trustedCoordinatesChanged ? '' : config.verifiedRpcUrl,
-        verified_by: trustedCoordinatesChanged ? '' : undefined,
+        verified_by: trustedCoordinatesChanged ? '' : config.verifiedBy,
         updated_at: new Date().toISOString(),
         updated_by: caller.id,
       };
