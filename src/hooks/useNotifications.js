@@ -70,7 +70,7 @@ export function useNotifications() {
   const markRead = useCallback(async (id) => {
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     try {
-      await base44.entities.Notification.update(id, { is_read: true, read_at: new Date().toISOString() });
+      await base44.functions.invoke('mark-notifications-read', { notificationId: id });
     } catch {}
   }, []);
 
@@ -78,7 +78,7 @@ export function useNotifications() {
     const now = new Date().toISOString();
     setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
     try {
-      await base44.entities.Notification.updateMany({ did, is_read: false }, { $set: { is_read: true, read_at: now } });
+      await base44.functions.invoke('mark-notifications-read', { all: true });
       await base44.entities.NotificationState.create({ did, last_read_timestamp: now, dismissed_all: true, updated_at: now });
     } catch {}
   }, [did]);
