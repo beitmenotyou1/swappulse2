@@ -159,6 +159,18 @@ export default async function(req: Request): Promise<Response> {
         },
         identity: safeIdentity(current),
         can_prepare: Boolean(age.eligible && network.ready && !current),
+        provisioning: current && network.ready && current.signer_public_key ? {
+          schema_version: 1,
+          kind: 'SWAPPULSE_TEST_IDENTITY_PROVISIONING_REQUEST',
+          network: 'SWAPPULSE_TESTNET',
+          chain_id: network.chain_id,
+          identity_id: current.chain_identity_id,
+          public_key: current.signer_public_key,
+          account_class_hash: network.account_class_hash,
+          identity_registry_address: network.identity_registry_address,
+          recovery_controller: network.recovery_controller || '0x0',
+          recovery_delay_seconds: network.recovery_delay_seconds,
+        } : null,
         private_key_required_by_base44: false,
       });
     }
