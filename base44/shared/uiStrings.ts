@@ -166,7 +166,7 @@ export const UI_STRINGS_EN: Record<string, string> = {
   'circles.curator': 'Curator', 'circles.member': 'Member', 'circles.members': 'members',
   'meetups.tbd': 'TBD', 'meetups.vouches': 'vouches',
   'predictions.newPoll': 'New poll', 'predictions.empty.active': 'No active polls. Create the first market prediction.', 'predictions.empty.all': 'Nothing here yet.',
-  'grading.new': 'New', 'grading.empty': 'No grading submissions yet', 'grading.emptySub': "Track cards you've sent to PSA, BGS, CGC or ACE - status, tracking and grades.", 'grading.add': 'Add submission', 'grading.noTracking': 'no tracking',
+  'grading.empty': 'No grading submissions yet', 'grading.emptySub': "Track cards you've sent to PSA, BGS, CGC or ACE - status, tracking and grades.", 'grading.add': 'Add submission', 'grading.noTracking': 'no tracking',
   'grading.status.submitted': 'Submitted', 'grading.status.inProgress': 'In Progress', 'grading.status.graded': 'Graded', 'grading.status.returned': 'Returned', 'grading.status.rejected': 'Rejected',
   'grading.declared': 'Declared:', 'grading.expected': 'Expected:', 'grading.sent': 'Sent:', 'grading.advance': 'Advance status', 'grading.gradePlaceholder': 'Grade e.g. PSA 10',
   'achievements.evaluateError': 'Could not evaluate achievements', 'achievements.of': 'of', 'achievements.summary': 'credentials unlocked. Each is a state-dependent proof verified against your on-chain activity, revoked if the underlying proof no longer holds (after a 24h grace period).',
