@@ -219,9 +219,9 @@ export default async function(req: Request): Promise<Response> {
     if (!config || config.status !== 'CONFIGURED') {
       return jsonError('SwapPulse Testnet is not configured', 409, 'CHAIN_NOT_CONFIGURED');
     }
-    if (!config.identity_registry_address || !config.identity_registry_class_hash || !config.account_class_hash || !config.rpc_url) {
+    if (!config.identity_registry_address || !config.identity_registry_class_hash || !config.identity_registry_owner || !config.account_class_hash || !config.rpc_url) {
       return jsonError(
-        'Identity registry address, registry class hash, account class hash and public RPC URL are required',
+        'Identity registry address/owner, registry class hash, account class hash and public RPC URL are required',
         409,
         'RPC_NOT_CONFIGURED',
       );
@@ -259,6 +259,16 @@ export default async function(req: Request): Promise<Response> {
       );
     }
 
+    const expectedRegistryOwner = normalizeHex(config.identity_registry_owner, 'configured registry owner');
+    const ownerValues = await starknetCall(rpcUrl, registryAddress, 'owner', []);
+    if (!ownerValues?.[0] || normalizeHex(ownerValues[0], 'registry owner') !== expectedRegistryOwner) {
+      return jsonError(
+        'IdentityRegistry owner does not match SwapPulse Testnet configuration',
+        409,
+        'REGISTRY_OWNER_MISMATCH',
+      );
+    }
+
     const recordId = String(body.record_id || '').trim();
     const requestedLimit = Math.max(1, Math.min(Number(body.limit) || 25, MAX_BATCH));
     let rows: any[] = [];
@@ -285,6 +295,7 @@ export default async function(req: Request): Promise<Response> {
         spec_version: String(specVersion || ''),
         chain_id: chainId,
         identity_registry_class_hash: registryClassHash,
+        identity_registry_owner: expectedRegistryOwner,
       },
       processed: results.length,
       counts,
