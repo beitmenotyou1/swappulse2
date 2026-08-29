@@ -5,6 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { Shield, Loader2, Check, QrCode } from "lucide-react";
 import WebAuthnSection from "@/components/settings/WebAuthnSection";
+import SecurityEmailVerification from "@/components/settings/SecurityEmailVerification";
 
 export default function SecuritySection() {
   const [user, setUser] = useState(null);
@@ -15,6 +16,10 @@ export default function SecuritySection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [enrollmentToken, setEnrollmentToken] = useState("");
+  const [showEnrollmentVerification, setShowEnrollmentVerification] = useState(false);
+  const [disabling, setDisabling] = useState(false);
+  const [disableCode, setDisableCode] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -22,7 +27,7 @@ export default function SecuritySection() {
 
   const enabled = user?.two_factor_enabled;
 
-  const startEnrollment = async () => {
+  const startEnrollment = async (managementToken) => {
     setLoading(true);
     setError("");
     setSuccess("");
@@ -30,9 +35,11 @@ export default function SecuritySection() {
       const res = await base44.functions.invoke("setup-2fa", {});
       setSecret(res.data.secret);
       setQrUrl(res.data.qr_data_uri);
+      setEnrollmentToken(managementToken);
+      setShowEnrollmentVerification(false);
       setEnrolling(true);
     } catch (err) {
-      setError(err.message || "Failed to start 2FA setup");
+      setError(err.response?.data?.error || err.message || "Failed to start 2FA setup");
     } finally {
       setLoading(false);
     }
@@ -43,13 +50,14 @@ export default function SecuritySection() {
     if (code.length < 6) { setError("Enter the 6-digit code."); return; }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("verify-2fa", { mode: "setup", secret, code });
+      const res = await base44.functions.invoke("verify-2fa", { mode: "setup", secret, code, management_token: enrollmentToken });
       if (res.data?.verified) {
         setSuccess("Two-factor authentication enabled!");
         setEnrolling(false);
         setCode("");
         setSecret("");
         setQrUrl("");
+        setEnrollmentToken("");
         setUser((prev) => ({ ...prev, two_factor_enabled: true }));
       } else {
         setError(res.data?.error || "Invalid code");
@@ -62,15 +70,19 @@ export default function SecuritySection() {
   };
 
   const disable2fa = async () => {
+    if (disableCode.length !== 6) { setError("Enter your current 6-digit authenticator code."); return; }
     setLoading(true);
     setError("");
     setSuccess("");
     try {
-      await base44.auth.updateMe({ two_factor_enabled: false, two_factor_secret: "" });
-      setUser((prev) => ({ ...prev, two_factor_enabled: false, two_factor_secret: "" }));
+      const res = await base44.functions.invoke("security-factor-management", { action: "disable_totp", code: disableCode });
+      if (!res.data?.disabled) throw new Error(res.data?.error || "Failed to disable 2FA");
+      setUser((prev) => ({ ...prev, two_factor_enabled: false }));
+      setDisableCode("");
+      setDisabling(false);
       setSuccess("Two-factor authentication disabled.");
     } catch (err) {
-      setError(err.message || "Failed to disable 2FA");
+      setError(err.response?.data?.error || err.message || "Failed to disable 2FA");
     } finally {
       setLoading(false);
     }
@@ -91,10 +103,31 @@ export default function SecuritySection() {
             <p className="text-sm text-muted-foreground mb-3">
               2FA is enabled. You'll need a code from your authenticator app each time you log in.
             </p>
-            <Button variant="outline" onClick={disable2fa} disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Disable 2FA
-            </Button>
+            {disabling ? (
+              <div className="space-y-3 rounded-lg border border-border p-3">
+                <p className="text-sm font-medium">Confirm with your authenticator</p>
+                <p className="text-xs text-muted-foreground">Enter your current 6-digit code before 2FA can be removed.</p>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={6} value={disableCode} onChange={setDisableCode} autoComplete="one-time-code" autoFocus>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} /><InputOTPSlot index={1} /><InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} /><InputOTPSlot index={4} /><InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => { setDisabling(false); setDisableCode(""); setError(""); }} disabled={loading}>Cancel</Button>
+                  <Button variant="destructive" className="flex-1" onClick={disable2fa} disabled={loading || disableCode.length !== 6}>
+                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Disable 2FA
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="outline" onClick={() => { setDisabling(true); setError(""); setSuccess(""); }} disabled={loading}>
+                Disable 2FA
+              </Button>
+            )}
           </div>
         ) : enrolling ? (
           <div className="space-y-4">
@@ -120,7 +153,7 @@ export default function SecuritySection() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => { setEnrolling(false); setCode(""); setSecret(""); setQrUrl(""); }}>
+              <Button variant="outline" className="flex-1" onClick={() => { setEnrolling(false); setCode(""); setSecret(""); setQrUrl(""); setEnrollmentToken(""); }}>
                 Cancel
               </Button>
               <Button className="flex-1" onClick={confirmEnrollment} disabled={loading || code.length < 6}>
@@ -129,12 +162,18 @@ export default function SecuritySection() {
               </Button>
             </div>
           </div>
+        ) : showEnrollmentVerification ? (
+          <SecurityEmailVerification
+            title="Verify your email before adding 2FA"
+            onVerified={startEnrollment}
+            onCancel={() => setShowEnrollmentVerification(false)}
+          />
         ) : (
           <div>
             <p className="text-sm text-muted-foreground mb-3">
               Add an extra layer of security. After entering your email code, you'll also need a code from your authenticator app.
             </p>
-            <Button onClick={startEnrollment} disabled={loading}>
+            <Button onClick={() => { setShowEnrollmentVerification(true); setError(""); setSuccess(""); }} disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <QrCode className="h-4 w-4 mr-2" />}
               Set up 2FA
             </Button>
