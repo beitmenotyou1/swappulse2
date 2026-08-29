@@ -31,7 +31,9 @@ for(const file of filesUnder('src')){
    }
    const ph=attrString(n,'placeholder');
    if(ph){rows.push({type:'PLACEHOLDER_ONLY',location:loc(file,n),label:ph,tag:tagName(n)});return}
-   rows.push({type:'UNNAMED_CONTROL',location:loc(file,n),tag:tagName(n)});
+   const source=fs.readFileSync(file,'utf8');
+   const snippet=source.slice(n.start,Math.min(n.end,n.start+260)).replace(/\s+/g,' ').trim();
+   rows.push({type:'UNNAMED_CONTROL',location:loc(file,n),tag:tagName(n),label:snippet});
  }});
 }
 const grouped=rows.reduce((m,r)=>((m[r.type]||=[]).push(r),m),{});for(const [type,rs] of Object.entries(grouped)){console.log(`\n${type}=${rs.length}`);for(const r of rs)console.log(`${r.location} ${r.tag} ${JSON.stringify(r.label||'')}`)}console.log(`\nTOTAL=${rows.length}`);
