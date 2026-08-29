@@ -73,8 +73,8 @@ export default function TradeTemplateEditor({ template, open, onClose, onSaved }
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">{tr('trade.templateNamePlaceholder')}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary" />
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="a11y-4225d06a53">{tr('trade.templateNamePlaceholder')}</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"  id="a11y-4225d06a53"/>
           </div>
 
           <div>
@@ -117,12 +117,12 @@ export default function TradeTemplateEditor({ template, open, onClose, onSaved }
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">{tr('trade.shippingRegions')}</label>
+              <label className="mb-1.5 block text-sm font-medium" htmlFor="a11y-b020addf42">{tr('trade.shippingRegions')}</label>
               <input
                 value={regions.join(', ')}
                 onChange={(e) => setRegions(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
                 className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-              />
+               id="a11y-b020addf42"/>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">{tr('trade.currency')}</label>

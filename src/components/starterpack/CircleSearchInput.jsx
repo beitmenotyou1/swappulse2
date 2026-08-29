@@ -70,7 +70,7 @@ export default function CircleSearchInput({ onAdd, excludeIds = [] }) {
           onFocus={() => setOpen(true)}
           placeholder="Search circles by name…"
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
+         aria-label="Search circles by name…"/>
         {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
         {query && !loading && (
           <button onClick={() => { setQuery(''); applyFilter(); }} aria-label="Clear" className="shrink-0 text-muted-foreground hover:text-foreground">

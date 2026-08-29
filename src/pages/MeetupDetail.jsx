@@ -170,13 +170,13 @@ export default function MeetupDetail() {
               <span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> {t('meetup.bringingBinder')}</span>
             </label>
             <div className="mt-3">
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.lookingFor')}</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-3ad4e2d240">{t('meetup.lookingFor')}</label>
               <input
                 value={lookingFor}
                 onChange={(e) => setLookingFor(e.target.value)}
                 placeholder="e.g. Umbreon VMAX, Charizard ex"
                 className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-              />
+               id="a11y-3ad4e2d240"/>
             </div>
             <div className="mt-4 flex justify-end">
               <button onClick={submitRsvp} disabled={saving} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">

@@ -267,14 +267,14 @@ function FilterBar({
             />
           </div>
           <div>
-            <Label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+            <Label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground" htmlFor="a11y-148d7711a2">
               Rarity
             </Label>
             <select
               value={rarity}
               onChange={(e) => setRarity(e.target.value)}
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-            >
+             id="a11y-148d7711a2">
               {RARITY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -283,14 +283,14 @@ function FilterBar({
             </select>
           </div>
           <div>
-            <Label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+            <Label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground" htmlFor="a11y-5bd520b031">
               Category
             </Label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-            >
+             id="a11y-5bd520b031">
               {CATEGORY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}

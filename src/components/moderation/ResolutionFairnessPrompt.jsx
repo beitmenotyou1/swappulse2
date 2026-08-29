@@ -80,7 +80,7 @@ export default function ResolutionFairnessPrompt({ decisionLogId, caseLabel, onC
         placeholder="Optional comment…"
         rows={2}
         className="mt-3 w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-      />
+       aria-label="Optional comment…"/>
 
       <div className="mt-3 flex gap-2">
         <Button size="sm" onClick={submit} disabled={rating < 1 || submitting}>

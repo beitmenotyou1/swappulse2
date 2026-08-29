@@ -63,7 +63,7 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, set code, or number, e.g. MEW 058, SSH 1, Charizard…"
                 className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
-              />
+               aria-label="Search by name, set code, or number, e.g. MEW 058, SSH 1, Charizard…"/>
             </div>
             <LanguageFilter value={langFilter} onChange={setLangFilter} />
           </div>

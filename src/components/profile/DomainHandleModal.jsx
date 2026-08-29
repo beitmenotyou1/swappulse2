@@ -113,7 +113,7 @@ export default function DomainHandleModal({ onClose }) {
                 onChange={(e) => setDomain(e.target.value)}
                 placeholder="yourbrand.com"
                 className="flex-1 bg-transparent text-sm outline-none"
-              />
+               aria-label="yourbrand.com"/>
               {user?.handle_verified && <BadgeCheck className="h-4 w-4 text-success" />}
             </div>
             <p className="mt-1 text-[11px] text-muted-foreground">ℹ️ You must own this domain.</p>

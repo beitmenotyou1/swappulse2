@@ -463,7 +463,7 @@ export default function BlueskyLinkCard() {
               onChange={(e) => setCustomDomain(e.target.value)}
               placeholder="yourbrand.com"
               className="flex-1 bg-transparent text-xs outline-none"
-            />
+             aria-label="yourbrand.com"/>
           </div>
         )}
         {showDomainInput && customDomain && (

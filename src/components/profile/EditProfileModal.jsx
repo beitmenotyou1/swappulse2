@@ -160,19 +160,19 @@ export default function EditProfileModal({ onClose, onSaved }) {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Name</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-96a54d5e8f">Name</label>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               maxLength={64}
               placeholder="Your display name"
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-96a54d5e8f"/>
             <p className="mt-1 text-right text-[11px] text-muted-foreground">{(fullName || '').length}/64</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Bio</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-26f85acfc4">Bio</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -180,7 +180,7 @@ export default function EditProfileModal({ onClose, onSaved }) {
               rows={3}
               placeholder="Tell other collectors about yourself…"
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-26f85acfc4"/>
             <p className="mt-1 text-right text-[11px] text-muted-foreground">{(description || '').length}/256</p>
           </div>
 

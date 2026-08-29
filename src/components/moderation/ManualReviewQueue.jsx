@@ -222,12 +222,12 @@ export default function ManualReviewQueue() {
 
           {adminDecision === 'overridden' && reviewing?.case_type === 'escrow_dispute' && (
             <div className="space-y-2">
-              <label className="text-sm font-semibold">Override direction</label>
+              <label className="text-sm font-semibold" htmlFor="a11y-dfc207a466">Override direction</label>
               <select
                 value={overrideDirection}
                 onChange={(e) => setOverrideDirection(e.target.value)}
                 className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-              >
+               id="a11y-dfc207a466">
                 <option value="release">Release to Seller</option>
                 <option value="refund">Refund to Buyer</option>
                 <option value="cancel">Cancel Escrow</option>
@@ -236,7 +236,7 @@ export default function ManualReviewQueue() {
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold">
+            <label className="text-sm font-semibold" htmlFor="a11y-b0d3f608ba">
               {adminDecision === 'overridden' ? 'Override rationale (required)' : 'Notes (optional)'}
             </label>
             <textarea
@@ -245,7 +245,7 @@ export default function ManualReviewQueue() {
               placeholder={adminDecision === 'overridden' ? 'Explain why you are overriding the agent. This trains the learning loop.' : 'Optional notes…'}
               rows={4}
               className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-b0d3f608ba"/>
           </div>
 
           <DialogFooter>

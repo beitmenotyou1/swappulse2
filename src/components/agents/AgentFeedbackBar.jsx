@@ -68,7 +68,7 @@ export default function AgentFeedbackBar({ agentName, conversationId, message })
             rows={2}
             placeholder="What should the agent have said or done differently?"
             className="flex-1 resize-none rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
-          />
+           aria-label="What should the agent have said or done differently?"/>
           <div className="flex gap-1">
             <button
               onClick={() => submit('correction', correction)}

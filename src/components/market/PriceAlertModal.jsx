@@ -77,13 +77,13 @@ export default function PriceAlertModal({ open, onClose, card }) {
         <div className="space-y-4">
           {!card && (
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">Card name</label>
+              <label className="mb-1.5 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-302ea294c1">Card name</label>
               <input
                 value={cardName}
                 onChange={(e) => setCardName(e.target.value)}
                 placeholder="e.g. Charizard ex"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
-              />
+               id="a11y-302ea294c1"/>
             </div>
           )}
 
@@ -99,7 +99,7 @@ export default function PriceAlertModal({ open, onClose, card }) {
                 onChange={(e) => setMaxPrice(e.target.value)}
                 placeholder="e.g. 25.00"
                 className="w-full rounded-lg border border-border bg-background py-2.5 pl-7 pr-3 text-sm outline-none focus:border-primary"
-              />
+               aria-label="e.g. 25.00"/>
             </div>
             <p className="mt-1 text-[11px] text-muted-foreground">Leave empty to get notified when any open trade lists this card.</p>
           </div>

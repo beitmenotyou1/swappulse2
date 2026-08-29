@@ -16,7 +16,7 @@ export default function PersonalInfoTab({ draft, update }) {
           maxLength={40}
           placeholder="e.g. she/her"
           className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-        />
+         aria-label="e.g. she/her"/>
       </Field>
 
       <Field label="Interests & hobbies" visibility={fv.interests} onVis={(v) => setVis('interests', v)}>

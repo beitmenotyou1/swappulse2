@@ -118,7 +118,7 @@ export default function IncidentsSection() {
             placeholder="Incident title (e.g. TCGDex API Latency)"
             required
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Incident title (e.g. TCGDex API Latency)"/>
           <div className="flex gap-2">
             <SettingSelect
               value={newInc.severity}
@@ -155,7 +155,7 @@ export default function IncidentsSection() {
             placeholder="Initial update message for subscribers…"
             rows={2}
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Initial update message for subscribers…"/>
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={creating}>
               {creating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
@@ -249,7 +249,7 @@ function AdminIncidentCard({ incident, updateForm, setUpdateForm, onAddUpdate, o
                 placeholder="Post an update for subscribers…"
                 rows={2}
                 className="w-full rounded border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary"
-              />
+               aria-label="Post an update for subscribers…"/>
               <div className="flex gap-2">
                 <SettingSelect
                   value={updateForm.status}

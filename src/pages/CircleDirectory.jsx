@@ -49,7 +49,7 @@ export default function CircleDirectory() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search circles…"
             className="flex-1 bg-transparent text-sm outline-none"
-          />
+           aria-label="Search circles…"/>
         </div>
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
           {THEMES.map((t) => (

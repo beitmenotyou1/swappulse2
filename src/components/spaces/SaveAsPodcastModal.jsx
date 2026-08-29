@@ -173,25 +173,25 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
 
           {/* Title */}
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Title</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-efc785aeaf">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-efc785aeaf"/>
           </div>
 
           {/* Description */}
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Description / show notes</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-e9cc12bec7">Description / show notes</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={2000}
               rows={3}
               className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-e9cc12bec7"/>
           </div>
 
           {/* Chapter marks */}
@@ -213,14 +213,14 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
                     onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, ts: e.target.value } : x)))}
                     placeholder="mm:ss"
                     className="w-16 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary"
-                  />
+                   aria-label="mm:ss"/>
                   <input
                     value={c.title}
                     onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
                     placeholder="Chapter title"
                     maxLength={100}
                     className="flex-1 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary"
-                  />
+                   aria-label="Chapter title"/>
                   <input
                     value={c.card}
                     onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, card: e.target.value } : x)))}

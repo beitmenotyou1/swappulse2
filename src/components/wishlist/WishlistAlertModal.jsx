@@ -76,15 +76,15 @@ export default function WishlistAlertModal({ card, onClose }) {
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Alert name</label>
+            <label className="text-xs font-semibold text-muted-foreground" htmlFor="a11y-105876b754">Alert name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            />
+             id="a11y-105876b754"/>
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Max price (£) - optional</label>
+            <label className="text-xs font-semibold text-muted-foreground" htmlFor="a11y-a94e3afb39">Max price (£) - optional</label>
             <input
               type="number"
               step="0.01"
@@ -92,7 +92,7 @@ export default function WishlistAlertModal({ card, onClose }) {
               onChange={(e) => setMaxPrice(e.target.value)}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               placeholder="e.g. 25.00"
-            />
+             id="a11y-a94e3afb39"/>
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">Notify me via</label>

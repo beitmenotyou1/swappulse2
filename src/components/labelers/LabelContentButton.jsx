@@ -97,7 +97,7 @@ export default function LabelContentButton({ subjectUri, subjectType, className 
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Note (optional)</label>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-c94261c214">Note (optional)</label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -105,7 +105,7 @@ export default function LabelContentButton({ subjectUri, subjectType, className 
                   rows={2}
                   placeholder="Why are you applying this label?"
                   className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                />
+                 id="a11y-c94261c214"/>
               </div>
               <button
                 onClick={apply}

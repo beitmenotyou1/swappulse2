@@ -221,16 +221,16 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-2e43806117">Title</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  id="a11y-2e43806117"/>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={2} className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-aa2e43dad0">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={2} className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  id="a11y-aa2e43dad0"/>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Show notes</label>
-            <textarea value={showNotes} onChange={(e) => setShowNotes(e.target.value)} maxLength={5000} rows={3} className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-362c7362ee">Show notes</label>
+            <textarea value={showNotes} onChange={(e) => setShowNotes(e.target.value)} maxLength={5000} rows={3} className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  id="a11y-362c7362ee"/>
           </div>
 
           {/* Tags */}
@@ -250,7 +250,7 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
                 placeholder="Add tag"
                 maxLength={30}
                 className="w-24 rounded-full border border-border bg-secondary px-2 py-1 text-xs outline-none focus:border-primary"
-              />
+               aria-label="Add tag"/>
               <button aria-label="Add podcast tag" onClick={addTag} className="rounded-full p-1 text-muted-foreground hover:text-primary"><Plus className="h-3.5 w-3.5" /></button>
             </div>
           </div>
@@ -293,8 +293,8 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
             <div className="space-y-2">
               {chapters.map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input value={c.ts} onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, ts: e.target.value } : x)))} placeholder="mm:ss" className="w-16 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary" />
-                  <input value={c.title} onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} placeholder="Chapter title" maxLength={100} className="flex-1 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary" />
+                  <input value={c.ts} onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, ts: e.target.value } : x)))} placeholder="mm:ss" className="w-16 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary"  aria-label="mm:ss"/>
+                  <input value={c.title} onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} placeholder="Chapter title" maxLength={100} className="flex-1 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary"  aria-label="Chapter title"/>
                   <button aria-label="Remove podcast chapter" onClick={() => setChapters((arr) => arr.filter((_, j) => j !== i))} className="rounded-md p-1 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               ))}

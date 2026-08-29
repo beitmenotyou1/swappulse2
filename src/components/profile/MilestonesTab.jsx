@@ -36,7 +36,7 @@ export default function MilestonesTab({ draft, update }) {
         {ms.map((m, i) => (
           <div key={m.id || i} className="space-y-2 rounded-xl border border-border bg-secondary p-3">
             <div className="flex gap-2">
-              <input value={m.title || ''} onChange={(e) => setM(i, { title: e.target.value })} placeholder="Milestone title" className="flex-1 rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />
+              <input value={m.title || ''} onChange={(e) => setM(i, { title: e.target.value })} placeholder="Milestone title" className="flex-1 rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary"  aria-label="Milestone title"/>
               <button type="button" onClick={() => removeM(i)} className="rounded-lg border border-border px-2 hover:bg-card" aria-label="Remove milestone"><X className="h-4 w-4" /></button>
             </div>
             <div className="flex gap-2">
@@ -45,7 +45,7 @@ export default function MilestonesTab({ draft, update }) {
               </div>
               <input type="date" value={m.date || ''} onChange={(e) => setM(i, { date: e.target.value })} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />
             </div>
-            <textarea value={m.description || ''} onChange={(e) => setM(i, { description: e.target.value })} rows={2} placeholder="What happened?" className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary" />
+            <textarea value={m.description || ''} onChange={(e) => setM(i, { description: e.target.value })} rows={2} placeholder="What happened?" className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-sm outline-none focus:border-primary"  aria-label="What happened?"/>
           </div>
         ))}
         <button type="button" onClick={addM} className="inline-flex items-center gap-1 rounded-xl border border-dashed border-border px-3 py-2 text-xs font-semibold hover:bg-secondary">

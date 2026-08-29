@@ -157,7 +157,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
           maxLength={200}
           placeholder="Add a text overlay…"
           className={`mb-2 resize-none ${input}`}
-        />
+         aria-label="Add a text overlay…"/>
         <div className="mb-3 flex gap-2">
           {POSITIONS.map((p) => (
             <button key={p.key} onClick={() => setSeg((s) => ({ ...s, text_position: p.key }))} className={`flex-1 rounded-full py-1.5 text-xs font-semibold ${seg.text_position === p.key ? 'bg-primary text-white' : 'bg-secondary'}`}>{p.label}</button>

@@ -245,7 +245,7 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
               placeholder="Write a reply…"
               rows={2}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
+             aria-label="Write a reply…"/>
             <button
               onClick={() => { setShowReply(false); setReplyText(''); setReplyError(''); }}
               className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:bg-secondary"
@@ -281,7 +281,7 @@ export default function CommentActions({ comment, onReply, onPosted, compact = f
               placeholder="Add your commentary…"
               rows={2}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
+             aria-label="Add your commentary…"/>
             <button
               onClick={() => { setQuoteOpen(false); setQuoteText(''); }}
               className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:bg-secondary"

@@ -235,7 +235,7 @@ export default function TradeAssistant() {
                     placeholder="Ask about a trade, paste a listing, or request a counter-offer…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Ask about a trade, paste a listing, or request a counter-offer…"/>
                   <button
                     onClick={send}
                     disabled={sending || !input.trim()}

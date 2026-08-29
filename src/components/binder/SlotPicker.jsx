@@ -30,7 +30,7 @@ export default function SlotPicker({ entries, onSelect, onClose }) {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search your collection..."
               className="w-full bg-transparent text-sm outline-none"
-            />
+             aria-label="Search your collection..."/>
           </div>
         </div>
         <div className="max-h-[55vh] overflow-y-auto p-3">

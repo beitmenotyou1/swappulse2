@@ -74,39 +74,39 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
         </div>
         <div className="space-y-4 p-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.titleLabel')}</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} className={field} placeholder="e.g. South London Trade Night" />
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-fb49b43a0d">{t('meetup.titleLabel')}</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} className={field} placeholder="e.g. South London Trade Night"  id="a11y-fb49b43a0d"/>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.descLabel')}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} rows={3} className={`resize-none ${field}`} placeholder="What to bring, format, etc." />
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-777c8ccca0">{t('meetup.descLabel')}</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} rows={3} className={`resize-none ${field}`} placeholder="What to bring, format, etc."  id="a11y-777c8ccca0"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.dateTime')}</label>
-              <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className={field} />
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-27b774dd1c">{t('meetup.dateTime')}</label>
+              <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className={field}  id="a11y-27b774dd1c"/>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.duration')}</label>
-              <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} min={15} className={field} />
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-7b228169e4">{t('meetup.duration')}</label>
+              <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} min={15} className={field}  id="a11y-7b228169e4"/>
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.venue')}</label>
-            <input value={locationName} onChange={(e) => setLocationName(e.target.value)} maxLength={200} className={field} placeholder="e.g. The Hood Arms, Sutton" />
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-d0902eee39">{t('meetup.venue')}</label>
+            <input value={locationName} onChange={(e) => setLocationName(e.target.value)} maxLength={200} className={field} placeholder="e.g. The Hood Arms, Sutton"  id="a11y-d0902eee39"/>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.region')}</label>
-            <input value={region} onChange={(e) => setRegion(e.target.value)} className={field} placeholder="e.g. London" />
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-5ded2b743b">{t('meetup.region')}</label>
+            <input value={region} onChange={(e) => setRegion(e.target.value)} className={field} placeholder="e.g. London"  id="a11y-5ded2b743b"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.capacity')}</label>
-              <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} min={2} max={50} className={field} />
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-b16c53d1e4">{t('meetup.capacity')}</label>
+              <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} min={2} max={50} className={field}  id="a11y-b16c53d1e4"/>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('meetup.requiredVouches')}</label>
-              <input type="number" value={requiredVouches} onChange={(e) => setRequiredVouches(e.target.value)} min={0} className={field} />
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-cd11304a63">{t('meetup.requiredVouches')}</label>
+              <input type="number" value={requiredVouches} onChange={(e) => setRequiredVouches(e.target.value)} min={0} className={field}  id="a11y-cd11304a63"/>
               <p className="mt-1 text-[11px] text-muted-foreground">{t('meetup.requiredVouchesHint')}</p>
             </div>
           </div>

@@ -94,7 +94,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
               />
             </div>
           </div>
-          <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Handle / display name (e.g. @collector)" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
+          <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Handle / display name (e.g. @collector)" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label="Handle / display name (e.g. @collector)"/>
           <input value={credential} onChange={(e) => setCredential(e.target.value)} placeholder={meta.credLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
           {meta.extraLabel && (
             <input value={extra} onChange={(e) => setExtra(e.target.value)} placeholder={meta.extraLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />

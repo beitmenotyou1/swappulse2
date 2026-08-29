@@ -468,12 +468,12 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">{tr('trade.shippingRegions')}</label>
+              <label className="mb-1.5 block text-sm font-medium" htmlFor="a11y-a9d4799749">{tr('trade.shippingRegions')}</label>
               <input
                 value={regions.join(', ')}
                 onChange={(e) => setRegions(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
                 className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-              />
+               id="a11y-a9d4799749"/>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">{tr('trade.currency')}</label>

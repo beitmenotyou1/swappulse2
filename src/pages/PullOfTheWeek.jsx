@@ -215,50 +215,50 @@ function NominateModal({ user, weekKey, onClose, onCreated }) {
         <p className="mt-1 text-sm text-muted-foreground">{t('page.pullOfTheWeek.nominateSub')}</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="text-sm font-medium">{t('page.pullOfTheWeek.cardName')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-1ae523494f">{t('page.pullOfTheWeek.cardName')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Charizard ex"
               value={cardName}
               onChange={(e) => setCardName(e.target.value)}
-            />
+             id="a11y-1ae523494f"/>
           </div>
           <div>
-            <label className="text-sm font-medium">{t('page.pullOfTheWeek.cardId')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-665730d9f0">{t('page.pullOfTheWeek.cardId')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="sv3-215"
               value={cardId}
               onChange={(e) => setCardId(e.target.value)}
-            />
+             id="a11y-665730d9f0"/>
           </div>
           <div>
-            <label className="text-sm font-medium">{t('page.pullOfTheWeek.imageUrl')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-78381be69b">{t('page.pullOfTheWeek.imageUrl')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="https://..."
               value={cardImage}
               onChange={(e) => setCardImage(e.target.value)}
-            />
+             id="a11y-78381be69b"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">{t('page.pullOfTheWeek.rarity')}</label>
+              <label className="text-sm font-medium" htmlFor="a11y-ce67d2a7a4">{t('page.pullOfTheWeek.rarity')}</label>
               <input
                 className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                 placeholder="Rare Holo"
                 value={cardRarity}
                 onChange={(e) => setCardRarity(e.target.value)}
-              />
+               id="a11y-ce67d2a7a4"/>
             </div>
             <div>
-              <label className="text-sm font-medium">{t('page.pullOfTheWeek.set')}</label>
+              <label className="text-sm font-medium" htmlFor="a11y-4a190488d5">{t('page.pullOfTheWeek.set')}</label>
               <input
                 className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                 placeholder="Scarlet & Violet"
                 value={setName}
                 onChange={(e) => setSetName(e.target.value)}
-              />
+               id="a11y-4a190488d5"/>
             </div>
           </div>
         </div>

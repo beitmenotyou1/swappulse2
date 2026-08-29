@@ -427,37 +427,37 @@ export default function ChainIdentitySection() {
               onChange={(e) => setConfigDraft((p) => ({ ...p, chain_id: e.target.value }))}
               placeholder="Expected Starknet chain ID 0x…"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="Expected Starknet chain ID 0x…"/>
             <input
               value={configDraft.account_class_hash}
               onChange={(e) => setConfigDraft((p) => ({ ...p, account_class_hash: e.target.value }))}
               placeholder="SwapPulseAccount class hash 0x…"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="SwapPulseAccount class hash 0x…"/>
             <input
               value={configDraft.identity_registry_class_hash}
               onChange={(e) => setConfigDraft((p) => ({ ...p, identity_registry_class_hash: e.target.value }))}
               placeholder="IdentityRegistry class hash 0x…"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="IdentityRegistry class hash 0x…"/>
             <input
               value={configDraft.identity_registry_address}
               onChange={(e) => setConfigDraft((p) => ({ ...p, identity_registry_address: e.target.value }))}
               placeholder="IdentityRegistry address 0x…"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="IdentityRegistry address 0x…"/>
             <input
               value={configDraft.identity_registry_owner}
               onChange={(e) => setConfigDraft((p) => ({ ...p, identity_registry_owner: e.target.value }))}
               placeholder="IdentityRegistry owner 0x…"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="IdentityRegistry owner 0x…"/>
             <input
               value={configDraft.recovery_controller}
               onChange={(e) => setConfigDraft((p) => ({ ...p, recovery_controller: e.target.value }))}
               placeholder="Recovery controller 0x… (optional)"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="Recovery controller 0x… (optional)"/>
             <input
               type="number"
               min="0"
@@ -466,19 +466,19 @@ export default function ChainIdentitySection() {
               onChange={(e) => setConfigDraft((p) => ({ ...p, recovery_delay_seconds: e.target.value }))}
               placeholder="Recovery delay seconds"
               className="rounded-lg border border-border bg-background px-3 py-2 text-xs"
-            />
+             aria-label="Recovery delay seconds"/>
             <input
               value={configDraft.rpc_url}
               onChange={(e) => setConfigDraft((p) => ({ ...p, rpc_url: e.target.value }))}
               placeholder="Public HTTPS RPC URL (optional)"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="Public HTTPS RPC URL (optional)"/>
             <input
               value={configDraft.explorer_url}
               onChange={(e) => setConfigDraft((p) => ({ ...p, explorer_url: e.target.value }))}
               placeholder="Public explorer URL (optional)"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-            />
+             aria-label="Public explorer URL (optional)"/>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
@@ -621,19 +621,19 @@ export default function ChainIdentitySection() {
                     onChange={(e) => setAccountAddress(e.target.value)}
                     placeholder="Deployed account address 0x…"
                     className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                  />
+                   aria-label="Deployed account address 0x…"/>
                   <input
                     value={deploymentTxHash}
                     onChange={(e) => setDeploymentTxHash(e.target.value)}
                     placeholder="Deploy tx hash (optional)"
                     className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                  />
+                   aria-label="Deploy tx hash (optional)"/>
                   <input
                     value={registrationTxHash}
                     onChange={(e) => setRegistrationTxHash(e.target.value)}
                     placeholder="Registry tx hash (optional)"
                     className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                  />
+                   aria-label="Registry tx hash (optional)"/>
                   <button
                     onClick={recordDeployment}
                     disabled={recording || !accountAddress.trim()}

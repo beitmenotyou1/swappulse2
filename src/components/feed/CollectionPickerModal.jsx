@@ -78,7 +78,7 @@ export default function CollectionPickerModal({ open, onClose, onAttach, title =
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter by name…"
               className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
-            />
+             aria-label="Filter by name…"/>
           </div>
 
           {loading && (

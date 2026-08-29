@@ -175,19 +175,19 @@ export default function GoLiveModal({ onClose, onLive }) {
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">{mode === 'in_platform' ? 'Space title' : 'Stream title'}</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-889ad65d38">{mode === 'in_platform' ? 'Space title' : 'Stream title'}</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={mode === 'in_platform' ? "What's your Space about?" : 'What are you streaming today?'}
               maxLength={120}
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-889ad65d38"/>
           </div>
 
           {mode === 'in_platform' && (
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Description (optional)</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-b3994b2708">Description (optional)</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -195,20 +195,20 @@ export default function GoLiveModal({ onClose, onLive }) {
                 maxLength={1000}
                 rows={2}
                 className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-              />
+               id="a11y-b3994b2708"/>
             </div>
           )}
 
           {mode === 'external' && (
             <>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Stream URL</label>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-3ab425fb41">Stream URL</label>
                 <input
                   value={streamUrl}
                   onChange={(e) => onUrlChange(e.target.value)}
                   placeholder="Paste your stream link (Twitch, YouTube, Kick, etc.)"
                   className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"
-                />
+                 id="a11y-3ab425fb41"/>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-muted-foreground">Platform</label>
@@ -239,7 +239,7 @@ export default function GoLiveModal({ onClose, onLive }) {
                 placeholder="Add tag"
                 maxLength={30}
                 className="w-24 rounded-full border border-border bg-secondary px-2 py-1 text-xs outline-none focus:border-primary"
-              />
+               aria-label="Add tag"/>
               <button aria-label="Add topic tag" onClick={addTag} className="rounded-full p-1 text-muted-foreground hover:text-primary"><Plus className="h-3.5 w-3.5" /></button>
             </div>
           </div>

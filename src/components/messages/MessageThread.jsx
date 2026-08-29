@@ -147,7 +147,7 @@ export default function MessageThread({ conversation, myDid, onBack }) {
           placeholder="Type a message…"
           className="flex-1 resize-none rounded-2xl border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           maxLength={2000}
-        />
+         aria-label="Type a message…"/>
         <button
           onClick={handleSend}
           disabled={!text.trim() || sending}

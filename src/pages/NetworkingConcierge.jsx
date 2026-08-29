@@ -249,7 +249,7 @@ export default function NetworkingConcierge() {
                     placeholder="Ask about circles, live rooms, or collectors you've met…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Ask about circles, live rooms, or collectors you've met…"/>
                   <button
                     onClick={() => send()}
                     disabled={sending || !input.trim()}

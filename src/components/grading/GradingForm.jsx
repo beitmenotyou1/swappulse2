@@ -102,16 +102,16 @@ export default function GradingForm({ collection, onClose, onSaved }) {
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">{t('grading.trackingNumber')}</label>
+            <label className="text-xs font-semibold text-muted-foreground" htmlFor="a11y-73b0d218d6">{t('grading.trackingNumber')}</label>
             <input
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               placeholder="e.g. RR123456789GB"
-            />
+             id="a11y-73b0d218d6"/>
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">{t('grading.declaredValue')}</label>
+            <label className="text-xs font-semibold text-muted-foreground" htmlFor="a11y-029e4ea17b">{t('grading.declaredValue')}</label>
             <input
               type="number"
               step="0.01"
@@ -119,18 +119,18 @@ export default function GradingForm({ collection, onClose, onSaved }) {
               onChange={(e) => setDeclared(e.target.value)}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               placeholder="0.00"
-            />
+             id="a11y-029e4ea17b"/>
           </div>
         </div>
 
         <div className="mt-3">
-          <label className="text-xs font-semibold text-muted-foreground">{t('grading.expectedReturn')}</label>
+          <label className="text-xs font-semibold text-muted-foreground" htmlFor="a11y-509340645d">{t('grading.expectedReturn')}</label>
           <input
             type="date"
             value={expected}
             onChange={(e) => setExpected(e.target.value)}
             className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-          />
+           id="a11y-509340645d"/>
         </div>
 
         {err && <p className="mt-3 text-xs text-destructive">{err}</p>}

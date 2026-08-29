@@ -96,7 +96,7 @@ export default function AddToCollectionModal({ open, onClose, card }) {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Purchase price (£)</label>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="a11y-1d204cf39d">Purchase price (£)</label>
             <input
               type="number"
               step="0.01"
@@ -104,10 +104,10 @@ export default function AddToCollectionModal({ open, onClose, card }) {
               onChange={(e) => setPrice(e.target.value)}
               placeholder="0.00"
               className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-1d204cf39d"/>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Notes</label>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="a11y-78f2483c6f">Notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -115,7 +115,7 @@ export default function AddToCollectionModal({ open, onClose, card }) {
               maxLength={500}
               placeholder="Optional notes…"
               className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-78f2483c6f"/>
           </div>
         </div>
 

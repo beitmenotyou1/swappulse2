@@ -249,7 +249,7 @@ export default function AchievementGoalTracker() {
                     placeholder="Ask about your progress, or pick an achievement to pursue…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Ask about your progress, or pick an achievement to pursue…"/>
                   <button
                     onClick={() => send()}
                     disabled={sending || !input.trim()}

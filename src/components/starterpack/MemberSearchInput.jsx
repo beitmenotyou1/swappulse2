@@ -62,7 +62,7 @@ export default function MemberSearchInput({ onAdd, excludeDids = [] }) {
           onFocus={() => results.length && setOpen(true)}
           placeholder="Search a username to add…"
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
+         aria-label="Search a username to add…"/>
         {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
         {query && !loading && (
           <button onClick={() => { setQuery(''); setResults([]); }} aria-label="Clear" className="shrink-0 text-muted-foreground hover:text-foreground">

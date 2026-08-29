@@ -60,7 +60,7 @@ export default function FeedSearchInput({ onAdd, excludeUris = [] }) {
           onFocus={() => (subscribed.length || discoverable.length) && setOpen(true)}
           placeholder="Search feeds — subscribed or discoverable…"
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
+         aria-label="Search feeds — subscribed or discoverable…"/>
         {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
         {query && !loading && (
           <button onClick={() => { setQuery(''); setSubscribed([]); setDiscoverable([]); }} aria-label="Clear" className="shrink-0 text-muted-foreground hover:text-foreground">

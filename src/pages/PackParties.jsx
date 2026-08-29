@@ -169,50 +169,50 @@ function CreatePartyModal({ user, onClose, onCreated }) {
         <p className="mt-1 text-sm text-muted-foreground">{t('page.packParties.createSub')}</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="text-sm font-medium">{t('page.packParties.titleLabel')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-8e73a2c069">{t('page.packParties.titleLabel')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Friday Night Pulls"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-            />
+             id="a11y-8e73a2c069"/>
           </div>
           <div>
-            <label className="text-sm font-medium">{t('page.packParties.descLabel')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-01484383ad">{t('page.packParties.descLabel')}</label>
             <textarea
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Opening 5 packs of Scarlet & Violet..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-            />
+             id="a11y-01484383ad"/>
           </div>
           <div>
-            <label className="text-sm font-medium">{t('page.packParties.setLabel')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-f8322fa065">{t('page.packParties.setLabel')}</label>
             <input
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="sv3"
               value={setId}
               onChange={(e) => { setSetId(e.target.value); setSetName(e.target.value); }}
-            />
+             id="a11y-f8322fa065"/>
           </div>
           <div>
-            <label className="text-sm font-medium">{t('page.packParties.whenLabel')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-545fa74db9">{t('page.packParties.whenLabel')}</label>
             <input
               type="datetime-local"
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
-            />
+             id="a11y-545fa74db9"/>
           </div>
           <div>
-            <label className="text-sm font-medium">{t('page.packParties.maxParticipants')}</label>
+            <label className="text-sm font-medium" htmlFor="a11y-0dc503527f">{t('page.packParties.maxParticipants')}</label>
             <input
               type="number"
               className="mt-1 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
               value={maxParticipants}
               onChange={(e) => setMaxParticipants(Number(e.target.value))}
-            />
+             id="a11y-0dc503527f"/>
           </div>
         </div>
         <div className="mt-5 flex gap-2">

@@ -380,7 +380,7 @@ export default function Status() {
                         required
                         disabled={subState === 'sending'}
                         className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary disabled:opacity-50"
-                      />
+                       aria-label="you@example.com"/>
                     </div>
                     <button
                       type="submit"

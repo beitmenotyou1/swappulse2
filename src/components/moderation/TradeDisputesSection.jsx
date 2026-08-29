@@ -223,7 +223,7 @@ export default function TradeDisputesSection() {
             placeholder="Resolution notes (optional)…"
             rows={4}
             className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Resolution notes (optional)…"/>
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setResolving(null); setDecision(null); setNotes(''); }} disabled={busy}>Cancel</Button>
             <Button

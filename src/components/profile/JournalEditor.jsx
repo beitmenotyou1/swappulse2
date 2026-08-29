@@ -147,14 +147,14 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
             maxLength={200}
             placeholder="Title"
             className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-base font-semibold outline-none focus:border-primary"
-          />
+           aria-label="Title"/>
           <input
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             maxLength={300}
             placeholder="Subtitle (optional)"
             className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Subtitle (optional)"/>
           <div>
             <textarea
               value={body}
@@ -162,7 +162,7 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
               rows={10}
               placeholder="Write your collection story in Markdown…"
               className="w-full resize-y rounded-xl border border-border bg-secondary p-3 font-mono text-sm outline-none focus:border-primary"
-            />
+             aria-label="Write your collection story in Markdown…"/>
             <p className="mt-1 text-xs text-muted-foreground">
               Markdown supported. Snapshot frozen at publish: {formatPrice(computeStats().total_collection_value)} · {collection.length} cards.
             </p>
@@ -172,7 +172,7 @@ export default function JournalEditor({ open, initial, collection = [], onClose,
             onChange={(e) => setTags(e.target.value)}
             placeholder="Tags (comma separated)"
             className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Tags (comma separated)"/>
           <div>
             <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Visibility</div>
             <div className="flex gap-2">

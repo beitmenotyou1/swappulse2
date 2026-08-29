@@ -50,7 +50,7 @@ export default function ChecklistGrid({ cards, setId, setName, recentlyScannedId
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Search by name, illustrator, or number…"/>
         </div>
         <div className="inline-flex rounded-lg border border-border bg-card p-1">
           {FILTER_MODES.map((mode) => (

@@ -77,7 +77,7 @@ export default function SearchPage() {
             placeholder="Card name, handle, or collector…"
             className="flex-1 bg-transparent text-sm outline-none"
             autoFocus
-          />
+           aria-label="Card name, handle, or collector…"/>
           {loading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
         </div>
 

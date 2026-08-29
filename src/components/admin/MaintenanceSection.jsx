@@ -116,42 +116,42 @@ export default function MaintenanceSection() {
       {showForm && (
         <div className="mb-4 space-y-3 rounded-xl border border-border p-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Title</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-e7f76f25aa">Title</label>
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="e.g. Database maintenance window"
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
+             id="a11y-e7f76f25aa"/>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Description</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-f6829b0998">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Optional details about the maintenance"
               rows={2}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
+             id="a11y-f6829b0998"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Starts At</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-f72e558bca">Starts At</label>
               <input
                 type="datetime-local"
                 value={form.starts_at}
                 onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+               id="a11y-f72e558bca"/>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Ends At</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-631fb4189f">Ends At</label>
               <input
                 type="datetime-local"
                 value={form.ends_at}
                 onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+               id="a11y-631fb4189f"/>
             </div>
           </div>
           <div>

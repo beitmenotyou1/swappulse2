@@ -334,7 +334,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
                 </div>
               </div>
               <div className="mb-3">
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor="a11y-2e726f4c25">
                    {t('compose.altTextLabel')}
                  </label>
                 <input
@@ -343,7 +343,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
                   onChange={(e) => setCardAltText(e.target.value.slice(0, 300))}
                   placeholder={t('compose.altTextPlaceholder')}
                   className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
+                 id="a11y-2e726f4c25"/>
               </div>
             </>
           )}

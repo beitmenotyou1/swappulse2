@@ -73,13 +73,13 @@ export default function FeedFilterBar({ onChange }) {
 
       <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-muted-foreground">Card series / set name</label>
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-d34dd370fe">Card series / set name</label>
           <input
             value={setQuery}
             onChange={(e) => setSetQuery(e.target.value)}
             placeholder="e.g. Base Set, Scarlet & Violet, Celebrations…"
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           id="a11y-d34dd370fe"/>
         </div>
 
         <div>

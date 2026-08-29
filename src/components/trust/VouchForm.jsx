@@ -102,7 +102,7 @@ export default function VouchForm({ onCreated }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter') resolve();
             }}
-          />
+           aria-label="collector handle"/>
         </div>
         <button
           onClick={resolve}
@@ -144,7 +144,7 @@ export default function VouchForm({ onCreated }) {
             rows={2}
             maxLength={280}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+           aria-label="Why are you vouching? (required)"/>
           <button
             onClick={submit}
             disabled={saving || !context.trim()}

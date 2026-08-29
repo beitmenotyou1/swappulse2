@@ -211,7 +211,7 @@ export default function CardReviews({ card }) {
           maxLength={2000}
           placeholder="Share your thoughts (optional)…"
           className="mt-2 w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-        />
+         aria-label="Share your thoughts (optional)…"/>
         {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
         <button
           onClick={submit}

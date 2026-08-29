@@ -142,14 +142,14 @@ export default function TradeDisputeForm({ trade, me, open, onClose, onFiled }) 
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">Description</label>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-8ccef66dab">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value.slice(0, 2000))}
               placeholder="Describe what happened, the condition, what was agreed, and what you received…"
               rows={4}
               className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+             id="a11y-8ccef66dab"/>
             <p className="mt-0.5 text-right text-[10px] text-muted-foreground">{description.length}/2000</p>
           </div>
 

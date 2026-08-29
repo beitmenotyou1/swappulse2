@@ -56,8 +56,8 @@ export default function CreateSpaceModal({ onClose, onCreated }) {
           <button aria-label="Close space form" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-3">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Space title e.g. Vintage Card Market Talk" maxLength={120} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What will you discuss?" maxLength={1000} rows={2} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Space title e.g. Vintage Card Market Talk" maxLength={120} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  aria-label="Space title e.g. Vintage Card Market Talk"/>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What will you discuss?" maxLength={1000} rows={2} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  aria-label="What will you discuss?"/>
           <div className="flex gap-2">
             <button onClick={() => setMode('live')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold ${mode === 'live' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-border bg-secondary'}`}><Mic className="h-4 w-4" /> Go Live Now</button>
             <button onClick={() => setMode('scheduled')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold ${mode === 'scheduled' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-secondary'}`}><CalendarClock className="h-4 w-4" /> Schedule</button>
@@ -65,7 +65,7 @@ export default function CreateSpaceModal({ onClose, onCreated }) {
           {mode === 'scheduled' && (
             <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
           )}
-          <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Topics (comma separated) e.g. vintage, market, prerelease" className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
+          <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Topics (comma separated) e.g. vintage, market, prerelease" className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  aria-label="Topics (comma separated) e.g. vintage, market, prerelease"/>
           <label className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm">
             <input type="checkbox" checked={recording} onChange={(e) => setRecording(e.target.checked)} className="accent-primary" />
             <Disc3 className="h-4 w-4 text-primary" /> Record & publish as podcast

@@ -264,7 +264,7 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
             placeholder="Add a caption…"
             maxLength={200}
             className="w-full rounded-full border border-white/30 bg-black/40 px-4 py-2.5 text-center text-sm text-white placeholder:text-white/50 outline-none backdrop-blur"
-          />
+           aria-label="Add a caption…"/>
           <div className="mt-2 flex justify-center gap-2">
             {POSITIONS.map((p) => (
               <button key={p.key} onClick={() => setTextPosition(p.key)} className={`rounded-full px-3 py-1 text-xs font-semibold ${textPosition === p.key ? 'bg-primary text-white' : 'bg-black/40 text-white/70'}`}>{p.label}</button>

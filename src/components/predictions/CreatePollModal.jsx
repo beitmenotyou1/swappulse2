@@ -178,7 +178,7 @@ export default function CreatePollModal({ open, onClose, onCreated }) {
             </div>
 
             <div>
-              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('poll.question')}</Label>
+              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-092ffc0351">{t('poll.question')}</Label>
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
@@ -186,7 +186,7 @@ export default function CreatePollModal({ open, onClose, onCreated }) {
                 rows={2}
                 className="w-full resize-none rounded-xl border border-border bg-secondary p-2.5 text-sm outline-none focus:border-primary"
                 placeholder={t('poll.questionPlaceholder')}
-              />
+               id="a11y-092ffc0351"/>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

@@ -118,7 +118,7 @@ export default function TradeFeedbackForm({ trade, me, messages }) {
         maxLength={280}
         placeholder="Leave a comment (optional)…"
         className="mt-3 w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
-      />
+       aria-label="Leave a comment (optional)…"/>
       <button
         onClick={submit}
         disabled={submitting || rating === 0}

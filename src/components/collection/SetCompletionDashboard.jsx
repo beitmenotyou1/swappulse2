@@ -205,7 +205,7 @@ export default function SetCompletionDashboard({ items }) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Filter sets…"
           className="flex-1 bg-transparent text-sm outline-none"
-        />
+         aria-label="Filter sets…"/>
       </div>
 
       {/* Set list */}

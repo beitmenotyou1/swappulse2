@@ -230,7 +230,7 @@ export default function MarketWatchAssistant() {
                     placeholder="Ask about your wishlist cards or request a market scan…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Ask about your wishlist cards or request a market scan…"/>
                   <button
                     onClick={send}
                     disabled={sending || !input.trim()}

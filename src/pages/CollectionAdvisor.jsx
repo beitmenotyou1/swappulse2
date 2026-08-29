@@ -232,7 +232,7 @@ export default function CollectionAdvisor() {
                     placeholder="Ask for a collection overview, trade suggestions, or set completion analysis…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Ask for a collection overview, trade suggestions, or set completion analysis…"/>
                   <button
                     onClick={send}
                     disabled={sending || !input.trim()}

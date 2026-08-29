@@ -92,17 +92,17 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
         </div>
         <div className="space-y-4 p-4">
           <div>
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.name')}</Label>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-b2f70cac4b">{t('circle.create.name')}</Label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={60}
               className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
               placeholder="e.g. South-East Shiny Hunters"
-            />
+             id="a11y-b2f70cac4b"/>
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.description')}</Label>
+            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-2ff06a0f9e">{t('circle.create.description')}</Label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -110,7 +110,7 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
               rows={2}
               className="w-full resize-none rounded-xl border border-border bg-secondary p-2.5 text-sm outline-none focus:border-primary"
               placeholder="What is this circle about?"
-            />
+             id="a11y-2ff06a0f9e"/>
           </div>
           <div>
             <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.theme')}</Label>
@@ -130,13 +130,13 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
           </div>
           {theme === 'local_region' && (
             <div>
-              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('circle.create.region')}</Label>
+              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="a11y-0370f4cfa3">{t('circle.create.region')}</Label>
               <input
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                 placeholder="e.g. UK-South-East"
-              />
+               id="a11y-0370f4cfa3"/>
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}

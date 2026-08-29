@@ -131,14 +131,14 @@ export default function ServicesSection() {
                       options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
                       className="mb-3"
                     />
-                    <label className="mb-1 block text-xs font-semibold text-muted-foreground">Message</label>
+                    <label className="mb-1 block text-xs font-semibold text-muted-foreground" htmlFor="a11y-1890e7ab99">Message</label>
                     <textarea
                       value={editMsg}
                       onChange={(e) => setEditMsg(e.target.value)}
                       placeholder="e.g. Investigating elevated latency on the collection service…"
                       rows={2}
                       className="mb-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    />
+                     id="a11y-1890e7ab99"/>
                     <button
                       onClick={() => handleUpdate(svc)}
                       disabled={saving || !editMsg.trim()}

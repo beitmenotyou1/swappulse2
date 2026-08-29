@@ -54,7 +54,7 @@ export default function VideoComposer({ value, onChange }) {
               placeholder="Alt text (accessibility)"
               maxLength={500}
               className="mt-1 w-full rounded-lg border border-input bg-card px-2 py-1 text-xs"
-            />
+             aria-label="Alt text (accessibility)"/>
           </div>
           <button onClick={clear} aria-label="Remove video" className="rounded-full p-1.5 hover:bg-destructive/10 hover:text-destructive">
             <X className="h-4 w-4" />

@@ -114,7 +114,7 @@ export default function QuoteComposeModal({ open, onClose, targetPost, onPosted 
               autoFocus
               placeholder="Add your commentary…"
               className="w-full resize-none bg-transparent text-base outline-none placeholder:text-muted-foreground"
-            />
+             aria-label="Add your commentary…"/>
             <div className={`mt-1 text-right text-xs ${MAX_LEN - text.length < 20 ? 'text-destructive' : MAX_LEN - text.length < 50 ? 'text-warning' : 'text-muted-foreground'}`}>
               {MAX_LEN - text.length} left
             </div>

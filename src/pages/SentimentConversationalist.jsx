@@ -228,7 +228,7 @@ export default function SentimentConversationalist() {
                     placeholder="Ask what's trending, or ask for a conversation starter about a specific card…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Ask what's trending, or ask for a conversation starter about a specific card…"/>
                   <button
                     onClick={send}
                     disabled={sending || !input.trim()}

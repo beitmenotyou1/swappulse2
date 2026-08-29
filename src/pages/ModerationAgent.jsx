@@ -368,7 +368,7 @@ export default function ModerationAgent() {
                     placeholder="Paste a post ID, ask for analysis, or request a warning draft…"
                     className="flex-1 resize-none rounded-2xl border border-border bg-secondary px-3 py-2 text-sm outline-none focus:border-primary"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  />
+                   aria-label="Paste a post ID, ask for analysis, or request a warning draft…"/>
                   <button
                     onClick={() => send()}
                     disabled={sending || !input.trim()}
