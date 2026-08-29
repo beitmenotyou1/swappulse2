@@ -156,6 +156,7 @@ export function clearPdsSession() {
 export async function pdsRequest(pdsUrl: string, accessJwt: string, endpoint: string, payload: object) {
   const res = await fetch(`${pdsUrl}/xrpc/${endpoint}`, {
     method: 'POST',
+    redirect: 'error',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessJwt}` },
     body: JSON.stringify(payload),
   });
