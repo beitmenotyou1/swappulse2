@@ -2,6 +2,7 @@ use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_block_timestamp,
     start_cheat_caller_address, stop_cheat_block_timestamp, stop_cheat_caller_address,
 };
+use openzeppelin_interfaces::upgrades::{IUpgradeableDispatcher, IUpgradeableDispatcherTrait};
 use starknet::ContractAddress;
 use swappulse_network::identity_registry::{
     IIdentityRegistryDispatcher, IIdentityRegistryDispatcherTrait,
@@ -236,4 +237,16 @@ fn chained_merges_resolve_to_final_active_identity() {
     let (_, source_status, source_canonical, _, _) = registry.get_identity(0xaaa);
     assert(source_status == 2_u8, 'source not merged');
     assert(source_canonical == 0xccc, 'get_identity not canonical');
+}
+
+#[test]
+#[should_panic]
+fn non_owner_cannot_upgrade_registry() {
+    let owner = addr(0x111);
+    let attacker = addr(0x999);
+    let (registry_address, _) = deploy_registry(owner);
+    let upgradeable = IUpgradeableDispatcher { contract_address: registry_address };
+
+    start_cheat_caller_address(registry_address, attacker);
+    upgradeable.upgrade(0x123.try_into().unwrap());
 }
