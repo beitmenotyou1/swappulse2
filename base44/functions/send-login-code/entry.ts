@@ -12,20 +12,8 @@ export default async function(req) {
     const email = (body.email || '').trim().toLowerCase();
     if (!email) return Response.json({ error: 'Email is required' }, { status: 400 });
 
-    // Find user by email — return not_found so the UI can guide to registration
-    const users = await svc.entities.User.filter({ email }, '-created_date', 1);
-    if (!users || users.length === 0) {
-      // Let the user know they need to create an account first
-      return Response.json({ not_found: true });
-    }
-    const user = users[0];
-
-    // Check if email is on the re-registration blocklist
-    const isBlocked = await checkBlocklist(svc, email);
-    if (isBlocked) {
-      return Response.json({ error: 'This email address is not permitted to access this platform.' }, { status: 403 });
-    }
-
+    // Bot protection runs before account lookup so request behaviour does not
+    // become an account-existence oracle.
     // Bot protection — block automated login-code requests (bot UA, hard
     // rate, active block window). The captcha challenge flow is handled on
     // the client for authenticated writes; for the auth flow a challenge
@@ -39,13 +27,8 @@ export default async function(req) {
       console.error('send-login-code: bot guard failed', e?.message || e);
     }
 
-    // If user has no login_key, they need a one-time setup via the reset flow.
-    // Don't send a code — the frontend will trigger resetPasswordRequest instead.
-    if (!user.login_key) {
-      return Response.json({ needs_setup: true });
-    }
-
-    // Rate-limit: min 60s between sends, max 5 per hour per email.
+    // Rate-limit: min 60s between sends, max 5 per hour per email. Apply this
+    // before account lookup so known/unknown emails follow the same throttle.
     const rlNow = Date.now();
     const rlRecords = await svc.entities.AuthRateLimit.filter({ email }, '-created_date', 1).catch(() => []);
     const rlExisting = rlRecords[0];
@@ -73,9 +56,22 @@ export default async function(req) {
       });
     }
 
-    // Generate 6-digit code (cryptographically secure)
+    // Account lookup happens only after bot/rate controls. Unknown addresses get
+    // the same success response but no LoginCode and no email, preventing user
+    // enumeration while keeping the UX deterministic.
+    const users = await svc.entities.User.filter({ email }, '-created_date', 1).catch(() => []);
+    const user = users?.[0] || null;
+    if (!user) return Response.json({ code_sent: true });
+
+    // A blocked account also gets the generic response. Do not disclose account
+    // or enforcement state before mailbox ownership is proven.
+    const isBlocked = await checkBlocklist(svc, email);
+    if (isBlocked) return Response.json({ code_sent: true });
+
+    // Generate 6-digit code (cryptographically secure), valid for the same
+    // five-minute window shown by the login UI.
     const code = String(100000 + crypto.getRandomValues(new Uint32Array(1))[0] % 900000);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
     // Delete old codes for this email
     try {
