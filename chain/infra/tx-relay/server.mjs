@@ -1,11 +1,14 @@
 import http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
-import { hash, transaction } from 'starknet';
+import { Account, RpcProvider, hash, transaction } from 'starknet';
 
 const upstream = new URL(process.env.UPSTREAM_RPC || 'http://devnet:5050');
 const port = Number(process.env.PORT || 8081);
 const relayToken = String(process.env.RELAY_TOKEN || '');
 const accountClassHash = normalizeHex(process.env.ACCOUNT_CLASS_HASH || '', 'ACCOUNT_CLASS_HASH');
+const identityRegistryClassHash = normalizeHex(process.env.IDENTITY_REGISTRY_CLASS_HASH || '', 'IDENTITY_REGISTRY_CLASS_HASH');
+const identityRegistryAddress = normalizeHex(process.env.IDENTITY_REGISTRY_ADDRESS || '', 'IDENTITY_REGISTRY_ADDRESS');
+const identityRegistryOwner = normalizeHex(process.env.IDENTITY_REGISTRY_OWNER || '', 'IDENTITY_REGISTRY_OWNER');
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
 const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 5_000_000_000_000_000);
@@ -23,6 +26,7 @@ if (!Number.isSafeInteger(deployMintAmount) || deployMintAmount <= 0) {
 }
 
 const windows = new Map();
+const provider = new RpcProvider({ nodeUrl: upstream.toString() });
 
 function normalizeHex(value, field = 'felt') {
   const raw = String(value || '').trim().toLowerCase();
