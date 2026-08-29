@@ -48,8 +48,14 @@ const seen = [];
 const ownerSelector = hash.getSelectorFromName('owner');
 const getIdentitySelector = hash.getSelectorFromName('get_identity');
 const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
+const recoveryControllerSelector = hash.getSelectorFromName('get_recovery_controller');
+const recoveryDelaySelector = hash.getSelectorFromName('get_recovery_delay');
 let mockIdentityStatus = 1;
 let mockReverseIdentity = identityId;
+let mockRecoveryController = recoveryController;
+let mockRecoveryDelay = recoveryDelay;
+let registrationMode = false;
+let ownerKeyRequested = false;
 
 const upstream = http.createServer(async (req, res) => {
   const chunks = [];
@@ -70,10 +76,36 @@ const upstream = http.createServer(async (req, res) => {
       ? ['0x0', '0x0', '0x0', '0x0', '0x0']
       : [accountAddress, '0x1', identityId, '0x1', '0x0'];
     else if (selector === reverseSelector) result = [mockReverseIdentity];
+    else if (selector === recoveryControllerSelector) result = [mockRecoveryController];
+    else if (selector === recoveryDelaySelector) result = [`0x${BigInt(mockRecoveryDelay).toString(16)}`];
     else result = ['0x0'];
   }
+  else if (payload.method === 'devnet_getPredeployedAccounts') {
+    ownerKeyRequested = true;
+    result = [{ address: registryOwner, private_key: '0x1' }];
+  }
+  else if (payload.method === 'starknet_specVersion') result = '0.9.0';
+  else if (payload.method === 'starknet_chainId') result = '0x534e5f5345504f4c4941';
+  else if (payload.method === 'starknet_getNonce') result = '0x0';
+  else if (payload.method === 'starknet_estimateFee') result = [{
+    l1_gas_consumed: '0x1', l1_gas_price: '0x1',
+    l1_data_gas_consumed: '0x1', l1_data_gas_price: '0x1',
+    l2_gas_consumed: '0x1', l2_gas_price: '0x1',
+    overall_fee: '0x3', unit: 'FRI',
+  }];
   else if (payload.method === 'starknet_addDeployAccountTransaction') result = { transaction_hash: '0xaaa', contract_address: accountAddress };
-  else if (payload.method === 'starknet_addInvokeTransaction') result = { transaction_hash: '0xbbb' };
+  else if (payload.method === 'starknet_addInvokeTransaction') {
+    if (registrationMode) {
+      mockIdentityStatus = 1;
+      mockReverseIdentity = identityId;
+      result = { transaction_hash: '0xccc' };
+    } else result = { transaction_hash: '0xbbb' };
+  }
+  else if (payload.method === 'starknet_getTransactionReceipt') result = {
+    type: 'INVOKE', transaction_hash: '0xccc', actual_fee: { amount: '0x1', unit: 'FRI' },
+    execution_status: 'SUCCEEDED', finality_status: 'ACCEPTED_ON_L2', events: [], messages_sent: [],
+  };
+  else if (payload.method === 'starknet_getTransactionStatus') result = { finality_status: 'ACCEPTED_ON_L2', execution_status: 'SUCCEEDED' };
   else result = { ignored: true };
   const body = JSON.stringify({ jsonrpc: '2.0', id: payload.id ?? 1, result });
   res.writeHead(200, { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) });
