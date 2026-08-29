@@ -146,7 +146,19 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the user"
+      "description": "AT Protocol DID of the user. Public identity, but backend-managed so clients cannot impersonate another DID.",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "bsky_handle": {
       "type": "string",
@@ -181,7 +193,24 @@
     },
     "signing_key": {
       "type": "string",
-      "description": "Local HMAC signing key for simulated AT Protocol record signatures"
+      "description": "Backend-managed HMAC signing key for legacy simulated record signatures. Never exposed in profile reads.",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "locale": {
       "type": "string",
