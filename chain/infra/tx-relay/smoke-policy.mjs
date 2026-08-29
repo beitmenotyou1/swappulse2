@@ -85,6 +85,9 @@ const child = spawn(process.execPath, ['server.mjs'], {
     PORT: String(relayPort),
     RELAY_TOKEN: token,
     ACCOUNT_CLASS_HASH: accountClassHash,
+    IDENTITY_REGISTRY_CLASS_HASH: registryClassHash,
+    IDENTITY_REGISTRY_ADDRESS: registryAddress,
+    IDENTITY_REGISTRY_OWNER: registryOwner,
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '5000000000000000',
@@ -150,6 +153,22 @@ try {
 
   const noToken = await post(relayUrl, { jsonrpc: '2.0', id: 6, method: 'starknet_addInvokeTransaction', params: { invoke_transaction: invokeTx } });
   if (noToken.status !== 401) throw new Error('Missing bearer token was not blocked');
+
+  const idempotentRegistration = await post(registerUrl, {
+    identity_id: identityId,
+    public_key: publicKey,
+    account_address: accountAddress,
+  }, token);
+  if (idempotentRegistration.status !== 200 || idempotentRegistration.body?.ok !== true || idempotentRegistration.body?.idempotent !== true) {
+    throw new Error(`Idempotent registration was not accepted: ${JSON.stringify(idempotentRegistration)}`);
+  }
+
+  const badRegistration = await post(registerUrl, {
+    identity_id: identityId,
+    public_key: publicKey,
+    account_address: '0x999',
+  }, token);
+  if (badRegistration.status !== 403) throw new Error('Mismatched registration account was not blocked');
 
   const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add'));
   if (forwardedWrites.join(',') !== 'starknet_addDeployAccountTransaction,starknet_addInvokeTransaction') {
