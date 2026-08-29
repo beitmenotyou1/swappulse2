@@ -30,7 +30,7 @@ The provisioning relay accepts only the exact write operations needed for testne
 - V3 `starknet_addInvokeTransaction` where calldata is exactly the approved account-self recovery-controller and recovery-delay configuration.
 - `POST /register` for one owner-only `IdentityRegistry.register_identity(identityId, accountAddress)` operation after the relay independently verifies registry class/owner, account class, deterministic public-key address, recovery policy and existing identity/reverse mappings.
 
-The relay's privileged Devnet mint helper is not exposed as a faucet. It can mint only a fixed testnet amount to the exact counterfactual account implied by the approved class hash and public key. The registry-owner private key is obtained only inside the host from the private Devnet API, only after registration policy checks have passed, and is never returned to Base44.
+The relay's privileged Devnet mint helper is not exposed as a faucet. It can mint only a fixed testnet amount to the exact counterfactual account implied by the approved class hash and public key. During host bootstrap, `setup-relay-env.sh` resolves the registry-owner test key from the loopback-only Devnet API, verifies its address matches the deployed registry owner, and stores it only in mode-`0600` `.env.relay`. Registration uses that preloaded host-only signer only after all registration policy checks pass; the key is never returned to Base44.
 
 The relay bearer token and HTTPS URL are Base44 **server-side secrets** (`SWAPPULSE_TX_RELAY_TOKEN` and `SWAPPULSE_TX_RELAY_URL`). They must never appear in `ChainNetworkConfig`, frontend code or browser storage.
 
@@ -162,7 +162,7 @@ chmod +x setup-relay-env.sh
 ./setup-relay-env.sh
 ```
 
-This creates git-ignored `.env.relay` with mode `0600`. It contains a random bearer token plus the exact account class hash, registry class/address/owner and recovery policy from the deployment manifest.
+This creates git-ignored `.env.relay` with mode `0600`. It contains a random bearer token, the exact account class hash, registry class/address/owner and recovery policy from the deployment manifest, plus the matching Devnet registry-owner test key resolved through loopback. The key and token are never printed.
 
 Start only the relay profile:
 
@@ -192,7 +192,7 @@ The relay policy smoke test is:
 node chain/infra/tx-relay/smoke-policy.mjs
 ```
 
-It must confirm that approved deploy/recovery operations pass while wrong account classes, arbitrary invokes, `devnet_*` calls and missing bearer tokens are blocked. Registration is idempotent when the correct binding already exists, and the smoke test verifies that the host owner key is not requested before registration policy checks pass.
+It must confirm that approved deploy/recovery operations pass while wrong account classes, arbitrary invokes, `devnet_*` calls and missing bearer tokens are blocked. Registration is idempotent when the correct binding already exists, and the smoke test verifies that registration never fetches the owner key from Devnet at request time, it uses only the host-preloaded signer.
 
 ## 7. Adult self-service browser testnet identity
 
