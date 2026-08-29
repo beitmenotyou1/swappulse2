@@ -54,6 +54,34 @@ services:
     networks:
       - swappulse-chain
 
+  tx-relay:
+    profiles: ["tx-relay"]
+    build:
+      context: ./tx-relay
+    restart: unless-stopped
+    environment:
+      UPSTREAM_RPC: http://devnet:5050
+      PORT: "8081"
+      RELAY_TOKEN: ${SWAPPULSE_TX_RELAY_TOKEN:?Set SWAPPULSE_TX_RELAY_TOKEN before starting the tx-relay profile}
+      ACCOUNT_CLASS_HASH: ${SWAPPULSE_ACCOUNT_CLASS_HASH:?Set SWAPPULSE_ACCOUNT_CLASS_HASH from the verified deployment manifest}
+      RECOVERY_CONTROLLER: ${SWAPPULSE_RECOVERY_CONTROLLER:-0x0}
+      RECOVERY_DELAY_SECONDS: ${SWAPPULSE_RECOVERY_DELAY_SECONDS:-172800}
+      DEPLOY_MINT_AMOUNT: ${SWAPPULSE_DEPLOY_MINT_AMOUNT:-5000000000000000}
+      RATE_LIMIT_PER_MINUTE: ${SWAPPULSE_TX_RELAY_RATE_LIMIT:-60}
+    depends_on:
+      - devnet
+    ports:
+      - "127.0.0.1:${SWAPPULSE_TX_RELAY_PORT:-8081}:8081"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - swappulse-chain
+
 networks:
   swappulse-chain:
     driver: bridge
