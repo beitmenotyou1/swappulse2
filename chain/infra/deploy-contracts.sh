@@ -8,6 +8,12 @@ RAW_RPC_PORT="${SWAPPULSE_RAW_RPC_PORT:-5050}"
 RAW_RPC="http://127.0.0.1:${RAW_RPC_PORT}"
 MANIFEST="${SWAPPULSE_DEPLOYMENT_MANIFEST:-$CHAIN_ROOT/deployments/swappulse-testnet.json}"
 NODE_BIN="${NODE_BIN:-node}"
+PUBLIC_RPC_URL="${SWAPPULSE_PUBLIC_RPC_URL:-}"
+
+if [[ -z "$PUBLIC_RPC_URL" ]]; then
+  echo "Set SWAPPULSE_PUBLIC_RPC_URL to the public read-only HTTPS gateway before deploying contracts." >&2
+  exit 1
+fi
 
 if ! command -v "$NODE_BIN" >/dev/null 2>&1 && [[ ! -x "$NODE_BIN" ]]; then
   echo "NODE_BIN does not point to an executable Node.js runtime: $NODE_BIN" >&2
@@ -51,6 +57,7 @@ if [[ -z "${DEPLOYER_ADDRESS:-}" || -z "${DEPLOYER_PRIVATE_KEY:-}" ]]; then
 fi
 
 export SWAPPULSE_RPC_URL="$RAW_RPC"
+export SWAPPULSE_PUBLIC_RPC_URL="$PUBLIC_RPC_URL"
 export SWAPPULSE_DEPLOYER_ADDRESS="$DEPLOYER_ADDRESS"
 export SWAPPULSE_DEPLOYER_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY"
 export SWAPPULSE_RECOVERY_CONTROLLER="${SWAPPULSE_RECOVERY_CONTROLLER:-$DEPLOYER_ADDRESS}"
@@ -65,4 +72,5 @@ unset SWAPPULSE_DEPLOYER_PRIVATE_KEY DEPLOYER_PRIVATE_KEY
 echo
 echo "SwapPulse Testnet contracts are deployed and locally verified."
 echo "Public manifest: $MANIFEST"
-echo "Next: expose ONLY the read-only gateway over HTTPS, then save the manifest fields in Admin → Identity & Federation and use Verify & Activate."
+echo "The manifest contains the public read-only HTTPS RPC, never the localhost raw RPC."
+echo "Next: import the manifest in Admin → Identity & Federation and use Verify & Activate."
