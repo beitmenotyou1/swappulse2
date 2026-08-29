@@ -24,17 +24,23 @@ function literalAttr(el, name) {
   if (a.value.type === 'StringLiteral') return a.value.value;
   return null;
 }
+function nodeHasAccessibleText(node) {
+  if (!node) return false;
+  if (node.type === 'JSXText') return node.value.trim().length > 0;
+  if (node.type === 'JSXExpressionContainer') {
+    const e = node.expression;
+    if (!e || e.type === 'JSXEmptyExpression') return false;
+    // Runtime expressions may resolve to visible labels. Treat them as text
+    // unless they are an element-only expression.
+    return e.type !== 'JSXElement' && e.type !== 'JSXFragment';
+  }
+  if (node.type === 'JSXElement' || node.type === 'JSXFragment') {
+    return (node.children || []).some(nodeHasAccessibleText);
+  }
+  return false;
+}
 function hasAccessibleChild(el) {
-  return el.children.some(c => {
-    if (c.type === 'JSXText') return c.value.trim().length > 0;
-    if (c.type === 'JSXExpressionContainer') {
-      const e = c.expression;
-      if (!e || e.type === 'JSXEmptyExpression') return false;
-      if (e.type === 'StringLiteral' || e.type === 'TemplateLiteral' || e.type === 'CallExpression' || e.type === 'ConditionalExpression') return true;
-      if (e.type === 'Identifier' || e.type === 'MemberExpression' || e.type === 'LogicalExpression') return true;
-    }
-    return false;
-  });
+  return el.children.some(nodeHasAccessibleText);
 }
 function loc(file, node) { return `${file}:${node.loc?.start.line || '?'}`; }
 
