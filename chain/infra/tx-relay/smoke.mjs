@@ -5,7 +5,11 @@ import { hash, transaction } from 'starknet';
 const upstreamPort = 19050;
 const relayPort = 18081;
 const token = 'test-only-relay-token-0123456789abcdef';
+const chainId = '0x534e5f5345504f4c4941';
 const classHash = '0x492c4b3e137468b6f6a805970d2c28b44f11bfd9f3cc6bd3187db5d83cb0a1c';
+const registryClassHash = '0x23456';
+const registryAddress = '0x45678';
+const registryOwner = '0x56789';
 const publicKey = '0x123456789abcdef';
 const recoveryController = '0x0';
 const recoveryDelay = 172800;
@@ -22,8 +26,13 @@ function startMock() {
     if (payload.method === 'devnet_mint') {
       observed.mint = payload.params;
       result = { new_balance: '0x1', unit: 'FRI', tx_hash: '0x111' };
+    } else if (payload.method === 'starknet_chainId') {
+      result = chainId;
     } else if (payload.method === 'starknet_getClassHashAt') {
-      result = classHash;
+      const address = Array.isArray(payload.params) ? payload.params[1] : '';
+      result = address === registryAddress ? registryClassHash : classHash;
+    } else if (payload.method === 'starknet_call') {
+      result = [registryOwner];
     } else if (payload.method === 'starknet_addDeployAccountTransaction') {
       result = { transaction_hash: '0x222', contract_address: expectedAddress };
     } else if (payload.method === 'starknet_addInvokeTransaction') {
@@ -71,7 +80,13 @@ const relay = spawn(process.execPath, ['server.mjs'], {
     UPSTREAM_RPC: `http://127.0.0.1:${upstreamPort}`,
     PORT: String(relayPort),
     RELAY_TOKEN: token,
+    CHAIN_ID: chainId,
     ACCOUNT_CLASS_HASH: classHash,
+    IDENTITY_REGISTRY_CLASS_HASH: registryClassHash,
+    IDENTITY_REGISTRY_ADDRESS: registryAddress,
+    IDENTITY_REGISTRY_OWNER: registryOwner,
+    REGISTRY_ADMIN_ADDRESS: registryOwner,
+    REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '5000000000000000',
