@@ -16,8 +16,6 @@ const allowedMethods = new Set([
   'starknet_call',
   'starknet_getNonce',
   'starknet_estimateFee',
-  'starknet_getNonce',
-  'starknet_estimateFee',
   'starknet_getTransactionReceipt',
   'starknet_getTransactionStatus',
 ]);
