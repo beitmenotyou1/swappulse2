@@ -4,53 +4,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Key, Plus, Trash2, Fingerprint } from "lucide-react";
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import SecurityEmailVerification from "@/components/settings/SecurityEmailVerification";
+import { startRegistration } from "@simplewebauthn/browser";
 
-// WebAuthnSection — Settings UI for managing WebAuthn/U2F security keys.
-// Users can register new security keys (YubiKey, Touch ID, Windows Hello,
-// passkeys) and delete existing ones. When all keys are deleted, the
-// webauthn_enabled flag is cleared on the user record.
-export default function WebAuthnSection() {
-  const [user, setUser] = useState(null);
+export default function WebAuthnSection({ managementToken, securityUnlocked, onSecurityExpired }) {
   const [credentials, setCredentials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [label, setLabel] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [managementToken, setManagementToken] = useState("");
-  const [showEnrollmentVerification, setShowEnrollmentVerification] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then((u) => {
-      setUser(u);
-      if (u?.id) loadCredentials();
-    }).catch(() => {});
+    loadCredentials();
   }, []);
 
   const loadCredentials = async () => {
     try {
       const creds = await base44.entities.WebAuthnCredential.list("-created_date", 20);
       setCredentials(creds || []);
-    } catch {}
+    } catch {
+      setCredentials([]);
+    }
+  };
+
+  const handleExpired = (err) => {
+    if (err?.response?.status === 403) onSecurityExpired?.();
   };
 
   const startEnrollment = async () => {
+    if (!securityUnlocked) {
+      setError("Verify your email above before adding a security key.");
+      return;
+    }
     setError("");
     setSuccess("");
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("webauthn-reg-options", { management_token: managementToken });
-      if (res.data?.error) {
-        setError(res.data.error);
-        return;
-      }
-      const { options, challenge_signature } = res.data;
-      if (!options || !options.challenge) {
-        setError("Could not generate registration options. Please try again.");
-        return;
-      }
+      const res = await base44.functions.invoke("webauthn-reg-options", {
+        management_token: managementToken,
+      });
+      const { options, challenge_signature } = res.data || {};
+      if (!options?.challenge) throw new Error(res.data?.error || "Could not generate registration options");
       const attestation = await startRegistration(options);
       const verifyRes = await base44.functions.invoke("webauthn-verify-reg", {
         attestation,
@@ -59,19 +53,15 @@ export default function WebAuthnSection() {
         label: label || "Security Key",
         management_token: managementToken,
       });
-      if (verifyRes.data?.verified) {
-        setSuccess("Security key registered!");
-        setEnrolling(false);
-        setLabel("");
-        setManagementToken("");
-        setUser((prev) => ({ ...prev, webauthn_enabled: true }));
-        await loadCredentials();
-      } else {
-        setError(verifyRes.data?.error || "Registration failed");
-      }
+      if (!verifyRes.data?.verified) throw new Error(verifyRes.data?.error || "Registration failed");
+      setSuccess(verifyRes.data?.already_registered ? "Security key is already registered." : "Security key registered.");
+      setEnrolling(false);
+      setLabel("");
+      await loadCredentials();
     } catch (err) {
+      handleExpired(err);
       if (err.name !== "AbortError") {
-        setError(err.message || "Could not register security key");
+        setError(err.response?.data?.error || err.message || "Could not register security key");
       }
     } finally {
       setLoading(false);
@@ -79,44 +69,47 @@ export default function WebAuthnSection() {
   };
 
   const deleteCredential = async (cred) => {
-    if (!confirm(`Remove "${cred.label}"? You'll be asked to verify with one of your registered security keys first.`)) return;
+    if (!securityUnlocked) {
+      setError("Verify your email above before removing a security key.");
+      return;
+    }
+    if (!confirm(`Remove "${cred.label || "Security Key"}"?`)) return;
     setLoading(true);
     setError("");
     setSuccess("");
     try {
-      const optsRes = await base44.functions.invoke("webauthn-management-options", {});
-      const { options, challenge_signature } = optsRes.data || {};
-      if (!options?.challenge) throw new Error(optsRes.data?.error || "Could not start security verification.");
-      const assertion = await startAuthentication(options);
-      const removeRes = await base44.functions.invoke("security-factor-management", {
-        action: "remove_webauthn",
+      await base44.functions.invoke("security-factor-manage", {
+        action: "delete_webauthn",
         credential_id: cred.id,
-        assertion,
-        challenge: options.challenge,
-        challenge_signature,
+        management_token: managementToken,
       });
-      if (!removeRes.data?.removed) throw new Error(removeRes.data?.error || "Could not remove security key.");
       await loadCredentials();
-      if ((removeRes.data?.remaining || 0) === 0) setUser((prev) => ({ ...prev, webauthn_enabled: false }));
       setSuccess("Security key removed.");
     } catch (err) {
-      if (err.name !== "AbortError") setError(err.response?.data?.error || err.message || "Could not remove security key");
+      handleExpired(err);
+      setError(err.response?.data?.error || err.message || "Could not remove security key");
     } finally {
       setLoading(false);
     }
   };
 
   const renameCredential = async (cred, newLabel) => {
-    if (!newLabel.trim() || newLabel.trim() === (cred.label || "").trim()) return;
+    const clean = newLabel.trim();
+    if (!clean || clean === (cred.label || "")) return;
+    if (!securityUnlocked) {
+      setError("Verify your email above before renaming a security key.");
+      return;
+    }
     try {
-      const res = await base44.functions.invoke("security-factor-management", {
+      await base44.functions.invoke("security-factor-manage", {
         action: "rename_webauthn",
         credential_id: cred.id,
-        label: newLabel.trim(),
+        label: clean,
+        management_token: managementToken,
       });
-      if (!res.data?.renamed) throw new Error(res.data?.error || "Could not rename security key");
       await loadCredentials();
     } catch (err) {
+      handleExpired(err);
       setError(err.response?.data?.error || err.message || "Could not rename security key");
     }
   };
@@ -124,54 +117,53 @@ export default function WebAuthnSection() {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Fingerprint className="h-5 w-5 text-primary" />
-        <h3 className="font-bold">Security keys (WebAuthn)</h3>
+        <Fingerprint className="h-5 w-5 text-primary" aria-hidden="true" />
+        <h3 className="font-bold">Security keys and passkeys</h3>
       </div>
 
-      {success && <div className="mb-3 p-3 rounded-lg bg-success/10 text-success text-sm">{success}</div>}
-      {error && <div className="mb-3 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+      {success && <div className="mb-3 p-3 rounded-lg bg-success/10 text-success text-sm" role="status">{success}</div>}
+      {error && <div className="mb-3 p-3 rounded-lg bg-destructive/10 text-destructive text-sm" role="alert">{error}</div>}
 
       {credentials.length > 0 && (
         <div className="space-y-2 mb-4">
           {credentials.map((cred) => (
             <div key={cred.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background">
-              <Key className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Key className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
               <div className="flex-1 min-w-0">
+                <label className="sr-only" htmlFor={`key-label-${cred.id}`}>Security key name</label>
                 <input
+                  id={`key-label-${cred.id}`}
                   type="text"
-                  defaultValue={cred.label}
+                  defaultValue={cred.label || "Security Key"}
                   onBlur={(e) => renameCredential(cred, e.target.value)}
-                  className="text-sm font-medium bg-transparent border-none outline-none w-full focus:bg-muted/50 rounded px-1 -mx-1"
+                  disabled={!securityUnlocked || loading}
+                  className="text-sm font-medium bg-transparent border-none outline-none w-full focus:bg-muted/50 rounded px-1 -mx-1 disabled:opacity-70"
                 />
                 <p className="text-xs text-muted-foreground">
                   Added {new Date(cred.created_at || cred.created_date).toLocaleDateString()}
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => deleteCredential(cred)}
-                disabled={loading}
-                className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                aria-label="Remove security key"
+                disabled={loading || !securityUnlocked}
+                className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                aria-label={`Remove ${cred.label || "security key"}`}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {showEnrollmentVerification ? (
-        <SecurityEmailVerification
-          title="Verify your email before adding a security key"
-          onVerified={(token) => { setManagementToken(token); setShowEnrollmentVerification(false); setEnrolling(true); }}
-          onCancel={() => setShowEnrollmentVerification(false)}
-        />
-      ) : enrolling ? (
+      {enrolling ? (
         <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="webauthn-label">Name this key (optional)</Label>
             <Input
               id="webauthn-label"
+              maxLength={60}
               placeholder="e.g. YubiKey 5C, Touch ID"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -179,28 +171,27 @@ export default function WebAuthnSection() {
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => { setEnrolling(false); setLabel(""); setManagementToken(""); setError(""); }}>
+            <Button variant="outline" className="flex-1" onClick={() => { setEnrolling(false); setLabel(""); setError(""); }}>
               Cancel
             </Button>
-            <Button className="flex-1" onClick={startEnrollment} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+            <Button className="flex-1" onClick={startEnrollment} disabled={loading || !securityUnlocked}>
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" /> : <Plus className="h-4 w-4 mr-2" aria-hidden="true" />}
               Register key
             </Button>
           </div>
         </div>
       ) : (
-        <Button variant="outline" onClick={() => { setShowEnrollmentVerification(true); setError(""); setSuccess(""); }} disabled={loading}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button variant="outline" onClick={() => { setEnrolling(true); setError(""); setSuccess(""); }} disabled={loading || !securityUnlocked}>
+          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
           Add security key
         </Button>
       )}
 
-      {credentials.length === 0 && !enrolling && (
-        <p className="text-sm text-muted-foreground mt-3">
-          Register a hardware security key (YubiKey), biometric (Touch ID, Windows Hello), or passkey as a second factor.
-          You'll need to tap or verify it each time you log in.
-        </p>
-      )}
+      <p className="text-sm text-muted-foreground mt-3">
+        {credentials.length === 0
+          ? "Add a hardware key, biometric or passkey as an additional sign-in factor."
+          : "Verify your email above before adding, renaming or removing security keys."}
+      </p>
     </div>
   );
 }
