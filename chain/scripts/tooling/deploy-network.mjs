@@ -50,14 +50,17 @@ if (registryAddress) {
   console.log(`IdentityRegistry deployed: ${registryAddress}`);
 }
 
-const [registryHashAt, accountDeclared] = await Promise.all([
+const [registryHashAt, accountDeclared, ownerResult] = await Promise.all([
   provider.getClassHashAt(registryAddress),
   provider.isClassDeclared({ classHash: accountDeclaration.class_hash }),
+  provider.callContract({ contractAddress: registryAddress, entrypoint: 'owner', calldata: [] }),
 ]);
 if (normalizeHex(registryHashAt) !== registryDeclaration.class_hash) {
   throw new Error('IdentityRegistry class hash verification failed after deployment');
 }
 if (!accountDeclared) throw new Error('SwapPulseAccount class declaration is not visible on-chain');
+const registryOwner = ownerResult?.[0] ? normalizeHex(ownerResult[0], 'registry owner') : '';
+if (!registryOwner) throw new Error('Could not read IdentityRegistry owner after deployment');
 
 const recoveryController = String(process.env.SWAPPULSE_RECOVERY_CONTROLLER || '').trim();
 const recoveryDelay = Number(process.env.SWAPPULSE_RECOVERY_DELAY_SECONDS || 172800);
@@ -73,6 +76,7 @@ const manifest = {
   account_class_hash: accountDeclaration.class_hash,
   identity_registry_class_hash: registryDeclaration.class_hash,
   identity_registry_address: registryAddress,
+  identity_registry_owner: registryOwner,
   recovery_controller: recoveryController ? normalizeHex(recoveryController, 'recovery controller') : '',
   recovery_delay_seconds: recoveryDelay,
   deployment: {
