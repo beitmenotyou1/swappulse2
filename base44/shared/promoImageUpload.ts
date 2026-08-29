@@ -1,8 +1,8 @@
-// Shared hardened image upload for promo posts (post-promo + post-help-promo).
-// Validates the fetched bytes are a real image, enforces Bluesky's 1MB embed
+// Shared hardened image upload for promotional AT Protocol previews.
+// Validates the fetched bytes are a real image, enforces the 1MB thumbnail
 // limit, normalizes the mimeType, and uploads to the PDS as a blob. Returns a
-// null blob on any validation or upload failure so the caller can abort the
-// post — never publish a text-only promo.
+// null blob on any validation or upload failure so callers abort rather than
+// publishing a visual promotion as plain text.
 
 import { getPdsSessionForUser, clearPdsSession } from './pdsSession.ts';
 
@@ -41,11 +41,9 @@ function detectImageType(bytes: Uint8Array): string | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return 'image/jpeg';
   }
-  // WebP is intentionally NOT accepted — Bluesky's app.bsky.embed.images
-  // lexicon only accepts image/jpeg and image/png. A WebP blob uploads to
-  // the PDS successfully, but the AppView strips the embed and renders the
-  // post as plain text. Rejecting WebP here aborts the post so the workflow
-  // retries with a JPEG/PNG image instead.
+  // Keep promo thumbnails to JPEG/PNG for broad AT client compatibility.
+  // Reject other formats here so the caller can use known-good fallback art
+  // rather than publishing a preview that some clients may not render.
   return null;
 }
 
@@ -58,16 +56,15 @@ function normalizeMimeType(raw: string): string | null {
   if (!raw) return null;
   const base = raw.split(';')[0].trim().toLowerCase();
   if (base === 'image/jpg') return 'image/jpeg';
-  // Only JPEG and PNG are accepted — Bluesky's app.bsky.embed.images lexicon
-  // rejects WebP, causing the AppView to strip the embed (plain-text post).
+  // Only JPEG and PNG are accepted for broad preview compatibility.
   if (base === 'image/jpeg' || base === 'image/png') return base;
   return null;
 }
 
 /**
  * Fetch an image from `imageUrl`, validate it, and upload it to the PDS as a
- * blob. Returns the blob ref for use in app.bsky.embed.images, or null on any
- * failure (non-image content, oversize, bad magic bytes, upload error). The
+ * blob. Returns the blob ref for use as a promo-preview thumbnail, or null on
+ * any failure (non-image content, oversize, bad magic bytes, upload error). The
  * caller must abort the post when the blob is null — never publish text-only.
  *
  * Retries once on transient failures and refreshes the PDS session on 401.
@@ -81,11 +78,8 @@ export async function uploadPromoImage(
   let currentJwt = accessJwt;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      // Send an explicit Accept header to prevent CDNs (e.g. TCGDex) from
-      // serving WebP via content negotiation despite a .png/.jpg URL suffix.
-      // Bluesky's app.bsky.embed.images lexicon only accepts JPEG and PNG;
-      // a WebP blob uploads to the PDS but the AppView strips the embed,
-      // rendering the post as plain text on Bluesky.
+      // Send an explicit Accept header so CDNs return the JPEG/PNG formats
+      // used by every current promo-preview path.
       const imgRes = await fetchWithTimeout(imageUrl, {
         headers: { 'Accept': 'image/png, image/jpeg' },
       });
@@ -157,20 +151,16 @@ export async function uploadPromoImage(
         return { blob: null, accessJwt: currentJwt };
       }
 
-      // Validate the PDS-returned mimeType is acceptable for Bluesky's
-      // app.bsky.embed.images lexicon (JPEG or PNG only). If the PDS returned
-      // an unsupported mimeType, abort — the AppView would strip the embed.
+      // Validate the PDS-returned mimeType matches the supported thumbnail
+      // formats. If not, abort and let the caller use its fallback/skip path.
       const pdsMime = normalizeMimeType(blob.mimeType);
       if (!pdsMime) {
         console.error('promoImageUpload: PDS returned unsupported mimeType', JSON.stringify(blob.mimeType), '— aborting');
         return { blob: null, accessJwt: currentJwt };
       }
 
-      // Use the PDS's blob object DIRECTLY — the blob ref in the record must
-      // exactly match what the PDS stored. Reconstructing the blob ref (e.g.,
-      // normalizing the mimeType from image/jpg → image/jpeg, or substituting
-      // size) creates a mismatch that the Bluesky AppView detects during async
-      // validation, stripping the embed and reverting the post to plain text.
+      // Use the PDS's blob object DIRECTLY. The record must reference exactly
+      // what the PDS stored rather than reconstructing CID, mimeType or size.
       return {
         blob: blob,
         accessJwt: currentJwt,
