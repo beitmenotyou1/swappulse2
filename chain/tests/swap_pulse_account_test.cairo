@@ -50,7 +50,7 @@ fn constructor_rejects_zero_public_key() {
 fn recovery_starts_disabled() {
     let zero = addr(0);
     let (_account_address, account) = deploy_account(0x12345, zero, 0);
-    assert(account.get_recovery_controller() == zero, 'controller should start disabled');
+    assert(account.get_recovery_controller() == zero, 'controller not disabled');
     assert(account.get_recovery_delay() == 0_u64, 'delay should start at zero');
 }
 
