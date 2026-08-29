@@ -6,6 +6,7 @@ import { bridgeStory } from '@/lib/federatedBridge';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useToast } from '@/components/ui/use-toast';
 import CardSearchModal from '@/components/cards/CardSearchModal';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 // Camera-first story composer (Instagram/Snapchat style). Opens the device
 // camera, captures a photo (resized to max 1080px), optionally adds a text
@@ -106,15 +107,17 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
     if (!file) return;
     setUploading(true);
     try {
+      assertImageUpload(file);
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       revokeCapture();
       setCapture(file_url);
       setCaptureBlob(null);
       setMode('camera');
-    } catch {
-      toast({ title: 'Upload failed', variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Upload failed', description: error?.message || 'Choose a smaller image file.', variant: 'destructive' });
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
