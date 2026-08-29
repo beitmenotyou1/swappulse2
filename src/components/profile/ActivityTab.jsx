@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, MessageCircle, ArrowLeftRight, ShieldCheck, Award, Layers, Trophy, BookOpen, BookMarked, MapPin, Camera, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import moment from 'moment';
+import { safeInternalPath } from '@/lib/safeNavigation';
 
 const ICONS = {
   post: MessageCircle,
@@ -69,8 +70,9 @@ export default function ActivityTab({ did }) {
             </div>
           </div>
         );
-        return it.target_path ? (
-          <Link key={it.id || i} to={it.target_path} className="block hover:bg-secondary/50 transition-colors">{row}</Link>
+        const targetPath = it.target_path ? safeInternalPath(it.target_path, '') : '';
+        return targetPath ? (
+          <Link key={it.id || i} to={targetPath} className="block hover:bg-secondary/50 transition-colors">{row}</Link>
         ) : (
           <div key={it.id || i}>{row}</div>
         );
