@@ -145,6 +145,8 @@ function validateCommonV3(tx, expectedType) {
   if (tx.paymaster_data && normalizeArray(tx.paymaster_data, 'paymaster_data').length !== 0) {
     throw new Error('PAYMASTER_DATA_NOT_ALLOWED');
   }
+  if (tx.proof_facts && normalizeArray(tx.proof_facts, 'proof_facts').length !== 0) throw new Error('PROOF_FACTS_NOT_ALLOWED');
+  if (tx.proof) throw new Error('PROOF_NOT_ALLOWED');
   if (BigInt(normalizeZeroableHex(tx.tip ?? '0x0', 'tip')) !== 0n) throw new Error('NONZERO_TIP_NOT_ALLOWED');
 }
 
