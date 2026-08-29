@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { hash } from 'npm:starknet@10.0.2';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 
 const NETWORK = 'SWAPPULSE_TESTNET';
@@ -99,7 +100,7 @@ export default async function(req: Request): Promise<Response> {
     const ownerResult = await rpcCall(rpcUrl, 'starknet_call', [
       {
         contract_address: normalizeHex(registryAddress, 'registry address'),
-        entry_point_selector: '0x760314f8ddf9565c756a665b44351b8e3e178a5efde9b38d8a77b21360525',
+        entry_point_selector: hash.getSelectorFromName('owner'),
         calldata: [],
       },
       'latest',
