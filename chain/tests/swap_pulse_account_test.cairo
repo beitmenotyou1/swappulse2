@@ -38,7 +38,11 @@ fn deploy_account(
     (contract_address, dispatcher)
 }
 
+// Foundry 0.51 cannot catch constructor reverts through its deploy helper.
+// scripts/verify-zero-key-revert.sh executes this ignored case separately and
+// treats it as passing only when INVALID_PUBLIC_KEY is present in the failure.
 #[test]
+#[ignore]
 fn constructor_rejects_zero_public_key() {
     let contract = declare("SwapPulseAccount").unwrap().contract_class();
     let calldata = array![0];
