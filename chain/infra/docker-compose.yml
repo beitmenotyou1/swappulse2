@@ -1,0 +1,55 @@
+services:
+  devnet:
+    image: shardlabs/starknet-devnet-rs:0.8.2
+    restart: unless-stopped
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5050"
+      - --accounts
+      - "3"
+      - --initial-balance
+      - ${SWAPPULSE_INITIAL_BALANCE:-1000000000000000000000}
+      - --seed
+      - ${SWAPPULSE_DEVNET_SEED:?Set SWAPPULSE_DEVNET_SEED in chain/infra/.env}
+      - --chain-id
+      - SWAPPULSE_TESTNET
+      - --dump-on
+      - block
+      - --dump-path
+      - /data/swappulse-testnet.dump
+      - --block-generation-on
+      - transaction
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:${SWAPPULSE_RAW_RPC_PORT:-5050}:5050"
+    networks:
+      - swappulse-chain
+
+  rpc-gateway:
+    build:
+      context: ./rpc-gateway
+    restart: unless-stopped
+    environment:
+      UPSTREAM_RPC: http://devnet:5050
+      PORT: "8080"
+      RATE_LIMIT_PER_MINUTE: ${SWAPPULSE_RPC_RATE_LIMIT:-180}
+    depends_on:
+      - devnet
+    ports:
+      - "127.0.0.1:${SWAPPULSE_GATEWAY_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - swappulse-chain
+
+networks:
+  swappulse-chain:
+    driver: bridge
