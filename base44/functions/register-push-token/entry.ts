@@ -26,8 +26,9 @@ export default async function(req: Request): Promise<Response> {
           console.error('unregister-push-token error', e?.message || e);
         }
       }
-      // Also clear legacy
-      try { await base44.auth.updateMe({ push_subscription: '' }); } catch {}
+      // Also clear legacy through the service role. User.push_subscription is
+      // backend-managed because it contains a sensitive push endpoint + keys.
+      try { await svc.entities.User.update(user.id, { push_subscription: '' }); } catch {}
       return Response.json({ ok: true, action: 'unregistered' });
     }
 
@@ -73,8 +74,9 @@ export default async function(req: Request): Promise<Response> {
       });
     }
 
-    // Mirror to legacy User.push_subscription for backward compat
-    try { await base44.auth.updateMe({ push_subscription: subStr }); } catch {}
+    // Mirror to legacy User.push_subscription for backward compat through the
+    // service role; the browser cannot write this sensitive field directly.
+    try { await svc.entities.User.update(user.id, { push_subscription: subStr }); } catch {}
 
     return Response.json({ ok: true, action: 'registered', endpoint });
   } catch (error) {
