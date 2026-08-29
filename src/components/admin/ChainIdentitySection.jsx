@@ -391,6 +391,7 @@ export default function ChainIdentitySection() {
               <p className="text-xs text-muted-foreground">These are public chain coordinates, not secrets. Never paste private RPC credentials or signer keys here.</p>
             </div>
             <select
+              aria-label="Network configuration status"
               value={configDraft.status}
               onChange={(e) => setConfigDraft((p) => ({ ...p, status: e.target.value }))}
               className="rounded-lg border border-border bg-background px-2 py-2 text-xs"
