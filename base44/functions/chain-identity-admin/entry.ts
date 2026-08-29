@@ -25,6 +25,15 @@ function normalizeAddress(value: unknown, field: string): string {
   return normalizeHex(value, field);
 }
 
+function normalizePublicHttpsUrl(value: unknown, field: string): string {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const url = new URL(raw);
+  if (url.protocol !== 'https:') throw new Error(`${field} must use https`);
+  if (url.username || url.password) throw new Error(`${field} must not contain embedded credentials`);
+  return url.toString();
+}
+
 function randomIdentityId(): string {
   // 31 random bytes = 248 bits, safely below the Starknet felt252 field prime.
   const bytes = new Uint8Array(31);
@@ -175,7 +184,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (action === 'save_config') {
-      const status = String(body.status || 'CONFIGURED').trim().toUpperCase();
+      const status = String(body.status || config.status || 'UNCONFIGURED').trim().toUpperCase();
       if (!['UNCONFIGURED', 'CONFIGURED', 'PAUSED'].includes(status)) {
         return jsonError('Invalid config status', 400, 'INVALID_CONFIG_STATUS');
       }
@@ -207,10 +216,13 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('recovery_delay_seconds must be between 0 and 2592000', 400, 'INVALID_RECOVERY_DELAY');
       }
 
-      const rpcUrl = String(body.rpc_url || '').trim();
-      const explorerUrl = String(body.explorer_url || '').trim();
-      for (const [label, url] of [['rpc_url', rpcUrl], ['explorer_url', explorerUrl]] as const) {
-        if (url && !/^https:\/\//i.test(url)) return jsonError(`${label} must use https`, 400, 'INVALID_PUBLIC_URL');
+      let rpcUrl = '';
+      let explorerUrl = '';
+      try {
+        rpcUrl = normalizePublicHttpsUrl(body.rpc_url, 'rpc_url');
+        explorerUrl = normalizePublicHttpsUrl(body.explorer_url, 'explorer_url');
+      } catch (e: any) {
+        return jsonError(e?.message || 'Invalid public URL', 400, 'INVALID_PUBLIC_URL');
       }
 
       const trustedCoordinatesChanged = Boolean(config.id) && (
