@@ -39,11 +39,11 @@ fn deploy_account(
 }
 
 #[test]
-#[should_panic]
 fn constructor_rejects_zero_public_key() {
     let contract = declare("SwapPulseAccount").unwrap().contract_class();
     let calldata = array![0];
-    contract.deploy(@calldata).unwrap();
+    let result = contract.deploy(@calldata);
+    assert(result.is_err(), 'zero key accepted');
 }
 
 #[test]
