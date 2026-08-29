@@ -1,0 +1,11 @@
+{
+  "name": "swappulse-testnet-tx-relay",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "starknet": "10.0.2"
+  }
+}
