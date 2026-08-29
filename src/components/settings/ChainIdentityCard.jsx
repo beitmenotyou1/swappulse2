@@ -23,6 +23,7 @@ export default function ChainIdentityCard() {
   const [importingResult, setImportingResult] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [automaticSetup, setAutomaticSetup] = useState(false);
+  const [setupStep, setSetupStep] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,6 +51,7 @@ export default function ChainIdentityCard() {
   const eligible = age?.eligible === true;
   const networkReady = network?.ready === true;
   const canPrepare = status?.can_prepare === true;
+  const automationReady = status?.automation_ready === true;
   const signerMatchesIdentity = Boolean(
     identity?.signer_public_key
     && deviceSigner?.publicKey
@@ -136,26 +138,35 @@ export default function ChainIdentityCard() {
   const secureIdentityAutomatically = async () => {
     if (!identity?.id || !signerMatchesIdentity || !user?.id) return;
     setAutomaticSetup(true);
+    setSetupStep('Preparing account deployment…');
     try {
       const deployDraft = await getDraft('deploy_account');
       if (!deployDraft?.already_complete) {
+        setSetupStep('Signing account deployment on this device…');
         await signAndSubmitDraft(deployDraft);
+        setSetupStep('Waiting for account deployment confirmation…');
         await waitForStep('deploy_account');
       }
 
+      setSetupStep('Checking recovery configuration…');
       const recoveryDraft = await getDraft('configure_recovery');
       if (!recoveryDraft?.already_complete) {
+        setSetupStep('Signing recovery settings on this device…');
         await signAndSubmitDraft(recoveryDraft);
+        setSetupStep('Waiting for recovery settings confirmation…');
         await waitForStep('configure_recovery');
       }
 
+      setSetupStep('Registering your identity…');
       await invokeData('chain-tx-submit', { action: 'register_identity', record_id: identity.id });
+      setSetupStep('Verifying identity from public chain state…');
       const reconciled = await invokeData('chain-identity-reconcile', { record_id: identity.id });
       const outcome = reconciled?.results?.[0]?.outcome || '';
       await load();
       if (!['REGISTERED', 'RECOVERED'].includes(outcome)) {
         throw new Error(`The chain registration completed, but final reconciliation returned ${outcome || 'no result'}.`);
       }
+      setSetupStep('Identity secured');
       toast({
         title: 'Identity secured',
         description: 'Your account was signed on this device, registered on SwapPulse Testnet and independently verified from the public chain state.',
@@ -166,6 +177,7 @@ export default function ChainIdentityCard() {
       toast({ title: 'Testnet setup paused', description: message, variant: 'destructive' });
     } finally {
       setAutomaticSetup(false);
+      setSetupStep('');
     }
   };
 
@@ -235,7 +247,9 @@ export default function ChainIdentityCard() {
   } else if (inProgress) {
     title = 'Identity setup in progress';
     description = identity?.status === 'PENDING'
-      ? 'Your identity and public signer key are reserved. The testnet operator still needs to deploy and register the account.'
+      ? automationReady
+        ? 'Your identity and public signer key are reserved. This device can now finish the verified testnet setup.'
+        : 'Your identity and public signer key are reserved. Automatic provisioning is not connected yet, so the manual operator fallback remains available.'
       : 'Your testnet identity is being verified against the chain before it becomes authoritative.';
   } else if (!age?.declared) {
     description = 'Choose your age band above before SwapPulse can determine whether testnet identity features are available.';
@@ -315,7 +329,7 @@ export default function ChainIdentityCard() {
         </div>
       )}
 
-      {identity?.status === 'PENDING' && signerMatchesIdentity && (
+      {identity?.status === 'PENDING' && signerMatchesIdentity && automationReady && (
         <div className="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
           <p className="text-xs font-bold">Finish testnet identity setup</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
@@ -330,7 +344,17 @@ export default function ChainIdentityCard() {
             {automaticSetup && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {automaticSetup ? 'Securing identity…' : 'Secure My Testnet Identity'}
           </button>
-          <p className="mt-2 text-[10px] text-muted-foreground">Testnet only. No value-bearing features are enabled by this process.</p>
+          {automaticSetup && setupStep && (
+            <p className="mt-2 text-[11px] font-medium text-primary" role="status" aria-live="polite">{setupStep}</p>
+          )}
+          <p className="mt-2 text-[10px] text-muted-foreground">Testnet only. No value-bearing features are enabled by this process. Retrying is safe: completed chain steps are detected and skipped.</p>
+        </div>
+      )}
+
+      {identity?.status === 'PENDING' && signerMatchesIdentity && !automationReady && (
+        <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-3 text-xs">
+          <p className="font-bold">Automatic testnet setup is not connected yet</p>
+          <p className="mt-1 text-muted-foreground">Your reservation is safe. Once the server-side provisioning relay is configured, this device can continue from the existing identity without creating a new signer.</p>
         </div>
       )}
 
