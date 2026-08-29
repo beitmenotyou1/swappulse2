@@ -35,7 +35,9 @@
     },
     "stream_url": {
       "type": "string",
-      "description": "External stream URL (external mode only) on any platform (Twitch, YouTube, Kick, Facebook Gaming, Rumble, custom RTMP, etc.)"
+      "maxLength": 2048,
+      "pattern": "^https?://",
+      "description": "External browser stream URL (external mode only). Only HTTP(S) URLs are accepted. Custom RTMP ingest URLs are not rendered or stored as clickable stream links."
     },
     "platform": {
       "type": "string",
