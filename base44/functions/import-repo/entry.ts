@@ -22,12 +22,6 @@ export default async function (req: Request): Promise<Response> {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const svc = base44.asServiceRole;
 
-    const pdsUrl = Deno.env.get('PDS_URL');
-    if (!pdsUrl) {
-      console.error('import-repo: PDS_URL not configured');
-      return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
-    }
-
     const body = await req.json().catch(() => ({}));
     const archive = (body as any).archive;
     if (!archive || !archive.records) {
@@ -45,9 +39,11 @@ export default async function (req: Request): Promise<Response> {
     }
 
     let session: any;
+    let userPdsUrl = '';
     try {
       const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
       session = s.session;
+      userPdsUrl = s.pdsUrl;
     } catch (e: any) {
       console.error('import-repo: session failed', e?.message || e);
       return Response.json({ error: `PDS session failed: ${e?.message || e}` }, { status: 502 });
@@ -68,8 +64,9 @@ export default async function (req: Request): Promise<Response> {
           const clean = { ...record };
           delete clean.$type;
           // Re-create on the PDS under the user's repo
-          const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.createRecord`, {
+          const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.createRecord`, {
             method: 'POST',
+            redirect: 'error',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
             body: JSON.stringify({ repo: session.did, collection, record: clean }),
           });
