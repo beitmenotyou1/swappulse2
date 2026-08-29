@@ -31,10 +31,13 @@
     },
     "photo_urls": {
       "type": "array",
+      "maxItems": 8,
       "items": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 2048,
+        "pattern": "^https?://"
       },
-      "description": "Uploaded photos of the cards received, as evidence"
+      "description": "Uploaded HTTP(S) photos of the cards received, as evidence"
     },
     "status": {
       "type": "string",
