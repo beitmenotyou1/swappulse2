@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "title": "Notification",
-  "description": "org.swappulse.notification \u2014 a notification derived from platform activity (trade match, price alert, follow, like, repost, quote, comment, mention, reaction, achievement earned/revoked, starter pack inclusion request, wallet top-up, escrow held/released, low balance alert, etc.), addressed to a user by DID. The canonical read state lives in the user's NotificationState record. metadata carries structured payloads for rich cards (e.g. achievement earned/revoked details, interaction post refs for respond-to-notification, quoteText for quote notifications, reactionType for reaction notifications, kind/packId/requestId for starter pack request accept/deny actions, amountCents/currency for wallet top-up, escrowId/tradeType for escrow held, thresholdCents/currentCents for low balance).",
+  "description": "org.swappulse.notification — backend-derived platform activity addressed to a user by DID. Browser clients may read their own notifications but cannot create, rewrite or delete notification records; read receipts are applied by the authenticated mark-notifications-read backend function.",
   "properties": {
     "did": {
       "type": "string",
@@ -122,7 +122,9 @@
   ],
   "rls": {
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "read": {
       "$or": [
@@ -140,24 +142,14 @@
       ]
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

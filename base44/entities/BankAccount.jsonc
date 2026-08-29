@@ -2,7 +2,7 @@
   "name": "BankAccount",
   "type": "object",
   "title": "BankAccount",
-  "description": "org.swappulse.bankAccount \u2014 a collector's bank account details (IBAN + BIC/Swift code) used when crypto features are disabled. Top-ups via Stripe are routed to this bank account, and trade payments pull from the linked bank account via the Stripe payment method. The IBAN and BIC are stored AES-256-GCM encrypted using APP_PASSWORD_ENCRYPTION_KEY and shown masked in the UI. One active bank account per user.",
+  "description": "DEPRECATED / QUARANTINED legacy bank-account entity from the removed custodial wallet design. Not part of current SwapPulse V1. Retained only for audit/history; ordinary user access is disabled.",
   "properties": {
     "did": {
       "type": "string",
@@ -18,11 +18,11 @@
     },
     "iban_masked": {
       "type": "string",
-      "description": "Masked IBAN for display (first 4 + \u2022\u2022\u2022\u2022 + last 4)"
+      "description": "Masked IBAN for display (first 4 + •••• + last 4)"
     },
     "bic_masked": {
       "type": "string",
-      "description": "Masked BIC for display (first 4 + \u2022\u2022\u2022\u2022)"
+      "description": "Masked BIC for display (first 4 + ••••)"
     },
     "account_holder_name": {
       "type": "string",
@@ -49,42 +49,24 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

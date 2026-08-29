@@ -2,7 +2,7 @@
   "name": "ContentReport",
   "type": "object",
   "title": "ContentReport",
-  "description": "org.swappulse.contentReport \u2014 a user-submitted report flagging content (post, listing, message, or profile) for moderator review. Each report feeds into the AI moderation learning loop as AgentFeedback so the agent learns what the community considers reportable. Supports evidence file uploads (evidence_urls) and, for DM reports, a moderator-only decrypted plaintext (reported_message_plaintext) populated server-side via the decrypt-reported-message backend function.",
+  "description": "org.swappulse.contentReport — a user-submitted moderation report. Reporters provide the reason, details and optional evidence. Direct-message bodies remain end-to-end encrypted; SwapPulse does not routinely decrypt or escrow new DM plaintext for moderation.",
   "properties": {
     "content_type": {
       "type": "string",
@@ -58,7 +58,51 @@
     "reported_message_plaintext": {
       "type": "string",
       "maxLength": 4000,
-      "description": "Moderator-only decrypted plaintext of a reported DM, populated server-side by the decrypt-reported-message backend function via key escrow. Empty for non-DM reports."
+      "description": "Legacy field retained for historical reports only. New DM reports do not populate it. Readable and writable only by moderation staff.",
+      "rls": {
+        "read": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        },
+        "create": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        },
+        "update": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        }
+      }
     },
     "status": {
       "type": "string",
@@ -68,19 +112,139 @@
         "dismissed",
         "escalated"
       ],
-      "default": "pending"
+      "default": "pending",
+      "rls": {
+        "create": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        },
+        "update": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        }
+      }
     },
     "resolved_by": {
       "type": "string",
-      "description": "User id of the moderator who resolved the report"
+      "description": "User id of the moderator who resolved the report",
+      "rls": {
+        "create": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        },
+        "update": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        }
+      }
     },
     "resolved_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "rls": {
+        "create": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        },
+        "update": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        }
+      }
     },
     "resolution_notes": {
       "type": "string",
-      "maxLength": 1000
+      "maxLength": 1000,
+      "rls": {
+        "create": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        },
+        "update": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "moderator"
+              }
+            }
+          ]
+        }
+      }
     }
   },
   "required": [

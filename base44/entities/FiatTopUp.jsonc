@@ -2,7 +2,7 @@
   "name": "FiatTopUp",
   "type": "object",
   "title": "FiatTopUp",
-  "description": "org.swappulse.fiatTopUp \u2014 a record of each Stripe top-up payment into a user's wallet. Tracks the Stripe PaymentIntent, the amount, the 2% fee, the refundable balance, and the refund status. Used to verify refund eligibility (only original fiat top-up amounts can be refunded, not converted USDC).",
+  "description": "DEPRECATED / QUARANTINED legacy custodial-wallet Stripe top-up entity. Not part of current SwapPulse V1. Retained only for audit/history; ordinary user read/write/create/delete access is disabled.",
   "properties": {
     "did": {
       "type": "string",
@@ -83,37 +83,19 @@
   ],
   "rls": {
     "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "user_condition": {
