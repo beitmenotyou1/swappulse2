@@ -31,14 +31,23 @@ async function post(url, payload, token = '') {
 const upstreamPort = await freePort();
 const relayPort = await freePort();
 const upstreamUrl = `http://127.0.0.1:${upstreamPort}`;
-const relayUrl = `http://127.0.0.1:${relayPort}/rpc`;
+const relayBaseUrl = `http://127.0.0.1:${relayPort}`;
+const relayUrl = `${relayBaseUrl}/rpc`;
+const registerUrl = `${relayBaseUrl}/register`;
 const token = 'a'.repeat(64);
 const accountClassHash = '0x12345';
+const registryClassHash = '0x23456';
+const registryAddress = '0x45678';
+const registryOwner = '0x56789';
+const identityId = '0x6789a';
 const publicKey = '0x34567';
 const accountAddress = `0x${BigInt(hash.calculateContractAddressFromHash(publicKey, accountClassHash, [publicKey], 0)).toString(16)}`;
 const recoveryController = '0x0';
 const recoveryDelay = 172800;
 const seen = [];
+const ownerSelector = hash.getSelectorFromName('owner');
+const getIdentitySelector = hash.getSelectorFromName('get_identity');
+const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
 
 const upstream = http.createServer(async (req, res) => {
   const chunks = [];
@@ -47,7 +56,18 @@ const upstream = http.createServer(async (req, res) => {
   seen.push(payload.method);
   let result = {};
   if (payload.method === 'devnet_mint') result = { unit: 'FRI' };
-  else if (payload.method === 'starknet_getClassHashAt') result = accountClassHash;
+  else if (payload.method === 'starknet_getClassHashAt') {
+    const address = Array.isArray(payload.params) ? payload.params[1] : '';
+    result = address === registryAddress ? registryClassHash : accountClassHash;
+  }
+  else if (payload.method === 'starknet_call') {
+    const call = Array.isArray(payload.params) ? payload.params[0] : {};
+    const selector = call?.entry_point_selector;
+    if (selector === ownerSelector) result = [registryOwner];
+    else if (selector === getIdentitySelector) result = [accountAddress, '0x1', identityId, '0x1', '0x0'];
+    else if (selector === reverseSelector) result = [identityId];
+    else result = ['0x0'];
+  }
   else if (payload.method === 'starknet_addDeployAccountTransaction') result = { transaction_hash: '0xaaa', contract_address: accountAddress };
   else if (payload.method === 'starknet_addInvokeTransaction') result = { transaction_hash: '0xbbb' };
   else result = { ignored: true };
