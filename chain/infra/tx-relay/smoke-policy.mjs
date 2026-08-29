@@ -48,6 +48,8 @@ const seen = [];
 const ownerSelector = hash.getSelectorFromName('owner');
 const getIdentitySelector = hash.getSelectorFromName('get_identity');
 const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
+let mockIdentityStatus = 1;
+let mockReverseIdentity = identityId;
 
 const upstream = http.createServer(async (req, res) => {
   const chunks = [];
@@ -64,8 +66,10 @@ const upstream = http.createServer(async (req, res) => {
     const call = Array.isArray(payload.params) ? payload.params[0] : {};
     const selector = call?.entry_point_selector;
     if (selector === ownerSelector) result = [registryOwner];
-    else if (selector === getIdentitySelector) result = [accountAddress, '0x1', identityId, '0x1', '0x0'];
-    else if (selector === reverseSelector) result = [identityId];
+    else if (selector === getIdentitySelector) result = mockIdentityStatus === 0
+      ? ['0x0', '0x0', '0x0', '0x0', '0x0']
+      : [accountAddress, '0x1', identityId, '0x1', '0x0'];
+    else if (selector === reverseSelector) result = [mockReverseIdentity];
     else result = ['0x0'];
   }
   else if (payload.method === 'starknet_addDeployAccountTransaction') result = { transaction_hash: '0xaaa', contract_address: accountAddress };
@@ -163,6 +167,20 @@ try {
     throw new Error(`Idempotent registration was not accepted: ${JSON.stringify(idempotentRegistration)}`);
   }
 
+  mockIdentityStatus = 0;
+  mockReverseIdentity = '0x0';
+  const wrongRecoveryRegistration = await post(registerUrl, {
+    identity_id: identityId,
+    public_key: publicKey,
+    account_address: accountAddress,
+  }, token);
+  if (wrongRecoveryRegistration.status !== 403 || wrongRecoveryRegistration.body?.code !== 'REGISTRATION_RECOVERY_DELAY_MISMATCH') {
+    throw new Error(`Wrong recovery registration was not blocked: ${JSON.stringify(wrongRecoveryRegistration)}`);
+  }
+  if (seen.includes('devnet_getPredeployedAccounts')) throw new Error('Registry owner key was requested before recovery policy validation completed');
+
+  mockIdentityStatus = 1;
+  mockReverseIdentity = identityId;
   const badRegistration = await post(registerUrl, {
     identity_id: identityId,
     public_key: publicKey,
@@ -170,7 +188,7 @@ try {
   }, token);
   if (badRegistration.status !== 403) throw new Error('Mismatched registration account was not blocked');
 
-  const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add'));
+  const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add')); 
   if (forwardedWrites.join(',') !== 'starknet_addDeployAccountTransaction,starknet_addInvokeTransaction') {
     throw new Error(`Unexpected writes reached upstream: ${forwardedWrites.join(',')}`);
   }
@@ -184,6 +202,8 @@ try {
     devnet_method_blocked: true,
     missing_token_blocked: true,
     idempotent_registration: true,
+    wrong_recovery_registration_blocked: true,
+    owner_key_not_requested_before_policy_pass: true,
     mismatched_registration_blocked: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
