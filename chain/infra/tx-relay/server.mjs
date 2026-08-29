@@ -262,6 +262,17 @@ async function registerIdentity(body) {
   const reverseIdentity = normalizeZeroableHex(reverseValues?.[0] || '0x0', 'reverse identity');
   if (reverseIdentity !== '0x0') throw new Error('REGISTRATION_ACCOUNT_ALREADY_BOUND');
 
+  const [controllerValues, delayValues] = await Promise.all([
+    starknetCall(accountAddress, 'get_recovery_controller', []),
+    starknetCall(accountAddress, 'get_recovery_delay', []),
+  ]);
+  if (normalizeZeroableHex(controllerValues?.[0] || '0x0', 'recovery controller') !== recoveryController) {
+    throw new Error('REGISTRATION_RECOVERY_CONTROLLER_MISMATCH');
+  }
+  if (BigInt(normalizeZeroableHex(delayValues?.[0] || '0x0', 'recovery delay')) !== BigInt(recoveryDelaySeconds)) {
+    throw new Error('REGISTRATION_RECOVERY_DELAY_MISMATCH');
+  }
+
   const predeployed = await rpc('devnet_getPredeployedAccounts', { with_balance: true });
   if (predeployed?.error || !Array.isArray(predeployed?.result)) throw new Error('REGISTRATION_OWNER_KEY_UNAVAILABLE');
   const ownerAccount = predeployed.result.find((entry) => {
