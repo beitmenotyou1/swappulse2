@@ -307,7 +307,7 @@ export default function ExternalStreamSpace({ space: initialSpace }) {
             </span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="h-3.5 w-3.5" /> {space.listener_count || listenersList.length}</span>
           </div>
-          <button onClick={leave} className="rounded-full p-2 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Leave space" onClick={leave} className="rounded-full p-2 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="px-4 pb-3">
           <h1 className="text-lg font-extrabold">{space.title}</h1>

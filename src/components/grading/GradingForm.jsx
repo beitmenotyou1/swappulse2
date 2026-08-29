@@ -56,7 +56,7 @@ export default function GradingForm({ collection, onClose, onSaved }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-bold">{t('grading.new')}</h2>
-          <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
+          <button aria-label="Close grading form" onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
         </div>
 
         <label className="text-xs font-semibold text-muted-foreground">{t('grading.cardFromCollection')}</label>

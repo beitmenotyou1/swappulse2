@@ -215,10 +215,10 @@ function AdminIncidentCard({ incident, updateForm, setUpdateForm, onAddUpdate, o
           </p>
         </button>
         <div className="flex items-center gap-1">
-          <button onClick={() => setExpanded(!expanded)} className="rounded p-1 hover:bg-secondary">
+          <button aria-label="Toggle incident details" onClick={() => setExpanded(!expanded)} className="rounded p-1 hover:bg-secondary">
             <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
-          <button onClick={onDelete} className="rounded p-1 text-destructive hover:bg-destructive/10">
+          <button aria-label="Delete incident" onClick={onDelete} className="rounded p-1 text-destructive hover:bg-destructive/10">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>

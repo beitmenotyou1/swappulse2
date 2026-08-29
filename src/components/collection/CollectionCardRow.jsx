@@ -46,7 +46,7 @@ export default function CollectionCardRow({ item, selected, selectMode, onToggle
         ) : (
           <p className="text-sm text-muted-foreground">-</p>
         )}
-        <button onClick={() => onRemove(item.id)} className="text-muted-foreground hover:text-red-400">
+        <button aria-label="Remove card from collection" onClick={() => onRemove(item.id)} className="text-muted-foreground hover:text-red-400">
           <Trash2 className="h-4 w-4" />
         </button>
       </div>

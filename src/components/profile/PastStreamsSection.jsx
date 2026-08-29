@@ -76,7 +76,7 @@ export default function PastStreamsSection({ did, onEpisodePublished }) {
               >
                 Save as Podcast
               </button>
-              <button
+              <button aria-label="Delete past stream"
                 onClick={() => del(s)}
                 className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
               >

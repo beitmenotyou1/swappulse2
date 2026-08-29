@@ -18,7 +18,7 @@ export default function SlotPicker({ entries, onSelect, onClose }) {
       >
         <div className="flex items-center justify-between border-b border-border p-3">
           <h3 className="font-bold">Pick a card for this slot</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button aria-label="Close slot picker" onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>

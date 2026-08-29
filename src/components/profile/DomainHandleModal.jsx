@@ -94,7 +94,7 @@ export default function DomainHandleModal({ onClose }) {
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Globe className="h-5 w-5 text-primary" /> Update Your Handle
           </h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
+          <button aria-label="Close handle settings" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
             <X className="h-5 w-5" />
           </button>
         </div>

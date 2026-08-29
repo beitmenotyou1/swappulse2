@@ -218,7 +218,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
             <Avatar name={user?.author_name} src={user?.author_avatar} size={32} />
             <span className="text-sm font-semibold text-white">{user?.author_name || 'Collector'}</span>
           </div>
-          <button className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+          <button aria-label="Close story" className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); onClose(); }}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -320,7 +320,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
           <div className="absolute bottom-0 left-0 right-0 z-40 max-h-[60%] animate-slide-up overflow-y-auto rounded-t-2xl bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-bold">{viewers.length} views</p>
-              <button onClick={() => setShowSeenBy(false)} className="rounded-full p-1 hover:bg-secondary"><X className="h-4 w-4" /></button>
+              <button aria-label="Close viewers list" onClick={() => setShowSeenBy(false)} className="rounded-full p-1 hover:bg-secondary"><X className="h-4 w-4" /></button>
             </div>
             {viewers.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No views yet.</p>

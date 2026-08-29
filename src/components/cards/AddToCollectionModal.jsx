@@ -58,7 +58,7 @@ export default function AddToCollectionModal({ open, onClose, card }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Add to Collection</h2>
-          <button onClick={onClose} className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5">
+          <button aria-label="Close add to collection" onClick={onClose} className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5">
             <X className="h-5 w-5" />
           </button>
         </div>

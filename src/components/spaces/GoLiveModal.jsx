@@ -150,7 +150,7 @@ export default function GoLiveModal({ onClose, onLive }) {
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Radio className="h-5 w-5 text-destructive" /> Go Live
           </h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
+          <button aria-label="Close go live form" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -229,7 +229,7 @@ export default function GoLiveModal({ onClose, onLive }) {
               {topicTags.map((t) => (
                 <span key={t} className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs">
                   <Hash className="h-3 w-3 text-muted-foreground" />{t}
-                  <button onClick={() => setTopicTags((arr) => arr.filter((x) => x !== t))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                  <button aria-label="Remove topic tag" onClick={() => setTopicTags((arr) => arr.filter((x) => x !== t))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
                 </span>
               ))}
               <input
@@ -240,7 +240,7 @@ export default function GoLiveModal({ onClose, onLive }) {
                 maxLength={30}
                 className="w-24 rounded-full border border-border bg-secondary px-2 py-1 text-xs outline-none focus:border-primary"
               />
-              <button onClick={addTag} className="rounded-full p-1 text-muted-foreground hover:text-primary"><Plus className="h-3.5 w-3.5" /></button>
+              <button aria-label="Add topic tag" onClick={addTag} className="rounded-full p-1 text-muted-foreground hover:text-primary"><Plus className="h-3.5 w-3.5" /></button>
             </div>
           </div>
 

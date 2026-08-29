@@ -175,7 +175,7 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       {/* Top bar */}
       <div className="absolute left-0 right-0 top-0 z-30 flex items-center justify-between p-4">
-        <button onClick={onClose} className="rounded-full bg-black/40 p-2 text-white backdrop-blur hover:bg-black/60">
+        <button aria-label="Close story camera" onClick={onClose} className="rounded-full bg-black/40 p-2 text-white backdrop-blur hover:bg-black/60">
           <X className="h-5 w-5" />
         </button>
         <div className="flex gap-2">
@@ -250,7 +250,7 @@ export default function StoryCamera({ open, onClose, onCreated, myDid }) {
           {mode === 'text' && (
             <div className="mb-2 flex justify-center gap-2">
               {BG_COLORS.map((c) => (
-                <button key={c} onClick={() => setBgColor(c)} className={`h-7 w-7 rounded-full ring-2 ${bgColor === c ? 'ring-white' : 'ring-transparent'}`} style={{ background: c }} />
+                <button aria-label="Choose story background colour" key={c} onClick={() => setBgColor(c)} className={`h-7 w-7 rounded-full ring-2 ${bgColor === c ? 'ring-white' : 'ring-transparent'}`} style={{ background: c }} />
               ))}
             </div>
           )}

@@ -88,7 +88,7 @@ export default function CommentComposer({ cardId, cardName, cardImage, user, rep
             <CornerDownRight className="h-3.5 w-3.5" />
             Replying to <strong className="text-foreground">{replyTarget.author_name || 'collector'}</strong>
           </span>
-          <button onClick={onCancelReply} className="rounded p-0.5 hover:bg-muted">
+          <button aria-label="Cancel reply" onClick={onCancelReply} className="rounded p-0.5 hover:bg-muted">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>

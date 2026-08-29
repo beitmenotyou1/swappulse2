@@ -316,7 +316,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
           {attachedCard && (
             <>
               <div className="relative mb-2 inline-flex overflow-hidden rounded-xl border border-border bg-secondary">
-                <button
+                <button aria-label="Remove attached card"
                   onClick={() => setAttachedCard(null)}
                   className="absolute right-1.5 top-1.5 z-10 rounded-full bg-background/80 p-1 hover:bg-background"
                 >

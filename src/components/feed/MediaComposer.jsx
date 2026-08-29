@@ -58,7 +58,7 @@ export default function MediaComposer({ media, content }) {
               <Video className="h-3.5 w-3.5" />
               {detectedVideo ? `${t('compose.videoDetected')}: ${detectedVideo.platform}` : t('compose.video')}
             </span>
-            <button onClick={media.removeVideo} className="text-destructive hover:underline">
+            <button aria-label="Remove video" onClick={media.removeVideo} className="text-destructive hover:underline">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -99,7 +99,7 @@ export default function MediaComposer({ media, content }) {
             <p className="line-clamp-1 text-xs text-muted-foreground">{media.linkPreview.description}</p>
             <div className="mt-0.5 flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{media.linkPreview.site_name}</span>
-              <button
+              <button aria-label="Remove link preview"
                 onClick={() => media.setLinkPreview(null)}
                 className="text-destructive hover:underline"
               >

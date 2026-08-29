@@ -30,7 +30,7 @@ export default function TradeInterestBanner() {
         <h3 className="flex items-center gap-1.5 text-sm font-bold">
           <Handshake className="h-4 w-4 text-primary" /> {t('feed.tradeInterest')} ({data.count})
         </h3>
-        <button onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground">
+        <button aria-label="Dismiss trade interest" onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
         </button>
       </div>

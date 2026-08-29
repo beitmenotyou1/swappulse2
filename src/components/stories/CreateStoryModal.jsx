@@ -97,7 +97,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
       <div className="w-full max-w-md animate-slide-up rounded-2xl border border-border bg-card p-5" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Compose story</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Close story composer" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
 
         {/* Preview */}
@@ -140,7 +140,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
         {seg.media_type === 'text' && (
           <div className="mb-3 flex flex-wrap gap-2">
             {COLORS.map((c) => (
-              <button key={c} onClick={() => setSeg((s) => ({ ...s, background_color: c }))} className={`h-7 w-7 rounded-full ring-2 ${seg.background_color === c ? 'ring-foreground' : 'ring-transparent'}`} style={{ background: c }} />
+              <button aria-label="Choose story background colour" key={c} onClick={() => setSeg((s) => ({ ...s, background_color: c }))} className={`h-7 w-7 rounded-full ring-2 ${seg.background_color === c ? 'ring-foreground' : 'ring-transparent'}`} style={{ background: c }} />
             ))}
           </div>
         )}
@@ -170,7 +170,7 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
                 {s.media_blob && <img src={s.media_blob} alt="" className="h-full w-full object-cover" />}
                 {s.media_type === 'card' && s.card_image && <img src={s.card_image} alt="" className="h-full w-full object-cover" />}
                 {s.media_type === 'text' && <div className="h-full w-full" style={{ background: s.background_color }} />}
-                <button onClick={() => removeSegment(i)} className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"><Trash2 className="h-3 w-3" /></button>
+                <button aria-label="Remove story segment" onClick={() => removeSegment(i)} className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"><Trash2 className="h-3 w-3" /></button>
               </div>
             ))}
           </div>

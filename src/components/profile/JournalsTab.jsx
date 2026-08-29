@@ -78,9 +78,9 @@ export default function JournalsTab({ journals = [], collection = [], onSaved })
                 <span>{j.like_count || 0} likes</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => setViewing(j)} className="rounded p-1.5 hover:bg-secondary"><Eye className="h-4 w-4" /></button>
-                <button onClick={() => openEdit(j)} className="rounded p-1.5 hover:bg-secondary"><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => remove(j)} className="rounded p-1.5 text-destructive hover:bg-secondary"><Trash2 className="h-4 w-4" /></button>
+                <button aria-label="View journal" onClick={() => setViewing(j)} className="rounded p-1.5 hover:bg-secondary"><Eye className="h-4 w-4" /></button>
+                <button aria-label="Edit journal" onClick={() => openEdit(j)} className="rounded p-1.5 hover:bg-secondary"><Pencil className="h-4 w-4" /></button>
+                <button aria-label="Delete journal" onClick={() => remove(j)} className="rounded p-1.5 text-destructive hover:bg-secondary"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
           </div>

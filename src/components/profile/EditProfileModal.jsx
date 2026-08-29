@@ -100,7 +100,7 @@ export default function EditProfileModal({ onClose, onSaved }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Edit Profile</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
+          <button aria-label="Close profile editor" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
             <X className="h-5 w-5" />
           </button>
         </div>

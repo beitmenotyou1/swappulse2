@@ -38,7 +38,7 @@ export default function WeeklyDigestToggle() {
             delivered to {user?.email || 'your inbox'}.
           </p>
         </div>
-        <button
+        <button aria-label="Weekly digest emails"
           onClick={toggle}
           disabled={saving}
           role="switch"

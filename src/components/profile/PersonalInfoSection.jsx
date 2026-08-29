@@ -35,7 +35,7 @@ export default function PersonalInfoSection({ data, isOwner }) {
             <div key={f.label} className={`rounded-xl border border-border bg-card p-3 ${f.full ? 'sm:col-span-2' : ''}`}>
               <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{f.label}</p>
               {f.href ? (
-                <a href={f.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 break-all text-sm font-medium text-primary hover:underline">
+                <a href={f.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 break-all text-sm font-medium text-primary hover:underline">
                   {f.icon && <f.icon className="h-3.5 w-3.5 shrink-0" />} {f.value}
                 </a>
               ) : (

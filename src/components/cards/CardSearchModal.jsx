@@ -49,7 +49,7 @@ export default function CardSearchModal({ open, onClose, onSelect, title = 'Sear
       >
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold">{title}</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
+          <button aria-label="Close card search" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
             <X className="h-5 w-5" />
           </button>
         </div>

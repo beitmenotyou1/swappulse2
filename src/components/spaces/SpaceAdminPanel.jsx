@@ -66,7 +66,7 @@ export default function SpaceAdminPanel({ open, onClose, participants, myDid, on
       >
         <div className="mb-3 flex items-center justify-between">
           <h3 className="flex items-center gap-2 text-base font-bold"><Crown className="h-4 w-4 text-primary" /> Manage Space</h3>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Close space admin panel" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">On stage ({onStage.length})</p>
         <div className="space-y-1.5">

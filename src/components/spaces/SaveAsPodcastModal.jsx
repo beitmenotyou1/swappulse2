@@ -124,7 +124,7 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Mic className="h-5 w-5 text-primary" /> Save as Podcast
           </h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
+          <button aria-label="Close save as podcast" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -219,7 +219,7 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
                     placeholder="card id (optional)"
                     className="hidden w-28 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary sm:block"
                   />
-                  <button
+                  <button aria-label="Remove podcast chapter"
                     onClick={() => setChapters((arr) => arr.filter((_, j) => j !== i))}
                     className="rounded-md p-1 text-destructive hover:bg-destructive/10"
                   >

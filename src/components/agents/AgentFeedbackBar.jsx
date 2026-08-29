@@ -77,7 +77,7 @@ export default function AgentFeedbackBar({ agentName, conversationId, message })
             >
               Send
             </button>
-            <button
+            <button aria-label="Close correction"
               onClick={() => setShowCorrection(false)}
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-background"
             >

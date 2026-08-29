@@ -90,7 +90,7 @@ export default function BinderDetail() {
             >
               <Pencil className="h-3.5 w-3.5" /> {t('binder.edit')}
             </Link>
-            <button
+            <button aria-label="Delete binder"
               onClick={remove}
               className="rounded-full p-2 text-muted-foreground hover:text-destructive"
             >
@@ -138,7 +138,7 @@ export default function BinderDetail() {
       </div>
 
       <div className="flex items-center justify-center gap-3 px-4 py-2">
-        <button
+        <button aria-label="Previous binder page"
           onClick={() => setPage((p) => Math.max(0, p - 1))}
           disabled={page === 0}
           className="rounded-full p-1.5 disabled:opacity-30"
@@ -148,7 +148,7 @@ export default function BinderDetail() {
         <span className="text-sm font-semibold">
           {page + 1} / {pages.length}
         </span>
-        <button
+        <button aria-label="Next binder page"
           onClick={() => setPage((p) => Math.min(pages.length - 1, p + 1))}
           disabled={page === pages.length - 1}
           className="rounded-full p-1.5 disabled:opacity-30"

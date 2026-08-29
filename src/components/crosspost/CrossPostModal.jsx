@@ -80,7 +80,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
       <div className="mt-6 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold">{editing ? 'Edit platform' : 'Add platform'}</h2>
-          <button onClick={onClose} className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5"><X className="h-5 w-5" /></button>
+          <button aria-label="Close cross-post dialog" onClick={onClose} className="relative rounded-full p-1.5 hover:bg-secondary before:content-[''] before:absolute before:-inset-1.5"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-4">
           <div className="block text-sm">

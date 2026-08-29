@@ -17,7 +17,7 @@ export default function JournalView({ journal, onClose }) {
             <h2 className="truncate text-lg font-bold">{journal.title}</h2>
             {journal.subtitle && <p className="truncate text-sm text-muted-foreground">{journal.subtitle}</p>}
           </div>
-          <button onClick={onClose} className="shrink-0 rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Close journal" onClick={onClose} className="shrink-0 rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="p-4">

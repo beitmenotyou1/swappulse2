@@ -356,7 +356,7 @@ export default function InPlatformSpace({ space: initialSpace }) {
               </span>
             )}
           </div>
-          <button onClick={leave} className="rounded-full p-2 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Leave space" onClick={leave} className="rounded-full p-2 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="px-4 pb-3">
           <h1 className="text-lg font-extrabold">{space.title}</h1>

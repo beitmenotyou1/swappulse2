@@ -121,7 +121,7 @@ export default function VouchForm({ onCreated }) {
               <p className="text-sm font-semibold">{resolved.name}</p>
               <p className="text-xs text-muted-foreground">@{resolved.handle}</p>
             </div>
-            <button onClick={() => setResolved(null)} className="text-muted-foreground hover:text-foreground">
+            <button aria-label="Clear selected collector" onClick={() => setResolved(null)} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>

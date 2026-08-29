@@ -67,7 +67,7 @@ export default function WishlistAlertModal({ card, onClose }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-bold"><Bell className="h-4 w-4 text-primary" /> Wishlist alert</h2>
-          <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
+          <button aria-label="Close wishlist alert settings" onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
         </div>
 
         <p className="text-xs text-muted-foreground">
@@ -137,7 +137,7 @@ export default function WishlistAlertModal({ card, onClose }) {
                       {a.card_name || 'Any'} · {a.max_price ? `max £${(a.max_price / 100).toFixed(2)}` : 'no limit'} · {a.notify}
                     </p>
                   </div>
-                  <button onClick={() => remove(a.id)} className="text-muted-foreground hover:text-destructive">
+                  <button aria-label="Delete wishlist alert" onClick={() => remove(a.id)} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

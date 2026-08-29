@@ -67,7 +67,7 @@ export default function MessageButton({ targetDid, targetName, targetHandle, tar
 
   if (state === 'checking') {
     return (
-      <button disabled className={`inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-muted-foreground ${className}`}>
+      <button aria-label="Starting conversation" disabled className={`inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-muted-foreground ${className}`}>
         <Loader2 className="h-4 w-4 animate-spin" />
       </button>
     );

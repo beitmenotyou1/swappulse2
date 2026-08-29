@@ -119,7 +119,7 @@ export default function InsuranceExport({ items }) {
               <a
                 href={lastUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary"
               >
                 <Download className="h-4 w-4" /> Download

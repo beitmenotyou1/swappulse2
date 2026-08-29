@@ -184,7 +184,7 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
       return (
         <div className="py-10 text-center text-sm text-muted-foreground">
           <p>{t('userProfile.noOnSiteActivity')}</p>
-          <a href={`https://bsky.app/profile/${did}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+          <a href={`https://bsky.app/profile/${did}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline">
             {t('userProfile.viewOnBluesky')} <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
         </div>

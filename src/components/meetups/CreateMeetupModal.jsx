@@ -70,7 +70,7 @@ export default function CreateMeetupModal({ open, onClose, onCreated }) {
       <div className="mt-8 w-full max-w-lg animate-slide-up rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border p-4">
           <h2 className="text-lg font-bold">{t('meetup.new')}</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Close meetup form" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-4">
           <div>

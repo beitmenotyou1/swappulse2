@@ -53,7 +53,7 @@ export default function CreateSpaceModal({ onClose, onCreated }) {
       <div className="w-full max-w-md animate-slide-up rounded-2xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Start a Voice Space</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Close space form" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-3">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Space title e.g. Vintage Card Market Talk" maxLength={120} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />

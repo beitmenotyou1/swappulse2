@@ -214,7 +214,7 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Edit Episode</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
+          <button aria-label="Close podcast editor" onClick={onClose} className="rounded-full p-1.5 hover:bg-secondary"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="space-y-4">
@@ -238,7 +238,7 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
               {tags.map((t) => (
                 <span key={t} className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs">
                   #{t}
-                  <button onClick={() => setTags((arr) => arr.filter((x) => x !== t))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                  <button aria-label="Remove podcast tag" onClick={() => setTags((arr) => arr.filter((x) => x !== t))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
                 </span>
               ))}
               <input
@@ -249,7 +249,7 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
                 maxLength={30}
                 className="w-24 rounded-full border border-border bg-secondary px-2 py-1 text-xs outline-none focus:border-primary"
               />
-              <button onClick={addTag} className="rounded-full p-1 text-muted-foreground hover:text-primary"><Plus className="h-3.5 w-3.5" /></button>
+              <button aria-label="Add podcast tag" onClick={addTag} className="rounded-full p-1 text-muted-foreground hover:text-primary"><Plus className="h-3.5 w-3.5" /></button>
             </div>
           </div>
 
@@ -280,7 +280,7 @@ export default function PodcastEditorModal({ episode, onClose, onSaved }) {
                 <div key={i} className="flex items-center gap-2">
                   <input value={c.ts} onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, ts: e.target.value } : x)))} placeholder="mm:ss" className="w-16 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary" />
                   <input value={c.title} onChange={(e) => setChapters((arr) => arr.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} placeholder="Chapter title" maxLength={100} className="flex-1 rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none focus:border-primary" />
-                  <button onClick={() => setChapters((arr) => arr.filter((_, j) => j !== i))} className="rounded-md p-1 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button aria-label="Remove podcast chapter" onClick={() => setChapters((arr) => arr.filter((_, j) => j !== i))} className="rounded-md p-1 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               ))}
               {chapters.length === 0 && <p className="text-xs text-muted-foreground">No chapters yet.</p>}

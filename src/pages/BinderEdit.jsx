@@ -254,7 +254,7 @@ export default function BinderEdit() {
           <div key={pgIdx} className="rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">{t('binder.page')} {pgIdx + 1}</h3>
-              <button
+              <button aria-label="Remove binder page"
                 onClick={() => removePage(pgIdx)}
                 className="text-muted-foreground hover:text-destructive"
               >
@@ -283,7 +283,7 @@ export default function BinderEdit() {
                               {entry.card_name}
                             </div>
                           )}
-                          <button
+                          <button aria-label="Remove card from binder slot"
                             onClick={(e) => {
                               e.stopPropagation();
                               clearSlot(pgIdx, slIdx);

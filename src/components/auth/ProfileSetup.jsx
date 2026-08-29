@@ -107,7 +107,7 @@ export default function ProfileSetup({ onDone, initialUsername, initialFullName,
                     <ImageIcon className="h-6 w-6" />
                   </div>
                 )}
-                <button type="button" onClick={() => headerRef.current?.click()} className="absolute bottom-2 right-2 rounded-full bg-background/80 p-2 backdrop-blur hover:bg-background">
+                <button aria-label="Change header image" type="button" onClick={() => headerRef.current?.click()} className="absolute bottom-2 right-2 rounded-full bg-background/80 p-2 backdrop-blur hover:bg-background">
                   <Camera className="h-4 w-4" />
                 </button>
                 <input ref={headerRef} type="file" accept="image/*" onChange={handleHeader} className="hidden" />
@@ -122,7 +122,7 @@ export default function ProfileSetup({ onDone, initialUsername, initialFullName,
                     <Camera className="h-6 w-6" />
                   </div>
                 )}
-                <button type="button" onClick={() => avatarRef.current?.click()} className="absolute bottom-0 right-0 rounded-full bg-background/80 p-1.5 backdrop-blur hover:bg-background">
+                <button aria-label="Change profile photo" type="button" onClick={() => avatarRef.current?.click()} className="absolute bottom-0 right-0 rounded-full bg-background/80 p-1.5 backdrop-blur hover:bg-background">
                   <Camera className="h-3.5 w-3.5" />
                 </button>
                 <input ref={avatarRef} type="file" accept="image/*" onChange={handleAvatar} className="hidden" />

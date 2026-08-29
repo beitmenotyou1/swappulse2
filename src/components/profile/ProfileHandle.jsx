@@ -53,7 +53,7 @@ export default function ProfileHandle({ bskyHandle, username, did, verified, syn
         <a
           href={bskyUrl}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
         >
           View on Bluesky <ExternalLink className="h-3 w-3" />
