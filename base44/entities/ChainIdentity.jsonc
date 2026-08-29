@@ -31,6 +31,10 @@
       "type": "string",
       "description": "IdentityRegistry contract address for this network."
     },
+    "signer_public_key": {
+      "type": "string",
+      "description": "Public Stark signer key reserved for this testnet account. This is public cryptographic material, never a private key."
+    },
     "deployment_tx_hash": {
       "type": "string",
       "description": "Deploy-account transaction hash, when known."
