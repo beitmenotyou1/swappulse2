@@ -5,6 +5,7 @@ import { Account, RpcProvider, hash, transaction } from 'starknet';
 const upstream = new URL(process.env.UPSTREAM_RPC || 'http://devnet:5050');
 const port = Number(process.env.PORT || 8081);
 const relayToken = String(process.env.RELAY_TOKEN || '');
+const expectedChainId = normalizeHex(process.env.CHAIN_ID || '', 'CHAIN_ID');
 const accountClassHash = normalizeHex(process.env.ACCOUNT_CLASS_HASH || '', 'ACCOUNT_CLASS_HASH');
 const identityRegistryClassHash = normalizeHex(process.env.IDENTITY_REGISTRY_CLASS_HASH || '', 'IDENTITY_REGISTRY_CLASS_HASH');
 const identityRegistryAddress = normalizeHex(process.env.IDENTITY_REGISTRY_ADDRESS || '', 'IDENTITY_REGISTRY_ADDRESS');
@@ -35,6 +36,8 @@ const windows = new Map();
 const provider = new RpcProvider({ nodeUrl: upstream.toString() });
 const registryAdmin = new Account({ provider, address: registryAdminAddress, signer: registryAdminPrivateKey });
 let registrationBusy = false;
+let readinessCache = null;
+const readinessTtlMs = 30_000;
 
 function normalizeHex(value, field = 'felt') {
   const raw = String(value || '').trim().toLowerCase();
@@ -229,6 +232,40 @@ async function starknetCall(contractAddress, entrypoint, calldata = []) {
   return payload.result.map((value, index) => normalizeZeroableHex(value, `${entrypoint} result[${index}]`));
 }
 
+async function assertRelayReady() {
+  const now = Date.now();
+  if (readinessCache && readinessCache.expiresAt > now) return readinessCache.value;
+
+  const [chainResult, registryClassResult, ownerValues] = await Promise.all([
+    rpc('starknet_chainId', []),
+    rpc('starknet_getClassHashAt', ['latest', identityRegistryAddress]),
+    starknetCall(identityRegistryAddress, 'owner', []),
+  ]);
+  if (chainResult?.error) throw new Error('RELAY_UPSTREAM_CHAIN_ID_UNAVAILABLE');
+  if (registryClassResult?.error) throw new Error('RELAY_REGISTRY_CLASS_UNAVAILABLE');
+
+  const actualChainId = normalizeHex(chainResult?.result, 'upstream chain id');
+  const actualRegistryClass = normalizeHex(registryClassResult?.result, 'upstream registry class hash');
+  const actualOwner = normalizeHex(ownerValues?.[0], 'upstream registry owner');
+  if (actualChainId !== expectedChainId) throw new Error('RELAY_CHAIN_ID_MISMATCH');
+  if (actualRegistryClass !== identityRegistryClassHash) throw new Error('RELAY_REGISTRY_CLASS_MISMATCH');
+  if (actualOwner !== identityRegistryOwner) throw new Error('RELAY_REGISTRY_OWNER_MISMATCH');
+
+  const value = {
+    ok: true,
+    purpose: 'swappulse-testnet-provisioning-relay',
+    chain_id: actualChainId,
+    account_class_hash: accountClassHash,
+    identity_registry_class_hash: actualRegistryClass,
+    identity_registry_address: identityRegistryAddress,
+    identity_registry_owner: actualOwner,
+    recovery_controller: recoveryController,
+    recovery_delay_seconds: recoveryDelaySeconds,
+  };
+  readinessCache = { value, expiresAt: now + readinessTtlMs };
+  return value;
+}
+
 async function registerIdentity(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('REGISTRATION_BODY_REQUIRED');
   const identityId = normalizeHex(body.identity_id, 'identity_id');
@@ -312,6 +349,18 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/healthz') {
     return json(res, 200, { ok: true, purpose: 'swappulse-testnet-provisioning-relay' });
   }
+  if (req.method === 'GET' && req.url === '/readyz') {
+    if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
+    const ip = clientIp(req);
+    if (!withinRateLimit(ip)) return json(res, 429, { error: 'Rate limit exceeded' });
+    try {
+      return json(res, 200, await assertRelayReady());
+    } catch (error) {
+      const code = String(error?.message || 'RELAY_NOT_READY').replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 120);
+      console.warn(`Provisioning relay readiness failed for ${ip}: ${code}`);
+      return json(res, 503, { ok: false, error: 'Provisioning relay is not ready', code });
+    }
+  }
   if (req.method !== 'POST' || !['/rpc', '/register'].includes(req.url || '')) return json(res, 404, { error: 'Not found' });
   if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
 
@@ -319,6 +368,7 @@ const server = http.createServer(async (req, res) => {
   if (!withinRateLimit(ip)) return json(res, 429, { error: 'Rate limit exceeded' });
 
   try {
+    await assertRelayReady();
     const payload = JSON.parse(await readBody(req));
 
     if (req.url === '/register') {
