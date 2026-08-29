@@ -35,6 +35,14 @@ function findForbiddenResultKey(value: unknown, path = 'result'): string | null 
   return null;
 }
 
+function normalizeZeroableHex(value: unknown, field: string): string {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!/^0x[0-9a-f]+$/.test(raw)) throw new Error(`${field} must be 0x-prefixed hex`);
+  const n = BigInt(raw);
+  if (n < 0n || n >= STARK_FIELD_PRIME) throw new Error(`${field} is outside the Starknet felt252 field`);
+  return `0x${n.toString(16)}`;
+}
+
 function randomIdentityId(): string {
   const bytes = new Uint8Array(31);
   crypto.getRandomValues(bytes);
@@ -152,6 +160,105 @@ export default async function(req: Request): Promise<Response> {
         identity: safeIdentity(current),
         can_prepare: Boolean(age.eligible && network.ready && !current),
         private_key_required_by_base44: false,
+      });
+    }
+
+    if (action === 'import_provisioning_result') {
+      if (!age.eligible) {
+        return jsonError('Your account is not currently eligible for SwapPulse Testnet identity provisioning', 403, 'AGE_ELIGIBILITY_REQUIRED');
+      }
+      if (!network.ready) return jsonError('SwapPulse Testnet is not independently verified and ready yet', 409, 'CHAIN_NOT_CONFIGURED');
+
+      const recordId = String(body.record_id || '').trim();
+      if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
+      const record = identities.find((row: any) => String(row?.id || '') === recordId);
+      if (!record) return jsonError('Chain identity not found for this account', 404, 'IDENTITY_NOT_FOUND');
+      if (!['PENDING', 'FAILED', 'DEPLOYED'].includes(String(record.status || ''))) {
+        return jsonError('This identity is no longer in a provisioning state', 409, 'INVALID_STATE');
+      }
+
+      let result: any = body.result;
+      try {
+        if (typeof result === 'string') result = JSON.parse(result);
+      } catch {
+        return jsonError('Provisioning result is not valid JSON', 400, 'INVALID_PROVISIONING_JSON');
+      }
+      if (!result || typeof result !== 'object' || Array.isArray(result)) {
+        return jsonError('Provisioning result must be a JSON object', 400, 'INVALID_PROVISIONING_RESULT');
+      }
+      if (Number(result.schema_version) !== 1 || String(result.kind || '') !== 'SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT') {
+        return jsonError('Unsupported provisioning result format', 400, 'UNSUPPORTED_PROVISIONING_RESULT');
+      }
+      if (result.ok !== true || String(result.network || '') !== 'SWAPPULSE_TESTNET') {
+        return jsonError('Provisioning result is not a successful SwapPulse Testnet result', 400, 'INVALID_PROVISIONING_RESULT');
+      }
+      const forbiddenPath = findForbiddenResultKey(result, 'provisioning_result');
+      if (forbiddenPath) {
+        return jsonError(`Provisioning result contains a forbidden secret-like field at ${forbiddenPath}`, 400, 'PROVISIONING_RESULT_CONTAINS_SECRET');
+      }
+
+      let resultChainId: string;
+      let resultIdentityId: string;
+      let resultPublicKey: string;
+      let resultAccountAddress: string;
+      let resultAccountClassHash: string;
+      let resultRegistryAddress: string;
+      let resultRegistryOwner: string;
+      let resultRecoveryController: string;
+      let deploymentTxHash = '';
+      let registrationTxHash = '';
+      try {
+        resultChainId = normalizeHex(result.chain_id, 'result chain_id');
+        resultIdentityId = normalizeHex(result.identity_id, 'result identity_id');
+        resultPublicKey = normalizeHex(result.public_key, 'result public_key');
+        resultAccountAddress = normalizeHex(result.account_address, 'result account_address');
+        resultAccountClassHash = normalizeHex(result.account_class_hash, 'result account_class_hash');
+        resultRegistryAddress = normalizeHex(result.identity_registry_address, 'result identity_registry_address');
+        resultRegistryOwner = normalizeHex(result.identity_registry_owner, 'result identity_registry_owner');
+        resultRecoveryController = normalizeZeroableHex(result.recovery_controller ?? '0x0', 'result recovery_controller');
+        if (result.transactions?.account_deploy) deploymentTxHash = normalizeHex(result.transactions.account_deploy, 'account_deploy tx hash');
+        if (result.transactions?.identity_register) registrationTxHash = normalizeHex(result.transactions.identity_register, 'identity_register tx hash');
+      } catch (e: any) {
+        return jsonError(e?.message || 'Invalid provisioning result fields', 400, 'INVALID_PROVISIONING_RESULT');
+      }
+
+      const expectedRecoveryController = normalizeZeroableHex(network.recovery_controller || '0x0', 'configured recovery controller');
+      const resultRecoveryDelay = Number(result.recovery_delay_seconds);
+      if (!Number.isInteger(resultRecoveryDelay)) return jsonError('Provisioning recovery_delay_seconds must be an integer', 400, 'INVALID_PROVISIONING_RESULT');
+      if (resultChainId !== normalizeHex(network.chain_id, 'configured chain id')) return jsonError('Provisioning result chain ID does not match the verified network', 409, 'CHAIN_ID_MISMATCH');
+      if (resultIdentityId !== normalizeHex(record.chain_identity_id, 'reserved identity id')) return jsonError('Provisioning result identity ID does not match your reservation', 409, 'IDENTITY_ID_MISMATCH');
+      if (!record.signer_public_key) return jsonError('Reserved identity has no bound public key', 409, 'SIGNER_PUBLIC_KEY_NOT_BOUND');
+      if (resultPublicKey !== normalizeHex(record.signer_public_key, 'reserved signer public key')) return jsonError('Provisioning result public key does not match your reserved signer', 409, 'SIGNER_PUBLIC_KEY_MISMATCH');
+      if (resultAccountClassHash !== normalizeHex(network.account_class_hash, 'configured account class hash')) return jsonError('Provisioning result account class does not match the verified network', 409, 'ACCOUNT_CLASS_MISMATCH');
+      if (resultRegistryAddress !== normalizeHex(network.identity_registry_address, 'configured registry address')) return jsonError('Provisioning result registry does not match the verified network', 409, 'REGISTRY_MISMATCH');
+      if (resultRegistryOwner !== normalizeHex(network.identity_registry_owner, 'configured registry owner')) return jsonError('Provisioning result registry owner does not match the verified network', 409, 'REGISTRY_OWNER_MISMATCH');
+      if (resultRecoveryController !== expectedRecoveryController || resultRecoveryDelay !== network.recovery_delay_seconds) return jsonError('Provisioning result recovery policy does not match the verified network', 409, 'RECOVERY_POLICY_MISMATCH');
+
+      const derivedAccountAddress = normalizeHex(
+        hash.calculateContractAddressFromHash(resultPublicKey, resultAccountClassHash, [resultPublicKey], 0),
+        'derived account address',
+      );
+      if (derivedAccountAddress !== resultAccountAddress) {
+        return jsonError('Provisioning account address does not derive from your reserved public key and account class', 409, 'ACCOUNT_ADDRESS_DERIVATION_MISMATCH');
+      }
+      if (record.account_address && normalizeHex(record.account_address, 'existing account address') !== resultAccountAddress) {
+        return jsonError('Provisioning result conflicts with the account address already recorded', 409, 'ACCOUNT_ADDRESS_MISMATCH');
+      }
+
+      await svc.entities.ChainIdentity.update(record.id, {
+        account_address: resultAccountAddress,
+        deployment_tx_hash: deploymentTxHash || record.deployment_tx_hash || '',
+        registration_tx_hash: registrationTxHash || record.registration_tx_hash || '',
+        status: 'DEPLOYED',
+        failure_code: '',
+      });
+      const refreshed = await svc.entities.ChainIdentity.filter({ id: record.id }, '-created_date', 1).catch(() => []);
+      return Response.json({
+        ok: true,
+        imported: true,
+        identity: safeIdentity(refreshed?.[0] || { ...record, account_address: resultAccountAddress, status: 'DEPLOYED' }),
+        chain_authority_required: true,
+        note: 'Public provisioning result accepted as DEPLOYED. Chain reconciliation is still required before REGISTERED.',
       });
     }
 
