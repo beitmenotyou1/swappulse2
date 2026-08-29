@@ -1,0 +1,9 @@
+{
+  "name": "swappulse-chain-tooling",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "starknet": "10.0.2",
+    "starknet-devnet": "0.8.2"
+  }
+}
