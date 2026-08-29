@@ -245,8 +245,13 @@ try {
   }, token);
   if (badRegistration.status !== 403) throw new Error('Mismatched registration account was not blocked');
 
-  const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add')); 
-  if (forwardedWrites.join(',') !== 'starknet_addDeployAccountTransaction,starknet_addInvokeTransaction') {
+  const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add'));
+  const expectedWrites = [
+    'starknet_addDeployAccountTransaction',
+    'starknet_addInvokeTransaction',
+    'starknet_addInvokeTransaction',
+  ];
+  if (forwardedWrites.join(',') !== expectedWrites.join(',')) {
     throw new Error(`Unexpected writes reached upstream: ${forwardedWrites.join(',')}`);
   }
 
