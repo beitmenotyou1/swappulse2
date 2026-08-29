@@ -27,6 +27,14 @@ function normalizeAddress(value: unknown, field: string): string {
   return normalizeHex(value, field);
 }
 
+function normalizeZeroableHex(value: unknown, field: string): string {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!/^0x[0-9a-f]+$/.test(raw)) throw new Error(`${field} must be 0x-prefixed hex`);
+  const n = BigInt(raw);
+  if (n < 0n || n >= STARK_FIELD_PRIME) throw new Error(`${field} is outside the Starknet felt252 field`);
+  return `0x${n.toString(16)}`;
+}
+
 function normalizePublicHttpsUrl(value: unknown, field: string): string {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -583,18 +591,14 @@ export default async function(req: Request): Promise<Response> {
         resultAccountClassHash = normalizeHex(result.account_class_hash, 'result account_class_hash');
         resultRegistryAddress = normalizeAddress(result.identity_registry_address, 'result identity_registry_address');
         resultRegistryOwner = normalizeAddress(result.identity_registry_owner, 'result identity_registry_owner');
-        resultRecoveryController = result.recovery_controller
-          ? normalizeAddress(result.recovery_controller, 'result recovery_controller')
-          : '0x0';
+        resultRecoveryController = normalizeZeroableHex(result.recovery_controller ?? '0x0', 'result recovery_controller');
         if (result.transactions?.account_deploy) deploymentTxHash = normalizeHex(result.transactions.account_deploy, 'account_deploy tx hash');
         if (result.transactions?.identity_register) registrationTxHash = normalizeHex(result.transactions.identity_register, 'identity_register tx hash');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid provisioning result fields', 400, 'INVALID_PROVISIONING_RESULT');
       }
 
-      const expectedRecoveryController = config.recoveryController
-        ? normalizeAddress(config.recoveryController, 'configured recovery controller')
-        : '0x0';
+      const expectedRecoveryController = normalizeZeroableHex(config.recoveryController || '0x0', 'configured recovery controller');
       const resultRecoveryDelay = Number(result.recovery_delay_seconds);
       if (!Number.isInteger(resultRecoveryDelay)) {
         return jsonError('Provisioning recovery_delay_seconds must be an integer', 400, 'INVALID_PROVISIONING_RESULT');
