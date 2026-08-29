@@ -31,5 +31,6 @@ dist-ssr
 .vite
 base44/.app.jsonc
 
-# SwapPulse private testnet runtime state
+# SwapPulse private testnet runtime state / local test signers
 chain/infra/data/
+chain/infra/secrets/
