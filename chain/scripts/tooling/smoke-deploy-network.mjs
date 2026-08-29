@@ -30,8 +30,10 @@ try {
   const [admin] = await devnet.getPredeployedAccounts();
   if (!admin) throw new Error('No predeployed devnet admin');
 
+  const publicRpcUrl = devnet.url.replace('127.0.0.1', 'localhost');
   const deployment = await runNode('./deploy-network.mjs', [], {
     SWAPPULSE_RPC_URL: devnet.url,
+    SWAPPULSE_PUBLIC_RPC_URL: publicRpcUrl,
     SWAPPULSE_DEPLOYER_ADDRESS: admin.address,
     SWAPPULSE_DEPLOYER_PRIVATE_KEY: admin.private_key,
     SWAPPULSE_DEPLOYMENT_MANIFEST: manifest,
@@ -44,11 +46,15 @@ try {
   if (publicManifest.deployment?.deployer_private_key) {
     throw new Error('Public deployment manifest unexpectedly contains a private key');
   }
+  if (new URL(publicManifest.rpc_url).hostname !== 'localhost') {
+    throw new Error('Public deployment manifest did not use SWAPPULSE_PUBLIC_RPC_URL');
+  }
 
   console.log(JSON.stringify({
     ok: true,
     deployment_manifest: publicManifest,
     verify_output: JSON.parse(verification.stdout),
+    public_rpc_override_verified: new URL(publicManifest.rpc_url).hostname === 'localhost',
     deploy_log_contains_private_key: deployment.stdout.includes(admin.private_key),
   }, null, 2));
 } finally {
