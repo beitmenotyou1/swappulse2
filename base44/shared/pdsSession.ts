@@ -4,6 +4,24 @@
 // records) and get-portable-reputation (list records) so both share one auth
 // implementation instead of duplicating createSession logic.
 
+import { assertSafeHost } from './ssrfGuard.ts';
+
+// Per-user PDS URLs are persisted user data and therefore must be treated as
+// untrusted whenever they are used for outbound authenticated requests. Return
+// a canonical public HTTPS origin and fail closed on private/DNS-rebound hosts.
+export async function validateUserPdsUrl(rawUrl: string): Promise<string> {
+  let url: URL;
+  try {
+    url = new URL(String(rawUrl || '').trim());
+  } catch {
+    throw new Error('Invalid PDS URL.');
+  }
+  if (url.protocol !== 'https:') throw new Error('PDS URL must use HTTPS.');
+  if (url.username || url.password) throw new Error('PDS URL must not contain credentials.');
+  await assertSafeHost(url.hostname);
+  return url.origin;
+}
+
 let cachedSession: { accessJwt: string; refreshJwt: string; did: string; handle: string; expiresAt: number } | null = null;
 
 export async function getPdsSession() {
@@ -67,7 +85,10 @@ const userSessions = new Map<string, { accessJwt: string; refreshJwt: string; di
 // Get a PDS session for a specific user, authenticated with their app password.
 // Used by the atproto-bridge when a user has a real PDS-backed DID + app password.
 export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appPassword: string) {
-  const cacheKey = userDid;
+  const safePdsUrl = await validateUserPdsUrl(pdsUrl);
+  // Bind cache entries to BOTH identity and PDS origin. A later pds_url change
+  // must never reuse an access token issued by the previous origin.
+  const cacheKey = `${userDid}|${safePdsUrl}`;
   const cached = userSessions.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
     return { pdsUrl, session: cached };
@@ -76,8 +97,9 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
   // Try refresh first
   if (cached?.refreshJwt) {
     try {
-      const refreshRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
+      const refreshRes = await fetch(`${safePdsUrl}/xrpc/com.atproto.server.refreshSession`, {
         method: 'POST',
+        redirect: 'error',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cached.refreshJwt}` },
       });
       if (refreshRes.ok) {
@@ -89,8 +111,11 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
           handle: data.handle || cached.handle,
           expiresAt: Date.now() + 25 * 60 * 1000,
         };
+        if (session.did && session.did !== userDid) {
+          throw new Error('PDS session identity mismatch.');
+        }
         userSessions.set(cacheKey, session);
-        return { pdsUrl, session };
+        return { pdsUrl: safePdsUrl, session };
       }
     } catch (e) {
       console.error('pdsSession: user refreshSession error', e?.message);
@@ -98,8 +123,9 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
   }
 
   // Create a new session with the user's app password
-  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
+  const res = await fetch(`${safePdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
+    redirect: 'error',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier: userDid, password: appPassword }),
   });
@@ -115,8 +141,11 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
     handle: data.handle,
     expiresAt: Date.now() + 25 * 60 * 1000,
   };
+  if (!session.did || session.did !== userDid) {
+    throw new Error('PDS session identity mismatch.');
+  }
   userSessions.set(cacheKey, session);
-  return { pdsUrl, session };
+  return { pdsUrl: safePdsUrl, session };
 }
 
 export function clearPdsSession() {
