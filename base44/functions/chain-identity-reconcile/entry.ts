@@ -61,6 +61,14 @@ async function rpcCall(rpcUrl: string, method: string, params: unknown[]): Promi
   }
 }
 
+async function getClassHashAt(rpcUrl: string, contractAddress: string): Promise<string> {
+  const result = await rpcCall(rpcUrl, 'starknet_getClassHashAt', [
+    'latest',
+    normalizeHex(contractAddress, 'contract address'),
+  ]);
+  return normalizeHex(result, 'class hash');
+}
+
 async function starknetCall(
   rpcUrl: string,
   contractAddress: string,
@@ -104,6 +112,17 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
 
     if (chainStatus === 1) {
       if (chainAccount === '0x0') throw new Error('Active identity has zero account');
+
+      const expectedAccountClassHash = normalizeHex(config.account_class_hash, 'configured account class hash');
+      const accountClassHash = await getClassHashAt(rpcUrl, chainAccount);
+      if (accountClassHash !== expectedAccountClassHash) {
+        await svc.entities.ChainIdentity.update(row.id, {
+          last_reconciled_at: now,
+          failure_code: 'CHAIN_ACCOUNT_CLASS_HASH_MISMATCH',
+        });
+        return { id: row.id, outcome: 'ACCOUNT_CLASS_MISMATCH' };
+      }
+
       const reverse = await starknetCall(rpcUrl, registry, 'get_identity_by_account', [chainAccount]);
       if (reverse.length < 1 || normalizeHex(reverse[0], 'reverse identity') !== identityId) {
         await svc.entities.ChainIdentity.update(row.id, {
@@ -177,8 +196,12 @@ export default async function(req: Request): Promise<Response> {
     if (!config || config.status !== 'CONFIGURED') {
       return jsonError('SwapPulse Testnet is not configured', 409, 'CHAIN_NOT_CONFIGURED');
     }
-    if (!config.identity_registry_address || !config.rpc_url) {
-      return jsonError('Identity registry address and public RPC URL are required', 409, 'RPC_NOT_CONFIGURED');
+    if (!config.identity_registry_address || !config.identity_registry_class_hash || !config.account_class_hash || !config.rpc_url) {
+      return jsonError(
+        'Identity registry address, registry class hash, account class hash and public RPC URL are required',
+        409,
+        'RPC_NOT_CONFIGURED',
+      );
     }
 
     let rpcUrl: string;
@@ -197,6 +220,20 @@ export default async function(req: Request): Promise<Response> {
     const expectedChainId = normalizeHex(config.chain_id, 'configured chain id');
     if (chainId !== expectedChainId) {
       return jsonError('RPC chain id does not match SwapPulse Testnet configuration', 409, 'CHAIN_ID_MISMATCH');
+    }
+
+    const registryAddress = normalizeHex(config.identity_registry_address, 'identity registry address');
+    const expectedRegistryClassHash = normalizeHex(
+      config.identity_registry_class_hash,
+      'configured registry class hash',
+    );
+    const registryClassHash = await getClassHashAt(rpcUrl, registryAddress);
+    if (registryClassHash !== expectedRegistryClassHash) {
+      return jsonError(
+        'IdentityRegistry class hash does not match SwapPulse Testnet configuration',
+        409,
+        'REGISTRY_CLASS_HASH_MISMATCH',
+      );
     }
 
     const recordId = String(body.record_id || '').trim();
@@ -221,7 +258,11 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({
       ok: true,
       network: NETWORK,
-      rpc: { spec_version: String(specVersion || ''), chain_id: chainId },
+      rpc: {
+        spec_version: String(specVersion || ''),
+        chain_id: chainId,
+        identity_registry_class_hash: registryClassHash,
+      },
       processed: results.length,
       counts,
       results,
