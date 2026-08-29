@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { chainDir, requiredEnv, normalizeHex, loadArtifacts, providerFor, accountFor, declareClass, wait, writePublicManifest } from './common.mjs';
+import { chainDir, requiredEnv, normalizeHex, loadArtifacts, providerFor, accountFor, declareClass, wait, writePublicManifest, safeRpcUrl } from './common.mjs';
 
 const rpc = requiredEnv('SWAPPULSE_RPC_URL');
 const deployerAddress = requiredEnv('SWAPPULSE_DEPLOYER_ADDRESS');
@@ -9,6 +9,9 @@ const outputFile = path.resolve(
 );
 
 const { provider, rpcUrl } = await providerFor(rpc);
+const publicRpcUrl = process.env.SWAPPULSE_PUBLIC_RPC_URL
+  ? safeRpcUrl(process.env.SWAPPULSE_PUBLIC_RPC_URL)
+  : rpcUrl;
 const deployer = accountFor(provider, deployerAddress, deployerPrivateKey);
 const chainId = normalizeHex(await provider.getChainId(), 'chain id');
 const loaded = await loadArtifacts();
@@ -72,7 +75,7 @@ const manifest = {
   schema_version: 1,
   network: 'SWAPPULSE_TESTNET',
   chain_id: chainId,
-  rpc_url: rpcUrl,
+  rpc_url: publicRpcUrl,
   account_class_hash: accountDeclaration.class_hash,
   identity_registry_class_hash: registryDeclaration.class_hash,
   identity_registry_address: registryAddress,
