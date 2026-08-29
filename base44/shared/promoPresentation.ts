@@ -43,10 +43,14 @@ export function assertPromoPresentation(record: any, destinationUrl: string, exp
 
   const destination = new URL(destinationUrl).toString();
   const features = facetFeatures(record);
-  const linkOk = features.some((feature: any) =>
-    feature?.$type === 'app.bsky.richtext.facet#link'
-    && String(feature?.uri || '') === destination
-  );
+  const linkOk = features.some((feature: any) => {
+    if (feature?.$type !== 'app.bsky.richtext.facet#link') return false;
+    try {
+      return new URL(String(feature?.uri || '')).toString() === destination;
+    } catch {
+      return false;
+    }
+  });
   if (!linkOk) throw new Error('PROMO_LINK_FACET_MISSING');
 
   const facetTags = new Set(
