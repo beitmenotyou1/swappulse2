@@ -5,6 +5,7 @@ import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { bridgePodcastEpisode } from '@/lib/federatedBridge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
+import { assertImageUpload, assertPodcastMediaUpload } from '@/lib/uploadGuard';
 
 // "mm:ss" or "hh:mm:ss" or plain seconds → seconds
 function parseTs(str) {
@@ -34,7 +35,13 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
 
   const pickAudio = (file) => {
     if (!file) return;
-    setAudioFile(file);
+    try {
+      assertPodcastMediaUpload(file);
+      setAudioFile(file);
+    } catch (error) {
+      setAudioFile(null);
+      toast({ title: 'Recording rejected', description: error?.message || 'Choose a smaller audio or video file.', variant: 'destructive' });
+    }
   };
 
   const publish = async () => {
@@ -58,6 +65,7 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
       let coverUrl = '';
       if (coverFile) {
         try {
+          assertImageUpload(coverFile);
           const r = await base44.integrations.Core.UploadFile({ file: coverFile });
           coverUrl = r.file_url;
         } catch { /* cover optional */ }
@@ -242,7 +250,19 @@ export default function SaveAsPodcastModal({ space, onClose, onPublished }) {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    assertImageUpload(file);
+                    setCoverFile(file);
+                  } catch (error) {
+                    setCoverFile(null);
+                    toast({ title: 'Cover rejected', description: error?.message || 'Choose a smaller image file.', variant: 'destructive' });
+                  } finally {
+                    e.target.value = '';
+                  }
+                }}
               />
               {coverFile ? (
                 <img src={URL.createObjectURL(coverFile)} alt="cover" className="h-12 w-12 rounded-lg object-cover" />
