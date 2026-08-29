@@ -93,7 +93,11 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
-        try { await base44.auth.updateMe({ login_key: generatedPasswordRef.current }); } catch {}
+        try {
+          await base44.functions.invoke("set-initial-login-key", { login_key: generatedPasswordRef.current });
+        } catch (setupErr) {
+          console.error("Could not finish passwordless account setup:", setupErr?.message || setupErr);
+        }
         if (inviteCode) {
           try { await base44.functions.invoke("redeem-invite", { code: inviteCode }); } catch {}
         }
