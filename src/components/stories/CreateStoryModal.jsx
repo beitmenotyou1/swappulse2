@@ -5,6 +5,7 @@ import { ensureUserDid, stampRecord, generateRkey, NSID } from '@/lib/atproto';
 import { bridgeStory } from '@/lib/federatedBridge';
 import { cardImageUrl } from '@/lib/tcgdex';
 import CardSearchModal from '@/components/cards/CardSearchModal';
+import { assertStoryMediaUpload } from '@/lib/uploadGuard';
 
 const COLORS = ['#6d4aff', '#10b981', '#fbbf24', '#ef4444', '#ec4899', '#1e293b'];
 const POSITIONS = [
@@ -37,9 +38,12 @@ export default function CreateStoryModal({ open, onClose, onCreated, myDid }) {
   const upload = async (file, isVideo) => {
     setSaving(true);
     try {
+      assertStoryMediaUpload(file);
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setSeg((s) => ({ ...s, media_blob: file_url, media_type: isVideo ? 'video' : 'image', duration: isVideo ? 15 : 5 }));
-    } catch { /* ignore */ } finally { setSaving(false); }
+    } catch (error) {
+      console.error('Story upload rejected:', error?.message || error);
+    } finally { setSaving(false); }
   };
 
   const addSegment = () => {
