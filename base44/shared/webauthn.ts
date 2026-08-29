@@ -114,7 +114,7 @@ async function sha256Base64Url(value: string): Promise<string> {
 export async function issueWebAuthnChallenge(
   svc: any,
   secret: string,
-  purpose: 'authentication' | 'registration',
+  purpose: 'authentication' | 'registration' | 'management',
   subject: string,
   rpConfig: { origin: string; rpId: string },
   ttlMs = 5 * 60 * 1000,
@@ -137,7 +137,7 @@ export async function consumeWebAuthnChallenge(
   secret: string,
   challenge: string,
   signature: string,
-  purpose: 'authentication' | 'registration',
+  purpose: 'authentication' | 'registration' | 'management',
   subject: string,
   rpConfig: { origin: string; rpId: string },
 ): Promise<boolean> {
