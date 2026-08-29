@@ -7,7 +7,7 @@ import TurnstileWidget from '@/components/TurnstileWidget';
 const PRESETS = [5, 10, 25, 50, 100];
 
 export default function FiatDonationForm() {
-  const [amount, setAmount] = useState(10);
+  const [amount, setAmount] = useState('10');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -73,7 +73,7 @@ export default function FiatDonationForm() {
           <button
             key={p}
             type="button"
-            onClick={() => setAmount(p)}
+            onClick={() => setAmount(String(p))}
             className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${Number(amount) === p ? 'bg-primary text-white' : 'bg-secondary text-foreground hover:bg-secondary/70'}`}
           >
             £{p}
