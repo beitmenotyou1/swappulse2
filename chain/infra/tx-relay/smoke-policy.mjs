@@ -201,6 +201,8 @@ try {
 
   mockIdentityStatus = 0;
   mockReverseIdentity = '0x0';
+  mockRecoveryDelay = 0;
+  ownerKeyRequested = false;
   const wrongRecoveryRegistration = await post(registerUrl, {
     identity_id: identityId,
     public_key: publicKey,
@@ -209,7 +211,30 @@ try {
   if (wrongRecoveryRegistration.status !== 403 || wrongRecoveryRegistration.body?.code !== 'REGISTRATION_RECOVERY_DELAY_MISMATCH') {
     throw new Error(`Wrong recovery registration was not blocked: ${JSON.stringify(wrongRecoveryRegistration)}`);
   }
-  if (seen.includes('devnet_getPredeployedAccounts')) throw new Error('Registry owner key was requested before recovery policy validation completed');
+  if (ownerKeyRequested) throw new Error('Registry owner key was requested before recovery policy validation completed');
+
+  mockRecoveryDelay = recoveryDelay;
+  registrationMode = true;
+  ownerKeyRequested = false;
+  const freshRegistration = await post(registerUrl, {
+    identity_id: identityId,
+    public_key: publicKey,
+    account_address: accountAddress,
+  }, token);
+  registrationMode = false;
+  if (freshRegistration.status !== 200 || freshRegistration.body?.ok !== true || freshRegistration.body?.idempotent !== false || freshRegistration.body?.transaction_hash !== '0xccc') {
+    throw new Error(`Fresh owner registration did not complete: ${JSON.stringify(freshRegistration)}`);
+  }
+  if (!ownerKeyRequested) throw new Error('Fresh registration never requested the host-local registry owner key');
+
+  const repeatRegistration = await post(registerUrl, {
+    identity_id: identityId,
+    public_key: publicKey,
+    account_address: accountAddress,
+  }, token);
+  if (repeatRegistration.status !== 200 || repeatRegistration.body?.idempotent !== true) {
+    throw new Error(`Fresh registration was not idempotent on retry: ${JSON.stringify(repeatRegistration)}`);
+  }
 
   mockIdentityStatus = 1;
   mockReverseIdentity = identityId;
@@ -236,6 +261,8 @@ try {
     idempotent_registration: true,
     wrong_recovery_registration_blocked: true,
     owner_key_not_requested_before_policy_pass: true,
+    fresh_owner_registration: true,
+    fresh_registration_retry_idempotent: true,
     mismatched_registration_blocked: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
