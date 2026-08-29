@@ -215,8 +215,8 @@ Deno.serve(async (req) => {
     // in the same language when a user clicks through.
     const promoLocale: PromoLocale = pickPromoLocale();
 
-    // Compose the message
-    const { content, tags } = generateMessage(article, promoLocale.locale);
+    // Compose the message and its matching rich-preview metadata.
+    const { content, tags, embedUrl, embedTitle, embedDescription } = generateMessage(article, promoLocale.locale);
 
     // Upload the branded banner image — retry once if it fails so the post
     // always has a visual embed on Bluesky (never plain text).
@@ -229,22 +229,28 @@ Deno.serve(async (req) => {
       imageBlob = uploadResult.blob;
       session.accessJwt = uploadResult.accessJwt;
     }
-    const altText = `SwapPulse help guide: ${article.title}`;
-    const embed: any = imageBlob
-      ? { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] }
-      : null;
+    if (!imageBlob) {
+      console.error('post-help-promo: banner unavailable after retry; aborting before publish');
+      return Response.json({
+        error: 'Promo artwork unavailable; help promotion was not published',
+        code: 'PROMO_MEDIA_REQUIRED',
+      }, { status: 502 });
+    }
+    const embed = buildPromoExternalEmbed(embedUrl, embedTitle, embedDescription, imageBlob);
 
-    // Create the post on the PDS
+    // Create the post on the PDS. Both the visible URL and the visual preview
+    // card point at the same help article.
     const record: any = {
       $type: 'app.bsky.feed.post',
       text: content,
       createdAt: new Date().toISOString(),
       langs: [promoLocale.bcp47],
+      embed,
     };
     if (tags.length > 0) record.tags = tags;
     const facets = buildRichTextFacets(content);
     if (facets.length > 0) record.facets = facets;
-    if (embed) record.embed = embed;
+    assertPromoPresentation(record, embedUrl, tags);
 
     let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
       repo: session.did,
@@ -297,7 +303,8 @@ Deno.serve(async (req) => {
       content,
       locale: promoLocale.locale,
       next_index: nextIndex,
-      hasEmbed: !!embed,
+      hasEmbed: true,
+      embedType: 'app.bsky.embed.external',
     });
   } catch (error) {
     console.error('post-help-promo error:', error?.message || error);
