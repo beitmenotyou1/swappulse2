@@ -17,9 +17,24 @@ fn deploy_account(
     public_key: felt252, recovery_controller: ContractAddress, recovery_delay: u64,
 ) -> (ContractAddress, ISwapPulseAccountDispatcher) {
     let contract = declare("SwapPulseAccount").unwrap().contract_class();
-    let calldata = array![public_key, recovery_controller.into(), recovery_delay.into()];
+    let calldata = array![public_key];
     let (contract_address, _) = contract.deploy(@calldata).unwrap();
     let dispatcher = ISwapPulseAccountDispatcher { contract_address };
+
+    // Standard Starknet deploy-account validation requires the constructor to
+    // match OpenZeppelin's public_key-only deploy ABI. Recovery is therefore
+    // configured after deployment through account-self calls.
+    if recovery_controller != addr(0) || recovery_delay != 0_u64 {
+        start_cheat_caller_address(contract_address, contract_address);
+        if recovery_controller != addr(0) {
+            dispatcher.set_recovery_controller(recovery_controller);
+        }
+        if recovery_delay != 0_u64 {
+            dispatcher.set_recovery_delay(recovery_delay);
+        }
+        stop_cheat_caller_address(contract_address);
+    }
+
     (contract_address, dispatcher)
 }
 
@@ -27,16 +42,16 @@ fn deploy_account(
 #[should_panic(expected: 'INVALID_PUBLIC_KEY')]
 fn constructor_rejects_zero_public_key() {
     let contract = declare("SwapPulseAccount").unwrap().contract_class();
-    let calldata = array![0, 0, 172800];
+    let calldata = array![0];
     contract.deploy(@calldata).unwrap();
 }
 
 #[test]
-#[should_panic(expected: 'RECOVERY_DELAY_TOO_LONG')]
-fn constructor_rejects_excessive_recovery_delay() {
-    let contract = declare("SwapPulseAccount").unwrap().contract_class();
-    let calldata = array![0x12345, 0, (MAX_RECOVERY_DELAY_SECONDS + 1).into()];
-    contract.deploy(@calldata).unwrap();
+fn recovery_starts_disabled() {
+    let zero = addr(0);
+    let (_account_address, account) = deploy_account(0x12345, zero, 0);
+    assert(account.get_recovery_controller() == zero, 'controller should start disabled');
+    assert(account.get_recovery_delay() == 0_u64, 'delay should start at zero');
 }
 
 #[test]
