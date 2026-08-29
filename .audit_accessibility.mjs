@@ -62,7 +62,9 @@ for (const file of filesUnder('src')) {
       if (tag === 'button') {
         const named = attr(el, 'aria-label') || attr(el, 'aria-labelledby') || attr(el, 'title');
         if (!named && !hasAccessibleChild(el)) {
-          issues.push({ type: 'ICON_BUTTON_NO_NAME', location: loc(file, el), detail: 'button has no accessible text/label' });
+          const source = fs.readFileSync(file, 'utf8');
+          const snippet = source.slice(el.start, Math.min(el.end, el.start + 220)).replace(/\s+/g, ' ').trim();
+          issues.push({ type: 'ICON_BUTTON_NO_NAME', location: loc(file, el), detail: snippet });
         }
       }
       if (tag === 'a') {
