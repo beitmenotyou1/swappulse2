@@ -5,7 +5,7 @@
 // so conversation partners can fetch it. Messages are encrypted with AES-GCM
 // using a shared secret derived via ECDH (my private + their public). Only the
 // two participants can derive the same secret, so ciphertext is all that's
-// stored in DirectMessage.body and bridged to the PDS.
+// stored in DirectMessage.body. Direct messages are never federated to a PDS.
 //
 // NOTE: private keys are device-local. Clearning IndexedDB or switching
 // devices loses the ability to decrypt old messages (key backup/restore is a
@@ -112,7 +112,7 @@ export async function publishPublicKey() {
       return;
     }
     await base44.entities.DmPublicKey.create({ did, public_key });
-  } catch { /* ignore, encryption falls back to plaintext */ }
+  } catch { /* Publishing failure is non-fatal here; sendDirectMessage still fails closed. */ }
 }
 
 // Fetch a user's published public key JWK by DID.
@@ -149,9 +149,7 @@ async function deriveSharedKey(privateKey, theirPublicJwk) {
 export async function encryptMessage(plaintext, myDid, theirDid) {
   const theirKey = await fetchPublicKey(theirDid);
   if (!theirKey) {
-    const error = new Error('This collector has not enabled encrypted messaging on a device yet. Ask them to open Messages, then try again.');
-    error.code = 'DM_RECIPIENT_KEY_UNAVAILABLE';
-    throw error;
+    throw new Error('This collector has not enabled encrypted messaging on a device yet. Ask them to open Messages, then try again.');
   }
   try {
     const { privateKey } = await getOrCreateKeyPair();
@@ -161,9 +159,7 @@ export async function encryptMessage(plaintext, myDid, theirDid) {
     const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, shared, enc.encode(plaintext));
     return { body: `${PREFIX}${bufToBase64(iv.buffer)}:${bufToBase64(ct)}`, encrypted: true };
   } catch {
-    const error = new Error('Could not establish encrypted messaging. Nothing was sent.');
-    error.code = 'DM_ENCRYPTION_FAILED';
-    throw error;
+    throw new Error('Could not establish encrypted messaging. Nothing was sent.');
   }
 }
 
