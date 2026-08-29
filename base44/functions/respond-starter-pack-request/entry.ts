@@ -8,6 +8,7 @@
 // Output: { ok, status }
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { dispatchNotification } from '../../shared/notificationDispatcher.ts';
+import { updateStarterPack } from '../../shared/bridgePublish.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -42,7 +43,9 @@ export default async function (req: Request): Promise<Response> {
         if (!members.includes(myDid)) {
           await svc.entities.StarterPack.update(packId, { member_dids: [...members, myDid].slice(0, 100) });
         }
-        base44.functions.invoke('bridge-record', { action: 'update', entityName: 'StarterPack', recordId: packId }).catch(() => {});
+        await updateStarterPack(base44, packId).catch((e) => {
+          console.error('respond-starter-pack-request: starter pack federation update failed', e?.message || e);
+        });
       }
       await svc.entities.StarterPackRequest.update(requestId, {
         status: 'accepted',
