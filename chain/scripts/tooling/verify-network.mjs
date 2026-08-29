@@ -33,6 +33,12 @@ const ownerResult = await provider.callContract({
 });
 const owner = ownerResult?.[0] ? normalizeHex(ownerResult[0], 'registry owner') : '';
 if (!owner) throw new Error('Could not read IdentityRegistry owner');
+const expectedOwner = manifest.identity_registry_owner
+  ? normalizeHex(manifest.identity_registry_owner, 'manifest registry owner')
+  : '';
+if (expectedOwner && owner !== expectedOwner) {
+  throw new Error(`IdentityRegistry owner mismatch: expected ${expectedOwner}, got ${owner}`);
+}
 
 console.log(JSON.stringify({
   ok: true,
