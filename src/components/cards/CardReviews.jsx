@@ -197,6 +197,7 @@ export default function CardReviews({ card }) {
         </div>
         <div className="mt-2 flex gap-2">
           <select
+            aria-label="Card variant"
             value={form.variant}
             onChange={(e) => setForm((f) => ({ ...f, variant: e.target.value }))}
             className="rounded-lg border border-border bg-secondary px-2 py-1.5 text-xs outline-none"
