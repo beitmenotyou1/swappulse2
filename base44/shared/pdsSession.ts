@@ -6,6 +6,18 @@
 
 import { assertSafeHost } from './ssrfGuard.ts';
 
+const PDS_REQUEST_TIMEOUT_MS = 10_000;
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PDS_REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Per-user PDS URLs are persisted user data and therefore must be treated as
 // untrusted whenever they are used for outbound authenticated requests. Return
 // a canonical public HTTPS origin and fail closed on private/DNS-rebound hosts.
@@ -38,7 +50,7 @@ export async function getPdsSession() {
 
   if (cachedSession?.refreshJwt) {
     try {
-      const refreshRes = await fetch(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
+      const refreshRes = await fetchWithTimeout(`${pdsUrl}/xrpc/com.atproto.server.refreshSession`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cachedSession.refreshJwt}` },
       });
@@ -58,7 +70,7 @@ export async function getPdsSession() {
     }
   }
 
-  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
+  const res = await fetchWithTimeout(`${pdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier, password }),
@@ -97,7 +109,7 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
   // Try refresh first
   if (cached?.refreshJwt) {
     try {
-      const refreshRes = await fetch(`${safePdsUrl}/xrpc/com.atproto.server.refreshSession`, {
+      const refreshRes = await fetchWithTimeout(`${safePdsUrl}/xrpc/com.atproto.server.refreshSession`, {
         method: 'POST',
         redirect: 'error',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cached.refreshJwt}` },
@@ -123,7 +135,7 @@ export async function getPdsSessionForUser(pdsUrl: string, userDid: string, appP
   }
 
   // Create a new session with the user's app password
-  const res = await fetch(`${safePdsUrl}/xrpc/com.atproto.server.createSession`, {
+  const res = await fetchWithTimeout(`${safePdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: 'POST',
     redirect: 'error',
     headers: { 'Content-Type': 'application/json' },
@@ -154,7 +166,7 @@ export function clearPdsSession() {
 }
 
 export async function pdsRequest(pdsUrl: string, accessJwt: string, endpoint: string, payload: object) {
-  const res = await fetch(`${pdsUrl}/xrpc/${endpoint}`, {
+  const res = await fetchWithTimeout(`${pdsUrl}/xrpc/${endpoint}`, {
     method: 'POST',
     redirect: 'error',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessJwt}` },
