@@ -342,23 +342,28 @@ Deno.serve(async (req) => {
         session.accessJwt = uploadResult.accessJwt;
         imageBlob = uploadResult.blob;
       }
-      const altText = 'SwapPulse Beta';
+      if (!imageBlob) {
+        console.error('post-promo: first_join_all banner unavailable after retry; aborting campaign before publish');
+        return Response.json({
+          error: 'Promo artwork unavailable; no campaign posts were published',
+          code: 'PROMO_MEDIA_REQUIRED',
+        }, { status: 502 });
+      }
       const results: any[] = [];
       for (const loc of PROMO_LOCALES) {
         const promo = generateFirstJoinMessage(loc.locale);
-        const { content, tags } = promo;
+        const { content, tags, embedUrl, embedTitle, embedDescription } = promo;
         const record: any = {
           $type: 'app.bsky.feed.post',
           text: content,
           createdAt: new Date().toISOString(),
           langs: [loc.bcp47],
+          embed: buildPromoExternalEmbed(embedUrl, embedTitle, embedDescription, imageBlob),
         };
-        if (imageBlob) {
-          record.embed = { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] };
-        }
         if (tags.length > 0) record.tags = tags;
         const facets = buildRichTextFacets(content);
         if (facets.length > 0) record.facets = facets;
+        assertPromoPresentation(record, embedUrl, tags);
         let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
           repo: session.did,
           collection: 'app.bsky.feed.post',
@@ -422,12 +427,10 @@ Deno.serve(async (req) => {
 
     const { content, embedUrl, embedTitle, embedDescription, tags } = promo;
 
-    // Build the embed as app.bsky.embed.images so the image renders inline in
-    // the post (like a photo post) without depending on Bluesky's AppView
-    // scraping the external URI. The swappulse.org link stays clickable in the
-    // post text via the link facets built by buildRichTextFacets.
+    // Upload artwork for the rich external preview. The destination URL is
+    // also kept in the text and faceted, so both the visible URL and the visual
+    // preview card are clickable on AT Protocol clients.
     let imageBlob: { $type: 'blob'; ref: { $link: string }; mimeType: string; size: number } | null = null;
-    let altText = embedTitle;
     if (card && promoType === 'card') {
       const imageUrl = cardImageUrl(card.imageField);
       if (imageUrl) {
@@ -435,16 +438,13 @@ Deno.serve(async (req) => {
         imageBlob = uploadResult.blob;
         session.accessJwt = uploadResult.accessJwt;
       }
-      altText = card.name + (card.setName ? ` (${card.setName})` : '');
-      // Fallback: if the card image upload failed (WebP, too large, fetch
-      // error), use the branded banner so the post still has a visual embed
-      // on Bluesky — never publish a card post as plain text.
+      // Fallback: if the card image upload failed (unsupported format, size or
+      // fetch error), use the branded banner. If that also fails, abort below.
       if (!imageBlob) {
         console.log('post-promo: card image upload failed, falling back to branded banner');
         const fallbackResult = await uploadPromoImage(pdsUrl, session.accessJwt, PROMO_BANNER_URL, cred);
         imageBlob = fallbackResult.blob;
         session.accessJwt = fallbackResult.accessJwt;
-        altText = `SwapPulse — ${card.name}`;
       }
     } else {
       // Feature and community posts: attach the branded SwapPulse banner.
@@ -459,11 +459,17 @@ Deno.serve(async (req) => {
         session.accessJwt = retryResult.accessJwt;
       }
     }
-    // If the image blob upload failed (even after fallbacks), publish without
-    // an embed — the link and hashtag facets still make the post functional.
-    const embed: any = imageBlob
-      ? { $type: 'app.bsky.embed.images', images: [{ alt: altText, image: imageBlob }] }
-      : null;
+    // Promotional posts are visual by contract. Never allow a PDS/CDN failure
+    // to silently degrade a scheduled promotion into plain text.
+    if (!imageBlob) {
+      console.error('post-promo: artwork unavailable after all fallbacks; aborting before publish');
+      return Response.json({
+        error: 'Promo artwork unavailable; post was not published',
+        code: 'PROMO_MEDIA_REQUIRED',
+      }, { status: 502 });
+    }
+
+    const embed = buildPromoExternalEmbed(embedUrl, embedTitle, embedDescription, imageBlob);
 
     // Create the post directly on the PDS (no local Post record)
     const record: any = {
@@ -471,11 +477,12 @@ Deno.serve(async (req) => {
       text: content,
       createdAt: new Date().toISOString(),
       langs: [promoLocale.bcp47],
+      embed,
     };
     if (tags.length > 0) record.tags = tags;
     const facets = buildRichTextFacets(content);
     if (facets.length > 0) record.facets = facets;
-    if (embed) record.embed = embed;
+    assertPromoPresentation(record, embedUrl, tags);
 
     let result: any = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
       repo: session.did,
@@ -510,8 +517,8 @@ Deno.serve(async (req) => {
       posted_at: new Date().toISOString(),
     }).catch((e: any) => console.error('post-promo: failed to track PromoPost', e?.message || e));
 
-    console.log('post-promo: published promo post', result.uri, `(type: ${promoType}, lang: ${promoLocale.locale})`, card ? `(card: ${card.name})` : '(no card)', embed ? '(with image embed)' : '(text only)');
-    return Response.json({ ok: true, uri: result.uri, cid: result.cid, content, promoType, locale: promoLocale.locale, card: card ? { id: card.id, name: card.name } : null, hasEmbed: !!embed });
+    console.log('post-promo: published promo post', result.uri, `(type: ${promoType}, lang: ${promoLocale.locale})`, card ? `(card: ${card.name})` : '(no card)', '(with external rich-card embed)');
+    return Response.json({ ok: true, uri: result.uri, cid: result.cid, content, promoType, locale: promoLocale.locale, card: card ? { id: card.id, name: card.name } : null, hasEmbed: true, embedType: 'app.bsky.embed.external' });
   } catch (error) {
     console.error('post-promo error:', error?.message || error);
     return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
