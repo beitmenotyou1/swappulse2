@@ -80,14 +80,14 @@ async function getVerifiedConfig(svc: any) {
   return row;
 }
 
-async function relayUrl(): Promise<string> {
+async function relayUrl(pathname = '/rpc'): Promise<string> {
   const raw = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
   if (!raw) throw new Error('TX_RELAY_NOT_CONFIGURED');
   const url = new URL(raw);
   if (url.protocol !== 'https:') throw new Error('TX_RELAY_URL_MUST_USE_HTTPS');
   if (url.username || url.password) throw new Error('TX_RELAY_URL_MUST_NOT_CONTAIN_CREDENTIALS');
   await assertSafeHost(url.hostname);
-  url.pathname = '/rpc';
+  url.pathname = pathname;
   url.search = '';
   url.hash = '';
   return url.toString();
@@ -99,7 +99,7 @@ async function forward(method: string, params: Record<string, unknown>) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(await relayUrl(), {
+    const response = await fetch(await relayUrl('/rpc'), {
       method: 'POST',
       redirect: 'error',
       headers: {
@@ -118,6 +118,68 @@ async function forward(method: string, params: Record<string, unknown>) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function forwardRegistration(payload: Record<string, unknown>) {
+  const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
+  if (token.length < 32) throw new Error('TX_RELAY_TOKEN_NOT_CONFIGURED');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(await relayUrl('/register'), {
+      method: 'POST',
+      redirect: 'error',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(String(result?.code || result?.error || `TX_RELAY_HTTP_${response.status}`));
+    if (!result?.ok) throw new Error('TX_RELAY_REGISTRATION_FAILED');
+    return result;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function publicRpc(config: any, method: string, params: unknown[]) {
+  const url = new URL(String(config.rpc_url || '').trim());
+  if (url.protocol !== 'https:') throw new Error('VERIFIED_RPC_MUST_USE_HTTPS');
+  if (url.username || url.password) throw new Error('VERIFIED_RPC_MUST_NOT_CONTAIN_CREDENTIALS');
+  await assertSafeHost(url.hostname);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      redirect: 'error',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }),
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(`PUBLIC_RPC_HTTP_${response.status}`);
+    if (payload?.error) throw new Error(`PUBLIC_RPC_${method}_${payload.error?.code ?? 'ERROR'}`);
+    return payload?.result;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function publicCall(config: any, contractAddress: string, entrypoint: string, calldata: string[] = []) {
+  const result = await publicRpc(config, 'starknet_call', [
+    {
+      contract_address: normalizeHex(contractAddress, 'contract address'),
+      entry_point_selector: hash.getSelectorFromName(entrypoint),
+      calldata: calldata.map((value, index) => normalizeZeroableHex(value, `${entrypoint} calldata[${index}]`)),
+    },
+    'latest',
+  ]);
+  if (!Array.isArray(result)) throw new Error(`PUBLIC_RPC_${entrypoint.toUpperCase()}_INVALID`);
+  return result.map((value, index) => normalizeZeroableHex(value, `${entrypoint} result[${index}]`));
 }
 
 function validateCommonV3(tx: any, expectedType: string) {
@@ -142,16 +204,17 @@ export default async function(req: Request): Promise<Response> {
     if (!(await ageEligible(svc, me.id))) return jsonError('Adult testnet eligibility is required', 403, 'AGE_ELIGIBILITY_REQUIRED');
 
     const body = await req.json().catch(() => ({}));
-    const action = String(body.action || '').trim() as ChainDraftAction;
+    const action = String(body.action || '').trim();
+    const signedAction = action === 'deploy_account' || action === 'configure_recovery';
     const recordId = String(body.record_id || '').trim();
     const draftToken = String(body.draft_token || '').trim();
     if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
-    if (!draftToken) return jsonError('A current server-issued transaction draft is required', 400, 'DRAFT_TOKEN_REQUIRED');
-    if (action !== 'deploy_account' && action !== 'configure_recovery') return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
+    if (signedAction && !draftToken) return jsonError('A current server-issued transaction draft is required', 400, 'DRAFT_TOKEN_REQUIRED');
+    if (!signedAction && action !== 'register_identity') return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
     const rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
     const identity = rows?.[0];
     if (!identity || String(identity.user_id || '') !== String(me.id)) return jsonError('Chain identity not found', 404, 'IDENTITY_NOT_FOUND');
-    if (!['PENDING', 'FAILED'].includes(String(identity.status || ''))) return jsonError('Identity is not awaiting provisioning', 409, 'INVALID_STATE');
+    const identityStatus = String(identity.status || '');
     if (!identity.signer_public_key) return jsonError('Reserved identity has no public signer key', 409, 'SIGNER_PUBLIC_KEY_NOT_BOUND');
 
     const config = await getVerifiedConfig(svc);
@@ -168,13 +231,14 @@ export default async function(req: Request): Promise<Response> {
 
     const tx = body.transaction;
     if (action === 'deploy_account') {
+      if (!['PENDING', 'FAILED'].includes(identityStatus)) return jsonError('Identity is not awaiting account deployment', 409, 'INVALID_STATE');
       validateCommonV3(tx, 'DEPLOY_ACCOUNT');
       if (normalizeZeroableHex(tx.nonce ?? '0x0', 'nonce') !== '0x0') return jsonError('Deploy nonce must be zero', 400, 'DEPLOY_NONCE_MUST_BE_ZERO');
       if (normalizeHex(tx.class_hash, 'class_hash') !== accountClassHash) return jsonError('Account class does not match verified SwapPulseAccount', 409, 'ACCOUNT_CLASS_MISMATCH');
       const constructor = feltArray(tx.constructor_calldata, 'constructor_calldata');
       if (constructor.length !== 1 || constructor[0] !== publicKey) return jsonError('Constructor must contain the reserved public key only', 409, 'PUBLIC_KEY_MISMATCH');
       if (normalizeHex(tx.contract_address_salt, 'contract_address_salt') !== publicKey) return jsonError('Account salt must equal the reserved public key', 409, 'ACCOUNT_SALT_MISMATCH');
-      const signingHash = signingHashForTransaction(action, tx, String(config.chain_id), expectedAddress, accountClassHash);
+      const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
       if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
@@ -192,6 +256,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (action === 'configure_recovery') {
+      if (!['PENDING', 'FAILED'].includes(identityStatus)) return jsonError('Identity is not awaiting recovery configuration', 409, 'INVALID_STATE');
       validateCommonV3(tx, 'INVOKE');
       if (normalizeHex(tx.sender_address, 'sender_address') !== expectedAddress) return jsonError('Recovery transaction sender does not match your reserved account', 409, 'ACCOUNT_ADDRESS_MISMATCH');
       if (tx.account_deployment_data && feltArray(tx.account_deployment_data, 'account_deployment_data').length !== 0) {
@@ -205,7 +270,7 @@ export default async function(req: Request): Promise<Response> {
       ], '1');
       const actualCalldata = feltArray(tx.calldata, 'calldata');
       if (!sameFelts(actualCalldata, expectedCalldata)) return jsonError('Only the configured recovery setup calls are allowed', 403, 'RECOVERY_CALLDATA_MISMATCH');
-      const signingHash = signingHashForTransaction(action, tx, String(config.chain_id), expectedAddress, accountClassHash);
+      const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
       if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
@@ -218,6 +283,53 @@ export default async function(req: Request): Promise<Response> {
         failure_code: '',
       });
       return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: txHash });
+    }
+
+    if (action === 'register_identity') {
+      if (!['PENDING', 'FAILED', 'DEPLOYED'].includes(identityStatus)) return jsonError('Identity is not in a registrable state', 409, 'INVALID_STATE');
+      const registryAddress = normalizeHex(config.identity_registry_address, 'configured registry address');
+      const registryClassHash = normalizeHex(config.identity_registry_class_hash, 'configured registry class hash');
+      const registryOwner = normalizeHex(config.identity_registry_owner, 'configured registry owner');
+      const recoveryController = normalizeZeroableHex(config.recovery_controller || '0x0', 'configured recovery controller');
+      const recoveryDelay = Number(config.recovery_delay_seconds ?? 172800);
+      if (!Number.isInteger(recoveryDelay) || recoveryDelay < 0 || recoveryDelay > 2_592_000) return jsonError('Configured recovery delay is invalid', 409, 'RECOVERY_POLICY_INVALID');
+      const identityId = normalizeHex(identity.chain_identity_id, 'identity id');
+
+      const [registryHashRaw, accountHashRaw, ownerRead, controllerRead, delayRead, identityRead, reverseRead] = await Promise.all([
+        publicRpc(config, 'starknet_getClassHashAt', ['latest', registryAddress]),
+        publicRpc(config, 'starknet_getClassHashAt', ['latest', expectedAddress]),
+        publicCall(config, registryAddress, 'owner'),
+        publicCall(config, expectedAddress, 'get_recovery_controller'),
+        publicCall(config, expectedAddress, 'get_recovery_delay'),
+        publicCall(config, registryAddress, 'get_identity', [identityId]),
+        publicCall(config, registryAddress, 'get_identity_by_account', [expectedAddress]),
+      ]);
+      if (normalizeHex(registryHashRaw, 'registry class hash') !== registryClassHash) return jsonError('Registry class no longer matches the verified network', 409, 'REGISTRY_CLASS_MISMATCH');
+      if (normalizeHex(accountHashRaw, 'account class hash') !== accountClassHash) return jsonError('Account class does not match SwapPulseAccount', 409, 'ACCOUNT_CLASS_MISMATCH');
+      if (!ownerRead[0] || normalizeHex(ownerRead[0], 'registry owner') !== registryOwner) return jsonError('Registry owner no longer matches the verified network', 409, 'REGISTRY_OWNER_MISMATCH');
+      if (normalizeZeroableHex(controllerRead?.[0] || '0x0', 'recovery controller') !== recoveryController) return jsonError('Account recovery controller is not configured correctly', 409, 'RECOVERY_CONTROLLER_MISMATCH');
+      if (Number(BigInt(delayRead?.[0] || '0x0')) !== recoveryDelay) return jsonError('Account recovery delay is not configured correctly', 409, 'RECOVERY_DELAY_MISMATCH');
+
+      const chainAccount = normalizeZeroableHex(identityRead?.[0] || '0x0', 'chain account');
+      const chainStatus = Number(BigInt(identityRead?.[1] || '0x0'));
+      const reverseIdentity = normalizeZeroableHex(reverseRead?.[0] || '0x0', 'reverse identity');
+      if (chainStatus === 1) {
+        if (chainAccount !== expectedAddress || reverseIdentity !== identityId) return jsonError('Chain identity binding conflicts with this reservation', 409, 'IDENTITY_BINDING_CONFLICT');
+        await svc.entities.ChainIdentity.update(identity.id, { account_address: expectedAddress, status: 'DEPLOYED', failure_code: '' });
+        return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: '', idempotent: true, chain_authority_required: true });
+      }
+      if (chainStatus !== 0) return jsonError('Chain identity is not available for registration', 409, 'IDENTITY_NOT_AVAILABLE');
+      if (reverseIdentity !== '0x0') return jsonError('SwapPulse account is already bound to another identity', 409, 'ACCOUNT_ALREADY_BOUND');
+
+      const result = await forwardRegistration({ identity_id: identityId, public_key: publicKey, account_address: expectedAddress });
+      const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'registration transaction hash') : '';
+      await svc.entities.ChainIdentity.update(identity.id, {
+        account_address: expectedAddress,
+        registration_tx_hash: txHash || identity.registration_tx_hash || '',
+        status: 'DEPLOYED',
+        failure_code: '',
+      });
+      return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: txHash, idempotent: result.idempotent === true, chain_authority_required: true });
     }
 
     return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
