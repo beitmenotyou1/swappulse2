@@ -196,11 +196,25 @@ pub mod IdentityRegistry {
         }
 
         fn resolve_canonical(self: @ContractState, identity_id: felt252) -> felt252 {
-            let status = self.identity_status.read(identity_id);
-            if status == STATUS_NONE {
-                0
-            } else {
-                self.canonical_identity.read(identity_id)
+            let mut current = identity_id;
+            let mut hops: u8 = 0;
+
+            loop {
+                let status = self.identity_status.read(current);
+                if status == STATUS_NONE {
+                    return 0;
+                }
+                if status == STATUS_ACTIVE {
+                    return current;
+                }
+
+                assert(status == STATUS_MERGED, 'INVALID_IDENTITY_STATUS');
+                let next = self.canonical_identity.read(current);
+                assert(next != 0 && next != current, 'INVALID_CANONICAL_LINK');
+
+                current = next;
+                hops += 1;
+                assert(hops <= 32_u8, 'MERGE_CHAIN_TOO_DEEP');
             }
         }
     }
