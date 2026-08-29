@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Radio, Users, ExternalLink } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import { getSafeHttpUrl } from '@/lib/externalLink';
 
 const PLATFORM_LABEL = {
   twitch: 'Twitch',
@@ -17,8 +18,9 @@ const PLATFORM_LABEL = {
 // external stream_url; legacy internal rooms (no stream_url) link in-app.
 export default function SpaceCard({ space }) {
   const live = space.status === 'live';
-  const external = !!space.stream_url;
-  const url = space.stream_url || `/spaces/${space.id}`;
+  const safeStreamUrl = getSafeHttpUrl(space.stream_url);
+  const external = !!safeStreamUrl;
+  const url = safeStreamUrl || `/spaces/${space.id}`;
 
   const inner = (
     <div className="flex items-start gap-3">
