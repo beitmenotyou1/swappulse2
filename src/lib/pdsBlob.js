@@ -8,6 +8,7 @@
 // binder covers, etc.) — it prefers PDS storage and degrades gracefully.
 
 import { base44 } from '@/api/base44Client';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -23,6 +24,7 @@ function fileToBase64(file) {
 }
 
 export async function uploadPdsBlob(file) {
+  assertImageUpload(file);
   const base64 = await fileToBase64(file);
   const res = await base44.functions.invoke('pds-blob-upload', {
     mimeType: file.type || 'application/octet-stream',
@@ -35,6 +37,7 @@ export async function uploadPdsBlob(file) {
 
 // Preferred entry point: PDS blob first, external UploadFile as a fallback.
 export async function uploadMedia(file) {
+  assertImageUpload(file);
   try {
     return await uploadPdsBlob(file);
   } catch (e) {
