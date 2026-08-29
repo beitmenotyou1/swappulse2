@@ -21,6 +21,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { uploadPromoImage } from '../../shared/promoImageUpload.ts';
+import { buildPromoExternalEmbed, assertPromoPresentation } from '../../shared/promoPresentation.ts';
 import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
 import { buildRichTextFacets } from '../../shared/hashtagFacets.ts';
 import {
@@ -144,17 +145,31 @@ async function fetchRandomCard(tcgdexLang: string): Promise<FeaturedCard | null>
   return null;
 }
 
-/** Build the small card image URL from TCGDex's CDN.
- * Uses PNG (not WebP) because Bluesky's app.bsky.embed.images lexicon only
- * accepts image/jpeg and image/png. TCGDex's CDN supports format selection via
- * the URL extension: .png (transparent bg), .jpg (black bg), .webp (modern).
- * We use .png for best quality. The Accept header in uploadPromoImage ensures
- * the CDN doesn't serve WebP via content negotiation despite the .png URL. */
+/** Build a PNG card image URL from TCGDex's CDN.
+ * TCGDex usually returns a base image path, but some responses may already
+ * contain /low.png, /high.webp, etc. Never blindly append another suffix or
+ * the resulting URL becomes invalid (for example high.webp/low.png). */
 function cardImageUrl(imageField: string | null): string | null {
   if (!imageField) return null;
-  const suffix = '/low.png';
-  if (imageField.startsWith('http')) return `${imageField}${suffix}`;
-  return `${TCGDEX_IMAGE_BASE}/${imageField}${suffix}`;
+  const raw = String(imageField).trim();
+  if (!raw) return null;
+  if (raw.startsWith('http')) {
+    try {
+      const url = new URL(raw);
+      if (url.hostname === 'assets.tcgdex.net') {
+        url.pathname = url.pathname.replace(/\/(?:low|high)\.(?:png|jpe?g|webp)$/i, '');
+        url.pathname = `${url.pathname.replace(/\/$/, '')}/low.png`;
+        url.search = '';
+        url.hash = '';
+        return url.toString();
+      }
+      return raw;
+    } catch {
+      return null;
+    }
+  }
+  const clean = raw.replace(/\/(?:low|high)\.(?:png|jpe?g|webp)$/i, '').replace(/^\/+/, '');
+  return `${TCGDEX_IMAGE_BASE}/${clean}/low.png`;
 }
 
 type PromoType = 'card' | 'feature' | 'community' | 'first_join';
