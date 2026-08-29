@@ -63,7 +63,7 @@ export default function CreateSpaceModal({ onClose, onCreated }) {
             <button onClick={() => setMode('scheduled')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold ${mode === 'scheduled' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-secondary'}`}><CalendarClock className="h-4 w-4" /> Schedule</button>
           </div>
           {mode === 'scheduled' && (
-            <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <input aria-label="Scheduled space start time" type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary" />
           )}
           <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Topics (comma separated) e.g. vintage, market, prerelease" className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary"  aria-label="Topics (comma separated) e.g. vintage, market, prerelease"/>
           <label className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm">
