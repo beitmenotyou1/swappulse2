@@ -54,8 +54,8 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
     try {
       const preview = (contentPreview || '').slice(0, 500);
 
-      // DM reports go through a backend function that decrypts the escrow and
-      // populates the moderator-only plaintext field.
+      // DM reports go through a backend participant check. The message body
+      // remains end-to-end encrypted; moderators receive only explicit report evidence.
       if (contentType === 'direct_message' && dmMessageId) {
         await base44.functions.invoke('submit-dm-report', {
           messageId: dmMessageId,
@@ -72,7 +72,6 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
           reason,
           details: details.trim(),
           evidence_urls: evidenceUrls,
-          status: 'pending',
         });
         base44.entities.AgentFeedback.create({
           agent_name: 'moderation_agent',
