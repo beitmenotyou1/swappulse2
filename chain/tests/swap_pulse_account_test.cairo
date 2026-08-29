@@ -42,8 +42,11 @@ fn deploy_account(
 fn constructor_rejects_zero_public_key() {
     let contract = declare("SwapPulseAccount").unwrap().contract_class();
     let calldata = array![0];
-    let result = contract.deploy(@calldata);
-    assert(result.is_err(), 'zero key accepted');
+    let mut err = starknet::syscalls::deploy_syscall(
+        *contract.class_hash, 0, calldata.span(), false,
+    )
+        .unwrap_err();
+    assert(err.pop_front().unwrap() == 'INVALID_PUBLIC_KEY', 'wrong constructor error');
 }
 
 #[test]
