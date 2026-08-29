@@ -2,15 +2,29 @@
   "name": "Conversation",
   "type": "object",
   "title": "Conversation",
-  "description": "org.swappulse.conversation \u2014 a 1:1 direct-message conversation between two collectors, mirrored to AT Protocol as a real org.swappulse.conversation record. The creator is tracked by created_by_id; the other participant is tracked by recipient_did so RLS can grant read access to both without an array-contains operator. participant_dids stores both DIDs for display and lookup. last_message_at/preview drive the conversation list ordering and preview.",
+  "description": "A local-only 1:1 direct-message conversation. Conversation metadata is visible only to its two participants and admins; it is never federated to an AT Protocol repository.",
   "properties": {
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the conversation creator"
+      "description": "DID of the conversation creator",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "recipient_did": {
       "type": "string",
-      "description": "AT Protocol DID of the other participant"
+      "description": "DID of the other participant",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "participant_dids": {
       "type": "array",
@@ -19,16 +33,44 @@
       "items": {
         "type": "string"
       },
-      "description": "Both participant DIDs in sorted order for symmetric lookup"
+      "description": "Both participant DIDs in sorted order",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "recipient_name": {
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "recipient_handle": {
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "recipient_avatar": {
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "last_message_at": {
       "type": "string",
@@ -37,36 +79,78 @@
     "last_message_preview": {
       "type": "string",
       "maxLength": 200,
-      "description": "Truncated preview of the most recent message for the list view"
+      "description": "Non-sensitive preview; encrypted messages use a fixed lock label."
     },
     "last_message_did": {
       "type": "string",
-      "description": "DID of the participant who sent the last message"
+      "description": "DID of the participant who sent the most recent message"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (real once bridged to the PDS)"
+      "description": "Legacy AT URI field. New conversations never federate.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "cid": {
       "type": "string",
-      "description": "Content identifier hash (simulated)"
+      "description": "Legacy content identifier field.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID (org.swappulse.conversation)"
+      "description": "Legacy record-type field.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "sig": {
       "type": "string",
-      "description": "HMAC signature binding the conversation to the creator's signing key (simulated)"
+      "description": "Legacy simulated signature field.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "bridged": {
       "type": "boolean",
       "default": false,
-      "description": "True once the conversation has been mirrored to the AT Protocol PDS as a real org.swappulse.conversation record"
+      "description": "Legacy flag. Must remain false for new conversations.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "content_hash": {
       "type": "string",
-      "description": "SHA-256 of the canonical record body, refreshed on each bridge push. outbound-reconcile compares it against the rebuilt record to detect silent local drift and re-push."
+      "description": "Legacy bridge hash field.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "description": {
       "type": "string",
@@ -86,11 +170,23 @@
         },
         {
           "data.recipient_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "$and": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.did": "{{user.data.did}}"
+        }
+      ]
     },
     "update": {
       "$or": [
@@ -99,6 +195,11 @@
         },
         {
           "data.recipient_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
@@ -108,7 +209,9 @@
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.recipient_did": "{{user.data.did}}"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     }
