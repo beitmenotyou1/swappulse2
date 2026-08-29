@@ -211,7 +211,7 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const caller = await base44.auth.me().catch(() => null);
     if (!caller) return jsonError('Unauthorized', 401);
-    if (caller.role !== 'admin') return jsonError('Admin only', 403);
+    const isAdmin = caller.role === 'admin';
 
     const body = await req.json().catch(() => ({}));
     const svc = base44.asServiceRole;
@@ -225,6 +225,15 @@ export default async function(req: Request): Promise<Response> {
         409,
         'RPC_NOT_CONFIGURED',
       );
+    }
+    if (
+      String(config.verified_chain_id || '').trim() !== String(config.chain_id || '').trim()
+      || String(config.verified_identity_registry_class_hash || '').trim() !== String(config.identity_registry_class_hash || '').trim()
+      || String(config.verified_identity_registry_owner || '').trim() !== String(config.identity_registry_owner || '').trim()
+      || String(config.verified_account_class_hash || '').trim() !== String(config.account_class_hash || '').trim()
+      || String(config.verified_rpc_url || '').trim() !== String(config.rpc_url || '').trim()
+    ) {
+      return jsonError('SwapPulse Testnet verification pins are stale or incomplete', 409, 'CHAIN_VERIFICATION_REQUIRED');
     }
 
     let rpcUrl: string;
@@ -270,10 +279,18 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const recordId = String(body.record_id || '').trim();
+    if (!isAdmin && !recordId) {
+      return jsonError('Ordinary users may reconcile only their own specific identity record', 400, 'RECORD_ID_REQUIRED');
+    }
     const requestedLimit = Math.max(1, Math.min(Number(body.limit) || 25, MAX_BATCH));
     let rows: any[] = [];
     if (recordId) {
       rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
+      if (!isAdmin) {
+        if (!rows?.[0] || String(rows[0].user_id || '') !== String(caller.id || '')) {
+          return jsonError('Chain identity not found for this account', 404, 'IDENTITY_NOT_FOUND');
+        }
+      }
     } else {
       rows = await svc.entities.ChainIdentity
         .filter({ network: NETWORK }, '-created_date', requestedLimit)
