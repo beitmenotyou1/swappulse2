@@ -35,6 +35,7 @@ const relayBaseUrl = `http://127.0.0.1:${relayPort}`;
 const relayUrl = `${relayBaseUrl}/rpc`;
 const registerUrl = `${relayBaseUrl}/register`;
 const token = 'a'.repeat(64);
+const chainId = '0x534e5f5345504f4c4941';
 const accountClassHash = '0x12345';
 const registryClassHash = '0x23456';
 const registryAddress = '0x45678';
@@ -80,7 +81,7 @@ const upstream = http.createServer(async (req, res) => {
     else result = ['0x0'];
   }
   else if (payload.method === 'starknet_specVersion') result = '0.9.0';
-  else if (payload.method === 'starknet_chainId') result = '0x534e5f5345504f4c4941';
+  else if (payload.method === 'starknet_chainId') result = chainId;
   else if (payload.method === 'starknet_getNonce') result = '0x0';
   else if (payload.method === 'starknet_estimateFee') result = [{
     l1_gas_consumed: '0x1', l1_gas_price: '0x1',
@@ -115,6 +116,7 @@ const child = spawn(process.execPath, ['server.mjs'], {
     UPSTREAM_RPC: upstreamUrl,
     PORT: String(relayPort),
     RELAY_TOKEN: token,
+    CHAIN_ID: chainId,
     ACCOUNT_CLASS_HASH: accountClassHash,
     IDENTITY_REGISTRY_CLASS_HASH: registryClassHash,
     IDENTITY_REGISTRY_ADDRESS: registryAddress,
@@ -143,6 +145,14 @@ async function waitForRelay() {
 
 try {
   await waitForRelay();
+
+  const unauthReady = await fetch(`${relayBaseUrl}/readyz`);
+  if (unauthReady.status !== 401) throw new Error(`Expected unauthenticated /readyz to return 401, got ${unauthReady.status}`);
+  const ready = await fetch(`${relayBaseUrl}/readyz`, { headers: { authorization: `Bearer ${token}` } });
+  const readyBody = await ready.json();
+  if (ready.status !== 200 || readyBody?.ok !== true || readyBody?.chain_id !== chainId || readyBody?.identity_registry_address !== registryAddress) {
+    throw new Error(`Authenticated /readyz did not verify relay pins: ${JSON.stringify({ status: ready.status, body: readyBody })}`);
+  }
 
   const deployTx = {
     type: 'DEPLOY_ACCOUNT', version: '0x3', signature: ['0x1', '0x2'], paymaster_data: [], tip: '0x0', nonce: '0x0',
