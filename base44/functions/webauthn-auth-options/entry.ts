@@ -8,6 +8,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateAuthenticationOptions } from 'npm:@simplewebauthn/server@10';
 import { issueWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
+import { consumeAuthAttempt } from '../../shared/authThrottle.ts';
 
 function randomCredentialId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -26,15 +27,27 @@ export default async function (req: Request): Promise<Response> {
     const email = String(body.email || '').trim().toLowerCase();
     if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
 
+    const svc = base44.asServiceRole;
+    const throttle = await consumeAuthAttempt(svc, 'webauthn-options', email, {
+      maxAttempts: 20,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!throttle.allowed) {
+      return Response.json(
+        { error: 'Too many authentication attempts. Try again later.', retry_after: throttle.retryAfterSeconds },
+        { status: 429, headers: { 'Retry-After': String(throttle.retryAfterSeconds || 900) } },
+      );
+    }
+
     // Look up user by email (service role — no RLS on this lookup)
-    const users = await base44.asServiceRole.entities.User.filter({ email }, '-created_date', 1);
+    const users = await svc.entities.User.filter({ email }, '-created_date', 1);
     const user = users && users[0];
 
     // Return a fixed-size allowCredentials list so the options response does
     // not reveal whether the email exists or how many security keys it has.
     // Authenticators simply ignore the random padding IDs.
     const creds = user
-      ? await base44.asServiceRole.entities.WebAuthnCredential
+      ? await svc.entities.WebAuthnCredential
           .filter({ user_id: user.id }, '-created_date', 20)
           .catch(() => [])
       : [];
@@ -50,7 +63,7 @@ export default async function (req: Request): Promise<Response> {
     }));
 
     const { challenge, signature } = await issueWebAuthnChallenge(
-      base44.asServiceRole,
+      svc,
       process.env.BACKEND_FUNCTION_SECRET!,
       'authentication',
       email,
