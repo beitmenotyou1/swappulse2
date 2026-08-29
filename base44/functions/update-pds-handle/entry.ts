@@ -19,9 +19,6 @@ export default async function(req: Request): Promise<Response> {
     const handle = String(body.handle || body.domain || '').trim().toLowerCase();
     if (!handle) return Response.json({ error: 'handle is required' }, { status: 400 });
 
-    const pdsUrl = Deno.env.get('PDS_URL');
-    if (!pdsUrl) return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
-
     if (!user.did || !user.did.startsWith('did:plc:')) {
       return Response.json({
         error: 'No federated identity yet. Your account is provisioned on login, try again in a moment.',
@@ -34,11 +31,11 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'No PDS credential found. Re-link your Bluesky account.' }, { status: 400 });
     }
 
-    const { session } = await getPdsSessionForUser(identity.pdsUrl, user.did, identity.appPassword);
+    const { pdsUrl: sessionPdsUrl, session } = await getPdsSessionForUser(identity.pdsUrl, user.did, identity.appPassword);
 
-    // The PDS verifies the new handle resolves to the user's DID (DNS TXT or
-    // well-known), then updates the PLC directory entry.
-    const res = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.identity.updateHandle', {
+    // Use the exact validated PDS origin that issued this user's session.
+    // Never send a per-user bearer token to the shared bridge PDS by mistake.
+    const res = await pdsRequest(sessionPdsUrl, session.accessJwt, 'com.atproto.identity.updateHandle', {
       handle,
     });
     if (res?.error) {
