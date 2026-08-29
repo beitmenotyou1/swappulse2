@@ -33,9 +33,19 @@ function feltArray(value: unknown, field: string): string[] {
   return value.map((item, index) => normalizeZeroableHex(item, `${field}[${index}]`));
 }
 
+function normalizeNumberish(value: unknown, field: string): string {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (/^0x[0-9a-f]+$/.test(raw) || /^[0-9]+$/.test(raw)) {
+    const n = BigInt(raw);
+    if (n < 0n || n >= STARK_FIELD_PRIME) throw new Error(`${field} is outside the Starknet felt252 field`);
+    return `0x${n.toString(16)}`;
+  }
+  throw new Error(`${field} must be a hexadecimal or decimal felt`);
+}
+
 function sameFelts(a: string[], b: unknown[]): boolean {
   if (a.length !== b.length) return false;
-  return a.every((value, index) => value === normalizeZeroableHex(b[index], `expected[${index}]`));
+  return a.every((value, index) => normalizeNumberish(value, `actual[${index}]`) === normalizeNumberish(b[index], `expected[${index}]`));
 }
 
 async function ageEligible(svc: any, userId: string): Promise<boolean> {
