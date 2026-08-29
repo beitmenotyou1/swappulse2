@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hash } from 'npm:starknet@10.0.2';
+import { secrets } from 'base44:runtime';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
@@ -114,6 +115,18 @@ async function getNetwork(svc: any) {
   };
 }
 
+function relayAutomationReady(): boolean {
+  const rawUrl = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
+  const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
+  if (token.length < 32 || !rawUrl) return false;
+  try {
+    const url = new URL(rawUrl);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 function safeIdentity(row: any) {
   if (!row) return null;
   return {
@@ -171,6 +184,7 @@ export default async function(req: Request): Promise<Response> {
           recovery_controller: network.recovery_controller || '0x0',
           recovery_delay_seconds: network.recovery_delay_seconds,
         } : null,
+        automation_ready: Boolean(age.eligible && network.ready && relayAutomationReady()),
         private_key_required_by_base44: false,
       });
     }
