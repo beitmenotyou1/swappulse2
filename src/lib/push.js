@@ -86,8 +86,6 @@ export async function subscribePush() {
   } catch (e) {
     console.error('register-push-token failed', e?.message || e);
   }
-  // Keep legacy updateMe for backward compat with sendPush/dispatchBellNotifications
-  await base44.auth.updateMe({ push_subscription: subStr });
   return sub;
 }
 
@@ -109,6 +107,4 @@ export async function unsubscribePush() {
   } catch (e) {
     console.error('unregister-push-token failed', e?.message || e);
   }
-  // Clear legacy
-  await base44.auth.updateMe({ push_subscription: '' });
 }
