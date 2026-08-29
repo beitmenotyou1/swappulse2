@@ -14,6 +14,7 @@ export default function ChainIdentitySection() {
     account_class_hash: '',
     identity_registry_class_hash: '',
     identity_registry_address: '',
+    identity_registry_owner: '',
     recovery_controller: '',
     recovery_delay_seconds: '172800',
     rpc_url: '',
@@ -52,6 +53,7 @@ export default function ChainIdentitySection() {
             account_class_hash: nextConfig?.account_class_hash || '',
             identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
             identity_registry_address: nextConfig?.identity_registry_address || '',
+            identity_registry_owner: nextConfig?.identity_registry_owner || '',
             recovery_controller: nextConfig?.recovery_controller || '',
             recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
             rpc_url: nextConfig?.rpc_url || '',
@@ -90,6 +92,7 @@ export default function ChainIdentitySection() {
         account_class_hash: nextConfig?.account_class_hash || '',
         identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
         identity_registry_address: nextConfig?.identity_registry_address || '',
+        identity_registry_owner: nextConfig?.identity_registry_owner || '',
         recovery_controller: nextConfig?.recovery_controller || '',
         recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
         rpc_url: nextConfig?.rpc_url || '',
@@ -130,6 +133,7 @@ export default function ChainIdentitySection() {
         account_class_hash: nextConfig?.account_class_hash || '',
         identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
         identity_registry_address: nextConfig?.identity_registry_address || '',
+        identity_registry_owner: nextConfig?.identity_registry_owner || '',
         recovery_controller: nextConfig?.recovery_controller || '',
         recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
         rpc_url: nextConfig?.rpc_url || '',
@@ -297,6 +301,10 @@ export default function ChainIdentitySection() {
             <p className="mt-1 truncate font-mono">{config?.identity_registry_address || 'Not deployed'}</p>
           </div>
           <div className="rounded-lg bg-secondary/50 p-3">
+            <p className="text-muted-foreground">Registry owner</p>
+            <p className="mt-1 truncate font-mono">{config?.identity_registry_owner || 'Not pinned'}</p>
+          </div>
+          <div className="rounded-lg bg-secondary/50 p-3">
             <p className="text-muted-foreground">Recovery delay</p>
             <p className="mt-1 font-semibold">{config?.recovery_delay_seconds ?? 172800}s</p>
           </div>
@@ -346,6 +354,12 @@ export default function ChainIdentitySection() {
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
             />
             <input
+              value={configDraft.identity_registry_owner}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, identity_registry_owner: e.target.value }))}
+              placeholder="IdentityRegistry owner 0x…"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+            />
+            <input
               value={configDraft.recovery_controller}
               onChange={(e) => setConfigDraft((p) => ({ ...p, recovery_controller: e.target.value }))}
               placeholder="Recovery controller 0x… (optional)"
@@ -384,7 +398,7 @@ export default function ChainIdentitySection() {
             </button>
             <button
               onClick={verifyNetwork}
-              disabled={verifyingNetwork || savingConfig || !configDraft.rpc_url || !configDraft.chain_id || !configDraft.account_class_hash || !configDraft.identity_registry_class_hash || !configDraft.identity_registry_address}
+              disabled={verifyingNetwork || savingConfig || !configDraft.rpc_url || !configDraft.chain_id || !configDraft.account_class_hash || !configDraft.identity_registry_class_hash || !configDraft.identity_registry_address || !configDraft.identity_registry_owner}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
               {verifyingNetwork ? <Loader2 className="h-4 w-4 animate-spin" /> : <Blocks className="h-4 w-4" />}
