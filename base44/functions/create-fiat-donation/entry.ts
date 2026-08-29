@@ -20,7 +20,12 @@ export default async function (req: Request): Promise<Response> {
     if (!Number.isFinite(value) || value < 0.5) {
       return Response.json({ error: 'Minimum donation is £0.50' }, { status: 400 });
     }
-    if (!donorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) {
+    if (value > 10_000) {
+      return Response.json({ error: 'Maximum online donation is £10,000' }, { status: 400 });
+    }
+    const cleanEmail = String(donorEmail || '').trim().toLowerCase().slice(0, 200);
+    const cleanName = String(donorName || '').trim().slice(0, 100);
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return Response.json({ error: 'A valid email is required' }, { status: 400 });
     }
     if (!turnstileToken) {
@@ -60,8 +65,9 @@ export default async function (req: Request): Promise<Response> {
     stripeParams.append('line_items[0][price_data][unit_amount]', String(amountPence));
     stripeParams.append('line_items[0][price_data][product_data][name]', 'SwapPulse Donation');
     stripeParams.append('line_items[0][quantity]', '1');
-    stripeParams.append('customer_email', donorEmail);
-    stripeParams.append('success_url', `${appUrl}/donate/fiat-success`);
+    stripeParams.append('customer_email', cleanEmail);
+    stripeParams.append('metadata[donor_name]', cleanName);
+    stripeParams.append('success_url', `${appUrl}/donate/fiat-success?session_id={CHECKOUT_SESSION_ID}`);
     stripeParams.append('cancel_url', `${appUrl}/donate`);
 
     const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -87,8 +93,8 @@ export default async function (req: Request): Promise<Response> {
         stripe_session_id: session.id,
         amount: value,
         currency: 'gbp',
-        donor_email: donorEmail,
-        donor_name: donorName || '',
+        donor_email: cleanEmail,
+        donor_name: cleanName,
         payment_status: 'pending',
       });
     } catch (e) {
