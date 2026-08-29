@@ -1,10 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hash } from 'npm:starknet@10.0.2';
 import { secrets } from 'base44:runtime';
+import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
 const ACTIVE_STATUSES = new Set(['PENDING', 'DEPLOYED', 'REGISTERED', 'RECOVERY_PENDING', 'RECOVERED']);
+const RELAY_READY_TIMEOUT_MS = 5_000;
+const RELAY_READY_CACHE_MS = 30_000;
+let relayReadyCache: { key: string; expires_at: number; value: any } | null = null;
 
 function jsonError(message: string, status: number, code?: string): Response {
   return Response.json({ error: message, code: code || undefined }, { status });
@@ -115,15 +119,70 @@ async function getNetwork(svc: any) {
   };
 }
 
-function relayAutomationReady(): boolean {
+async function relayAutomationStatus(network: any) {
   const rawUrl = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
   const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
-  if (token.length < 32 || !rawUrl) return false;
+  const configured = Boolean(rawUrl && token.length >= 32);
+  if (!configured) return { configured: false, verified: false, code: 'TX_RELAY_NOT_CONFIGURED' };
+
+  const cacheKey = [
+    rawUrl,
+    token.length,
+    network.chain_id,
+    network.account_class_hash,
+    network.identity_registry_class_hash,
+    network.identity_registry_address,
+    network.identity_registry_owner,
+    network.recovery_controller || '0x0',
+    network.recovery_delay_seconds,
+  ].join('|');
+  if (relayReadyCache && relayReadyCache.key === cacheKey && relayReadyCache.expires_at > Date.now()) {
+    return relayReadyCache.value;
+  }
+
+  let controller: AbortController | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
   try {
     const url = new URL(rawUrl);
-    return url.protocol === 'https:' && !url.username && !url.password;
-  } catch {
-    return false;
+    if (url.protocol !== 'https:') throw new Error('TX_RELAY_URL_MUST_USE_HTTPS');
+    if (url.username || url.password) throw new Error('TX_RELAY_URL_MUST_NOT_CONTAIN_CREDENTIALS');
+    await assertSafeHost(url.hostname);
+    url.pathname = '/readyz';
+    url.search = '';
+    url.hash = '';
+
+    controller = new AbortController();
+    timer = setTimeout(() => controller?.abort(), RELAY_READY_TIMEOUT_MS);
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'error',
+      headers: { authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.ok !== true) {
+      throw new Error(String(payload?.code || `TX_RELAY_READY_HTTP_${response.status}`));
+    }
+    if (String(payload?.purpose || '') !== 'swappulse-testnet-provisioning-relay') throw new Error('TX_RELAY_PURPOSE_MISMATCH');
+    if (normalizeHex(payload.chain_id, 'relay chain id') !== normalizeHex(network.chain_id, 'verified chain id')) throw new Error('TX_RELAY_CHAIN_ID_MISMATCH');
+    if (normalizeHex(payload.account_class_hash, 'relay account class hash') !== normalizeHex(network.account_class_hash, 'verified account class hash')) throw new Error('TX_RELAY_ACCOUNT_CLASS_MISMATCH');
+    if (normalizeHex(payload.identity_registry_class_hash, 'relay registry class hash') !== normalizeHex(network.identity_registry_class_hash, 'verified registry class hash')) throw new Error('TX_RELAY_REGISTRY_CLASS_MISMATCH');
+    if (normalizeHex(payload.identity_registry_address, 'relay registry address') !== normalizeHex(network.identity_registry_address, 'verified registry address')) throw new Error('TX_RELAY_REGISTRY_ADDRESS_MISMATCH');
+    if (normalizeHex(payload.identity_registry_owner, 'relay registry owner') !== normalizeHex(network.identity_registry_owner, 'verified registry owner')) throw new Error('TX_RELAY_REGISTRY_OWNER_MISMATCH');
+    if (normalizeZeroableHex(payload.recovery_controller ?? '0x0', 'relay recovery controller') !== normalizeZeroableHex(network.recovery_controller || '0x0', 'verified recovery controller')) throw new Error('TX_RELAY_RECOVERY_CONTROLLER_MISMATCH');
+    if (Number(payload.recovery_delay_seconds) !== Number(network.recovery_delay_seconds)) throw new Error('TX_RELAY_RECOVERY_DELAY_MISMATCH');
+
+    const value = { configured: true, verified: true, code: 'READY' };
+    relayReadyCache = { key: cacheKey, expires_at: Date.now() + RELAY_READY_CACHE_MS, value };
+    return value;
+  } catch (error: any) {
+    const rawCode = error?.name === 'AbortError' ? 'TX_RELAY_READY_TIMEOUT' : String(error?.message || 'TX_RELAY_READY_FAILED');
+    const code = rawCode.replace(/[^A-Za-z0-9_:-]/g, '_').slice(0, 120);
+    const value = { configured: true, verified: false, code };
+    relayReadyCache = { key: cacheKey, expires_at: Date.now() + 5_000, value };
+    return value;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
