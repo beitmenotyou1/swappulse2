@@ -112,9 +112,15 @@ export async function verifyActionToken(
       false,
       ['verify'],
     );
-    const expectedSig = await crypto.subtle.sign('HMAC', signingKey, new TextEncoder().encode(bodyB64));
-    const expectedSigHex = Array.from(new Uint8Array(expectedSig)).map((b) => b.toString(16).padStart(2, '0')).join('');
-    if (!timingSafeEqual(sigHex, expectedSigHex)) return { valid: false, error: 'Invalid token signature' };
+    if (!/^[0-9a-f]{64}$/i.test(sigHex)) return { valid: false, error: 'Invalid token signature' };
+    const signatureBytes = new Uint8Array(sigHex.match(/../g)!.map((byte) => Number.parseInt(byte, 16)));
+    const signatureValid = await crypto.subtle.verify(
+      'HMAC',
+      signingKey,
+      signatureBytes,
+      new TextEncoder().encode(bodyB64),
+    );
+    if (!signatureValid) return { valid: false, error: 'Invalid token signature' };
     const body = JSON.parse(atob(bodyB64));
     if (body.exp < Date.now()) return { valid: false, error: 'Token expired' };
     if (body.act !== expectedAction) return { valid: false, error: 'Token action mismatch' };
