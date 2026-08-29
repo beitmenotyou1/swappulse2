@@ -25,6 +25,10 @@ services:
       - ./data:/data
     ports:
       - "127.0.0.1:${SWAPPULSE_RAW_RPC_PORT:-5050}:5050"
+    # Devnet prints deterministic predeployed private keys during startup.
+    # Do not retain those keys in Docker's log store.
+    logging:
+      driver: "none"
     networks:
       - swappulse-chain
 
