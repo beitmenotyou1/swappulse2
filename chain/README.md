@@ -41,11 +41,14 @@ Base44 stores the private user -> chain identity mapping in the owner-readable `
 
 The verified Milestone 1 toolchain is pinned to:
 
+- Node.js: `22.x` for deployment / RPC tooling (`chain/.nvmrc`; `engine-strict=true` in the tooling package)
+- Starknet.js: `10.0.2`
 - Scarb / Cairo / Starknet package: `2.13.1`
 - OpenZeppelin Contracts for Cairo: `3.0.0`
 - OpenZeppelin interfaces: `2.1.0`
 - Starknet Foundry / `snforge_std`: `0.51.2` (the version family OpenZeppelin 3.0 was tested against)
 - Universal Sierra Compiler: `2.10.0`
+- Starknet Devnet binary: `0.8.2` for local E2E only
 
 Do not casually mix newer `snforge` binaries with the older `snforge_std` package. We reproduced an actual cheatcode protocol incompatibility with Foundry 0.63 + `snforge_std` 0.51.2. Pinning should be revisited deliberately before a public testnet or audit.
 
@@ -59,6 +62,58 @@ SCARB_BIN=scarb SNFORGE_BIN=snforge bash scripts/test-chain.sh
 ```
 
 `test-chain.sh` runs `scarb build`, the full Foundry suite, and the isolated zero-public-key constructor negative check. On 29 August 2026 the pinned toolchain completed with 26 normal tests passing, 0 failing, 1 runner-limited test ignored by the normal suite, and the ignored constructor case separately verified to revert with `INVALID_PUBLIC_KEY`.
+
+## Deployment tooling
+
+Deployment/RPC tooling is isolated under `chain/scripts/tooling`. Use Node 22. The npm `starknet-devnet` wrapper is intentionally **not** a dependency: its transitive `decompress` package had a critical archive-extraction advisory during this audit. Local E2E instead uses a separately installed `starknet-devnet` binary through `STARKNET_DEVNET_BIN`.
+
+Install and audit the tooling:
+
+```bash
+cd chain
+nvm use
+cd scripts/tooling
+npm ci
+npm audit
+```
+
+The audited tooling dependency tree contains Starknet.js only and returned zero known npm vulnerabilities on 29 August 2026.
+
+Before persistent deployment, build the Cairo contracts and compile their Sierra artifacts to CASM. The deployment script expects these four files in `chain/target/dev`:
+
+- `swappulse_network_IdentityRegistry.contract_class.json`
+- `swappulse_network_IdentityRegistry.casm.json`
+- `swappulse_network_SwapPulseAccount.contract_class.json`
+- `swappulse_network_SwapPulseAccount.casm.json`
+
+Persistent deployment requires these environment values to be injected by the operator or a secret manager, never committed to the repository:
+
+- `SWAPPULSE_RPC_URL` — persistent HTTPS Starknet JSON-RPC endpoint
+- `SWAPPULSE_DEPLOYER_ADDRESS` — funded deployment account address
+- `SWAPPULSE_DEPLOYER_PRIVATE_KEY` — deployment signer secret, process-only
+
+Optional values:
+
+- `SWAPPULSE_RECOVERY_CONTROLLER`
+- `SWAPPULSE_RECOVERY_DELAY_SECONDS` (default `172800`)
+- `SWAPPULSE_DEPLOYMENT_MANIFEST` (default `chain/deployments/swappulse-testnet.json`)
+- `SWAPPULSE_EXISTING_REGISTRY_ADDRESS` to verify/reuse an existing registry instead of deploying a new one
+
+Run:
+
+```bash
+node deploy-network.mjs
+node verify-network.mjs ../../deployments/swappulse-testnet.json
+```
+
+`deploy-network.mjs` writes a **public-only** deployment manifest. It never serialises the deployment private key. A Node 22 smoke test on 29 August 2026 successfully declared both classes, deployed `IdentityRegistry`, verified the generated manifest against the node and confirmed that deployment output did not contain the private key.
+
+For local E2E with a standalone devnet binary:
+
+```bash
+STARKNET_DEVNET_BIN=/path/to/starknet-devnet node devnet-e2e.mjs
+STARKNET_DEVNET_BIN=/path/to/starknet-devnet node smoke-deploy-network.mjs
+```
 
 ## Required tests before deployment
 
@@ -106,6 +161,8 @@ Required network configuration after the contracts are compiled and deployed is 
 The smart-account constructor accepts only `public_key`, matching OpenZeppelin's standard deploy-account validation ABI. Recovery starts disabled and is configured after deployment through signed account self-calls.
 
 These values are public blockchain deployment metadata, not secrets. Private RPC credentials, private keys, seed phrases, and passkey secret material must never be stored in `ChainNetworkConfig`.
+
+Saving these values creates or updates a **draft**, not a trusted network. `chain-network-verify` must independently query the HTTPS RPC, verify the chain ID, verify the `IdentityRegistry` class hash at the configured address, and confirm that the configured `SwapPulseAccount` class is declared. Only that RPC verification can set `status = CONFIGURED`. Changing the RPC, chain ID, registry address or either class hash invalidates the previous verification.
 
 ## Next milestone
 
