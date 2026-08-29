@@ -11,7 +11,8 @@
       "type": "string",
       "enum": [
         "authentication",
-        "registration"
+        "registration",
+        "management"
       ]
     },
     "subject": {
