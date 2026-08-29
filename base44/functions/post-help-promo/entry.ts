@@ -5,9 +5,9 @@
 // index, selects the article at that index from the shared HELP_ARTICLES list,
 // composes a conversational promo message with the article's
 // https://swappulse.org/help/<slug> link, uploads the branded SwapPulse banner
-// image to the PDS as a blob, publishes an app.bsky.feed.post with the image
-// embed, tracks the post in PromoPost so firehose-ingest skips it, and advances
-// the cursor to the next article (wrapping to 0 after the last).
+// image to the PDS as a blob, publishes an app.bsky.feed.post with a clickable
+// external rich-card preview, tracks it in PromoPost so firehose-ingest skips
+// it, and advances the cursor to the next article (wrapping after the last).
 //
 // Supports an `op` parameter:
 //   - "post" (default): post the next article and advance the cursor
@@ -15,9 +15,9 @@
 //   - "reset": reset the cursor to index 0 (admin only)
 //   - "skip": advance the cursor by one without posting (admin only)
 //
-// Reuses the same PdsCredential lookup, getPdsSessionForUser, pdsRequest,
-// uploadCardImage pattern, buildRichTextFacets, and PromoPost tracking as
-// post-promo. Invoked by the "Help Article Promo" workflow every 8 hours.
+// Reuses the same identity lookup, getPdsSessionForUser, pdsRequest,
+// hardened promo-image upload, rich-text facets, presentation preflight and
+// PromoPost tracking as post-promo. Invoked every 8 hours.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
