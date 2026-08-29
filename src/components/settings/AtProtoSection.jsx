@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Loader2, ArrowRightLeft, Upload } from 'lucide-react';
+import { Download, Loader2, ArrowRightLeft, Upload, ShieldAlert } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -13,8 +13,6 @@ import SyncDashboard from '@/components/settings/SyncDashboard';
 export default function AtProtoSection({ settings, update }) {
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
-  const [migrating, setMigrating] = useState(false);
-  const [newPdsUrl, setNewPdsUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState('');
   const importRef = React.useRef(null);
@@ -68,31 +66,6 @@ export default function AtProtoSection({ settings, update }) {
     }
   };
 
-  const handleMigrate = async () => {
-    if (!newPdsUrl.trim()) return;
-    if (!newPdsUrl.startsWith('https://')) {
-      toast({ title: 'Invalid URL', description: 'PDS URL must start with https://', variant: 'destructive' });
-      return;
-    }
-    setMigrating(true);
-    try {
-      const res = await base44.functions.invoke('migrate-pds', { newPdsUrl: newPdsUrl.trim() });
-      if (res?.data?.ok) {
-        toast({
-          title: 'Repository migrated',
-          description: res.data.message || 'Your repo has been transferred to the new PDS.',
-        });
-        setNewPdsUrl('');
-      } else {
-        throw new Error(res?.data?.error || 'Migration failed');
-      }
-    } catch (e) {
-      toast({ title: 'Migration failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setMigrating(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
       <BlueskyLinkCard />
@@ -141,50 +114,13 @@ export default function AtProtoSection({ settings, update }) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-warning/40 bg-warning/10 p-4">
         <p className="flex items-center gap-2 text-sm font-bold">
-          <ArrowRightLeft className="h-4 w-4 text-primary" /> PDS Migration
+          <ShieldAlert className="h-4 w-4 text-warning" /> PDS Migration Temporarily Unavailable
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Move your repository to a different AT Protocol PDS host. This transfers all your
-          records to the new PDS. You'll need to update your PLC directory entry separately
-          to complete the migration.
+          Repository migration is paused while SwapPulse replaces the legacy transfer flow with a standards-correct process that authenticates independently to the destination PDS and updates DID/PLC state safely. Export and import remain available above.
         </p>
-        <input
-          type="url"
-          value={newPdsUrl}
-          onChange={(e) => setNewPdsUrl(e.target.value)}
-          placeholder="https://your-new-pds.example.com"
-          className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        />
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <button
-              disabled={migrating || !newPdsUrl.trim()}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-sm font-bold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
-            >
-              {migrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
-              {migrating ? 'Migrating...' : 'Migrate to New PDS'}
-            </button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirm PDS migration</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will transfer all your SwapPulse records to <strong className="text-foreground break-all">{newPdsUrl}</strong>. The migration is irreversible, make sure you have access to the new PDS and can update your PLC directory entry afterward.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleMigrate}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {migrating ? 'Migrating...' : 'Yes, migrate'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
 
       <SyncDashboard />
