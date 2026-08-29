@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { hash, transaction } from 'npm:starknet@10.0.2';
+import { ec, hash, transaction } from 'npm:starknet@10.0.2';
 import { secrets } from 'base44:runtime';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
@@ -47,6 +47,22 @@ function normalizeNumberish(value: unknown, field: string): string {
 function sameFelts(a: string[], b: unknown[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((value, index) => normalizeNumberish(value, `actual[${index}]`) === normalizeNumberish(b[index], `expected[${index}]`));
+}
+
+function verifyReservedSignature(signature: string[], signingHash: string, publicKey: string): boolean {
+  if (signature.length !== 2) return false;
+  const sig = { r: BigInt(signature[0]), s: BigInt(signature[1]) };
+  const x = normalizeHex(publicKey, 'reserved public key').slice(2).padStart(64, '0');
+  // Starknet account public keys store the x-coordinate. Try both valid point
+  // parities for that x-coordinate and accept only a real Stark-curve signature.
+  for (const prefix of ['02', '03']) {
+    try {
+      if (ec.starkCurve.verify(sig, signingHash, `${prefix}${x}`)) return true;
+    } catch {
+      // Invalid compressed point/parity, try the other parity.
+    }
+  }
+  return false;
 }
 
 async function ageEligible(svc: any, userId: string): Promise<boolean> {
