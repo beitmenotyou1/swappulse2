@@ -183,7 +183,7 @@ export default function AccountEnforcementSection() {
               <Input value={blocklistForm.handle} onChange={(e) => setBlocklistForm({ ...blocklistForm, handle: e.target.value })} placeholder="Handle" />
             </div>
             <div className="flex gap-2">
-              <select value={blocklistForm.reason} onChange={(e) => setBlocklistForm({ ...blocklistForm, reason: e.target.value })} className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              <select aria-label="Blocklist reason" value={blocklistForm.reason} onChange={(e) => setBlocklistForm({ ...blocklistForm, reason: e.target.value })} className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm">
                 <option value="scam">Scam</option><option value="spam">Spam</option><option value="harassment">Harassment</option>
                 <option value="ban_evasion">Ban evasion</option><option value="other">Other</option>
               </select>
