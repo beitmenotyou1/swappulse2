@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle2, ChevronDown, ChevronUp, Fingerprint, KeyRound, Loader2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp, Copy, Fingerprint, KeyRound, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 import { createDeviceTestSigner, getDeviceTestSigner } from '@/lib/testnetSignerVault';
@@ -19,6 +19,9 @@ export default function ChainIdentityCard() {
   const [advanced, setAdvanced] = useState(false);
   const [creatingSigner, setCreatingSigner] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  const [provisioningResult, setProvisioningResult] = useState('');
+  const [importingResult, setImportingResult] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,7 +83,7 @@ export default function ChainIdentityCard() {
     try {
       const res = await base44.functions.invoke('chain-identity-user', { action: 'prepare', public_key: publicKey });
       const data = res?.data || res;
-      setStatus((prev) => ({ ...(prev || {}), identity: data?.identity || prev?.identity, can_prepare: false }));
+      await load();
       toast({
         title: data?.existing ? 'Test identity already reserved' : 'Test identity reserved',
         description: 'Only your public Stark key was sent to SwapPulse. The encrypted private key remains on this device.',
@@ -90,6 +93,61 @@ export default function ChainIdentityCard() {
       toast({ title: 'Identity setup blocked', description: message, variant: 'destructive' });
     } finally {
       setPreparing(false);
+    }
+  };
+
+  const copyProvisioningRequest = async () => {
+    if (!status?.provisioning) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(status.provisioning, null, 2));
+      toast({ title: 'Provisioning request copied', description: 'This JSON contains public testnet data only.' });
+    } catch {
+      toast({ title: 'Could not copy provisioning request', variant: 'destructive' });
+    }
+  };
+
+  const importProvisioningResult = async () => {
+    if (!identity?.id || !provisioningResult.trim()) return;
+    setImportingResult(true);
+    try {
+      await base44.functions.invoke('chain-identity-user', {
+        action: 'import_provisioning_result',
+        record_id: identity.id,
+        result: provisioningResult,
+      });
+      setProvisioningResult('');
+      await load();
+      toast({
+        title: 'Deployment recorded',
+        description: 'The public provisioning result was accepted. Verify it on chain before the identity becomes authoritative.',
+      });
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Could not import the provisioning result.';
+      toast({ title: 'Provisioning result rejected', description: message, variant: 'destructive' });
+    } finally {
+      setImportingResult(false);
+    }
+  };
+
+  const reconcileIdentity = async () => {
+    if (!identity?.id) return;
+    setReconciling(true);
+    try {
+      const res = await base44.functions.invoke('chain-identity-reconcile', { record_id: identity.id });
+      const data = res?.data || res;
+      const outcome = data?.results?.[0]?.outcome || 'CHECKED';
+      await load();
+      toast({
+        title: ['REGISTERED', 'RECOVERED'].includes(outcome) ? 'Identity verified on chain' : 'Chain check completed',
+        description: ['REGISTERED', 'RECOVERED'].includes(outcome)
+          ? 'Your SwapPulse identity is now chain-authoritative.'
+          : `Chain result: ${outcome}`,
+      });
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Could not verify the identity on chain.';
+      toast({ title: 'Chain verification failed', description: message, variant: 'destructive' });
+    } finally {
+      setReconciling(false);
     }
   };
 
