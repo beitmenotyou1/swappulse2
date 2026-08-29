@@ -242,6 +242,59 @@ export default function ChainIdentityCard() {
         </div>
       )}
 
+      {identity?.status === 'PENDING' && status?.provisioning && (
+        <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-3">
+          <p className="text-xs font-bold">External testnet deployment</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Copy the public provisioning request for the SwapPulse testnet operator. It contains no private key. After deployment, paste the public provisioning-result JSON returned by the operator.
+          </p>
+          <button
+            type="button"
+            onClick={copyProvisioningRequest}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold hover:bg-secondary"
+          >
+            <Copy className="h-3.5 w-3.5" /> Copy Public Provisioning Request
+          </button>
+          <label htmlFor="swappulse-provisioning-result" className="mt-3 block text-xs font-semibold">Public provisioning result</label>
+          <textarea
+            id="swappulse-provisioning-result"
+            value={provisioningResult}
+            onChange={(e) => setProvisioningResult(e.target.value)}
+            rows={6}
+            spellCheck={false}
+            placeholder={'{\n  "schema_version": 1,\n  "kind": "SWAPPULSE_TEST_IDENTITY_PROVISIONING_RESULT",\n  ...\n}'}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-[11px] outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            onClick={importProvisioningResult}
+            disabled={importingResult || !provisioningResult.trim()}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+          >
+            {importingResult && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {importingResult ? 'Checking result…' : 'Import Public Result'}
+          </button>
+        </div>
+      )}
+
+      {identity?.status === 'DEPLOYED' && (
+        <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <p className="text-xs font-bold">Deployment recorded, chain proof required</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            SwapPulse will read the verified public RPC and confirm the registry mapping, account class and reverse identity mapping before marking this identity secured.
+          </p>
+          <button
+            type="button"
+            onClick={reconcileIdentity}
+            disabled={reconciling}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${reconciling ? 'animate-spin' : ''}`} />
+            {reconciling ? 'Verifying on chain…' : 'Verify on Chain'}
+          </button>
+        </div>
+      )}
+
       {identity && (
         <>
           <button
