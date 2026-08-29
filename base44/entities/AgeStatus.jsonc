@@ -1,0 +1,136 @@
+{
+  "name": "AgeStatus",
+  "type": "object",
+  "title": "AgeStatus",
+  "description": "Private, backend-managed age-band and eligibility record. SwapPulse does not store date of birth here. Users may read only their own record; all mutations are performed by validated backend policy code.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Owning Base44 user id."
+    },
+    "age_band": {
+      "type": "string",
+      "enum": [
+        "13_15",
+        "16_17",
+        "18_PLUS"
+      ],
+      "description": "Coarse age band only. Exact date of birth is intentionally not stored."
+    },
+    "age_method": {
+      "type": "string",
+      "enum": [
+        "SELF_DECLARED",
+        "THIRD_PARTY_VERIFIED"
+      ],
+      "default": "SELF_DECLARED"
+    },
+    "verification_level": {
+      "type": "string",
+      "enum": [
+        "SELF_DECLARED",
+        "ADULT_VERIFIED"
+      ],
+      "default": "SELF_DECLARED"
+    },
+    "policy_version": {
+      "type": "string",
+      "default": "AGE_POLICY_V1"
+    },
+    "collection_eligible": {
+      "type": "boolean",
+      "default": true
+    },
+    "private_photo_verification_eligible": {
+      "type": "boolean",
+      "default": false
+    },
+    "public_collection_eligible": {
+      "type": "boolean",
+      "default": false
+    },
+    "testnet_identity_eligible": {
+      "type": "boolean",
+      "default": false
+    },
+    "testnet_wallet_eligible": {
+      "type": "boolean",
+      "default": false
+    },
+    "value_features_eligible": {
+      "type": "boolean",
+      "default": false
+    },
+    "proof_of_use_eligible": {
+      "type": "boolean",
+      "default": false
+    },
+    "wallet_eligible_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "First time this user became eligible for the non-value-bearing SwapPulse Testnet wallet."
+    },
+    "declared_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_checked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "previous_age_band": {
+      "type": "string",
+      "enum": [
+        "13_15",
+        "16_17",
+        "18_PLUS"
+      ],
+      "description": "Previous coarse band when a declaration changes. No DOB is retained."
+    },
+    "revision": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1
+    }
+  },
+  "required": [
+    "user_id",
+    "age_band",
+    "age_method",
+    "verification_level",
+    "policy_version"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
