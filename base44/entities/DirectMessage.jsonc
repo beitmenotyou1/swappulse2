@@ -2,7 +2,7 @@
   "name": "DirectMessage",
   "type": "object",
   "title": "DirectMessage",
-  "description": "org.swappulse.directMessage \u2014 a single message in a 1:1 conversation, mirrored to AT Protocol as a real org.swappulse.directMessage record. The sender is tracked by created_by_id + did; the recipient by recipient_did so RLS grants read access to both. read is set true by the recipient when they open the thread, driving the unread badge. The body is end-to-end encrypted (ECDH+AES-GCM via e2ee.js); escrow_key_cipher stores an admin-encrypted copy of the per-message AES key so moderators can decrypt reported messages and users can recover history on a new device.",
+  "description": "A local-only end-to-end encrypted 1:1 message. AT Protocol repositories are public, so direct messages are never federated. The sender is bound to the authenticated user's DID at creation; the recipient can read the ciphertext and mark it read only through the backend read-receipt function.",
   "properties": {
     "conversation_id": {
       "type": "string",
@@ -10,24 +10,36 @@
     },
     "conversation_ref": {
       "type": "string",
-      "description": "at:// URI of the bridged Conversation record (for federated linking)"
+      "description": "Legacy field retained for old records. New DMs do not federate and leave this empty."
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the sender"
+      "description": "DID of the sender"
     },
     "recipient_did": {
       "type": "string",
-      "description": "AT Protocol DID of the recipient"
+      "description": "DID of the recipient"
     },
     "body": {
       "type": "string",
       "maxLength": 4000,
-      "description": "Message text body (E2EE ciphertext prefixed with 'e2ee:' when encrypted)"
+      "description": "E2EE ciphertext prefixed with e2ee:. New plaintext messages are rejected before persistence."
     },
     "escrow_key_cipher": {
       "type": "string",
-      "description": "AES-GCM encrypted copy of the per-message symmetric key used to encrypt the body. Encrypted with an admin-held escrow key (APP_PASSWORD_ENCRYPTION_KEY). Enables moderator decryption of reported messages and user history recovery on a new device. Empty for legacy plaintext messages."
+      "description": "Legacy escrow field retained only for backwards compatibility. New messages do not populate it.",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "author_name": {
       "type": "string"
@@ -41,32 +53,32 @@
     "read": {
       "type": "boolean",
       "default": false,
-      "description": "True once the recipient has opened the thread containing this message"
+      "description": "True once the recipient opens the thread. Mutated only by the backend read-receipt function."
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (real once bridged to the PDS)"
+      "description": "Legacy AT URI field. New direct messages never federate."
     },
     "cid": {
       "type": "string",
-      "description": "Content identifier hash (simulated)"
+      "description": "Legacy content identifier field."
     },
     "record_type": {
       "type": "string",
-      "description": "SwapPulse lexicon NSID (org.swappulse.directMessage)"
+      "description": "Legacy record-type field."
     },
     "sig": {
       "type": "string",
-      "description": "HMAC signature binding the message to the sender's signing key (simulated)"
+      "description": "Legacy simulated signature field."
     },
     "bridged": {
       "type": "boolean",
       "default": false,
-      "description": "True once the message has been mirrored to the AT Protocol PDS as a real org.swappulse.directMessage record"
+      "description": "Legacy flag. Must remain false for new direct messages."
     },
     "content_hash": {
       "type": "string",
-      "description": "SHA-256 of the canonical record body, refreshed on each bridge push. outbound-reconcile compares it against the rebuilt record to detect silent local drift and re-push."
+      "description": "Legacy bridge hash field."
     }
   },
   "required": [
@@ -83,21 +95,28 @@
         },
         {
           "data.recipient_did": "{{user.data.did}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
-    },
-    "update": {
-      "$or": [
+      "$and": [
         {
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.recipient_did": "{{user.data.did}}"
+          "data.did": "{{user.data.did}}"
         }
       ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "$or": [
@@ -105,7 +124,9 @@
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.recipient_did": "{{user.data.did}}"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     }
