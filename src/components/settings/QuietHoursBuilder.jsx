@@ -60,6 +60,7 @@ export default function QuietHoursBuilder({ quietHours, update }) {
 
             <div className="mt-2 flex items-center gap-2">
               <input
+                aria-label={`Quiet hours start time for window ${idx + 1}`}
                 type="time"
                 value={w.start || '22:00'}
                 onChange={(e) => updateWindow(idx, { start: e.target.value })}
@@ -67,6 +68,7 @@ export default function QuietHoursBuilder({ quietHours, update }) {
               />
               <span className="text-muted-foreground">to</span>
               <input
+                aria-label={`Quiet hours end time for window ${idx + 1}`}
                 type="time"
                 value={w.end || '08:00'}
                 onChange={(e) => updateWindow(idx, { end: e.target.value })}
