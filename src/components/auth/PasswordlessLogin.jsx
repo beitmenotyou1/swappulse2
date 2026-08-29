@@ -29,17 +29,8 @@ export default function PasswordlessLogin() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("send-login-code", { email });
-      if (res.data?.not_found) {
-        setError("No account found with this email.");
-        return;
-      }
-      if (res.data?.needs_setup) {
-        try { await base44.auth.resetPasswordRequest(email); } catch {}
-        setInfo("We've sent a sign-in link to your email. Click it to set up passwordless login.");
-        return;
-      }
       setStep("code");
-      setInfo("We sent a 6-digit code to your email. Enter it below to log in.");
+      setInfo(`If an account exists for ${email}, a 6-digit code has been sent. If nothing arrives, check the address or create an account.`);
     } catch (err) {
       setError(err.message || "Could not send login code");
     } finally {
