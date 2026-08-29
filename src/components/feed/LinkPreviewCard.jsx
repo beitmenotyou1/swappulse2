@@ -1,27 +1,29 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { Image } from '@/components/ui/image';
-import { confirmExternalLink } from '@/lib/externalLink';
+import { confirmExternalLink, getSafeHttpUrl } from '@/lib/externalLink';
 
 // Large OpenGraph preview card for non-embeddable URLs.
 // Shows thumbnail, title, description, and domain. Opens externally via
 // the shared confirmation dialog.
 export default function LinkPreviewCard({ ext }) {
   if (!ext?.uri) return null;
+  const safeUri = getSafeHttpUrl(ext.uri);
+  if (!safeUri) return null;
 
   const domain = (() => {
-    try { return new URL(ext.uri).hostname.replace(/^www\./, ''); }
+    try { return new URL(safeUri).hostname.replace(/^www\./, ''); }
     catch { return ext.site_name || ''; }
   })();
 
   const handleClick = (e) => {
     e.preventDefault();
-    confirmExternalLink(ext.uri);
+    confirmExternalLink(safeUri);
   };
 
   return (
     <a
-      href={ext.uri}
+      href={safeUri}
       onClick={handleClick}
       className="mt-3 flex overflow-hidden rounded-xl border border-border bg-secondary transition-colors hover:bg-secondary/80"
     >
