@@ -24,6 +24,8 @@ export default function ChainIdentitySection() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [verifyingNetwork, setVerifyingNetwork] = useState(false);
   const [networkVerifyResult, setNetworkVerifyResult] = useState(null);
+  const [manifestText, setManifestText] = useState('');
+  const [importingManifest, setImportingManifest] = useState(false);
   const [targetUserId, setTargetUserId] = useState('');
   const [publicKey, setPublicKey] = useState('');
   const [preparing, setPreparing] = useState(false);
@@ -152,6 +154,45 @@ export default function ChainIdentitySection() {
       });
     } finally {
       setVerifyingNetwork(false);
+    }
+  };
+
+  const importManifest = async () => {
+    setImportingManifest(true);
+    try {
+      const res = await base44.functions.invoke('chain-identity-admin', {
+        action: 'import_manifest',
+        manifest: manifestText,
+      });
+      const data = res?.data || res;
+      const nextConfig = data?.config || null;
+      setConfig(nextConfig);
+      setConfigDraft((prev) => ({
+        ...prev,
+        chain_id: nextConfig?.chain_id || '',
+        account_class_hash: nextConfig?.account_class_hash || '',
+        identity_registry_class_hash: nextConfig?.identity_registry_class_hash || '',
+        identity_registry_address: nextConfig?.identity_registry_address || '',
+        identity_registry_owner: nextConfig?.identity_registry_owner || '',
+        recovery_controller: nextConfig?.recovery_controller || '',
+        recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
+        rpc_url: nextConfig?.rpc_url || '',
+        explorer_url: nextConfig?.explorer_url || '',
+        status: nextConfig?.status || 'UNCONFIGURED',
+      }));
+      setNetworkVerifyResult(null);
+      toast({
+        title: 'Deployment manifest imported',
+        description: 'Saved as an unverified draft. Verify & Activate will independently check the public RPC.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Manifest import failed',
+        description: err?.response?.data?.error || err?.message || 'Invalid deployment manifest',
+        variant: 'destructive',
+      });
+    } finally {
+      setImportingManifest(false);
     }
   };
 
@@ -328,6 +369,27 @@ export default function ChainIdentitySection() {
               <option value="PAUSED">Paused</option>
             </select>
           </div>
+          <details className="mb-3 rounded-lg border border-border bg-background/60 p-3">
+            <summary className="cursor-pointer text-sm font-semibold">Import deployment manifest</summary>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Paste the public JSON emitted by deploy-network.mjs. Secret-like fields are rejected, and importing never activates the network by itself.
+            </p>
+            <textarea
+              value={manifestText}
+              onChange={(e) => setManifestText(e.target.value)}
+              placeholder={'{\n  "schema_version": 1,\n  "network": "SWAPPULSE_TESTNET",\n  ...\n}'}
+              className="mt-2 min-h-40 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+              spellCheck={false}
+            />
+            <button
+              onClick={importManifest}
+              disabled={importingManifest || !manifestText.trim()}
+              className="mt-2 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-secondary disabled:opacity-50"
+            >
+              {importingManifest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clipboard className="h-4 w-4" />}
+              {importingManifest ? 'Importing…' : 'Import Public Manifest'}
+            </button>
+          </details>
           <div className="grid gap-2 md:grid-cols-2">
             <input
               value={configDraft.chain_id}
