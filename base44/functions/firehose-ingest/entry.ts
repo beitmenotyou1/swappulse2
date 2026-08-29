@@ -33,6 +33,18 @@ import { getPdsSessionForUser } from '../../shared/pdsSession.ts';
 import { upsertEntity } from '../../shared/entityDedup.ts';
 
 const APPVIEW = 'https://public.api.bsky.app';
+const FEDERATION_FETCH_TIMEOUT_MS = 10_000;
+const MAX_RECORD_PAGES = 20;
+
+async function fetchWithTimeout(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FEDERATION_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Resolve a remote actor's profile (displayName, handle, avatar) from the
 // AppView once per repo DID, so inbound posts carry author metadata for
@@ -44,7 +56,7 @@ async function getProfile(repoDid: string): Promise<any> {
   try {
     const url = new URL(`${APPVIEW}/xrpc/app.bsky.actor.getProfile`);
     url.searchParams.set('actor', repoDid);
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url);
     if (res.status === 429 || res.status >= 500) return null;
     if (res.ok) profile = await res.json();
   } catch (e) {
@@ -174,7 +186,7 @@ async function syncInboundReplies(base44: any, svc: any, promoUris: Set<string>)
         url.searchParams.set('uri', post.at_uri);
         url.searchParams.set('depth', '3');
         url.searchParams.set('parentHeight', '0');
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url);
         if (res.status === 429 || res.status >= 500) continue;
         if (!res.ok) continue;
         const data = await res.json();
@@ -237,7 +249,7 @@ async function syncInboundInteractions(base44: any, svc: any): Promise<{ likes_s
         const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getLikes`);
         url.searchParams.set('uri', post.at_uri);
         url.searchParams.set('limit', '50');
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url);
         if (res.status === 429 || res.status >= 500) continue;
         if (res.ok) {
           const data = await res.json();
@@ -271,7 +283,7 @@ async function syncInboundInteractions(base44: any, svc: any): Promise<{ likes_s
         const url = new URL(`${APPVIEW}/xrpc/app.bsky.feed.getRepostedBy`);
         url.searchParams.set('uri', post.at_uri);
         url.searchParams.set('limit', '50');
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url);
         if (res.status === 429 || res.status >= 500) continue;
         if (res.ok) {
           const data = await res.json();
@@ -504,7 +516,7 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
     const url = new URL(`${pdsUrl}/xrpc/app.bsky.feed.searchPosts`);
     url.searchParams.set('q', 'PokemonTCG');
     url.searchParams.set('limit', '50');
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessJwt}` } });
+    const res = await fetchWithTimeout(url, { headers: { Authorization: `Bearer ${accessJwt}` } });
     if (res.status === 429 || res.status >= 500) {
       console.error(`firehose-ingest: searchPosts rate-limited (${res.status})`);
       return { found, ingested };
@@ -544,22 +556,36 @@ async function searchAppViewPosts(base44: any, svc: any, pdsUrl: string, accessJ
 // 429/5xx so the caller can skip that repo+collection without failing the run.
 async function listRecords(baseUrl: string, repoDid: string, collection: string, accessJwt?: string): Promise<any[] | null> {
   const all: any[] = [];
+  const seenCursors = new Set<string>();
   let cursor: string | null = null;
+  let pages = 0;
   do {
+    if (cursor) {
+      if (seenCursors.has(cursor)) {
+        console.error(`firehose-ingest: repeated cursor for ${repoDid} ${collection}; refusing partial listing`);
+        return null;
+      }
+      seenCursors.add(cursor);
+    }
     const url = new URL(`${baseUrl}/xrpc/com.atproto.repo.listRecords`);
     url.searchParams.set('repo', repoDid);
     url.searchParams.set('collection', collection);
     url.searchParams.set('limit', '100');
     if (cursor) url.searchParams.set('cursor', cursor);
-    const res = await fetch(url, { headers: accessJwt ? { Authorization: `Bearer ${accessJwt}` } : {} });
+    const res = await fetchWithTimeout(url, { headers: accessJwt ? { Authorization: `Bearer ${accessJwt}` } : {} });
     if (res.status === 429 || res.status >= 500) {
       console.error(`firehose-ingest: listRecords rate-limited/error (${res.status}) for ${repoDid} ${collection}`);
       return null;
     }
-    if (!res.ok) return all;
+    if (!res.ok) return null;
     const data = await res.json();
     all.push(...(data.records || []));
     cursor = data.cursor || null;
+    pages += 1;
+    if (cursor && pages >= MAX_RECORD_PAGES) {
+      console.error(`firehose-ingest: page cap reached for ${repoDid} ${collection}; refusing partial listing`);
+      return null;
+    }
   } while (cursor);
   return all;
 }
