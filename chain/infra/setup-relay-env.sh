@@ -42,6 +42,37 @@ IDENTITY_REGISTRY_ADDRESS="${VALUES[2]:-}"
 IDENTITY_REGISTRY_OWNER="${VALUES[3]:-}"
 RECOVERY_CONTROLLER="${VALUES[4]:-0x0}"
 RECOVERY_DELAY_SECONDS="${VALUES[5]:-172800}"
+RAW_RPC_PORT="${SWAPPULSE_RAW_RPC_PORT:-5050}"
+RAW_RPC="http://127.0.0.1:${RAW_RPC_PORT}"
+
+read -r REGISTRY_ADMIN_ADDRESS REGISTRY_ADMIN_PRIVATE_KEY < <(
+  RAW_RPC="$RAW_RPC" EXPECTED_OWNER="$IDENTITY_REGISTRY_OWNER" "$NODE_BIN" --input-type=module <<'NODE'
+const response = await fetch(process.env.RAW_RPC, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'devnet_getPredeployedAccounts',
+    params: { with_balance: true },
+  }),
+});
+if (!response.ok) throw new Error(`Devnet RPC HTTP ${response.status}`);
+const payload = await response.json();
+if (payload.error) throw new Error(JSON.stringify(payload.error));
+const expected = BigInt(process.env.EXPECTED_OWNER).toString(16);
+const account = (payload.result || []).find((row) => BigInt(row.address).toString(16) === expected);
+if (!account?.address || !account?.private_key) {
+  throw new Error('IdentityRegistry owner is not one of the local Devnet predeployed accounts');
+}
+process.stdout.write(`${account.address} ${account.private_key}\n`);
+NODE
+)
+
+if [[ -z "${REGISTRY_ADMIN_ADDRESS:-}" || -z "${REGISTRY_ADMIN_PRIVATE_KEY:-}" ]]; then
+  echo "Could not resolve the local IdentityRegistry owner key." >&2
+  exit 1
+fi
 
 if command -v openssl >/dev/null 2>&1; then
   RELAY_TOKEN="$(openssl rand -hex 32)"
@@ -56,6 +87,8 @@ ACCOUNT_CLASS_HASH=$ACCOUNT_CLASS_HASH
 IDENTITY_REGISTRY_CLASS_HASH=$IDENTITY_REGISTRY_CLASS_HASH
 IDENTITY_REGISTRY_ADDRESS=$IDENTITY_REGISTRY_ADDRESS
 IDENTITY_REGISTRY_OWNER=$IDENTITY_REGISTRY_OWNER
+REGISTRY_ADMIN_ADDRESS=$REGISTRY_ADMIN_ADDRESS
+REGISTRY_ADMIN_PRIVATE_KEY=$REGISTRY_ADMIN_PRIVATE_KEY
 RECOVERY_CONTROLLER=$RECOVERY_CONTROLLER
 RECOVERY_DELAY_SECONDS=$RECOVERY_DELAY_SECONDS
 DEPLOY_MINT_AMOUNT=5000000000000000
@@ -64,5 +97,6 @@ EOF
 chmod 600 "$OUT"
 
 echo "Relay environment written to $OUT with mode 0600."
+echo "The registry-owner private key is stored only in $OUT and is never printed."
 echo "Copy RELAY_TOKEN only into the Base44 server-side secret SWAPPULSE_TX_RELAY_TOKEN, never into browser code or ChainNetworkConfig."
 echo "Start the relay with: docker compose --env-file .env --env-file .env.relay --profile provisioning up -d --build tx-relay"
