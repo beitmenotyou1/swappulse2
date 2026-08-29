@@ -14,8 +14,9 @@ import { startAuthentication } from "@simplewebauthn/browser";
 //   emailCode  — the first-factor email OTP (already verified by the server)
 //   methods    — array of available 2FA methods: ['totp'], ['webauthn'], or both
 //   onSuccess  — called with login_key when the second factor is verified
+//   onSetup    — called with a short-lived setup capability when login_key recovery is required
 //   onCancel   — called when the user goes back to the email code step
-export default function TwoFactorChallenge({ email, emailCode, methods = ["totp"], onSuccess, onCancel }) {
+export default function TwoFactorChallenge({ email, emailCode, methods = ["totp"], onSuccess, onSetup, onCancel }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,8 +51,8 @@ export default function TwoFactorChallenge({ email, emailCode, methods = ["totp"
         onSuccess?.(verifyRes.data.login_key);
       } else if (verifyRes.data?.suspended) {
         setError(verifyRes.data.reason || "Your account has been suspended.");
-      } else if (verifyRes.data?.needs_setup) {
-        setError("Account setup required. Please request a new login code.");
+      } else if (verifyRes.data?.needs_setup && verifyRes.data?.setup_token) {
+        onSetup?.(verifyRes.data.setup_token);
       } else {
         setError(verifyRes.data?.error || "Security key verification failed");
       }
@@ -79,6 +80,8 @@ export default function TwoFactorChallenge({ email, emailCode, methods = ["totp"
       });
       if (res.data?.login_key) {
         onSuccess?.(res.data.login_key);
+      } else if (res.data?.needs_setup && res.data?.setup_token) {
+        onSetup?.(res.data.setup_token);
       } else {
         setError(res.data?.error || "Invalid 2FA code");
       }
