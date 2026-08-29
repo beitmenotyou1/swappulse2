@@ -205,6 +205,97 @@ async function validateRecoveryInvoke(tx) {
   return { sender };
 }
 
+async function starknetCall(contractAddress, entrypoint, calldata = []) {
+  const payload = await rpc('starknet_call', [
+    {
+      contract_address: normalizeHex(contractAddress, 'contract address'),
+      entry_point_selector: hash.getSelectorFromName(entrypoint),
+      calldata: calldata.map((value, index) => normalizeZeroableHex(value, `${entrypoint} calldata[${index}]`)),
+    },
+    'latest',
+  ]);
+  if (payload?.error) throw new Error(`STARKNET_CALL_${entrypoint.toUpperCase()}_FAILED`);
+  if (!Array.isArray(payload?.result)) throw new Error(`STARKNET_CALL_${entrypoint.toUpperCase()}_INVALID`);
+  return payload.result.map((value, index) => normalizeZeroableHex(value, `${entrypoint} result[${index}]`));
+}
+
+async function registerIdentity(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('REGISTRATION_BODY_REQUIRED');
+  const identityId = normalizeHex(body.identity_id, 'identity_id');
+  const publicKey = normalizeHex(body.public_key, 'public_key');
+  const accountAddress = normalizeHex(body.account_address, 'account_address');
+  const derivedAddress = normalizeHex(
+    hash.calculateContractAddressFromHash(publicKey, accountClassHash, [publicKey], 0),
+    'derived account address',
+  );
+  if (derivedAddress !== accountAddress) throw new Error('REGISTRATION_ACCOUNT_DERIVATION_MISMATCH');
+
+  const [accountClassResult, registryClassResult, ownerValues] = await Promise.all([
+    rpc('starknet_getClassHashAt', ['latest', accountAddress]),
+    rpc('starknet_getClassHashAt', ['latest', identityRegistryAddress]),
+    starknetCall(identityRegistryAddress, 'owner', []),
+  ]);
+  if (accountClassResult?.error || normalizeHex(accountClassResult?.result, 'account class hash') !== accountClassHash) {
+    throw new Error('REGISTRATION_ACCOUNT_CLASS_MISMATCH');
+  }
+  if (registryClassResult?.error || normalizeHex(registryClassResult?.result, 'registry class hash') !== identityRegistryClassHash) {
+    throw new Error('REGISTRATION_REGISTRY_CLASS_MISMATCH');
+  }
+  if (!ownerValues[0] || normalizeHex(ownerValues[0], 'registry owner') !== identityRegistryOwner) {
+    throw new Error('REGISTRATION_REGISTRY_OWNER_MISMATCH');
+  }
+
+  const identityValues = await starknetCall(identityRegistryAddress, 'get_identity', [identityId]);
+  const existingAccount = normalizeZeroableHex(identityValues?.[0] || '0x0', 'existing account');
+  const existingStatus = Number(BigInt(identityValues?.[1] || '0x0'));
+  if (existingStatus === 1) {
+    if (existingAccount !== accountAddress) throw new Error('REGISTRATION_IDENTITY_ALREADY_BOUND');
+    const reverseValues = await starknetCall(identityRegistryAddress, 'get_identity_by_account', [accountAddress]);
+    if (normalizeZeroableHex(reverseValues?.[0] || '0x0', 'reverse identity') !== identityId) {
+      throw new Error('REGISTRATION_REVERSE_MAPPING_MISMATCH');
+    }
+    return { identity_id: identityId, account_address: accountAddress, transaction_hash: '', idempotent: true };
+  }
+  if (existingStatus !== 0) throw new Error('REGISTRATION_IDENTITY_NOT_AVAILABLE');
+
+  const reverseValues = await starknetCall(identityRegistryAddress, 'get_identity_by_account', [accountAddress]);
+  const reverseIdentity = normalizeZeroableHex(reverseValues?.[0] || '0x0', 'reverse identity');
+  if (reverseIdentity !== '0x0') throw new Error('REGISTRATION_ACCOUNT_ALREADY_BOUND');
+
+  const predeployed = await rpc('devnet_getPredeployedAccounts', { with_balance: true });
+  if (predeployed?.error || !Array.isArray(predeployed?.result)) throw new Error('REGISTRATION_OWNER_KEY_UNAVAILABLE');
+  const ownerAccount = predeployed.result.find((entry) => {
+    try { return normalizeHex(entry?.address, 'predeployed address') === identityRegistryOwner; } catch { return false; }
+  });
+  const ownerPrivateKey = String(ownerAccount?.private_key || '');
+  if (!ownerPrivateKey) throw new Error('REGISTRATION_OWNER_KEY_UNAVAILABLE');
+
+  const registryAdmin = new Account({ provider, address: identityRegistryOwner, signer: ownerPrivateKey });
+  const registered = await registryAdmin.execute({
+    contractAddress: identityRegistryAddress,
+    entrypoint: 'register_identity',
+    calldata: [identityId, accountAddress],
+  });
+  await provider.waitForTransaction(registered.transaction_hash);
+
+  const [finalIdentity, finalReverse] = await Promise.all([
+    starknetCall(identityRegistryAddress, 'get_identity', [identityId]),
+    starknetCall(identityRegistryAddress, 'get_identity_by_account', [accountAddress]),
+  ]);
+  if (normalizeZeroableHex(finalIdentity?.[0] || '0x0', 'final account') !== accountAddress || Number(BigInt(finalIdentity?.[1] || '0x0')) !== 1) {
+    throw new Error('REGISTRATION_FINAL_IDENTITY_MISMATCH');
+  }
+  if (normalizeZeroableHex(finalReverse?.[0] || '0x0', 'final reverse identity') !== identityId) {
+    throw new Error('REGISTRATION_FINAL_REVERSE_MISMATCH');
+  }
+  return {
+    identity_id: identityId,
+    account_address: accountAddress,
+    transaction_hash: normalizeHex(registered.transaction_hash, 'registration transaction hash'),
+    idempotent: false,
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/healthz') {
     return json(res, 200, { ok: true, purpose: 'swappulse-testnet-provisioning-relay' });
