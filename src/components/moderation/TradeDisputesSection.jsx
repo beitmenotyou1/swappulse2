@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Image } from '@/components/ui/image';
 import Avatar from '@/components/Avatar';
+import { getSafeHttpUrl } from '@/lib/externalLink';
 
 const REASON_LABELS = {
   misgraded: 'Misgraded card',
@@ -123,11 +124,15 @@ export default function TradeDisputesSection() {
 
       {d.photo_urls?.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {d.photo_urls.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer">
-              <Image src={url} alt="Evidence" className="h-24 w-24 rounded-lg object-cover ring-1 ring-border" fittingType="fill" />
-            </a>
-          ))}
+          {d.photo_urls.map((url) => {
+            const safeUrl = getSafeHttpUrl(url);
+            if (!safeUrl) return null;
+            return (
+              <a key={safeUrl} href={safeUrl} target="_blank" rel="noopener noreferrer">
+                <Image src={safeUrl} alt="Evidence" className="h-24 w-24 rounded-lg object-cover ring-1 ring-border" fittingType="fill" />
+              </a>
+            );
+          })}
         </div>
       ) : (
         <p className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground">
