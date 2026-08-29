@@ -34,6 +34,25 @@ function normalizePublicHttpsUrl(value: unknown, field: string): string {
   return url.toString();
 }
 
+function findForbiddenManifestKey(value: unknown, path = 'manifest'): string | null {
+  if (!value || typeof value !== 'object') return null;
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const found = findForbiddenManifestKey(value[i], `${path}[${i}]`);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  const forbidden = /(private[_-]?key|mnemonic|seed[_-]?phrase|password|secret|credential|bearer|api[_-]?key)/i;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (forbidden.test(key)) return `${path}.${key}`;
+    const found = findForbiddenManifestKey(child, `${path}.${key}`);
+    if (found) return found;
+  }
+  return null;
+}
+
 function randomIdentityId(): string {
   // 31 random bytes = 248 bits, safely below the Starknet felt252 field prime.
   const bytes = new Uint8Array(31);
@@ -186,6 +205,101 @@ export default async function(req: Request): Promise<Response> {
           'This endpoint never returns a private key or passkey secret.',
           'Ordinary-user provisioning remains disabled until AgeStatus enforcement is implemented.',
         ],
+      });
+    }
+
+    if (action === 'import_manifest') {
+      let manifest: any = body.manifest;
+      try {
+        if (typeof manifest === 'string') manifest = JSON.parse(manifest);
+      } catch {
+        return jsonError('Deployment manifest is not valid JSON', 400, 'INVALID_MANIFEST_JSON');
+      }
+      if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+        return jsonError('Deployment manifest must be a JSON object', 400, 'INVALID_MANIFEST');
+      }
+      if (Number(manifest.schema_version) !== 1) {
+        return jsonError('Unsupported deployment manifest schema_version', 400, 'UNSUPPORTED_MANIFEST_VERSION');
+      }
+      if (String(manifest.network || '') !== 'SWAPPULSE_TESTNET') {
+        return jsonError('Deployment manifest is not for SWAPPULSE_TESTNET', 400, 'WRONG_MANIFEST_NETWORK');
+      }
+      const forbiddenPath = findForbiddenManifestKey(manifest);
+      if (forbiddenPath) {
+        return jsonError(`Deployment manifest contains a forbidden secret-like field at ${forbiddenPath}`, 400, 'MANIFEST_CONTAINS_SECRET');
+      }
+
+      let chainId: string;
+      let accountClassHash: string;
+      let identityRegistryClassHash: string;
+      let identityRegistryAddress: string;
+      let identityRegistryOwner: string;
+      let recoveryController = '';
+      let rpcUrl: string;
+      let explorerUrl = '';
+      try {
+        chainId = normalizeHex(manifest.chain_id, 'chain_id');
+        accountClassHash = normalizeHex(manifest.account_class_hash, 'account_class_hash');
+        identityRegistryClassHash = normalizeHex(manifest.identity_registry_class_hash, 'identity_registry_class_hash');
+        identityRegistryAddress = normalizeAddress(manifest.identity_registry_address, 'identity_registry_address');
+        identityRegistryOwner = normalizeAddress(manifest.identity_registry_owner, 'identity_registry_owner');
+        if (manifest.recovery_controller) recoveryController = normalizeAddress(manifest.recovery_controller, 'recovery_controller');
+        rpcUrl = normalizePublicHttpsUrl(manifest.rpc_url, 'rpc_url');
+        if (!rpcUrl) throw new Error('rpc_url is required');
+        if (manifest.explorer_url) explorerUrl = normalizePublicHttpsUrl(manifest.explorer_url, 'explorer_url');
+      } catch (e: any) {
+        return jsonError(e?.message || 'Invalid deployment manifest', 400, 'INVALID_MANIFEST');
+      }
+
+      const recoveryDelay = Number(manifest.recovery_delay_seconds ?? 172800);
+      if (!Number.isInteger(recoveryDelay) || recoveryDelay < 0 || recoveryDelay > 2592000) {
+        return jsonError('Manifest recovery_delay_seconds must be an integer from 0 to 2592000', 400, 'INVALID_MANIFEST_RECOVERY_DELAY');
+      }
+
+      const payload = {
+        network: 'SWAPPULSE_TESTNET',
+        chain_id: chainId,
+        account_class_hash: accountClassHash,
+        identity_registry_class_hash: identityRegistryClassHash,
+        identity_registry_address: identityRegistryAddress,
+        identity_registry_owner: identityRegistryOwner,
+        recovery_controller: recoveryController,
+        recovery_delay_seconds: recoveryDelay,
+        rpc_url: rpcUrl,
+        explorer_url: explorerUrl,
+        status: 'UNCONFIGURED',
+        last_verified_at: '',
+        verified_chain_id: '',
+        verified_identity_registry_class_hash: '',
+        verified_identity_registry_owner: '',
+        verified_account_class_hash: '',
+        verified_rpc_url: '',
+        verified_by: '',
+        updated_at: new Date().toISOString(),
+        updated_by: caller.id,
+      };
+
+      if (config.id) await svc.entities.ChainNetworkConfig.update(config.id, payload);
+      else await svc.entities.ChainNetworkConfig.create(payload);
+      const saved = await networkConfig(svc);
+      return Response.json({
+        ok: true,
+        imported: true,
+        config: {
+          network: saved.network,
+          chain_id: saved.chainId,
+          status: saved.status,
+          ready: saved.ready,
+          account_class_hash: saved.accountClassHash,
+          identity_registry_class_hash: saved.identityRegistryClassHash,
+          identity_registry_address: saved.identityRegistryAddress,
+          identity_registry_owner: saved.identityRegistryOwner,
+          recovery_controller: saved.recoveryController,
+          recovery_delay_seconds: saved.recoveryDelaySeconds,
+          rpc_url: saved.rpcUrl,
+          explorer_url: saved.explorerUrl,
+        },
+        note: 'Manifest imported as an unverified draft. Verify & Activate must independently read the public RPC before this network becomes ready.',
       });
     }
 
