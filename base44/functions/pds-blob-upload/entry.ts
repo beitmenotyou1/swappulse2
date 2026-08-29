@@ -32,6 +32,17 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'mimeType and base64 are required' }, { status: 400 });
     }
 
+    const normalizedMime = String(mimeType || '').toLowerCase();
+    if (!normalizedMime.startsWith('image/') || normalizedMime === 'image/svg+xml') {
+      return Response.json({ error: 'Only standard image uploads are accepted' }, { status: 415 });
+    }
+    // 10 MB decoded payload, checked before atob to avoid unnecessary memory use.
+    const maxDecodedBytes = 10 * 1024 * 1024;
+    const estimatedDecodedBytes = Math.floor(String(base64).length * 3 / 4);
+    if (estimatedDecodedBytes > maxDecodedBytes) {
+      return Response.json({ error: 'Image is too large. Maximum size is 10 MB.' }, { status: 413 });
+    }
+
     // Resolve session: per-user credential if the user has a real did:plc,
     // otherwise the shared bridge account.
     let session: { accessJwt: string; did: string };
@@ -60,7 +71,7 @@ export default async function (req: Request): Promise<Response> {
       method: 'POST',
       redirect: 'error',
       headers: {
-        'Content-Type': mimeType,
+        'Content-Type': normalizedMime,
         'Authorization': `Bearer ${session.accessJwt}`,
       },
       body: bytes,
@@ -85,7 +96,7 @@ export default async function (req: Request): Promise<Response> {
     return Response.json({
       blobCid,
       blobUrl,
-      mimeType: blob.mimeType || mimeType,
+      mimeType: blob.mimeType || normalizedMime,
       size: blob.size ?? bytes.length,
     });
   } catch (error) {
