@@ -258,6 +258,9 @@ export default async function(req: Request): Promise<Response> {
       if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action as ChainDraftAction, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
+      if (!verifyReservedSignature(feltArray(tx.signature, 'signature'), signingHash, publicKey)) {
+        return jsonError('Transaction signature does not match the reserved device signer', 403, 'INVALID_STARK_SIGNATURE');
+      }
 
       const result = await forward('starknet_addDeployAccountTransaction', { deploy_account_transaction: tx });
       const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'transaction hash') : '';
@@ -289,6 +292,9 @@ export default async function(req: Request): Promise<Response> {
       const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
       if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action as ChainDraftAction, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
+      }
+      if (!verifyReservedSignature(feltArray(tx.signature, 'signature'), signingHash, publicKey)) {
+        return jsonError('Transaction signature does not match the reserved device signer', 403, 'INVALID_STARK_SIGNATURE');
       }
 
       const result = await forward('starknet_addInvokeTransaction', { invoke_transaction: tx });
