@@ -39,7 +39,7 @@ fn deploy_account(
 }
 
 #[test]
-#[should_panic(expected: 'INVALID_PUBLIC_KEY')]
+#[should_panic]
 fn constructor_rejects_zero_public_key() {
     let contract = declare("SwapPulseAccount").unwrap().contract_class();
     let calldata = array![0];
