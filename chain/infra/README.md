@@ -28,7 +28,9 @@ Devnet is pinned to `shardlabs/starknet-devnet-rs:0.8.2` and uses:
 - `--dump-on block`
 - persistent dump file `/data/swappulse-testnet.dump`
 
-`./data` is bind-mounted into the container so contract/state history survives container restarts. Keep the same Devnet version, seed and predeployment configuration when loading an existing dump.
+`./data` is bind-mounted into the container so contract/state history survives container restarts. Keep the same Devnet version, seed and predeployment configuration when loading an existing dump. Devnet prints its deterministic predeployed private keys during startup, so the Compose service deliberately uses Docker's `none` logging driver and the raw RPC remains loopback-only.
+
+The persistence path was exercised end-to-end on 29 August 2026: the compiled SwapPulse classes were declared, `IdentityRegistry` was deployed, state was dumped, Devnet was stopped/restarted from that dump, and `verify-network.mjs` still verified the same registry class hash and owner after restart.
 
 This persistence mechanism is appropriate for the current contract/UX milestone. It is **not** a substitute for the future sequencer/prover/DA/validator architecture.
 
