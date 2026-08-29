@@ -95,7 +95,17 @@ async function networkConfig(svc: any) {
     rpcUrl: String(row?.rpc_url || '').trim(),
     explorerUrl: String(row?.explorer_url || '').trim(),
     status,
-    ready: status === 'CONFIGURED' && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress),
+    lastVerifiedAt: String(row?.last_verified_at || '').trim(),
+    verifiedChainId: String(row?.verified_chain_id || '').trim(),
+    verifiedRegistryClassHash: String(row?.verified_identity_registry_class_hash || '').trim(),
+    verifiedAccountClassHash: String(row?.verified_account_class_hash || '').trim(),
+    verifiedRpcUrl: String(row?.verified_rpc_url || '').trim(),
+    ready: status === 'CONFIGURED'
+      && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress)
+      && String(row?.verified_chain_id || '').trim() === chainId
+      && String(row?.verified_identity_registry_class_hash || '').trim() === identityRegistryClassHash
+      && String(row?.verified_account_class_hash || '').trim() === accountClassHash
+      && String(row?.verified_rpc_url || '').trim() === String(row?.rpc_url || '').trim(),
   };
 }
 
@@ -149,6 +159,11 @@ export default async function(req: Request): Promise<Response> {
           recovery_delay_seconds: config.recoveryDelaySeconds,
           rpc_url: config.rpcUrl,
           explorer_url: config.explorerUrl,
+          last_verified_at: config.lastVerifiedAt,
+          verified_chain_id: config.verifiedChainId,
+          verified_identity_registry_class_hash: config.verifiedRegistryClassHash,
+          verified_account_class_hash: config.verifiedAccountClassHash,
+          verified_rpc_url: config.verifiedRpcUrl,
         },
         notes: [
           'These are public blockchain configuration values stored in the admin-only ChainNetworkConfig entity, not secrets.',
@@ -162,6 +177,9 @@ export default async function(req: Request): Promise<Response> {
       const status = String(body.status || 'CONFIGURED').trim().toUpperCase();
       if (!['UNCONFIGURED', 'CONFIGURED', 'PAUSED'].includes(status)) {
         return jsonError('Invalid config status', 400, 'INVALID_CONFIG_STATUS');
+      }
+      if (status === 'CONFIGURED' && config.status !== 'CONFIGURED') {
+        return jsonError('Use RPC verification to activate SwapPulse Testnet', 409, 'CHAIN_VERIFICATION_REQUIRED');
       }
 
       let chainId = '';
@@ -194,6 +212,17 @@ export default async function(req: Request): Promise<Response> {
         if (url && !/^https:\/\//i.test(url)) return jsonError(`${label} must use https`, 400, 'INVALID_PUBLIC_URL');
       }
 
+      const trustedCoordinatesChanged = Boolean(config.id) && (
+        chainId !== config.chainId
+        || accountClassHash !== config.accountClassHash
+        || identityRegistryClassHash !== config.identityRegistryClassHash
+        || identityRegistryAddress !== config.identityRegistryAddress
+        || rpcUrl !== config.rpcUrl
+      );
+      const effectiveStatus = status === 'PAUSED'
+        ? 'PAUSED'
+        : (trustedCoordinatesChanged ? 'UNCONFIGURED' : status);
+
       const payload = {
         network: 'SWAPPULSE_TESTNET',
         chain_id: chainId,
@@ -204,7 +233,13 @@ export default async function(req: Request): Promise<Response> {
         recovery_delay_seconds: Math.floor(parsedDelay),
         rpc_url: rpcUrl,
         explorer_url: explorerUrl,
-        status,
+        status: effectiveStatus,
+        last_verified_at: trustedCoordinatesChanged ? '' : config.lastVerifiedAt,
+        verified_chain_id: trustedCoordinatesChanged ? '' : config.verifiedChainId,
+        verified_identity_registry_class_hash: trustedCoordinatesChanged ? '' : config.verifiedRegistryClassHash,
+        verified_account_class_hash: trustedCoordinatesChanged ? '' : config.verifiedAccountClassHash,
+        verified_rpc_url: trustedCoordinatesChanged ? '' : config.verifiedRpcUrl,
+        verified_by: trustedCoordinatesChanged ? '' : undefined,
         updated_at: new Date().toISOString(),
         updated_by: caller.id,
       };
@@ -228,6 +263,11 @@ export default async function(req: Request): Promise<Response> {
           recovery_delay_seconds: saved.recoveryDelaySeconds,
           rpc_url: saved.rpcUrl,
           explorer_url: saved.explorerUrl,
+          last_verified_at: saved.lastVerifiedAt,
+          verified_chain_id: saved.verifiedChainId,
+          verified_identity_registry_class_hash: saved.verifiedRegistryClassHash,
+          verified_account_class_hash: saved.verifiedAccountClassHash,
+          verified_rpc_url: saved.verifiedRpcUrl,
         },
       });
     }
