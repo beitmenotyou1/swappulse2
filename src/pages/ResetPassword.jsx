@@ -22,26 +22,32 @@ export default function ResetPassword() {
   const resetToken = searchParams.get("token");
   const migration = searchParams.get("migration") === "1";
   const storedSetupEmail = localStorage.getItem("swappulse_setup_email");
+  const storedSetupToken = localStorage.getItem("swappulse_setup_token");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
-  const [setupEmail, setSetupEmail] = useState(storedSetupEmail || "");
-  const [emailInput, setEmailInput] = useState("");
+  const [setupEmail] = useState(storedSetupEmail || "");
+  const [setupToken] = useState(storedSetupToken || "");
 
   useEffect(() => {
-    if (!resetToken || !setupEmail) return;
+    if (!resetToken || !setupEmail || !setupToken) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const res = await base44.functions.invoke("store-login-key", { reset_token: resetToken, email: setupEmail });
+        const res = await base44.functions.invoke("store-login-key", {
+          reset_token: resetToken,
+          email: setupEmail,
+          setup_token: setupToken,
+        });
         if (cancelled) return;
         const pwd = res.data?.login_key;
         if (!pwd) throw new Error(res.data?.error || t('auth.reset.couldNotSetup'));
         localStorage.removeItem("swappulse_setup_email");
+        localStorage.removeItem("swappulse_setup_token");
         setStoredAuthEpoch(CURRENT_AUTH_EPOCH);
         try {
           await base44.auth.loginViaEmailPassword(setupEmail, pwd);
@@ -58,9 +64,9 @@ export default function ResetPassword() {
       }
     })();
     return () => { cancelled = true; };
-  }, [resetToken, setupEmail, t]);
+  }, [resetToken, setupEmail, setupToken, t]);
 
-  if (resetToken && setupEmail && !migration) {
+  if (resetToken && setupEmail && setupToken && !migration) {
     return (
       <AuthLayout
         icon={Mail}
@@ -86,41 +92,6 @@ export default function ResetPassword() {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
-      </AuthLayout>
-    );
-  }
-
-  if (resetToken && !setupEmail && !migration) {
-    const handleEmailSubmit = (e) => {
-      e.preventDefault();
-      setError("");
-      const trimmed = emailInput.trim().toLowerCase();
-      if (!trimmed) { setError(t('auth.reset.enterEmailError')); return; }
-      setSetupEmail(trimmed);
-    };
-    return (
-      <AuthLayout
-        icon={Mail}
-        title={t('auth.reset.completeSignin')}
-        subtitle={t('auth.reset.enterEmailContinue')}
-      >
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleEmailSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="setupEmail">{t('auth.reset.email')}</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-              <Input id="setupEmail" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="pl-10 h-12" required />
-            </div>
-          </div>
-          <Button type="submit" className="w-full h-12 font-medium">
-            {t('auth.reset.continue')}
-          </Button>
-        </form>
       </AuthLayout>
     );
   }
