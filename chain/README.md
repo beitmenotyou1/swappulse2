@@ -39,23 +39,26 @@ Base44 stores the private user -> chain identity mapping in the owner-readable `
 
 ## Toolchain target
 
-The manifest currently targets:
+The verified Milestone 1 toolchain is pinned to:
 
-- Cairo / Starknet package: `2.13.1`
+- Scarb / Cairo / Starknet package: `2.13.1`
 - OpenZeppelin Contracts for Cairo: `3.0.0`
+- OpenZeppelin interfaces: `2.1.0`
+- Starknet Foundry / `snforge_std`: `0.51.2` (the version family OpenZeppelin 3.0 was tested against)
+- Universal Sierra Compiler: `2.10.0`
 
-These versions match the current stable OpenZeppelin 3.x documentation used for the initial implementation. Pinning should be revisited deliberately before any public testnet or audit.
+Do not casually mix newer `snforge` binaries with the older `snforge_std` package. We reproduced an actual cheatcode protocol incompatibility with Foundry 0.63 + `snforge_std` 0.51.2. Pinning should be revisited deliberately before a public testnet or audit.
 
 ## Build
 
-From a machine with Scarb installed:
+The Base44 sandbox repository is mounted at `/app`. From the project root, run:
 
 ```bash
 cd chain
-scarb build
+SCARB_BIN=scarb SNFORGE_BIN=snforge bash scripts/test-chain.sh
 ```
 
-The Base44 shell currently exposes an empty `/workspace` rather than the repository checkout, so Cairo compilation cannot be executed from the connected Base44 sandbox. Do not treat the contracts as deployment-ready until `scarb build` and Starknet Foundry tests pass in a real Cairo workspace.
+`test-chain.sh` runs `scarb build`, the full Foundry suite, and the isolated zero-public-key constructor negative check. On 29 August 2026 the pinned toolchain completed with 26 normal tests passing, 0 failing, 1 runner-limited test ignored by the normal suite, and the ignored constructor case separately verified to revert with `INVALID_PUBLIC_KEY`.
 
 ## Required tests before deployment
 
@@ -64,7 +67,8 @@ At minimum:
 - account constructor rejects a zero public key
 - standard account execution validates Stark signatures
 - public-key rotation remains account-self-only
-- recovery is impossible while controller is disabled
+- recovery starts disabled and is impossible while controller is disabled
+- recovery controller/delay configuration is account-self-only
 - only recovery controller can propose / execute recovery
 - recovery cannot execute before its delay
 - current account holder can cancel a pending recovery through a self-call
@@ -74,7 +78,8 @@ At minimum:
 - account addresses cannot be bound to two active identities
 - identity ids cannot be registered twice
 - merged identities remain queryable and resolve to the canonical target
-- merged identity cannot be merged again
+- chained merges resolve transitively to the final active identity
+- merged identity cannot be used again as an active source
 - historical source account mapping survives a merge
 - account replacement correctly clears the old reverse mapping
 
@@ -90,23 +95,31 @@ At minimum:
 
 Required network configuration after the contracts are compiled and deployed is stored in the admin-only `ChainNetworkConfig` entity and managed through `chain-identity-admin`:
 
+- `chain_id`
 - `account_class_hash`
+- `identity_registry_class_hash`
 - `identity_registry_address`
 - `recovery_controller` (optional during early testing; empty disables recovery)
 - `recovery_delay_seconds` (defaults to 172800 / 48 hours)
 - optional public `rpc_url` and `explorer_url`
 
+The smart-account constructor accepts only `public_key`, matching OpenZeppelin's standard deploy-account validation ABI. Recovery starts disabled and is configured after deployment through signed account self-calls.
+
 These values are public blockchain deployment metadata, not secrets. Private RPC credentials, private keys, seed phrases, and passkey secret material must never be stored in `ChainNetworkConfig`.
 
 ## Next milestone
 
-After compilation, tests and private-testnet deployment:
+The Base44 read-back reconciler is already implemented. It pins chain ID, IdentityRegistry address/class hash and SwapPulseAccount class hash, then verifies registry state and reverse identity mapping before promoting a mirror to `REGISTERED` / `RECOVERED` / `MERGED`.
 
-1. implement blockchain read-back / event reconciliation
-2. promote verified mirrors from `DEPLOYED` to `REGISTERED`
-3. implement `AgeStatus` and enforce 18+ before ordinary-user chain provisioning
-4. add client-side temporary Stark signer creation for the testnet
-5. implement Handle Registry
-6. implement admin-issued Card Possession Attestation
-7. connect the real photo challenge
-8. replace `STARK_V1` with audited P-256/WebAuthn validation before the identity layer carries real value
+Next:
+
+1. declare the compiled classes and deploy `IdentityRegistry` on an isolated devnet, then on the persistent SwapPulse Testnet
+2. configure the real chain ID, class hashes, registry address and public RPC URL
+3. deploy the first test smart account, configure recovery through signed self-calls and register its opaque identity
+4. prove Base44 reconciliation end-to-end
+5. implement `AgeStatus` and enforce 18+ before ordinary-user chain provisioning
+6. add client-side temporary Stark signer creation for the testnet
+7. implement Handle Registry
+8. implement admin-issued Card Possession Attestation
+9. connect the real photo challenge
+10. replace `STARK_V1` with audited P-256/WebAuthn validation before the identity layer carries real value
