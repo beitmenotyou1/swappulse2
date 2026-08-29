@@ -159,3 +159,81 @@ fn recovery_counter_is_auditable() {
     let (_, _, _, _, recovery_count) = registry.get_identity(identity_id);
     assert(recovery_count == 2_u64, 'recovery count mismatch');
 }
+
+#[test]
+#[should_panic(expected: 'INVALID_IDENTITY_ID')]
+fn zero_identity_id_is_rejected() {
+    let owner = addr(0x111);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0, addr(0x222));
+}
+
+#[test]
+#[should_panic]
+fn non_owner_cannot_change_account() {
+    let owner = addr(0x111);
+    let attacker = addr(0x999);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, attacker);
+    registry.change_account(0xabc, addr(0x333));
+}
+
+#[test]
+#[should_panic]
+fn non_owner_cannot_merge_identities() {
+    let owner = addr(0x111);
+    let attacker = addr(0x999);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xaaa, addr(0x222));
+    registry.register_identity(0xbbb, addr(0x333));
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, attacker);
+    registry.merge_identity(0xaaa, 0xbbb);
+}
+
+#[test]
+#[should_panic]
+fn non_owner_cannot_record_recovery() {
+    let owner = addr(0x111);
+    let attacker = addr(0x999);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, attacker);
+    registry.record_recovery(0xabc);
+}
+
+#[test]
+fn chained_merges_resolve_to_final_active_identity() {
+    let owner = addr(0x111);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xaaa, addr(0x222));
+    registry.register_identity(0xbbb, addr(0x333));
+    registry.register_identity(0xccc, addr(0x444));
+    registry.merge_identity(0xaaa, 0xbbb);
+    registry.merge_identity(0xbbb, 0xccc);
+    stop_cheat_caller_address(registry_address);
+
+    assert(registry.resolve_canonical(0xaaa) == 0xccc, 'source not fully resolved');
+    assert(registry.resolve_canonical(0xbbb) == 0xccc, 'middle not fully resolved');
+    assert(registry.resolve_canonical(0xccc) == 0xccc, 'active not self canonical');
+
+    let (_, source_status, source_canonical, _, _) = registry.get_identity(0xaaa);
+    assert(source_status == 2_u8, 'source not merged');
+    assert(source_canonical == 0xccc, 'get_identity not canonical');
+}
