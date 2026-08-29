@@ -77,33 +77,7 @@ curl -i http://127.0.0.1:8080/ \
 
 That request must return HTTP `403`.
 
-## 3. Deploy the verified Milestone 1 contracts
-
-Install the separate Node 22 chain tooling first:
-
-```bash
-cd ../scripts/tooling
-npm ci
-npm audit
-cd ../../infra
-```
-
-Then run:
-
-```bash
-chmod +x deploy-contracts.sh
-./deploy-contracts.sh
-```
-
-The script obtains the first Devnet deployment account through the **loopback-only raw RPC**, passes its private key only through the deployment process environment, and never writes or prints the private key. It produces the public manifest at:
-
-```text
-chain/deployments/swappulse-testnet.json
-```
-
-The manifest contains the chain ID, declared class hashes, `IdentityRegistry` address/owner, recovery policy and deployment transaction hashes.
-
-## 4. Publish only the read-only gateway over HTTPS
+## 3. Publish only the read-only gateway over HTTPS
 
 Use your HTTPS reverse proxy or tunnel to publish:
 
@@ -121,7 +95,33 @@ Example intended shape:
 https://rpc-testnet.example.org  ->  127.0.0.1:8080
 ```
 
-Before using the URL in Base44, verify it externally with `starknet_chainId` and confirm `devnet_*` is still rejected.
+Before deployment, verify the URL externally with `starknet_chainId` and confirm `devnet_*` is still rejected. Put this exact HTTPS URL in `SWAPPULSE_PUBLIC_RPC_URL` inside the host's private `.env`.
+
+## 4. Deploy the verified Milestone 1 contracts
+
+Install the separate Node 22 chain tooling first:
+
+```bash
+cd ../scripts/tooling
+npm ci
+npm audit
+cd ../../infra
+```
+
+Then run:
+
+```bash
+chmod +x deploy-contracts.sh
+./deploy-contracts.sh
+```
+
+The script requires `SWAPPULSE_PUBLIC_RPC_URL`, obtains the first Devnet deployment account through the **loopback-only raw RPC**, passes its private key only through the deployment process environment, and never writes or prints the private key. It produces the public manifest at:
+
+```text
+chain/deployments/swappulse-testnet.json
+```
+
+The manifest contains the chain ID, public read-only HTTPS RPC, declared class hashes, `IdentityRegistry` address/owner, recovery policy and deployment transaction hashes. It never contains the raw localhost RPC or a private key.
 
 ## 5. Activate in SwapPulse
 
@@ -129,23 +129,40 @@ Open:
 
 **Admin → Identity & Federation → SwapPulse Network — Identity Testnet**
 
-Copy these public values from `deployments/swappulse-testnet.json`:
+The preferred path is **Import deployment manifest** and paste the entire public `deployments/swappulse-testnet.json`. The importer rejects secret-like fields, requires the correct manifest schema/network and HTTPS RPC, and saves only an unverified draft.
 
-- `chain_id`
-- `account_class_hash`
-- `identity_registry_class_hash`
-- `identity_registry_address`
-- `identity_registry_owner`
-- `recovery_controller`
-- `recovery_delay_seconds`
+You can still enter the public fields manually if necessary. In either case use:
 
-Set `rpc_url` to the public HTTPS read-only gateway.
-
-Use:
-
-**Save Configuration Draft → Verify & Activate**
+**Verify & Activate**
 
 Base44 independently verifies the RPC chain ID, registry address/class/owner and account class declaration before setting the network to `CONFIGURED`.
+
+## 6. Provision the first admin-only test identity
+
+Generate a temporary test signer locally. The private key is stored under the git-ignored `chain/infra/secrets/` directory with mode `0600`; only the public key is printed:
+
+```bash
+mkdir -p secrets
+chmod 700 secrets
+cd ../scripts/tooling
+SWAPPULSE_USER_KEY_FILE="../../infra/secrets/test-identity.key" node create-test-signer.mjs
+```
+
+Copy **only** the printed `public_key` into SwapPulse Admin and use **Prepare Test Identity** for the target user. Copy the returned opaque `chain_identity_id`, then on the host run:
+
+```bash
+cd ../../infra
+chmod +x provision-test-identity.sh
+SWAPPULSE_IDENTITY_ID=0x... \
+SWAPPULSE_USER_KEY_FILE="$PWD/secrets/test-identity.key" \
+./provision-test-identity.sh
+```
+
+The host wrapper reads the local registry-admin test key from the loopback-only Devnet RPC and the user test signer from the mode-`0600` file. Those keys exist only in the provisioning process environment. The script deploys the `SwapPulseAccount` if needed, configures recovery, registers the opaque identity and prints only public metadata.
+
+The provisioning code is idempotent. Its automated smoke test runs it twice: the first run deploys/configures/registers, the second submits no transactions, and the test fails if either private key appears in output.
+
+Back in SwapPulse Admin, copy the public `account_address`, `account_deploy` transaction hash and `identity_register` transaction hash into **Record Deployment**, then run **Reconcile From Chain**. Only successful chain read-back may promote the private mirror to `REGISTERED` and show **Identity secured**.
 
 ## Backups and upgrades
 
