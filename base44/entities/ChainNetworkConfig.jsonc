@@ -54,6 +54,31 @@
       ],
       "default": "UNCONFIGURED"
     },
+    "last_verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time Base44 independently verified the configured chain ID and contract classes through the public RPC."
+    },
+    "verified_chain_id": {
+      "type": "string",
+      "description": "Chain ID observed during the last successful RPC verification."
+    },
+    "verified_identity_registry_class_hash": {
+      "type": "string",
+      "description": "IdentityRegistry class hash observed at identity_registry_address during the last successful verification."
+    },
+    "verified_account_class_hash": {
+      "type": "string",
+      "description": "SwapPulseAccount class hash confirmed declared during the last successful verification."
+    },
+    "verified_rpc_url": {
+      "type": "string",
+      "description": "Public RPC URL used for the last successful verification."
+    },
+    "verified_by": {
+      "type": "string",
+      "description": "Base44 admin user id that initiated the last successful verification."
+    },
     "updated_at": {
       "type": "string",
       "format": "date-time"
