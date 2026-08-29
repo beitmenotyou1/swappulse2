@@ -1,0 +1,57 @@
+{
+  "name": "SecurityStepUpCode",
+  "type": "object",
+  "title": "SecurityStepUpCode",
+  "description": "Short-lived server-managed email verification code used only to unlock sensitive account-security changes. The plaintext code is never stored; only a salted SHA-256 digest is persisted.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "code_hash": {
+      "type": "string"
+    },
+    "salt": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "failed_attempts": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "user_id",
+    "code_hash",
+    "salt",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
