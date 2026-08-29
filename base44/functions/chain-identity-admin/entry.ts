@@ -85,6 +85,7 @@ async function networkConfig(svc: any) {
   const accountClassHash = String(row?.account_class_hash || '').trim();
   const identityRegistryClassHash = String(row?.identity_registry_class_hash || '').trim();
   const identityRegistryAddress = String(row?.identity_registry_address || '').trim();
+  const identityRegistryOwner = String(row?.identity_registry_owner || '').trim();
   const recoveryController = String(row?.recovery_controller || '').trim();
   const parsedDelay = Number(row?.recovery_delay_seconds ?? 172800);
   const recoveryDelaySeconds = Number.isFinite(parsedDelay) && parsedDelay >= 0
@@ -99,6 +100,7 @@ async function networkConfig(svc: any) {
     accountClassHash,
     identityRegistryClassHash,
     identityRegistryAddress,
+    identityRegistryOwner,
     recoveryController,
     recoveryDelaySeconds,
     rpcUrl: String(row?.rpc_url || '').trim(),
@@ -107,13 +109,15 @@ async function networkConfig(svc: any) {
     lastVerifiedAt: String(row?.last_verified_at || '').trim(),
     verifiedChainId: String(row?.verified_chain_id || '').trim(),
     verifiedRegistryClassHash: String(row?.verified_identity_registry_class_hash || '').trim(),
+    verifiedRegistryOwner: String(row?.verified_identity_registry_owner || '').trim(),
     verifiedAccountClassHash: String(row?.verified_account_class_hash || '').trim(),
     verifiedRpcUrl: String(row?.verified_rpc_url || '').trim(),
     verifiedBy: String(row?.verified_by || '').trim(),
     ready: status === 'CONFIGURED'
-      && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress)
+      && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress && identityRegistryOwner)
       && String(row?.verified_chain_id || '').trim() === chainId
       && String(row?.verified_identity_registry_class_hash || '').trim() === identityRegistryClassHash
+      && String(row?.verified_identity_registry_owner || '').trim() === identityRegistryOwner
       && String(row?.verified_account_class_hash || '').trim() === accountClassHash
       && String(row?.verified_rpc_url || '').trim() === String(row?.rpc_url || '').trim(),
   };
@@ -164,6 +168,7 @@ export default async function(req: Request): Promise<Response> {
           account_class_hash: config.accountClassHash,
           identity_registry_class_hash: config.identityRegistryClassHash,
           identity_registry_address: config.identityRegistryAddress,
+          identity_registry_owner: config.identityRegistryOwner,
           recovery_controller: config.recoveryController,
           recovery_controller_configured: Boolean(config.recoveryController),
           recovery_delay_seconds: config.recoveryDelaySeconds,
@@ -172,6 +177,7 @@ export default async function(req: Request): Promise<Response> {
           last_verified_at: config.lastVerifiedAt,
           verified_chain_id: config.verifiedChainId,
           verified_identity_registry_class_hash: config.verifiedRegistryClassHash,
+          verified_identity_registry_owner: config.verifiedRegistryOwner,
           verified_account_class_hash: config.verifiedAccountClassHash,
           verified_rpc_url: config.verifiedRpcUrl,
         },
@@ -196,19 +202,21 @@ export default async function(req: Request): Promise<Response> {
       let accountClassHash = '';
       let identityRegistryClassHash = '';
       let identityRegistryAddress = '';
+      let identityRegistryOwner = '';
       let recoveryController = '';
       try {
         if (body.chain_id) chainId = normalizeHex(body.chain_id, 'chain_id');
         if (body.account_class_hash) accountClassHash = normalizeHex(body.account_class_hash, 'account_class_hash');
         if (body.identity_registry_class_hash) identityRegistryClassHash = normalizeHex(body.identity_registry_class_hash, 'identity_registry_class_hash');
         if (body.identity_registry_address) identityRegistryAddress = normalizeAddress(body.identity_registry_address, 'identity_registry_address');
+        if (body.identity_registry_owner) identityRegistryOwner = normalizeAddress(body.identity_registry_owner, 'identity_registry_owner');
         if (body.recovery_controller) recoveryController = normalizeAddress(body.recovery_controller, 'recovery_controller');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid chain configuration', 400, 'INVALID_CHAIN_CONFIG');
       }
 
-      if (status === 'CONFIGURED' && (!chainId || !accountClassHash || !identityRegistryClassHash || !identityRegistryAddress)) {
-        return jsonError('Configured network requires chain_id, account_class_hash, identity_registry_class_hash and identity_registry_address', 400, 'INCOMPLETE_CHAIN_CONFIG');
+      if (status === 'CONFIGURED' && (!chainId || !accountClassHash || !identityRegistryClassHash || !identityRegistryAddress || !identityRegistryOwner)) {
+        return jsonError('Configured network requires chain_id, account_class_hash, identity_registry_class_hash, identity_registry_address and identity_registry_owner', 400, 'INCOMPLETE_CHAIN_CONFIG');
       }
 
       const parsedDelay = Number(body.recovery_delay_seconds ?? 172800);
@@ -230,6 +238,7 @@ export default async function(req: Request): Promise<Response> {
         || accountClassHash !== config.accountClassHash
         || identityRegistryClassHash !== config.identityRegistryClassHash
         || identityRegistryAddress !== config.identityRegistryAddress
+        || identityRegistryOwner !== config.identityRegistryOwner
         || rpcUrl !== config.rpcUrl
       );
       const effectiveStatus = status === 'PAUSED'
@@ -242,6 +251,7 @@ export default async function(req: Request): Promise<Response> {
         account_class_hash: accountClassHash,
         identity_registry_class_hash: identityRegistryClassHash,
         identity_registry_address: identityRegistryAddress,
+        identity_registry_owner: identityRegistryOwner,
         recovery_controller: recoveryController,
         recovery_delay_seconds: Math.floor(parsedDelay),
         rpc_url: rpcUrl,
@@ -250,6 +260,7 @@ export default async function(req: Request): Promise<Response> {
         last_verified_at: trustedCoordinatesChanged ? '' : config.lastVerifiedAt,
         verified_chain_id: trustedCoordinatesChanged ? '' : config.verifiedChainId,
         verified_identity_registry_class_hash: trustedCoordinatesChanged ? '' : config.verifiedRegistryClassHash,
+        verified_identity_registry_owner: trustedCoordinatesChanged ? '' : config.verifiedRegistryOwner,
         verified_account_class_hash: trustedCoordinatesChanged ? '' : config.verifiedAccountClassHash,
         verified_rpc_url: trustedCoordinatesChanged ? '' : config.verifiedRpcUrl,
         verified_by: trustedCoordinatesChanged ? '' : config.verifiedBy,
@@ -271,6 +282,7 @@ export default async function(req: Request): Promise<Response> {
           account_class_hash: saved.accountClassHash,
           identity_registry_class_hash: saved.identityRegistryClassHash,
           identity_registry_address: saved.identityRegistryAddress,
+          identity_registry_owner: saved.identityRegistryOwner,
           recovery_controller: saved.recoveryController,
           recovery_controller_configured: Boolean(saved.recoveryController),
           recovery_delay_seconds: saved.recoveryDelaySeconds,
@@ -279,6 +291,7 @@ export default async function(req: Request): Promise<Response> {
           last_verified_at: saved.lastVerifiedAt,
           verified_chain_id: saved.verifiedChainId,
           verified_identity_registry_class_hash: saved.verifiedRegistryClassHash,
+          verified_identity_registry_owner: saved.verifiedRegistryOwner,
           verified_account_class_hash: saved.verifiedAccountClassHash,
           verified_rpc_url: saved.verifiedRpcUrl,
         },
