@@ -6,12 +6,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateRegistrationOptions } from 'npm:@simplewebauthn/server@10';
 import { issueWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
+import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const body = await req.json().catch(() => ({}));
+    const managementToken = String(body.management_token || '');
+    const authz = await verifyActionToken(managementToken, 'security-factor-management', user.id);
+    if (!authz.valid) return Response.json({ error: 'Fresh email verification is required.' }, { status: 403 });
 
     const rpConfig = getRpConfig(req);
     if (!rpConfig) return Response.json({ error: 'Could not determine origin' }, { status: 400 });
