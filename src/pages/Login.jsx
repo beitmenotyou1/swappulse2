@@ -37,6 +37,14 @@ export default function Login() {
   const [twoFactorMethods, setTwoFactorMethods] = useState(["totp"]);
   const timerRef = useRef(null);
 
+  const beginPasswordlessSetup = async (setupToken) => {
+    if (!setupToken) throw new Error(t('auth.login.verificationFailed'));
+    await base44.auth.resetPasswordRequest(email);
+    localStorage.setItem("swappulse_setup_email", email);
+    localStorage.setItem("swappulse_setup_token", setupToken);
+    setStep("setup");
+  };
+
   useEffect(() => {
     if (step !== "code") return;
     setCountdown(CODE_EXPIRY_SECONDS);
@@ -83,11 +91,7 @@ export default function Login() {
         return;
       }
       if (res.data?.needs_setup) {
-        try {
-          await base44.auth.resetPasswordRequest(email);
-          localStorage.setItem("swappulse_setup_email", email);
-        } catch {}
-        setStep("setup");
+        await beginPasswordlessSetup(res.data.setup_token);
         return;
       }
       if (res.data?.requires_2fa) {
@@ -112,6 +116,16 @@ export default function Login() {
       setError(err.response?.data?.error || err.data?.error || err.message || t('auth.login.invalidCode'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTwoFactorSetup = async (setupToken) => {
+    try {
+      await beginPasswordlessSetup(setupToken);
+    } catch (err) {
+      setError(err.message || t('auth.login.loginFailed'));
+      setStep("code");
+      setOtp("");
     }
   };
 
@@ -276,6 +290,7 @@ export default function Login() {
           emailCode={otp}
           methods={twoFactorMethods}
           onSuccess={handleTwoFactorSuccess}
+          onSetup={handleTwoFactorSetup}
           onCancel={() => { setStep("code"); setOtp(""); }}
         />
       )}
