@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hash } from 'npm:starknet@10.0.2';
+import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
 const ACTIVE_STATUSES = new Set([
@@ -93,6 +94,24 @@ function deploymentPayload(config: any, identityId: string, publicKey: string) {
       identity_id: identityId,
       account_address: '<fill after account deployment>',
     },
+  };
+}
+
+async function ageEligibilityForUser(svc: any, userId: string) {
+  const rows = await svc.entities.AgeStatus
+    .filter({ user_id: userId }, '-updated_date', 5)
+    .catch(() => []);
+  const row = rows?.[0] || null;
+  if (!row || !isAgeBand(row.age_band)) {
+    return { row: null, eligible: false, ageBand: '' };
+  }
+  const ageBand = row.age_band as AgeBand;
+  const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
+  const eligibility = deriveAgeEligibility(ageBand, method);
+  return {
+    row,
+    eligible: eligibility.testnet_identity_eligible,
+    ageBand,
   };
 }
 
@@ -427,6 +446,15 @@ export default async function(req: Request): Promise<Response> {
 
       const users = await svc.entities.User.filter({ id: targetUserId }, '-created_date', 1).catch(() => []);
       if (!users?.[0]) return jsonError('Target user not found', 404);
+
+      const ageStatus = await ageEligibilityForUser(svc, targetUserId);
+      if (!ageStatus.eligible) {
+        return jsonError(
+          'Target user must have an eligible 18+ AgeStatus before any SwapPulse Testnet identity can be prepared',
+          403,
+          'AGE_ELIGIBILITY_REQUIRED',
+        );
+      }
 
       const existing = await svc.entities.ChainIdentity
         .filter({ user_id: targetUserId }, '-created_date', 20)
