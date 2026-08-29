@@ -39,6 +39,10 @@
       "type": "string",
       "description": "Deploy-account transaction hash, when known."
     },
+    "recovery_config_tx_hash": {
+      "type": "string",
+      "description": "Signed account-self transaction hash that configured the testnet recovery controller/delay, when known."
+    },
     "registration_tx_hash": {
       "type": "string",
       "description": "IdentityRegistry registration transaction hash, when known."
