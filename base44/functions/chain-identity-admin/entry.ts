@@ -35,6 +35,38 @@ function randomIdentityId(): string {
   return `0x${(n === 0n ? 1n : n).toString(16)}`;
 }
 
+async function uniqueIdentityId(svc: any): Promise<string> {
+  // A 248-bit collision is already vanishingly unlikely, but identity creation
+  // should still enforce uniqueness rather than relying on probability alone.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidate = randomIdentityId();
+    const existing = await svc.entities.ChainIdentity
+      .filter({ chain_identity_id: candidate }, '-created_date', 1)
+      .catch(() => []);
+    if (!existing?.length) return candidate;
+  }
+  throw new Error('Could not allocate unique chain identity id');
+}
+
+function deploymentPayload(config: any, identityId: string, publicKey: string) {
+  return {
+    account_class_hash: config.accountClassHash,
+    constructor: {
+      public_key: publicKey,
+    },
+    post_deploy_account_calls: {
+      recovery_controller: config.recoveryController || '0x0',
+      recovery_delay_seconds: config.recoveryDelaySeconds,
+      note: 'Recovery is disabled at construction. Configure these values through signed account self-calls after deployment.',
+    },
+    identity_registry_address: config.identityRegistryAddress,
+    register_identity_calldata: {
+      identity_id: identityId,
+      account_address: '<fill after account deployment>',
+    },
+  };
+}
+
 async function networkConfig(svc: any) {
   const rows = await svc.entities.ChainNetworkConfig
     .filter({ network: 'SWAPPULSE_TESTNET' }, '-updated_date', 1)
@@ -219,6 +251,29 @@ export default async function(req: Request): Promise<Response> {
         .catch(() => []);
       const current = existing.find((row: any) => ACTIVE_STATUSES.has(String(row?.status || '')));
       if (current) {
+        if (String(current.status || '') === 'PENDING') {
+          const refreshedFields = {
+            account_class_hash: config.accountClassHash,
+            identity_registry_address: config.identityRegistryAddress,
+            failure_code: '',
+          };
+          await svc.entities.ChainIdentity.update(current.id, refreshedFields);
+          const refreshedRows = await svc.entities.ChainIdentity
+            .filter({ id: current.id }, '-created_date', 1)
+            .catch(() => []);
+          const refreshed = refreshedRows?.[0] || { ...current, ...refreshedFields };
+          return Response.json({
+            ok: true,
+            existing: true,
+            chain_ready: config.ready,
+            identity: safeIdentity(refreshed),
+            deployment: deploymentPayload(config, refreshed.chain_identity_id, publicKey),
+            warnings: config.ready ? [] : [
+              'SwapPulse Testnet contract coordinates are not configured yet. The identity remains PENDING.',
+            ],
+          });
+        }
+
         return Response.json({
           ok: true,
           existing: true,
@@ -226,7 +281,7 @@ export default async function(req: Request): Promise<Response> {
         });
       }
 
-      const identityId = randomIdentityId();
+      const identityId = await uniqueIdentityId(svc);
       const now = new Date().toISOString();
       const record = await svc.entities.ChainIdentity.create({
         user_id: targetUserId,
@@ -248,22 +303,7 @@ export default async function(req: Request): Promise<Response> {
         existing: false,
         chain_ready: config.ready,
         identity: safeIdentity(record),
-        deployment: {
-          account_class_hash: config.accountClassHash,
-          constructor: {
-            public_key: publicKey,
-          },
-          post_deploy_account_calls: {
-            recovery_controller: config.recoveryController || '0x0',
-            recovery_delay_seconds: config.recoveryDelaySeconds,
-            note: 'Recovery is disabled at construction. Configure these values through signed account self-calls after deployment.',
-          },
-          identity_registry_address: config.identityRegistryAddress,
-          register_identity_calldata: {
-            identity_id: identityId,
-            account_address: '<fill after account deployment>',
-          },
-        },
+        deployment: deploymentPayload(config, identityId, publicKey),
         warnings: config.ready ? [] : [
           'SwapPulse Testnet contract addresses are not configured yet. The identity reservation is PENDING and cannot be deployed until the contracts are declared/deployed.',
         ],
@@ -273,6 +313,7 @@ export default async function(req: Request): Promise<Response> {
     if (action === 'record_deployment') {
       const recordId = String(body.record_id || '').trim();
       if (!recordId) return jsonError('record_id is required', 400);
+      if (!config.ready) return jsonError('SwapPulse Testnet is not configured', 409, 'CHAIN_NOT_CONFIGURED');
 
       let accountAddress: string;
       try {
@@ -286,6 +327,13 @@ export default async function(req: Request): Promise<Response> {
       if (!record) return jsonError('ChainIdentity not found', 404);
       if (!['PENDING', 'FAILED'].includes(String(record.status || ''))) {
         return jsonError('Identity is not awaiting deployment', 409, 'INVALID_STATE');
+      }
+
+      if (record.account_class_hash && normalizeHex(record.account_class_hash, 'record account_class_hash') !== config.accountClassHash) {
+        return jsonError('Reserved identity uses a different account class hash', 409, 'ACCOUNT_CLASS_CHANGED');
+      }
+      if (record.identity_registry_address && normalizeAddress(record.identity_registry_address, 'record identity_registry_address') !== config.identityRegistryAddress) {
+        return jsonError('Reserved identity uses a different IdentityRegistry', 409, 'REGISTRY_CHANGED');
       }
 
       const deploymentTxHash = body.deployment_tx_hash
