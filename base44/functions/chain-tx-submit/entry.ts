@@ -3,6 +3,7 @@ import { hash, transaction } from 'npm:starknet@10.0.2';
 import { secrets } from 'base44:runtime';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
+import { signingHashForTransaction, verifyChainDraftToken, type ChainDraftAction } from '../../shared/chainTxDraft.ts';
 
 const NETWORK = 'SWAPPULSE_TESTNET';
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
@@ -126,6 +127,8 @@ function validateCommonV3(tx: any, expectedType: string) {
   const signature = feltArray(tx.signature, 'signature');
   if (signature.length !== 2) throw new Error('STARK_SIGNATURE_MUST_HAVE_TWO_FELTS');
   if (tx.paymaster_data && feltArray(tx.paymaster_data, 'paymaster_data').length !== 0) throw new Error('PAYMASTER_DATA_NOT_ALLOWED');
+  if (tx.proof_facts && feltArray(tx.proof_facts, 'proof_facts').length !== 0) throw new Error('PROOF_FACTS_NOT_ALLOWED');
+  if (tx.proof) throw new Error('PROOF_NOT_ALLOWED');
   if (normalizeZeroableHex(tx.tip ?? '0x0', 'tip') !== '0x0') throw new Error('NONZERO_TIP_NOT_ALLOWED');
 }
 
@@ -139,9 +142,12 @@ export default async function(req: Request): Promise<Response> {
     if (!(await ageEligible(svc, me.id))) return jsonError('Adult testnet eligibility is required', 403, 'AGE_ELIGIBILITY_REQUIRED');
 
     const body = await req.json().catch(() => ({}));
-    const action = String(body.action || '').trim();
+    const action = String(body.action || '').trim() as ChainDraftAction;
     const recordId = String(body.record_id || '').trim();
+    const draftToken = String(body.draft_token || '').trim();
     if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
+    if (!draftToken) return jsonError('A current server-issued transaction draft is required', 400, 'DRAFT_TOKEN_REQUIRED');
+    if (action !== 'deploy_account' && action !== 'configure_recovery') return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
     const rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
     const identity = rows?.[0];
     if (!identity || String(identity.user_id || '') !== String(me.id)) return jsonError('Chain identity not found', 404, 'IDENTITY_NOT_FOUND');
@@ -168,6 +174,10 @@ export default async function(req: Request): Promise<Response> {
       const constructor = feltArray(tx.constructor_calldata, 'constructor_calldata');
       if (constructor.length !== 1 || constructor[0] !== publicKey) return jsonError('Constructor must contain the reserved public key only', 409, 'PUBLIC_KEY_MISMATCH');
       if (normalizeHex(tx.contract_address_salt, 'contract_address_salt') !== publicKey) return jsonError('Account salt must equal the reserved public key', 409, 'ACCOUNT_SALT_MISMATCH');
+      const signingHash = signingHashForTransaction(action, tx, String(config.chain_id), expectedAddress, accountClassHash);
+      if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action, signingHash))) {
+        return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
+      }
 
       const result = await forward('starknet_addDeployAccountTransaction', { deploy_account_transaction: tx });
       const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'transaction hash') : '';
@@ -195,9 +205,18 @@ export default async function(req: Request): Promise<Response> {
       ], '1');
       const actualCalldata = feltArray(tx.calldata, 'calldata');
       if (!sameFelts(actualCalldata, expectedCalldata)) return jsonError('Only the configured recovery setup calls are allowed', 403, 'RECOVERY_CALLDATA_MISMATCH');
+      const signingHash = signingHashForTransaction(action, tx, String(config.chain_id), expectedAddress, accountClassHash);
+      if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action, signingHash))) {
+        return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
+      }
 
       const result = await forward('starknet_addInvokeTransaction', { invoke_transaction: tx });
       const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'transaction hash') : '';
+      await svc.entities.ChainIdentity.update(identity.id, {
+        account_address: expectedAddress,
+        recovery_config_tx_hash: txHash,
+        failure_code: '',
+      });
       return Response.json({ ok: true, action, account_address: expectedAddress, transaction_hash: txHash });
     }
 
