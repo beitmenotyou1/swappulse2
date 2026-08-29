@@ -183,6 +183,8 @@ try {
     arbitrary_invoke_blocked: true,
     devnet_method_blocked: true,
     missing_token_blocked: true,
+    idempotent_registration: true,
+    mismatched_registration_blocked: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
 } finally {
