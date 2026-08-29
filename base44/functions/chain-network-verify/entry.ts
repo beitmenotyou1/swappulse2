@@ -62,10 +62,11 @@ export default async function(req: Request): Promise<Response> {
     const rpcRaw = String(config.rpc_url || '').trim();
     const configuredChainId = String(config.chain_id || '').trim();
     const registryAddress = String(config.identity_registry_address || '').trim();
+    const configuredRegistryOwner = String(config.identity_registry_owner || '').trim();
     const configuredRegistryHash = String(config.identity_registry_class_hash || '').trim();
     const configuredAccountHash = String(config.account_class_hash || '').trim();
-    if (!rpcRaw || !configuredChainId || !registryAddress || !configuredRegistryHash || !configuredAccountHash) {
-      return jsonError('Save the RPC URL, chain ID, registry address and both class hashes before verification', 409, 'CHAIN_CONFIG_INCOMPLETE');
+    if (!rpcRaw || !configuredChainId || !registryAddress || !configuredRegistryOwner || !configuredRegistryHash || !configuredAccountHash) {
+      return jsonError('Save the RPC URL, chain ID, registry address/owner and both class hashes before verification', 409, 'CHAIN_CONFIG_INCOMPLETE');
     }
 
     let rpcUrl: string;
@@ -94,6 +95,23 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('IdentityRegistry class hash does not match the saved configuration', 409, 'REGISTRY_CLASS_HASH_MISMATCH');
     }
 
+    const expectedOwner = normalizeHex(configuredRegistryOwner, 'configured registry owner');
+    const ownerResult = await rpcCall(rpcUrl, 'starknet_call', [
+      {
+        contract_address: normalizeHex(registryAddress, 'registry address'),
+        entry_point_selector: '0x760314f8ddf9565c756a665b44351b8e3e178a5efde9b38d8a77b21360525',
+        calldata: [],
+      },
+      'latest',
+    ]);
+    if (!Array.isArray(ownerResult) || !ownerResult[0]) {
+      return jsonError('IdentityRegistry owner could not be verified', 409, 'REGISTRY_OWNER_UNREADABLE');
+    }
+    const actualOwner = normalizeHex(ownerResult[0], 'registry owner');
+    if (actualOwner !== expectedOwner) {
+      return jsonError('IdentityRegistry owner does not match the saved configuration', 409, 'REGISTRY_OWNER_MISMATCH');
+    }
+
     const expectedAccountHash = normalizeHex(configuredAccountHash, 'configured account class hash');
     const accountClass = await rpcCall(rpcUrl, 'starknet_getClass', ['latest', expectedAccountHash]);
     if (!accountClass || typeof accountClass !== 'object') {
@@ -106,6 +124,7 @@ export default async function(req: Request): Promise<Response> {
       last_verified_at: now,
       verified_chain_id: chainId,
       verified_identity_registry_class_hash: actualRegistryHash,
+      verified_identity_registry_owner: actualOwner,
       verified_account_class_hash: expectedAccountHash,
       verified_rpc_url: rpcUrl,
       verified_by: caller.id,
@@ -124,6 +143,7 @@ export default async function(req: Request): Promise<Response> {
       contracts: {
         identity_registry_address: normalizeHex(registryAddress, 'registry address'),
         identity_registry_class_hash: actualRegistryHash,
+        identity_registry_owner: actualOwner,
         account_class_hash: expectedAccountHash,
       },
     });
