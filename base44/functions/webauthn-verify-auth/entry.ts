@@ -10,6 +10,7 @@ import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
 import { consumeWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
 import { resetAuthAttempts } from '../../shared/authThrottle.ts';
+import { signActionToken } from '../../shared/appPasswordCrypto.ts';
 import {
   TOTP_RATE_LIMIT_MAX,
   TOTP_RATE_LIMIT_WINDOW_MS,
@@ -114,7 +115,15 @@ export default async function (req: Request): Promise<Response> {
         suspended_until: suspension.suspended_until || null,
       });
     }
-    if (!user.login_key) return Response.json({ needs_setup: true });
+    if (!user.login_key) {
+      const setupToken = await signActionToken({
+        userId: user.id,
+        action: 'login_key_setup',
+        targetId: email,
+        ttlMs: 30 * 60 * 1000,
+      });
+      return Response.json({ needs_setup: true, setup_token: setupToken });
+    }
 
     return Response.json({ login_key: user.login_key });
   } catch (error: any) {
