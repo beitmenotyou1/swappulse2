@@ -1,3 +1,5 @@
+import { safeInternalPath } from '@/lib/safeNavigation';
+
 // Shared helper for resolving notification target_paths to on-site routes.
 // Converts external bsky.app URLs (stored historically by ingest-notifications)
 // into on-site routes so no notification ever sends the user away from SwapPulse.
@@ -9,12 +11,12 @@ export function bskyUrlToOnSiteRoute(url) {
   const postMatch = url.match(/bsky\.app\/profile\/([^/]+)\/post\/([^/?#]+)/);
   if (postMatch) {
     const atUri = `at://${postMatch[1]}/app.bsky.feed.post/${postMatch[2]}`;
-    return `/post/at/${encodeURIComponent(atUri)}`;
+    return safeInternalPath(`/post/at/${encodeURIComponent(atUri)}`, '/notifications');
   }
   // Profile URL: https://bsky.app/profile/:did
   const profileMatch = url.match(/bsky\.app\/profile\/([^/?#]+)/);
   if (profileMatch) {
-    return `/profile/${profileMatch[1]}`;
+    return safeInternalPath(`/profile/${profileMatch[1]}`, '/notifications');
   }
   return null;
 }
@@ -25,8 +27,8 @@ export function bskyUrlToOnSiteRoute(url) {
 export function resolveNotificationRoute(n) {
   const path = n?.target_path || '';
   if (!path) return '/notifications';
-  if (path.startsWith('http')) {
+  if (/^https?:/i.test(path)) {
     return bskyUrlToOnSiteRoute(path) || '/notifications';
   }
-  return path.startsWith('/') ? path : `/${path}`;
+  return safeInternalPath(path, '/notifications');
 }
