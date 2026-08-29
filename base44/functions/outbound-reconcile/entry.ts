@@ -35,7 +35,7 @@ async function listPdsRecords(pdsUrl: string, accessJwt: string, did: string, co
     url.searchParams.set('collection', collection);
     url.searchParams.set('limit', '100');
     if (cursor) url.searchParams.set('cursor', cursor);
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessJwt}` } });
+    const res = await fetch(url, { redirect: 'error', headers: { Authorization: `Bearer ${accessJwt}` } });
     if (!res.ok) return all;
     const data = await res.json();
     all.push(...(data.records || []));
@@ -52,11 +52,6 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
     const svc = base44.asServiceRole;
-    const pdsUrl = Deno.env.get('PDS_URL');
-    if (!pdsUrl) {
-      console.error('outbound-reconcile: PDS_URL not configured');
-      return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
-    }
 
     const usersWithDid = await svc.entities.User
       .filter({ migrated_from_bluesky: true }, '-created_date', 10).catch(() => []);
@@ -75,9 +70,11 @@ export default async function (req: Request): Promise<Response> {
         continue;
       }
       let session: any;
+      let userPdsUrl = '';
       try {
         const s = await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
         session = s.session;
+        userPdsUrl = s.pdsUrl;
       } catch (e: any) {
         console.error('outbound-reconcile: session failed for', identity.did, e?.message || e);
         errors++;
@@ -92,7 +89,7 @@ export default async function (req: Request): Promise<Response> {
             .filter({ did: identity.did, bridged: true }, '-updated_date', 50).catch(() => []);
           if (!local || local.length === 0) continue;
 
-          const pdsRecords = await listPdsRecords(pdsUrl, session.accessJwt, session.did, collection);
+          const pdsRecords = await listPdsRecords(userPdsUrl, session.accessJwt, session.did, collection);
           const pdsByUri = new Map(pdsRecords.map((r: any) => [r.uri, r.cid]));
 
           for (const rec of local) {
@@ -106,7 +103,8 @@ export default async function (req: Request): Promise<Response> {
               const rkey = rec.at_uri.split('/').pop();
               try {
                 if (pdsCid) {
-                  const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                  const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                    redirect: 'error',
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
                     body: JSON.stringify({ repo: session.did, collection, rkey }),
@@ -139,7 +137,8 @@ export default async function (req: Request): Promise<Response> {
               if (!pdsCid) {
                 // Missing on PDS → re-create
                 const rkey = rec.at_uri.split('/').pop();
-                const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.createRecord`, {
+                const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.createRecord`, {
+                  redirect: 'error',
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
                   body: JSON.stringify({ repo: session.did, collection, rkey, record }),
@@ -155,7 +154,8 @@ export default async function (req: Request): Promise<Response> {
               } else if (hashDrift || cidDrift) {
                 // Content-hash or CID mismatch → update in place
                 const rkey = rec.at_uri.split('/').pop();
-                const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.putRecord`, {
+                const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.putRecord`, {
+                  redirect: 'error',
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
                   body: JSON.stringify({ repo: session.did, collection, rkey, record }),
@@ -184,7 +184,8 @@ export default async function (req: Request): Promise<Response> {
             if (localUris.has(uri)) continue;
             const rkey = uri.split('/').pop();
             try {
-              const res = await fetch(`${pdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+              const res = await fetch(`${userPdsUrl}/xrpc/com.atproto.repo.deleteRecord`, {
+                redirect: 'error',
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessJwt}` },
                 body: JSON.stringify({ repo: session.did, collection, rkey }),
