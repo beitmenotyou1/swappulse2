@@ -12,6 +12,13 @@ import {
 const NETWORK = 'SWAPPULSE_TESTNET';
 const RPC_TIMEOUT_MS = 12_000;
 const CONTRACT_NOT_FOUND = 20;
+// Sanity ceiling on the maximum fee a drafted transaction may authorise, in FRI
+// (1 STRK = 1e18 FRI). Provisioning transactions cost orders of magnitude less
+// than this. The bounds are derived from the RPC's own fee estimate, so a
+// misbehaving or hostile RPC could otherwise inflate the estimate and have the
+// user sign a transaction authorising an arbitrarily large fee against whoever
+// funds it. Defence in depth — the RPC is already pinned and verified.
+const MAX_DRAFT_FEE_FRI = 10n ** 18n;
 
 function jsonError(message: string, status: number, code?: string): Response {
   return Response.json({ error: message, code: code || undefined }, { status });
@@ -141,7 +148,13 @@ async function estimateBounds(rpcUrl: string, estimateTransaction: any) {
     block_id: 'latest',
   });
   if (!Array.isArray(result) || !result[0]) throw new Error('RPC fee estimation returned no result');
-  return stark.toOverheadResourceBounds(normaliseFeeEstimate(result[0]) as any);
+  const bounds = stark.toOverheadResourceBounds(normaliseFeeEstimate(result[0]) as any);
+  const maxFee = (['l1_gas', 'l2_gas', 'l1_data_gas'] as const).reduce((total, name) => {
+    const item = (bounds as any)[name];
+    return total + BigInt(item.max_amount) * BigInt(item.max_price_per_unit);
+  }, 0n);
+  if (maxFee > MAX_DRAFT_FEE_FRI) throw new Error('FEE_ESTIMATE_EXCEEDS_CEILING');
+  return bounds;
 }
 
 export default async function(req: Request): Promise<Response> {
