@@ -84,17 +84,26 @@ async function getAgeEligibility(svc: any, userId: string) {
   }
   const ageBand = row.age_band as AgeBand;
   const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
-  const eligibility = deriveAgeEligibility(ageBand, method);
+  const verifierStatus = ['PENDING', 'VERIFIED', 'EXPIRED', 'REVOKED'].includes(String(row.verifier_status || ''))
+    ? String(row.verifier_status)
+    : 'NONE';
+  const verifierExpiry = String(row.verifier_expires_at || '').trim();
+  const verifierCurrent = method === 'THIRD_PARTY_VERIFIED'
+    && verifierStatus === 'VERIFIED'
+    && (!verifierExpiry || new Date(verifierExpiry).getTime() > Date.now());
+  const eligibility = deriveAgeEligibility(ageBand, verifierCurrent ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED');
   return {
     declared: true,
     age_band: ageBand,
     method,
+    verifier_status: verifierStatus,
+    verifier_expires_at: verifierExpiry,
     eligible: eligibility.testnet_identity_eligible,
     testnet_wallet_eligible: eligibility.testnet_wallet_eligible,
     value_features_eligible: eligibility.value_features_eligible,
     policy_version: String(row.policy_version || AGE_POLICY_VERSION),
     revision: Math.max(1, Number(row.revision || 1)),
-    chain_attestable: method === 'THIRD_PARTY_VERIFIED' && eligibility.testnet_identity_eligible,
+    chain_attestable: verifierCurrent && eligibility.testnet_identity_eligible,
   };
 }
 
@@ -223,6 +232,7 @@ function safeIdentity(row: any) {
     age_policy_version: row.age_policy_version || '',
     eligibility_basis: row.eligibility_basis || '',
     verification_tx_hash: row.verification_tx_hash || '',
+    verification_revoke_tx_hash: row.verification_revoke_tx_hash || '',
     verification_root: row.verification_root || '',
     verification_schema_hash: row.verification_schema_hash || '',
     verification_status: row.verification_status || 'NONE',
