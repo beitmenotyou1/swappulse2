@@ -1,36 +1,18 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Clock, Copy, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Copy, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-
-function shortHex(v) {
-  if (!v || v.length < 18) return v || '—';
-  return `${v.slice(0, 10)}…${v.slice(-8)}`;
-}
-
-const STATUS_CONFIG = {
-  REGISTERED: { label: 'Secured on chain', bgClass: 'bg-success/10', textClass: 'text-success', Icon: CheckCircle2 },
-  RECOVERED: { label: 'Recovered', bgClass: 'bg-success/10', textClass: 'text-success', Icon: ShieldCheck },
-  // MERGED must be present: an unmapped status silently falls through to the
-  // PENDING entry below, which would label a real, registered-then-merged
-  // on-chain identity as a mere "Reservation pending".
-  MERGED: { label: 'Merged into another identity', bgClass: 'bg-primary/10', textClass: 'text-primary', Icon: ShieldCheck },
-  DEPLOYED: { label: 'Deployed, pending verification', bgClass: 'bg-primary/10', textClass: 'text-primary', Icon: Clock },
-  PENDING: { label: 'Reservation pending', bgClass: 'bg-warning/10', textClass: 'text-warning', Icon: Clock },
-  FAILED: { label: 'Setup failed', bgClass: 'bg-destructive/10', textClass: 'text-destructive', Icon: AlertCircle },
-  RECOVERY_PENDING: { label: 'Recovery in progress', bgClass: 'bg-warning/10', textClass: 'text-warning', Icon: RefreshCw },
-};
+import { identityStatusConfig, isChainAuthoritative, shortHex } from '@/lib/chainIdentityDisplay';
 
 export default function WalletDashboard({ status, onReload }) {
   const { toast } = useToast();
   const [reconciling, setReconciling] = useState(false);
   const identity = status?.identity || {};
-  const network = status?.network || {};
-  const cfg = STATUS_CONFIG[identity.status] || STATUS_CONFIG.PENDING;
-  const { Icon, bgClass, textClass, label } = cfg;
+  const { Icon, bgClass, textClass, label } = identityStatusConfig(identity.status);
 
-  const copy = async (value, label) => {
-    try { await navigator.clipboard.writeText(value); toast({ title: `${label} copied` }); }
+  const copy = async (value, what) => {
+    try { await navigator.clipboard.writeText(value); toast({ title: `${what} copied` }); }
     catch { toast({ title: 'Could not copy', variant: 'destructive' }); }
   };
 
@@ -43,8 +25,8 @@ export default function WalletDashboard({ status, onReload }) {
       const outcome = data?.results?.[0]?.outcome || 'CHECKED';
       await onReload();
       toast({
-        title: ['REGISTERED', 'RECOVERED'].includes(outcome) ? 'Identity verified on chain' : 'Chain check completed',
-        description: ['REGISTERED', 'RECOVERED'].includes(outcome) ? 'Your identity is chain-authoritative.' : `Chain result: ${outcome}`,
+        title: isChainAuthoritative(outcome) ? 'Identity verified on chain' : 'Chain check completed',
+        description: isChainAuthoritative(outcome) ? 'Your identity is chain-authoritative.' : `Chain result: ${outcome}`,
       });
     } catch (error) {
       toast({ title: 'Chain verification failed', description: error?.response?.data?.error || error?.message, variant: 'destructive' });
@@ -125,15 +107,16 @@ export default function WalletDashboard({ status, onReload }) {
         </button>
       )}
 
+      {/* /status is an in-app route, so this stays client-side navigation — the
+          external-link icon and target=_blank misrepresented it as leaving
+          SwapPulse and forced a full reload of the whole app. */}
       {identity.account_address && (
-        <a
-          href={`${window.location.origin}/status`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to="/status"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
         >
-          <ExternalLink className="h-3.5 w-3.5" /> View network status
-        </a>
+          <RefreshCw className="h-3.5 w-3.5" /> View network status
+        </Link>
       )}
     </div>
   );

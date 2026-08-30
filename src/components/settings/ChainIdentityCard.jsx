@@ -5,11 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 import { createDeviceTestSigner, getDeviceTestSigner } from '@/lib/testnetSignerVault';
 import useChainProvisioning, { signerMatchesIdentity as signerMatches } from '@/hooks/useChainProvisioning';
-
-function shortHex(value) {
-  if (!value || value.length < 18) return value || '—';
-  return `${value.slice(0, 10)}…${value.slice(-8)}`;
-}
+import { isChainAuthoritative, shortHex } from '@/lib/chainIdentityDisplay';
 
 export default function ChainIdentityCard() {
   const { user } = useAuth();
