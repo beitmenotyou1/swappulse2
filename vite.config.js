@@ -20,8 +20,10 @@ export default defineConfig({
   // optimization runs, so one page load pulls React twice (?v=6da34daf and
   // ?v=586c7768) → "Cannot read properties of null (reading 'useState')".
   // Pointing at an unused cache dir forces one clean, self-consistent run.
-  cacheDir: 'node_modules/.vite-clean',
+  cacheDir: 'node_modules/.vite-fresh-1',
   resolve: {
+    // Guarantee a single React copy even if a dependency pulls its own.
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
     alias: {
       // base44:runtime is a backend-only virtual module; mock it so Vite can
       // resolve shared modules that import it during the frontend build.
