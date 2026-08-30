@@ -492,11 +492,40 @@ async function assertRelayReady() {
   return value;
 }
 
+function parsePrivateVerification(body) {
+  if (body?.verification == null) return null;
+  const value = body.verification;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('VERIFICATION_BODY_INVALID');
+  const verificationRoot = normalizeHex(value.verification_root, 'verification_root');
+  const schemaHash = normalizeHex(value.schema_hash, 'schema_hash');
+  const expiresAt = Number(value.expires_at ?? 0);
+  if (!Number.isSafeInteger(expiresAt) || expiresAt < 0) throw new Error('VERIFICATION_EXPIRY_INVALID');
+  return { verificationRoot, schemaHash, expiresAt };
+}
+
+function verificationMatches(values, expected) {
+  if (!expected || !Array.isArray(values) || values.length < 8) return false;
+  const status = Number(BigInt(values[1] || '0x0'));
+  return status === 1
+    && normalizeZeroableHex(values[0] || '0x0', 'verification root') === expected.verificationRoot
+    && normalizeZeroableHex(values[2] || '0x0', 'verification schema') === expected.schemaHash
+    && normalizeZeroableHex(values[3] || '0x0', 'verification attester') === identityRegistryOwner
+    && Number(BigInt(values[5] || '0x0')) === expected.expiresAt;
+}
+
+async function assertVerification(identityId, expected) {
+  if (!expected) return null;
+  const values = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
+  if (!verificationMatches(values, expected)) throw new Error('VERIFICATION_FINAL_STATE_MISMATCH');
+  return values;
+}
+
 async function registerIdentity(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('REGISTRATION_BODY_REQUIRED');
   const identityId = normalizeHex(body.identity_id, 'identity_id');
   const publicKey = normalizeHex(body.public_key, 'public_key');
   const accountAddress = normalizeHex(body.account_address, 'account_address');
+  const verification = parsePrivateVerification(body);
   const derivedAddress = normalizeHex(
     hash.calculateContractAddressFromHash(publicKey, accountClassHash, [publicKey], 0),
     'derived account address',
@@ -521,13 +550,44 @@ async function registerIdentity(body) {
   const identityValues = await starknetCall(identityRegistryAddress, 'get_identity', [identityId]);
   const existingAccount = normalizeZeroableHex(identityValues?.[0] || '0x0', 'existing account');
   const existingStatus = Number(BigInt(identityValues?.[1] || '0x0'));
+  let registrationIdempotent = false;
+  let verificationIdempotent = verification == null;
+  let registrationTransactionHash = '';
+  let verificationTransactionHash = '';
+
   if (existingStatus === 1) {
     if (existingAccount !== accountAddress) throw new Error('REGISTRATION_IDENTITY_ALREADY_BOUND');
     const reverseValues = await starknetCall(identityRegistryAddress, 'get_identity_by_account', [accountAddress]);
     if (normalizeZeroableHex(reverseValues?.[0] || '0x0', 'reverse identity') !== identityId) {
       throw new Error('REGISTRATION_REVERSE_MAPPING_MISMATCH');
     }
-    return { identity_id: identityId, account_address: accountAddress, transaction_hash: '', idempotent: true };
+    registrationIdempotent = true;
+
+    if (verification) {
+      const currentVerification = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
+      verificationIdempotent = verificationMatches(currentVerification, verification);
+      if (!verificationIdempotent) {
+        const attested = await registryAdmin.execute({
+          contractAddress: identityRegistryAddress,
+          entrypoint: 'set_verification',
+          calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
+        });
+        await provider.waitForTransaction(attested.transaction_hash);
+        verificationTransactionHash = normalizeHex(attested.transaction_hash, 'verification transaction hash');
+        await assertVerification(identityId, verification);
+      }
+    }
+
+    return {
+      identity_id: identityId,
+      account_address: accountAddress,
+      transaction_hash: verificationTransactionHash,
+      registration_transaction_hash: '',
+      verification_transaction_hash: verificationTransactionHash,
+      registration_idempotent: true,
+      verification_idempotent: verificationIdempotent,
+      idempotent: registrationIdempotent && verificationIdempotent,
+    };
   }
   if (existingStatus !== 0) throw new Error('REGISTRATION_IDENTITY_NOT_AVAILABLE');
 
@@ -546,12 +606,25 @@ async function registerIdentity(body) {
     throw new Error('REGISTRATION_RECOVERY_DELAY_MISMATCH');
   }
 
-  const registered = await registryAdmin.execute({
-    contractAddress: identityRegistryAddress,
-    entrypoint: 'register_identity',
-    calldata: [identityId, accountAddress],
-  });
+  const calls = [
+    {
+      contractAddress: identityRegistryAddress,
+      entrypoint: 'register_identity',
+      calldata: [identityId, accountAddress],
+    },
+  ];
+  if (verification) {
+    calls.push({
+      contractAddress: identityRegistryAddress,
+      entrypoint: 'set_verification',
+      calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
+    });
+  }
+
+  const registered = await registryAdmin.execute(calls.length === 1 ? calls[0] : calls);
   await provider.waitForTransaction(registered.transaction_hash);
+  registrationTransactionHash = normalizeHex(registered.transaction_hash, 'registration transaction hash');
+  if (verification) verificationTransactionHash = registrationTransactionHash;
 
   const [finalIdentity, finalReverse] = await Promise.all([
     starknetCall(identityRegistryAddress, 'get_identity', [identityId]),
@@ -563,10 +636,19 @@ async function registerIdentity(body) {
   if (normalizeZeroableHex(finalReverse?.[0] || '0x0', 'final reverse identity') !== identityId) {
     throw new Error('REGISTRATION_FINAL_REVERSE_MISMATCH');
   }
+  if (verification) {
+    verificationIdempotent = false;
+    await assertVerification(identityId, verification);
+  }
+
   return {
     identity_id: identityId,
     account_address: accountAddress,
-    transaction_hash: normalizeHex(registered.transaction_hash, 'registration transaction hash'),
+    transaction_hash: registrationTransactionHash,
+    registration_transaction_hash: registrationTransactionHash,
+    verification_transaction_hash: verificationTransactionHash,
+    registration_idempotent: false,
+    verification_idempotent: verificationIdempotent,
     idempotent: false,
   };
 }
