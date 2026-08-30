@@ -38,9 +38,10 @@ The relay bearer token and HTTPS URL are Base44 **server-side secrets** (`SWAPPU
 
 Devnet is pinned to `shardlabs/starknet-devnet-rs:0.8.2` and uses:
 
-- custom chain ID `SWAPPULSE_TESTNET`
-- block generation on each transaction
-- `--dump-on block`
+- Devnet CLI chain ID `TESTNET` (required by this pinned Devnet version)
+- SwapPulse's deployment manifest/network label remains `SWAPPULSE_TESTNET`
+- the Devnet default of block generation on each transaction
+- `--dump-on transaction`
 - persistent dump file `/data/swappulse-testnet.dump`
 
 `./data` is bind-mounted into the container so contract/state history survives container restarts. Keep the same Devnet version, seed and predeployment configuration when loading an existing dump. Devnet prints its deterministic predeployed private keys during startup, so the Compose service deliberately uses Docker's `none` logging driver and the raw RPC remains loopback-only.
