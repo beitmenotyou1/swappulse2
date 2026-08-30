@@ -114,7 +114,9 @@ export async function valueFeatureEligible(
   const band = row.age_band as AgeBand;
   const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
   if (!deriveAgeEligibility(band, method).value_features_eligible) return false;
-  if (String(row.verifier_status || 'VERIFIED') !== 'VERIFIED') return false;
+  if (String(row.verifier_status || 'NONE') !== 'VERIFIED') return false;
+  const privateExpiry = String(row.verifier_expires_at || '').trim();
+  if (privateExpiry && new Date(privateExpiry).getTime() <= Date.now()) return false;
   if (String(identity?.verification_status || '') !== 'ACTIVE') return false;
   const expectedVerifier = normalizeHex(config?.identity_verifier_address, 'configured identity verifier');
   const actualAttester = normalizeHex(identity?.verification_attested_by, 'identity verification attester');
