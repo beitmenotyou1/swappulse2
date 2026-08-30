@@ -19,6 +19,7 @@ export default function ChainIdentitySection() {
     recovery_controller: '',
     recovery_delay_seconds: '172800',
     rpc_url: '',
+    tx_relay_url: '',
     explorer_url: '',
     status: 'UNCONFIGURED',
   });
@@ -63,6 +64,7 @@ export default function ChainIdentitySection() {
             recovery_controller: nextConfig?.recovery_controller || '',
             recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
             rpc_url: nextConfig?.rpc_url || '',
+            tx_relay_url: nextConfig?.tx_relay_url || '',
             explorer_url: nextConfig?.explorer_url || '',
             status: nextConfig?.status || 'UNCONFIGURED',
           });
@@ -103,6 +105,7 @@ export default function ChainIdentitySection() {
         recovery_controller: nextConfig?.recovery_controller || '',
         recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
         rpc_url: nextConfig?.rpc_url || '',
+        tx_relay_url: nextConfig?.tx_relay_url || '',
         explorer_url: nextConfig?.explorer_url || '',
         status: nextConfig?.status || 'UNCONFIGURED',
       }));
@@ -145,6 +148,7 @@ export default function ChainIdentitySection() {
         recovery_controller: nextConfig?.recovery_controller || '',
         recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
         rpc_url: nextConfig?.rpc_url || '',
+        tx_relay_url: nextConfig?.tx_relay_url || '',
         explorer_url: nextConfig?.explorer_url || '',
         status: nextConfig?.status || 'UNCONFIGURED',
       }));
@@ -184,6 +188,7 @@ export default function ChainIdentitySection() {
         recovery_controller: nextConfig?.recovery_controller || '',
         recovery_delay_seconds: String(nextConfig?.recovery_delay_seconds ?? 172800),
         rpc_url: nextConfig?.rpc_url || '',
+        tx_relay_url: nextConfig?.tx_relay_url || '',
         explorer_url: nextConfig?.explorer_url || '',
         status: nextConfig?.status || 'UNCONFIGURED',
       }));
@@ -489,6 +494,12 @@ export default function ChainIdentitySection() {
               placeholder="Public HTTPS RPC URL (optional)"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
              aria-label="Public HTTPS RPC URL (optional)"/>
+            <input
+              value={configDraft.tx_relay_url}
+              onChange={(e) => setConfigDraft((p) => ({ ...p, tx_relay_url: e.target.value }))}
+              placeholder="Privileged transaction relay HTTPS URL (optional)"
+              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+             aria-label="Privileged transaction relay HTTPS URL (optional)"/>
             <input
               value={configDraft.explorer_url}
               onChange={(e) => setConfigDraft((p) => ({ ...p, explorer_url: e.target.value }))}
