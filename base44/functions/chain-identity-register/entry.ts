@@ -42,6 +42,7 @@ async function getVerifiedConfig(svc: any) {
     row.identity_registry_class_hash,
     row.identity_registry_address,
     row.identity_registry_owner,
+    row.identity_verifier_address,
     row.rpc_url,
   ];
   if (required.some((v) => !String(v || '').trim())) return null;
@@ -49,6 +50,7 @@ async function getVerifiedConfig(svc: any) {
     String(row.verified_chain_id || '').trim() !== String(row.chain_id || '').trim()
     || String(row.verified_identity_registry_class_hash || '').trim() !== String(row.identity_registry_class_hash || '').trim()
     || String(row.verified_identity_registry_owner || '').trim() !== String(row.identity_registry_owner || '').trim()
+    || String(row.verified_identity_verifier_address || '').trim() !== String(row.identity_verifier_address || '').trim()
     || String(row.verified_account_class_hash || '').trim() !== String(row.account_class_hash || '').trim()
     || String(row.verified_rpc_url || '').trim() !== String(row.rpc_url || '').trim()
   ) return null;
