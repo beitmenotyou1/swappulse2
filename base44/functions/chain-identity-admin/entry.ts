@@ -341,12 +341,16 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Use RPC verification to activate SwapPulse Testnet', 409, 'CHAIN_VERIFICATION_REQUIRED');
       }
 
-      let chainId = '';
-      let accountClassHash = '';
-      let identityRegistryClassHash = '';
-      let identityRegistryAddress = '';
-      let identityRegistryOwner = '';
-      let recoveryController = '';
+      // Absent fields fall back to what is already stored. The payload below writes
+      // every column unconditionally, so defaulting these to '' would let a partial
+      // save (e.g. updating only the explorer URL) silently erase the chain ID,
+      // class hashes and registry coordinates of an already-configured network.
+      let chainId = config.chainId;
+      let accountClassHash = config.accountClassHash;
+      let identityRegistryClassHash = config.identityRegistryClassHash;
+      let identityRegistryAddress = config.identityRegistryAddress;
+      let identityRegistryOwner = config.identityRegistryOwner;
+      let recoveryController = config.recoveryController;
       try {
         if (body.chain_id) chainId = normalizeHex(body.chain_id, 'chain_id');
         if (body.account_class_hash) accountClassHash = normalizeHex(body.account_class_hash, 'account_class_hash');
@@ -367,11 +371,11 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('recovery_delay_seconds must be between 0 and 2592000', 400, 'INVALID_RECOVERY_DELAY');
       }
 
-      let rpcUrl = '';
-      let explorerUrl = '';
+      let rpcUrl = config.rpcUrl;
+      let explorerUrl = config.explorerUrl;
       try {
-        rpcUrl = normalizePublicHttpsUrl(body.rpc_url, 'rpc_url');
-        explorerUrl = normalizePublicHttpsUrl(body.explorer_url, 'explorer_url');
+        if (body.rpc_url) rpcUrl = normalizePublicHttpsUrl(body.rpc_url, 'rpc_url');
+        if (body.explorer_url) explorerUrl = normalizePublicHttpsUrl(body.explorer_url, 'explorer_url');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid public URL', 400, 'INVALID_PUBLIC_URL');
       }
@@ -383,6 +387,11 @@ export default async function(req: Request): Promise<Response> {
         || identityRegistryAddress !== config.identityRegistryAddress
         || identityRegistryOwner !== config.identityRegistryOwner
         || rpcUrl !== config.rpcUrl
+        // The recovery controller is who can move an account under recovery, and
+        // chain-tx-draft builds the on-chain recovery calls straight from it. It has
+        // no verification pin of its own, so changing it must at least force
+        // re-verification rather than taking effect under existing pins.
+        || recoveryController !== config.recoveryController
       );
       const effectiveStatus = status === 'PAUSED'
         ? 'PAUSED'
@@ -714,8 +723,12 @@ export default async function(req: Request): Promise<Response> {
       const rows = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       const record = rows?.[0];
       if (!record) return jsonError('ChainIdentity not found', 404);
-      if (record.status === 'REGISTERED' || record.status === 'MERGED') {
-        return jsonError('Registered/merged identities cannot be marked failed from Base44', 409, 'CHAIN_STATE_PROTECTED');
+      // RECOVERED belongs here too: like REGISTERED and MERGED it is a status only
+      // reconciliation can set, from authoritative chain state. import_provisioning_result
+      // already protects all three; omitting it here let an admin overwrite a live
+      // on-chain identity with FAILED.
+      if (['REGISTERED', 'MERGED', 'RECOVERED'].includes(String(record.status || ''))) {
+        return jsonError('Chain-authoritative identities cannot be marked failed from Base44', 409, 'CHAIN_STATE_PROTECTED');
       }
       await svc.entities.ChainIdentity.update(record.id, { status: 'FAILED', failure_code: failureCode });
       return Response.json({ ok: true, status: 'FAILED', record_id: record.id });
