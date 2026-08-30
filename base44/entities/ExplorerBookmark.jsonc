@@ -6,7 +6,7 @@
   "properties": {
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the bookmark owner"
+      "description": "AT Protocol DID of the bookmark owner (metadata only; access is controlled by created_by_id)"
     },
     "wallet_address": {
       "type": "string",
@@ -33,9 +33,6 @@
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.did": "{{user.data.did}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
@@ -51,7 +48,9 @@
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.did": "{{user.data.did}}"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
@@ -59,9 +58,6 @@
       "$or": [
         {
           "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
         },
         {
           "user_condition": {
