@@ -18,6 +18,8 @@ export type PrivateEligibilityState = {
   policy_version: string;
   revision: number;
   chain_attestable: boolean;
+  verifier_status: 'NONE' | 'PENDING' | 'VERIFIED' | 'EXPIRED' | 'REVOKED';
+  verifier_expires_at: string;
   row: any | null;
 };
 
@@ -45,6 +47,8 @@ export async function privateEligibilityState(svc: any, userId: string): Promise
       policy_version: AGE_POLICY_VERSION,
       revision: 0,
       chain_attestable: false,
+      verifier_status: 'NONE',
+      verifier_expires_at: '',
       row: null,
     };
   }
@@ -52,16 +56,24 @@ export async function privateEligibilityState(svc: any, userId: string): Promise
   const ageBand = row.age_band as AgeBand;
   const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
   const eligibility = deriveAgeEligibility(ageBand, method);
+  const verifierStatus = ['PENDING', 'VERIFIED', 'EXPIRED', 'REVOKED'].includes(String(row.verifier_status || ''))
+    ? String(row.verifier_status) as 'PENDING' | 'VERIFIED' | 'EXPIRED' | 'REVOKED'
+    : 'NONE';
+  const verifierExpiresAt = String(row.verifier_expires_at || '').trim();
+  const expiryMs = verifierExpiresAt ? new Date(verifierExpiresAt).getTime() : 0;
+  const verifierCurrent = verifierStatus === 'VERIFIED' && (!expiryMs || expiryMs > Date.now());
   return {
     eligible: eligibility.testnet_identity_eligible,
     age_band: ageBand,
     method,
     policy_version: String(row.policy_version || AGE_POLICY_VERSION),
     revision: Math.max(1, Number(row.revision || 1)),
-    // Cairo's IdentityVerification means a verifier-backed claim. A user's
-    // self-declaration may unlock the non-value-bearing testnet, but must never
-    // be silently upgraded into an on-chain "verified" state.
-    chain_attestable: eligibility.testnet_identity_eligible && method === 'THIRD_PARTY_VERIFIED',
+    // Cairo's IdentityVerification means a CURRENT verifier-backed claim. A
+    // self-declaration, expired assertion or revoked assertion may never be
+    // silently upgraded into an on-chain "verified" state.
+    chain_attestable: eligibility.testnet_identity_eligible && method === 'THIRD_PARTY_VERIFIED' && verifierCurrent,
+    verifier_status: verifierStatus,
+    verifier_expires_at: verifierExpiresAt,
     row,
   };
 }
@@ -84,6 +96,7 @@ export async function buildPrivateEligibilityAttestation(
     method: state.method,
     revision: state.revision,
     verified_at: verifiedAt,
+    verifier_expires_at: state.verifier_expires_at,
     testnet_identity_eligible: true,
   });
 
@@ -115,11 +128,16 @@ export async function buildPrivateEligibilityAttestation(
   const verificationRoot = feltFromDigest(digest);
   const schemaHash = `0x${BigInt(hash.getSelectorFromName(PRIVATE_ELIGIBILITY_SCHEMA)).toString(16)}`;
 
+  let expiresAt = 0;
+  if (state.verifier_expires_at) {
+    const parsed = new Date(state.verifier_expires_at).getTime();
+    if (!Number.isFinite(parsed) || parsed <= Date.now()) return null;
+    expiresAt = Math.floor(parsed / 1000);
+  }
+
   return {
     verification_root: verificationRoot,
     schema_hash: schemaHash,
-    // No arbitrary expiry is invented here. Once the real third-party verifier
-    // is connected it should supply an evidence-specific expiry/revocation policy.
-    expires_at: 0,
+    expires_at: expiresAt,
   };
 }
