@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { CheckCircle2, ChevronDown, ChevronUp, Copy, Fingerprint, KeyRound, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
-import { createDeviceTestSigner, getDeviceTestSigner, signTestnetHash } from '@/lib/testnetSignerVault';
+import { createDeviceTestSigner, getDeviceTestSigner } from '@/lib/testnetSignerVault';
+import useChainProvisioning, { signerMatchesIdentity as signerMatches } from '@/hooks/useChainProvisioning';
 
 function shortHex(value) {
   if (!value || value.length < 18) return value || '—';
@@ -22,8 +23,6 @@ export default function ChainIdentityCard() {
   const [provisioningResult, setProvisioningResult] = useState('');
   const [importingResult, setImportingResult] = useState(false);
   const [reconciling, setReconciling] = useState(false);
-  const [automaticSetup, setAutomaticSetup] = useState(false);
-  const [setupStep, setSetupStep] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,11 +52,12 @@ export default function ChainIdentityCard() {
   const canPrepare = status?.can_prepare === true;
   const automationReady = status?.automation_ready === true;
   const relay = status?.relay || {};
-  const signerMatchesIdentity = Boolean(
-    identity?.signer_public_key
-    && deviceSigner?.publicKey
-    && identity.signer_public_key.toLowerCase() === deviceSigner.publicKey.toLowerCase(),
-  );
+  const signerMatchesIdentity = signerMatches(identity, deviceSigner);
+  const { autoSetup: automaticSetup, setupStep, secureIdentity } = useChainProvisioning({
+    identity,
+    userId: user?.id,
+    onReload: load,
+  });
 
   const createSigner = async () => {
     if (!user?.id) return;
@@ -97,88 +97,6 @@ export default function ChainIdentityCard() {
       toast({ title: 'Identity setup blocked', description: message, variant: 'destructive' });
     } finally {
       setPreparing(false);
-    }
-  };
-
-  const invokeData = async (name, payload) => {
-    const res = await base44.functions.invoke(name, payload);
-    return res?.data || res;
-  };
-
-  const getDraft = async (action) => invokeData('chain-tx-draft', { action, record_id: identity.id });
-
-  const signAndSubmitDraft = async (draft) => {
-    if (draft?.already_complete) return draft;
-    if (!user?.id || !draft?.transaction || !draft?.signing_hash || !draft?.draft_token) {
-      throw new Error('SwapPulse returned an incomplete testnet transaction draft.');
-    }
-    const signature = await signTestnetHash(user.id, draft.signing_hash);
-    const transaction = { ...draft.transaction, signature: [signature.r, signature.s] };
-    return invokeData('chain-tx-submit', {
-      action: draft.action,
-      record_id: identity.id,
-      draft_token: draft.draft_token,
-      transaction,
-    });
-  };
-
-  const waitForStep = async (action, attempts = 12) => {
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 1000));
-      try {
-        const draft = await getDraft(action);
-        if (draft?.already_complete) return draft;
-      } catch (error) {
-        const code = error?.response?.data?.code || '';
-        if (code !== 'ACCOUNT_NOT_READY' && attempt === attempts - 1) throw error;
-      }
-    }
-    throw new Error('The public testnet RPC has not confirmed the transaction yet. Try again shortly.');
-  };
-
-  const secureIdentityAutomatically = async () => {
-    if (!identity?.id || !signerMatchesIdentity || !user?.id) return;
-    setAutomaticSetup(true);
-    setSetupStep('Preparing account deployment…');
-    try {
-      const deployDraft = await getDraft('deploy_account');
-      if (!deployDraft?.already_complete) {
-        setSetupStep('Signing account deployment on this device…');
-        await signAndSubmitDraft(deployDraft);
-        setSetupStep('Waiting for account deployment confirmation…');
-        await waitForStep('deploy_account');
-      }
-
-      setSetupStep('Checking recovery configuration…');
-      const recoveryDraft = await getDraft('configure_recovery');
-      if (!recoveryDraft?.already_complete) {
-        setSetupStep('Signing recovery settings on this device…');
-        await signAndSubmitDraft(recoveryDraft);
-        setSetupStep('Waiting for recovery settings confirmation…');
-        await waitForStep('configure_recovery');
-      }
-
-      setSetupStep('Registering your identity…');
-      await invokeData('chain-identity-register', { record_id: identity.id });
-      setSetupStep('Verifying identity from public chain state…');
-      const reconciled = await invokeData('chain-identity-reconcile', { record_id: identity.id });
-      const outcome = reconciled?.results?.[0]?.outcome || '';
-      await load();
-      if (!['REGISTERED', 'RECOVERED'].includes(outcome)) {
-        throw new Error(`The chain registration completed, but final reconciliation returned ${outcome || 'no result'}.`);
-      }
-      setSetupStep('Identity secured');
-      toast({
-        title: 'Identity secured',
-        description: 'Your account was signed on this device, registered on SwapPulse Testnet and independently verified from the public chain state.',
-      });
-    } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'Could not complete automatic testnet identity setup.';
-      await load().catch(() => {});
-      toast({ title: 'Testnet setup paused', description: message, variant: 'destructive' });
-    } finally {
-      setAutomaticSetup(false);
-      setSetupStep('');
     }
   };
 
@@ -340,7 +258,7 @@ export default function ChainIdentityCard() {
           </p>
           <button
             type="button"
-            onClick={secureIdentityAutomatically}
+            onClick={secureIdentity}
             disabled={automaticSetup}
             className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
           >
