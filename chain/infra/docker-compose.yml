@@ -14,7 +14,7 @@ services:
       - --chain-id
       - TESTNET
       - --dump-on
-      - transaction
+      - block
       - --dump-path
       - /data/swappulse-testnet.dump
     volumes:

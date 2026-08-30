@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "placeholder": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "__noop"
+}
