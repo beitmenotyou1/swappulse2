@@ -31,6 +31,18 @@
       "type": "string",
       "description": "IdentityRegistry contract address for this network."
     },
+    "age_policy_version": {
+      "type": "string",
+      "description": "Private Base44 snapshot of the age-policy version that permitted this identity reservation. Never written on-chain."
+    },
+    "eligibility_basis": {
+      "type": "string",
+      "enum": [
+        "SELF_DECLARED",
+        "THIRD_PARTY_VERIFIED"
+      ],
+      "description": "Private Base44 audit snapshot of the eligibility basis. Never written on-chain."
+    },
     "signer_public_key": {
       "type": "string",
       "description": "Public Stark signer key reserved for this testnet account. This is public cryptographic material, never a private key."
@@ -46,6 +58,52 @@
     "registration_tx_hash": {
       "type": "string",
       "description": "IdentityRegistry registration transaction hash, when known."
+    },
+    "verification_tx_hash": {
+      "type": "string",
+      "description": "IdentityRegistry verification-attestation transaction hash, when a stronger private verification was committed on-chain."
+    },
+    "verification_root": {
+      "type": "string",
+      "description": "Public opaque verification commitment mirrored from IdentityRegistry. Contains no plaintext age or identity evidence."
+    },
+    "verification_schema_hash": {
+      "type": "string",
+      "description": "Public generic schema identifier mirrored from IdentityRegistry."
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "ACTIVE",
+        "EXPIRED",
+        "REVOKED"
+      ],
+      "default": "NONE"
+    },
+    "verification_attested_by": {
+      "type": "string",
+      "description": "Public attester address mirrored from IdentityRegistry."
+    },
+    "verification_verified_at": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "verification_expires_at": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "verification_revoked_at": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "verification_version": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
     },
     "signer_version": {
       "type": "string",
