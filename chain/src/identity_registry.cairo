@@ -1,5 +1,20 @@
 use starknet::ContractAddress;
 
+// Public identity state is intentionally pseudonymous. `identity_id` is an opaque
+// application-generated felt and `account_address` is the public Starknet account
+// bound to it. Human identity data must never be written into this structure.
+#[derive(Copy, Drop, Serde)]
+pub struct IdentityRecord {
+    pub identity_id: felt252,
+    pub account_address: ContractAddress,
+    // 0 = none, 1 = active, 2 = merged. Kept numeric for ABI stability with
+    // the Base44 reconciler and provisioning relay.
+    pub status: u8,
+    pub canonical_identity_id: felt252,
+    pub created_at: u64,
+    pub recovery_count: u64,
+}
+
 // Verification metadata deliberately contains commitments only. Raw identity
 // claims (name, email, documents, date of birth, etc.) must remain off-chain.
 // `verification_root` is intended to become a Merkle/Poseidon commitment to
@@ -12,6 +27,7 @@ pub struct IdentityVerification {
     pub attested_by: ContractAddress,
     pub verified_at: u64,
     pub expires_at: u64,
+    pub revoked_at: u64,
     pub version: u64,
 }
 
@@ -38,7 +54,11 @@ pub trait IIdentityRegistry<TContractState> {
     fn get_verification(
         self: @TContractState, identity_id: felt252,
     ) -> IdentityVerification;
+    fn get_effective_verification(
+        self: @TContractState, identity_id: felt252,
+    ) -> IdentityVerification;
     fn is_verified(self: @TContractState, identity_id: felt252) -> bool;
+    fn get_identity_record(self: @TContractState, identity_id: felt252) -> IdentityRecord;
     fn get_identity(
         self: @TContractState, identity_id: felt252,
     ) -> (ContractAddress, u8, felt252, u64, u64);
@@ -55,7 +75,7 @@ pub mod IdentityRegistry {
     use starknet::storage::{Map, StorageMapReadAccess, StorageMapWriteAccess};
     use starknet::{get_block_timestamp, get_caller_address, ClassHash, ContractAddress};
 
-    use super::{IIdentityRegistry, IdentityVerification};
+    use super::{IIdentityRegistry, IdentityRecord, IdentityVerification};
 
     const STATUS_NONE: u8 = 0;
     const STATUS_ACTIVE: u8 = 1;
@@ -94,6 +114,7 @@ pub mod IdentityRegistry {
         verification_attested_by: Map<felt252, ContractAddress>,
         verification_verified_at: Map<felt252, u64>,
         verification_expires_at: Map<felt252, u64>,
+        verification_revoked_at: Map<felt252, u64>,
         verification_version: Map<felt252, u64>,
     }
 
@@ -163,6 +184,7 @@ pub mod IdentityRegistry {
         #[key]
         identity_id: felt252,
         revoked_by: ContractAddress,
+        revoked_at: u64,
         version: u64,
     }
 
@@ -248,6 +270,9 @@ pub mod IdentityRegistry {
             schema_hash: felt252,
             expires_at: u64,
         ) {
+            // Testnet bootstrap authority. A later milestone can replace this
+            // owner gate with an attester registry/governance policy without
+            // changing the privacy-preserving verification record itself.
             self.ownable.assert_only_owner();
             self.assert_active(identity_id);
             assert(verification_root != 0, 'INVALID_VERIFY_ROOT');
@@ -265,6 +290,7 @@ pub mod IdentityRegistry {
             self.verification_attested_by.write(identity_id, attested_by);
             self.verification_verified_at.write(identity_id, verified_at);
             self.verification_expires_at.write(identity_id, expires_at);
+            self.verification_revoked_at.write(identity_id, 0);
             self.verification_version.write(identity_id, next_version);
 
             self.emit(
@@ -289,13 +315,16 @@ pub mod IdentityRegistry {
             );
 
             let next_version = self.verification_version.read(identity_id) + 1;
+            let revoked_at = get_block_timestamp();
             self.verification_status.write(identity_id, VERIFICATION_REVOKED);
+            self.verification_revoked_at.write(identity_id, revoked_at);
             self.verification_version.write(identity_id, next_version);
 
             self.emit(
                 IdentityVerificationRevoked {
                     identity_id,
                     revoked_by: get_caller_address(),
+                    revoked_at,
                     version: next_version,
                 },
             );
@@ -311,7 +340,25 @@ pub mod IdentityRegistry {
                 attested_by: self.verification_attested_by.read(identity_id),
                 verified_at: self.verification_verified_at.read(identity_id),
                 expires_at: self.verification_expires_at.read(identity_id),
+                revoked_at: self.verification_revoked_at.read(identity_id),
                 version: self.verification_version.read(identity_id),
+            }
+        }
+
+        fn get_effective_verification(
+            self: @ContractState, identity_id: felt252,
+        ) -> IdentityVerification {
+            let canonical = self.resolve_canonical(identity_id);
+            let subject = if canonical == 0 { identity_id } else { canonical };
+            IdentityVerification {
+                verification_root: self.verification_root.read(subject),
+                status: self.verification_status.read(subject),
+                schema_hash: self.verification_schema_hash.read(subject),
+                attested_by: self.verification_attested_by.read(subject),
+                verified_at: self.verification_verified_at.read(subject),
+                expires_at: self.verification_expires_at.read(subject),
+                revoked_at: self.verification_revoked_at.read(subject),
+                version: self.verification_version.read(subject),
             }
         }
 
@@ -327,6 +374,17 @@ pub mod IdentityRegistry {
 
             let expires_at = self.verification_expires_at.read(canonical);
             expires_at == 0 || expires_at > get_block_timestamp()
+        }
+
+        fn get_identity_record(self: @ContractState, identity_id: felt252) -> IdentityRecord {
+            IdentityRecord {
+                identity_id,
+                account_address: self.identity_to_account.read(identity_id),
+                status: self.identity_status.read(identity_id),
+                canonical_identity_id: self.resolve_canonical(identity_id),
+                created_at: self.created_at.read(identity_id),
+                recovery_count: self.recovery_count.read(identity_id),
+            }
         }
 
         fn get_identity(
