@@ -183,6 +183,7 @@ const CATEGORY_TKEYS = {
   'Challenges & Achievements': 'help.category.challenges',
   'AI Assistants': 'help.category.aiAssistants',
   'Account & Settings': 'help.category.account',
+  'Wallet & On-Chain': 'help.category.wallet',
   'Platform': 'help.category.platform',
 };
 

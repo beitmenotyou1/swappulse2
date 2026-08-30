@@ -12,16 +12,18 @@ import BridgePanel from '@/components/chain/BridgePanel';
 import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import useSEO from '@/hooks/useSEO';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function Wallet() {
   const { user } = useAuth();
+  const t = useT();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [attestations, setAttestations] = useState([]);
 
   useSEO({
-    title: 'Wallet & On-Chain Identity',
-    description: 'Manage your self-custodial SwapPulse smart account: on-chain identity, card possession attestations, anchored cards, network staking, and cross-chain transfers. Free and open source, with no protocol fees.',
+    title: t('page.wallet.seoTitle'),
+    description: t('page.wallet.seoDescription'),
     canonicalPath: '/wallet',
   });
 
@@ -51,12 +53,12 @@ export default function Wallet() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center gap-3">
-        <Link to="/" className="rounded-full p-2 hover:bg-secondary" aria-label="Back">
+        <Link to="/" className="rounded-full p-2 hover:bg-secondary" aria-label={t('page.wallet.back')}>
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex items-center gap-2">
           <WalletIcon className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-bold">Wallet & Identity</h1>
+          <h1 className="text-xl font-bold">{t('page.wallet.title')}</h1>
         </div>
       </div>
 
@@ -68,8 +70,8 @@ export default function Wallet() {
           <User className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">View your profile</p>
-          <p className="text-xs text-muted-foreground">See your collection status, attestations, and public identity</p>
+          <p className="text-sm font-bold">{t('page.wallet.viewProfile')}</p>
+          <p className="text-xs text-muted-foreground">{t('page.wallet.viewProfileSub')}</p>
         </div>
         <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
       </Link>
@@ -79,26 +81,26 @@ export default function Wallet() {
       ) : identity ? (
         <div className="space-y-6">
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">Smart Account</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.smartAccount')}</h2>
             <WalletDashboard status={status} onReload={load} />
           </div>
           <div>
             <div className="mb-3 flex items-center gap-2">
               <Camera className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold uppercase text-muted-foreground">Card Possession Attestations</h2>
+              <h2 className="text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.attestations')}</h2>
             </div>
             <CardAttestation attestations={attestations} onReload={load} identity={identity} />
           </div>
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">On-Chain Cards</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.onChainCards')}</h2>
             <MintedCardsPanel identitySecured={secured} />
           </div>
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">Network Staking</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.staking')}</h2>
             <StakingPanel identitySecured={secured} />
           </div>
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">Cross-Chain</h2>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.crossChain')}</h2>
             <BridgePanel identitySecured={secured} />
           </div>
         </div>
@@ -106,7 +108,7 @@ export default function Wallet() {
         <div className="space-y-4">
           <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
             <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
-            <p className="text-sm font-medium">Create your on-chain identity to start attesting card ownership.</p>
+            <p className="text-sm font-medium">{t('page.wallet.createPrompt')}</p>
           </div>
           <SmartAccountSetup status={status} onReload={load} />
         </div>
