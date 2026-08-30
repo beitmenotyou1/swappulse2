@@ -60,13 +60,25 @@ VITE_BASE44_APP_BASE_URL=https://your-app.base44.app
 
 When you use `base44 dev`, the command injects the local Base44 values for you, so `.env.local` is mainly needed for frontend-only workflows.
 
-## Publish Your Changes
+## Connect and Publish with GitHub
 
-After pushing your changes to git, open the Base44 dashboard and publish the app:
+For the initial source-code connection, use Base44's GitHub Integration from the app dashboard. The app owner authorises Base44 Builder, selects the GitHub account/organisation and creates the repository. This establishes two-way sync, so treat the connection as a long-lived source-control decision.
+
+After GitHub is connected, merge local changes to the `main` branch. Base44 syncs those changes back into the app. Then open the Base44 dashboard and publish the app:
 
 ```bash
 base44 dashboard open
 ```
+
+## Local Starknet Relay on Zorin
+
+For the private SwapPulse Starknet testnet, relay token generation and local Cloudflare tunnel setup, follow:
+
+```text
+chain/infra/ZORIN_LOCAL_RELAY.md
+```
+
+The Starknet identity path uses `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN`. It does not require the legacy `POLYGON_PRIVATE_KEY`.
 
 ## Docs & Support
 
