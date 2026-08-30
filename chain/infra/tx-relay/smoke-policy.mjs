@@ -49,12 +49,18 @@ const seen = [];
 const ownerSelector = hash.getSelectorFromName('owner');
 const getIdentitySelector = hash.getSelectorFromName('get_identity');
 const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
+const getVerificationSelector = hash.getSelectorFromName('get_verification');
 const recoveryControllerSelector = hash.getSelectorFromName('get_recovery_controller');
 const recoveryDelaySelector = hash.getSelectorFromName('get_recovery_delay');
 let mockIdentityStatus = 1;
 let mockReverseIdentity = identityId;
 let mockRecoveryController = recoveryController;
 let mockRecoveryDelay = recoveryDelay;
+const verificationRoot = '0x789ab';
+const verificationSchema = '0x89abc';
+let mockVerificationStatus = 0;
+let mockVerificationRoot = '0x0';
+let mockVerificationSchema = '0x0';
 let registrationMode = false;
 
 const upstream = http.createServer(async (req, res) => {
@@ -76,6 +82,16 @@ const upstream = http.createServer(async (req, res) => {
       ? ['0x0', '0x0', '0x0', '0x0', '0x0']
       : [accountAddress, '0x1', identityId, '0x1', '0x0'];
     else if (selector === reverseSelector) result = [mockReverseIdentity];
+    else if (selector === getVerificationSelector) result = [
+      mockVerificationRoot,
+      `0x${BigInt(mockVerificationStatus).toString(16)}`,
+      mockVerificationSchema,
+      mockVerificationStatus === 1 ? registryOwner : '0x0',
+      mockVerificationStatus === 1 ? '0x1' : '0x0',
+      '0x0',
+      '0x0',
+      mockVerificationStatus === 1 ? '0x1' : '0x0',
+    ];
     else if (selector === recoveryControllerSelector) result = [mockRecoveryController];
     else if (selector === recoveryDelaySelector) result = [`0x${BigInt(mockRecoveryDelay).toString(16)}`];
     else result = ['0x0'];
@@ -219,22 +235,41 @@ try {
   }
   mockRecoveryDelay = recoveryDelay;
   registrationMode = true;
+  mockVerificationStatus = 1;
+  mockVerificationRoot = verificationRoot;
+  mockVerificationSchema = verificationSchema;
   const freshRegistration = await post(registerUrl, {
     identity_id: identityId,
     public_key: publicKey,
     account_address: accountAddress,
+    verification: {
+      verification_root: verificationRoot,
+      schema_hash: verificationSchema,
+      expires_at: 0,
+    },
   }, token);
   registrationMode = false;
-  if (freshRegistration.status !== 200 || freshRegistration.body?.ok !== true || freshRegistration.body?.idempotent !== false || freshRegistration.body?.transaction_hash !== '0xccc') {
-    throw new Error(`Fresh owner registration did not complete: ${JSON.stringify(freshRegistration)}`);
+  if (
+    freshRegistration.status !== 200
+    || freshRegistration.body?.ok !== true
+    || freshRegistration.body?.idempotent !== false
+    || freshRegistration.body?.registration_transaction_hash !== '0xccc'
+    || freshRegistration.body?.verification_transaction_hash !== '0xccc'
+  ) {
+    throw new Error(`Fresh owner registration + verification did not complete: ${JSON.stringify(freshRegistration)}`);
   }
   const repeatRegistration = await post(registerUrl, {
     identity_id: identityId,
     public_key: publicKey,
     account_address: accountAddress,
+    verification: {
+      verification_root: verificationRoot,
+      schema_hash: verificationSchema,
+      expires_at: 0,
+    },
   }, token);
-  if (repeatRegistration.status !== 200 || repeatRegistration.body?.idempotent !== true) {
-    throw new Error(`Fresh registration was not idempotent on retry: ${JSON.stringify(repeatRegistration)}`);
+  if (repeatRegistration.status !== 200 || repeatRegistration.body?.idempotent !== true || repeatRegistration.body?.verification_transaction_hash !== '') {
+    throw new Error(`Fresh registration + verification was not idempotent on retry: ${JSON.stringify(repeatRegistration)}`);
   }
 
   mockIdentityStatus = 1;
@@ -270,8 +305,8 @@ try {
     idempotent_registration: true,
     wrong_recovery_registration_blocked: true,
     registry_owner_key_loaded_from_host_env: true,
-    fresh_owner_registration: true,
-    fresh_registration_retry_idempotent: true,
+    fresh_owner_registration_and_verification: true,
+    fresh_registration_and_verification_retry_idempotent: true,
     mismatched_registration_blocked: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
