@@ -148,9 +148,9 @@ export async function getVerifiedConfig(svc: any) {
   return row;
 }
 
-async function relayUrl(pathname: string): Promise<string> {
-  const raw = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
-  if (!raw) throw new Error('TX_RELAY_NOT_CONFIGURED');
+async function relayUrl(rawValue: unknown, pathname: string): Promise<string> {
+  const raw = String(rawValue || '').trim();
+  if (!raw) throw new Error('TX_RELAY_URL_NOT_CONFIGURED');
   const url = new URL(raw);
   if (url.protocol !== 'https:') throw new Error('TX_RELAY_URL_MUST_USE_HTTPS');
   if (url.username || url.password) throw new Error('TX_RELAY_URL_MUST_NOT_CONTAIN_CREDENTIALS');
@@ -161,13 +161,13 @@ async function relayUrl(pathname: string): Promise<string> {
   return url.toString();
 }
 
-async function relayPost(pathname: string, body: unknown) {
+async function relayPost(relayBaseUrl: unknown, pathname: string, body: unknown) {
   const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
   if (token.length < 32) throw new Error('TX_RELAY_TOKEN_NOT_CONFIGURED');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(await relayUrl(pathname), {
+    const response = await fetch(await relayUrl(relayBaseUrl, pathname), {
       method: 'POST',
       redirect: 'error',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
@@ -183,35 +183,36 @@ async function relayPost(pathname: string, body: unknown) {
   }
 }
 
-export async function relayRpc(method: string, params: Record<string, unknown>) {
-  return relayPost('/rpc', { jsonrpc: '2.0', id: crypto.randomUUID(), method, params });
+export async function relayRpc(relayBaseUrl: unknown, method: string, params: Record<string, unknown>) {
+  return relayPost(relayBaseUrl, '/rpc', { jsonrpc: '2.0', id: crypto.randomUUID(), method, params });
 }
 
-export async function relayMintCard(payload: Record<string, unknown>) {
-  return relayPost('/mint-card', payload);
+export async function relayMintCard(relayBaseUrl: unknown, payload: Record<string, unknown>) {
+  return relayPost(relayBaseUrl, '/mint-card', payload);
 }
 
-export async function relaySubmitUsership(payload: Record<string, unknown>) {
-  return relayPost('/submit-usership', payload);
+export async function relaySubmitUsership(relayBaseUrl: unknown, payload: Record<string, unknown>) {
+  return relayPost(relayBaseUrl, '/submit-usership', payload);
 }
 
 export async function relayIdentityVerification(
+  relayBaseUrl: unknown,
   mode: 'attest' | 'revoke',
   payload: Record<string, unknown>,
 ) {
-  return relayPost(`/verification-${mode}`, payload);
+  return relayPost(relayBaseUrl, `/verification-${mode}`, payload);
 }
 
 // Recovery-controller actions. The relay signs as the account's configured
 // recovery controller; the on-chain delay still gates execution.
-export async function relayRecoveryAction(kind: 'propose' | 'execute' | 'cancel', payload: Record<string, unknown>) {
-  return relayPost(`/recovery-${kind}`, payload);
+export async function relayRecoveryAction(relayBaseUrl: unknown, kind: 'propose' | 'execute' | 'cancel', payload: Record<string, unknown>) {
+  return relayPost(relayBaseUrl, `/recovery-${kind}`, payload);
 }
 
 // The relay owns the faucet treasury and always sends its own fixed drip amount,
 // so this call carries only the recipient — never an amount.
-export async function relayFaucetDrip(payload: Record<string, unknown>) {
-  return relayPost('/faucet-drip', payload);
+export async function relayFaucetDrip(relayBaseUrl: unknown, payload: Record<string, unknown>) {
+  return relayPost(relayBaseUrl, '/faucet-drip', payload);
 }
 
 // Read-only chain access uses the PUBLIC verified rpc_url, never the relay —
