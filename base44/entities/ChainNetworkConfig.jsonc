@@ -79,6 +79,10 @@
       "type": "string",
       "description": "Optional public RPC endpoint for read-only reconciliation. Do not store authenticated/private RPC URLs here."
     },
+    "tx_relay_url": {
+      "type": "string",
+      "description": "Admin-only HTTPS base URL for the privileged SwapPulse transaction relay. This is an endpoint, not a credential; bearer authentication remains in Base44 Secrets."
+    },
     "explorer_url": {
       "type": "string",
       "description": "Optional public explorer base URL."
