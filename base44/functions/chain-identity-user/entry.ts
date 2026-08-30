@@ -221,6 +221,9 @@ export default async function(req: Request): Promise<Response> {
     const current = identities.find((row: any) => ACTIVE_STATUSES.has(String(row?.status || ''))) || null;
 
     if (action === 'status') {
+      const relay = network.ready
+        ? await relayAutomationStatus(network)
+        : { configured: false, verified: false, code: 'CHAIN_NOT_CONFIGURED' };
       return Response.json({
         ok: true,
         age,
@@ -243,7 +246,8 @@ export default async function(req: Request): Promise<Response> {
           recovery_controller: network.recovery_controller || '0x0',
           recovery_delay_seconds: network.recovery_delay_seconds,
         } : null,
-        automation_ready: Boolean(age.eligible && network.ready && relayAutomationReady()),
+        relay,
+        automation_ready: Boolean(age.eligible && network.ready && relay.verified),
         private_key_required_by_base44: false,
       });
     }
