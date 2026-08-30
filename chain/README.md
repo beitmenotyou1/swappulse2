@@ -8,7 +8,7 @@ Milestone 1 intentionally contains only:
 
 1. `SwapPulseAccount` — Starknet smart account using the standard Stark-curve signer for the private testnet.
 2. Timelocked recovery hooks — recovery is disabled when the controller is the zero address.
-3. `IdentityRegistry` — permanent opaque identity -> smart-account mapping.
+3. `IdentityRegistry` — permanent opaque identity -> smart-account mapping, with a privacy-preserving verification commitment scaffold.
 4. Admin-gated identity merge — duplicate identities remain in history and resolve to one canonical identity.
 5. Upgrade hooks — account upgrades are self-authorised; registry upgrades are owner-authorised for the testnet.
 
@@ -23,6 +23,12 @@ The chain stores only public blockchain identifiers and state:
 - identity status / canonical merge target
 - creation timestamp
 - recovery counter
+- verification commitment root (for example a Poseidon/Merkle commitment to off-chain verified claims)
+- verification schema hash, attester address, validity timestamps, revocation timestamp and version
+
+`IdentityRecord` formalises the public identity shape without changing the legacy `get_identity()` tuple used by the existing relay/reconciler. `IdentityVerification` is deliberately separate from it. `get_verification()` exposes the direct historical verification record, while `get_effective_verification()` follows identity merges to the canonical identity.
+
+The commitment is proof metadata, not the identity evidence itself. A future verifier can prove that a claim set matched an approved schema without publishing the underlying claim values. The current testnet uses the registry owner as the bootstrap attester; this authority boundary is expected to move to an explicit attester/governance policy before production.
 
 The following must never be written on-chain:
 
@@ -32,7 +38,8 @@ The following must never be written on-chain:
 - AT Protocol credentials or app passwords
 - private keys
 - passkey secret material
-- verification photos
+- verification photos, document scans, document numbers or raw verifier responses
+- plaintext or reversibly encoded verified claims (for example legal name, DOB, address or nationality)
 - private collection/binder information
 
 Base44 stores the private user -> chain identity mapping in the owner-readable `ChainIdentity` entity. The blockchain remains authoritative.
