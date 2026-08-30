@@ -100,9 +100,9 @@ async function getVerifiedConfig(svc: any) {
   return row;
 }
 
-async function relayUrl(pathname = '/rpc'): Promise<string> {
-  const raw = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
-  if (!raw) throw new Error('TX_RELAY_NOT_CONFIGURED');
+async function relayUrl(rawValue: unknown, pathname = '/rpc'): Promise<string> {
+  const raw = String(rawValue || '').trim();
+  if (!raw) throw new Error('TX_RELAY_URL_NOT_CONFIGURED');
   const url = new URL(raw);
   if (url.protocol !== 'https:') throw new Error('TX_RELAY_URL_MUST_USE_HTTPS');
   if (url.username || url.password) throw new Error('TX_RELAY_URL_MUST_NOT_CONTAIN_CREDENTIALS');
@@ -113,13 +113,13 @@ async function relayUrl(pathname = '/rpc'): Promise<string> {
   return url.toString();
 }
 
-async function forward(method: string, params: Record<string, unknown>) {
+async function forward(relayBaseUrl: unknown, method: string, params: Record<string, unknown>) {
   const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
   if (token.length < 32) throw new Error('TX_RELAY_TOKEN_NOT_CONFIGURED');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(await relayUrl('/rpc'), {
+    const response = await fetch(await relayUrl(relayBaseUrl, '/rpc'), {
       method: 'POST',
       redirect: 'error',
       headers: {
@@ -246,7 +246,7 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Transaction signature does not match the reserved device signer', 403, 'INVALID_STARK_SIGNATURE');
       }
 
-      const result = await forward('starknet_addDeployAccountTransaction', { deploy_account_transaction: canonical });
+      const result = await forward(config.tx_relay_url, 'starknet_addDeployAccountTransaction', { deploy_account_transaction: canonical });
       if (!result?.transaction_hash) return jsonError('Relay response did not include a deployment transaction hash', 502, 'RELAY_TX_HASH_MISSING');
       const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
       const contractAddress = result.contract_address ? normalizeHex(result.contract_address, 'contract address') : expectedAddress;
@@ -289,7 +289,7 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Transaction signature does not match the reserved device signer', 403, 'INVALID_STARK_SIGNATURE');
       }
 
-      const result = await forward('starknet_addInvokeTransaction', { invoke_transaction: canonical });
+      const result = await forward(config.tx_relay_url, 'starknet_addInvokeTransaction', { invoke_transaction: canonical });
       if (!result?.transaction_hash) return jsonError('Relay response did not include a recovery transaction hash', 502, 'RELAY_TX_HASH_MISSING');
       const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
       await svc.entities.ChainIdentity.update(identity.id, {
