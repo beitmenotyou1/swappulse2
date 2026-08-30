@@ -14,7 +14,7 @@ services:
       - --seed
       - ${SWAPPULSE_DEVNET_SEED:?Set SWAPPULSE_DEVNET_SEED in chain/infra/.env}
       - --chain-id
-      - SWAPPULSE_TESTNET
+      - TESTNET
       - --dump-on
       - transaction
       - --dump-path
