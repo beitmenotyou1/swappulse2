@@ -429,6 +429,7 @@ export default async function(req: Request): Promise<Response> {
         recovery_controller: recoveryController,
         recovery_delay_seconds: Math.floor(parsedDelay),
         rpc_url: rpcUrl,
+        tx_relay_url: txRelayUrl,
         explorer_url: explorerUrl,
         status: effectiveStatus,
         last_verified_at: trustedCoordinatesChanged ? '' : config.lastVerifiedAt,
