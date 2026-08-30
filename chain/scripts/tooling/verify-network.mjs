@@ -40,6 +40,17 @@ if (expectedOwner && owner !== expectedOwner) {
   throw new Error(`IdentityRegistry owner mismatch: expected ${expectedOwner}, got ${owner}`);
 }
 
+const verifier = normalizeHex(manifest.identity_verifier_address, 'manifest identity verifier');
+if (verifier === owner) throw new Error('Identity verifier must be separate from the IdentityRegistry owner');
+const verifierResult = await provider.callContract({
+  contractAddress: registryAddress,
+  entrypoint: 'is_verifier',
+  calldata: [verifier],
+});
+if (BigInt(verifierResult?.[0] || '0x0') !== 1n) {
+  throw new Error(`Identity verifier ${verifier} is not authorised by IdentityRegistry`);
+}
+
 console.log(JSON.stringify({
   ok: true,
   rpc_url: rpcUrl,
@@ -48,5 +59,6 @@ console.log(JSON.stringify({
   identity_registry_class_hash: registryHash,
   account_class_hash: expectedAccountHash,
   identity_registry_owner: owner,
+  identity_verifier_address: verifier,
   verified_at: new Date().toISOString(),
 }, null, 2));
