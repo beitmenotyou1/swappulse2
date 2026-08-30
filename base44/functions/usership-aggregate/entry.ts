@@ -108,7 +108,7 @@ export default async function (req: Request): Promise<Response> {
       });
 
       try {
-        const submitted = await relaySubmitUsership({
+        const submitted = await relaySubmitUsership(config.tx_relay_url, {
           identity_id: normalizeHex(identity.chain_identity_id, 'chain identity id'),
           account: normalizeHex(wallet, 'account address'),
           score,
