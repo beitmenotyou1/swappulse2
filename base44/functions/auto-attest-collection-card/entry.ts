@@ -42,7 +42,10 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // Create a self-attested verification session (level 0, no photos).
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    // Self-attestations are a baseline trust claim that persists as long as the
+    // card is in the collection — they don't expire like AI-verified sessions
+    // (which are short-lived to prevent replay during NFT minting).
+    const expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString();
     const session = await svc.entities.CardVerificationSession.create({
       did: me.did || '',
       collection_entry_id: collectionEntryId,
@@ -61,8 +64,9 @@ export default async function(req: Request): Promise<Response> {
       .catch(() => []);
 
     // Gather all verified card IDs for this user in one pass.
+    // Use created_by_id (not did) to avoid cross-user leakage when did is empty.
     const allSessions = await svc.entities.CardVerificationSession
-      .filter({ did: me.did || '', status: 'verified' }, '-created_date', 500)
+      .filter({ created_by_id: me.id, status: 'verified' }, '-created_date', 500)
       .catch(() => []);
     const verifiedCardIds = new Set<string>();
     for (const s of allSessions) {

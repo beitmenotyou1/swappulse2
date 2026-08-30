@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Camera, Loader2, Wallet } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import WalletDashboard from '@/components/profile/onchain/WalletDashboard';
 import SmartAccountSetup from '@/components/profile/onchain/SmartAccountSetup';
 import CardAttestation from '@/components/profile/onchain/CardAttestation';
 
 export default function OnChainTab({ isOwner, did }) {
+  const { user: me } = useAuth();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [attestations, setAttestations] = useState([]);
@@ -16,7 +18,7 @@ export default function OnChainTab({ isOwner, did }) {
     try {
       const [res, atts] = await Promise.all([
         base44.functions.invoke('chain-identity-user', { action: 'status' }),
-        base44.entities.CardVerificationSession.filter({ did }, '-created_date', 20).catch(() => []),
+        base44.entities.CardVerificationSession.filter({ created_by_id: me?.id }, '-created_date', 20).catch(() => []),
       ]);
       setStatus(res?.data || res || null);
       setAttestations(atts || []);

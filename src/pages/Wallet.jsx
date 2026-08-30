@@ -13,7 +13,6 @@ export default function Wallet() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [attestations, setAttestations] = useState([]);
-  const did = user?.did || '';
 
   useSEO({
     title: 'Wallet & On-Chain Identity',
@@ -26,7 +25,7 @@ export default function Wallet() {
     try {
       const [res, atts] = await Promise.all([
         base44.functions.invoke('chain-identity-user', { action: 'status' }),
-        base44.entities.CardVerificationSession.filter({ did }, '-created_date', 50).catch(() => []),
+        base44.entities.CardVerificationSession.filter({ created_by_id: user?.id }, '-created_date', 50).catch(() => []),
       ]);
       setStatus(res?.data || res || null);
       setAttestations(atts || []);
