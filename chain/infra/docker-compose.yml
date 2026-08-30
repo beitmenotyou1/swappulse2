@@ -16,7 +16,7 @@ services:
       - --chain-id
       - SWAPPULSE_TESTNET
       - --dump-on
-      - block
+      - transaction
       - --dump-path
       - /data/swappulse-testnet.dump
       - --block-generation-on
