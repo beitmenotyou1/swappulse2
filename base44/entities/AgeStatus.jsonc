@@ -33,6 +33,32 @@
       ],
       "default": "SELF_DECLARED"
     },
+    "verifier_status": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "PENDING",
+        "VERIFIED",
+        "EXPIRED",
+        "REVOKED"
+      ],
+      "default": "NONE",
+      "description": "Current private third-party assertion state. This is backend-managed and is checked together with chain reconciliation before value-bearing features are enabled."
+    },
+    "verifier_event_id": {
+      "type": "string",
+      "description": "Opaque latest verifier event identifier used for idempotency. Contains no identity evidence."
+    },
+    "verifier_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiry supplied by the verifier, if any."
+    },
+    "verifier_revoked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time the private verifier assertion was withdrawn or revoked."
+    },
     "policy_version": {
       "type": "string",
       "default": "AGE_POLICY_V1"
