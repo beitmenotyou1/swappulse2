@@ -5,6 +5,12 @@ function jsonError(message: string, status: number, code?: string) {
   return Response.json({ error: message, code: code || undefined }, { status });
 }
 
+function randomSubjectRef(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 function safeStatus(row: any) {
   if (!row) return null;
   const ageBand = String(row.age_band || '') as AgeBand;
@@ -83,11 +89,99 @@ export default async function(req: Request): Promise<Response> {
     const current = rows?.[0] || null;
 
     if (action === 'get') {
+      const sessions = current
+        ? await svc.entities.AgeVerificationSession.filter({ user_id: me.id }, '-created_date', 5).catch(() => [])
+        : [];
+      const latest = sessions?.[0] || null;
       return Response.json({
         ok: true,
         status: safeStatus(current),
         declaration_required: !current,
+        verification_session: latest ? {
+          status: latest.status || 'PENDING',
+          subject_ref: latest.status === 'PENDING' ? (latest.subject_ref || '') : '',
+          chain_sync_status: latest.chain_sync_status || 'PENDING',
+          verified_at: latest.verified_at || '',
+          expires_at: latest.expires_at || '',
+          revoked_at: latest.revoked_at || '',
+        } : null,
         policy: policySummary(),
+      });
+    }
+
+    if (action === 'start_verification') {
+      if (!current || current.age_band !== '18_PLUS') {
+        return jsonError('Declare the 18+ age band before starting private adult verification', 403, 'ADULT_DECLARATION_REQUIRED');
+      }
+
+      const expiryRaw = String(current.verifier_expires_at || '').trim();
+      const expiryMs = expiryRaw ? new Date(expiryRaw).getTime() : 0;
+      if (
+        current.age_method === 'THIRD_PARTY_VERIFIED'
+        && current.verifier_status === 'VERIFIED'
+        && (!expiryRaw || (Number.isFinite(expiryMs) && expiryMs > Date.now()))
+      ) {
+        return jsonError('Your private adult verification is already current', 409, 'VERIFICATION_ALREADY_CURRENT');
+      }
+
+      const sessions = await svc.entities.AgeVerificationSession
+        .filter({ user_id: me.id }, '-created_date', 10)
+        .catch(() => []);
+      const pending = (sessions || []).find((row: any) => String(row.status || '') === 'PENDING');
+      const now = new Date().toISOString();
+      if (pending?.subject_ref) {
+        await svc.entities.AgeStatus.update(current.id, {
+          age_method: 'SELF_DECLARED',
+          verification_level: 'SELF_DECLARED',
+          verifier_status: 'PENDING',
+          value_features_eligible: false,
+          proof_of_use_eligible: false,
+          last_checked_at: now,
+        });
+        const refreshed = await svc.entities.AgeStatus.filter({ id: current.id }, '-updated_date', 1).catch(() => []);
+        return Response.json({
+          ok: true,
+          idempotent: true,
+          status: safeStatus(refreshed?.[0] || current),
+          verification_session: { status: 'PENDING', subject_ref: pending.subject_ref },
+          note: 'Use only this opaque subject reference with the private verifier. Do not send DOB or identity evidence to SwapPulse.',
+        });
+      }
+
+      const subjectRef = randomSubjectRef();
+      await svc.entities.AgeVerificationSession.create({
+        user_id: me.id,
+        subject_ref: subjectRef,
+        status: 'PENDING',
+        verifier_event_id: '',
+        created_at: now,
+        verified_at: '',
+        expires_at: '',
+        revoked_at: '',
+        last_event_at: '',
+        chain_sync_status: 'PENDING',
+        chain_tx_hash: '',
+        last_error: '',
+      });
+      await svc.entities.AgeStatus.update(current.id, {
+        age_method: 'SELF_DECLARED',
+        verification_level: 'SELF_DECLARED',
+        verifier_status: 'PENDING',
+        verifier_event_id: '',
+        verifier_expires_at: '',
+        verifier_revoked_at: '',
+        value_features_eligible: false,
+        proof_of_use_eligible: false,
+        last_checked_at: now,
+        revision: Math.max(1, Number(current.revision || 0) + 1),
+      });
+      const refreshed = await svc.entities.AgeStatus.filter({ id: current.id }, '-updated_date', 1).catch(() => []);
+      return Response.json({
+        ok: true,
+        idempotent: false,
+        status: safeStatus(refreshed?.[0] || current),
+        verification_session: { status: 'PENDING', subject_ref: subjectRef },
+        note: 'Use only this opaque subject reference with the private verifier. SwapPulse does not require DOB, document data or raw verification evidence in this flow.',
       });
     }
 
