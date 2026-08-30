@@ -141,6 +141,15 @@ export async function signTestnetHash(userId, messageHash) {
   }
 }
 
+// Device recovery: discard whatever key this browser holds and mint a fresh one.
+// Used when a collector recovers onto a new device (or a browser whose key no
+// longer matches the account), so the new public key can be proposed on chain.
+export async function resetDeviceTestSigner(userId) {
+  if (!userId) throw new Error('Sign in before resetting the device signer.');
+  await deleteDeviceTestSigner(userId);
+  return createDeviceTestSigner(userId);
+}
+
 export async function deleteDeviceTestSigner(userId) {
   if (!userId) return;
   await withStore('readwrite', (store) => store.delete(String(userId)));

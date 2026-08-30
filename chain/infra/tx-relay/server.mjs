@@ -20,6 +20,10 @@ const bridgeAdapterAddress = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_ADD
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
 const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 5_000_000_000_000_000);
+// Fixed testnet faucet drip. The AMOUNT IS NOT CLIENT-SELECTABLE: the relay always
+// transfers exactly this much, so neither Base44 nor a compromised caller can drain
+// the faucet treasury with an inflated request.
+const faucetDripAmount = BigInt(process.env.FAUCET_DRIP_AMOUNT || '1000000000000000000000');
 const maxBodyBytes = 128 * 1024;
 const maxUpstreamBytes = 2 * 1024 * 1024;
 const timeoutMs = 10_000;
@@ -31,6 +35,9 @@ if (!Number.isInteger(recoveryDelaySeconds) || recoveryDelaySeconds < 0 || recov
 }
 if (!Number.isSafeInteger(deployMintAmount) || deployMintAmount <= 0) {
   throw new Error('DEPLOY_MINT_AMOUNT must be a positive safe integer');
+}
+if (faucetDripAmount <= 0n || faucetDripAmount > (1n << 100n)) {
+  throw new Error('FAUCET_DRIP_AMOUNT must be a positive amount within the supported range');
 }
 
 if (registryAdminAddress !== identityRegistryOwner) {
@@ -294,6 +301,76 @@ async function submitUsership(body) {
   return { transaction_hash: normalizeHex(executed.transaction_hash, 'usership transaction hash') };
 }
 
+// Owner-signed testnet faucet drip. Only the recipient is caller-supplied, and it
+// must be a deployed account of the approved SwapPulse class — so the faucet can
+// only ever fund real collector smart accounts, never an arbitrary address. The
+// per-collector 24h cooldown is enforced by Base44 before this is called.
+async function faucetDrip(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('FAUCET_BODY_REQUIRED');
+  if (nativeTokenAddress === '0x0') throw new Error('NATIVE_TOKEN_NOT_CONFIGURED');
+
+  const to = normalizeHex(body.to, 'to');
+  const recipientClass = await rpc('starknet_getClassHashAt', ['latest', to]);
+  if (recipientClass?.error || normalizeHex(recipientClass?.result, 'recipient class hash') !== accountClassHash) {
+    throw new Error('FAUCET_RECIPIENT_CLASS_MISMATCH');
+  }
+
+  const executed = await registryAdmin.execute({
+    contractAddress: nativeTokenAddress,
+    entrypoint: 'transfer',
+    calldata: [to, `0x${faucetDripAmount.toString(16)}`, '0x0'],
+  });
+  await provider.waitForTransaction(executed.transaction_hash);
+  return {
+    transaction_hash: normalizeHex(executed.transaction_hash, 'faucet transaction hash'),
+    amount: faucetDripAmount.toString(),
+  };
+}
+
+// Recovery-controller actions. The account contract only accepts propose/execute
+// from its configured recovery controller, so the relay can act here only while it
+// IS that controller — otherwise this fails closed. The on-chain delay is what
+// protects the collector: proposing does not rotate the key, and execute_recovery
+// reverts until the delay has elapsed.
+async function recoveryAction(body, kind) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('RECOVERY_BODY_REQUIRED');
+  if (recoveryController === '0x0') throw new Error('RECOVERY_CONTROLLER_NOT_CONFIGURED');
+  if (recoveryController !== registryAdminAddress) throw new Error('RELAY_IS_NOT_RECOVERY_CONTROLLER');
+
+  const account = normalizeHex(body.account_address, 'account_address');
+  const accountClass = await rpc('starknet_getClassHashAt', ['latest', account]);
+  if (accountClass?.error || normalizeHex(accountClass?.result, 'account class hash') !== accountClassHash) {
+    throw new Error('RECOVERY_ACCOUNT_CLASS_MISMATCH');
+  }
+
+  const controllerValues = await starknetCall(account, 'get_recovery_controller', []);
+  if (normalizeZeroableHex(controllerValues?.[0] || '0x0', 'account recovery controller') !== recoveryController) {
+    throw new Error('RECOVERY_CONTROLLER_MISMATCH');
+  }
+
+  const call = kind === 'propose'
+    ? {
+      contractAddress: account,
+      entrypoint: 'propose_recovery',
+      calldata: [normalizeHex(body.new_public_key, 'new_public_key')],
+    }
+    : { contractAddress: account, entrypoint: kind === 'execute' ? 'execute_recovery' : 'cancel_recovery', calldata: [] };
+
+  const executed = await registryAdmin.execute(call);
+  await provider.waitForTransaction(executed.transaction_hash);
+
+  const [pending, nonce] = await Promise.all([
+    starknetCall(account, 'get_pending_recovery', []),
+    starknetCall(account, 'get_recovery_nonce', []),
+  ]);
+  return {
+    transaction_hash: normalizeHex(executed.transaction_hash, 'recovery transaction hash'),
+    pending_public_key: normalizeZeroableHex(pending?.[0] || '0x0', 'pending public key'),
+    execute_after: Number(BigInt(pending?.[1] || '0x0')),
+    recovery_nonce: Number(BigInt(nonce?.[0] || '0x0')),
+  };
+}
+
 // Cairo ByteArray serialisation: [pending_word_count, ...full_words,
 // pending_word, pending_word_len]. Metadata URIs are short ASCII, so a single
 // pending word (< 31 bytes) is uncommon — full 31-byte words are emitted first.
@@ -510,7 +587,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 503, { ok: false, error: 'Provisioning relay is not ready', code });
     }
   }
-  if (req.method !== 'POST' || !['/rpc', '/register', '/mint-card', '/submit-usership'].includes(req.url || '')) {
+  if (req.method !== 'POST' || !['/rpc', '/register', '/mint-card', '/submit-usership', '/faucet-drip', '/recovery-propose', '/recovery-execute', '/recovery-cancel'].includes(req.url || '')) {
     return json(res, 404, { error: 'Not found' });
   }
   if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
@@ -537,6 +614,19 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/mint-card') {
       const result = await mintCard(payload);
       console.log(`mint_card accepted ${ip} ${result.attestation_hash}`);
+      return json(res, 200, { ok: true, ...result });
+    }
+
+    if (req.url === '/recovery-propose' || req.url === '/recovery-execute' || req.url === '/recovery-cancel') {
+      const kind = req.url === '/recovery-propose' ? 'propose' : req.url === '/recovery-execute' ? 'execute' : 'cancel';
+      const result = await recoveryAction(payload, kind);
+      console.log(`recovery_${kind} accepted ${ip} ${result.transaction_hash}`);
+      return json(res, 200, { ok: true, ...result });
+    }
+
+    if (req.url === '/faucet-drip') {
+      const result = await faucetDrip(payload);
+      console.log(`faucet_drip accepted ${ip} ${result.transaction_hash}`);
       return json(res, 200, { ok: true, ...result });
     }
 

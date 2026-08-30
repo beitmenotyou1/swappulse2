@@ -7,6 +7,7 @@ import WalletDashboard from '@/components/profile/onchain/WalletDashboard';
 import SmartAccountSetup from '@/components/profile/onchain/SmartAccountSetup';
 import CardAttestation from '@/components/profile/onchain/CardAttestation';
 import MintedCardsPanel from '@/components/chain/MintedCardsPanel';
+import FaucetCard from '@/components/chain/FaucetCard';
 import StakingPanel from '@/components/chain/StakingPanel';
 import BridgePanel from '@/components/chain/BridgePanel';
 import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
@@ -85,6 +86,10 @@ export default function Wallet() {
             <WalletDashboard status={status} onReload={load} />
           </div>
           <div>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.faucet')}</h2>
+            <FaucetCard />
+          </div>
+          <div>
             <div className="mb-3 flex items-center gap-2">
               <Camera className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.attestations')}</h2>
@@ -113,6 +118,10 @@ export default function Wallet() {
           <SmartAccountSetup status={status} onReload={load} />
         </div>
       )}
+
+      <Link to="/recover" className="mt-6 block text-center text-xs text-muted-foreground underline hover:text-foreground">
+        {t('wallet.recoverLink')}
+      </Link>
 
       <GuideFooterLink slug="wallet" />
     </div>

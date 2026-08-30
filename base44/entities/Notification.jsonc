@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "title": "Notification",
-  "description": "org.swappulse.notification — backend-derived platform activity addressed to a user by DID. Browser clients may read their own notifications but cannot create, rewrite or delete notification records; read receipts are applied by the authenticated mark-notifications-read backend function.",
+  "description": "org.swappulse.notification \u2014 backend-derived platform activity addressed to a user by DID. Browser clients may read their own notifications but cannot create, rewrite or delete notification records; read receipts are applied by the authenticated mark-notifications-read backend function.",
   "properties": {
     "did": {
       "type": "string",
@@ -29,7 +29,14 @@
         "wallet_topup",
         "escrow_held",
         "escrow_released",
-        "low_balance"
+        "low_balance",
+        "chain_mint",
+        "chain_stake",
+        "chain_unlock",
+        "chain_bridge",
+        "chain_rewards",
+        "chain_usership",
+        "chain_recovery"
       ],
       "default": "reaction"
     },
@@ -59,7 +66,8 @@
         "listing",
         "space",
         "podcast",
-        "wallet"
+        "wallet",
+        "chain"
       ]
     },
     "target_path": {
@@ -92,7 +100,7 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath }, interaction { postId, postUri, postCid, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType }, starter_pack { kind: request|accepted|denied, packId, requestId, packName }, wallet_topup { amountCents, currency, topupId }, escrow_held { escrowId, tradeType, amountUsdc, cardNames }, escrow_released { escrowId, tradeType, amountUsdc, cardNames }, low_balance { thresholdCents, currentCents, currency })"
+      "description": "Structured payload for rich notification cards (e.g. achievement { kind, achievementId, achievementName, tier, reason, restorationPath }, interaction { postId, postUri, postCid, origin, commentText, commentId, commentUri, commentCid, quoteText, reactionType }, starter_pack { kind: request|accepted|denied, packId, requestId, packName }, wallet_topup { amountCents, currency, topupId }, escrow_held { escrowId, tradeType, amountUsdc, cardNames }, escrow_released { escrowId, tradeType, amountUsdc, cardNames }, low_balance { thresholdCents, currentCents, currency }, chain_* { recordId, txHash, amount, tokenId, cardName, validatorAddress, epoch, score })"
     },
     "at_uri": {
       "type": "string",

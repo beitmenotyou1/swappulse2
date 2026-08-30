@@ -42,6 +42,15 @@ export const ROUTE_MAP: Record<string, (params: Record<string, unknown>) => stri
   escrow_held: (p) => (p.tradeId ? `/trade/${p.tradeId}` : '/wallet'),
   escrow_released: (p) => (p.tradeId ? `/trade/${p.tradeId}` : '/wallet'),
   low_balance: (p) => '/wallet',
+  // Appchain state transitions all land on the collector's wallet, except the
+  // usership score which belongs to their public profile.
+  chain_mint: (p) => '/wallet',
+  chain_stake: (p) => '/wallet',
+  chain_unlock: (p) => '/wallet',
+  chain_bridge: (p) => '/wallet',
+  chain_rewards: (p) => '/wallet',
+  chain_recovery: (p) => '/wallet',
+  chain_usership: (p) => (p.did ? `/profile/${p.did}` : '/wallet'),
 };
 
 export function buildDeepLink(type: string, params: Record<string, unknown>): string {

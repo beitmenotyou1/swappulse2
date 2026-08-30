@@ -1,0 +1,84 @@
+{
+  "name": "FaucetClaim",
+  "type": "object",
+  "title": "FaucetClaim",
+  "description": "org.swappulse.faucetClaim \u2014 a testnet SWPX drip issued to a collector's smart account by the faucet. One record per claim attempt. The 24h per-identity cooldown is enforced server-side by reading the most recent claim for the account, so a client cannot bypass it. Contains only public chain data.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the claiming collector (metadata only; access is controlled by created_by_id)"
+    },
+    "network": {
+      "type": "string",
+      "default": "SWAPPULSE_TESTNET"
+    },
+    "account_address": {
+      "type": "string",
+      "description": "Smart account address the drip was sent to"
+    },
+    "chain_identity_id": {
+      "type": "string",
+      "description": "On-chain identity id the claim is attributed to"
+    },
+    "amount": {
+      "type": "string",
+      "default": "0",
+      "description": "Amount dripped in base units (decimal string to avoid precision loss)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "SUBMITTED",
+        "CONFIRMED",
+        "FAILED"
+      ],
+      "default": "SUBMITTED"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Faucet transfer transaction hash on the appchain"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "did",
+    "account_address",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

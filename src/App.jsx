@@ -65,6 +65,7 @@ const SpaceRoom = lazy(() => import('@/pages/SpaceRoom'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
+const Recover = lazy(() => import('@/pages/Recover'));
 const Help = lazy(() => import('@/pages/Help'));
 const Status = lazy(() => import('@/pages/Status'));
 const IncidentDetail = lazy(() => import('@/pages/IncidentDetail'));
@@ -344,6 +345,7 @@ const AuthenticatedApp = () => {
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/recover" element={<Recover />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderation" element={<Moderation />} />
           <Route path="/moderation-agent" element={<ModerationAgent />} />

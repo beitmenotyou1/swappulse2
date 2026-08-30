@@ -163,6 +163,18 @@ export async function relaySubmitUsership(payload: Record<string, unknown>) {
   return relayPost('/submit-usership', payload);
 }
 
+// Recovery-controller actions. The relay signs as the account's configured
+// recovery controller; the on-chain delay still gates execution.
+export async function relayRecoveryAction(kind: 'propose' | 'execute' | 'cancel', payload: Record<string, unknown>) {
+  return relayPost(`/recovery-${kind}`, payload);
+}
+
+// The relay owns the faucet treasury and always sends its own fixed drip amount,
+// so this call carries only the recipient — never an amount.
+export async function relayFaucetDrip(payload: Record<string, unknown>) {
+  return relayPost('/faucet-drip', payload);
+}
+
 // Read-only chain access uses the PUBLIC verified rpc_url, never the relay —
 // reads must never consume the relay's privileged path.
 export async function publicRpc(rpcUrl: string, method: string, params: unknown) {
@@ -185,6 +197,33 @@ export async function publicRpc(rpcUrl: string, method: string, params: unknown)
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Read-only contract call over the PUBLIC rpc. Returns the raw felt array.
+export async function readContract(
+  rpcUrl: string,
+  contractAddress: string,
+  entrypoint: string,
+  calldata: string[] = [],
+): Promise<string[]> {
+  const result = await publicRpc(rpcUrl, 'starknet_call', [
+    {
+      contract_address: normalizeHex(contractAddress, 'contract address'),
+      entry_point_selector: selectorFor(entrypoint),
+      calldata: calldata.map((value, index) => normalizeZeroableHex(value, `${entrypoint} calldata[${index}]`)),
+    },
+    'latest',
+  ]);
+  if (!Array.isArray(result)) throw new Error(`RPC_CALL_${entrypoint.toUpperCase()}_INVALID`);
+  return result.map((value: unknown, index: number) => normalizeZeroableHex(value, `${entrypoint} result[${index}]`));
+}
+
+// A Cairo u256 comes back as [low, high]; recombine into a decimal string so
+// entities and the UI never carry a lossy number.
+export function u256ToDecimal(values: string[]): string {
+  const low = BigInt(values?.[0] || '0x0');
+  const high = BigInt(values?.[1] || '0x0');
+  return ((high << 128n) + low).toString();
 }
 
 export function daModeName(value: unknown, field: string): 'L1' | 'L2' {

@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "chain_event_reconcile",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "reconcile_chain_events": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "chain-event-reconcile"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Reconcile chain events",
+            "description": "Confirm mints, stakes, unlocks, bridges"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Chain Event Reconcile",
+  "description": "Polls the SwapPulse appchain every 5 minutes, advances in-flight mint/stake/bridge/usership mirror records, and notifies collectors when a transition confirms."
+}
