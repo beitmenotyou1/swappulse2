@@ -466,11 +466,12 @@ async function assertRelayReady() {
   const now = Date.now();
   if (readinessCache && readinessCache.expiresAt > now) return readinessCache.value;
 
-  const [chainResult, accountClassResult, registryClassResult, ownerValues] = await Promise.all([
+  const [chainResult, accountClassResult, registryClassResult, ownerValues, verifierValues] = await Promise.all([
     rpc('starknet_chainId', []),
     rpc('starknet_getClass', ['latest', accountClassHash]),
     rpc('starknet_getClassHashAt', ['latest', identityRegistryAddress]),
     starknetCall(identityRegistryAddress, 'owner', []),
+    starknetCall(identityRegistryAddress, 'is_verifier', [identityVerifierAddress]),
   ]);
   if (chainResult?.error) throw new Error('RELAY_UPSTREAM_CHAIN_ID_UNAVAILABLE');
   if (accountClassResult?.error || !accountClassResult?.result) throw new Error('RELAY_ACCOUNT_CLASS_UNAVAILABLE');
@@ -482,6 +483,7 @@ async function assertRelayReady() {
   if (actualChainId !== expectedChainId) throw new Error('RELAY_CHAIN_ID_MISMATCH');
   if (actualRegistryClass !== identityRegistryClassHash) throw new Error('RELAY_REGISTRY_CLASS_MISMATCH');
   if (actualOwner !== identityRegistryOwner) throw new Error('RELAY_REGISTRY_OWNER_MISMATCH');
+  if (BigInt(verifierValues?.[0] || '0x0') !== 1n) throw new Error('RELAY_IDENTITY_VERIFIER_NOT_AUTHORISED');
 
   const value = {
     ok: true,
@@ -491,6 +493,7 @@ async function assertRelayReady() {
     identity_registry_class_hash: actualRegistryClass,
     identity_registry_address: identityRegistryAddress,
     identity_registry_owner: actualOwner,
+    identity_verifier_address: identityVerifierAddress,
     recovery_controller: recoveryController,
     recovery_delay_seconds: recoveryDelaySeconds,
   };
@@ -515,7 +518,7 @@ function verificationMatches(values, expected) {
   return status === 1
     && normalizeZeroableHex(values[0] || '0x0', 'verification root') === expected.verificationRoot
     && normalizeZeroableHex(values[2] || '0x0', 'verification schema') === expected.schemaHash
-    && normalizeZeroableHex(values[3] || '0x0', 'verification attester') === identityRegistryOwner
+    && normalizeZeroableHex(values[3] || '0x0', 'verification attester') === identityVerifierAddress
     && Number(BigInt(values[5] || '0x0')) === expected.expiresAt;
 }
 
@@ -573,7 +576,7 @@ async function registerIdentity(body) {
       const currentVerification = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
       verificationIdempotent = verificationMatches(currentVerification, verification);
       if (!verificationIdempotent) {
-        const attested = await registryAdmin.execute({
+        const attested = await identityVerifier.execute({
           contractAddress: identityRegistryAddress,
           entrypoint: 'set_verification',
           calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
@@ -612,25 +615,13 @@ async function registerIdentity(body) {
     throw new Error('REGISTRATION_RECOVERY_DELAY_MISMATCH');
   }
 
-  const calls = [
-    {
-      contractAddress: identityRegistryAddress,
-      entrypoint: 'register_identity',
-      calldata: [identityId, accountAddress],
-    },
-  ];
-  if (verification) {
-    calls.push({
-      contractAddress: identityRegistryAddress,
-      entrypoint: 'set_verification',
-      calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
-    });
-  }
-
-  const registered = await registryAdmin.execute(calls.length === 1 ? calls[0] : calls);
+  const registered = await registryAdmin.execute({
+    contractAddress: identityRegistryAddress,
+    entrypoint: 'register_identity',
+    calldata: [identityId, accountAddress],
+  });
   await provider.waitForTransaction(registered.transaction_hash);
   registrationTransactionHash = normalizeHex(registered.transaction_hash, 'registration transaction hash');
-  if (verification) verificationTransactionHash = registrationTransactionHash;
 
   const [finalIdentity, finalReverse] = await Promise.all([
     starknetCall(identityRegistryAddress, 'get_identity', [identityId]),
@@ -643,6 +634,13 @@ async function registerIdentity(body) {
     throw new Error('REGISTRATION_FINAL_REVERSE_MISMATCH');
   }
   if (verification) {
+    const attested = await identityVerifier.execute({
+      contractAddress: identityRegistryAddress,
+      entrypoint: 'set_verification',
+      calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
+    });
+    await provider.waitForTransaction(attested.transaction_hash);
+    verificationTransactionHash = normalizeHex(attested.transaction_hash, 'verification transaction hash');
     verificationIdempotent = false;
     await assertVerification(identityId, verification);
   }
@@ -656,6 +654,57 @@ async function registerIdentity(body) {
     registration_idempotent: false,
     verification_idempotent: verificationIdempotent,
     idempotent: false,
+  };
+}
+
+async function syncVerification(body, mode) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('VERIFICATION_SYNC_BODY_REQUIRED');
+  const identityId = normalizeHex(body.identity_id, 'identity_id');
+  const identityValues = await starknetCall(identityRegistryAddress, 'get_identity', [identityId]);
+  if (Number(BigInt(identityValues?.[1] || '0x0')) !== 1) throw new Error('VERIFICATION_IDENTITY_NOT_ACTIVE');
+
+  const current = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
+  const currentStatus = Number(BigInt(current?.[1] || '0x0'));
+
+  if (mode === 'revoke') {
+    if (currentStatus === 0 || currentStatus === 2) {
+      return { identity_id: identityId, transaction_hash: '', idempotent: true, status: currentStatus === 2 ? 'REVOKED' : 'NONE' };
+    }
+    if (currentStatus !== 1) throw new Error('VERIFICATION_STATUS_INVALID');
+    const revoked = await identityVerifier.execute({
+      contractAddress: identityRegistryAddress,
+      entrypoint: 'revoke_verification',
+      calldata: [identityId],
+    });
+    await provider.waitForTransaction(revoked.transaction_hash);
+    const finalState = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
+    if (Number(BigInt(finalState?.[1] || '0x0')) !== 2) throw new Error('VERIFICATION_REVOKE_FINAL_STATE_MISMATCH');
+    return {
+      identity_id: identityId,
+      transaction_hash: normalizeHex(revoked.transaction_hash, 'verification revoke transaction hash'),
+      idempotent: false,
+      status: 'REVOKED',
+    };
+  }
+
+  const verification = parsePrivateVerification(body);
+  if (!verification) throw new Error('VERIFICATION_BODY_REQUIRED');
+  if (verificationMatches(current, verification)) {
+    return { identity_id: identityId, transaction_hash: '', idempotent: true, status: 'ACTIVE' };
+  }
+
+  const attested = await identityVerifier.execute({
+    contractAddress: identityRegistryAddress,
+    entrypoint: 'set_verification',
+    calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
+  });
+  await provider.waitForTransaction(attested.transaction_hash);
+  await assertVerification(identityId, verification);
+  return {
+    identity_id: identityId,
+    transaction_hash: normalizeHex(attested.transaction_hash, 'verification transaction hash'),
+    idempotent: false,
+    status: 'ACTIVE',
   };
 }
 
@@ -675,7 +724,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 503, { ok: false, error: 'Provisioning relay is not ready', code });
     }
   }
-  if (req.method !== 'POST' || !['/rpc', '/register', '/mint-card', '/submit-usership', '/faucet-drip', '/recovery-propose', '/recovery-execute', '/recovery-cancel'].includes(req.url || '')) {
+  if (req.method !== 'POST' || !['/rpc', '/register', '/verification-attest', '/verification-revoke', '/mint-card', '/submit-usership', '/faucet-drip', '/recovery-propose', '/recovery-execute', '/recovery-cancel'].includes(req.url || '')) {
     return json(res, 404, { error: 'Not found' });
   }
   if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
@@ -697,6 +746,13 @@ const server = http.createServer(async (req, res) => {
       } finally {
         registrationBusy = false;
       }
+    }
+
+    if (req.url === '/verification-attest' || req.url === '/verification-revoke') {
+      const mode = req.url === '/verification-revoke' ? 'revoke' : 'attest';
+      const result = await syncVerification(payload, mode);
+      console.log(`verification_${mode} accepted ${ip} ${result.identity_id} idempotent=${result.idempotent}`);
+      return json(res, 200, { ok: true, ...result });
     }
 
     if (req.url === '/mint-card') {
