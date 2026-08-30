@@ -1,0 +1,45 @@
+{
+  "description": "Aggregates verified collector activity from the points ledger into per-epoch Proof-of-Usership scores and submits them on chain, where they scale each collector's own staked security weight.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "proof_of_usership_aggregation",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "aggregate_usership": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "usership-aggregate",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Aggregate usership scores",
+            "description": "Score activity and submit on chain"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Proof of Usership Aggregation",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

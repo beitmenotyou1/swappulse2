@@ -1,0 +1,184 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Coins, Loader2, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
+import useChainAction from '@/hooks/useChainAction';
+
+// Staking is presented as "help secure the network", not as a trading product.
+// Raw amounts stay in base units server-side; collectors enter whole tokens.
+const DECIMALS = 18n;
+
+function toBaseUnits(input) {
+  const raw = String(input || '').trim();
+  if (!/^\d+(\.\d{1,18})?$/.test(raw)) return null;
+  const [whole, fraction = ''] = raw.split('.');
+  const padded = (fraction + '0'.repeat(18)).slice(0, 18);
+  const value = BigInt(whole) * 10n ** DECIMALS + BigInt(padded || '0');
+  return value > 0n ? value.toString() : null;
+}
+
+function toDisplay(baseUnits) {
+  try {
+    const value = BigInt(String(baseUnits || '0'));
+    const whole = value / 10n ** DECIMALS;
+    const fraction = (value % 10n ** DECIMALS).toString().padStart(18, '0').replace(/0+$/, '');
+    return fraction ? `${whole}.${fraction.slice(0, 4)}` : String(whole);
+  } catch {
+    return '0';
+  }
+}
+
+export default function StakingPanel({ identitySecured }) {
+  const { user } = useAuth();
+  const [positions, setPositions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState('');
+  const [mode, setMode] = useState('delegate');
+  const [validator, setValidator] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const rows = await base44.entities.StakePosition.filter({ network: 'SWAPPULSE_TESTNET' }, '-created_date', 25);
+      setPositions((rows || []).filter((row) => row.status !== 'DRAFTED'));
+    } catch {
+      setPositions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const { busy, step, run } = useChainAction({ userId: user?.id, onDone: load });
+
+  const submit = async () => {
+    const base = toBaseUnits(amount);
+    if (!base) return;
+    const params = mode === 'validator'
+      ? { kind: 'register_validator', amount: base, commission_bps: 500 }
+      : { kind: 'delegate', amount: base, validator_address: validator.trim() };
+
+    const ok = await run('stake', params, {
+      preparing: 'Preparing your stake…',
+      signing: 'Confirming on this device…',
+      submitting: 'Adding your stake to the network…',
+      success: mode === 'validator' ? 'Validator stake submitted' : 'Delegation submitted',
+      successDescription: 'Your stake helps secure the SwapPulse network.',
+      failure: 'Stake not completed',
+    });
+    if (ok) {
+      setAmount('');
+      setValidator('');
+    }
+  };
+
+  const canSubmit = !busy
+    && Boolean(toBaseUnits(amount))
+    && (mode === 'validator' || validator.trim().length > 3);
+
+  if (!identitySecured) {
+    return (
+      <div className="rounded-xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
+        <p className="text-sm font-bold text-foreground">Network staking</p>
+        <p className="mt-1">Secure your on-chain identity first to help secure the SwapPulse network.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+          <ShieldCheck className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Help secure the network</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Stake to run a validator, or back one you trust. Your collecting activity increases the weight of the stake you already hold — it never replaces it.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setMode('delegate')}
+          className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold ${mode === 'delegate' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground'}`}
+        >
+          Back a validator
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('validator')}
+          className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold ${mode === 'validator' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground'}`}
+        >
+          Run a validator
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {mode === 'delegate' && (
+          <div>
+            <label htmlFor="swappulse-validator" className="text-xs font-semibold">Validator address</label>
+            <input
+              id="swappulse-validator"
+              value={validator}
+              onChange={(e) => setValidator(e.target.value)}
+              placeholder="0x…"
+              spellCheck={false}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-primary"
+            />
+          </div>
+        )}
+        <div>
+          <label htmlFor="swappulse-stake-amount" className="text-xs font-semibold">Amount</label>
+          <input
+            id="swappulse-stake-amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            inputMode="decimal"
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={submit}
+        disabled={!canSubmit}
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
+        {busy ? 'Working…' : mode === 'validator' ? 'Stake and run a validator' : 'Stake to this validator'}
+      </button>
+      {busy && step && (
+        <p className="mt-2 text-center text-xs font-medium text-primary" role="status" aria-live="polite">{step}</p>
+      )}
+
+      <div className="mt-4 border-t border-border pt-3">
+        <p className="text-xs font-bold">Your stake</p>
+        {loading ? (
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+          </div>
+        ) : positions.length === 0 ? (
+          <p className="mt-1 text-xs text-muted-foreground">You have no stake yet.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {positions.map((position) => (
+              <li key={position.id} className="flex items-center justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-xs">
+                <span className="min-w-0">
+                  <span className="font-semibold capitalize">{position.role}</span>
+                  <span className="ml-2 text-muted-foreground">{position.status.toLowerCase()}</span>
+                </span>
+                <span className="font-mono font-semibold">{toDisplay(position.staked_amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

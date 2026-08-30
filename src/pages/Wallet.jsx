@@ -6,6 +6,10 @@ import { useAuth } from '@/lib/AuthContext';
 import WalletDashboard from '@/components/profile/onchain/WalletDashboard';
 import SmartAccountSetup from '@/components/profile/onchain/SmartAccountSetup';
 import CardAttestation from '@/components/profile/onchain/CardAttestation';
+import MintedCardsPanel from '@/components/chain/MintedCardsPanel';
+import StakingPanel from '@/components/chain/StakingPanel';
+import BridgePanel from '@/components/chain/BridgePanel';
+import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
 import useSEO from '@/hooks/useSEO';
 
 export default function Wallet() {
