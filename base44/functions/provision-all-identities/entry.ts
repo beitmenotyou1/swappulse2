@@ -5,11 +5,16 @@
 // Three paths per user:
 //   1. Already fully provisioned (PdsCredential on current PDS) → skip.
 //   2. Has a did:plc that resolves on the current PDS but no credential →
-//      repair (re-issue an app password without recreating the account).
+//      repair. The PDS admin write endpoints reject our auth, so repair means
+//      creating a fresh account and repointing the user at it. Safe only
+//      because no credential was ever stored, so nothing was ever bridged to
+//      the abandoned account.
 //   3. No did:plc on the current PDS (simulated DID, or DID on another PDS) →
 //      provision a new account on the current PDS.
 //
-// Idempotent. Processes up to 50 per run to stay within function time limits.
+// Idempotent. Scans all users, then processes a small batch of those actually
+// needing work per run to stay within function time limits (each user costs
+// several PDS round-trips).
 // Returns { provisioned, repaired, skipped, failed, errors }. Re-run until
 // failed=0 and provisioned+repaired stop increasing.
 
@@ -30,18 +35,18 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
     }
 
-    const LIMIT = 50;
-    const users = await svc.entities.User.list('-created_date', LIMIT);
+    // Scan the whole roster, not just the newest page — otherwise a permanent
+    // failure among recent signups would starve older users forever.
+    const BATCH = 10;
+    const allUsers = await svc.entities.User.list('-created_date', 500).catch(() => []);
 
     // Path 1: users with a consolidated PDS identity (pds_app_password set)
-    // on the current PDS are fully done.
-    const allUsers = await svc.entities.User.list('-created_date', 500).catch(() => []);
+    // on the current PDS are fully done and never re-touched.
+    const isDone = (u: any) => Boolean(u.pds_app_password) && (!u.pds_url || u.pds_url === currentPdsUrl);
+    const alreadyDone = (allUsers || []).filter(isDone).length;
+    const pending = (allUsers || []).filter((u: any) => !isDone(u));
+    const users = pending.slice(0, BATCH);
     const credByUser = new Map<string, any>();
-    for (const u of (allUsers || [])) {
-      if (u.pds_app_password && (!u.pds_url || u.pds_url === currentPdsUrl)) {
-        credByUser.set(u.id, { did: u.did, pds_url: u.pds_url || currentPdsUrl });
-      }
-    }
 
     let provisioned = 0, repaired = 0, skipped = 0, failed = 0;
     const errors: Array<{ id: string; error: string }> = [];
@@ -111,9 +116,10 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({
       provisioned,
       repaired,
-      skipped,
+      skipped: alreadyDone,
       failed,
       total: users.length,
+      remaining: Math.max(0, pending.length - users.length),
       errors: errors.slice(0, 20),
     });
   } catch (error) {
