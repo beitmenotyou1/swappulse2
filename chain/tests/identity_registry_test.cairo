@@ -19,6 +19,18 @@ fn deploy_registry(owner: ContractAddress) -> (ContractAddress, IIdentityRegistr
     (contract_address, dispatcher)
 }
 
+fn authorise_verifier(
+    registry_address: ContractAddress,
+    registry: IIdentityRegistryDispatcher,
+    owner: ContractAddress,
+    verifier: ContractAddress,
+) {
+    start_cheat_caller_address(registry_address, owner);
+    registry.set_verifier(verifier, true);
+    stop_cheat_caller_address(registry_address);
+    assert(registry.is_verifier(verifier), 'verifier not authorised');
+}
+
 #[test]
 fn register_identity_and_reverse_lookup() {
     let owner = addr(0x111);
@@ -252,12 +264,16 @@ fn chained_merges_resolve_to_final_active_identity() {
 #[test]
 fn verification_commitment_lifecycle_is_queryable() {
     let owner = addr(0x111);
+    let verifier = addr(0x777);
     let identity_id = 0xabc;
     let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
 
     start_cheat_block_timestamp(registry_address, 5_000_u64);
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(identity_id, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+    start_cheat_caller_address(registry_address, verifier);
     registry.set_verification(identity_id, 0x12345, 0x534348454d41, 9_000_u64);
     stop_cheat_caller_address(registry_address);
 
@@ -265,7 +281,7 @@ fn verification_commitment_lifecycle_is_queryable() {
     assert(verification.verification_root == 0x12345, 'verification root');
     assert(verification.status == 1_u8, 'verification status');
     assert(verification.schema_hash == 0x534348454d41, 'schema hash');
-    assert(verification.attested_by == owner, 'attester mismatch');
+    assert(verification.attested_by == verifier, 'attester mismatch');
     assert(verification.verified_at == 5_000_u64, 'verified_at mismatch');
     assert(verification.expires_at == 9_000_u64, 'expires_at mismatch');
     assert(verification.revoked_at == 0_u64, 'unexpected revoked_at');
@@ -278,12 +294,16 @@ fn verification_commitment_lifecycle_is_queryable() {
 #[test]
 fn revoked_verification_is_not_valid() {
     let owner = addr(0x111);
+    let verifier = addr(0x777);
     let identity_id = 0xabc;
     let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
 
     start_cheat_block_timestamp(registry_address, 7_000_u64);
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(identity_id, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+    start_cheat_caller_address(registry_address, verifier);
     registry.set_verification(identity_id, 0x12345, 0x999, 0_u64);
 
     start_cheat_block_timestamp(registry_address, 7_100_u64);
@@ -301,12 +321,16 @@ fn revoked_verification_is_not_valid() {
 #[test]
 fn expired_verification_is_not_valid() {
     let owner = addr(0x111);
+    let verifier = addr(0x777);
     let identity_id = 0xabc;
     let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
 
     start_cheat_block_timestamp(registry_address, 5_000_u64);
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(identity_id, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+    start_cheat_caller_address(registry_address, verifier);
     registry.set_verification(identity_id, 0x12345, 0x999, 5_100_u64);
     stop_cheat_caller_address(registry_address);
     assert(registry.is_verified(identity_id), 'verification starts invalid');
@@ -320,15 +344,19 @@ fn expired_verification_is_not_valid() {
 #[test]
 fn merged_identity_uses_canonical_verification_state() {
     let owner = addr(0x111);
+    let verifier = addr(0x777);
     let source_id = 0xaaa;
     let target_id = 0xbbb;
     let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
 
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(source_id, addr(0x222));
     registry.register_identity(target_id, addr(0x333));
-    registry.set_verification(target_id, 0x98765, 0x999, 0_u64);
     registry.merge_identity(source_id, target_id);
+    stop_cheat_caller_address(registry_address);
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification(target_id, 0x98765, 0x999, 0_u64);
     stop_cheat_caller_address(registry_address);
 
     assert(registry.is_verified(source_id), 'source not canonical verified');
@@ -348,10 +376,14 @@ fn merged_identity_uses_canonical_verification_state() {
 #[should_panic(expected: 'INVALID_VERIFY_ROOT')]
 fn verification_rejects_zero_commitment() {
     let owner = addr(0x111);
+    let verifier = addr(0x777);
     let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
 
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(0xabc, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+    start_cheat_caller_address(registry_address, verifier);
     registry.set_verification(0xabc, 0, 0x999, 0_u64);
 }
 
