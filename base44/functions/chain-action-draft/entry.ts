@@ -11,6 +11,7 @@ import {
   normalizeHex,
   publicRpc,
   recipientCommitment,
+  valueFeatureEligible,
 } from '../../shared/chainRelay.ts';
 import { issueChainDraftToken, signingHashForTransaction, type ChainDraftAction } from '../../shared/chainTxDraft.ts';
 import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
@@ -65,6 +66,13 @@ export default async function (req: Request): Promise<Response> {
 
     const accountAddress = normalizeHex(identity.account_address, 'account address');
     const accountClassHash = normalizeHex(config.account_class_hash, 'configured account class hash');
+    if ((action === 'stake' || action === 'bridge_out') && !(await valueFeatureEligible(svc, me.id, identity, config))) {
+      return jsonError(
+        'A current private verifier assertion and ACTIVE on-chain attestation are required for value-bearing features',
+        403,
+        'VERIFIED_ELIGIBILITY_REQUIRED',
+      );
+    }
 
     let calls: Array<{ contractAddress: string; entrypoint: string; calldata: string[] }> = [];
     let recordId = '';
