@@ -57,7 +57,7 @@ export async function spawnDevnet() {
     '--host', '127.0.0.1',
     '--port', String(port),
     '--seed', '0',
-    '--chain-id', 'SWAPPULSE_TESTNET',
+    '--chain-id', 'TESTNET',
   ], {
     stdio: ['ignore', 'ignore', 'ignore'],
   });
