@@ -236,12 +236,14 @@ async function assertRelayReady() {
   const now = Date.now();
   if (readinessCache && readinessCache.expiresAt > now) return readinessCache.value;
 
-  const [chainResult, registryClassResult, ownerValues] = await Promise.all([
+  const [chainResult, accountClassResult, registryClassResult, ownerValues] = await Promise.all([
     rpc('starknet_chainId', []),
+    rpc('starknet_getClass', ['latest', accountClassHash]),
     rpc('starknet_getClassHashAt', ['latest', identityRegistryAddress]),
     starknetCall(identityRegistryAddress, 'owner', []),
   ]);
   if (chainResult?.error) throw new Error('RELAY_UPSTREAM_CHAIN_ID_UNAVAILABLE');
+  if (accountClassResult?.error || !accountClassResult?.result) throw new Error('RELAY_ACCOUNT_CLASS_UNAVAILABLE');
   if (registryClassResult?.error) throw new Error('RELAY_REGISTRY_CLASS_UNAVAILABLE');
 
   const actualChainId = normalizeHex(chainResult?.result, 'upstream chain id');
