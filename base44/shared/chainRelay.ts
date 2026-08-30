@@ -98,18 +98,42 @@ export async function ageEligible(svc: any, userId: string): Promise<boolean> {
   return deriveAgeEligibility(band, method).testnet_identity_eligible;
 }
 
+// Value-bearing chain actions intentionally require BOTH sides of the trust
+// boundary. Base44 must still hold a current strong private assertion, and the
+// chain mirror must have reconciled an ACTIVE attestation from the pinned
+// verifier. Either side becoming stale or revoked fails closed.
+export async function valueFeatureEligible(
+  svc: any,
+  userId: string,
+  identity: any,
+  config: any,
+): Promise<boolean> {
+  const rows = await svc.entities.AgeStatus.filter({ user_id: userId }, '-updated_date', 5).catch(() => []);
+  const row = rows?.[0];
+  if (!row || !isAgeBand(row.age_band)) return false;
+  const band = row.age_band as AgeBand;
+  const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
+  if (!deriveAgeEligibility(band, method).value_features_eligible) return false;
+  if (String(row.verifier_status || 'VERIFIED') !== 'VERIFIED') return false;
+  if (String(identity?.verification_status || '') !== 'ACTIVE') return false;
+  const expectedVerifier = normalizeHex(config?.identity_verifier_address, 'configured identity verifier');
+  const actualAttester = normalizeHex(identity?.verification_attested_by, 'identity verification attester');
+  return actualAttester === expectedVerifier;
+}
+
 // A configuration row is trusted only when every verified_* pin still matches
 // the configured value byte-for-byte. Anything stale fails closed.
 export async function getVerifiedConfig(svc: any) {
   const rows = await svc.entities.ChainNetworkConfig.filter({ network: NETWORK }, '-updated_date', 1).catch(() => []);
   const row = rows?.[0];
   if (!row || row.status !== 'CONFIGURED') return null;
-  const required = [row.chain_id, row.account_class_hash, row.identity_registry_address, row.identity_registry_owner, row.rpc_url];
+  const required = [row.chain_id, row.account_class_hash, row.identity_registry_address, row.identity_registry_owner, row.identity_verifier_address, row.rpc_url];
   if (required.some((v) => !String(v || '').trim())) return null;
   if (
     String(row.verified_chain_id || '').trim() !== String(row.chain_id || '').trim()
     || String(row.verified_identity_registry_class_hash || '').trim() !== String(row.identity_registry_class_hash || '').trim()
     || String(row.verified_identity_registry_owner || '').trim() !== String(row.identity_registry_owner || '').trim()
+    || String(row.verified_identity_verifier_address || '').trim() !== String(row.identity_verifier_address || '').trim()
     || String(row.verified_account_class_hash || '').trim() !== String(row.account_class_hash || '').trim()
     || String(row.verified_rpc_url || '').trim() !== String(row.rpc_url || '').trim()
   ) return null;
@@ -161,6 +185,13 @@ export async function relayMintCard(payload: Record<string, unknown>) {
 
 export async function relaySubmitUsership(payload: Record<string, unknown>) {
   return relayPost('/submit-usership', payload);
+}
+
+export async function relayIdentityVerification(
+  mode: 'attest' | 'revoke',
+  payload: Record<string, unknown>,
+) {
+  return relayPost(`/verification-${mode}`, payload);
 }
 
 // Recovery-controller actions. The relay signs as the account's configured
