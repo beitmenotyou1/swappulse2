@@ -6,7 +6,7 @@
   "properties": {
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the collector requesting verification"
+      "description": "AT Protocol DID of the collector requesting verification (metadata only; access is controlled by created_by_id)"
     },
     "collection_entry_id": {
       "type": "string",
@@ -92,7 +92,7 @@
     "expires_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the session expires (1 hour after creation). Expired sessions cannot be used for minting."
+      "description": "When the session expires (1 hour after creation for AI-verified sessions, 10 years for self-attested level-0 sessions). Expired sessions cannot be used for minting."
     }
   },
   "required": [
@@ -108,9 +108,6 @@
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.did": "{{user.data.did}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
@@ -124,9 +121,6 @@
       "$or": [
         {
           "created_by_id": "{{user.id}}"
-        },
-        {
-          "data.did": "{{user.data.did}}"
         },
         {
           "user_condition": {
