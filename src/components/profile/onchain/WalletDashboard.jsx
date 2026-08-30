@@ -11,6 +11,10 @@ function shortHex(v) {
 const STATUS_CONFIG = {
   REGISTERED: { label: 'Secured on chain', bgClass: 'bg-success/10', textClass: 'text-success', Icon: CheckCircle2 },
   RECOVERED: { label: 'Recovered', bgClass: 'bg-success/10', textClass: 'text-success', Icon: ShieldCheck },
+  // MERGED must be present: an unmapped status silently falls through to the
+  // PENDING entry below, which would label a real, registered-then-merged
+  // on-chain identity as a mere "Reservation pending".
+  MERGED: { label: 'Merged into another identity', bgClass: 'bg-primary/10', textClass: 'text-primary', Icon: ShieldCheck },
   DEPLOYED: { label: 'Deployed, pending verification', bgClass: 'bg-primary/10', textClass: 'text-primary', Icon: Clock },
   PENDING: { label: 'Reservation pending', bgClass: 'bg-warning/10', textClass: 'text-warning', Icon: Clock },
   FAILED: { label: 'Setup failed', bgClass: 'bg-destructive/10', textClass: 'text-destructive', Icon: AlertCircle },
