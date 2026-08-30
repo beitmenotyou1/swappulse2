@@ -13,9 +13,10 @@ function safeStatus(row: any) {
     ? String(row.verifier_status)
     : 'NONE';
   const verifierExpiry = String(row.verifier_expires_at || '').trim();
+  const verifierExpiryMs = verifierExpiry ? new Date(verifierExpiry).getTime() : 0;
   const verifierCurrent = ageMethod === 'THIRD_PARTY_VERIFIED'
     && verifierStatus === 'VERIFIED'
-    && (!verifierExpiry || new Date(verifierExpiry).getTime() > Date.now());
+    && (!verifierExpiry || (Number.isFinite(verifierExpiryMs) && verifierExpiryMs > Date.now()));
   const eligibility = isAgeBand(ageBand)
     ? deriveAgeEligibility(ageBand, verifierCurrent ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED')
     : deriveAgeEligibility('13_15', 'SELF_DECLARED');
@@ -31,7 +32,7 @@ function safeStatus(row: any) {
     ...eligibility,
     wallet_eligible_at: row.wallet_eligible_at || '',
     declared_at: row.declared_at || row.created_date || '',
-    verified_at: ageMethod === 'THIRD_PARTY_VERIFIED' ? (row.verified_at || '') : '',
+    verified_at: verifierCurrent ? (row.verified_at || '') : '',
     last_checked_at: row.last_checked_at || '',
     revision: Number(row.revision || 1),
   };
@@ -97,8 +98,8 @@ export default async function(req: Request): Promise<Response> {
       if (!isAgeBand(body.age_band)) {
         return jsonError('age_band must be 13_15, 16_17 or 18_PLUS', 400, 'INVALID_AGE_BAND');
       }
-      if (current?.age_method === 'THIRD_PARTY_VERIFIED') {
-        return jsonError('A verified adult status cannot be replaced by self-declaration', 409, 'VERIFIED_STATUS_PROTECTED');
+      if (current?.age_method === 'THIRD_PARTY_VERIFIED' && ['VERIFIED', 'PENDING'].includes(String(current?.verifier_status || ''))) {
+        return jsonError('A current or pending verified adult status cannot be replaced by self-declaration', 409, 'VERIFIED_STATUS_PROTECTED');
       }
 
       const ageBand = body.age_band as AgeBand;
