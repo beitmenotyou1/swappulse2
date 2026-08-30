@@ -9,14 +9,24 @@ function safeStatus(row: any) {
   if (!row) return null;
   const ageBand = String(row.age_band || '') as AgeBand;
   const ageMethod = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
+  const verifierStatus = ['PENDING', 'VERIFIED', 'EXPIRED', 'REVOKED'].includes(String(row.verifier_status || ''))
+    ? String(row.verifier_status)
+    : 'NONE';
+  const verifierExpiry = String(row.verifier_expires_at || '').trim();
+  const verifierCurrent = ageMethod === 'THIRD_PARTY_VERIFIED'
+    && verifierStatus === 'VERIFIED'
+    && (!verifierExpiry || new Date(verifierExpiry).getTime() > Date.now());
   const eligibility = isAgeBand(ageBand)
-    ? deriveAgeEligibility(ageBand, ageMethod)
+    ? deriveAgeEligibility(ageBand, verifierCurrent ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED')
     : deriveAgeEligibility('13_15', 'SELF_DECLARED');
 
   return {
     age_band: ageBand,
     age_method: ageMethod,
-    verification_level: ageMethod === 'THIRD_PARTY_VERIFIED' ? 'ADULT_VERIFIED' : 'SELF_DECLARED',
+    verification_level: verifierCurrent ? 'ADULT_VERIFIED' : 'SELF_DECLARED',
+    verifier_status: verifierStatus,
+    verifier_expires_at: verifierExpiry,
+    verifier_revoked_at: row.verifier_revoked_at || '',
     policy_version: AGE_POLICY_VERSION,
     ...eligibility,
     wallet_eligible_at: row.wallet_eligible_at || '',
@@ -53,7 +63,7 @@ function policySummary() {
         testnet_wallet: true,
       },
     },
-    note: 'Self-declared 18+ permits non-value-bearing SwapPulse Testnet identity/wallet features only. Value-bearing and Proof-of-Use features require stronger adult verification that is not enabled yet.',
+    note: 'Self-declared 18+ permits non-value-bearing SwapPulse Testnet identity/wallet features only. Value-bearing and Proof-of-Use features require a current private third-party adult assertion plus an ACTIVE reconciled on-chain attestation.',
   };
 }
 
@@ -102,6 +112,10 @@ export default async function(req: Request): Promise<Response> {
         age_band: ageBand,
         age_method: 'SELF_DECLARED',
         verification_level: 'SELF_DECLARED',
+        verifier_status: 'NONE',
+        verifier_event_id: '',
+        verifier_expires_at: '',
+        verifier_revoked_at: '',
         policy_version: AGE_POLICY_VERSION,
         ...eligibility,
         wallet_eligible_at: firstWalletEligibleAt,
