@@ -41,6 +41,16 @@ fn register_identity_and_reverse_lookup() {
     assert(created_at == 1_234_u64, 'created_at mismatch');
     assert(recovery_count == 0_u64, 'recovery count');
     assert(registry.get_identity_by_account(account) == identity_id, 'reverse lookup');
+
+    // The structured getter is additive. The legacy five-value getter above is
+    // intentionally preserved for the existing Base44 relay/reconciler ABI.
+    let record = registry.get_identity_record(identity_id);
+    assert(record.identity_id == identity_id, 'record identity id');
+    assert(record.account_address == account, 'record account');
+    assert(record.status == status, 'record status');
+    assert(record.canonical_identity_id == canonical, 'record canonical');
+    assert(record.created_at == created_at, 'record created_at');
+    assert(record.recovery_count == recovery_count, 'record recovery count');
 }
 
 #[test]
@@ -258,6 +268,7 @@ fn verification_commitment_lifecycle_is_queryable() {
     assert(verification.attested_by == owner, 'attester mismatch');
     assert(verification.verified_at == 5_000_u64, 'verified_at mismatch');
     assert(verification.expires_at == 9_000_u64, 'expires_at mismatch');
+    assert(verification.revoked_at == 0_u64, 'unexpected revoked_at');
     assert(verification.version == 1_u64, 'verification version');
     assert(registry.is_verified(identity_id), 'identity not verified');
 
@@ -270,16 +281,21 @@ fn revoked_verification_is_not_valid() {
     let identity_id = 0xabc;
     let (registry_address, registry) = deploy_registry(owner);
 
+    start_cheat_block_timestamp(registry_address, 7_000_u64);
     start_cheat_caller_address(registry_address, owner);
     registry.register_identity(identity_id, addr(0x222));
     registry.set_verification(identity_id, 0x12345, 0x999, 0_u64);
+
+    start_cheat_block_timestamp(registry_address, 7_100_u64);
     registry.revoke_verification(identity_id);
     stop_cheat_caller_address(registry_address);
 
     let verification = registry.get_verification(identity_id);
     assert(verification.status == 2_u8, 'verification not revoked');
+    assert(verification.revoked_at == 7_100_u64, 'revoked_at mismatch');
     assert(verification.version == 2_u64, 'revoke did not version');
     assert(!registry.is_verified(identity_id), 'revoked verification valid');
+    stop_cheat_block_timestamp(registry_address);
 }
 
 #[test]
@@ -317,6 +333,15 @@ fn merged_identity_uses_canonical_verification_state() {
 
     assert(registry.is_verified(source_id), 'source not canonical verified');
     assert(registry.is_verified(target_id), 'target not verified');
+
+    // Direct verification remains an audit view of the historical source,
+    // while effective verification follows the canonical identity.
+    let direct_source = registry.get_verification(source_id);
+    let effective_source = registry.get_effective_verification(source_id);
+    assert(direct_source.status == 0_u8, 'source unexpectedly directly verified');
+    assert(effective_source.status == 1_u8, 'effective source not verified');
+    assert(effective_source.verification_root == 0x98765, 'effective root mismatch');
+    assert(effective_source.schema_hash == 0x999, 'effective schema mismatch');
 }
 
 #[test]
