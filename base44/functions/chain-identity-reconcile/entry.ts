@@ -110,7 +110,7 @@ async function readVerificationMirror(
   const currentlyValid = asNumber(verifiedValues[0], 'is_verified') === 1;
 
   if (![0, 1, 2].includes(status)) throw new Error(`unknown verification status ${status}`);
-  if (status !== 0 && attestedBy !== expectedAttester) throw new Error('verification attester does not match configured registry owner');
+  if (status !== 0 && attestedBy !== expectedAttester) throw new Error('verification attester does not match configured identity verifier');
   if (status === 0 && (root !== '0x0' || schemaHash !== '0x0' || version !== 0)) {
     throw new Error('empty verification state contains unexpected data');
   }
@@ -135,7 +135,7 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
   const now = new Date().toISOString();
   const identityId = normalizeHex(row.chain_identity_id, 'chain_identity_id');
   const registry = normalizeHex(config.identity_registry_address, 'identity_registry_address');
-  const expectedAttester = normalizeHex(config.identity_registry_owner, 'identity_registry_owner');
+  const expectedAttester = normalizeHex(config.identity_verifier_address, 'identity_verifier_address');
 
   try {
     const values = await starknetCall(rpcUrl, registry, 'get_identity', [identityId]);
@@ -282,9 +282,9 @@ export default async function(req: Request): Promise<Response> {
     if (!config || config.status !== 'CONFIGURED') {
       return jsonError('SwapPulse Testnet is not configured', 409, 'CHAIN_NOT_CONFIGURED');
     }
-    if (!config.identity_registry_address || !config.identity_registry_class_hash || !config.identity_registry_owner || !config.account_class_hash || !config.rpc_url) {
+    if (!config.identity_registry_address || !config.identity_registry_class_hash || !config.identity_registry_owner || !config.identity_verifier_address || !config.account_class_hash || !config.rpc_url) {
       return jsonError(
-        'Identity registry address/owner, registry class hash, account class hash and public RPC URL are required',
+        'Identity registry address/owner, authorised verifier, registry class hash, account class hash and public RPC URL are required',
         409,
         'RPC_NOT_CONFIGURED',
       );
@@ -293,6 +293,7 @@ export default async function(req: Request): Promise<Response> {
       String(config.verified_chain_id || '').trim() !== String(config.chain_id || '').trim()
       || String(config.verified_identity_registry_class_hash || '').trim() !== String(config.identity_registry_class_hash || '').trim()
       || String(config.verified_identity_registry_owner || '').trim() !== String(config.identity_registry_owner || '').trim()
+      || String(config.verified_identity_verifier_address || '').trim() !== String(config.identity_verifier_address || '').trim()
       || String(config.verified_account_class_hash || '').trim() !== String(config.account_class_hash || '').trim()
       || String(config.verified_rpc_url || '').trim() !== String(config.rpc_url || '').trim()
     ) {
@@ -332,6 +333,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const expectedRegistryOwner = normalizeHex(config.identity_registry_owner, 'configured registry owner');
+    const expectedVerifier = normalizeHex(config.identity_verifier_address, 'configured identity verifier');
     const ownerValues = await starknetCall(rpcUrl, registryAddress, 'owner', []);
     if (!ownerValues?.[0] || normalizeHex(ownerValues[0], 'registry owner') !== expectedRegistryOwner) {
       return jsonError(
@@ -339,6 +341,13 @@ export default async function(req: Request): Promise<Response> {
         409,
         'REGISTRY_OWNER_MISMATCH',
       );
+    }
+    if (expectedVerifier === expectedRegistryOwner) {
+      return jsonError('Identity verifier must be separate from the registry owner', 409, 'VERIFIER_ROLE_NOT_SEPARATED');
+    }
+    const verifierValues = await starknetCall(rpcUrl, registryAddress, 'is_verifier', [expectedVerifier]);
+    if (!verifierValues?.[0] || asNumber(verifierValues[0], 'is_verifier') !== 1) {
+      return jsonError('Configured identity verifier is no longer authorised on-chain', 409, 'IDENTITY_VERIFIER_NOT_AUTHORISED');
     }
 
     const recordId = String(body.record_id || '').trim();
@@ -383,6 +392,7 @@ export default async function(req: Request): Promise<Response> {
         chain_id: chainId,
         identity_registry_class_hash: registryClassHash,
         identity_registry_owner: expectedRegistryOwner,
+        identity_verifier_address: expectedVerifier,
       },
       processed: results.length,
       counts,
