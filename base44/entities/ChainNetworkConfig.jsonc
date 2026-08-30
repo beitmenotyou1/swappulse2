@@ -41,6 +41,36 @@
       "minimum": 0,
       "maximum": 2592000
     },
+    "native_token_address": {
+      "type": "string",
+      "description": "Deployed NativeToken (staking token) contract address."
+    },
+    "native_token_symbol": {
+      "type": "string",
+      "description": "Deployed native token ticker. Must never be PULSE or PLS \u2014 those belong to PulseChain, a live traded token \u2014 so the field stays empty until branding is cleared."
+    },
+    "card_nft_address": {
+      "type": "string",
+      "description": "Deployed CardNft contract address used for card-possession NFTs."
+    },
+    "staking_pool_address": {
+      "type": "string",
+      "description": "Deployed StakingPool contract address."
+    },
+    "usership_address": {
+      "type": "string",
+      "description": "Deployed ProofOfUsership contract address."
+    },
+    "bridge_adapter_address": {
+      "type": "string",
+      "description": "Deployed BridgeAdapter contract address."
+    },
+    "usership_epoch": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "description": "Current Proof-of-Usership scoring epoch, advanced by the aggregation workflow."
+    },
     "rpc_url": {
       "type": "string",
       "description": "Optional public RPC endpoint for read-only reconciliation. Do not store authenticated/private RPC URLs here."

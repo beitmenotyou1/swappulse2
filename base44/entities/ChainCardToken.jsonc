@@ -1,0 +1,124 @@
+{
+  "name": "ChainCardToken",
+  "type": "object",
+  "title": "ChainCardToken",
+  "description": "org.swappulse.chainCardToken \u2014 a local mirror of a card NFT minted on the SwapPulse appchain CardNft contract. Created once the mint transaction is relayed, and confirmed once the token is read back from the chain. Holds only public chain data plus cached TCGDex display fields; never private key material. The verification_level is copied from the CardVerificationSession that authorised the mint so the trust level travels with the token.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the minting collector (metadata only; access is controlled by created_by_id)"
+    },
+    "network": {
+      "type": "string",
+      "default": "SWAPPULSE_TESTNET",
+      "description": "Chain network this token lives on"
+    },
+    "token_id": {
+      "type": "string",
+      "description": "On-chain CardNft token id (stored as a decimal string to avoid precision loss)"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "TCGDex card id this token represents"
+    },
+    "card_name": {
+      "type": "string",
+      "description": "Cached card name for display"
+    },
+    "card_image": {
+      "type": "string",
+      "description": "Cached TCGDex card image URL for display"
+    },
+    "collection_entry_id": {
+      "type": "string",
+      "description": "CollectionEntry this token was minted from"
+    },
+    "verification_session_id": {
+      "type": "string",
+      "description": "CardVerificationSession that authorised the mint"
+    },
+    "verification_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "default": 0,
+      "description": "Achieved verification level embedded in the on-chain token (0=self-attested, 3=graded cert)"
+    },
+    "attestation_hash": {
+      "type": "string",
+      "description": "0x-prefixed commitment to the verification session, used on-chain to prevent the same scan being minted twice"
+    },
+    "metadata_uri": {
+      "type": "string",
+      "description": "Public URL of the TCGDex-sourced metadata JSON referenced by the token"
+    },
+    "owner_address": {
+      "type": "string",
+      "description": "Smart account address that owns the token on chain"
+    },
+    "soulbound": {
+      "type": "boolean",
+      "default": true,
+      "description": "True when the token is bound to the verifying collector and cannot be transferred on the appchain"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Mint transaction hash on the appchain"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DRAFTED",
+        "SUBMITTED",
+        "MINTED",
+        "BRIDGED_OUT",
+        "BURNED",
+        "FAILED"
+      ],
+      "default": "DRAFTED"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the token was independently confirmed by reading the chain"
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "did",
+    "card_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

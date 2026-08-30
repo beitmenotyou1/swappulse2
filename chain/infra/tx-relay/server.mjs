@@ -12,6 +12,11 @@ const identityRegistryAddress = normalizeHex(process.env.IDENTITY_REGISTRY_ADDRE
 const identityRegistryOwner = normalizeHex(process.env.IDENTITY_REGISTRY_OWNER || '', 'IDENTITY_REGISTRY_OWNER');
 const registryAdminAddress = normalizeHex(process.env.REGISTRY_ADMIN_ADDRESS || '', 'REGISTRY_ADMIN_ADDRESS');
 const registryAdminPrivateKey = normalizeHex(process.env.REGISTRY_ADMIN_PRIVATE_KEY || '', 'REGISTRY_ADMIN_PRIVATE_KEY');
+const nativeTokenAddress = normalizeZeroableHex(process.env.NATIVE_TOKEN_ADDRESS || '0x0', 'NATIVE_TOKEN_ADDRESS');
+const cardNftAddress = normalizeZeroableHex(process.env.CARD_NFT_ADDRESS || '0x0', 'CARD_NFT_ADDRESS');
+const stakingPoolAddress = normalizeZeroableHex(process.env.STAKING_POOL_ADDRESS || '0x0', 'STAKING_POOL_ADDRESS');
+const usershipAddress = normalizeZeroableHex(process.env.USERSHIP_ADDRESS || '0x0', 'USERSHIP_ADDRESS');
+const bridgeAdapterAddress = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_ADDRESS || '0x0', 'BRIDGE_ADAPTER_ADDRESS');
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
 const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 5_000_000_000_000_000);
@@ -214,8 +219,150 @@ async function validateRecoveryInvoke(tx) {
     },
   ], '1');
   const actual = normalizeArray(tx.calldata, 'calldata');
-  if (!sameFelts(actual, expected)) throw new Error('ONLY_RECOVERY_CONFIGURATION_INVOKE_ALLOWED');
-  return { sender };
+  if (sameFelts(actual, expected)) return { sender, kind: 'configure_recovery' };
+
+  // Not the recovery bootstrap — fall back to the collector-action allowlist
+  // (staking, bridging, token approvals). Every call is checked individually.
+  const calls = decodeExecuteCalls(tx.calldata);
+  assertAllowedUserCalls(calls);
+  return {
+    sender,
+    kind: 'collector_action',
+    entrypoints: calls.map((call) => call.selector),
+  };
+}
+
+// Owner-signed CardNft mint. The relay is the CardNft owner, so minting is only
+// possible through this endpoint — a collector can never mint themselves a
+// verification level they did not earn. Base44 verifies the CardVerificationSession
+// before calling, and `attestation_hash` makes the mint idempotent on-chain.
+async function mintCard(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('MINT_BODY_REQUIRED');
+  if (cardNftAddress === '0x0') throw new Error('CARD_NFT_NOT_CONFIGURED');
+
+  const to = normalizeHex(body.to, 'to');
+  const cardId = normalizeHex(body.card_id, 'card_id');
+  const attestationHash = normalizeHex(body.attestation_hash, 'attestation_hash');
+  const verificationLevel = Number(body.verification_level);
+  const soulbound = Number(body.soulbound);
+  const metadataUri = String(body.metadata_uri || '');
+  if (!Number.isInteger(verificationLevel) || verificationLevel < 0 || verificationLevel > 3) {
+    throw new Error('VERIFICATION_LEVEL_NOT_ALLOWED');
+  }
+  if (soulbound !== 0 && soulbound !== 1) throw new Error('SOULBOUND_FLAG_NOT_ALLOWED');
+  if (!/^https:\/\/[^\s]{1,400}$/.test(metadataUri)) throw new Error('METADATA_URI_MUST_BE_HTTPS');
+
+  const accountClassResult = await rpc('starknet_getClassHashAt', ['latest', to]);
+  if (accountClassResult?.error || normalizeHex(accountClassResult?.result, 'recipient class hash') !== accountClassHash) {
+    throw new Error('MINT_RECIPIENT_CLASS_MISMATCH');
+  }
+
+  const uriCalldata = byteArrayCalldata(metadataUri);
+  const executed = await registryAdmin.execute({
+    contractAddress: cardNftAddress,
+    entrypoint: 'mint',
+    calldata: [to, cardId, String(verificationLevel), attestationHash, ...uriCalldata, String(soulbound)],
+  });
+  await provider.waitForTransaction(executed.transaction_hash);
+  return {
+    transaction_hash: normalizeHex(executed.transaction_hash, 'mint transaction hash'),
+    attestation_hash: attestationHash,
+  };
+}
+
+// Owner-signed Proof-of-Usership score submission. Scores are computed by the
+// Base44 aggregation workflow from verified activity; the contract rejects a
+// repeated epoch so a replayed submission cannot inflate anyone's weight.
+async function submitUsership(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('USERSHIP_BODY_REQUIRED');
+  if (usershipAddress === '0x0') throw new Error('USERSHIP_NOT_CONFIGURED');
+
+  const identityId = normalizeHex(body.identity_id, 'identity_id');
+  const account = normalizeHex(body.account, 'account');
+  const activityRoot = normalizeHex(body.activity_root, 'activity_root');
+  const score = Number(body.score);
+  const epoch = Number(body.epoch);
+  if (!Number.isInteger(score) || score < 0 || score > 1_000_000) throw new Error('SCORE_NOT_ALLOWED');
+  if (!Number.isInteger(epoch) || epoch < 1) throw new Error('EPOCH_NOT_ALLOWED');
+
+  const executed = await registryAdmin.execute({
+    contractAddress: usershipAddress,
+    entrypoint: 'submit_score',
+    calldata: [identityId, account, String(score), activityRoot, String(epoch)],
+  });
+  await provider.waitForTransaction(executed.transaction_hash);
+  return { transaction_hash: normalizeHex(executed.transaction_hash, 'usership transaction hash') };
+}
+
+// Cairo ByteArray serialisation: [pending_word_count, ...full_words,
+// pending_word, pending_word_len]. Metadata URIs are short ASCII, so a single
+// pending word (< 31 bytes) is uncommon — full 31-byte words are emitted first.
+function byteArrayCalldata(value) {
+  const bytes = new TextEncoder().encode(value);
+  const fullWordCount = Math.floor(bytes.length / 31);
+  const words = [];
+  for (let i = 0; i < fullWordCount; i += 1) {
+    const slice = bytes.slice(i * 31, i * 31 + 31);
+    words.push(`0x${Buffer.from(slice).toString('hex')}`);
+  }
+  const rest = bytes.slice(fullWordCount * 31);
+  const pendingWord = rest.length ? `0x${Buffer.from(rest).toString('hex')}` : '0x0';
+  return [String(fullWordCount), ...words, pendingWord, String(rest.length)];
+}
+
+// Entrypoints a COLLECTOR may invoke with their own signature, per contract.
+// Anything not listed here is rejected before the transaction reaches upstream,
+// so a compromised client cannot reach privileged entrypoints (mint, slash,
+// confirm_relayed, submit_score, release_inbound) through this relay.
+const userEntrypoints = new Map([
+  [nativeTokenAddress, ['approve']],
+  [stakingPoolAddress, [
+    'register_validator',
+    'increase_self_stake',
+    'delegate',
+    'request_undelegate',
+    'withdraw',
+    'exit_validator',
+  ]],
+  [bridgeAdapterAddress, ['bridge_out_token', 'bridge_out_card']],
+  [cardNftAddress, ['transfer', 'burn']],
+]);
+
+// Decode a V3 invoke's __execute__ calldata back into its call list so each
+// call can be checked against the allowlist. Layout (Cairo v1 encoding):
+// [call_count, (to, selector, data_len, ...data) * call_count].
+function decodeExecuteCalls(calldata) {
+  const felts = normalizeArray(calldata, 'calldata');
+  if (felts.length < 1) throw new Error('CALLDATA_EMPTY');
+  const callCount = Number(BigInt(felts[0]));
+  if (!Number.isInteger(callCount) || callCount < 1 || callCount > 4) throw new Error('CALL_COUNT_NOT_ALLOWED');
+
+  const calls = [];
+  let cursor = 1;
+  for (let i = 0; i < callCount; i += 1) {
+    if (cursor + 2 >= felts.length) throw new Error('CALLDATA_TRUNCATED');
+    const to = felts[cursor];
+    const selector = felts[cursor + 1];
+    const dataLen = Number(BigInt(felts[cursor + 2]));
+    if (!Number.isInteger(dataLen) || dataLen < 0 || dataLen > 16) throw new Error('CALL_DATA_LEN_NOT_ALLOWED');
+    cursor += 3;
+    if (cursor + dataLen > felts.length) throw new Error('CALLDATA_TRUNCATED');
+    calls.push({ to, selector, data: felts.slice(cursor, cursor + dataLen) });
+    cursor += dataLen;
+  }
+  if (cursor !== felts.length) throw new Error('CALLDATA_TRAILING_BYTES');
+  return calls;
+}
+
+function assertAllowedUserCalls(calls) {
+  for (const call of calls) {
+    const allowed = userEntrypoints.get(call.to);
+    if (!allowed || allowed.length === 0) throw new Error('CONTRACT_NOT_ALLOWED');
+    const permitted = allowed.some(
+      (name) => normalizeHex(hash.getSelectorFromName(name), 'selector') === call.selector,
+    );
+    if (!permitted) throw new Error('ENTRYPOINT_NOT_ALLOWED');
+  }
 }
 
 async function starknetCall(contractAddress, entrypoint, calldata = []) {
@@ -363,7 +510,9 @@ const server = http.createServer(async (req, res) => {
       return json(res, 503, { ok: false, error: 'Provisioning relay is not ready', code });
     }
   }
-  if (req.method !== 'POST' || !['/rpc', '/register'].includes(req.url || '')) return json(res, 404, { error: 'Not found' });
+  if (req.method !== 'POST' || !['/rpc', '/register', '/mint-card', '/submit-usership'].includes(req.url || '')) {
+    return json(res, 404, { error: 'Not found' });
+  }
   if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
 
   const ip = clientIp(req);
@@ -383,6 +532,18 @@ const server = http.createServer(async (req, res) => {
       } finally {
         registrationBusy = false;
       }
+    }
+
+    if (req.url === '/mint-card') {
+      const result = await mintCard(payload);
+      console.log(`mint_card accepted ${ip} ${result.attestation_hash}`);
+      return json(res, 200, { ok: true, ...result });
+    }
+
+    if (req.url === '/submit-usership') {
+      const result = await submitUsership(payload);
+      console.log(`submit_usership accepted ${ip}`);
+      return json(res, 200, { ok: true, ...result });
     }
 
     if (Array.isArray(payload)) return json(res, 400, { error: 'JSON-RPC batch requests are disabled' });

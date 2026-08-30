@@ -1,0 +1,134 @@
+{
+  "name": "StakePosition",
+  "type": "object",
+  "title": "StakePosition",
+  "description": "org.swappulse.stakePosition \u2014 a local mirror of a collector's stake in the SwapPulse appchain StakingPool: either a self-stake as a registered validator or a delegation to another validator. Created at draft time with the exact staking intent, so the submit path can rebuild the transaction calldata server-side instead of trusting the client. Public chain data only.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the staker (metadata only; access is controlled by created_by_id)"
+    },
+    "network": {
+      "type": "string",
+      "default": "SWAPPULSE_TESTNET"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "validator",
+        "delegator"
+      ],
+      "description": "Whether this position is the collector's own validator self-stake or a delegation"
+    },
+    "intent_kind": {
+      "type": "string",
+      "enum": [
+        "register_validator",
+        "increase_self_stake",
+        "delegate",
+        "request_undelegate",
+        "withdraw",
+        "exit_validator"
+      ],
+      "description": "The staking operation this record was drafted for. The submit path rebuilds calldata from this plus the stored amount and validator, so a client cannot alter what it signed."
+    },
+    "account_address": {
+      "type": "string",
+      "description": "Staker's smart account address"
+    },
+    "validator_address": {
+      "type": "string",
+      "description": "Validator this position backs (equals account_address for a validator self-stake)"
+    },
+    "chain_identity_id": {
+      "type": "string",
+      "description": "On-chain identity id bound to the staking account"
+    },
+    "staked_amount": {
+      "type": "string",
+      "default": "0",
+      "description": "Amount for this operation in base units (stored as a decimal string to avoid overflow)"
+    },
+    "pending_withdrawal": {
+      "type": "string",
+      "default": "0",
+      "description": "Amount that has been undelegated and is waiting out the unbonding period"
+    },
+    "unlock_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the pending withdrawal becomes claimable"
+    },
+    "commission_bps": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3000,
+      "default": 0,
+      "description": "Validator commission in basis points (validators only)"
+    },
+    "security_weight": {
+      "type": "string",
+      "default": "0",
+      "description": "Stake weight after the Proof-of-Usership reputation multiplier, as last read from the chain"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DRAFTED",
+        "SUBMITTED",
+        "ACTIVE",
+        "UNBONDING",
+        "EXITED",
+        "SLASHED",
+        "FAILED"
+      ],
+      "default": "DRAFTED"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Most recent staking transaction hash"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "did",
+    "role",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

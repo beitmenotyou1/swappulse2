@@ -1,0 +1,144 @@
+{
+  "name": "BridgeTransfer",
+  "type": "object",
+  "title": "BridgeTransfer",
+  "description": "org.swappulse.bridgeTransfer \u2014 a cross-chain transfer of a native token amount or a card NFT between the SwapPulse appchain and an external chain (Ethereum, an L2, or Solana). Outbound transfers lock or burn on the appchain and are minted/released by the relay on the destination; inbound transfers are keyed on the source transaction hash for replay protection. The appchain remains the canonical home for the asset.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector who initiated the transfer"
+    },
+    "network": {
+      "type": "string",
+      "default": "SWAPPULSE_TESTNET"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "outbound",
+        "inbound"
+      ],
+      "description": "outbound = appchain to external chain; inbound = external chain to appchain"
+    },
+    "asset_kind": {
+      "type": "string",
+      "enum": [
+        "token",
+        "card"
+      ],
+      "description": "Whether the transfer moves native token value or a card NFT"
+    },
+    "external_chain": {
+      "type": "string",
+      "enum": [
+        "ethereum",
+        "l2",
+        "solana"
+      ],
+      "description": "The non-appchain side of this transfer"
+    },
+    "chain_code": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Numeric chain key used by the BridgeAdapter contract (1=ethereum, 2=l2, 3=solana)"
+    },
+    "nonce": {
+      "type": "integer",
+      "description": "Outbound nonce assigned by the BridgeAdapter contract"
+    },
+    "sender_address": {
+      "type": "string",
+      "description": "Appchain smart account that initiated an outbound transfer"
+    },
+    "recipient_address": {
+      "type": "string",
+      "description": "Destination-chain recipient address as entered by the collector"
+    },
+    "recipient_hash": {
+      "type": "string",
+      "description": "0x-prefixed commitment to the destination recipient, as recorded on chain"
+    },
+    "amount": {
+      "type": "string",
+      "default": "0",
+      "description": "Token amount in base units for a token transfer (string to avoid overflow)"
+    },
+    "card_token_id": {
+      "type": "string",
+      "description": "Appchain CardNft token id for a card transfer"
+    },
+    "card_token_record_id": {
+      "type": "string",
+      "description": "ChainCardToken record this transfer moves"
+    },
+    "source_tx_hash": {
+      "type": "string",
+      "description": "Transaction hash on the originating chain. For inbound transfers this is the replay-protection key."
+    },
+    "destination_tx_hash": {
+      "type": "string",
+      "description": "Transaction hash on the receiving chain once the relay completes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "DRAFTED",
+        "SUBMITTED",
+        "PENDING_RELAY",
+        "COMPLETED",
+        "REFUNDED",
+        "FAILED"
+      ],
+      "default": "DRAFTED"
+    },
+    "queue_id": {
+      "type": "string",
+      "description": "BridgeQueue record retrying this transfer's relay, when a relay attempt failed"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "did",
+    "direction",
+    "asset_kind",
+    "external_chain",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

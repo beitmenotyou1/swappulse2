@@ -1,0 +1,107 @@
+{
+  "name": "UsershipScore",
+  "type": "object",
+  "title": "UsershipScore",
+  "description": "org.swappulse.usershipScore \u2014 a per-collector, per-epoch Proof-of-Usership score aggregated from verified platform activity (trades completed, vouches given, journals published, pack openings) recorded in PointsLedger. The aggregate plus an activity commitment root is submitted to the ProofOfUsership contract, where it scales that collector's own staked weight. Contains only aggregates and a commitment, never the underlying activity records.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the scored collector"
+    },
+    "network": {
+      "type": "string",
+      "default": "SWAPPULSE_TESTNET"
+    },
+    "chain_identity_id": {
+      "type": "string",
+      "description": "On-chain identity id the score is attributed to"
+    },
+    "account_address": {
+      "type": "string",
+      "description": "Smart account address bound to the identity"
+    },
+    "epoch": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Scoring epoch this record belongs to"
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000,
+      "default": 0,
+      "description": "Aggregate usership score, capped so no single collector can dominate the validator set"
+    },
+    "activity_root": {
+      "type": "string",
+      "description": "0x-prefixed commitment to the set of activity records that produced this score, for later audit without exposing the records"
+    },
+    "breakdown": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Per-action point contributions that produced the score (TRADE_COMPLETED, VOUCH_GIVEN, JOURNAL_PUBLISHED, PACK_OPENING, \u2026)"
+    },
+    "points_considered": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of PointsLedger entries aggregated into this score"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "AGGREGATED",
+        "SUBMITTED",
+        "CONFIRMED",
+        "FAILED"
+      ],
+      "default": "AGGREGATED"
+    },
+    "tx_hash": {
+      "type": "string",
+      "description": "Transaction hash of the on-chain score submission"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "did",
+    "epoch",
+    "score",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

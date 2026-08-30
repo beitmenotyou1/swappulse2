@@ -6,7 +6,14 @@ const MAX_U64 = (1n << 64n) - 1n;
 const MAX_U128 = (1n << 128n) - 1n;
 const TOKEN_TTL_MS = 5 * 60 * 1000;
 
-export type ChainDraftAction = 'deploy_account' | 'configure_recovery';
+// Every action other than 'deploy_account' is drafted as a Starknet V3 invoke.
+export type ChainDraftAction =
+  | 'deploy_account'
+  | 'configure_recovery'
+  | 'mint_card'
+  | 'stake'
+  | 'bridge_out'
+  | 'add_signer';
 
 export function normalizeChainHex(value: unknown, field = 'felt', allowZero = true): string {
   const raw = String(value ?? '').trim().toLowerCase();
