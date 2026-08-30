@@ -5,6 +5,7 @@ import CardImage from '@/components/cards/CardImage';
 import { conditionLabel, variantLabel } from '@/lib/format';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { createEntry } from '@/lib/offlineSync';
+import { base44 } from '@/api/base44Client';
 import SettingSelect from '@/components/settings/SettingSelect';
 
 export default function AddToCollectionModal({ open, onClose, card }) {
@@ -38,6 +39,16 @@ export default function AddToCollectionModal({ open, onClose, card }) {
       const created = await createEntry(stamped);
       // Privacy containment: raw collection entries stay private in Base44.
       // Public federation will use a sanitised projection in a later phase.
+      // Auto-issue a self-attested possession attestation and verify any open
+      // trade listings offering this card. Fire-and-forget — the collection
+      // entry is already saved; attestation is a best-effort enhancement.
+      if (created?.id && card?.id) {
+        base44.functions.invoke('auto-attest-collection-card', {
+          collection_entry_id: created.id,
+          card_id: card.id,
+          card_name: card.name,
+        }).catch(() => {});
+      }
       onClose();
       setPrice('');
       setNotes('');

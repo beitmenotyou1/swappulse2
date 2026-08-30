@@ -178,6 +178,11 @@ export default function TradeBoard() {
                   t.status === 'completed' ? 'bg-secondary text-muted-foreground' :
                   'bg-warning/15 text-warning'
                 }`}>{TRADE_STATUS_LABELS[t.status] || t.status}</span>
+                {t.possession_verified && (
+                  <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
+                    <ShieldCheck className="h-3 w-3" /> Verified
+                  </span>
+                )}
               </div>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-border bg-secondary p-3">

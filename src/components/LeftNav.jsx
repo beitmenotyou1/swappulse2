@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -17,6 +17,7 @@ const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
+  { to: '/wallet', icon: WalletIcon, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
   { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', tKey: 'nav.trades' },
   { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
@@ -42,6 +43,7 @@ const more = [
   { to: '/market', icon: BarChart3, label: 'Market Watch', tKey: 'nav.market' },
   { to: '/predictions', icon: Vote, label: 'Predictions', tKey: 'nav.predictions' },
   { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
+  { to: '/wallet', icon: WalletIcon, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
   { to: '/help', icon: HelpCircle, label: 'Help & Info', tKey: 'nav.help' },
   { to: '/donate', icon: Heart, label: 'Donate', tKey: 'nav.donate' },
   { to: '/admin', icon: Shield, label: 'Admin', tKey: 'nav.admin', adminOnly: true },

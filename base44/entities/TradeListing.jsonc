@@ -2,7 +2,7 @@
   "name": "TradeListing",
   "type": "object",
   "title": "TradeListing",
-  "description": "org.swappulse.tradeListing \u2014 a peer-to-peer card trade listing published by a collector, mirrored to AT Protocol as a real org.swappulse.tradeListing record. Offer/wanted card sets reference TCGDex catalogue records; status tracks the trade lifecycle.",
+  "description": "org.swappulse.tradeListing \u2014 a peer-to-peer card trade listing published by a collector, mirrored to AT Protocol as a real org.swappulse.tradeListing record. Offer/wanted card sets reference TCGDex catalogue records; status tracks the trade lifecycle. possession_verified is set to true when every offered card has a verified CardVerificationSession attestation from the listing author.",
   "properties": {
     "offer_card_ids": {
       "type": "array",
@@ -81,6 +81,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Optional listing expiry (max 90 days from creation). When present and past, the listing is no longer visible."
+    },
+    "possession_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when every offered card has a verified CardVerificationSession attestation from the listing author, confirming physical possession. Set by auto-attest-collection-card."
     },
     "author_name": {
       "type": "string"
