@@ -28,7 +28,7 @@ The chain stores only public blockchain identifiers and state:
 
 `IdentityRecord` formalises the public identity shape without changing the legacy `get_identity()` tuple used by the existing relay/reconciler. `IdentityVerification` is deliberately separate from it. `get_verification()` exposes the direct historical verification record, while `get_effective_verification()` follows identity merges to the canonical identity.
 
-The commitment is proof metadata, not the identity evidence itself. A future verifier can prove that a claim set matched an approved schema without publishing the underlying claim values. The current testnet uses the registry owner as the bootstrap attester; this authority boundary is expected to move to an explicit attester/governance policy before production.
+The commitment is proof metadata, not the identity evidence itself. A future verifier can prove that a claim set matched an approved schema without publishing the underlying claim values. Commitment construction must use explicit domain separation plus a secret salt/blinding value. A plain hash of low-entropy personal data such as DOB, postcode or nationality is not private because it can be dictionary-attacked. The current testnet uses the registry owner as the bootstrap attester; this authority boundary is expected to move to an explicit attester/governance policy before production.
 
 The following must never be written on-chain:
 
