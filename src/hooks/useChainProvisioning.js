@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { signTestnetHash } from '@/lib/testnetSignerVault';
+import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
 
 // Single source of truth for the testnet provisioning flow. This logic was
 // duplicated in ChainIdentityCard and SmartAccountSetup and had already drifted
 // apart in two places (retry handling and the signer-binding guard), so both
 // surfaces now share exactly one implementation.
-
-const CHAIN_AUTHORITATIVE = ['REGISTERED', 'RECOVERED'];
 
 export function signerMatchesIdentity(identity, deviceSigner) {
   return Boolean(
@@ -89,7 +88,7 @@ export default function useChainProvisioning({ identity, userId, onReload }) {
       const reconciled = await invokeData('chain-identity-reconcile', { record_id: identity.id });
       const outcome = reconciled?.results?.[0]?.outcome || '';
       await onReload();
-      if (!CHAIN_AUTHORITATIVE.includes(outcome)) {
+      if (!isChainAuthoritative(outcome)) {
         throw new Error(`The chain registration completed, but final reconciliation returned ${outcome || 'no result'}.`);
       }
       setSetupStep('Identity secured');

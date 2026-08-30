@@ -41,7 +41,7 @@ export default function ChainIdentityCard() {
   const identity = status?.identity || null;
   const age = status?.age || {};
   const network = status?.network || {};
-  const secured = ['REGISTERED', 'RECOVERED'].includes(identity?.status);
+  const secured = isChainAuthoritative(identity?.status);
   const inProgress = ['PENDING', 'DEPLOYED', 'RECOVERY_PENDING'].includes(identity?.status);
   const eligible = age?.eligible === true;
   const networkReady = network?.ready === true;
@@ -138,8 +138,8 @@ export default function ChainIdentityCard() {
       const outcome = data?.results?.[0]?.outcome || 'CHECKED';
       await load();
       toast({
-        title: ['REGISTERED', 'RECOVERED'].includes(outcome) ? 'Identity verified on chain' : 'Chain check completed',
-        description: ['REGISTERED', 'RECOVERED'].includes(outcome)
+        title: isChainAuthoritative(outcome) ? 'Identity verified on chain' : 'Chain check completed',
+        description: isChainAuthoritative(outcome)
           ? 'Your SwapPulse identity is now chain-authoritative.'
           : `Chain result: ${outcome}`,
       });

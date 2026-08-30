@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 import { createDeviceTestSigner, getDeviceTestSigner } from '@/lib/testnetSignerVault';
 import useChainProvisioning, { signerMatchesIdentity } from '@/hooks/useChainProvisioning';
+import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
 
 export default function SmartAccountSetup({ status, onReload }) {
   const { user } = useAuth();
@@ -65,7 +66,7 @@ export default function SmartAccountSetup({ status, onReload }) {
     { num: 2, label: 'Network ready', done: networkReady, blocked: age?.declared && !eligible },
     { num: 3, label: 'Create device signer', done: Boolean(deviceSigner), blocked: !networkReady },
     { num: 4, label: 'Reserve identity', done: Boolean(identity), blocked: !deviceSigner },
-    { num: 5, label: 'Secure on chain', done: ['REGISTERED', 'RECOVERED'].includes(identity?.status), blocked: !identity },
+    { num: 5, label: 'Secure on chain', done: isChainAuthoritative(identity?.status), blocked: !identity },
   ];
 
   return (
