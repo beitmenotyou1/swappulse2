@@ -151,6 +151,38 @@ export const walletPages = {
     ],
   },
 
+  'account-recovery': {
+    title: 'Account Recovery',
+    subtitle: 'Bind a new device to your smart account',
+    sections: [
+      { icon: 'ShieldCheck', title: 'When to use recovery', blocks: [
+        { type: 'p', text: 'Your signing key lives only on the device that created it, so a lost, wiped, or replaced device means that device can no longer sign for your smart account. Recovery lets you bind a <b>new</b> device key to the same account, without SwapPulse ever holding your key.' },
+      ]},
+      { icon: 'Key', title: 'How it works', blocks: [
+        { type: 'steps', items: [
+          'Sign in to SwapPulse as normal, then open Recover your account from the Wallet page.',
+          'Verify the code sent to your account email, key changes always need a fresh code.',
+          'Start recovery. A new signing key is created on this device and only its public half is sent.',
+          'Wait out the on-chain waiting period. Nothing changes on your account until it ends.',
+          'Come back and complete the recovery. Your new device key now controls the account.',
+        ]},
+      ]},
+      { icon: 'Clock', title: 'Why the waiting period exists', blocks: [
+        { type: 'p', text: 'The delay is your protection. If somebody else ever started a recovery on your account, you would be notified and could cancel it before it takes effect. That is why recovery is deliberately slow rather than instant.' },
+      ]},
+      { icon: 'AlertTriangle', title: 'Cancelling a recovery', blocks: [
+        { type: 'p', text: 'While a recovery is scheduled you can cancel it at any point from the same page. Cancelling leaves your existing key in control and clears the pending change.' },
+      ]},
+      { variant: 'warning', title: 'Good to know', blocks: [
+        { type: 'list', items: [
+          'Recovery replaces the key on the device you are using, so run it on the device you intend to keep.',
+          'Your anchored cards, attestations, and stake stay with the same account, only the signing key changes.',
+          'Recovery runs on the testnet during the alpha, alongside the rest of the wallet features.',
+        ]},
+      ]},
+    ],
+  },
+
   'on-chain-cards': {
     title: 'On-Chain Cards & Cross-Chain',
     subtitle: 'Anchor verified cards and move them',

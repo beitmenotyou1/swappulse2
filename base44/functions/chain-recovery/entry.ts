@@ -27,7 +27,7 @@ async function recoverableIdentity(svc: any, userId: string) {
 
 async function requireStepUp(token: string, userId: string) {
   if (!token) throw new Error('STEP_UP_REQUIRED');
-  const result = await verifyActionToken(token, 'swappulse-security-stepup', userId).catch(() => ({ valid: false }));
+  const result = await verifyActionToken(token, 'security_manage', userId).catch(() => ({ valid: false }));
   if (!result?.valid) throw new Error('STEP_UP_INVALID');
 }
 

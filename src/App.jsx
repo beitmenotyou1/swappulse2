@@ -130,6 +130,7 @@ const HelpChainIdentity = lazy(() => import('@/pages/help/HelpChainIdentity'));
 const HelpCardAttestations = lazy(() => import('@/pages/help/HelpCardAttestations'));
 const HelpStaking = lazy(() => import('@/pages/help/HelpStaking'));
 const HelpOnChainCards = lazy(() => import('@/pages/help/HelpOnChainCards'));
+const HelpAccountRecovery = lazy(() => import('@/pages/help/HelpAccountRecovery'));
 const HandleProfile = lazy(() => import('@/pages/HandleProfile'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const Moderation = lazy(() => import('@/pages/Moderation'));
@@ -317,6 +318,7 @@ const AuthenticatedApp = () => {
         <Route path="/help/card-attestations" element={<HelpCardAttestations />} />
         <Route path="/help/staking" element={<HelpStaking />} />
         <Route path="/help/on-chain-cards" element={<HelpOnChainCards />} />
+        <Route path="/help/account-recovery" element={<HelpAccountRecovery />} />
         <Route path="/about" element={<About />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
