@@ -116,8 +116,14 @@ export async function valueFeatureEligible(
   if (!deriveAgeEligibility(band, method).value_features_eligible) return false;
   if (String(row.verifier_status || 'NONE') !== 'VERIFIED') return false;
   const privateExpiry = String(row.verifier_expires_at || '').trim();
-  if (privateExpiry && new Date(privateExpiry).getTime() <= Date.now()) return false;
+  if (privateExpiry) {
+    const expiryMs = new Date(privateExpiry).getTime();
+    if (!Number.isFinite(expiryMs) || expiryMs <= Date.now()) return false;
+  }
   if (String(identity?.verification_status || '') !== 'ACTIVE') return false;
+  const chainExpirySeconds = Number(identity?.verification_expires_at || 0);
+  if (!Number.isFinite(chainExpirySeconds) || chainExpirySeconds < 0) return false;
+  if (chainExpirySeconds > 0 && chainExpirySeconds * 1000 <= Date.now()) return false;
   const expectedVerifier = normalizeHex(config?.identity_verifier_address, 'configured identity verifier');
   const actualAttester = normalizeHex(identity?.verification_attested_by, 'identity verification attester');
   return actualAttester === expectedVerifier;
