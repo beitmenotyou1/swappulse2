@@ -9,6 +9,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { provisionIdentityForUser } from '../../shared/provisionIdentity.ts';
+import { consumeAuthAttempt } from '../../shared/authThrottle.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -28,6 +29,20 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const svc = base44.asServiceRole;
+
+    // Each successful call creates a real account on the PDS. Throttle per user
+    // so a looping client cannot mint unbounded federated identities.
+    const throttle = await consumeAuthAttempt(svc, 'provision-identity', me.id, {
+      maxAttempts: 5,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!throttle.allowed) {
+      return Response.json(
+        { error: 'Too many identity setup attempts. Please try again later.', code: 'RATE_LIMITED', retry_after_seconds: throttle.retryAfterSeconds },
+        { status: 429 },
+      );
+    }
+
     const { did, handle } = await provisionIdentityForUser(
       svc, me.id, username, me.email || `${username}@swappulse.org`,
     );
