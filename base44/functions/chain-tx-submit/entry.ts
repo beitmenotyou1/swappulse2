@@ -138,6 +138,42 @@ async function forward(method: string, params: Record<string, unknown>) {
   }
 }
 
+function daModeName(value: unknown, field: string): 'L1' | 'L2' {
+  if (value === 'L1' || value === 0 || value === '0x0') return 'L1';
+  if (value === 'L2' || value === 1 || value === '0x1') return 'L2';
+  throw new Error(`${field}_MUST_BE_L1_OR_L2`);
+}
+
+function canonicalResourceBounds(tx: any) {
+  const read = (name: string) => {
+    const item = tx?.resource_bounds?.[name];
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error('RESOURCE_BOUNDS_REQUIRED');
+    return {
+      max_amount: normalizeZeroableHex(item.max_amount, `resource_bounds.${name}.max_amount`),
+      max_price_per_unit: normalizeZeroableHex(item.max_price_per_unit, `resource_bounds.${name}.max_price_per_unit`),
+    };
+  };
+  return { l1_gas: read('l1_gas'), l2_gas: read('l2_gas'), l1_data_gas: read('l1_data_gas') };
+}
+
+// The relay must receive ONLY fields this function validated and hashed. Passing
+// the caller's own object through would forward any extra keys it carried —
+// those are not covered by the signing hash, so the draft-token and signature
+// checks cannot vouch for them. Rebuilding the transaction from validated
+// values makes the verified hash provably cover exactly what is relayed.
+function canonicalV3Base(tx: any) {
+  return {
+    version: '0x3',
+    signature: feltArray(tx.signature, 'signature'),
+    nonce: normalizeZeroableHex(tx.nonce ?? '0x0', 'nonce'),
+    resource_bounds: canonicalResourceBounds(tx),
+    tip: '0x0',
+    paymaster_data: [] as string[],
+    nonce_data_availability_mode: daModeName(tx.nonce_data_availability_mode, 'NONCE_DATA_AVAILABILITY_MODE'),
+    fee_data_availability_mode: daModeName(tx.fee_data_availability_mode, 'FEE_DATA_AVAILABILITY_MODE'),
+  };
+}
+
 function validateCommonV3(tx: any, expectedType: string) {
   if (!tx || typeof tx !== 'object' || Array.isArray(tx)) throw new Error('TRANSACTION_REQUIRED');
   if (tx.type && String(tx.type) !== expectedType) throw new Error('WRONG_TRANSACTION_TYPE');
@@ -193,7 +229,14 @@ export default async function(req: Request): Promise<Response> {
       const constructor = feltArray(tx.constructor_calldata, 'constructor_calldata');
       if (constructor.length !== 1 || constructor[0] !== publicKey) return jsonError('Constructor must contain the reserved public key only', 409, 'PUBLIC_KEY_MISMATCH');
       if (normalizeHex(tx.contract_address_salt, 'contract_address_salt') !== publicKey) return jsonError('Account salt must equal the reserved public key', 409, 'ACCOUNT_SALT_MISMATCH');
-      const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
+      const canonical = {
+        type: 'DEPLOY_ACCOUNT',
+        ...canonicalV3Base(tx),
+        class_hash: accountClassHash,
+        contract_address_salt: publicKey,
+        constructor_calldata: [publicKey],
+      };
+      const signingHash = signingHashForTransaction(action as ChainDraftAction, canonical, String(config.chain_id), expectedAddress, accountClassHash);
       if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action as ChainDraftAction, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
@@ -201,7 +244,7 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Transaction signature does not match the reserved device signer', 403, 'INVALID_STARK_SIGNATURE');
       }
 
-      const result = await forward('starknet_addDeployAccountTransaction', { deploy_account_transaction: tx });
+      const result = await forward('starknet_addDeployAccountTransaction', { deploy_account_transaction: canonical });
       if (!result?.transaction_hash) return jsonError('Relay response did not include a deployment transaction hash', 502, 'RELAY_TX_HASH_MISSING');
       const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
       const contractAddress = result.contract_address ? normalizeHex(result.contract_address, 'contract address') : expectedAddress;
@@ -229,7 +272,14 @@ export default async function(req: Request): Promise<Response> {
       ], '1');
       const actualCalldata = feltArray(tx.calldata, 'calldata');
       if (!sameFelts(actualCalldata, expectedCalldata)) return jsonError('Only the configured recovery setup calls are allowed', 403, 'RECOVERY_CALLDATA_MISMATCH');
-      const signingHash = signingHashForTransaction(action as ChainDraftAction, tx, String(config.chain_id), expectedAddress, accountClassHash);
+      const canonical = {
+        type: 'INVOKE',
+        ...canonicalV3Base(tx),
+        sender_address: expectedAddress,
+        calldata: actualCalldata,
+        account_deployment_data: [] as string[],
+      };
+      const signingHash = signingHashForTransaction(action as ChainDraftAction, canonical, String(config.chain_id), expectedAddress, accountClassHash);
       if (!(await verifyChainDraftToken(draftToken, me.id, identity.id, action as ChainDraftAction, signingHash))) {
         return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
       }
@@ -237,7 +287,7 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Transaction signature does not match the reserved device signer', 403, 'INVALID_STARK_SIGNATURE');
       }
 
-      const result = await forward('starknet_addInvokeTransaction', { invoke_transaction: tx });
+      const result = await forward('starknet_addInvokeTransaction', { invoke_transaction: canonical });
       if (!result?.transaction_hash) return jsonError('Relay response did not include a recovery transaction hash', 502, 'RELAY_TX_HASH_MISSING');
       const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
       await svc.entities.ChainIdentity.update(identity.id, {
