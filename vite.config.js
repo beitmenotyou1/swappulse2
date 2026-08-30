@@ -25,6 +25,14 @@ export default defineConfig({
   // optimization runs. Without it, the hash stays stable across restarts
   // as long as dependencies don't change.
   optimizeDeps: {
+    // Pre-bundle React core AND every React-using library imported by the
+    // ~100 lazy-loaded pages. Without this, the first navigation to a lazy
+    // page lets Vite "discover" a library (framer-motion, recharts, …) and
+    // trigger a mid-session re-optimization — a new ?v= hash is generated
+    // and the browser ends up with React chunks from two different
+    // optimization runs → duplicate React copies → "Cannot read properties
+    // of null (reading 'useState')". Pre-bundling them all upfront keeps
+    // the hash stable for the whole session.
     include: [
       'react',
       'react-dom',
@@ -33,6 +41,22 @@ export default defineConfig({
       'react-dom/client',
       'react-dom/test-utils',
       'scheduler',
+      'react-router-dom',
+      'framer-motion',
+      'recharts',
+      'react-hot-toast',
+      '@tanstack/react-query',
+      'react-hook-form',
+      'react-markdown',
+      '@hello-pangea/dnd',
+      'react-leaflet',
+      'react-resizable-panels',
+      'react-day-picker',
+      '@stripe/react-stripe-js',
+      'lucide-react',
+      'moment',
+      'date-fns',
+      'lodash',
     ],
   },
   resolve: {
