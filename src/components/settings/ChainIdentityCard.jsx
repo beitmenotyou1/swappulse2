@@ -49,6 +49,7 @@ export default function ChainIdentityCard() {
   const automationReady = status?.automation_ready === true;
   const relay = status?.relay || {};
   const signerMatchesIdentity = signerMatches(identity, deviceSigner);
+  const verificationStatus = identity?.verification_status || 'NONE';
   const { autoSetup: automaticSetup, setupStep, secureIdentity } = useChainProvisioning({
     identity,
     userId: user?.id,
@@ -246,6 +247,38 @@ export default function ChainIdentityCard() {
         </div>
       )}
 
+      {secured && verificationStatus === 'ACTIVE' && (
+        <div className="mt-3 rounded-lg border border-success/20 bg-success/5 p-3 text-xs">
+          <p className="font-bold text-success">Private eligibility attested on chain</p>
+          <p className="mt-1 text-muted-foreground">
+            A stronger private eligibility check is represented by an opaque cryptographic commitment. Your age band, date of birth and verification evidence are not published on chain.
+          </p>
+        </div>
+      )}
+
+      {secured && verificationStatus === 'NONE' && age?.method === 'SELF_DECLARED' && (
+        <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-3 text-xs">
+          <p className="font-bold">Testnet identity, not verified identity</p>
+          <p className="mt-1 text-muted-foreground">
+            Your self-declared 18+ status can unlock the non-value-bearing testnet, but SwapPulse does not promote a self-declaration into Cairo's verified identity state.
+          </p>
+        </div>
+      )}
+
+      {secured && verificationStatus === 'EXPIRED' && (
+        <div className="mt-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs">
+          <p className="font-bold text-warning">Private eligibility attestation expired</p>
+          <p className="mt-1 text-muted-foreground">Your chain identity remains intact, but features that require stronger verified eligibility must stay disabled until a new attestation is recorded.</p>
+        </div>
+      )}
+
+      {secured && verificationStatus === 'REVOKED' && (
+        <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs">
+          <p className="font-bold text-destructive">Private eligibility attestation revoked</p>
+          <p className="mt-1 text-muted-foreground">Your permanent chain identity is unaffected, but stronger verified features must remain disabled until a valid replacement attestation exists.</p>
+        </div>
+      )}
+
       {identity?.status === 'PENDING' && signerMatchesIdentity && automationReady && (
         <div className="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
           <p className="text-xs font-bold">Finish testnet identity setup</p>
@@ -375,6 +408,22 @@ export default function ChainIdentityCard() {
                 <p className="text-muted-foreground">Recoveries</p>
                 <p className="font-mono">{identity.recovery_count || 0}</p>
               </div>
+              <div>
+                <p className="text-muted-foreground">Verification</p>
+                <p className="font-mono">{verificationStatus}</p>
+              </div>
+              {identity.verification_schema_hash && (
+                <div>
+                  <p className="text-muted-foreground">Verification schema</p>
+                  <p className="font-mono" title={identity.verification_schema_hash}>{shortHex(identity.verification_schema_hash)}</p>
+                </div>
+              )}
+              {identity.verification_attested_by && (
+                <div>
+                  <p className="text-muted-foreground">Public attester</p>
+                  <p className="font-mono" title={identity.verification_attested_by}>{shortHex(identity.verification_attested_by)}</p>
+                </div>
+              )}
             </div>
           )}
         </>
