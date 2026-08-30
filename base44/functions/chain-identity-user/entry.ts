@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hash } from 'npm:starknet@10.0.2';
 import { secrets } from 'base44:runtime';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
-import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
+import { AGE_POLICY_VERSION, deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
 const ACTIVE_STATUSES = new Set(['PENDING', 'DEPLOYED', 'REGISTERED', 'RECOVERY_PENDING', 'RECOVERED']);
@@ -72,7 +72,15 @@ async function getAgeEligibility(svc: any, userId: string) {
   const rows = await svc.entities.AgeStatus.filter({ user_id: userId }, '-updated_date', 5).catch(() => []);
   const row = rows?.[0] || null;
   if (!row || !isAgeBand(row.age_band)) {
-    return { declared: false, age_band: '', method: '', eligible: false };
+    return {
+      declared: false,
+      age_band: '',
+      method: '',
+      eligible: false,
+      policy_version: AGE_POLICY_VERSION,
+      revision: 0,
+      chain_attestable: false,
+    };
   }
   const ageBand = row.age_band as AgeBand;
   const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
@@ -84,6 +92,9 @@ async function getAgeEligibility(svc: any, userId: string) {
     eligible: eligibility.testnet_identity_eligible,
     testnet_wallet_eligible: eligibility.testnet_wallet_eligible,
     value_features_eligible: eligibility.value_features_eligible,
+    policy_version: String(row.policy_version || AGE_POLICY_VERSION),
+    revision: Math.max(1, Number(row.revision || 1)),
+    chain_attestable: method === 'THIRD_PARTY_VERIFIED' && eligibility.testnet_identity_eligible,
   };
 }
 
@@ -204,6 +215,17 @@ function safeIdentity(row: any) {
     created_at: row.created_at || row.created_date || '',
     last_reconciled_at: row.last_reconciled_at || '',
     failure_code: row.failure_code || '',
+    age_policy_version: row.age_policy_version || '',
+    eligibility_basis: row.eligibility_basis || '',
+    verification_tx_hash: row.verification_tx_hash || '',
+    verification_root: row.verification_root || '',
+    verification_schema_hash: row.verification_schema_hash || '',
+    verification_status: row.verification_status || 'NONE',
+    verification_attested_by: row.verification_attested_by || '',
+    verification_verified_at: Number(row.verification_verified_at || 0),
+    verification_expires_at: Number(row.verification_expires_at || 0),
+    verification_revoked_at: Number(row.verification_revoked_at || 0),
+    verification_version: Number(row.verification_version || 0),
   };
 }
 
@@ -375,7 +397,14 @@ export default async function(req: Request): Promise<Response> {
         if (existingKey && normalizeHex(existingKey, 'reserved signer_public_key') !== publicKey) {
           return jsonError('Your pending identity is already bound to a different public key', 409, 'SIGNER_PUBLIC_KEY_MISMATCH');
         }
-        if (!existingKey) await svc.entities.ChainIdentity.update(current.id, { signer_public_key: publicKey, failure_code: '' });
+        if (!existingKey || !current.age_policy_version || !current.eligibility_basis) {
+          await svc.entities.ChainIdentity.update(current.id, {
+            ...(existingKey ? {} : { signer_public_key: publicKey }),
+            age_policy_version: age.policy_version || AGE_POLICY_VERSION,
+            eligibility_basis: age.method || 'SELF_DECLARED',
+            failure_code: '',
+          });
+        }
         const refreshed = await svc.entities.ChainIdentity.filter({ id: current.id }, '-created_date', 1).catch(() => []);
         return Response.json({ ok: true, existing: true, identity: safeIdentity(refreshed?.[0] || { ...current, signer_public_key: publicKey }) });
       }
@@ -390,6 +419,8 @@ export default async function(req: Request): Promise<Response> {
       network: 'SWAPPULSE_TESTNET',
       account_class_hash: network.account_class_hash,
       identity_registry_address: network.identity_registry_address,
+      age_policy_version: age.policy_version || AGE_POLICY_VERSION,
+      eligibility_basis: age.method || 'SELF_DECLARED',
       signer_public_key: publicKey,
       signer_version: 'STARK_V1',
       status: 'PENDING',
