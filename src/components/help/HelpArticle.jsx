@@ -36,7 +36,7 @@ export default function HelpArticle({ title, subtitle, slug, children }) {
   const t = useT();
   useSEO({
     title: `${title} – Help Guide`,
-    description: subtitle || `Learn how to use ${title} on SwapPulse, the decentralized social network for Pokémon TCG collectors.`,
+    description: subtitle || `Learn how to use ${title} on SwapPulse, the free and open-source Pokémon TCG collector network.`,
     canonicalPath: `/help/${slug}`,
   });
   return (

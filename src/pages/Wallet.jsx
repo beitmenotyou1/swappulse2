@@ -10,6 +10,7 @@ import MintedCardsPanel from '@/components/chain/MintedCardsPanel';
 import StakingPanel from '@/components/chain/StakingPanel';
 import BridgePanel from '@/components/chain/BridgePanel';
 import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
+import GuideFooterLink from '@/components/help/GuideFooterLink';
 import useSEO from '@/hooks/useSEO';
 
 export default function Wallet() {
@@ -20,7 +21,7 @@ export default function Wallet() {
 
   useSEO({
     title: 'Wallet & On-Chain Identity',
-    description: 'Manage your SwapPulse smart account, on-chain identity, and card NFT possession attestations.',
+    description: 'Manage your self-custodial SwapPulse smart account: on-chain identity, card possession attestations, anchored cards, network staking, and cross-chain transfers. Free and open source, with no protocol fees.',
     canonicalPath: '/wallet',
   });
 
@@ -110,6 +111,8 @@ export default function Wallet() {
           <SmartAccountSetup status={status} onReload={load} />
         </div>
       )}
+
+      <GuideFooterLink slug="wallet" />
     </div>
   );
 }

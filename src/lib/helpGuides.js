@@ -5,6 +5,7 @@ import {
   Vote, Bell, Mail, UserPlus, Share2, Radio, Mic, Target, Medal, Sparkles,
   Settings, LogIn, Activity, ShieldAlert, Gavel, Heart,
   Rss, Bookmark, Tags, Search, Copy, UserCheck,
+  Wallet, Fingerprint, Camera, Coins, Layers as LayersIcon,
 } from 'lucide-react';
 
 export const HELP_CATEGORIES = [
@@ -15,6 +16,7 @@ export const HELP_CATEGORIES = [
   'Challenges & Achievements',
   'AI Assistants',
   'Account & Settings',
+  'Wallet & On-Chain',
   'Platform',
 ];
 
@@ -80,6 +82,13 @@ export const HELP_GUIDES = [
   { slug: 'settings', title: 'Settings', category: 'Account & Settings', icon: Settings, description: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.', relatedRoute: '/settings' },
   { slug: 'your-profile', title: 'Your Profile', category: 'Account & Settings', icon: User, description: 'Set up your collector profile, avatar, handle, bio, and display preferences.', relatedRoute: '/profile' },
   { slug: 'account', title: 'Account & Login', category: 'Account & Settings', icon: LogIn, description: 'Passwordless login, activation, 2FA, and managing your SwapPulse account.', relatedRoute: '/login' },
+  // Wallet & On-Chain
+  { slug: 'wallet', title: 'Wallet & Identity', category: 'Wallet & On-Chain', icon: Wallet, description: 'Your self-custodial collector account: identity, attestations, anchored cards, and stake.', relatedRoute: '/wallet' },
+  { slug: 'chain-identity', title: 'On-Chain Identity', category: 'Wallet & On-Chain', icon: Fingerprint, description: 'Create a smart account whose private key never leaves your own device.', relatedRoute: '/wallet' },
+  { slug: 'card-attestations', title: 'Card Possession Attestations', category: 'Wallet & On-Chain', icon: Camera, description: 'Photograph your cards to prove you physically hold them, across four trust levels.', relatedRoute: '/wallet' },
+  { slug: 'staking', title: 'Network Staking', category: 'Wallet & On-Chain', icon: Coins, description: 'Delegate or run a validator to secure the zero-fee SwapPulse network.', relatedRoute: '/wallet' },
+  { slug: 'on-chain-cards', title: 'On-Chain Cards & Cross-Chain', category: 'Wallet & On-Chain', icon: LayersIcon, description: 'Anchor verified cards on the network and move assets to other chains.', relatedRoute: '/wallet' },
+
   // Platform
   { slug: 'status', title: 'System Status', category: 'Platform', icon: Activity, description: 'Check if any SwapPulse service is down, degraded, or under maintenance.', relatedRoute: '/status' },
   { slug: 'admin', title: 'Admin', category: 'Platform', icon: Gavel, description: 'Admin dashboard for health, metrics, services, incidents, and federation diagnostics.', relatedRoute: '/admin' },

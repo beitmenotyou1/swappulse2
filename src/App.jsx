@@ -124,6 +124,11 @@ const HelpLabelers = lazy(() => import('@/pages/help/HelpLabelers'));
 const HelpSearch = lazy(() => import('@/pages/help/HelpSearch'));
 const HelpTradeTemplates = lazy(() => import('@/pages/help/HelpTradeTemplates'));
 const HelpOnlineNow = lazy(() => import('@/pages/help/HelpOnlineNow'));
+const HelpWallet = lazy(() => import('@/pages/help/HelpWallet'));
+const HelpChainIdentity = lazy(() => import('@/pages/help/HelpChainIdentity'));
+const HelpCardAttestations = lazy(() => import('@/pages/help/HelpCardAttestations'));
+const HelpStaking = lazy(() => import('@/pages/help/HelpStaking'));
+const HelpOnChainCards = lazy(() => import('@/pages/help/HelpOnChainCards'));
 const HandleProfile = lazy(() => import('@/pages/HandleProfile'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const Moderation = lazy(() => import('@/pages/Moderation'));
@@ -306,6 +311,11 @@ const AuthenticatedApp = () => {
         <Route path="/help/search" element={<HelpSearch />} />
         <Route path="/help/trade-templates" element={<HelpTradeTemplates />} />
         <Route path="/help/online-now" element={<HelpOnlineNow />} />
+        <Route path="/help/wallet" element={<HelpWallet />} />
+        <Route path="/help/chain-identity" element={<HelpChainIdentity />} />
+        <Route path="/help/card-attestations" element={<HelpCardAttestations />} />
+        <Route path="/help/staking" element={<HelpStaking />} />
+        <Route path="/help/on-chain-cards" element={<HelpOnChainCards />} />
         <Route path="/about" element={<About />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />

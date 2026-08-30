@@ -76,6 +76,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'settings', title: 'Settings', category: 'Account & Settings', description: 'Language, privacy, notifications, accessibility, AT Protocol, and account preferences.' },
   { slug: 'your-profile', title: 'Your Profile', category: 'Account & Settings', description: 'Set up your collector profile, avatar, handle, bio, and display preferences.' },
   { slug: 'account', title: 'Account & Login', category: 'Account & Settings', description: 'Passwordless login, activation, 2FA, and managing your SwapPulse account.' },
+  // Wallet & On-Chain
+  { slug: 'wallet', title: 'Wallet & Identity', category: 'Wallet & On-Chain', description: 'Your self-custodial collector account: identity, attestations, anchored cards, and stake.' },
+  { slug: 'chain-identity', title: 'On-Chain Identity', category: 'Wallet & On-Chain', description: 'Create a smart account whose private key never leaves your own device.' },
+  { slug: 'card-attestations', title: 'Card Possession Attestations', category: 'Wallet & On-Chain', description: 'Photograph your cards to prove you physically hold them, across four trust levels.' },
+  { slug: 'staking', title: 'Network Staking', category: 'Wallet & On-Chain', description: 'Delegate or run a validator to secure the zero-fee SwapPulse network.' },
+  { slug: 'on-chain-cards', title: 'On-Chain Cards & Cross-Chain', category: 'Wallet & On-Chain', description: 'Anchor verified cards on the network and move assets to other chains.' },
+
   // Platform
   { slug: 'status', title: 'System Status', category: 'Platform', description: 'Check if any SwapPulse service is down, degraded, or under maintenance.' },
   { slug: 'admin', title: 'Admin', category: 'Platform', description: 'Admin dashboard for health, metrics, services, incidents, and federation diagnostics.' },

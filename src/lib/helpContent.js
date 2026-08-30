@@ -12,6 +12,7 @@ import { tradingPages } from './helpContent/trading';
 import { socialPages } from './helpContent/social';
 import { communityPages } from './helpContent/community';
 import { voicePages, challengesPages, aiPages, accountPages, platformPages } from './helpContent/platform';
+import { walletPages } from './helpContent/wallet';
 
 export const HELP_CONTENT = {
   ...collectionPages,
@@ -22,5 +23,6 @@ export const HELP_CONTENT = {
   ...challengesPages,
   ...aiPages,
   ...accountPages,
+  ...walletPages,
   ...platformPages,
 };

@@ -16,6 +16,7 @@ import {
   Rss, Scissors, Target as Target2, PenLine as PenLine2, BookOpen as BookOpen2,
   Users as Users2, MessageCircle, TrendingUp as TrendingUp2, Eye as Eye2,
   LayoutGrid as LayoutGrid2, CalendarDays as CalendarDays2,
+  Fingerprint, Coins,
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -28,7 +29,7 @@ const ICON_MAP = {
   MapPin, PartyPopper, Calendar, Trophy, Vote, Crown, Mail, Lock, Key, KeyRound,
   LogIn, ShieldAlert, Bot, Gavel, Activity, Wrench, Settings, Globe, Sparkles,
   Target, Handshake, UserPlus, UserCheck, Share2, MessageCircle, Radio, Mic,
-  Circle, Medal, Shield, Tag, Rss, Scissors,
+  Circle, Medal, Shield, Tag, Rss, Scissors, Fingerprint, Coins,
 };
 
 export function getHelpIcon(name) {
