@@ -8,6 +8,8 @@ RAW_RPC_PORT="${SWAPPULSE_RAW_RPC_PORT:-5050}"
 RAW_RPC="http://127.0.0.1:${RAW_RPC_PORT}"
 MANIFEST="${SWAPPULSE_DEPLOYMENT_MANIFEST:-$CHAIN_ROOT/deployments/swappulse-testnet.json}"
 NODE_BIN="${NODE_BIN:-node}"
+USC_BIN="${USC_BIN:-universal-sierra-compiler}"
+EXPECTED_USC_VERSION="2.10.0"
 PUBLIC_RPC_URL="${SWAPPULSE_PUBLIC_RPC_URL:-}"
 
 if [[ -z "$PUBLIC_RPC_URL" ]]; then
@@ -29,6 +31,34 @@ if [[ ! -d "$CHAIN_ROOT/scripts/tooling/node_modules/starknet" ]]; then
   echo "Install chain tooling first: cd chain/scripts/tooling && npm ci" >&2
   exit 1
 fi
+
+if ! command -v "$USC_BIN" >/dev/null 2>&1 && [[ ! -x "$USC_BIN" ]]; then
+  echo "Universal Sierra Compiler is required for Devnet-compatible declaration artifacts: $USC_BIN" >&2
+  exit 1
+fi
+usc_version="$("$USC_BIN" --version | awk '{print $2}')"
+if [[ "$usc_version" != "$EXPECTED_USC_VERSION" ]]; then
+  echo "Universal Sierra Compiler $EXPECTED_USC_VERSION is required, found ${usc_version:-unknown}." >&2
+  echo "Set USC_BIN to the pinned compiler binary before deploying." >&2
+  exit 1
+fi
+
+REGISTRY_SIERRA="$CHAIN_ROOT/target/dev/swappulse_network_IdentityRegistry.contract_class.json"
+REGISTRY_CASM="$CHAIN_ROOT/target/dev/swappulse_network_IdentityRegistry.casm.json"
+ACCOUNT_SIERRA="$CHAIN_ROOT/target/dev/swappulse_network_SwapPulseAccount.contract_class.json"
+ACCOUNT_CASM="$CHAIN_ROOT/target/dev/swappulse_network_SwapPulseAccount.casm.json"
+
+for sierra in "$REGISTRY_SIERRA" "$ACCOUNT_SIERRA"; do
+  if [[ ! -f "$sierra" ]]; then
+    echo "Missing Sierra artifact: $sierra" >&2
+    echo "Build/test the Cairo contracts first: cd chain && SCARB_BIN=scarb SNFORGE_BIN=snforge bash scripts/test-chain.sh" >&2
+    exit 1
+  fi
+done
+
+echo "Regenerating deployment CASM with universal-sierra-compiler $usc_version..."
+"$USC_BIN" compile-contract --sierra-path "$REGISTRY_SIERRA" --output-path "$REGISTRY_CASM"
+"$USC_BIN" compile-contract --sierra-path "$ACCOUNT_SIERRA" --output-path "$ACCOUNT_CASM"
 
 read -r DEPLOYER_ADDRESS DEPLOYER_PRIVATE_KEY VERIFIER_ADDRESS < <(
   RAW_RPC="$RAW_RPC" "$NODE_BIN" --input-type=module <<'NODE'
