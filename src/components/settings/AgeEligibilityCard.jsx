@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BadgeCheck, CalendarRange, Loader2, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, CalendarRange, Clipboard, Loader2, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -24,9 +24,30 @@ const BANDS = [
 function statusCopy(status) {
   if (!status) return null;
   if (status.age_band === '18_PLUS') {
+    if (status.value_features_eligible) {
+      return {
+        title: 'Private adult verification active',
+        description: 'Your private verifier assertion is current. Value-bearing features still require the matching ACTIVE attestation reconciled from the chain.',
+        tone: 'text-success',
+      };
+    }
+    if (status.verifier_status === 'PENDING') {
+      return {
+        title: 'Private verification pending',
+        description: 'Your non-value-bearing testnet identity remains available, but staking, bridging and Proof-of-Use stay locked until verification completes and the chain attestation is reconciled.',
+        tone: 'text-primary',
+      };
+    }
+    if (status.verifier_status === 'REVOKED' || status.verifier_status === 'EXPIRED') {
+      return {
+        title: status.verifier_status === 'REVOKED' ? 'Private verification revoked' : 'Private verification expired',
+        description: 'Value-bearing features are locked. You can still use the non-value-bearing testnet identity under your 18+ declaration or start a new private verification.',
+        tone: 'text-muted-foreground',
+      };
+    }
     return {
       title: 'Eligible for SwapPulse Testnet',
-      description: 'Your age band allows the testnet identity and wallet rollout. Value-bearing features remain disabled until stronger adult verification exists.',
+      description: 'Your 18+ declaration allows the non-value-bearing testnet identity and wallet. Value-bearing features require separate private verification plus an ACTIVE on-chain attestation.',
       tone: 'text-success',
     };
   }
@@ -49,6 +70,8 @@ export default function AgeEligibilityCard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
+  const [verificationSession, setVerificationSession] = useState(null);
+  const [startingVerification, setStartingVerification] = useState(false);
   const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState('');
   const [confirmed, setConfirmed] = useState(false);
@@ -59,9 +82,11 @@ export default function AgeEligibilityCard() {
       const res = await base44.functions.invoke('age-status', { action: 'get' });
       const data = res?.data || res;
       setStatus(data?.status || null);
+      setVerificationSession(data?.verification_session || null);
       setSelected(data?.status?.age_band || '');
     } catch {
       setStatus(null);
+      setVerificationSession(null);
     } finally {
       setLoading(false);
     }
@@ -80,6 +105,7 @@ export default function AgeEligibilityCard() {
       });
       const data = res?.data || res;
       setStatus(data?.status || null);
+      setVerificationSession(null);
       setEditing(false);
       setConfirmed(false);
       toast({ title: 'Age eligibility updated', description: 'SwapPulse saved your age band only, not your date of birth.' });
@@ -92,6 +118,36 @@ export default function AgeEligibilityCard() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const startVerification = async () => {
+    if (startingVerification) return;
+    setStartingVerification(true);
+    try {
+      const res = await base44.functions.invoke('age-status', { action: 'start_verification' });
+      const data = res?.data || res;
+      setStatus(data?.status || status);
+      setVerificationSession(data?.verification_session || null);
+      toast({
+        title: data?.idempotent ? 'Verifier reference already prepared' : 'Private verification prepared',
+        description: 'SwapPulse created only an opaque reference. Do not send DOB, documents or raw identity evidence to SwapPulse.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Could not prepare private verification',
+        description: error?.response?.data?.error || error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setStartingVerification(false);
+    }
+  };
+
+  const copyVerifierReference = async () => {
+    const ref = verificationSession?.subject_ref;
+    if (!ref) return;
+    await navigator.clipboard?.writeText(ref);
+    toast({ title: 'Verifier reference copied' });
   };
 
   const copy = statusCopy(status);
@@ -186,6 +242,37 @@ export default function AgeEligibilityCard() {
               Change age band
             </button>
           </div>
+
+          {status.age_band === '18_PLUS' && !status.value_features_eligible && (
+            <div className="mt-3 border-t border-border pt-3">
+              {status.verifier_status === 'PENDING' && verificationSession?.subject_ref ? (
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <p className="text-xs font-semibold">Opaque verifier reference</p>
+                  <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">{verificationSession.subject_ref}</p>
+                  <button
+                    type="button"
+                    onClick={copyVerifierReference}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <Clipboard className="h-3.5 w-3.5" /> Copy reference
+                  </button>
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Give only this reference to the configured private verifier. DOB, document scans and raw verifier evidence do not belong in SwapPulse or on-chain.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startVerification}
+                  disabled={startingVerification}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+                >
+                  {startingVerification ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                  {startingVerification ? 'Preparing…' : 'Prepare private verifier reference'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
