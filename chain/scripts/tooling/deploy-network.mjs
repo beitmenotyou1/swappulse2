@@ -4,6 +4,7 @@ import { chainDir, requiredEnv, normalizeHex, loadArtifacts, providerFor, accoun
 const rpc = requiredEnv('SWAPPULSE_RPC_URL');
 const deployerAddress = requiredEnv('SWAPPULSE_DEPLOYER_ADDRESS');
 const deployerPrivateKey = requiredEnv('SWAPPULSE_DEPLOYER_PRIVATE_KEY');
+const verifierAddress = normalizeHex(requiredEnv('SWAPPULSE_VERIFIER_ADDRESS'), 'verifier address');
 const outputFile = path.resolve(
   process.env.SWAPPULSE_DEPLOYMENT_MANIFEST || path.join(chainDir, 'deployments/swappulse-testnet.json'),
 );
@@ -64,6 +65,37 @@ if (normalizeHex(registryHashAt) !== registryDeclaration.class_hash) {
 if (!accountDeclared) throw new Error('SwapPulseAccount class declaration is not visible on-chain');
 const registryOwner = ownerResult?.[0] ? normalizeHex(ownerResult[0], 'registry owner') : '';
 if (!registryOwner) throw new Error('Could not read IdentityRegistry owner after deployment');
+if (normalizeHex(deployer.address, 'deployer address') !== registryOwner) {
+  throw new Error('SWAPPULSE_DEPLOYER_ADDRESS must be the IdentityRegistry owner to configure verifier authority');
+}
+if (verifierAddress === registryOwner) {
+  throw new Error('SWAPPULSE_VERIFIER_ADDRESS must be separate from the IdentityRegistry owner');
+}
+
+let verifierAuthoriseTx = '';
+const verifierState = await provider.callContract({
+  contractAddress: registryAddress,
+  entrypoint: 'is_verifier',
+  calldata: [verifierAddress],
+});
+const verifierAlreadyAuthorised = BigInt(verifierState?.[0] || '0x0') === 1n;
+if (!verifierAlreadyAuthorised) {
+  const authorised = await deployer.execute({
+    contractAddress: registryAddress,
+    entrypoint: 'set_verifier',
+    calldata: [verifierAddress, '0x1'],
+  });
+  await wait(provider, authorised.transaction_hash);
+  verifierAuthoriseTx = authorised.transaction_hash || '';
+}
+const verifiedVerifierState = await provider.callContract({
+  contractAddress: registryAddress,
+  entrypoint: 'is_verifier',
+  calldata: [verifierAddress],
+});
+if (BigInt(verifiedVerifierState?.[0] || '0x0') !== 1n) {
+  throw new Error('Identity verifier authorisation is not visible on-chain after deployment');
+}
 
 const recoveryController = String(process.env.SWAPPULSE_RECOVERY_CONTROLLER || '').trim();
 const recoveryDelay = Number(process.env.SWAPPULSE_RECOVERY_DELAY_SECONDS || 172800);
@@ -80,6 +112,7 @@ const manifest = {
   identity_registry_class_hash: registryDeclaration.class_hash,
   identity_registry_address: registryAddress,
   identity_registry_owner: registryOwner,
+  identity_verifier_address: verifierAddress,
   recovery_controller: recoveryController ? normalizeHex(recoveryController, 'recovery controller') : '',
   recovery_delay_seconds: recoveryDelay,
   deployment: {
@@ -87,6 +120,7 @@ const manifest = {
     identity_registry_declare_tx: registryDeclaration.transaction_hash,
     account_declare_tx: accountDeclaration.transaction_hash,
     identity_registry_deploy_tx: registryDeployTx,
+    identity_verifier_authorise_tx: verifierAuthoriseTx,
   },
   generated_at: new Date().toISOString(),
 };
