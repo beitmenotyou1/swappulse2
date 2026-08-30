@@ -123,7 +123,7 @@ export default function WalletDashboard({ status, onReload }) {
 
       {identity.account_address && (
         <a
-          href={`https://swap-pulse-hub.base44.app/status`}
+          href={`${window.location.origin}/status`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"

@@ -77,7 +77,8 @@ export default function SmartAccountSetup({ status, onReload }) {
         if (draft?.already_complete) return draft;
       } catch (error) {
         const code = error?.response?.data?.code || '';
-        if (code !== 'ACCOUNT_NOT_READY' && i === attempts - 1) throw error;
+        // Re-throw immediately on any permanent (non-transient) error.
+        if (code !== 'ACCOUNT_NOT_READY') throw error;
       }
     }
     throw new Error('The testnet RPC has not confirmed the transaction yet.');

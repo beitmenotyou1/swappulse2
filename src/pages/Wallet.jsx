@@ -37,7 +37,7 @@ export default function Wallet() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (user?.id) load(); }, [user?.id]);
 
   const identity = status?.identity || null;
 

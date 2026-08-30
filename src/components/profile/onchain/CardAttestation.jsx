@@ -19,8 +19,13 @@ export default function CardAttestation({ attestations, onReload, identity }) {
     if (!user?.id) return;
     base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100)
       .then((entries) => {
-        const attestedIds = new Set((attestations || []).filter((a) => a.status === 'verified').map((a) => a.collection_entry_id));
-        setCollection(entries.filter((e) => !attestedIds.has(e.id)));
+        // Only exclude cards that have been AI-verified (level >= 2). Level-0
+        // self-attested cards (from auto-attest) should remain selectable so
+        // collectors can upgrade them to photo-verified attestations.
+        const aiVerifiedIds = new Set((attestations || [])
+          .filter((a) => a.status === 'verified' && Number(a.verification_level) >= 2)
+          .map((a) => a.collection_entry_id));
+        setCollection(entries.filter((e) => !aiVerifiedIds.has(e.id)));
       })
       .catch(() => setCollection([]))
       .finally(() => setLoading(false));
@@ -74,23 +79,36 @@ export default function CardAttestation({ attestations, onReload, identity }) {
     }
   };
 
-  const verifiedAttestations = (attestations || []).filter((a) => a.status === 'verified');
+  const LEVEL_META = {
+    0: { label: 'SELF', badge: 'bg-secondary text-muted-foreground', border: 'border-border bg-secondary/30', icon: 'text-muted-foreground' },
+    1: { label: 'SCANNED', badge: 'bg-warning/10 text-warning', border: 'border-warning/20 bg-warning/5', icon: 'text-warning' },
+    2: { label: 'AI VERIFIED', badge: 'bg-success/10 text-success', border: 'border-success/20 bg-success/5', icon: 'text-success' },
+    3: { label: 'GRADED', badge: 'bg-primary/10 text-primary', border: 'border-primary/20 bg-primary/5', icon: 'text-primary' },
+  };
+  const levelMeta = (lvl) => LEVEL_META[Number(lvl)] || LEVEL_META[0];
+
+  const verifiedAttestations = (attestations || [])
+    .filter((a) => a.status === 'verified')
+    .sort((a, b) => Number(b.verification_level || 0) - Number(a.verification_level || 0));
 
   return (
     <div className="space-y-4">
       {verifiedAttestations.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-muted-foreground">Attested cards ({verifiedAttestations.length})</p>
-          {verifiedAttestations.map((att) => (
-            <div key={att.id} className="flex items-center gap-3 rounded-lg border border-success/20 bg-success/5 p-3">
-              <ShieldCheck className="h-5 w-5 shrink-0 text-success" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{att.card_name}</p>
-                <p className="text-xs text-muted-foreground">Level {att.verification_level} · {new Date(att.created_date).toLocaleDateString()}</p>
+          {verifiedAttestations.map((att) => {
+            const meta = levelMeta(att.verification_level);
+            return (
+              <div key={att.id} className={`flex items-center gap-3 rounded-lg border p-3 ${meta.border}`}>
+                <ShieldCheck className={`h-5 w-5 shrink-0 ${meta.icon}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{att.card_name}</p>
+                  <p className="text-xs text-muted-foreground">Level {att.verification_level} · {new Date(att.created_date).toLocaleDateString()}</p>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.badge}`}>{meta.label}</span>
               </div>
-              <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success">VERIFIED</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
