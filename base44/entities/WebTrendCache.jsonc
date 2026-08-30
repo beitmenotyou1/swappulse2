@@ -1,0 +1,48 @@
+{
+  "name": "WebTrendCache",
+  "type": "object",
+  "title": "WebTrendCache",
+  "description": "Server-side cache of the internet-sourced trending Pok\u00e9mon TCG topics shown in the sidebar. Written only by the get-web-trends backend function (service role) so the AI web-search call runs at most once per refresh window instead of once per page view.",
+  "properties": {
+    "cache_key": {
+      "type": "string",
+      "default": "sidebar_trends",
+      "description": "Stable cache key (single row per key)"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Cached { cards, hashtags, keywords } payload"
+    },
+    "refreshed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the cached payload was last refreshed from the AI web-search call"
+    }
+  },
+  "required": [
+    "cache_key"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

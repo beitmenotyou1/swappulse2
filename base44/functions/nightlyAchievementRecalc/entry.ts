@@ -147,7 +147,7 @@ export default async function (req: Request): Promise<Response> {
         if (revokedEvents.length > 0 && email) {
           for (const e of revokedEvents) {
             try {
-              await base44.integrations.Core.SendEmail({
+              await base44.asServiceRole.integrations.Core.SendEmail({
                 to: email,
                 subject: buildAchievementEmailSubject('revoked', e.name),
                 body: buildAchievementEmailHtml('revoked', {

@@ -28,7 +28,7 @@ export default async function (req: Request): Promise<Response> {
     if (earned.length > 0 && user.email) {
       // Parallelize email sends for all newly-earned achievements.
       await Promise.allSettled(earned.map((e: any) =>
-        base44.integrations.Core.SendEmail({
+        svc.integrations.Core.SendEmail({
           to: user.email,
           subject: buildAchievementEmailSubject('earned', e.name),
           body: buildAchievementEmailHtml('earned', {

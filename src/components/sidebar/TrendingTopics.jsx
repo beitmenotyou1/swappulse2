@@ -79,65 +79,13 @@ function aggregate(posts) {
   };
 }
 
-// Fetch trending Pokémon TCG topics from the broader web via LLM web search.
-// Returns { cards, hashtags, keywords } with source: 'web'. Uses
-// add_context_from_internet (gemini_3_flash) so the results reflect current
-// online trends — set prices, new set releases, community discussions — that
-// may not yet appear in local posts. Works for logged-out users (no auth
-// needed for InvokeLLM).
+// Fetch trending Pokémon TCG topics from the broader web. The AI web-search
+// call runs server-side and is cached there for hours, so browsing the app
+// never spends integration credits per page view.
 async function fetchWebTrends() {
   try {
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a Pokémon TCG trend analyst. Based on current internet trends, news, and community discussions, identify what's trending right now in the Pokémon TCG world. Return three lists:
-1. "cards": up to 5 Pokémon cards that are trending online (new pulls, competitive play, price spikes, set reveals). For each, provide "name" (the card name) and "card_id" (the TCGDex-style card id if you can infer it, otherwise leave empty).
-2. "hashtags": up to 5 trending Pokémon TCG hashtags (without the # symbol, lowercase).
-3. "keywords": up to 5 trending keywords or topics (single words or short phrases, lowercase, no hashtags).
-Focus on what collectors and players are actively discussing online this week.`,
-      add_context_from_internet: true,
-      model: 'gemini_3_flash',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          cards: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                card_id: { type: 'string' },
-              },
-            },
-          },
-          hashtags: {
-            type: 'array',
-            items: { type: 'string' },
-          },
-          keywords: {
-            type: 'array',
-            items: { type: 'string' },
-          },
-        },
-      },
-    });
-    const data = res || {};
-    return {
-      cards: (data.cards || []).slice(0, 5).map((c) => ({
-        card_id: c.card_id || '',
-        card_name: c.name || '',
-        count: 0,
-        source: 'web',
-      })).filter((c) => c.card_name),
-      hashtags: (data.hashtags || []).slice(0, 5).map((t) => ({
-        tag: String(t).toLowerCase().replace(/^#/, ''),
-        count: 0,
-        source: 'web',
-      })).filter((h) => h.tag),
-      keywords: (data.keywords || []).slice(0, 5).map((k) => ({
-        key: String(k).toLowerCase(),
-        count: 0,
-        source: 'web',
-      })).filter((k) => k.key),
-    };
+    const res = await base44.functions.invoke('get-web-trends', {});
+    return res?.data?.trends || { cards: [], hashtags: [], keywords: [] };
   } catch {
     return { cards: [], hashtags: [], keywords: [] };
   }
