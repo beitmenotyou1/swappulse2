@@ -148,7 +148,7 @@ export default async function (req: Request): Promise<Response> {
       return jsonError('Transaction signature does not match your device signer', 403, 'INVALID_STARK_SIGNATURE');
     }
 
-    const result = await relayRpc('starknet_addInvokeTransaction', { invoke_transaction: canonical });
+    const result = await relayRpc(config.tx_relay_url, 'starknet_addInvokeTransaction', { invoke_transaction: canonical });
     if (!result?.transaction_hash) return jsonError('Relay response did not include a transaction hash', 502, 'RELAY_TX_HASH_MISSING');
     const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
 
