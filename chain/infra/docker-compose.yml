@@ -3,8 +3,6 @@ services:
     image: shardlabs/starknet-devnet-rs:0.8.2
     restart: unless-stopped
     command:
-      - --host
-      - 0.0.0.0
       - --port
       - "5050"
       - --accounts
