@@ -14,6 +14,7 @@ import {
   relayRpc,
   sameFelts,
   validateInvokeShape,
+  valueFeatureEligible,
 } from '../../shared/chainRelay.ts';
 import { signingHashForTransaction, verifyChainDraftToken, type ChainDraftAction } from '../../shared/chainTxDraft.ts';
 
@@ -70,6 +71,13 @@ export default async function (req: Request): Promise<Response> {
     const accountAddress = normalizeHex(identity.account_address, 'account address');
     const accountClassHash = normalizeHex(config.account_class_hash, 'configured account class hash');
     const publicKey = normalizeHex(identity.signer_public_key, 'signer public key');
+    if ((action === 'stake' || action === 'bridge_out') && !(await valueFeatureEligible(svc, me.id, identity, config))) {
+      return jsonError(
+        'A current private verifier assertion and ACTIVE on-chain attestation are required for value-bearing features',
+        403,
+        'VERIFIED_ELIGIBILITY_REQUIRED',
+      );
+    }
 
     const tx = body.transaction;
     validateInvokeShape(tx);
