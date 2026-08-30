@@ -45,6 +45,26 @@
     "last_event_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "chain_sync_status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "SYNCED",
+        "NOT_APPLICABLE",
+        "FAILED"
+      ],
+      "default": "PENDING",
+      "description": "Whether the verifier event has been reflected through the privileged chain relay. A failed sync remains fail-closed and is retryable with the same event id."
+    },
+    "chain_tx_hash": {
+      "type": "string",
+      "description": "Public verification attest/revoke transaction hash, when one was required."
+    },
+    "last_error": {
+      "type": "string",
+      "maxLength": 160,
+      "description": "Non-sensitive machine-readable chain sync error."
     }
   },
   "required": [
