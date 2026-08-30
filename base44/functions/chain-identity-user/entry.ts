@@ -108,13 +108,15 @@ async function getNetwork(svc: any) {
   const registryClassHash = String(row?.identity_registry_class_hash || '').trim();
   const registryAddress = String(row?.identity_registry_address || '').trim();
   const registryOwner = String(row?.identity_registry_owner || '').trim();
+  const identityVerifierAddress = String(row?.identity_verifier_address || '').trim();
   const rpcUrl = String(row?.rpc_url || '').trim();
   const status = String(row?.status || 'UNCONFIGURED');
   const ready = status === 'CONFIGURED'
-    && Boolean(chainId && accountClassHash && registryClassHash && registryAddress && registryOwner && rpcUrl)
+    && Boolean(chainId && accountClassHash && registryClassHash && registryAddress && registryOwner && identityVerifierAddress && rpcUrl)
     && String(row?.verified_chain_id || '').trim() === chainId
     && String(row?.verified_identity_registry_class_hash || '').trim() === registryClassHash
     && String(row?.verified_identity_registry_owner || '').trim() === registryOwner
+    && String(row?.verified_identity_verifier_address || '').trim() === identityVerifierAddress
     && String(row?.verified_account_class_hash || '').trim() === accountClassHash
     && String(row?.verified_rpc_url || '').trim() === rpcUrl;
   return {
@@ -125,6 +127,7 @@ async function getNetwork(svc: any) {
     identity_registry_class_hash: registryClassHash,
     identity_registry_address: registryAddress,
     identity_registry_owner: registryOwner,
+    identity_verifier_address: identityVerifierAddress,
     recovery_controller: String(row?.recovery_controller || '').trim(),
     recovery_delay_seconds: Number(row?.recovery_delay_seconds ?? 172800),
   };
@@ -147,6 +150,7 @@ async function relayAutomationStatus(network: any) {
     network.identity_registry_class_hash,
     network.identity_registry_address,
     network.identity_registry_owner,
+    network.identity_verifier_address,
     network.recovery_controller || '0x0',
     network.recovery_delay_seconds,
   ].join('|');
@@ -183,6 +187,7 @@ async function relayAutomationStatus(network: any) {
     if (normalizeHex(payload.identity_registry_class_hash, 'relay registry class hash') !== normalizeHex(network.identity_registry_class_hash, 'verified registry class hash')) throw new Error('TX_RELAY_REGISTRY_CLASS_MISMATCH');
     if (normalizeHex(payload.identity_registry_address, 'relay registry address') !== normalizeHex(network.identity_registry_address, 'verified registry address')) throw new Error('TX_RELAY_REGISTRY_ADDRESS_MISMATCH');
     if (normalizeHex(payload.identity_registry_owner, 'relay registry owner') !== normalizeHex(network.identity_registry_owner, 'verified registry owner')) throw new Error('TX_RELAY_REGISTRY_OWNER_MISMATCH');
+    if (normalizeHex(payload.identity_verifier_address, 'relay identity verifier') !== normalizeHex(network.identity_verifier_address, 'verified identity verifier')) throw new Error('TX_RELAY_IDENTITY_VERIFIER_MISMATCH');
     if (normalizeZeroableHex(payload.recovery_controller ?? '0x0', 'relay recovery controller') !== normalizeZeroableHex(network.recovery_controller || '0x0', 'verified recovery controller')) throw new Error('TX_RELAY_RECOVERY_CONTROLLER_MISMATCH');
     if (Number(payload.recovery_delay_seconds) !== Number(network.recovery_delay_seconds)) throw new Error('TX_RELAY_RECOVERY_DELAY_MISMATCH');
 
