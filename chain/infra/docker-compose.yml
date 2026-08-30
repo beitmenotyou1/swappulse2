@@ -19,8 +19,6 @@ services:
       - transaction
       - --dump-path
       - /data/swappulse-testnet.dump
-      - --block-generation-on
-      - transaction
     volumes:
       - ./data:/data
     ports:
