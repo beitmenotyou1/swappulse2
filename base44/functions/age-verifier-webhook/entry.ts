@@ -206,12 +206,12 @@ export default async function(req: Request): Promise<Response> {
       'canonical identity id',
     );
     const config = await getVerifiedConfig(svc);
-    if (!config) {
+    if (!config?.tx_relay_url) {
       await svc.entities.AgeVerificationSession.update(session.id, {
         chain_sync_status: 'FAILED',
-        last_error: 'CHAIN_VERIFICATION_REQUIRED',
+        last_error: 'CHAIN_RELAY_NOT_CONFIGURED',
       }).catch(() => null);
-      return jsonError('Private verifier state was accepted but the chain configuration is not currently verified', 503, 'CHAIN_VERIFICATION_REQUIRED');
+      return jsonError('Private verifier state was accepted but the chain relay is not configured', 503, 'CHAIN_RELAY_NOT_CONFIGURED');
     }
 
     try {
