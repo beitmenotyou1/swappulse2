@@ -338,7 +338,7 @@ fn merged_identity_uses_canonical_verification_state() {
     // while effective verification follows the canonical identity.
     let direct_source = registry.get_verification(source_id);
     let effective_source = registry.get_effective_verification(source_id);
-    assert(direct_source.status == 0_u8, 'source unexpectedly directly verified');
+    assert(direct_source.status == 0_u8, 'source direct verified');
     assert(effective_source.status == 1_u8, 'effective source not verified');
     assert(effective_source.verification_root == 0x98765, 'effective root mismatch');
     assert(effective_source.schema_hash == 0x999, 'effective schema mismatch');
