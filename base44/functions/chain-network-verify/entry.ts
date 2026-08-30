@@ -120,9 +120,24 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const now = new Date().toISOString();
+    // Every consumer treats the network as ready only when each verified_* pin is
+    // byte-identical to its live config field. The pins hold normalised values
+    // (lowercased, leading zeros stripped, URL canonicalised), so an admin entry
+    // written in any other equivalent form — a class hash padded to 64 digits,
+    // uppercase hex, or a bare origin that canonicalises with a trailing slash —
+    // would never compare equal and the network would stay permanently "not
+    // ready" despite verification reporting CONFIGURED. Persist the canonical
+    // form into the config fields too, so equality is meaningful and a genuine
+    // later edit by an admin still correctly invalidates the pins.
     await svc.entities.ChainNetworkConfig.update(config.id, {
       status: 'CONFIGURED',
       last_verified_at: now,
+      rpc_url: rpcUrl,
+      chain_id: chainId,
+      identity_registry_address: normalizeHex(registryAddress, 'registry address'),
+      identity_registry_class_hash: actualRegistryHash,
+      identity_registry_owner: actualOwner,
+      account_class_hash: expectedAccountHash,
       verified_chain_id: chainId,
       verified_identity_registry_class_hash: actualRegistryHash,
       verified_identity_registry_owner: actualOwner,
