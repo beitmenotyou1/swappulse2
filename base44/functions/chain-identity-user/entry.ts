@@ -221,9 +221,9 @@ export default async function(req: Request): Promise<Response> {
     const current = identities.find((row: any) => ACTIVE_STATUSES.has(String(row?.status || ''))) || null;
 
     if (action === 'status') {
-      const relay = network.ready
+      const relay = age.eligible && network.ready
         ? await relayAutomationStatus(network)
-        : { configured: false, verified: false, code: 'CHAIN_NOT_CONFIGURED' };
+        : { configured: false, verified: false, code: age.eligible ? 'CHAIN_NOT_CONFIGURED' : 'AGE_ELIGIBILITY_REQUIRED' };
       return Response.json({
         ok: true,
         age,
