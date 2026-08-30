@@ -28,6 +28,8 @@ function startMock() {
       result = { new_balance: '0x1', unit: 'FRI', tx_hash: '0x111' };
     } else if (payload.method === 'starknet_chainId') {
       result = chainId;
+    } else if (payload.method === 'starknet_getClass') {
+      result = { sierra_program: ['0x1'], contract_class_version: '0.1.0', entry_points_by_type: {}, abi: [] };
     } else if (payload.method === 'starknet_getClassHashAt') {
       const address = Array.isArray(payload.params) ? payload.params[1] : '';
       result = address === registryAddress ? registryClassHash : classHash;
