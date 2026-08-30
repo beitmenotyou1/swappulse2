@@ -153,6 +153,7 @@ async function networkConfig(svc: any) {
     recoveryController,
     recoveryDelaySeconds,
     rpcUrl: String(row?.rpc_url || '').trim(),
+    txRelayUrl: String(row?.tx_relay_url || '').trim(),
     explorerUrl: String(row?.explorer_url || '').trim(),
     status,
     lastVerifiedAt: String(row?.last_verified_at || '').trim(),
@@ -226,6 +227,7 @@ export default async function(req: Request): Promise<Response> {
           recovery_controller_configured: Boolean(config.recoveryController),
           recovery_delay_seconds: config.recoveryDelaySeconds,
           rpc_url: config.rpcUrl,
+          tx_relay_url: config.txRelayUrl,
           explorer_url: config.explorerUrl,
           last_verified_at: config.lastVerifiedAt,
           verified_chain_id: config.verifiedChainId,
@@ -338,6 +340,7 @@ export default async function(req: Request): Promise<Response> {
           recovery_controller: saved.recoveryController,
           recovery_delay_seconds: saved.recoveryDelaySeconds,
           rpc_url: saved.rpcUrl,
+          tx_relay_url: saved.txRelayUrl,
           explorer_url: saved.explorerUrl,
         },
         note: 'Manifest imported as an unverified draft. Verify & Activate must independently read the public RPC before this network becomes ready.',
@@ -387,9 +390,11 @@ export default async function(req: Request): Promise<Response> {
       }
 
       let rpcUrl = config.rpcUrl;
+      let txRelayUrl = config.txRelayUrl;
       let explorerUrl = config.explorerUrl;
       try {
         if (body.rpc_url) rpcUrl = normalizePublicHttpsUrl(body.rpc_url, 'rpc_url');
+        if (Object.prototype.hasOwnProperty.call(body, 'tx_relay_url')) txRelayUrl = normalizePublicHttpsUrl(body.tx_relay_url, 'tx_relay_url');
         if (body.explorer_url) explorerUrl = normalizePublicHttpsUrl(body.explorer_url, 'explorer_url');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid public URL', 400, 'INVALID_PUBLIC_URL');
@@ -458,6 +463,7 @@ export default async function(req: Request): Promise<Response> {
           recovery_controller_configured: Boolean(saved.recoveryController),
           recovery_delay_seconds: saved.recoveryDelaySeconds,
           rpc_url: saved.rpcUrl,
+          tx_relay_url: saved.txRelayUrl,
           explorer_url: saved.explorerUrl,
           last_verified_at: saved.lastVerifiedAt,
           verified_chain_id: saved.verifiedChainId,
