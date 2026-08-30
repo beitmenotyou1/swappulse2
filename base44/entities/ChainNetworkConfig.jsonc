@@ -31,6 +31,10 @@
       "type": "string",
       "description": "Expected public owner/admin address returned by IdentityRegistry.owner(). Verification fails closed if the deployed registry has a different owner."
     },
+    "identity_verifier_address": {
+      "type": "string",
+      "description": "Public verifier/attester account authorised by IdentityRegistry.is_verifier(). This account is deliberately separate from registry ownership."
+    },
     "recovery_controller": {
       "type": "string",
       "description": "Public recovery-controller contract/account address. Empty disables recovery controller at deployment."
@@ -104,6 +108,10 @@
     "verified_identity_registry_owner": {
       "type": "string",
       "description": "IdentityRegistry owner observed during the last successful verification."
+    },
+    "verified_identity_verifier_address": {
+      "type": "string",
+      "description": "Verifier address confirmed authorised by IdentityRegistry.is_verifier() during the last successful verification."
     },
     "verified_account_class_hash": {
       "type": "string",
