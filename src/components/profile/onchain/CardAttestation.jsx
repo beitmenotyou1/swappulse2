@@ -16,7 +16,10 @@ export default function CardAttestation({ attestations, onReload, identity }) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) return;
+    // Without this the spinner would run forever for a not-yet-resolved user,
+    // because the fetch that clears `loading` never starts.
+    if (!user?.id) { setLoading(false); return; }
+    setLoading(true);
     base44.entities.CollectionEntry.filter({ created_by_id: user.id }, '-updated_date', 100)
       .then((entries) => {
         // Only exclude cards that have been AI-verified (level >= 2). Level-0

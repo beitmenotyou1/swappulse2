@@ -14,11 +14,16 @@ export default function OnChainTab({ isOwner, did }) {
 
   const load = async () => {
     if (!isOwner) { setLoading(false); return; }
+    // Wait for the signed-in user id before querying attestations. Filtering on
+    // created_by_id: undefined is not a no-op — it drops the ownership clause,
+    // so an admin viewer would be shown other collectors' attestations as their
+    // own. Reload runs again from the effect once the id resolves.
+    if (!me?.id) return;
     setLoading(true);
     try {
       const [res, atts] = await Promise.all([
         base44.functions.invoke('chain-identity-user', { action: 'status' }),
-        base44.entities.CardVerificationSession.filter({ created_by_id: me?.id }, '-created_date', 20).catch(() => []),
+        base44.entities.CardVerificationSession.filter({ created_by_id: me.id }, '-created_date', 20).catch(() => []),
       ]);
       setStatus(res?.data || res || null);
       setAttestations(atts || []);
@@ -29,7 +34,7 @@ export default function OnChainTab({ isOwner, did }) {
     }
   };
 
-  useEffect(() => { load(); }, [isOwner, did]);
+  useEffect(() => { load(); }, [isOwner, did, me?.id]);
 
   if (loading) {
     return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
