@@ -291,6 +291,13 @@ export default async function(req: Request): Promise<Response> {
           return jsonError('Chain identity not found for this account', 404, 'IDENTITY_NOT_FOUND');
         }
       }
+      // The batch path filters on network, but a single record lookup does not —
+      // and every check above (registry address, class hashes, RPC) is pinned to
+      // SWAPPULSE_TESTNET. Reconciling a row from another network against this
+      // registry would overwrite its mirrored status from the wrong chain.
+      if (rows?.[0] && String(rows[0].network || NETWORK) !== NETWORK) {
+        return jsonError('This identity belongs to a different network', 409, 'IDENTITY_NETWORK_MISMATCH');
+      }
     } else {
       rows = await svc.entities.ChainIdentity
         .filter({ network: NETWORK }, '-created_date', requestedLimit)

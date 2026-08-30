@@ -29,7 +29,11 @@ export default async function(req: Request): Promise<Response> {
 
     // Prefer the most-established identity by status, not merely the newest row —
     // a newer PENDING reservation must never shadow an already REGISTERED identity.
-    const STATUS_PRIORITY = ['REGISTERED', 'RECOVERED', 'DEPLOYED', 'RECOVERY_PENDING', 'PENDING'];
+    // MERGED and FAILED must be ranked too: any status missing from this list
+    // scores -1 and is skipped entirely, so a user whose only row is MERGED (a
+    // real on-chain identity resolved to a canonical target) or FAILED would be
+    // reported as having no identity at all — and prompted to create a second one.
+    const STATUS_PRIORITY = ['REGISTERED', 'RECOVERED', 'MERGED', 'DEPLOYED', 'RECOVERY_PENDING', 'PENDING', 'FAILED'];
     let preferred: any = null;
     let bestRank = STATUS_PRIORITY.length;
     for (const row of rows) {
