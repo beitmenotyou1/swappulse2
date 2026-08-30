@@ -2,7 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hash } from 'npm:starknet@10.0.2';
 import { secrets } from 'base44:runtime';
 import { assertSafeHost } from '../../shared/ssrfGuard.ts';
-import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
+import {
+  buildPrivateEligibilityAttestation,
+  privateEligibilityState,
+  type PrivateEligibilityAttestation,
+} from '../../shared/privateEligibilityAttestation.ts';
 
 const NETWORK = 'SWAPPULSE_TESTNET';
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
@@ -26,15 +30,6 @@ function normalizeZeroableHex(value: unknown, field: string): string {
   const n = BigInt(raw);
   if (n < 0n || n >= STARK_FIELD_PRIME) throw new Error(`${field} is outside the Starknet felt252 field`);
   return `0x${n.toString(16)}`;
-}
-
-async function ageEligible(svc: any, userId: string): Promise<boolean> {
-  const rows = await svc.entities.AgeStatus.filter({ user_id: userId }, '-updated_date', 5).catch(() => []);
-  const row = rows?.[0];
-  if (!row || !isAgeBand(row.age_band)) return false;
-  const band = row.age_band as AgeBand;
-  const method = row.age_method === 'THIRD_PARTY_VERIFIED' ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED';
-  return deriveAgeEligibility(band, method).testnet_identity_eligible;
 }
 
 async function getVerifiedConfig(svc: any) {
@@ -114,7 +109,12 @@ async function registrationRelayUrl(): Promise<string> {
   return url.toString();
 }
 
-async function forwardRegistration(identityId: string, publicKey: string, accountAddress: string) {
+async function forwardRegistration(
+  identityId: string,
+  publicKey: string,
+  accountAddress: string,
+  verification: PrivateEligibilityAttestation | null,
+) {
   const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
   if (token.length < 32) throw new Error('TX_RELAY_TOKEN_NOT_CONFIGURED');
   const controller = new AbortController();
@@ -127,7 +127,12 @@ async function forwardRegistration(identityId: string, publicKey: string, accoun
         'content-type': 'application/json',
         authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ identity_id: identityId, public_key: publicKey, account_address: accountAddress }),
+      body: JSON.stringify({
+        identity_id: identityId,
+        public_key: publicKey,
+        account_address: accountAddress,
+        ...(verification ? { verification } : {}),
+      }),
       signal: controller.signal,
     });
     const payload = await response.json().catch(() => null);
@@ -147,7 +152,8 @@ export default async function(req: Request): Promise<Response> {
     const me = await base44.auth.me().catch(() => null);
     if (!me?.id) return jsonError('Unauthorized', 401);
     const svc = base44.asServiceRole;
-    if (!(await ageEligible(svc, me.id))) return jsonError('Adult testnet eligibility is required', 403, 'AGE_ELIGIBILITY_REQUIRED');
+    const eligibility = await privateEligibilityState(svc, me.id);
+    if (!eligibility.eligible) return jsonError('Adult testnet eligibility is required', 403, 'AGE_ELIGIBILITY_REQUIRED');
 
     const body = await req.json().catch(() => ({}));
     const recordId = String(body.record_id || '').trim();
@@ -193,17 +199,34 @@ export default async function(req: Request): Promise<Response> {
     if (normalizeZeroableHex(controllerValues?.[0] || '0x0', 'deployed recovery controller') !== expectedController) return jsonError('Recovery controller is not configured correctly', 409, 'RECOVERY_CONTROLLER_MISMATCH');
     if (Number(BigInt(delayValues?.[0] || '0x0')) !== expectedDelay) return jsonError('Recovery delay is not configured correctly', 409, 'RECOVERY_DELAY_MISMATCH');
 
-    const result = await forwardRegistration(identityId, publicKey, accountAddress);
+    const verification = await buildPrivateEligibilityAttestation(identityId, eligibility);
+    const result = await forwardRegistration(identityId, publicKey, accountAddress, verification);
     const returnedIdentity = normalizeHex(result.identity_id, 'relay identity id');
     const returnedAccount = normalizeHex(result.account_address, 'relay account address');
     if (returnedIdentity !== identityId || returnedAccount !== accountAddress) return jsonError('Registration relay returned unexpected identity coordinates', 502, 'RELAY_REGISTRATION_MISMATCH');
     const idempotent = result.idempotent === true;
-    const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'registration transaction hash') : '';
-    if (!idempotent && !txHash) return jsonError('Relay response did not include a registration transaction hash', 502, 'RELAY_TX_HASH_MISSING');
+    const registrationTxHash = result.registration_transaction_hash
+      ? normalizeHex(result.registration_transaction_hash, 'registration transaction hash')
+      : result.transaction_hash
+        ? normalizeHex(result.transaction_hash, 'registration transaction hash')
+        : '';
+    const verificationTxHash = result.verification_transaction_hash
+      ? normalizeHex(result.verification_transaction_hash, 'verification transaction hash')
+      : '';
+    if (!idempotent && !registrationTxHash && !verificationTxHash) {
+      return jsonError('Relay response did not include a registry transaction hash', 502, 'RELAY_TX_HASH_MISSING');
+    }
 
     await svc.entities.ChainIdentity.update(identity.id, {
       account_address: accountAddress,
-      registration_tx_hash: txHash || identity.registration_tx_hash || '',
+      age_policy_version: eligibility.policy_version,
+      eligibility_basis: eligibility.method || identity.eligibility_basis || 'SELF_DECLARED',
+      registration_tx_hash: registrationTxHash || identity.registration_tx_hash || '',
+      verification_tx_hash: verificationTxHash || identity.verification_tx_hash || '',
+      ...(verification ? {
+        verification_root: verification.verification_root,
+        verification_schema_hash: verification.schema_hash,
+      } : {}),
       status: 'DEPLOYED',
       failure_code: '',
     });
@@ -212,10 +235,15 @@ export default async function(req: Request): Promise<Response> {
       ok: true,
       identity_id: identityId,
       account_address: accountAddress,
-      transaction_hash: txHash,
+      transaction_hash: registrationTxHash || verificationTxHash,
+      registration_transaction_hash: registrationTxHash,
+      verification_transaction_hash: verificationTxHash,
       idempotent,
+      private_verification_committed: Boolean(verification),
       chain_authority_required: true,
-      note: 'Registration submitted by the host-local registry owner. Chain reconciliation is still required before REGISTERED.',
+      note: verification
+        ? 'Registration and the blinded private-verification commitment were submitted by the host-local registry owner. Chain reconciliation is still required before either state is authoritative.'
+        : 'Registration submitted by the host-local registry owner. Self-declared age eligibility is not promoted to Cairo verified state; chain reconciliation is still required before REGISTERED.',
     });
   } catch (error: any) {
     const code = String(error?.message || 'CHAIN_IDENTITY_REGISTER_FAILED').replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 120);
