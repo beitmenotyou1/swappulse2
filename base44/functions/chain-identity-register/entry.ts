@@ -197,7 +197,9 @@ export default async function(req: Request): Promise<Response> {
     const returnedIdentity = normalizeHex(result.identity_id, 'relay identity id');
     const returnedAccount = normalizeHex(result.account_address, 'relay account address');
     if (returnedIdentity !== identityId || returnedAccount !== accountAddress) return jsonError('Registration relay returned unexpected identity coordinates', 502, 'RELAY_REGISTRATION_MISMATCH');
+    const idempotent = result.idempotent === true;
     const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'registration transaction hash') : '';
+    if (!idempotent && !txHash) return jsonError('Relay response did not include a registration transaction hash', 502, 'RELAY_TX_HASH_MISSING');
 
     await svc.entities.ChainIdentity.update(identity.id, {
       account_address: accountAddress,
@@ -211,7 +213,7 @@ export default async function(req: Request): Promise<Response> {
       identity_id: identityId,
       account_address: accountAddress,
       transaction_hash: txHash,
-      idempotent: result.idempotent === true,
+      idempotent,
       chain_authority_required: true,
       note: 'Registration submitted by the host-local registry owner. Chain reconciliation is still required before REGISTERED.',
     });
