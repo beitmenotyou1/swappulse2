@@ -294,6 +294,7 @@ fn expired_verification_is_not_valid() {
     registry.set_verification(identity_id, 0x12345, 0x999, 5_100_u64);
     stop_cheat_caller_address(registry_address);
     assert(registry.is_verified(identity_id), 'verification starts invalid');
+    stop_cheat_block_timestamp(registry_address);
 
     start_cheat_block_timestamp(registry_address, 5_101_u64);
     assert(!registry.is_verified(identity_id), 'expired verification valid');
