@@ -16,6 +16,13 @@ export default defineConfig({
     }),
     react(),
   ],
+  // The default cache dir (node_modules/.vite) ended up holding chunks from two
+  // different optimization runs, so a single page load pulled React from both
+  // (?v=6da34daf AND ?v=586c7768) → two React copies → "Cannot read properties
+  // of null (reading 'useState')" in the first hook call. Pointing Vite at a
+  // fresh cache dir forces ONE complete optimization run, and unlike
+  // `optimizeDeps.force` it stays stable across server restarts.
+  cacheDir: 'node_modules/.vite-swappulse',
   // Pre-bundle ALL React entry points so Vite never discovers one mid-session
   // and triggers a re-optimization (which creates a new ?v= hash and mixes
   // old + new dep chunks → duplicate React copies → "Cannot read properties
