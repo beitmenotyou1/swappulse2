@@ -64,10 +64,11 @@ export default async function(req: Request): Promise<Response> {
     const configuredChainId = String(config.chain_id || '').trim();
     const registryAddress = String(config.identity_registry_address || '').trim();
     const configuredRegistryOwner = String(config.identity_registry_owner || '').trim();
+    const configuredVerifier = String(config.identity_verifier_address || '').trim();
     const configuredRegistryHash = String(config.identity_registry_class_hash || '').trim();
     const configuredAccountHash = String(config.account_class_hash || '').trim();
-    if (!rpcRaw || !configuredChainId || !registryAddress || !configuredRegistryOwner || !configuredRegistryHash || !configuredAccountHash) {
-      return jsonError('Save the RPC URL, chain ID, registry address/owner and both class hashes before verification', 409, 'CHAIN_CONFIG_INCOMPLETE');
+    if (!rpcRaw || !configuredChainId || !registryAddress || !configuredRegistryOwner || !configuredVerifier || !configuredRegistryHash || !configuredAccountHash) {
+      return jsonError('Save the RPC URL, chain ID, registry address/owner, authorised verifier and both class hashes before verification', 409, 'CHAIN_CONFIG_INCOMPLETE');
     }
 
     let rpcUrl: string;
@@ -113,6 +114,22 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('IdentityRegistry owner does not match the saved configuration', 409, 'REGISTRY_OWNER_MISMATCH');
     }
 
+    const expectedVerifier = normalizeHex(configuredVerifier, 'configured identity verifier');
+    if (expectedVerifier === actualOwner) {
+      return jsonError('Identity verifier must be separate from the registry owner', 409, 'VERIFIER_ROLE_NOT_SEPARATED');
+    }
+    const verifierResult = await rpcCall(rpcUrl, 'starknet_call', [
+      {
+        contract_address: normalizeHex(registryAddress, 'registry address'),
+        entry_point_selector: hash.getSelectorFromName('is_verifier'),
+        calldata: [expectedVerifier],
+      },
+      'latest',
+    ]);
+    if (!Array.isArray(verifierResult) || BigInt(verifierResult[0] || '0x0') !== 1n) {
+      return jsonError('Configured identity verifier is not authorised by IdentityRegistry', 409, 'IDENTITY_VERIFIER_NOT_AUTHORISED');
+    }
+
     const expectedAccountHash = normalizeHex(configuredAccountHash, 'configured account class hash');
     const accountClass = await rpcCall(rpcUrl, 'starknet_getClass', ['latest', expectedAccountHash]);
     if (!accountClass || typeof accountClass !== 'object') {
@@ -137,10 +154,12 @@ export default async function(req: Request): Promise<Response> {
       identity_registry_address: normalizeHex(registryAddress, 'registry address'),
       identity_registry_class_hash: actualRegistryHash,
       identity_registry_owner: actualOwner,
+      identity_verifier_address: expectedVerifier,
       account_class_hash: expectedAccountHash,
       verified_chain_id: chainId,
       verified_identity_registry_class_hash: actualRegistryHash,
       verified_identity_registry_owner: actualOwner,
+      verified_identity_verifier_address: expectedVerifier,
       verified_account_class_hash: expectedAccountHash,
       verified_rpc_url: rpcUrl,
       verified_by: caller.id,
@@ -160,6 +179,7 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_address: normalizeHex(registryAddress, 'registry address'),
         identity_registry_class_hash: actualRegistryHash,
         identity_registry_owner: actualOwner,
+        identity_verifier_address: expectedVerifier,
         account_class_hash: expectedAccountHash,
       },
     });
