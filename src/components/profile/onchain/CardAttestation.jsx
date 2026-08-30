@@ -67,8 +67,14 @@ export default function CardAttestation({ attestations, onReload, identity }) {
         scan_image_urls: photos,
       });
       const data = res?.data || res;
+      const level = Number(data?.verification_level || 0);
       if (data?.attested) {
-        toast({ title: 'Card attested', description: `Verification level ${data.verification_level} — your card possession is proven.` });
+        toast({ title: 'Card attested', description: `Level ${level} — AI verified your photos match this card.` });
+      } else if (level === 1) {
+        // A level-1 result IS a stored, verified attestation (it appears in the
+        // list as SCANNED and counts toward trade badges) — reporting it as an
+        // outright failure contradicted what the user then saw on screen.
+        toast({ title: 'Partially verified', description: 'Level 1 — your photos partly matched. Clearer, well-lit photos can reach level 2.' });
       } else {
         toast({ title: 'Verification failed', description: 'The AI could not verify your card photos. Try clearer photos.', variant: 'destructive' });
       }
@@ -185,7 +191,7 @@ export default function CardAttestation({ attestations, onReload, identity }) {
             {submitting ? 'Verifying…' : 'Attest Card Ownership'}
           </button>
           <p className="text-center text-[10px] text-muted-foreground">
-            AI vision compares your photos with the reference card. Your on-chain identity signs the attestation.
+            AI vision compares your photos with the reference card and records the result on your account.
           </p>
         </div>
       )}

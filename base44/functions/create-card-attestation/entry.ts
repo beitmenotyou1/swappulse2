@@ -1,9 +1,13 @@
 // create-card-attestation — creates a CardVerificationSession for a collector
 // proving physical ownership of a Pokémon TCG card, runs an AI vision
 // comparison of the uploaded scan photos against the TCGDex reference image,
-// and records the achieved verification level. The session is linked to the
-// caller's on-chain chain identity so the attestation is bound to their
-// self-custodial SwapPulse account.
+// and records the achieved verification level.
+//
+// NOTE: this is an OFF-CHAIN attestation. It is scoped to the caller's account
+// and stores their DID for reference, but nothing here is signed by, or bound
+// to, their chain identity — no key, signature or chain call is involved. Any
+// UI that claims the on-chain identity signs an attestation is wrong. Binding
+// these sessions to the smart account is still outstanding work.
 //
 // Verification levels:
 //   0 = self-attested (scan failed AI check)
