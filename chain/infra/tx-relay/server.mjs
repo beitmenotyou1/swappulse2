@@ -10,8 +10,10 @@ const accountClassHash = normalizeHex(process.env.ACCOUNT_CLASS_HASH || '', 'ACC
 const identityRegistryClassHash = normalizeHex(process.env.IDENTITY_REGISTRY_CLASS_HASH || '', 'IDENTITY_REGISTRY_CLASS_HASH');
 const identityRegistryAddress = normalizeHex(process.env.IDENTITY_REGISTRY_ADDRESS || '', 'IDENTITY_REGISTRY_ADDRESS');
 const identityRegistryOwner = normalizeHex(process.env.IDENTITY_REGISTRY_OWNER || '', 'IDENTITY_REGISTRY_OWNER');
+const identityVerifierAddress = normalizeHex(process.env.IDENTITY_VERIFIER_ADDRESS || '', 'IDENTITY_VERIFIER_ADDRESS');
 const registryAdminAddress = normalizeHex(process.env.REGISTRY_ADMIN_ADDRESS || '', 'REGISTRY_ADMIN_ADDRESS');
 const registryAdminPrivateKey = normalizeHex(process.env.REGISTRY_ADMIN_PRIVATE_KEY || '', 'REGISTRY_ADMIN_PRIVATE_KEY');
+const identityVerifierPrivateKey = normalizeHex(process.env.IDENTITY_VERIFIER_PRIVATE_KEY || '', 'IDENTITY_VERIFIER_PRIVATE_KEY');
 const nativeTokenAddress = normalizeZeroableHex(process.env.NATIVE_TOKEN_ADDRESS || '0x0', 'NATIVE_TOKEN_ADDRESS');
 const cardNftAddress = normalizeZeroableHex(process.env.CARD_NFT_ADDRESS || '0x0', 'CARD_NFT_ADDRESS');
 const stakingPoolAddress = normalizeZeroableHex(process.env.STAKING_POOL_ADDRESS || '0x0', 'STAKING_POOL_ADDRESS');
@@ -43,10 +45,14 @@ if (faucetDripAmount <= 0n || faucetDripAmount > (1n << 100n)) {
 if (registryAdminAddress !== identityRegistryOwner) {
   throw new Error('REGISTRY_ADMIN_ADDRESS must equal IDENTITY_REGISTRY_OWNER');
 }
+if (identityVerifierAddress === identityRegistryOwner) {
+  throw new Error('IDENTITY_VERIFIER_ADDRESS must be separate from IDENTITY_REGISTRY_OWNER');
+}
 
 const windows = new Map();
 const provider = new RpcProvider({ nodeUrl: upstream.toString() });
 const registryAdmin = new Account({ provider, address: registryAdminAddress, signer: registryAdminPrivateKey });
+const identityVerifier = new Account({ provider, address: identityVerifierAddress, signer: identityVerifierPrivateKey });
 let registrationBusy = false;
 let readinessCache = null;
 const readinessTtlMs = 30_000;
