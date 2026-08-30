@@ -27,9 +27,18 @@ export default async function(req: Request): Promise<Response> {
       .filter({ user_id: me.id }, '-created_date', 20)
       .catch(() => []);
 
-    const preferred = rows.find((row: any) =>
-      ['REGISTERED', 'RECOVERED', 'DEPLOYED', 'RECOVERY_PENDING', 'PENDING'].includes(String(row?.status || '')),
-    ) || null;
+    // Prefer the most-established identity by status, not merely the newest row —
+    // a newer PENDING reservation must never shadow an already REGISTERED identity.
+    const STATUS_PRIORITY = ['REGISTERED', 'RECOVERED', 'DEPLOYED', 'RECOVERY_PENDING', 'PENDING'];
+    let preferred: any = null;
+    let bestRank = STATUS_PRIORITY.length;
+    for (const row of rows) {
+      const rank = STATUS_PRIORITY.indexOf(String(row?.status || ''));
+      if (rank !== -1 && rank < bestRank) {
+        bestRank = rank;
+        preferred = row;
+      }
+    }
 
     return Response.json({
       ok: true,
