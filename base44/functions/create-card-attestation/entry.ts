@@ -107,7 +107,9 @@ export default async function(req: Request): Promise<Response> {
       const fileUrls = [...scanImageUrls];
       if (refImage) fileUrls.push(refImage);
 
-      const llmRes = await base44.integrations.Core.InvokeLLM({
+      // Service-role integration call: credits are spent only through this
+      // auth-gated, rate-limited path, never on the caller's own scope.
+      const llmRes = await svc.integrations.Core.InvokeLLM({
         prompt: `You are a Pokémon TCG card verification assistant. Compare the uploaded scan photo(s) of a physical Pokémon TCG card with the reference card image (if provided as the last image). The card is "${cardName}" (TCGDex ID: ${cardId}).
 
 Assess:

@@ -115,20 +115,12 @@ export default function BulkImportExport({ items, onImported }) {
         rows = Array.isArray(parsed) ? parsed : [parsed];
       } else {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const jsonSchema = {
-          type: 'object',
-          properties: Object.fromEntries(
-            COLLECTION_FIELDS.map((f) => {
-              const numeric = ['purchase_price', 'market_value'].includes(f);
-              return [f, { type: numeric ? 'number' : 'string' }];
-            })
-          ),
-        };
-        const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
-          file_url,
-          json_schema: { type: 'array', items: jsonSchema },
-        });
-        rows = Array.isArray(extracted.output) ? extracted.output : extracted.output ? [extracted.output] : [];
+        // Extraction runs server-side so the AI integration can't be called
+        // directly from the browser.
+        const res = await base44.functions.invoke('extract-collection-import', { file_url });
+        const data = res?.data ?? res;
+        if (data?.error) throw new Error(data.error);
+        rows = Array.isArray(data?.rows) ? data.rows : [];
       }
 
       if (!rows.length) {
