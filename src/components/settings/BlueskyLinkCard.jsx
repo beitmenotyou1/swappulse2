@@ -471,14 +471,12 @@ export default function BlueskyLinkCard() {
       <div className="mt-3">
         <AtProtoForm mode="link" onSuccess={handleLinked} submitLabel={t('migration.linkButton')} />
       </div>
-      {(rebridging || migrating || backfilling) && (
+      {(migrating || backfilling) && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
           {backfilling
             ? t('migration.syncingPosts', { count: backfillCount })
-            : migrating
-              ? t('migration.migratingStatus')
-              : t('migration.rebridgingStatus')}
+            : t('migration.migratingStatus')}
         </p>
       )}
     </div>
