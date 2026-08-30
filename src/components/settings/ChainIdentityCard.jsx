@@ -52,6 +52,7 @@ export default function ChainIdentityCard() {
   const networkReady = network?.ready === true;
   const canPrepare = status?.can_prepare === true;
   const automationReady = status?.automation_ready === true;
+  const relay = status?.relay || {};
   const signerMatchesIdentity = Boolean(
     identity?.signer_public_key
     && deviceSigner?.publicKey
@@ -249,7 +250,9 @@ export default function ChainIdentityCard() {
     description = identity?.status === 'PENDING'
       ? automationReady
         ? 'Your identity and public signer key are reserved. This device can now finish the verified testnet setup.'
-        : 'Your identity and public signer key are reserved. Automatic provisioning is not connected yet, so the manual operator fallback remains available.'
+        : relay?.configured
+          ? 'Your identity and public signer key are reserved. The provisioning relay is configured but has not passed its authenticated chain readiness check, so automatic setup is paused.'
+          : 'Your identity and public signer key are reserved. Automatic provisioning is not connected yet, so the manual operator fallback remains available.'
       : 'Your testnet identity is being verified against the chain before it becomes authoritative.';
   } else if (!age?.declared) {
     description = 'Choose your age band above before SwapPulse can determine whether testnet identity features are available.';
@@ -353,8 +356,15 @@ export default function ChainIdentityCard() {
 
       {identity?.status === 'PENDING' && signerMatchesIdentity && !automationReady && (
         <div className="mt-3 rounded-lg border border-border bg-secondary/30 p-3 text-xs">
-          <p className="font-bold">Automatic testnet setup is not connected yet</p>
-          <p className="mt-1 text-muted-foreground">Your reservation is safe. Once the server-side provisioning relay is configured, this device can continue from the existing identity without creating a new signer.</p>
+          <p className="font-bold">Automatic testnet setup is unavailable</p>
+          <p className="mt-1 text-muted-foreground">
+            {relay?.configured
+              ? 'The server-side provisioning relay is configured, but its authenticated readiness check did not match the verified SwapPulse Testnet pins. Automatic signing is disabled until that is corrected.'
+              : 'Your reservation is safe. Once the server-side provisioning relay is configured and verified, this device can continue from the existing identity without creating a new signer.'}
+          </p>
+          {relay?.configured && relay?.code && (
+            <p className="mt-2 font-mono text-[10px] text-muted-foreground">Relay check: {relay.code}</p>
+          )}
         </div>
       )}
 
