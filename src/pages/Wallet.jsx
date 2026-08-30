@@ -43,6 +43,9 @@ export default function Wallet() {
   useEffect(() => { if (user?.id) load(); }, [user?.id]);
 
   const identity = status?.identity || null;
+  // Staking, minting and bridging all require an identity the chain itself
+  // confirmed — a reservation alone is not enough to hold assets.
+  const secured = isChainAuthoritative(identity?.status);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -84,6 +87,18 @@ export default function Wallet() {
               <h2 className="text-sm font-bold uppercase text-muted-foreground">Card Possession Attestations</h2>
             </div>
             <CardAttestation attestations={attestations} onReload={load} identity={identity} />
+          </div>
+          <div>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">On-Chain Cards</h2>
+            <MintedCardsPanel identitySecured={secured} />
+          </div>
+          <div>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">Network Staking</h2>
+            <StakingPanel identitySecured={secured} />
+          </div>
+          <div>
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">Cross-Chain</h2>
+            <BridgePanel identitySecured={secured} />
           </div>
         </div>
       ) : (
