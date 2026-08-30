@@ -108,8 +108,21 @@ export default async function(req: Request): Promise<Response> {
     const session = sessionRows?.[0];
     if (!session) return jsonError('Verifier subject is not recognised', 404, 'VERIFIER_SUBJECT_NOT_FOUND');
 
+    // A newer verification attempt retires every older opaque subject reference.
+    // Late provider events for an old session are acknowledged but cannot mutate
+    // the user's current eligibility state.
+    const latestRows = await svc.entities.AgeVerificationSession
+      .filter({ user_id: session.user_id }, '-created_date', 1)
+      .catch(() => []);
+    if (latestRows?.[0] && String(latestRows[0].id) !== String(session.id)) {
+      return Response.json({ ok: true, stale_ignored: true, event_id: eventId, reason: 'SUPERSEDED_SUBJECT' });
+    }
+
     const lastEventAt = String(session.last_event_at || '').trim();
     const sameEvent = String(session.verifier_event_id || '') === eventId;
+    if (sameEvent && String(session.status || '') !== status) {
+      return jsonError('event_id was already used for a different verifier status', 409, 'VERIFIER_EVENT_ID_CONFLICT');
+    }
     if (!sameEvent && lastEventAt && new Date(lastEventAt).getTime() > new Date(eventAt).getTime()) {
       return Response.json({ ok: true, stale_ignored: true, event_id: eventId });
     }
