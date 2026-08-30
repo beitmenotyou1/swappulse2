@@ -133,6 +133,7 @@ async function networkConfig(svc: any) {
   const identityRegistryClassHash = String(row?.identity_registry_class_hash || '').trim();
   const identityRegistryAddress = String(row?.identity_registry_address || '').trim();
   const identityRegistryOwner = String(row?.identity_registry_owner || '').trim();
+  const identityVerifierAddress = String(row?.identity_verifier_address || '').trim();
   const recoveryController = String(row?.recovery_controller || '').trim();
   const parsedDelay = Number(row?.recovery_delay_seconds ?? 172800);
   const recoveryDelaySeconds = Number.isFinite(parsedDelay) && parsedDelay >= 0
@@ -148,6 +149,7 @@ async function networkConfig(svc: any) {
     identityRegistryClassHash,
     identityRegistryAddress,
     identityRegistryOwner,
+    identityVerifierAddress,
     recoveryController,
     recoveryDelaySeconds,
     rpcUrl: String(row?.rpc_url || '').trim(),
@@ -157,14 +159,16 @@ async function networkConfig(svc: any) {
     verifiedChainId: String(row?.verified_chain_id || '').trim(),
     verifiedRegistryClassHash: String(row?.verified_identity_registry_class_hash || '').trim(),
     verifiedRegistryOwner: String(row?.verified_identity_registry_owner || '').trim(),
+    verifiedVerifierAddress: String(row?.verified_identity_verifier_address || '').trim(),
     verifiedAccountClassHash: String(row?.verified_account_class_hash || '').trim(),
     verifiedRpcUrl: String(row?.verified_rpc_url || '').trim(),
     verifiedBy: String(row?.verified_by || '').trim(),
     ready: status === 'CONFIGURED'
-      && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress && identityRegistryOwner)
+      && Boolean(chainId && accountClassHash && identityRegistryClassHash && identityRegistryAddress && identityRegistryOwner && identityVerifierAddress)
       && String(row?.verified_chain_id || '').trim() === chainId
       && String(row?.verified_identity_registry_class_hash || '').trim() === identityRegistryClassHash
       && String(row?.verified_identity_registry_owner || '').trim() === identityRegistryOwner
+      && String(row?.verified_identity_verifier_address || '').trim() === identityVerifierAddress
       && String(row?.verified_account_class_hash || '').trim() === accountClassHash
       && String(row?.verified_rpc_url || '').trim() === String(row?.rpc_url || '').trim(),
   };
@@ -217,6 +221,7 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_class_hash: config.identityRegistryClassHash,
           identity_registry_address: config.identityRegistryAddress,
           identity_registry_owner: config.identityRegistryOwner,
+          identity_verifier_address: config.identityVerifierAddress,
           recovery_controller: config.recoveryController,
           recovery_controller_configured: Boolean(config.recoveryController),
           recovery_delay_seconds: config.recoveryDelaySeconds,
@@ -226,6 +231,7 @@ export default async function(req: Request): Promise<Response> {
           verified_chain_id: config.verifiedChainId,
           verified_identity_registry_class_hash: config.verifiedRegistryClassHash,
           verified_identity_registry_owner: config.verifiedRegistryOwner,
+          verified_identity_verifier_address: config.verifiedVerifierAddress,
           verified_account_class_hash: config.verifiedAccountClassHash,
           verified_rpc_url: config.verifiedRpcUrl,
         },
@@ -263,6 +269,7 @@ export default async function(req: Request): Promise<Response> {
       let identityRegistryClassHash: string;
       let identityRegistryAddress: string;
       let identityRegistryOwner: string;
+      let identityVerifierAddress: string;
       let recoveryController = '';
       let rpcUrl: string;
       let explorerUrl = '';
@@ -272,6 +279,8 @@ export default async function(req: Request): Promise<Response> {
         identityRegistryClassHash = normalizeHex(manifest.identity_registry_class_hash, 'identity_registry_class_hash');
         identityRegistryAddress = normalizeAddress(manifest.identity_registry_address, 'identity_registry_address');
         identityRegistryOwner = normalizeAddress(manifest.identity_registry_owner, 'identity_registry_owner');
+        identityVerifierAddress = normalizeAddress(manifest.identity_verifier_address, 'identity_verifier_address');
+        if (identityVerifierAddress === identityRegistryOwner) throw new Error('identity_verifier_address must be separate from identity_registry_owner');
         if (manifest.recovery_controller) recoveryController = normalizeAddress(manifest.recovery_controller, 'recovery_controller');
         rpcUrl = normalizePublicHttpsUrl(manifest.rpc_url, 'rpc_url');
         if (!rpcUrl) throw new Error('rpc_url is required');
@@ -301,6 +310,7 @@ export default async function(req: Request): Promise<Response> {
         verified_chain_id: '',
         verified_identity_registry_class_hash: '',
         verified_identity_registry_owner: '',
+        verified_identity_verifier_address: '',
         verified_account_class_hash: '',
         verified_rpc_url: '',
         verified_by: '',
@@ -350,6 +360,7 @@ export default async function(req: Request): Promise<Response> {
       let identityRegistryClassHash = config.identityRegistryClassHash;
       let identityRegistryAddress = config.identityRegistryAddress;
       let identityRegistryOwner = config.identityRegistryOwner;
+      let identityVerifierAddress = config.identityVerifierAddress;
       let recoveryController = config.recoveryController;
       try {
         if (body.chain_id) chainId = normalizeHex(body.chain_id, 'chain_id');
@@ -357,13 +368,15 @@ export default async function(req: Request): Promise<Response> {
         if (body.identity_registry_class_hash) identityRegistryClassHash = normalizeHex(body.identity_registry_class_hash, 'identity_registry_class_hash');
         if (body.identity_registry_address) identityRegistryAddress = normalizeAddress(body.identity_registry_address, 'identity_registry_address');
         if (body.identity_registry_owner) identityRegistryOwner = normalizeAddress(body.identity_registry_owner, 'identity_registry_owner');
+        if (body.identity_verifier_address) identityVerifierAddress = normalizeAddress(body.identity_verifier_address, 'identity_verifier_address');
+        if (identityVerifierAddress && identityVerifierAddress === identityRegistryOwner) throw new Error('identity_verifier_address must be separate from identity_registry_owner');
         if (body.recovery_controller) recoveryController = normalizeAddress(body.recovery_controller, 'recovery_controller');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid chain configuration', 400, 'INVALID_CHAIN_CONFIG');
       }
 
-      if (status === 'CONFIGURED' && (!chainId || !accountClassHash || !identityRegistryClassHash || !identityRegistryAddress || !identityRegistryOwner)) {
-        return jsonError('Configured network requires chain_id, account_class_hash, identity_registry_class_hash, identity_registry_address and identity_registry_owner', 400, 'INCOMPLETE_CHAIN_CONFIG');
+      if (status === 'CONFIGURED' && (!chainId || !accountClassHash || !identityRegistryClassHash || !identityRegistryAddress || !identityRegistryOwner || !identityVerifierAddress)) {
+        return jsonError('Configured network requires chain_id, account_class_hash, identity_registry_class_hash, identity_registry_address, identity_registry_owner and identity_verifier_address', 400, 'INCOMPLETE_CHAIN_CONFIG');
       }
 
       const parsedDelay = Number(body.recovery_delay_seconds ?? 172800);
@@ -386,6 +399,7 @@ export default async function(req: Request): Promise<Response> {
         || identityRegistryClassHash !== config.identityRegistryClassHash
         || identityRegistryAddress !== config.identityRegistryAddress
         || identityRegistryOwner !== config.identityRegistryOwner
+        || identityVerifierAddress !== config.identityVerifierAddress
         || rpcUrl !== config.rpcUrl
         // The recovery controller is who can move an account under recovery, and
         // chain-tx-draft builds the on-chain recovery calls straight from it. It has
@@ -413,6 +427,7 @@ export default async function(req: Request): Promise<Response> {
         verified_chain_id: trustedCoordinatesChanged ? '' : config.verifiedChainId,
         verified_identity_registry_class_hash: trustedCoordinatesChanged ? '' : config.verifiedRegistryClassHash,
         verified_identity_registry_owner: trustedCoordinatesChanged ? '' : config.verifiedRegistryOwner,
+        verified_identity_verifier_address: trustedCoordinatesChanged ? '' : config.verifiedVerifierAddress,
         verified_account_class_hash: trustedCoordinatesChanged ? '' : config.verifiedAccountClassHash,
         verified_rpc_url: trustedCoordinatesChanged ? '' : config.verifiedRpcUrl,
         verified_by: trustedCoordinatesChanged ? '' : config.verifiedBy,
@@ -444,6 +459,7 @@ export default async function(req: Request): Promise<Response> {
           verified_chain_id: saved.verifiedChainId,
           verified_identity_registry_class_hash: saved.verifiedRegistryClassHash,
           verified_identity_registry_owner: saved.verifiedRegistryOwner,
+          verified_identity_verifier_address: saved.verifiedVerifierAddress,
           verified_account_class_hash: saved.verifiedAccountClassHash,
           verified_rpc_url: saved.verifiedRpcUrl,
         },
