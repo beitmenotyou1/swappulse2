@@ -87,17 +87,31 @@ export async function buildPrivateEligibilityAttestation(
     testnet_identity_eligible: true,
   });
 
-  // The relay token is never placed in the claim or returned. HMAC gives the
-  // low-entropy private fields a secret blinding key, so the public commitment
-  // cannot be dictionary-attacked like a plain hash of an age band could be.
-  const key = await crypto.subtle.importKey(
+  // The relay token is never placed in the claim or returned. Derive a
+  // purpose-specific HMAC key with HKDF so the commitment key is separated
+  // from the bearer-token use of the same host-managed secret. The keyed hash
+  // blinds low-entropy private fields against public dictionary attacks.
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(token),
-    { name: 'HMAC', hash: 'SHA-256' },
+    encoder.encode(token),
+    'HKDF',
+    false,
+    ['deriveKey'],
+  );
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: encoder.encode('SWAPPULSE_COMMITMENT_KEY_DERIVATION_V1'),
+      info: encoder.encode('private-identity-assurance'),
+    },
+    keyMaterial,
+    { name: 'HMAC', hash: 'SHA-256', length: 256 },
     false,
     ['sign'],
   );
-  const digest = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(claim)));
+  const digest = new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(claim)));
   const verificationRoot = feltFromDigest(digest);
   const schemaHash = `0x${BigInt(hash.getSelectorFromName(PRIVATE_ELIGIBILITY_SCHEMA)).toString(16)}`;
 
