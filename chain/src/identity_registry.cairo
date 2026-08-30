@@ -1,5 +1,20 @@
 use starknet::ContractAddress;
 
+// Verification metadata deliberately contains commitments only. Raw identity
+// claims (name, email, documents, date of birth, etc.) must remain off-chain.
+// `verification_root` is intended to become a Merkle/Poseidon commitment to
+// the verified claim set, while `schema_hash` identifies how that set was encoded.
+#[derive(Copy, Drop, Serde)]
+pub struct IdentityVerification {
+    pub verification_root: felt252,
+    pub status: u8,
+    pub schema_hash: felt252,
+    pub attested_by: ContractAddress,
+    pub verified_at: u64,
+    pub expires_at: u64,
+    pub version: u64,
+}
+
 #[starknet::interface]
 pub trait IIdentityRegistry<TContractState> {
     fn register_identity(
@@ -12,6 +27,18 @@ pub trait IIdentityRegistry<TContractState> {
         ref self: TContractState, source_identity_id: felt252, target_identity_id: felt252,
     );
     fn record_recovery(ref self: TContractState, identity_id: felt252);
+    fn set_verification(
+        ref self: TContractState,
+        identity_id: felt252,
+        verification_root: felt252,
+        schema_hash: felt252,
+        expires_at: u64,
+    );
+    fn revoke_verification(ref self: TContractState, identity_id: felt252);
+    fn get_verification(
+        self: @TContractState, identity_id: felt252,
+    ) -> IdentityVerification;
+    fn is_verified(self: @TContractState, identity_id: felt252) -> bool;
     fn get_identity(
         self: @TContractState, identity_id: felt252,
     ) -> (ContractAddress, u8, felt252, u64, u64);
@@ -26,13 +53,17 @@ pub mod IdentityRegistry {
     use openzeppelin_interfaces::upgrades::IUpgradeable;
     use openzeppelin_upgrades::UpgradeableComponent;
     use starknet::storage::{Map, StorageMapReadAccess, StorageMapWriteAccess};
-    use starknet::{get_block_timestamp, ClassHash, ContractAddress};
+    use starknet::{get_block_timestamp, get_caller_address, ClassHash, ContractAddress};
 
-    use super::IIdentityRegistry;
+    use super::{IIdentityRegistry, IdentityVerification};
 
     const STATUS_NONE: u8 = 0;
     const STATUS_ACTIVE: u8 = 1;
     const STATUS_MERGED: u8 = 2;
+
+    const VERIFICATION_NONE: u8 = 0;
+    const VERIFICATION_VERIFIED: u8 = 1;
+    const VERIFICATION_REVOKED: u8 = 2;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
@@ -54,6 +85,16 @@ pub mod IdentityRegistry {
         canonical_identity: Map<felt252, felt252>,
         created_at: Map<felt252, u64>,
         recovery_count: Map<felt252, u64>,
+
+        // Privacy-preserving verification layer. These fields hold only
+        // commitments and audit metadata, never plaintext identity claims.
+        verification_root: Map<felt252, felt252>,
+        verification_status: Map<felt252, u8>,
+        verification_schema_hash: Map<felt252, felt252>,
+        verification_attested_by: Map<felt252, ContractAddress>,
+        verification_verified_at: Map<felt252, u64>,
+        verification_expires_at: Map<felt252, u64>,
+        verification_version: Map<felt252, u64>,
     }
 
     #[event]
@@ -67,6 +108,8 @@ pub mod IdentityRegistry {
         AccountChanged: AccountChanged,
         IdentityMerged: IdentityMerged,
         IdentityRecovered: IdentityRecovered,
+        IdentityVerified: IdentityVerified,
+        IdentityVerificationRevoked: IdentityVerificationRevoked,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -100,6 +143,27 @@ pub mod IdentityRegistry {
         identity_id: felt252,
         account_address: ContractAddress,
         recovery_count: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct IdentityVerified {
+        #[key]
+        identity_id: felt252,
+        #[key]
+        schema_hash: felt252,
+        verification_root: felt252,
+        attested_by: ContractAddress,
+        verified_at: u64,
+        expires_at: u64,
+        version: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct IdentityVerificationRevoked {
+        #[key]
+        identity_id: felt252,
+        revoked_by: ContractAddress,
+        version: u64,
     }
 
     #[constructor]
@@ -175,6 +239,94 @@ pub mod IdentityRegistry {
                     recovery_count: next_count,
                 },
             );
+        }
+
+        fn set_verification(
+            ref self: ContractState,
+            identity_id: felt252,
+            verification_root: felt252,
+            schema_hash: felt252,
+            expires_at: u64,
+        ) {
+            self.ownable.assert_only_owner();
+            self.assert_active(identity_id);
+            assert(verification_root != 0, 'INVALID_VERIFY_ROOT');
+            assert(schema_hash != 0, 'INVALID_SCHEMA_HASH');
+
+            let verified_at = get_block_timestamp();
+            assert(expires_at == 0 || expires_at > verified_at, 'VERIFY_EXPIRY_PAST');
+
+            let next_version = self.verification_version.read(identity_id) + 1;
+            let attested_by = get_caller_address();
+
+            self.verification_root.write(identity_id, verification_root);
+            self.verification_status.write(identity_id, VERIFICATION_VERIFIED);
+            self.verification_schema_hash.write(identity_id, schema_hash);
+            self.verification_attested_by.write(identity_id, attested_by);
+            self.verification_verified_at.write(identity_id, verified_at);
+            self.verification_expires_at.write(identity_id, expires_at);
+            self.verification_version.write(identity_id, next_version);
+
+            self.emit(
+                IdentityVerified {
+                    identity_id,
+                    schema_hash,
+                    verification_root,
+                    attested_by,
+                    verified_at,
+                    expires_at,
+                    version: next_version,
+                },
+            );
+        }
+
+        fn revoke_verification(ref self: ContractState, identity_id: felt252) {
+            self.ownable.assert_only_owner();
+            self.assert_active(identity_id);
+            assert(
+                self.verification_status.read(identity_id) == VERIFICATION_VERIFIED,
+                'VERIFY_NOT_ACTIVE',
+            );
+
+            let next_version = self.verification_version.read(identity_id) + 1;
+            self.verification_status.write(identity_id, VERIFICATION_REVOKED);
+            self.verification_version.write(identity_id, next_version);
+
+            self.emit(
+                IdentityVerificationRevoked {
+                    identity_id,
+                    revoked_by: get_caller_address(),
+                    version: next_version,
+                },
+            );
+        }
+
+        fn get_verification(
+            self: @ContractState, identity_id: felt252,
+        ) -> IdentityVerification {
+            IdentityVerification {
+                verification_root: self.verification_root.read(identity_id),
+                status: self.verification_status.read(identity_id),
+                schema_hash: self.verification_schema_hash.read(identity_id),
+                attested_by: self.verification_attested_by.read(identity_id),
+                verified_at: self.verification_verified_at.read(identity_id),
+                expires_at: self.verification_expires_at.read(identity_id),
+                version: self.verification_version.read(identity_id),
+            }
+        }
+
+        fn is_verified(self: @ContractState, identity_id: felt252) -> bool {
+            let canonical = self.resolve_canonical(identity_id);
+            if canonical == 0 {
+                return false;
+            }
+
+            if self.verification_status.read(canonical) != VERIFICATION_VERIFIED {
+                return false;
+            }
+
+            let expires_at = self.verification_expires_at.read(canonical);
+            expires_at == 0 || expires_at > get_block_timestamp()
         }
 
         fn get_identity(
