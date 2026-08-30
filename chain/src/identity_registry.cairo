@@ -45,6 +45,10 @@ pub trait IIdentityRegistry<TContractState> {
         ref self: TContractState, source_identity_id: felt252, target_identity_id: felt252,
     );
     fn record_recovery(ref self: TContractState, identity_id: felt252);
+    fn set_verifier(
+        ref self: TContractState, verifier: ContractAddress, authorised: bool,
+    );
+    fn is_verifier(self: @TContractState, verifier: ContractAddress) -> bool;
     fn set_verification(
         ref self: TContractState,
         identity_id: felt252,
@@ -108,6 +112,11 @@ pub mod IdentityRegistry {
         created_at: Map<felt252, u64>,
         recovery_count: Map<felt252, u64>,
 
+        // Verification authority is deliberately separate from registry
+        // ownership. The owner appoints/revokes verifier addresses, but only an
+        // authorised verifier can create or revoke identity attestations.
+        authorised_verifier: Map<ContractAddress, bool>,
+
         // Privacy-preserving verification layer. These fields hold only
         // commitments and audit metadata, never plaintext identity claims.
         verification_root: Map<felt252, felt252>,
@@ -131,6 +140,7 @@ pub mod IdentityRegistry {
         AccountChanged: AccountChanged,
         IdentityMerged: IdentityMerged,
         IdentityRecovered: IdentityRecovered,
+        VerifierAuthorisationChanged: VerifierAuthorisationChanged,
         IdentityVerified: IdentityVerified,
         IdentityVerificationRevoked: IdentityVerificationRevoked,
     }
@@ -166,6 +176,13 @@ pub mod IdentityRegistry {
         identity_id: felt252,
         account_address: ContractAddress,
         recovery_count: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct VerifierAuthorisationChanged {
+        #[key]
+        verifier: ContractAddress,
+        authorised: bool,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -265,6 +282,19 @@ pub mod IdentityRegistry {
             );
         }
 
+        fn set_verifier(
+            ref self: ContractState, verifier: ContractAddress, authorised: bool,
+        ) {
+            self.ownable.assert_only_owner();
+            assert(!verifier.is_zero(), 'INVALID_VERIFIER');
+            self.authorised_verifier.write(verifier, authorised);
+            self.emit(VerifierAuthorisationChanged { verifier, authorised });
+        }
+
+        fn is_verifier(self: @ContractState, verifier: ContractAddress) -> bool {
+            self.authorised_verifier.read(verifier)
+        }
+
         fn set_verification(
             ref self: ContractState,
             identity_id: felt252,
@@ -272,10 +302,7 @@ pub mod IdentityRegistry {
             schema_hash: felt252,
             expires_at: u64,
         ) {
-            // Testnet bootstrap authority. A later milestone can replace this
-            // owner gate with an attester registry/governance policy without
-            // changing the privacy-preserving verification record itself.
-            self.ownable.assert_only_owner();
+            self.assert_verifier();
             self.assert_active(identity_id);
             assert(verification_root != 0, 'INVALID_VERIFY_ROOT');
             assert(schema_hash != 0, 'INVALID_SCHEMA_HASH');
@@ -309,7 +336,7 @@ pub mod IdentityRegistry {
         }
 
         fn revoke_verification(ref self: ContractState, identity_id: felt252) {
-            self.ownable.assert_only_owner();
+            self.assert_verifier();
             self.assert_active(identity_id);
             assert(
                 self.verification_status.read(identity_id) == VERIFICATION_VERIFIED,
@@ -444,6 +471,11 @@ pub mod IdentityRegistry {
     impl InternalImpl of InternalTrait {
         fn assert_active(self: @ContractState, identity_id: felt252) {
             assert(self.identity_status.read(identity_id) == STATUS_ACTIVE, 'IDENTITY_NOT_ACTIVE');
+        }
+
+        fn assert_verifier(self: @ContractState) {
+            let caller = get_caller_address();
+            assert(self.authorised_verifier.read(caller), 'VERIFIER_NOT_AUTHORISED');
         }
     }
 }
