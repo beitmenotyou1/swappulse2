@@ -19,6 +19,8 @@ pub struct IdentityRecord {
 // claims (name, email, documents, date of birth, etc.) must remain off-chain.
 // `verification_root` is intended to become a Merkle/Poseidon commitment to
 // the verified claim set, while `schema_hash` identifies how that set was encoded.
+// The off-chain commitment scheme MUST use domain separation plus secret
+// salt/blinding. Never store a plain hash of low-entropy PII that can be guessed.
 #[derive(Copy, Drop, Serde)]
 pub struct IdentityVerification {
     pub verification_root: felt252,
