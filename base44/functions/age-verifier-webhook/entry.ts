@@ -5,7 +5,7 @@ import {
   buildPrivateEligibilityAttestation,
   privateEligibilityState,
 } from '../../shared/privateEligibilityAttestation.ts';
-import { relayIdentityVerification, normalizeHex } from '../../shared/chainRelay.ts';
+import { getVerifiedConfig, relayIdentityVerification, normalizeHex } from '../../shared/chainRelay.ts';
 import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
 
 const MAX_BODY_BYTES = 16 * 1024;
@@ -205,6 +205,14 @@ export default async function(req: Request): Promise<Response> {
       String(identity.status || '') === 'MERGED' ? identity.canonical_identity_id : identity.chain_identity_id,
       'canonical identity id',
     );
+    const config = await getVerifiedConfig(svc);
+    if (!config) {
+      await svc.entities.AgeVerificationSession.update(session.id, {
+        chain_sync_status: 'FAILED',
+        last_error: 'CHAIN_VERIFICATION_REQUIRED',
+      }).catch(() => null);
+      return jsonError('Private verifier state was accepted but the chain configuration is not currently verified', 503, 'CHAIN_VERIFICATION_REQUIRED');
+    }
 
     try {
       let result: any;
@@ -212,7 +220,7 @@ export default async function(req: Request): Promise<Response> {
         const state = await privateEligibilityState(svc, String(session.user_id || ''));
         const verification = await buildPrivateEligibilityAttestation(identityId, state);
         if (!verification) throw new Error('VERIFICATION_COMMITMENT_NOT_AVAILABLE');
-        result = await relayIdentityVerification('attest', { identity_id: identityId, verification });
+        result = await relayIdentityVerification(config.tx_relay_url, 'attest', { identity_id: identityId, verification });
         const txHash = result?.transaction_hash ? normalizeHex(result.transaction_hash, 'verification transaction hash') : '';
         await svc.entities.ChainIdentity.update(identity.id, {
           verification_tx_hash: txHash || identity.verification_tx_hash || '',
@@ -226,7 +234,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ ok: true, event_id: eventId, chain_sync_status: 'SYNCED', transaction_hash: txHash, reconciliation_required: true });
       }
 
-      result = await relayIdentityVerification('revoke', { identity_id: identityId });
+      result = await relayIdentityVerification(config.tx_relay_url, 'revoke', { identity_id: identityId });
       const txHash = result?.transaction_hash ? normalizeHex(result.transaction_hash, 'verification revoke transaction hash') : '';
       await svc.entities.ChainIdentity.update(identity.id, {
         verification_revoke_tx_hash: txHash || identity.verification_revoke_tx_hash || '',
