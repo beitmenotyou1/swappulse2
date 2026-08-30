@@ -4,6 +4,22 @@ const DB_NAME = 'swappulse-testnet-signer-v1';
 const DB_VERSION = 1;
 const STORE = 'signers';
 const VAULT_VERSION = 1;
+const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
+
+// The device key must only ever sign a well-formed Starknet transaction hash.
+// Without this guard a malformed or non-hash value is stringified and signed
+// anyway, producing a signature over garbage.
+function assertTransactionHash(messageHash) {
+  const raw = String(messageHash ?? '').trim().toLowerCase();
+  if (!/^0x[0-9a-f]{1,64}$/.test(raw)) {
+    throw new Error('Refusing to sign: value is not a Starknet transaction hash.');
+  }
+  const value = BigInt(raw);
+  if (value <= 0n || value >= STARK_FIELD_PRIME) {
+    throw new Error('Refusing to sign: hash is outside the Starknet field.');
+  }
+  return `0x${value.toString(16)}`;
+}
 
 function requireBrowserCrypto() {
   if (typeof window === 'undefined' || !window.indexedDB || !window.crypto?.subtle) {
@@ -105,6 +121,7 @@ export async function createDeviceTestSigner(userId) {
 
 export async function signTestnetHash(userId, messageHash) {
   requireBrowserCrypto();
+  const safeHash = assertTransactionHash(messageHash);
   const record = await getRecord(userId);
   if (!record) throw new Error('No device test signer exists for this account.');
   if (Number(record.vaultVersion) !== VAULT_VERSION) throw new Error('Unsupported device signer vault version.');
@@ -117,7 +134,7 @@ export async function signTestnetHash(userId, messageHash) {
   );
   const privateKey = new Uint8Array(plaintext);
   try {
-    const signature = sign(String(messageHash), privateKey);
+    const signature = sign(safeHash, privateKey);
     return { r: `0x${signature.r.toString(16)}`, s: `0x${signature.s.toString(16)}` };
   } finally {
     privateKey.fill(0);
