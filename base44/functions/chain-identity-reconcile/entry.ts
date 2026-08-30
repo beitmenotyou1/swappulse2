@@ -87,10 +87,55 @@ async function starknetCall(
   return result.map((v) => normalizeHex(v, `${entrypoint} result`));
 }
 
+async function readVerificationMirror(
+  rpcUrl: string,
+  registry: string,
+  identityId: string,
+  expectedAttester: string,
+) {
+  const [values, verifiedValues] = await Promise.all([
+    starknetCall(rpcUrl, registry, 'get_effective_verification', [identityId]),
+    starknetCall(rpcUrl, registry, 'is_verified', [identityId]),
+  ]);
+  if (values.length < 8 || verifiedValues.length < 1) throw new Error('verification read returned too few values');
+
+  const root = normalizeHex(values[0], 'verification root');
+  const status = asNumber(values[1], 'verification status');
+  const schemaHash = normalizeHex(values[2], 'verification schema hash');
+  const attestedBy = normalizeHex(values[3], 'verification attester');
+  const verifiedAt = asNumber(values[4], 'verification verified_at');
+  const expiresAt = asNumber(values[5], 'verification expires_at');
+  const revokedAt = asNumber(values[6], 'verification revoked_at');
+  const version = asNumber(values[7], 'verification version');
+  const currentlyValid = asNumber(verifiedValues[0], 'is_verified') === 1;
+
+  if (![0, 1, 2].includes(status)) throw new Error(`unknown verification status ${status}`);
+  if (status !== 0 && attestedBy !== expectedAttester) throw new Error('verification attester does not match configured registry owner');
+  if (status === 0 && (root !== '0x0' || schemaHash !== '0x0' || version !== 0)) {
+    throw new Error('empty verification state contains unexpected data');
+  }
+
+  let mirrorStatus = 'NONE';
+  if (status === 2) mirrorStatus = 'REVOKED';
+  else if (status === 1) mirrorStatus = currentlyValid ? 'ACTIVE' : 'EXPIRED';
+
+  return {
+    verification_root: root === '0x0' ? '' : root,
+    verification_schema_hash: schemaHash === '0x0' ? '' : schemaHash,
+    verification_status: mirrorStatus,
+    verification_attested_by: attestedBy === '0x0' ? '' : attestedBy,
+    verification_verified_at: verifiedAt,
+    verification_expires_at: expiresAt,
+    verification_revoked_at: revokedAt,
+    verification_version: version,
+  };
+}
+
 async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
   const now = new Date().toISOString();
   const identityId = normalizeHex(row.chain_identity_id, 'chain_identity_id');
   const registry = normalizeHex(config.identity_registry_address, 'identity_registry_address');
+  const expectedAttester = normalizeHex(config.identity_registry_owner, 'identity_registry_owner');
 
   try {
     const values = await starknetCall(rpcUrl, registry, 'get_identity', [identityId]);
@@ -104,11 +149,21 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
 
     if (chainStatus === 0) {
       await svc.entities.ChainIdentity.update(row.id, {
+        verification_root: '',
+        verification_schema_hash: '',
+        verification_status: 'NONE',
+        verification_attested_by: '',
+        verification_verified_at: 0,
+        verification_expires_at: 0,
+        verification_revoked_at: 0,
+        verification_version: 0,
         last_reconciled_at: now,
         failure_code: 'CHAIN_IDENTITY_NOT_REGISTERED',
       });
       return { id: row.id, outcome: 'NOT_REGISTERED' };
     }
+
+    const verification = await readVerificationMirror(rpcUrl, registry, identityId, expectedAttester);
 
     if (chainStatus === 1) {
       if (chainAccount === '0x0') throw new Error('Active identity has zero account');
@@ -140,12 +195,14 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
         status: nextStatus,
         canonical_identity_id: canonical === '0x0' ? identityId : canonical,
         recovery_count: recoveryCount,
+        ...verification,
         last_reconciled_at: now,
         failure_code: '',
       });
       return {
         id: row.id,
         outcome: nextStatus,
+        verification_status: verification.verification_status,
         account_changed: Boolean(row.account_address && normalizeHex(row.account_address, 'local account') !== chainAccount),
         recovery_count: recoveryCount,
         chain_created_at: createdAt,
@@ -183,10 +240,16 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
         status: 'MERGED',
         canonical_identity_id: canonical,
         recovery_count: recoveryCount,
+        ...verification,
         last_reconciled_at: now,
         failure_code: '',
       });
-      return { id: row.id, outcome: 'MERGED', canonical_identity_id: canonical };
+      return {
+        id: row.id,
+        outcome: 'MERGED',
+        canonical_identity_id: canonical,
+        verification_status: verification.verification_status,
+      };
     }
 
     await svc.entities.ChainIdentity.update(row.id, {
