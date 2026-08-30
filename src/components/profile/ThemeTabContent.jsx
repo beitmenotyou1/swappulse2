@@ -20,6 +20,7 @@ import SharedCollectionsTab from '@/components/profile/SharedCollectionsTab';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import WeeklyDigestToggle from '@/components/profile/WeeklyDigestToggle';
 import DataPrivacy from '@/components/profile/DataPrivacy';
+import OnChainTab from '@/components/profile/OnChainTab';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -250,6 +251,9 @@ export default function ThemeTabContent({ theme, tabKey, did, isOwner, isExterna
       </div>
     );
   }
+
+  // On-Chain — Starknet L3 wallet, identity, and card attestations (owner only)
+  if (tabKey === 'OnChain') return <OnChainTab isOwner={isOwner} did={did} />;
 
   return null;
 }
