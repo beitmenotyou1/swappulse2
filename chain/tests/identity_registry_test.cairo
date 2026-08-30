@@ -388,8 +388,8 @@ fn verification_rejects_zero_commitment() {
 }
 
 #[test]
-#[should_panic]
-fn non_owner_cannot_set_verification() {
+#[should_panic(expected: 'VERIFIER_NOT_AUTHORISED')]
+fn unauthorised_account_cannot_set_verification() {
     let owner = addr(0x111);
     let attacker = addr(0x999);
     let (registry_address, registry) = deploy_registry(owner);
@@ -400,6 +400,42 @@ fn non_owner_cannot_set_verification() {
 
     start_cheat_caller_address(registry_address, attacker);
     registry.set_verification(0xabc, 0x12345, 0x999, 0_u64);
+}
+
+#[test]
+#[should_panic(expected: 'VERIFIER_NOT_AUTHORISED')]
+fn registry_owner_is_not_implicitly_a_verifier() {
+    let owner = addr(0x111);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, addr(0x222));
+    registry.set_verification(0xabc, 0x12345, 0x999, 0_u64);
+}
+
+#[test]
+fn owner_can_rotate_verifier_authority() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    authorise_verifier(registry_address, registry, owner, verifier);
+    start_cheat_caller_address(registry_address, owner);
+    registry.set_verifier(verifier, false);
+    stop_cheat_caller_address(registry_address);
+
+    assert(!registry.is_verifier(verifier), 'verifier still authorised');
+}
+
+#[test]
+#[should_panic]
+fn non_owner_cannot_authorise_verifier() {
+    let owner = addr(0x111);
+    let attacker = addr(0x999);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, attacker);
+    registry.set_verifier(attacker, true);
 }
 
 #[test]
