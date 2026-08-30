@@ -1,0 +1,84 @@
+{
+  "name": "AgeVerificationSession",
+  "type": "object",
+  "title": "AgeVerificationSession",
+  "description": "Private mapping between a Base44 user and an opaque third-party age-verification subject reference. Contains no DOB, document data, image evidence or raw verifier response.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Owning Base44 user id. Never sent on-chain."
+    },
+    "subject_ref": {
+      "type": "string",
+      "description": "Random opaque reference given to the private verifier instead of the Base44 user id."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "VERIFIED",
+        "EXPIRED",
+        "REVOKED"
+      ],
+      "default": "PENDING"
+    },
+    "verifier_event_id": {
+      "type": "string",
+      "description": "Latest opaque verifier event identifier used for idempotency."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_event_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "subject_ref",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
