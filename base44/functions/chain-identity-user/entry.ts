@@ -125,9 +125,12 @@ async function relayAutomationStatus(network: any) {
   const configured = Boolean(rawUrl && token.length >= 32);
   if (!configured) return { configured: false, verified: false, code: 'TX_RELAY_NOT_CONFIGURED' };
 
+  const tokenDigest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
   const cacheKey = [
     rawUrl,
-    token.length,
+    tokenDigest,
     network.chain_id,
     network.account_class_hash,
     network.identity_registry_class_hash,
