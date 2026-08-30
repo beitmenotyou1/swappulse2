@@ -30,7 +30,7 @@ if [[ ! -d "$CHAIN_ROOT/scripts/tooling/node_modules/starknet" ]]; then
   exit 1
 fi
 
-read -r DEPLOYER_ADDRESS DEPLOYER_PRIVATE_KEY < <(
+read -r DEPLOYER_ADDRESS DEPLOYER_PRIVATE_KEY VERIFIER_ADDRESS < <(
   RAW_RPC="$RAW_RPC" "$NODE_BIN" --input-type=module <<'NODE'
 const response = await fetch(process.env.RAW_RPC, {
   method: 'POST',
@@ -45,14 +45,17 @@ const response = await fetch(process.env.RAW_RPC, {
 if (!response.ok) throw new Error(`Devnet RPC HTTP ${response.status}`);
 const payload = await response.json();
 if (payload.error) throw new Error(JSON.stringify(payload.error));
-const account = payload.result?.[0];
-if (!account?.address || !account?.private_key) throw new Error('No Devnet predeployed account available');
-process.stdout.write(`${account.address} ${account.private_key}\n`);
+const deployer = payload.result?.[0];
+const verifier = payload.result?.[1];
+if (!deployer?.address || !deployer?.private_key) throw new Error('No Devnet deployment account available');
+if (!verifier?.address || !verifier?.private_key) throw new Error('No separate Devnet verifier account available');
+if (BigInt(deployer.address) === BigInt(verifier.address)) throw new Error('Devnet deployer and verifier must be separate accounts');
+process.stdout.write(`${deployer.address} ${deployer.private_key} ${verifier.address}\n`);
 NODE
 )
 
-if [[ -z "${DEPLOYER_ADDRESS:-}" || -z "${DEPLOYER_PRIVATE_KEY:-}" ]]; then
-  echo "Could not obtain the local Devnet deployment account." >&2
+if [[ -z "${DEPLOYER_ADDRESS:-}" || -z "${DEPLOYER_PRIVATE_KEY:-}" || -z "${VERIFIER_ADDRESS:-}" ]]; then
+  echo "Could not obtain separate local Devnet deployment and verifier accounts." >&2
   exit 1
 fi
 
@@ -60,6 +63,7 @@ export SWAPPULSE_RPC_URL="$RAW_RPC"
 export SWAPPULSE_PUBLIC_RPC_URL="$PUBLIC_RPC_URL"
 export SWAPPULSE_DEPLOYER_ADDRESS="$DEPLOYER_ADDRESS"
 export SWAPPULSE_DEPLOYER_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY"
+export SWAPPULSE_VERIFIER_ADDRESS="${SWAPPULSE_VERIFIER_ADDRESS:-$VERIFIER_ADDRESS}"
 export SWAPPULSE_RECOVERY_CONTROLLER="${SWAPPULSE_RECOVERY_CONTROLLER:-$DEPLOYER_ADDRESS}"
 export SWAPPULSE_RECOVERY_DELAY_SECONDS="${SWAPPULSE_RECOVERY_DELAY_SECONDS:-172800}"
 export SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST"
