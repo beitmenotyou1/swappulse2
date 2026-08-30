@@ -87,16 +87,26 @@ No separate Expo project is needed — the web app is already responsive and mob
 
 ## Step 3: Configure Secrets
 
-All secrets are managed in **Settings → Environment Variables**. The following are already configured:
+All secrets are managed in **Settings → Environment Variables**. Configure only the secrets required by the feature set you are actively running.
 
-### Blockchain Secrets
-- `POLYGON_RPC_URL` — Polygon RPC endpoint
-- `POLYGON_PRIVATE_KEY` — Deployer wallet private key
-- `POLYGON_CARD_CONTRACT` — Deployed Card NFT contract address
-- `POLYGON_USERNAME_CONTRACT` — Deployed Username NFT address
-- `PULSE_RPC_URL` — PulseChain RPC endpoint
-- `PULSE_PRIVATE_KEY` — PulseChain deployer key
-- `PULSE_CHAIN_ID` — PulseChain chain ID
+### Current Starknet Identity Testnet Secrets
+- `SWAPPULSE_TX_RELAY_URL` — public HTTPS URL for the bearer-protected provisioning transaction relay on port 8081
+- `SWAPPULSE_TX_RELAY_TOKEN` — random 32-byte bearer token shared only between Base44 server-side functions and the relay host
+
+The relay token must never be exposed in frontend code, browser storage, `ChainNetworkConfig`, logs, screenshots or GitHub.
+
+`POLYGON_PRIVATE_KEY` is **not required** for the current Starknet identity/provisioning architecture.
+
+### Legacy Polygon / PulseChain Secrets
+These remain only for older Polygon/PulseChain features that are still intentionally enabled. Do not create them merely to operate the Starknet identity testnet.
+
+- `POLYGON_RPC_URL` — legacy Polygon RPC endpoint
+- `POLYGON_PRIVATE_KEY` — legacy Polygon deployer/relayer key
+- `POLYGON_CARD_CONTRACT` — legacy Card NFT contract address
+- `POLYGON_USERNAME_CONTRACT` — legacy Username NFT address
+- `PULSE_RPC_URL` — legacy PulseChain RPC endpoint
+- `PULSE_PRIVATE_KEY` — legacy PulseChain deployer key
+- `PULSE_CHAIN_ID` — legacy PulseChain chain ID
 
 ### Payment Secrets
 - `STRIPE_SECRET_KEY` — Stripe API key
@@ -120,14 +130,18 @@ All secrets are managed in **Settings → Environment Variables**. The following
 - `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_TOKEN` — Email
 - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — Web Push
 
-### Secrets to Set After Contract Deployment
-- `META_RELAY_CONTRACT_ADDRESS` — MetaTransactionRelay contract address (Phase 7)
+### After Starknet Identity Testnet Deployment
+Follow `chain/infra/README.md` to deploy the private testnet, start the read-only RPC gateway and provisioning relay, then set `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN` in Base44.
+
+`META_RELAY_CONTRACT_ADDRESS` belongs to the older Polygon meta-transaction design and is not required by the current Starknet identity relay.
 
 ---
 
 ## Step 4: Deploy Smart Contracts
 
-Smart contracts are deployed via Base44 backend functions (pre-compiled bytecode):
+For the **current Starknet identity testnet**, use the host-side deployment flow documented in `chain/infra/README.md`. The registry-owner key and relay bearer token stay on the host and are never committed to Base44 or GitHub.
+
+The following are **legacy Polygon/PulseChain deployment paths** and are needed only if those older features are intentionally enabled:
 
 1. **Polygon contracts**: Invoke `deploy-polygon-contracts` from the Admin dashboard
 2. **PulseChain contracts**: Invoke `deploy-pulse-contracts`
@@ -136,7 +150,7 @@ Smart contracts are deployed via Base44 backend functions (pre-compiled bytecode
 5. **Metadata anchor**: Invoke `deploy-card-metadata-anchor`
 6. **Configure LayerZero peers**: Invoke `configure-lz-peers`
 
-Contract addresses are stored automatically in secrets (`POLYGON_CARD_CONTRACT`, etc.).
+Legacy contract addresses are stored in their corresponding secrets (`POLYGON_CARD_CONTRACT`, etc.).
 
 ---
 
@@ -197,10 +211,12 @@ Verify each is **active** in the Workflows dashboard.
 - [ ] Refund flow tested
 
 ### Blockchain
-- [ ] All contracts deployed to mainnet
-- [ ] Contract addresses saved in secrets
-- [ ] Bridge relayer funded with gas
-- [ ] MetaTransactionRelay funded with gas
+- [ ] Starknet identity contracts build and test successfully
+- [ ] Private testnet deployment manifest verified through the read-only HTTPS RPC
+- [ ] Provisioning relay `/health` endpoint responds on its HTTPS URL
+- [ ] `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN` are stored only as Base44 server-side secrets
+- [ ] Raw Devnet RPC port 5050 is not publicly exposed
+- [ ] Legacy Polygon/PulseChain relayers are funded only if those legacy features are intentionally enabled
 
 ### Mobile
 - [ ] App icon and splash screen configured
