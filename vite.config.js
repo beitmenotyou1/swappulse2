@@ -16,6 +16,11 @@ export default defineConfig({
     }),
     react(),
   ],
+  // The default dep cache (node_modules/.vite) holds chunks from two different
+  // optimization runs, so one page load pulls React twice (?v=6da34daf and
+  // ?v=586c7768) → "Cannot read properties of null (reading 'useState')".
+  // Pointing at an unused cache dir forces one clean, self-consistent run.
+  cacheDir: 'node_modules/.vite-clean',
   resolve: {
     alias: {
       // base44:runtime is a backend-only virtual module; mock it so Vite can
