@@ -238,7 +238,7 @@ export default async function(req: Request): Promise<Response> {
         notes: [
           'These are public blockchain configuration values stored in the admin-only ChainNetworkConfig entity, not secrets.',
           'This endpoint never returns a private key or passkey secret.',
-          'Ordinary-user provisioning remains disabled until AgeStatus enforcement is implemented.',
+          'Ordinary-user provisioning is age-gated. Value-bearing features additionally require a current stronger verifier assertion and ACTIVE chain attestation.',
         ],
       });
     }
@@ -301,6 +301,7 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_class_hash: identityRegistryClassHash,
         identity_registry_address: identityRegistryAddress,
         identity_registry_owner: identityRegistryOwner,
+        identity_verifier_address: identityVerifierAddress,
         recovery_controller: recoveryController,
         recovery_delay_seconds: recoveryDelay,
         rpc_url: rpcUrl,
@@ -333,6 +334,7 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_class_hash: saved.identityRegistryClassHash,
           identity_registry_address: saved.identityRegistryAddress,
           identity_registry_owner: saved.identityRegistryOwner,
+          identity_verifier_address: saved.identityVerifierAddress,
           recovery_controller: saved.recoveryController,
           recovery_delay_seconds: saved.recoveryDelaySeconds,
           rpc_url: saved.rpcUrl,
@@ -418,6 +420,7 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_class_hash: identityRegistryClassHash,
         identity_registry_address: identityRegistryAddress,
         identity_registry_owner: identityRegistryOwner,
+        identity_verifier_address: identityVerifierAddress,
         recovery_controller: recoveryController,
         recovery_delay_seconds: Math.floor(parsedDelay),
         rpc_url: rpcUrl,
@@ -450,6 +453,7 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_class_hash: saved.identityRegistryClassHash,
           identity_registry_address: saved.identityRegistryAddress,
           identity_registry_owner: saved.identityRegistryOwner,
+          identity_verifier_address: saved.identityVerifierAddress,
           recovery_controller: saved.recoveryController,
           recovery_controller_configured: Boolean(saved.recoveryController),
           recovery_delay_seconds: saved.recoveryDelaySeconds,
