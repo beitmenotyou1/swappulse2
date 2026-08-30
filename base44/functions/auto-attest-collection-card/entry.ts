@@ -7,6 +7,7 @@
 // Photo-based AI verification (level 2) is a separate, higher-trust flow invoked
 // from the On-Chain tab; this function only records the self-attested baseline.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { syncPossessionVerified } from '../../shared/possessionVerification.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -35,7 +36,7 @@ export default async function(req: Request): Promise<Response> {
 
     // Idempotency: skip if a verified session already exists for this entry.
     const existing = await svc.entities.CardVerificationSession
-      .filter({ collection_entry_id: collectionEntryId, status: 'verified' }, '-created_date', 1)
+      .filter({ collection_entry_id: collectionEntryId, created_by_id: me.id, status: 'verified' }, '-created_date', 1)
       .catch(() => []);
     if (existing?.[0]) {
       return Response.json({ ok: true, attested: true, session_id: existing[0].id, duplicate: true });
@@ -59,34 +60,7 @@ export default async function(req: Request): Promise<Response> {
 
     // Update the author's open TradeListings that offer this card to possession_verified = true.
     // Only listings where ALL offered cards now have a verified attestation are marked.
-    const myListings = await svc.entities.TradeListing
-      .filter({ created_by_id: me.id, status: 'open' }, '-created_date', 100)
-      .catch(() => []);
-
-    // Gather all verified card IDs for this user in one pass.
-    // Use created_by_id (not did) to avoid cross-user leakage when did is empty.
-    const allSessions = await svc.entities.CardVerificationSession
-      .filter({ created_by_id: me.id, status: 'verified' }, '-created_date', 500)
-      .catch(() => []);
-    const verifiedCardIds = new Set<string>();
-    for (const s of allSessions) {
-      if (s.card_id) verifiedCardIds.add(s.card_id);
-    }
-    // Include the card we just attested.
-    verifiedCardIds.add(cardId);
-
-    let updatedCount = 0;
-    for (const listing of myListings) {
-      const offerIds = listing.offer_card_ids || [];
-      if (offerIds.length === 0) continue;
-      const allVerified = offerIds.every((id: string) => verifiedCardIds.has(id));
-      if (allVerified && !listing.possession_verified) {
-        try {
-          await svc.entities.TradeListing.update(listing.id, { possession_verified: true });
-          updatedCount++;
-        } catch { /* best-effort */ }
-      }
-    }
+    const updatedCount = await syncPossessionVerified(svc, me.id, cardId);
 
     return Response.json({
       ok: true,

@@ -11,6 +11,7 @@
 //   2 = AI-verified scan (matched, high confidence, not a screen photo)
 //   3 = graded cert (reserved for future grading-company verification)
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { syncPossessionVerified } from '../../shared/possessionVerification.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -35,8 +36,32 @@ export default async function(req: Request): Promise<Response> {
     if (scanImageUrls.length > 4) {
       return Response.json({ error: 'Maximum 4 scan photos' }, { status: 400 });
     }
+    // Only accept well-formed HTTPS URLs as scan photos — these are stored on
+    // the session and passed to the AI vision call.
+    for (const raw of scanImageUrls) {
+      let url: URL;
+      try {
+        url = new URL(String(raw));
+      } catch {
+        return Response.json({ error: 'Scan photo URLs must be valid URLs' }, { status: 400 });
+      }
+      if (url.protocol !== 'https:' || url.username || url.password || String(raw).length > 2000) {
+        return Response.json({ error: 'Scan photo URLs must be plain HTTPS URLs' }, { status: 400 });
+      }
+    }
 
     const svc = base44.asServiceRole;
+
+    // Rate limit: at most 10 AI-verified attestation attempts per user per hour
+    // (each call runs a vision LLM comparison).
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const recentSessions = await svc.entities.CardVerificationSession
+      .filter({ created_by_id: me.id, created_date: { $gte: hourAgo } }, '-created_date', 50)
+      .catch(() => []);
+    const recentAiAttempts = recentSessions.filter((s: any) => (s.scan_image_urls || []).length > 0);
+    if (recentAiAttempts.length >= 10) {
+      return Response.json({ error: 'Too many verification attempts. Please try again in an hour.', code: 'RATE_LIMITED' }, { status: 429 });
+    }
 
     // Verify the collection entry belongs to the calling user.
     const entries = await svc.entities.CollectionEntry
@@ -128,6 +153,11 @@ Return your assessment as structured JSON.`,
       verification_level: verificationLevel,
       status: aiStatus,
     });
+
+    // A verified photo attestation also counts toward trade-listing badges.
+    if (aiStatus === 'verified') {
+      await syncPossessionVerified(svc, me.id, cardId).catch(() => 0);
+    }
 
     const updatedRows = await svc.entities.CardVerificationSession
       .filter({ id: session.id }, '-created_date', 1)
