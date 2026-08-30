@@ -63,6 +63,10 @@
       "type": "string",
       "description": "IdentityRegistry verification-attestation transaction hash, when a stronger private verification was committed on-chain."
     },
+    "verification_revoke_tx_hash": {
+      "type": "string",
+      "description": "IdentityRegistry verification-revocation transaction hash, when a verifier assertion was withdrawn, expired or otherwise failed closed."
+    },
     "verification_root": {
       "type": "string",
       "description": "Public opaque verification commitment mirrored from IdentityRegistry. Contains no plaintext age or identity evidence."
