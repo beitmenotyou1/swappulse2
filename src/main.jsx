@@ -18,35 +18,19 @@ try {
   }
 } catch (e) { /* ignore */ }
 
-// §8 PWA: In dev, a stale service worker from a previous production visit
-// cache-serves old Vite dep chunks alongside fresh ones, creating duplicate
-// React copies and "Invalid hook call" / "Cannot read properties of null
-// (reading 'useState')" crashes. We must unregister it and clear its caches
-// BEFORE React renders — then reload to fetch clean chunks without SW
-// interference. In production, the SW registers normally after load.
+// §8 PWA: In dev, a service worker from a previous production visit can
+// cache-serve stale chunks, so unregister it and drop its caches. Rendering
+// happens either way — a reload here would risk a blank page loop.
 async function bootstrap() {
   if (import.meta.env.DEV) {
     try {
-      // Always unregister any service worker in dev — a production SW can
-      // cache-serve stale Vite dep chunks and cause duplicate React copies.
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
       }
-      // Always clear the Cache API in dev, even with no active SW — stale
-      // entries from a previously-unregistered SW can still be served.
-      let hadStaleCache = false;
       if ('caches' in window) {
         const keys = await caches.keys();
-        if (keys.length > 0) {
-          hadStaleCache = true;
-          await Promise.all(keys.map((k) => caches.delete(k)));
-        }
-      }
-      if (hadStaleCache) {
-        // Reload to get fresh chunks without any stale cache interference.
-        window.location.reload();
-        return; // Don't render — page is reloading.
+        await Promise.all(keys.map((k) => caches.delete(k)));
       }
     } catch { /* ignore */ }
   }
