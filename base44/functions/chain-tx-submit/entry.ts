@@ -202,7 +202,8 @@ export default async function(req: Request): Promise<Response> {
       }
 
       const result = await forward('starknet_addDeployAccountTransaction', { deploy_account_transaction: tx });
-      const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'transaction hash') : '';
+      if (!result?.transaction_hash) return jsonError('Relay response did not include a deployment transaction hash', 502, 'RELAY_TX_HASH_MISSING');
+      const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
       const contractAddress = result.contract_address ? normalizeHex(result.contract_address, 'contract address') : expectedAddress;
       if (contractAddress !== expectedAddress) return jsonError('Relay returned an unexpected account address', 502, 'RELAY_ACCOUNT_ADDRESS_MISMATCH');
       await svc.entities.ChainIdentity.update(identity.id, {
@@ -237,7 +238,8 @@ export default async function(req: Request): Promise<Response> {
       }
 
       const result = await forward('starknet_addInvokeTransaction', { invoke_transaction: tx });
-      const txHash = result.transaction_hash ? normalizeHex(result.transaction_hash, 'transaction hash') : '';
+      if (!result?.transaction_hash) return jsonError('Relay response did not include a recovery transaction hash', 502, 'RELAY_TX_HASH_MISSING');
+      const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
       await svc.entities.ChainIdentity.update(identity.id, {
         account_address: expectedAddress,
         recovery_config_tx_hash: txHash,
