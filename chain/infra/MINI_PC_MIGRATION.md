@@ -39,6 +39,14 @@ tailscale status
 
 Do not continue until Docker works without exposing its daemon publicly and Node is 22 or newer.
 
+Check that the copied Zorin port assignments will not collide with an existing mini-PC service:
+
+```bash
+sudo ss -ltnp | grep -E ':(5050|18080|8081)\\b' || echo 'SwapPulse candidate ports are currently free'
+```
+
+The migrated `.env` currently decides the actual host ports. If a collision exists, change only the corresponding loopback host-port variable after the transfer (`SWAPPULSE_RAW_RPC_PORT`, `SWAPPULSE_GATEWAY_PORT`, or `SWAPPULSE_TX_RELAY_PORT`); never bind raw Devnet to a public interface.
+
 Clone or update the existing repository using the host's already-authorised GitHub method:
 
 ```bash
@@ -155,19 +163,17 @@ cp ~/swappulse-migration/swappulse-testnet.dump data/swappulse-testnet.dump
 mkdir -p ../deployments
 cp ~/swappulse-migration/swappulse-testnet.json ../deployments/swappulse-testnet.json
 
-TUNNEL_ID="$(basename ~/swappulse-migration/*.json .json 2>/dev/null | grep -E '^[0-9a-fA-F-]{36}$' | head -n 1)"
-if [[ -z "$TUNNEL_ID" ]]; then
+TUNNEL_CREDENTIAL="$(find "$HOME/swappulse-migration" -maxdepth 1 -type f \
+  -regextype posix-extended \
+  -regex '.*/[0-9a-fA-F-]{36}\\.json' \
+  -print -quit)"
+if [[ -z "$TUNNEL_CREDENTIAL" ]]; then
   echo 'Could not identify the copied Cloudflare tunnel credential UUID.' >&2
   exit 1
 fi
-cp "~/swappulse-migration/${TUNNEL_ID}.json" "$HOME/.cloudflared/${TUNNEL_ID}.json"
+TUNNEL_ID="$(basename "$TUNNEL_CREDENTIAL" .json)"
+cp "$TUNNEL_CREDENTIAL" "$HOME/.cloudflared/${TUNNEL_ID}.json"
 chmod 600 "$HOME/.cloudflared/${TUNNEL_ID}.json"
-```
-
-If the quoted `cp` line above is entered manually, use this shell-safe form instead:
-
-```bash
-cp "$HOME/swappulse-migration/${TUNNEL_ID}.json" "$HOME/.cloudflared/${TUNNEL_ID}.json"
 ```
 
 Verify the dump checksum matches the Zorin checksum recorded in Phase 2:
