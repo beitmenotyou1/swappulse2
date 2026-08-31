@@ -75,6 +75,24 @@
       "type": "string",
       "description": "Public generic schema identifier mirrored from IdentityRegistry."
     },
+    "verification_type": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "default": 0,
+      "description": "Generic public V2 assurance category mirrored from IdentityRegistry. Zero means legacy V1/no V2 assurance metadata."
+    },
+    "verification_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "default": 0,
+      "description": "Generic public V2 assurance strength mirrored from IdentityRegistry. It never encodes DOB, document type or private verifier evidence."
+    },
+    "verification_attestation_id": {
+      "type": "string",
+      "description": "Opaque public replay identifier mirrored from IdentityRegistry V2. It is independently keyed and contains no plaintext identity evidence."
+    },
     "verification_status": {
       "type": "string",
       "enum": [
