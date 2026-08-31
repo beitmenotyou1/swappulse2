@@ -35,8 +35,10 @@ fn deploy_token(
     let contract = declare("NativeToken").unwrap().contract_class();
     let mut calldata = ArrayTrait::new();
     owner.serialize(ref calldata);
-    "SwapPulse".serialize(ref calldata);
-    "SWPX".serialize(ref calldata);
+    let name: ByteArray = "SwapPulse";
+    let symbol: ByteArray = "SWPX";
+    name.serialize(ref calldata);
+    symbol.serialize(ref calldata);
     max_supply.serialize(ref calldata);
     let (contract_address, _) = contract.deploy(@calldata).unwrap();
 
