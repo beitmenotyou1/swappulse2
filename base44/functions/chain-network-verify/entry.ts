@@ -68,6 +68,17 @@ export default async function(req: Request): Promise<Response> {
     const configuredRegistryHash = String(config.identity_registry_class_hash || '').trim();
     const configuredAccountHash = String(config.account_class_hash || '').trim();
     const verificationMode = String(config.identity_verification_mode || 'V1').trim().toUpperCase();
+    const supportContracts = [
+      { key: 'native_token', label: 'NativeToken', address: String(config.native_token_address || '').trim(), classHash: String(config.native_token_class_hash || '').trim() },
+      { key: 'card_nft', label: 'CardNft', address: String(config.card_nft_address || '').trim(), classHash: String(config.card_nft_class_hash || '').trim() },
+      { key: 'staking_pool', label: 'StakingPool', address: String(config.staking_pool_address || '').trim(), classHash: String(config.staking_pool_class_hash || '').trim() },
+      { key: 'usership', label: 'ProofOfUsership', address: String(config.usership_address || '').trim(), classHash: String(config.usership_class_hash || '').trim() },
+      { key: 'bridge_adapter', label: 'BridgeAdapter', address: String(config.bridge_adapter_address || '').trim(), classHash: String(config.bridge_adapter_class_hash || '').trim() },
+    ];
+    const incompleteSupport = supportContracts.find((item) => Boolean(item.address) !== Boolean(item.classHash));
+    if (incompleteSupport) {
+      return jsonError(`${incompleteSupport.label} requires both an address and class hash`, 409, 'ECOSYSTEM_CONFIG_INCOMPLETE');
+    }
     if (!['V1', 'V2'].includes(verificationMode)) {
       return jsonError('Identity verification mode must be V1 or V2', 409, 'IDENTITY_VERIFICATION_MODE_INVALID');
     }
@@ -156,6 +167,36 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('SwapPulseAccount class declaration could not be verified', 409, 'ACCOUNT_CLASS_NOT_DECLARED');
     }
 
+    const verifiedSupport: Record<string, string> = {};
+    const canonicalSupport: Record<string, string> = {};
+    for (const item of supportContracts) {
+      if (!item.address) continue;
+      const address = normalizeHex(item.address, `${item.label} address`);
+      const expectedHash = normalizeHex(item.classHash, `${item.label} class hash`);
+      const actualHash = normalizeHex(
+        await rpcCall(rpcUrl, 'starknet_getClassHashAt', ['latest', address]),
+        `${item.label} deployed class hash`,
+      );
+      if (actualHash !== expectedHash) {
+        return jsonError(`${item.label} class hash does not match the saved configuration`, 409, `${item.key.toUpperCase()}_CLASS_HASH_MISMATCH`);
+      }
+      const ownerValues = await rpcCall(rpcUrl, 'starknet_call', [
+        {
+          contract_address: address,
+          entry_point_selector: hash.getSelectorFromName('owner'),
+          calldata: [],
+        },
+        'latest',
+      ]);
+      if (!Array.isArray(ownerValues) || !ownerValues[0] || normalizeHex(ownerValues[0], `${item.label} owner`) !== actualOwner) {
+        return jsonError(`${item.label} owner does not match the IdentityRegistry owner`, 409, `${item.key.toUpperCase()}_OWNER_MISMATCH`);
+      }
+      canonicalSupport[`${item.key}_address`] = address;
+      canonicalSupport[`${item.key}_class_hash`] = actualHash;
+      verifiedSupport[`verified_${item.key}_class_hash`] = actualHash;
+    }
+    const ecosystemReady = supportContracts.every((item) => Boolean(item.address && item.classHash));
+
     const now = new Date().toISOString();
     // Every consumer treats the network as ready only when each verified_* pin is
     // byte-identical to its live config field. The pins hold normalised values
@@ -177,12 +218,14 @@ export default async function(req: Request): Promise<Response> {
       identity_verifier_address: expectedVerifier,
       identity_verification_mode: verificationMode,
       account_class_hash: expectedAccountHash,
+      ...canonicalSupport,
       verified_chain_id: chainId,
       verified_identity_registry_class_hash: actualRegistryHash,
       verified_identity_registry_owner: actualOwner,
       verified_identity_verifier_address: expectedVerifier,
       verified_identity_verification_mode: verificationMode,
       verified_account_class_hash: expectedAccountHash,
+      ...verifiedSupport,
       verified_rpc_url: rpcUrl,
       verified_by: caller.id,
     });
@@ -191,6 +234,8 @@ export default async function(req: Request): Promise<Response> {
       ok: true,
       network: NETWORK,
       status: 'CONFIGURED',
+      identity_ready: true,
+      ecosystem_ready: ecosystemReady,
       verified_at: now,
       rpc: {
         url: rpcUrl,
@@ -205,6 +250,16 @@ export default async function(req: Request): Promise<Response> {
         identity_verification_mode: verificationMode,
         verification_v2_required: verificationV2Required,
         account_class_hash: expectedAccountHash,
+        native_token_address: canonicalSupport.native_token_address || '',
+        native_token_class_hash: canonicalSupport.native_token_class_hash || '',
+        card_nft_address: canonicalSupport.card_nft_address || '',
+        card_nft_class_hash: canonicalSupport.card_nft_class_hash || '',
+        staking_pool_address: canonicalSupport.staking_pool_address || '',
+        staking_pool_class_hash: canonicalSupport.staking_pool_class_hash || '',
+        usership_address: canonicalSupport.usership_address || '',
+        usership_class_hash: canonicalSupport.usership_class_hash || '',
+        bridge_adapter_address: canonicalSupport.bridge_adapter_address || '',
+        bridge_adapter_class_hash: canonicalSupport.bridge_adapter_class_hash || '',
       },
     });
   } catch (error: any) {
