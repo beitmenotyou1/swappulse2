@@ -248,6 +248,27 @@ SWAPPULSE_VERIFY_RPC_URL=http://127.0.0.1:5050 \
 
 Do not continue unless this returns `ok: true` with the existing IdentityRegistry address, class hash, owner, verifier and account class hash.
 
+### If startup did not replay the dump
+
+Devnet 0.8.2 documents `--dump-path <PATH>` as the startup-load flag and also supports explicit `devnet_load`. If verification reports `Contract not found`, do not redeploy. Preserve the copied migration snapshot and explicitly load that frozen file into the already-running Devnet:
+
+```bash
+cd ~/swappulse2/chain/infra
+
+cp ~/swappulse-migration/swappulse-testnet.dump data/swappulse-restore.dump
+DEVNET_UID="$(docker exec infra-devnet-1 id -u)"
+DEVNET_GID="$(docker exec infra-devnet-1 id -g)"
+sudo chown "$DEVNET_UID:$DEVNET_GID" data/swappulse-restore.dump
+sudo chmod 600 data/swappulse-restore.dump
+
+curl -sS --fail-with-body \
+  -X POST http://127.0.0.1:5050 \
+  -H 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"devnet_load","params":{"path":"/data/swappulse-restore.dump"}}'
+```
+
+Immediately rerun `verify-network.mjs` against `http://127.0.0.1:5050`. If `devnet_load` itself errors, stop and diagnose that error; do not deploy replacement contracts.
+
 ## Phase 6: regenerate relay credentials on the mini PC
 
 The public RPC still points at the read-only Zorin copy during this transition, so it should match the same preserved state. Generate a fresh relay environment on the mini PC; this derives the same registry-owner/verifier accounts from the migrated Devnet seed but rotates the bearer token.
