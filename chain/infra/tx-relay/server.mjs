@@ -638,17 +638,14 @@ async function registerIdentity(body) {
     registrationIdempotent = true;
 
     if (verification) {
-      const currentVerification = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
-      verificationIdempotent = verificationMatches(currentVerification, verification);
+      const currentVerification = await readVerificationState(identityId);
+      verificationIdempotent = verificationMatches(
+        currentVerification.values,
+        verification,
+        currentVerification.assurance,
+      );
       if (!verificationIdempotent) {
-        const attested = await identityVerifier.execute({
-          contractAddress: identityRegistryAddress,
-          entrypoint: 'set_verification',
-          calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
-        });
-        await provider.waitForTransaction(attested.transaction_hash);
-        verificationTransactionHash = normalizeHex(attested.transaction_hash, 'verification transaction hash');
-        await assertVerification(identityId, verification);
+        verificationTransactionHash = await writeVerification(identityId, verification);
       }
     }
 
@@ -699,15 +696,8 @@ async function registerIdentity(body) {
     throw new Error('REGISTRATION_FINAL_REVERSE_MISMATCH');
   }
   if (verification) {
-    const attested = await identityVerifier.execute({
-      contractAddress: identityRegistryAddress,
-      entrypoint: 'set_verification',
-      calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
-    });
-    await provider.waitForTransaction(attested.transaction_hash);
-    verificationTransactionHash = normalizeHex(attested.transaction_hash, 'verification transaction hash');
+    verificationTransactionHash = await writeVerification(identityId, verification);
     verificationIdempotent = false;
-    await assertVerification(identityId, verification);
   }
 
   return {
@@ -728,8 +718,8 @@ async function syncVerification(body, mode) {
   const identityValues = await starknetCall(identityRegistryAddress, 'get_identity', [identityId]);
   if (Number(BigInt(identityValues?.[1] || '0x0')) !== 1) throw new Error('VERIFICATION_IDENTITY_NOT_ACTIVE');
 
-  const current = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
-  const currentStatus = Number(BigInt(current?.[1] || '0x0'));
+  const current = await readVerificationState(identityId);
+  const currentStatus = Number(BigInt(current.values?.[1] || '0x0'));
 
   if (mode === 'revoke') {
     if (currentStatus === 0 || currentStatus === 2) {
@@ -754,20 +744,14 @@ async function syncVerification(body, mode) {
 
   const verification = parsePrivateVerification(body);
   if (!verification) throw new Error('VERIFICATION_BODY_REQUIRED');
-  if (verificationMatches(current, verification)) {
+  if (verificationMatches(current.values, verification, current.assurance)) {
     return { identity_id: identityId, transaction_hash: '', idempotent: true, status: 'ACTIVE' };
   }
 
-  const attested = await identityVerifier.execute({
-    contractAddress: identityRegistryAddress,
-    entrypoint: 'set_verification',
-    calldata: [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)],
-  });
-  await provider.waitForTransaction(attested.transaction_hash);
-  await assertVerification(identityId, verification);
+  const transactionHash = await writeVerification(identityId, verification);
   return {
     identity_id: identityId,
-    transaction_hash: normalizeHex(attested.transaction_hash, 'verification transaction hash'),
+    transaction_hash: transactionHash,
     idempotent: false,
     status: 'ACTIVE',
   };
