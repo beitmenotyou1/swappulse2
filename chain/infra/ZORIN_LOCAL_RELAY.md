@@ -95,11 +95,11 @@ cloudflared tunnel login
 
 Complete the browser login and select the Cloudflare zone that will hold the SwapPulse hostnames.
 
-Set the fixed hostnames in `.env`, for example:
+Set the fixed SwapPulse hostnames in `.env`:
 
 ```text
-SWAPPULSE_RPC_HOSTNAME=swappulse-rpc.example.com
-SWAPPULSE_TX_RELAY_HOSTNAME=swappulse-relay.example.com
+SWAPPULSE_RPC_HOSTNAME=swappulse-rpc.swappulse.org
+SWAPPULSE_TX_RELAY_HOSTNAME=swappulse-relay.swappulse.org
 SWAPPULSE_CLOUDFLARE_TUNNEL_NAME=swappulse-testnet
 ```
 
