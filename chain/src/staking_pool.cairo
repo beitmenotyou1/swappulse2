@@ -127,6 +127,10 @@ pub mod StakingPool {
         validator_identity: Map<ContractAddress, felt252>,
         validator_self_stake: Map<ContractAddress, u128>,
         validator_delegated: Map<ContractAddress, u128>,
+        // True while this validator's delegations are included in total_staked.
+        // It flips false when the validator exits or is forced out by slashing,
+        // while the underlying delegator funds remain in total_locked_stake.
+        validator_delegations_counted: Map<ContractAddress, bool>,
         validator_commission: Map<ContractAddress, u16>,
         validator_status: Map<ContractAddress, u8>,
         validator_registered_at: Map<ContractAddress, u64>,
@@ -265,6 +269,7 @@ pub mod StakingPool {
             let index = self.validator_count.read();
             self.validator_identity.write(caller, identity_id);
             self.validator_self_stake.write(caller, amount);
+            self.validator_delegations_counted.write(caller, true);
             self.validator_commission.write(caller, commission_bps);
             self.validator_status.write(caller, STATUS_ACTIVE);
             self.validator_registered_at.write(caller, get_block_timestamp());
@@ -332,7 +337,9 @@ pub mod StakingPool {
             self
                 .validator_delegated
                 .write(validator, self.validator_delegated.read(validator) - amount);
-            self.total_staked.write(self.total_staked.read() - amount);
+            if self.validator_delegations_counted.read(validator) {
+                self.total_staked.write(self.total_staked.read() - amount);
+            }
 
             let pending = self.delegation_pending.read((caller, validator)) + amount;
             let unlock_at = get_block_timestamp() + self.unbonding_period.read();
@@ -370,7 +377,9 @@ pub mod StakingPool {
             );
             self.validator_status.write(caller, STATUS_EXITING);
             self.validator_self_stake.write(caller, 0_u128);
-            self.total_staked.write(self.total_staked.read() - self_stake);
+            let delegated = self.validator_delegated.read(caller);
+            self.total_staked.write(self.total_staked.read() - self_stake - delegated);
+            self.validator_delegations_counted.write(caller, false);
 
             let pending = self.delegation_pending.read((caller, caller)) + self_stake;
             self.delegation_pending.write((caller, caller), pending);
@@ -391,7 +400,7 @@ pub mod StakingPool {
             let pending_self_stake = self.delegation_pending.read((validator, validator));
             let slashable = active_self_stake + pending_self_stake;
             assert(slashable > 0_u128, 'NOTHING_TO_SLASH');
-            let max_slash = slashable * MAX_SLASH_BPS / 10000_u128;
+            let max_slash = slashable / 2_u128;
             assert(amount > 0_u128 && amount <= max_slash, 'SLASH_AMOUNT_INVALID');
 
             let active_slash = if amount <= active_self_stake { amount } else { active_self_stake };
@@ -410,11 +419,33 @@ pub mod StakingPool {
             self.total_locked_stake.write(self.total_locked_stake.read() - amount);
             self.burn_tokens(amount);
 
-            let remaining_active = self.validator_self_stake.read(validator);
+            let mut remaining_active = self.validator_self_stake.read(validator);
             if self.validator_status.read(validator) == STATUS_ACTIVE
                 && remaining_active < self.min_self_stake.read()
             {
+                // Falling below the minimum removes the validator and all of its
+                // delegations from active security weight immediately. Remaining
+                // self-stake is moved into the same timed withdrawal path used by
+                // a voluntary exit, so it is not stranded.
+                let delegated = self.validator_delegated.read(validator);
+                self.total_staked.write(self.total_staked.read() - remaining_active - delegated);
+                self.validator_delegations_counted.write(validator, false);
                 self.validator_status.write(validator, STATUS_SLASHED);
+                self.validator_self_stake.write(validator, 0_u128);
+
+                if remaining_active > 0_u128 {
+                    let existing_pending = self.delegation_pending.read((validator, validator));
+                    self
+                        .delegation_pending
+                        .write((validator, validator), existing_pending + remaining_active);
+                    self
+                        .delegation_unlock_at
+                        .write(
+                            (validator, validator),
+                            get_block_timestamp() + self.unbonding_period.read(),
+                        );
+                }
+                remaining_active = 0_u128;
             }
 
             let remaining = remaining_active
