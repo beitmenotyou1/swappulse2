@@ -1,5 +1,5 @@
 // Wallet & On-Chain pages — smart account identity, card possession
-// attestations, on-chain card anchoring, network staking, and cross-chain
+// attestations, on-chain card anchoring, community staking, and cross-chain
 // transfers. English source content; translated at runtime via
 // TranslationOverride records keyed 'help.<slug>'.
 
@@ -128,7 +128,7 @@ export const walletPages = {
       { icon: 'Plus', title: 'Delegating', blocks: [
         { type: 'steps', items: [
           'Secure your on-chain identity first, staking needs a confirmed account.',
-          'Open Network Staking on the Wallet page and choose Delegate.',
+          'Open Community Staking on the Wallet page and choose Delegate.',
           'Enter the operator address and the amount you want to stake.',
           'Confirm. Your position appears in the list once the network accepts it.',
         ]},
