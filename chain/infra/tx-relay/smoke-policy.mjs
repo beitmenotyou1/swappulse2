@@ -279,9 +279,6 @@ try {
       verification_root: verificationRoot,
       schema_hash: verificationSchema,
       expires_at: 0,
-      verification_type: verificationType,
-      verification_level: verificationLevel,
-      attestation_id: attestationId,
     },
   }, token);
   if (missingV2Metadata.status !== 400 || missingV2Metadata.body?.code !== 'VERIFICATION_TYPE_INVALID') {
