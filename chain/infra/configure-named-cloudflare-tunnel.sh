@@ -56,14 +56,14 @@ fi
 
 find_tunnel_id() {
   "$CLOUDFLARED_BIN" tunnel list --output json 2>/dev/null | \
-    node --input-type=module - "$TUNNEL_NAME" <<'NODE'
-import fs from 'node:fs';
-const wanted = process.argv[2];
-const text = fs.readFileSync(0, 'utf8').trim();
-const rows = text ? JSON.parse(text) : [];
-const row = Array.isArray(rows) ? rows.find((item) => item?.name === wanted) : null;
-if (row?.id) process.stdout.write(String(row.id));
-NODE
+    TUNNEL_NAME="$TUNNEL_NAME" node --input-type=module -e '
+      import fs from "node:fs";
+      const wanted = process.env.TUNNEL_NAME;
+      const text = fs.readFileSync(0, "utf8").trim();
+      const rows = text ? JSON.parse(text) : [];
+      const row = Array.isArray(rows) ? rows.find((item) => item?.name === wanted) : null;
+      if (row?.id) process.stdout.write(String(row.id));
+    '
 }
 
 TUNNEL_ID="$(find_tunnel_id || true)"
