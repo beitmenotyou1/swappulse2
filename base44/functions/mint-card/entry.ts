@@ -130,7 +130,7 @@ export default async function (req: Request): Promise<Response> {
       });
 
     try {
-      const minted = await relayMintCard( {
+      const minted = await relayMintCard({
         to: normalizeHex(identity.account_address, 'account address'),
         card_id: cardIdFelt(String(session.card_id)),
         verification_level: level,
