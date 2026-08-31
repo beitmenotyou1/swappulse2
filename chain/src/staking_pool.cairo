@@ -1,5 +1,9 @@
 use starknet::ContractAddress;
 
+// NOTE: the public product calls these participants "community operators".
+// This undeployed Phase 2 contract retains validator-named structs/functions for
+// compatibility with the existing Base44 draft/submit ABI. On the current
+// single-runtime Devnet these bonds secure accountable services, not consensus.
 #[derive(Copy, Drop, Serde)]
 pub struct ValidatorInfo {
     pub account: ContractAddress,
