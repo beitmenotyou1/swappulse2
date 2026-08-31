@@ -296,8 +296,9 @@ try {
   const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add'));
   const expectedWrites = [
     'starknet_addDeployAccountTransaction',
-    'starknet_addInvokeTransaction',
-    'starknet_addInvokeTransaction',
+    'starknet_addInvokeTransaction', // approved recovery configuration
+    'starknet_addInvokeTransaction', // owner identity registration
+    'starknet_addInvokeTransaction', // verifier attestation
   ];
   if (forwardedWrites.join(',') !== expectedWrites.join(',')) {
     throw new Error(`Unexpected writes reached upstream: ${forwardedWrites.join(',')}`);
