@@ -67,6 +67,10 @@ export default async function(req: Request): Promise<Response> {
     const configuredVerifier = String(config.identity_verifier_address || '').trim();
     const configuredRegistryHash = String(config.identity_registry_class_hash || '').trim();
     const configuredAccountHash = String(config.account_class_hash || '').trim();
+    const verificationMode = String(config.identity_verification_mode || 'V1').trim().toUpperCase();
+    if (!['V1', 'V2'].includes(verificationMode)) {
+      return jsonError('Identity verification mode must be V1 or V2', 409, 'IDENTITY_VERIFICATION_MODE_INVALID');
+    }
     if (!rpcRaw || !configuredChainId || !registryAddress || !configuredRegistryOwner || !configuredVerifier || !configuredRegistryHash || !configuredAccountHash) {
       return jsonError('Save the RPC URL, chain ID, registry address/owner, authorised verifier and both class hashes before verification', 409, 'CHAIN_CONFIG_INCOMPLETE');
     }
@@ -130,6 +134,22 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('Configured identity verifier is not authorised by IdentityRegistry', 409, 'IDENTITY_VERIFIER_NOT_AUTHORISED');
     }
 
+    let verificationV2Required = false;
+    if (verificationMode === 'V2') {
+      const v2Result = await rpcCall(rpcUrl, 'starknet_call', [
+        {
+          contract_address: normalizeHex(registryAddress, 'registry address'),
+          entry_point_selector: hash.getSelectorFromName('verification_v2_required'),
+          calldata: [],
+        },
+        'latest',
+      ]);
+      if (!Array.isArray(v2Result) || v2Result.length < 1) {
+        return jsonError('IdentityRegistry V2 assurance ABI could not be verified', 409, 'IDENTITY_VERIFICATION_V2_UNAVAILABLE');
+      }
+      verificationV2Required = BigInt(v2Result[0] || '0x0') === 1n;
+    }
+
     const expectedAccountHash = normalizeHex(configuredAccountHash, 'configured account class hash');
     const accountClass = await rpcCall(rpcUrl, 'starknet_getClass', ['latest', expectedAccountHash]);
     if (!accountClass || typeof accountClass !== 'object') {
@@ -155,11 +175,13 @@ export default async function(req: Request): Promise<Response> {
       identity_registry_class_hash: actualRegistryHash,
       identity_registry_owner: actualOwner,
       identity_verifier_address: expectedVerifier,
+      identity_verification_mode: verificationMode,
       account_class_hash: expectedAccountHash,
       verified_chain_id: chainId,
       verified_identity_registry_class_hash: actualRegistryHash,
       verified_identity_registry_owner: actualOwner,
       verified_identity_verifier_address: expectedVerifier,
+      verified_identity_verification_mode: verificationMode,
       verified_account_class_hash: expectedAccountHash,
       verified_rpc_url: rpcUrl,
       verified_by: caller.id,
@@ -180,6 +202,8 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_class_hash: actualRegistryHash,
         identity_registry_owner: actualOwner,
         identity_verifier_address: expectedVerifier,
+        identity_verification_mode: verificationMode,
+        verification_v2_required: verificationV2Required,
         account_class_hash: expectedAccountHash,
       },
     });
