@@ -83,38 +83,40 @@ The ownership step is required because Devnet dumps blockchain state into the bi
 
 The raw Devnet remains on loopback port `5050`. The public-safe gateway uses `SWAPPULSE_GATEWAY_PORT` from `.env`, defaulting to `8080`. If `docker compose ps` shows a different host port, use that port. Do not assume `8080` when another local service already occupies it.
 
-## 6. Create a temporary HTTPS URL for the read-only RPC
+## 6. Create the persistent Cloudflare Tunnel
 
-Open a second terminal and run:
+Use a named Cloudflare Tunnel for the persistent SwapPulse testnet. One tunnel publishes two fixed hostnames: the read-only RPC gateway and the authenticated transaction relay. Raw Devnet port `5050` is never routed.
+
+First authenticate `cloudflared` once if this host does not already have `~/.cloudflared/cert.pem`:
+
+```bash
+cloudflared tunnel login
+```
+
+Complete the browser login and select the Cloudflare zone that will hold the SwapPulse hostnames.
+
+Set the fixed hostnames in `.env`, for example:
+
+```text
+SWAPPULSE_RPC_HOSTNAME=swappulse-rpc.example.com
+SWAPPULSE_TX_RELAY_HOSTNAME=swappulse-relay.example.com
+SWAPPULSE_CLOUDFLARE_TUNNEL_NAME=swappulse-testnet
+```
+
+Then configure or reuse the named tunnel:
 
 ```bash
 cd ~/swappulse2/chain/infra
-GATEWAY_PORT="$(grep '^SWAPPULSE_GATEWAY_PORT=' .env | cut -d= -f2-)"
-GATEWAY_PORT="${GATEWAY_PORT:-8080}"
-cloudflared tunnel --protocol http2 --url "http://127.0.0.1:${GATEWAY_PORT}"
+bash ./configure-named-cloudflare-tunnel.sh
 ```
 
-`--protocol http2` is preferred here because it avoids QUIC instability seen on some VPN paths.
+The helper verifies both local services first, creates/reuses the named tunnel, writes a mode-0600 ingress configuration under `~/.cloudflared/`, creates the two DNS routes and updates `SWAPPULSE_PUBLIC_RPC_URL` to the stable RPC `/rpc` endpoint. The ingress config contains only:
 
-Copy the generated `https://...trycloudflare.com` URL. In the first terminal, replace the placeholder in `.env`:
+- the RPC hostname → `127.0.0.1:${SWAPPULSE_GATEWAY_PORT:-8080}`
+- the relay hostname → `127.0.0.1:${SWAPPULSE_TX_RELAY_PORT:-8081}`
+- a final catch-all `http_status:404`
 
-```bash
-nano .env
-```
-
-Set exactly one assignment line:
-
-```text
-SWAPPULSE_PUBLIC_RPC_URL=https://YOUR-RPC-TUNNEL.trycloudflare.com
-```
-
-Do not add the URL on a separate line by itself. Before deployment, verify only the safe public setting without printing the Devnet seed:
-
-```bash
-grep '^SWAPPULSE_PUBLIC_RPC_URL=' .env
-```
-
-Keep the RPC tunnel terminal running.
+For the first verification run the printed `cloudflared tunnel --config ... run ...` command in a separate terminal and keep it running.
 
 ## 7. Install deployment tooling and deploy the contracts
 
@@ -131,14 +133,18 @@ bash ./deploy-contracts.sh
 
 A public deployment manifest is written to `chain/deployments/swappulse-testnet.json`. It must not contain private keys. Contract verification during deployment uses the localhost raw RPC so a temporary Cloudflare outage cannot make a successful on-chain deployment appear to have failed.
 
-Before Base44 activation, the public HTTPS RPC in the manifest must also pass verification. Quick Tunnel URLs can change or expire. If that happens, refresh it without redeploying contracts:
+Before Base44 activation, the public HTTPS RPC in the manifest must also pass verification. If the manifest still contains an old Quick Tunnel URL after migrating to the named tunnel, adopt the stable URL without redeploying contracts:
 
 ```bash
-cd ~/swappulse2/chain/infra
-bash ./refresh-public-rpc-tunnel.sh
+cd ~/swappulse2/chain/scripts/tooling
+set -a
+source ../../infra/.env
+set +a
+node update-public-rpc.mjs ../../deployments/swappulse-testnet.json
+node verify-network.mjs ../../deployments/swappulse-testnet.json
 ```
 
-The helper checks the local read-only gateway first, starts a fresh HTTP/2 Quick Tunnel, updates only `SWAPPULSE_PUBLIC_RPC_URL` in `.env`, confirms the new URL has the expected chain ID and deployed registry class hash, updates the existing manifest, then performs the full public verification including owner and verifier authority. The tunnel PID and log remain under `/tmp`, and no private key or bearer token is printed.
+`update-public-rpc.mjs` verifies the stable RPC chain ID and deployed registry class hash before modifying the manifest. The following `verify-network.mjs` performs the full public verification, including owner and verifier authority.
 
 ## 8. Generate the transaction relay token
 
@@ -162,21 +168,21 @@ Check it locally:
 curl -sS --fail-with-body http://127.0.0.1:8081/healthz
 ```
 
-## 9. Create a temporary HTTPS URL for the transaction relay
+## 9. Use the fixed transaction relay hostname
 
-Open another terminal and run:
+The named tunnel from step 6 already publishes the transaction relay. Its stable HTTPS address is:
 
-```bash
-cloudflared tunnel --url http://127.0.0.1:8081
+```text
+https://<SWAPPULSE_TX_RELAY_HOSTNAME>
 ```
 
-The generated `https://...trycloudflare.com` address is the value for the Base44 server-side secret:
+That fixed URL is the value for the Base44 server-side secret:
 
 ```text
 SWAPPULSE_TX_RELAY_URL
 ```
 
-Keep this relay tunnel terminal running.
+The relay still requires its bearer token on protected endpoints, so publishing the hostname does not expose privileged transaction execution by itself.
 
 ## 10. Copy only the bearer token into Base44
 
@@ -208,6 +214,6 @@ The test uses a local mock upstream and does not use `.env.relay`, print the rel
 
 Then import `chain/deployments/swappulse-testnet.json` in SwapPulse Admin under **Identity & Federation**, verify the network through the public RPC, and only then test identity provisioning.
 
-## Temporary tunnel warning
+## Quick Tunnel fallback
 
-Cloudflare quick-tunnel URLs change when `cloudflared` stops. If either URL changes, update the matching Base44/network configuration before testing again. For a persistent testnet, replace quick tunnels with named Cloudflare tunnels and fixed subdomains.
+`refresh-public-rpc-tunnel.sh` remains available only as a temporary diagnostic/development fallback. `trycloudflare.com` URLs are not the persistent SwapPulse testnet architecture. Use the named tunnel and fixed hostnames for Base44 activation and continuing Web3 identity work.
