@@ -119,7 +119,6 @@ async function getNetwork(svc: any) {
   const registryOwner = String(row?.identity_registry_owner || '').trim();
   const identityVerifierAddress = String(row?.identity_verifier_address || '').trim();
   const rpcUrl = String(row?.rpc_url || '').trim();
-  const txRelayUrl = String(row?.tx_relay_url || '').trim();
   const status = String(row?.status || 'UNCONFIGURED');
   const ready = status === 'CONFIGURED'
     && Boolean(chainId && accountClassHash && registryClassHash && registryAddress && registryOwner && identityVerifierAddress && rpcUrl)
@@ -140,12 +139,11 @@ async function getNetwork(svc: any) {
     identity_verifier_address: identityVerifierAddress,
     recovery_controller: String(row?.recovery_controller || '').trim(),
     recovery_delay_seconds: Number(row?.recovery_delay_seconds ?? 172800),
-    tx_relay_url: txRelayUrl,
   };
 }
 
 async function relayAutomationStatus(network: any) {
-  const rawUrl = String(network?.tx_relay_url || '').trim();
+  const rawUrl = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
   const token = String(secrets.get('SWAPPULSE_TX_RELAY_TOKEN') || '');
   const configured = Boolean(rawUrl && token.length >= 32);
   if (!configured) return { configured: false, verified: false, code: 'TX_RELAY_NOT_CONFIGURED' };

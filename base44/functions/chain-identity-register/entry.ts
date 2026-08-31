@@ -98,8 +98,8 @@ async function starknetCall(rpcUrl: string, contractAddress: string, entrypoint:
   return result.map((value, i) => normalizeZeroableHex(value, `${entrypoint} result[${i}]`));
 }
 
-async function registrationRelayUrl(rawValue: unknown): Promise<string> {
-  const raw = String(rawValue || '').trim();
+async function registrationRelayUrl(): Promise<string> {
+  const raw = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
   if (!raw) throw new Error('TX_RELAY_URL_NOT_CONFIGURED');
   const url = new URL(raw);
   if (url.protocol !== 'https:') throw new Error('TX_RELAY_URL_MUST_USE_HTTPS');
@@ -112,7 +112,6 @@ async function registrationRelayUrl(rawValue: unknown): Promise<string> {
 }
 
 async function forwardRegistration(
-  relayBaseUrl: unknown,
   identityId: string,
   publicKey: string,
   accountAddress: string,
@@ -123,7 +122,7 @@ async function forwardRegistration(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(await registrationRelayUrl(relayBaseUrl), {
+    const response = await fetch(await registrationRelayUrl(), {
       method: 'POST',
       redirect: 'error',
       headers: {
@@ -203,7 +202,7 @@ export default async function(req: Request): Promise<Response> {
     if (Number(BigInt(delayValues?.[0] || '0x0')) !== expectedDelay) return jsonError('Recovery delay is not configured correctly', 409, 'RECOVERY_DELAY_MISMATCH');
 
     const verification = await buildPrivateEligibilityAttestation(identityId, eligibility);
-    const result = await forwardRegistration(config.tx_relay_url, identityId, publicKey, accountAddress, verification);
+    const result = await forwardRegistration(identityId, publicKey, accountAddress, verification);
     const returnedIdentity = normalizeHex(result.identity_id, 'relay identity id');
     const returnedAccount = normalizeHex(result.account_address, 'relay account address');
     if (returnedIdentity !== identityId || returnedAccount !== accountAddress) return jsonError('Registration relay returned unexpected identity coordinates', 502, 'RELAY_REGISTRATION_MISMATCH');

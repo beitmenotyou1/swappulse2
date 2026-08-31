@@ -220,7 +220,7 @@ export default async function(req: Request): Promise<Response> {
         const state = await privateEligibilityState(svc, String(session.user_id || ''));
         const verification = await buildPrivateEligibilityAttestation(identityId, state);
         if (!verification) throw new Error('VERIFICATION_COMMITMENT_NOT_AVAILABLE');
-        result = await relayIdentityVerification(config.tx_relay_url, 'attest', { identity_id: identityId, verification });
+        result = await relayIdentityVerification('attest', { identity_id: identityId, verification });
         const txHash = result?.transaction_hash ? normalizeHex(result.transaction_hash, 'verification transaction hash') : '';
         await svc.entities.ChainIdentity.update(identity.id, {
           verification_tx_hash: txHash || identity.verification_tx_hash || '',
@@ -234,7 +234,7 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ ok: true, event_id: eventId, chain_sync_status: 'SYNCED', transaction_hash: txHash, reconciliation_required: true });
       }
 
-      result = await relayIdentityVerification(config.tx_relay_url, 'revoke', { identity_id: identityId });
+      result = await relayIdentityVerification('revoke', { identity_id: identityId });
       const txHash = result?.transaction_hash ? normalizeHex(result.transaction_hash, 'verification revoke transaction hash') : '';
       await svc.entities.ChainIdentity.update(identity.id, {
         verification_revoke_tx_hash: txHash || identity.verification_revoke_tx_hash || '',

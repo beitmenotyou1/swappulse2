@@ -95,7 +95,7 @@ export default async function (req: Request): Promise<Response> {
         return jsonError('The new signer must differ from the current one', 409, 'SIGNER_UNCHANGED');
       }
 
-      const result = await relayRecoveryAction(config.tx_relay_url, 'propose', { account_address: accountAddress, new_public_key: newPublicKey });
+      const result = await relayRecoveryAction('propose', { account_address: accountAddress, new_public_key: newPublicKey });
       await svc.entities.ChainIdentity.update(identity.id, {
         status: 'RECOVERY_PENDING',
         recovery_config_tx_hash: String(result?.transaction_hash || ''),
@@ -113,7 +113,7 @@ export default async function (req: Request): Promise<Response> {
 
     if (action === 'cancel') {
       if (!state.pending) return jsonError('There is no scheduled recovery to cancel', 409, 'NO_PENDING_RECOVERY');
-      const result = await relayRecoveryAction(config.tx_relay_url, 'cancel', { account_address: accountAddress });
+      const result = await relayRecoveryAction('cancel', { account_address: accountAddress });
       // Cancelling returns the identity to its previously authoritative state.
       await svc.entities.ChainIdentity.update(identity.id, {
         status: Number(identity.recovery_count || 0) > 0 ? 'RECOVERED' : 'REGISTERED',
@@ -131,7 +131,7 @@ export default async function (req: Request): Promise<Response> {
     if (!state.pending) return jsonError('There is no scheduled recovery to complete', 409, 'NO_PENDING_RECOVERY');
     if (!state.ready) return jsonError('The recovery waiting period has not finished yet', 409, 'RECOVERY_NOT_READY');
 
-    const result = await relayRecoveryAction(config.tx_relay_url, 'execute', { account_address: accountAddress });
+    const result = await relayRecoveryAction('execute', { account_address: accountAddress });
     const rotatedKey = state.pending_public_key;
     await svc.entities.ChainIdentity.update(identity.id, {
       status: 'RECOVERED',

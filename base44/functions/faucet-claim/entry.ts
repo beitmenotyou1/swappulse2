@@ -107,7 +107,7 @@ export default async function (req: Request): Promise<Response> {
     });
 
     try {
-      const result = await relayFaucetDrip(config.tx_relay_url, { to: accountAddress });
+      const result = await relayFaucetDrip( { to: accountAddress });
       const txHash = normalizeHex(result?.transaction_hash, 'faucet transaction hash');
       const amount = String(result?.amount || '0');
       await svc.entities.FaucetClaim.update(created.id, {
