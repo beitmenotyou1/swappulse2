@@ -314,7 +314,8 @@ export default async function(req: Request): Promise<Response> {
       if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
         return jsonError('Deployment manifest must be a JSON object', 400, 'INVALID_MANIFEST');
       }
-      if (Number(manifest.schema_version) !== 1) {
+      const schemaVersion = Number(manifest.schema_version);
+      if (![1, 2].includes(schemaVersion)) {
         return jsonError('Unsupported deployment manifest schema_version', 400, 'UNSUPPORTED_MANIFEST_VERSION');
       }
       if (String(manifest.network || '') !== 'SWAPPULSE_TESTNET') {
@@ -332,6 +333,17 @@ export default async function(req: Request): Promise<Response> {
       let identityRegistryOwner: string;
       let identityVerifierAddress: string;
       let identityVerificationMode = 'V1';
+      let nativeTokenAddress = '';
+      let nativeTokenClassHash = '';
+      let nativeTokenSymbol = '';
+      let cardNftAddress = '';
+      let cardNftClassHash = '';
+      let stakingPoolAddress = '';
+      let stakingPoolClassHash = '';
+      let usershipAddress = '';
+      let usershipClassHash = '';
+      let bridgeAdapterAddress = '';
+      let bridgeAdapterClassHash = '';
       let recoveryController = '';
       let rpcUrl: string;
       let explorerUrl = '';
@@ -345,6 +357,20 @@ export default async function(req: Request): Promise<Response> {
         if (identityVerifierAddress === identityRegistryOwner) throw new Error('identity_verifier_address must be separate from identity_registry_owner');
         identityVerificationMode = String(manifest.identity_verification_mode || 'V1').trim().toUpperCase();
         if (!['V1', 'V2'].includes(identityVerificationMode)) throw new Error('identity_verification_mode must be V1 or V2');
+        if (schemaVersion === 2) {
+          nativeTokenAddress = normalizeAddress(manifest.native_token_address, 'native_token_address');
+          nativeTokenClassHash = normalizeHex(manifest.native_token_class_hash, 'native_token_class_hash');
+          nativeTokenSymbol = String(manifest.native_token_symbol || '').trim().toUpperCase();
+          if (nativeTokenSymbol !== 'SWPX') throw new Error('native_token_symbol must be SWPX for SWAPPULSE_TESTNET');
+          cardNftAddress = normalizeAddress(manifest.card_nft_address, 'card_nft_address');
+          cardNftClassHash = normalizeHex(manifest.card_nft_class_hash, 'card_nft_class_hash');
+          stakingPoolAddress = normalizeAddress(manifest.staking_pool_address, 'staking_pool_address');
+          stakingPoolClassHash = normalizeHex(manifest.staking_pool_class_hash, 'staking_pool_class_hash');
+          usershipAddress = normalizeAddress(manifest.usership_address, 'usership_address');
+          usershipClassHash = normalizeHex(manifest.usership_class_hash, 'usership_class_hash');
+          bridgeAdapterAddress = normalizeAddress(manifest.bridge_adapter_address, 'bridge_adapter_address');
+          bridgeAdapterClassHash = normalizeHex(manifest.bridge_adapter_class_hash, 'bridge_adapter_class_hash');
+        }
         if (manifest.recovery_controller) recoveryController = normalizeAddress(manifest.recovery_controller, 'recovery_controller');
         rpcUrl = normalizePublicHttpsUrl(manifest.rpc_url, 'rpc_url');
         if (!rpcUrl) throw new Error('rpc_url is required');
