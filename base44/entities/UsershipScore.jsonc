@@ -30,7 +30,7 @@
       "minimum": 0,
       "maximum": 1000000,
       "default": 0,
-      "description": "Aggregate usership score, capped so no single collector can dominate the validator set"
+      "description": "Aggregate usership score, capped so no single collector can dominate community-operator staking weight. This does not imply a decentralised consensus validator set on the current testnet."
     },
     "activity_root": {
       "type": "string",
