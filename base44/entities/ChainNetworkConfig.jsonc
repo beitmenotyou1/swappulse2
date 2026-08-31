@@ -58,6 +58,10 @@
       "type": "string",
       "description": "Deployed NativeToken (staking token) contract address."
     },
+    "native_token_class_hash": {
+      "type": "string",
+      "description": "Expected NativeToken class hash at native_token_address."
+    },
     "native_token_symbol": {
       "type": "string",
       "description": "Deployed native token ticker. Must never be PULSE or PLS \u2014 those belong to PulseChain, a live traded token \u2014 so the field stays empty until branding is cleared."
@@ -66,17 +70,33 @@
       "type": "string",
       "description": "Deployed CardNft contract address used for card-possession NFTs."
     },
+    "card_nft_class_hash": {
+      "type": "string",
+      "description": "Expected CardNft class hash at card_nft_address."
+    },
     "staking_pool_address": {
       "type": "string",
       "description": "Deployed StakingPool contract address."
+    },
+    "staking_pool_class_hash": {
+      "type": "string",
+      "description": "Expected StakingPool class hash at staking_pool_address."
     },
     "usership_address": {
       "type": "string",
       "description": "Deployed ProofOfUsership contract address."
     },
+    "usership_class_hash": {
+      "type": "string",
+      "description": "Expected ProofOfUsership class hash at usership_address."
+    },
     "bridge_adapter_address": {
       "type": "string",
       "description": "Deployed BridgeAdapter contract address."
+    },
+    "bridge_adapter_class_hash": {
+      "type": "string",
+      "description": "Expected BridgeAdapter class hash at bridge_adapter_address."
     },
     "usership_epoch": {
       "type": "integer",
@@ -129,6 +149,26 @@
     "verified_account_class_hash": {
       "type": "string",
       "description": "SwapPulseAccount class hash confirmed declared during the last successful verification."
+    },
+    "verified_native_token_class_hash": {
+      "type": "string",
+      "description": "NativeToken class hash independently observed at native_token_address."
+    },
+    "verified_card_nft_class_hash": {
+      "type": "string",
+      "description": "CardNft class hash independently observed at card_nft_address."
+    },
+    "verified_staking_pool_class_hash": {
+      "type": "string",
+      "description": "StakingPool class hash independently observed at staking_pool_address."
+    },
+    "verified_usership_class_hash": {
+      "type": "string",
+      "description": "ProofOfUsership class hash independently observed at usership_address."
+    },
+    "verified_bridge_adapter_class_hash": {
+      "type": "string",
+      "description": "BridgeAdapter class hash independently observed at bridge_adapter_address."
     },
     "verified_rpc_url": {
       "type": "string",
