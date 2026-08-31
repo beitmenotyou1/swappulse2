@@ -273,6 +273,10 @@ try {
   }
   mockRecoveryDelay = recoveryDelay;
 
+  // Exercise the dedicated attestation parser against an active identity, then
+  // restore the unregistered state for the fresh-registration scenario below.
+  mockIdentityStatus = 1;
+  mockReverseIdentity = identityId;
   const missingV2Metadata = await post(verificationAttestUrl, {
     identity_id: identityId,
     verification: {
@@ -284,6 +288,8 @@ try {
   if (missingV2Metadata.status !== 400 || missingV2Metadata.body?.code !== 'VERIFICATION_TYPE_INVALID') {
     throw new Error(`V2 attestation without assurance metadata was not blocked: ${JSON.stringify(missingV2Metadata)}`);
   }
+  mockIdentityStatus = 0;
+  mockReverseIdentity = '0x0';
 
   registrationMode = true;
   mockVerificationStatus = 1;
