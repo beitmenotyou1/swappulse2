@@ -7,6 +7,7 @@ import {
   readContract,
   relayFaucetDrip,
   u256ToDecimal,
+  verifiedContractConfigured,
 } from '../../shared/chainRelay.ts';
 
 // Testnet SWPX faucet. Two actions:
@@ -67,6 +68,8 @@ export default async function (req: Request): Promise<Response> {
         ? 'IDENTITY_NOT_SECURED'
         : !config
           ? 'CHAIN_VERIFICATION_REQUIRED'
+          : !verifiedContractConfigured(config, 'native_token')
+            ? 'NATIVE_TOKEN_NOT_VERIFIED'
           : remaining > 0
             ? 'COOLDOWN_ACTIVE'
             : '';
