@@ -1,6 +1,6 @@
-# SwapPulse Network — Milestone 1
+# SwapPulse Network
 
-This directory contains the first portable Cairo implementation for the private SwapPulse Testnet.
+This directory contains the Cairo/Starknet implementation for the private SwapPulse Testnet. Milestone 1 identity infrastructure is deployed; Phase 2 token, staking/operator and additional Web3 components are being hardened and remain undeployed until their build, Foundry tests and deployment checks pass.
 
 ## Scope
 
@@ -12,7 +12,7 @@ Milestone 1 intentionally contains only:
 4. Admin-gated identity merge — duplicate identities remain in history and resolve to one canonical identity.
 5. Upgrade hooks — account upgrades are self-authorised; registry upgrades are owner-authorised for the testnet.
 
-There is **no token, staking, bridge, marketplace settlement, Proof-of-Usership, custodial wallet, seed phrase, or user-paid gas design in this milestone**.
+Milestone 1 deliberately excludes token, staking, bridge, marketplace settlement, Proof-of-Usership, custodial wallet, seed phrase and user-paid gas behaviour from the deployed identity architecture. Phase 2 source code for several of those features now exists in this repository, but it is **not part of the live Milestone 1 deployment** until explicitly compiled, tested, deployed and added to the verified public manifest.
 
 ## Privacy boundary
 
@@ -175,19 +175,35 @@ Saving these values creates or updates a **draft**, not a trusted network. The a
 
 For the first admin-only test identity, `create-test-signer.mjs` can generate a temporary Stark signer into a local mode-`0600` file while printing only its public key. After that public key is used with Base44 **Prepare Test Identity**, `provision-test-identity.mjs` (or the host wrapper in `chain/infra`) deploys the smart account, applies recovery configuration and registers the returned opaque identity ID. The provisioning flow is idempotent: a second run submits no transactions when the chain already matches, and its smoke test verifies that neither registry-admin nor user private keys appear in output.
 
+## Phase 2 status
+
+Milestone 1 identity deployment and relay policy are now the frozen foundation for Phase 2. Do not redeploy or mutate the live `IdentityRegistry` merely to add token/staking features.
+
+Phase 2 work currently includes:
+
+- `NativeToken`, refactored onto OpenZeppelin Cairo `ERC20Component` for standard transfer, allowance, balance and metadata behaviour;
+- a capped supply plus explicit owner/allowlisted mint authority;
+- `StakingPool`, with verified-identity-bound operator registration, delegation, unbonding, active-vs-locked stake accounting and slashable exiting self-stake;
+- Foundry tests for token supply/accounting and staking security invariants;
+- Base44 wallet, draft/sign/submit and staking mirror plumbing;
+- the community operator model documented in `OPERATOR_GUIDE.md`.
+
+The product calls staking participants **community operators**. Some Cairo and Base44 fields retain historical `validator` names for ABI compatibility. The current SwapPulse Testnet still runs on one Starknet Devnet runtime, so Phase 2 staking currently represents economic accountability for operator/service duties, **not decentralised consensus validation**.
+
+Production token rewards are not live yet. Before any promise of token earnings, SwapPulse still needs a deterministic reward distributor, published reward/emission parameters, governance/provable-fault slashing, a multi-operator production architecture and an external security review.
+
+Read `OPERATOR_GUIDE.md` for the open operator model, security requirements, staking semantics and the roadmap to permissionless network maintenance.
+
 ## Next milestone
 
-The Base44 read-back reconciler is already implemented. It pins chain ID, IdentityRegistry address/class hash and SwapPulseAccount class hash, then verifies registry state and reverse identity mapping before promoting a mirror to `REGISTERED` / `RECOVERED` / `MERGED`.
-
-Next:
-
-1. declare the compiled classes and deploy `IdentityRegistry` on an isolated devnet, then on the persistent SwapPulse Testnet
-2. configure the real chain ID, class hashes, registry address and public RPC URL
-3. deploy the first test smart account, configure recovery through signed self-calls and register its opaque identity
-4. prove Base44 reconciliation end-to-end
-5. implement `AgeStatus` and enforce 18+ before ordinary-user chain provisioning
-6. add client-side temporary Stark signer creation for the testnet
-7. implement Handle Registry
-8. implement admin-issued Card Possession Attestation
-9. connect the real photo challenge
-10. replace `STARK_V1` with audited P-256/WebAuthn validation before the identity layer carries real value
+1. compile `NativeToken` and `StakingPool` with the pinned Scarb/Cairo toolchain;
+2. run the complete Starknet Foundry suite, including fuzz and negative-path tests;
+3. fix every compile/test finding before class declaration;
+4. add deterministic reward accounting and replay/duplicate protection;
+5. extend deployment tooling and the public manifest with Phase 2 class hashes/addresses;
+6. verify Phase 2 contracts independently through the public read-only RPC;
+7. connect the existing Base44 wallet UI to only verified Phase 2 addresses;
+8. keep all user signing self-custodial and all privileged signing server-side;
+9. add operator discovery, health/service proofs and governance rules;
+10. migrate from the single Devnet runtime to a genuinely decentralised appchain/rollup operator set before describing staking as consensus security;
+11. replace `STARK_V1` with audited P-256/WebAuthn validation before the identity/value layer carries real economic value.
