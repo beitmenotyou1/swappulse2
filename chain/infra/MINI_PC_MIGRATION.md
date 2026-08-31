@@ -207,14 +207,17 @@ Verify the dump checksum matches the Zorin checksum recorded in Phase 2:
 sha256sum ~/swappulse2/chain/infra/data/swappulse-testnet.dump
 ```
 
-Prepare bind-mount ownership for the pinned Devnet image without assuming a UID/GID:
+Prepare bind-mount ownership for the pinned Devnet image without assuming a UID/GID. Use Docker itself for the ownership change so this also works over non-interactive SSH without a `sudo` password prompt:
 
 ```bash
 cd ~/swappulse2/chain/infra
 DEVNET_UID="$(docker run --rm --entrypoint sh shardlabs/starknet-devnet-rs:0.8.2 -c 'id -u')"
 DEVNET_GID="$(docker run --rm --entrypoint sh shardlabs/starknet-devnet-rs:0.8.2 -c 'id -g')"
-sudo chown -R "$DEVNET_UID:$DEVNET_GID" data
-sudo chmod -R u+rwX,go-rwx data
+docker run --rm --user 0:0 \
+  -v "$PWD/data:/hostdata" \
+  --entrypoint sh \
+  shardlabs/starknet-devnet-rs:0.8.2 \
+  -c "chown -R $DEVNET_UID:$DEVNET_GID /hostdata && chmod -R u+rwX,go-rwx /hostdata"
 ```
 
 ## Phase 5: restore and prove the exact existing chain locally
@@ -258,8 +261,11 @@ cd ~/swappulse2/chain/infra
 cp ~/swappulse-migration/swappulse-testnet.dump data/swappulse-restore.dump
 DEVNET_UID="$(docker exec infra-devnet-1 id -u)"
 DEVNET_GID="$(docker exec infra-devnet-1 id -g)"
-sudo chown "$DEVNET_UID:$DEVNET_GID" data/swappulse-restore.dump
-sudo chmod 600 data/swappulse-restore.dump
+docker run --rm --user 0:0 \
+  -v "$PWD/data:/hostdata" \
+  --entrypoint sh \
+  shardlabs/starknet-devnet-rs:0.8.2 \
+  -c "chown $DEVNET_UID:$DEVNET_GID /hostdata/swappulse-restore.dump && chmod 600 /hostdata/swappulse-restore.dump"
 
 curl -sS --fail-with-body \
   -X POST http://127.0.0.1:5050 \
