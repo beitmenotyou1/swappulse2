@@ -34,6 +34,7 @@ const upstreamUrl = `http://127.0.0.1:${upstreamPort}`;
 const relayBaseUrl = `http://127.0.0.1:${relayPort}`;
 const relayUrl = `${relayBaseUrl}/rpc`;
 const registerUrl = `${relayBaseUrl}/register`;
+const verificationAttestUrl = `${relayBaseUrl}/verification-attest`;
 const token = 'a'.repeat(64);
 const chainId = '0x534e5f5345504f4c4941';
 const accountClassHash = '0x12345';
@@ -47,11 +48,15 @@ const accountAddress = `0x${BigInt(hash.calculateContractAddressFromHash(publicK
 const recoveryController = '0x0';
 const recoveryDelay = 172800;
 const seen = [];
+const seenRequests = [];
 const ownerSelector = hash.getSelectorFromName('owner');
 const isVerifierSelector = hash.getSelectorFromName('is_verifier');
 const getIdentitySelector = hash.getSelectorFromName('get_identity');
 const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
 const getVerificationSelector = hash.getSelectorFromName('get_verification');
+const getAssuranceSelector = hash.getSelectorFromName('get_assurance');
+const verificationV2RequiredSelector = hash.getSelectorFromName('verification_v2_required');
+const setVerificationV2Selector = `0x${BigInt(hash.getSelectorFromName('set_verification_v2')).toString(16)}`;
 const recoveryControllerSelector = hash.getSelectorFromName('get_recovery_controller');
 const recoveryDelaySelector = hash.getSelectorFromName('get_recovery_delay');
 let mockIdentityStatus = 1;
@@ -60,9 +65,15 @@ let mockRecoveryController = recoveryController;
 let mockRecoveryDelay = recoveryDelay;
 const verificationRoot = '0x789ab';
 const verificationSchema = '0x89abc';
+const verificationType = 1;
+const verificationLevel = 2;
+const attestationId = '0x9abcd';
 let mockVerificationStatus = 0;
 let mockVerificationRoot = '0x0';
 let mockVerificationSchema = '0x0';
+let mockVerificationType = 0;
+let mockVerificationLevel = 0;
+let mockAttestationId = '0x0';
 let registrationMode = false;
 
 const upstream = http.createServer(async (req, res) => {
@@ -70,6 +81,7 @@ const upstream = http.createServer(async (req, res) => {
   for await (const chunk of req) chunks.push(chunk);
   const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   seen.push(payload.method);
+  seenRequests.push(payload);
   let result = {};
   if (payload.method === 'devnet_mint') result = { unit: 'FRI' };
   else if (payload.method === 'starknet_getClassHashAt') {
@@ -95,6 +107,12 @@ const upstream = http.createServer(async (req, res) => {
       '0x0',
       mockVerificationStatus === 1 ? '0x1' : '0x0',
     ];
+    else if (selector === getAssuranceSelector) result = [
+      `0x${BigInt(mockVerificationType).toString(16)}`,
+      `0x${BigInt(mockVerificationLevel).toString(16)}`,
+      mockAttestationId,
+    ];
+    else if (selector === verificationV2RequiredSelector) result = ['0x0'];
     else if (selector === recoveryControllerSelector) result = [mockRecoveryController];
     else if (selector === recoveryDelaySelector) result = [`0x${BigInt(mockRecoveryDelay).toString(16)}`];
     else result = ['0x0'];
@@ -144,6 +162,7 @@ const child = spawn(process.execPath, ['server.mjs'], {
     REGISTRY_ADMIN_ADDRESS: registryOwner,
     REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
     IDENTITY_VERIFIER_PRIVATE_KEY: '0x2',
+    IDENTITY_VERIFICATION_MODE: 'v2',
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '5000000000000000',
@@ -171,7 +190,14 @@ try {
   if (unauthReady.status !== 401) throw new Error(`Expected unauthenticated /readyz to return 401, got ${unauthReady.status}`);
   const ready = await fetch(`${relayBaseUrl}/readyz`, { headers: { authorization: `Bearer ${token}` } });
   const readyBody = await ready.json();
-  if (ready.status !== 200 || readyBody?.ok !== true || readyBody?.chain_id !== chainId || readyBody?.identity_registry_address !== registryAddress) {
+  if (
+    ready.status !== 200
+    || readyBody?.ok !== true
+    || readyBody?.chain_id !== chainId
+    || readyBody?.identity_registry_address !== registryAddress
+    || readyBody?.identity_verification_mode !== 'v2'
+    || readyBody?.verification_v2_required !== false
+  ) {
     throw new Error(`Authenticated /readyz did not verify relay pins: ${JSON.stringify({ status: ready.status, body: readyBody })}`);
   }
 
@@ -246,10 +272,29 @@ try {
     throw new Error(`Wrong recovery registration was not blocked: ${JSON.stringify(wrongRecoveryRegistration)}`);
   }
   mockRecoveryDelay = recoveryDelay;
+
+  const missingV2Metadata = await post(verificationAttestUrl, {
+    identity_id: identityId,
+    verification: {
+      verification_root: verificationRoot,
+      schema_hash: verificationSchema,
+      expires_at: 0,
+      verification_type: verificationType,
+      verification_level: verificationLevel,
+      attestation_id: attestationId,
+    },
+  }, token);
+  if (missingV2Metadata.status !== 400 || missingV2Metadata.body?.code !== 'VERIFICATION_TYPE_INVALID') {
+    throw new Error(`V2 attestation without assurance metadata was not blocked: ${JSON.stringify(missingV2Metadata)}`);
+  }
+
   registrationMode = true;
   mockVerificationStatus = 1;
   mockVerificationRoot = verificationRoot;
   mockVerificationSchema = verificationSchema;
+  mockVerificationType = verificationType;
+  mockVerificationLevel = verificationLevel;
+  mockAttestationId = attestationId;
   const freshRegistration = await post(registerUrl, {
     identity_id: identityId,
     public_key: publicKey,
@@ -258,6 +303,9 @@ try {
       verification_root: verificationRoot,
       schema_hash: verificationSchema,
       expires_at: 0,
+      verification_type: verificationType,
+      verification_level: verificationLevel,
+      attestation_id: attestationId,
     },
   }, token);
   registrationMode = false;
@@ -278,6 +326,9 @@ try {
       verification_root: verificationRoot,
       schema_hash: verificationSchema,
       expires_at: 0,
+      verification_type: verificationType,
+      verification_level: verificationLevel,
+      attestation_id: attestationId,
     },
   }, token);
   if (repeatRegistration.status !== 200 || repeatRegistration.body?.idempotent !== true || repeatRegistration.body?.verification_transaction_hash !== '') {
@@ -306,6 +357,17 @@ try {
   if (seen.includes('devnet_getPredeployedAccounts')) {
     throw new Error('Registration relay unexpectedly requested Devnet predeployed private keys at runtime');
   }
+  const invokeCalldata = seenRequests
+    .filter((request) => request.method === 'starknet_addInvokeTransaction')
+    .flatMap((request) => {
+      const params = request?.params;
+      const tx = Array.isArray(params) ? params[0] : params?.invoke_transaction;
+      return Array.isArray(tx?.calldata) ? tx.calldata : [];
+    })
+    .map((value) => `0x${BigInt(value).toString(16)}`);
+  if (!invokeCalldata.includes(setVerificationV2Selector)) {
+    throw new Error('V2 relay mode never submitted set_verification_v2');
+  }
 
   console.log(JSON.stringify({
     ok: true,
@@ -318,6 +380,8 @@ try {
     idempotent_registration: true,
     wrong_recovery_registration_blocked: true,
     registry_owner_key_loaded_from_host_env: true,
+    v2_assurance_metadata_required: true,
+    v2_entrypoint_used: true,
     fresh_owner_registration_and_verification: true,
     fresh_registration_and_verification_retry_idempotent: true,
     mismatched_registration_blocked: true,
