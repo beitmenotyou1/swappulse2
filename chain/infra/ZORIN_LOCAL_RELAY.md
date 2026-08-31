@@ -159,7 +159,7 @@ docker compose --env-file .env --env-file .env.relay \
 Check it locally:
 
 ```bash
-curl http://127.0.0.1:8081/health
+curl -sS --fail-with-body http://127.0.0.1:8081/healthz
 ```
 
 ## 9. Create a temporary HTTPS URL for the transaction relay
