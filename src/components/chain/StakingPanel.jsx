@@ -4,7 +4,10 @@ import { Coins, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import useChainAction from '@/hooks/useChainAction';
 
-// Staking is presented as "help secure the network", not as a trading product.
+// User-facing language deliberately says "community operator". The current
+// SwapPulse testnet is a single Starknet Devnet runtime, so staking currently
+// bonds operators to accountable service duties rather than consensus validation.
+// The legacy `validator` variable/action names are kept only for ABI compatibility.
 // Raw amounts stay in base units server-side; collectors enter whole tokens.
 const DECIMALS = 18n;
 
@@ -63,8 +66,8 @@ export default function StakingPanel({ identitySecured }) {
       preparing: 'Preparing your stake…',
       signing: 'Confirming on this device…',
       submitting: 'Adding your stake to the network…',
-      success: mode === 'validator' ? 'Validator stake submitted' : 'Delegation submitted',
-      successDescription: 'Your stake helps secure the SwapPulse network.',
+      success: mode === 'validator' ? 'Operator stake submitted' : 'Delegation submitted',
+      successDescription: 'Your stake backs accountable community services on the SwapPulse testnet.',
       failure: 'Stake not completed',
     });
     if (ok) {
@@ -80,8 +83,8 @@ export default function StakingPanel({ identitySecured }) {
   if (!identitySecured) {
     return (
       <div className="rounded-xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
-        <p className="text-sm font-bold text-foreground">Network staking</p>
-        <p className="mt-1">Secure your on-chain identity first to help secure the SwapPulse network.</p>
+        <p className="text-sm font-bold text-foreground">Community staking</p>
+        <p className="mt-1">Secure your on-chain identity first to stake with a SwapPulse community operator.</p>
       </div>
     );
   }
@@ -93,9 +96,9 @@ export default function StakingPanel({ identitySecured }) {
           <ShieldCheck className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">Help secure the network</p>
+          <p className="text-sm font-bold">Back community operators</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Stake to run a validator, or back one you trust. Your collecting activity increases the weight of the stake you already hold — it never replaces it.
+            Stake to run an operator, or back one you trust. On the current testnet this bonds operators to accountable network services; it does not yet represent decentralised consensus validation. Your collecting activity can scale stake weight, but never replaces stake.
           </p>
         </div>
       </div>
@@ -106,21 +109,21 @@ export default function StakingPanel({ identitySecured }) {
           onClick={() => setMode('delegate')}
           className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold ${mode === 'delegate' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground'}`}
         >
-          Back a validator
+          Back an operator
         </button>
         <button
           type="button"
           onClick={() => setMode('validator')}
           className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold ${mode === 'validator' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground'}`}
         >
-          Run a validator
+          Run an operator
         </button>
       </div>
 
       <div className="mt-3 space-y-2">
         {mode === 'delegate' && (
           <div>
-            <label htmlFor="swappulse-validator" className="text-xs font-semibold">Validator address</label>
+            <label htmlFor="swappulse-validator" className="text-xs font-semibold">Operator address</label>
             <input
               id="swappulse-validator"
               value={validator}
@@ -151,7 +154,7 @@ export default function StakingPanel({ identitySecured }) {
         className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-        {busy ? 'Working…' : mode === 'validator' ? 'Stake and run a validator' : 'Stake to this validator'}
+        {busy ? 'Working…' : mode === 'validator' ? 'Stake and run an operator' : 'Stake to this operator'}
       </button>
       {busy && step && (
         <p className="mt-2 text-center text-xs font-medium text-primary" role="status" aria-live="polite">{step}</p>
