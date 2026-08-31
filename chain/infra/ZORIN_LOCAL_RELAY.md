@@ -65,10 +65,21 @@ At this stage `SWAPPULSE_PUBLIC_RPC_URL` still contains the placeholder value. W
 ```bash
 docker compose up -d --build devnet rpc-gateway
 docker compose ps
+
+DEVNET_CID="$(docker compose ps -q devnet)"
+DEVNET_UID="$(docker exec "$DEVNET_CID" id -u)"
+HOST_GID="$(id -g)"
+sudo mkdir -p data
+sudo chown -R "$DEVNET_UID:$HOST_GID" data
+sudo chmod -R ug+rwX,o-rwx data
+docker exec "$DEVNET_CID" sh -c 'touch /data/.write-test && rm /data/.write-test'
+
 GATEWAY_PORT="$(grep '^SWAPPULSE_GATEWAY_PORT=' .env | cut -d= -f2-)"
 GATEWAY_PORT="${GATEWAY_PORT:-8080}"
 curl -sS --fail-with-body "http://127.0.0.1:${GATEWAY_PORT}/healthz"
 ```
+
+The ownership step is required because Devnet dumps blockchain state into the bind-mounted `chain/infra/data/` directory after blocks. The command discovers the Devnet container UID dynamically instead of assuming a fixed numeric UID, while retaining access for the host user's primary group. The final `touch` is a safe write test and must succeed before deployment.
 
 The raw Devnet remains on loopback port `5050`. The public-safe gateway uses `SWAPPULSE_GATEWAY_PORT` from `.env`, defaulting to `8080`. If `docker compose ps` shows a different host port, use that port. Do not assume `8080` when another local service already occupies it.
 
@@ -115,8 +126,7 @@ cd ../../infra
 set -a
 source .env
 set +a
-chmod +x deploy-contracts.sh setup-relay-env.sh
-./deploy-contracts.sh
+bash ./deploy-contracts.sh
 ```
 
 A public deployment manifest is written to `chain/deployments/swappulse-testnet.json`. It must not contain private keys.
@@ -124,7 +134,7 @@ A public deployment manifest is written to `chain/deployments/swappulse-testnet.
 ## 8. Generate the transaction relay token
 
 ```bash
-./setup-relay-env.sh
+bash ./setup-relay-env.sh
 chmod 600 .env.relay
 ```
 
