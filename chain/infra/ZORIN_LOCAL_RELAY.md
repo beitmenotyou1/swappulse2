@@ -168,23 +168,35 @@ Check it locally:
 curl -sS --fail-with-body http://127.0.0.1:8081/healthz
 ```
 
-## 9. Use the fixed transaction relay hostname
+## 9. Verify the fixed transaction relay hostname
 
-The named tunnel from step 6 already publishes the transaction relay. Its stable HTTPS address is:
-
-```text
-https://<SWAPPULSE_TX_RELAY_HOSTNAME>
-```
-
-That fixed URL is the value for the Base44 server-side secret:
+The named tunnel from step 6 publishes the transaction relay at:
 
 ```text
-SWAPPULSE_TX_RELAY_URL
+https://relay.swappulse.org
 ```
 
-The relay still requires its bearer token on protected endpoints, so publishing the hostname does not expose privileged transaction execution by itself.
+Check unauthenticated liveness first:
 
-## 10. Copy only the bearer token into Base44
+```bash
+curl -sS --fail-with-body https://relay.swappulse.org/healthz
+```
+
+Then verify the protected readiness endpoint without printing the bearer token:
+
+```bash
+RELAY_TOKEN="$(sed -n 's/^RELAY_TOKEN=//p' .env.relay)"
+curl -sS --fail-with-body \
+  -H "Authorization: Bearer $RELAY_TOKEN" \
+  https://relay.swappulse.org/readyz
+unset RELAY_TOKEN
+```
+
+`/readyz` must return `ok: true` and the pinned chain ID, account class, registry class, registry owner and verifier address before Base44 is configured.
+
+The fixed relay URL is stored only as the Base44 server-side secret `SWAPPULSE_TX_RELAY_URL`. It is deliberately absent from `ChainNetworkConfig`, frontend state and ordinary-user API responses. The relay bearer token is separately stored as `SWAPPULSE_TX_RELAY_TOKEN`.
+
+## 10. Copy only the relay server-side values into Base44
 
 On the Zorin PC, display only the relay token when you are ready to paste it into Base44's secure secret field:
 
@@ -192,13 +204,19 @@ On the Zorin PC, display only the relay token when you are ready to paste it int
 grep '^RELAY_TOKEN=' .env.relay
 ```
 
-Copy the value after `RELAY_TOKEN=` into:
+Copy the value after `RELAY_TOKEN=` into the Base44 server-side secret:
 
 ```text
 SWAPPULSE_TX_RELAY_TOKEN
 ```
 
-Do not copy any other line from `.env.relay`.
+Set the second Base44 server-side secret to the fixed hostname:
+
+```text
+SWAPPULSE_TX_RELAY_URL=https://relay.swappulse.org
+```
+
+Do not copy any other line from `.env.relay`, and never place either value in a frontend field or entity record.
 
 ## 11. Verify the relay policy
 
@@ -213,6 +231,27 @@ node smoke-policy.mjs
 The test uses a local mock upstream and does not use `.env.relay`, print the relay bearer token or contact the public RPC. It must finish with `Relay policy smoke checks passed.` before the relay is exposed publicly.
 
 Then import `chain/deployments/swappulse-testnet.json` in SwapPulse Admin under **Identity & Federation**, verify the network through the public RPC, and only then test identity provisioning.
+
+## 12. Install the SwapPulse tunnel as its own boot service
+
+This host may run other Cloudflare tunnels, so do not replace a generic `cloudflared.service`. Install the dedicated SwapPulse unit instead:
+
+```bash
+cd ~/swappulse2/chain/infra
+bash ./install-swappulse-tunnel-service.sh
+```
+
+The helper creates and starts `cloudflared-swappulse-testnet.service` using the existing `~/.cloudflared/swappulse-testnet.yml` and tunnel credential file. It runs as the current user, uses a read-only view of the home directory, and does not alter other tunnel services. Once the dedicated service is healthy, the temporary foreground `cloudflared tunnel ... run ...` process can be stopped.
+
+Verify after stopping the foreground copy:
+
+```bash
+systemctl is-active cloudflared-swappulse-testnet.service
+curl -sS --fail-with-body -X POST https://rpc.swappulse.org/rpc \
+  -H 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"starknet_chainId","params":[]}'
+curl -sS --fail-with-body https://relay.swappulse.org/healthz
+```
 
 ## Quick Tunnel fallback
 
