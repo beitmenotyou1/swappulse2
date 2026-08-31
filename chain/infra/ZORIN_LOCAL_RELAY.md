@@ -1,6 +1,8 @@
 # SwapPulse local Starknet relay on Zorin OS
 
-This is the local-development path for running the private SwapPulse Starknet testnet, creating the relay bearer token, and exposing the read-only RPC and transaction relay through temporary HTTPS Cloudflare tunnels.
+This is the local-development path for running the private SwapPulse Starknet testnet, creating the relay bearer token, and exposing the read-only RPC and transaction relay through Cloudflare Tunnel.
+
+For moving the already-deployed testnet from the Zorin development PC to the always-on mini PC, follow `chain/infra/MINI_PC_MIGRATION.md`. That migration preserves the existing Devnet state and contract addresses instead of redeploying a replacement chain.
 
 ## Security rules
 
