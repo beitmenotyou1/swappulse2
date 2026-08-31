@@ -17,8 +17,12 @@ const rpcUrl = process.env.SWAPPULSE_RECOVERY_RPC_URL || 'http://127.0.0.1:5050'
 const manifestPath = path.resolve(
   process.env.SWAPPULSE_DEPLOYMENT_MANIFEST || path.join(chainDir, 'deployments/swappulse-testnet.json'),
 );
-const restorePath = process.env.SWAPPULSE_RECOVERY_DUMP_PATH || '/data/swappulse-restore.dump';
+const recoverySourceFile = path.resolve(
+  process.env.SWAPPULSE_RECOVERY_SOURCE_FILE
+    || path.join(chainDir, 'infra/recovery-source/swappulse-restore.dump'),
+);
 const prefixDumpPath = process.env.SWAPPULSE_PREFIX_DUMP_PATH || '/data/swappulse-recovery-prefix.dump';
+const combinedLoadPath = process.env.SWAPPULSE_COMBINED_LOAD_PATH || '/data/swappulse-combined-replay.dump';
 const completeDumpPath = process.env.SWAPPULSE_COMPLETE_DUMP_PATH || '/data/swappulse-testnet-complete.dump';
 const hostDataDir = path.resolve(
   process.env.SWAPPULSE_RECOVERY_HOST_DATA_DIR || path.join(chainDir, 'infra/data'),
@@ -93,6 +97,31 @@ const expectedRegistry = normalizeHex(manifest.identity_registry_address, 'manif
 const expectedRegistryClass = normalizeHex(manifest.identity_registry_class_hash, 'manifest registry class hash');
 const expectedAccountClass = normalizeHex(manifest.account_class_hash, 'manifest account class hash');
 
+// Read and validate the immutable preserved suffix before touching Devnet state.
+// Keep this source outside chain/infra/data because Devnet manages that bind-mounted directory.
+let preservedActions;
+try {
+  preservedActions = JSON.parse(await fs.readFile(recoverySourceFile, 'utf8'));
+} catch (error) {
+  throw new Error(`Could not read immutable recovery source ${recoverySourceFile}: ${error.message}`);
+}
+if (!Array.isArray(preservedActions)) {
+  throw new Error('Immutable recovery source must contain a JSON action array');
+}
+const preservedOwnerActions = preservedActions.filter((action) => actionSender(action) === expectedOwner);
+const preservedOwnerNonces = preservedOwnerActions.map(actionNonce).filter((value) => value !== null);
+if (
+  preservedOwnerNonces.length !== 2
+  || preservedOwnerNonces[0] !== 3n
+  || preservedOwnerNonces[1] !== 4n
+) {
+  throw new Error(
+    `Immutable recovery source must contain owner nonces 3,4; got ${preservedOwnerNonces.map(String).join(',')}`,
+  );
+}
+console.log(`Immutable recovery source validated: ${recoverySourceFile}`);
+console.log('Preserved owner nonces: 3,4');
+
 const { provider } = await providerFor(rpcUrl);
 const loaded = await loadArtifacts();
 const actualRegistryClass = normalizeHex(hash.computeSierraContractClassHash(loaded.registrySierra));
@@ -160,32 +189,21 @@ console.log(`Writing reconstructed prefix dump: ${prefixDumpPath}`);
 await rpc('devnet_dump', { path: prefixDumpPath });
 
 const prefixHostPath = hostPathForContainerData(prefixDumpPath);
-const restoreHostPath = hostPathForContainerData(restorePath);
+const combinedLoadHostPath = hostPathForContainerData(combinedLoadPath);
 const completeHostPath = hostPathForContainerData(completeDumpPath);
-const [prefixActions, preservedActions] = await Promise.all([
-  fs.readFile(prefixHostPath, 'utf8').then(JSON.parse),
-  fs.readFile(restoreHostPath, 'utf8').then(JSON.parse),
-]);
-if (!Array.isArray(prefixActions) || !Array.isArray(preservedActions)) {
-  throw new Error('Recovery dump files must both contain JSON action arrays');
+const prefixActions = JSON.parse(await fs.readFile(prefixHostPath, 'utf8'));
+if (!Array.isArray(prefixActions)) {
+  throw new Error('Reconstructed prefix dump must contain a JSON action array');
 }
 
 const ownerPrefix = prefixActions.filter((action) => actionSender(action) === expectedOwner);
-const ownerPreserved = preservedActions.filter((action) => actionSender(action) === expectedOwner);
 const prefixNonces = ownerPrefix.map(actionNonce).filter((value) => value !== null);
-const preservedNonces = ownerPreserved.map(actionNonce).filter((value) => value !== null);
 if (prefixNonces.length !== 3 || prefixNonces.some((value, index) => value !== BigInt(index))) {
   throw new Error(`Reconstructed owner prefix must contain nonces 0,1,2; got ${prefixNonces.map(String).join(',')}`);
 }
-if (preservedNonces.length !== 2 || preservedNonces[0] !== 3n || preservedNonces[1] !== 4n) {
-  throw new Error(`Preserved owner dump must contain nonces 3,4; got ${preservedNonces.map(String).join(',')}`);
-}
 
-const completeActions = [...prefixActions, ...preservedActions];
-await fs.writeFile(completeHostPath, `${JSON.stringify(completeActions, null, 2)}\n`, { mode: 0o600 });
-await fs.chmod(completeHostPath, 0o600);
-console.log(`Combined complete replay written: ${completeDumpPath}`);
-console.log(`Combined actions: ${completeActions.length}; owner nonces: 0,1,2,3,4`);
+const combinedActions = [...prefixActions, ...preservedActions];
+console.log(`Combined actions prepared in memory: ${combinedActions.length}; owner nonces: 0,1,2,3,4`);
 
 console.log('Resetting Devnet again before proving the combined replay from nonce 0...');
 await rpc('devnet_restart');
@@ -193,8 +211,17 @@ const resetNonce = await nonceOf(expectedOwner);
 if (resetNonce !== 0n) {
   throw new Error(`Owner nonce should be 0 before combined replay; got ${resetNonce}`);
 }
-console.log(`Loading combined replay: ${completeDumpPath}`);
-await rpc('devnet_load', { path: completeDumpPath });
+
+// Write the load file only after devnet_restart. This avoids relying on files
+// inside Devnet's managed bind mount surviving a restart. Mode 0644 is
+// intentional for this temporary replay file so the container's unprivileged
+// UID can read a host-created file. It contains signed testnet transactions,
+// not private keys or relay credentials.
+await fs.writeFile(combinedLoadHostPath, `${JSON.stringify(combinedActions, null, 2)}\n`, { mode: 0o644 });
+await fs.chmod(combinedLoadHostPath, 0o644);
+console.log(`Combined replay staged after reset: ${combinedLoadPath}`);
+console.log(`Loading combined replay: ${combinedLoadPath}`);
+await rpc('devnet_load', { path: combinedLoadPath });
 
 const registryClass = await classHashAt(expectedRegistry);
 if (registryClass !== expectedRegistryClass) {
@@ -232,7 +259,24 @@ for (const [label, txHash] of [
 }
 
 console.log('Recovered registry and original nonce-3/4 transactions verified.');
-console.log('The combined dump was proven by loading it from pristine nonce 0.');
+console.log('The combined replay was proven by loading it from pristine nonce 0.');
+console.log(`Writing final self-contained Devnet dump: ${completeDumpPath}`);
+await rpc('devnet_dump', { path: completeDumpPath });
+const finalActions = JSON.parse(await fs.readFile(completeHostPath, 'utf8'));
+if (!Array.isArray(finalActions)) {
+  throw new Error('Final self-contained dump must contain a JSON action array');
+}
+const finalOwnerNonces = finalActions
+  .filter((action) => actionSender(action) === expectedOwner)
+  .map(actionNonce)
+  .filter((value) => value !== null);
+if (
+  finalOwnerNonces.length !== 5
+  || finalOwnerNonces.some((value, index) => value !== BigInt(index))
+) {
+  throw new Error(`Final dump must contain owner nonces 0,1,2,3,4; got ${finalOwnerNonces.map(String).join(',')}`);
+}
+console.log('Final self-contained dump verified: owner nonces 0,1,2,3,4');
 console.log(JSON.stringify({
   ok: true,
   identity_registry_address: expectedRegistry,
