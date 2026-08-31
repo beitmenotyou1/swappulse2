@@ -138,13 +138,34 @@ export async function valueFeatureEligible(
   return actualAttester === expectedVerifier;
 }
 
-// A configuration row is trusted only when every verified_* pin still matches
-// the configured value byte-for-byte. Anything stale fails closed.
+const SUPPORT_CONTRACTS = [
+  'native_token',
+  'card_nft',
+  'staking_pool',
+  'usership',
+  'bridge_adapter',
+] as const;
+
+export function verifiedContractConfigured(config: any, key: typeof SUPPORT_CONTRACTS[number]): boolean {
+  const address = String(config?.[`${key}_address`] || '').trim();
+  const classHash = String(config?.[`${key}_class_hash`] || '').trim();
+  const verifiedHash = String(config?.[`verified_${key}_class_hash`] || '').trim();
+  return Boolean(address && classHash && verifiedHash && verifiedHash === classHash);
+}
+
+export function ecosystemReady(config: any): boolean {
+  return SUPPORT_CONTRACTS.every((key) => verifiedContractConfigured(config, key));
+}
+
+// A configuration row is trusted only when every verified_* identity pin still
+// matches the configured value byte-for-byte. Support contracts are checked
+// independently by verifiedContractConfigured/ecosystemReady so identity
+// provisioning can remain available during a staged economic-layer rollout.
 export async function getVerifiedConfig(svc: any) {
   const rows = await svc.entities.ChainNetworkConfig.filter({ network: NETWORK }, '-updated_date', 1).catch(() => []);
   const row = rows?.[0];
   if (!row || row.status !== 'CONFIGURED') return null;
-  const required = [row.chain_id, row.account_class_hash, row.identity_registry_address, row.identity_registry_owner, row.identity_verifier_address, row.rpc_url];
+  const required = [row.chain_id, row.account_class_hash, row.identity_registry_class_hash, row.identity_registry_address, row.identity_registry_owner, row.identity_verifier_address, row.rpc_url];
   if (required.some((v) => !String(v || '').trim())) return null;
   if (
     String(row.verified_chain_id || '').trim() !== String(row.chain_id || '').trim()
