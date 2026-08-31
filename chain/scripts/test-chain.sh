@@ -5,7 +5,7 @@ set -euo pipefail
 # Expected toolchain:
 #   Scarb/Cairo 2.13.1
 #   Starknet Foundry 0.51.2
-#   universal-sierra-compiler 2.10.0
+#   universal-sierra-compiler 2.8.0
 #
 # Override the binaries with SCARB_BIN / SNFORGE_BIN when they are not on PATH.
 
