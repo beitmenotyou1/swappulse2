@@ -8,7 +8,8 @@ const manifestPath = path.resolve(
 const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
 if (manifest.network !== 'SWAPPULSE_TESTNET') throw new Error('Manifest network must be SWAPPULSE_TESTNET');
 
-const { provider, rpcUrl } = await providerFor(manifest.rpc_url);
+const verificationRpc = String(process.env.SWAPPULSE_VERIFY_RPC_URL || manifest.rpc_url).trim();
+const { provider, rpcUrl } = await providerFor(verificationRpc);
 const actualChainId = normalizeHex(await provider.getChainId(), 'chain id');
 const expectedChainId = normalizeHex(manifest.chain_id, 'manifest chain id');
 if (actualChainId !== expectedChainId) {
@@ -53,7 +54,8 @@ if (BigInt(verifierResult?.[0] || '0x0') !== 1n) {
 
 console.log(JSON.stringify({
   ok: true,
-  rpc_url: rpcUrl,
+  verification_rpc_url: rpcUrl,
+  manifest_rpc_url: manifest.rpc_url,
   chain_id: actualChainId,
   identity_registry_address: registryAddress,
   identity_registry_class_hash: registryHash,
