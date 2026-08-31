@@ -206,11 +206,18 @@ try {
     throw new Error('Allowed recovery invoke was not forwarded');
   }
 
+  const forbiddenCalldata = transaction.getExecuteCalldata([
+    {
+      contractAddress: registryAddress,
+      entrypoint: 'register_identity',
+      calldata: [identityId, accountAddress],
+    },
+  ], '1').map((value) => `0x${BigInt(value).toString(16)}`);
   const badInvoke = await post(relayUrl, {
     jsonrpc: '2.0', id: 4, method: 'starknet_addInvokeTransaction',
-    params: { invoke_transaction: { ...invokeTx, calldata: ['0x1'] } },
+    params: { invoke_transaction: { ...invokeTx, calldata: forbiddenCalldata } },
   }, token);
-  if (badInvoke.status !== 403) throw new Error('Arbitrary invoke was not blocked');
+  if (badInvoke.status !== 403) throw new Error(`Arbitrary invoke was not blocked: ${JSON.stringify(badInvoke)}`);
 
   const devnetMethod = await post(relayUrl, { jsonrpc: '2.0', id: 5, method: 'devnet_mint', params: {} }, token);
   if (devnetMethod.status !== 403) throw new Error('devnet_* method was not blocked');
