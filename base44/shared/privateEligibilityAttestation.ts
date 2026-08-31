@@ -4,6 +4,13 @@ import { AGE_POLICY_VERSION, deriveAgeEligibility, isAgeBand, type AgeBand } fro
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
 const COMMITMENT_DOMAIN = 'SWAPPULSE_PRIVATE_ELIGIBILITY_COMMITMENT_V1';
+const REPLAY_DOMAIN = 'SWAPPULSE_PRIVATE_IDENTITY_ATTESTATION_REPLAY_V2';
+
+// Public V2 assurance codes are intentionally generic. They describe only the
+// strength/category of an attestation, never the private fact that caused the
+// verifier to approve it (age, document type, DOB, provider response, etc.).
+export const PRIVATE_ASSURANCE_TYPE = 1;
+export const PRIVATE_ASSURANCE_LEVEL = 2;
 
 // Deliberately generic. Publishing a schema called "18_PLUS" would turn the
 // schema identifier itself into age information. The private Base44 record
@@ -27,6 +34,9 @@ export type PrivateEligibilityAttestation = {
   verification_root: string;
   schema_hash: string;
   expires_at: number;
+  verification_type: number;
+  verification_level: number;
+  attestation_id: string;
 };
 
 function feltFromDigest(bytes: Uint8Array): string {
@@ -34,6 +44,25 @@ function feltFromDigest(bytes: Uint8Array): string {
   let value = BigInt(`0x${hex}`) % STARK_FIELD_PRIME;
   if (value === 0n) value = 1n;
   return `0x${value.toString(16)}`;
+}
+
+async function purposeHmacFelt(keyMaterial: CryptoKey, info: string, message: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: encoder.encode('SWAPPULSE_COMMITMENT_KEY_DERIVATION_V1'),
+      info: encoder.encode(info),
+    },
+    keyMaterial,
+    { name: 'HMAC', hash: 'SHA-256', length: 256 },
+    false,
+    ['sign'],
+  );
+  return feltFromDigest(
+    new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(message))),
+  );
 }
 
 export async function privateEligibilityState(svc: any, userId: string): Promise<PrivateEligibilityState> {
@@ -100,10 +129,10 @@ export async function buildPrivateEligibilityAttestation(
     testnet_identity_eligible: true,
   });
 
-  // The relay token is never placed in the claim or returned. Derive a
-  // purpose-specific HMAC key with HKDF so the commitment key is separated
-  // from the bearer-token use of the same host-managed secret. The keyed hash
-  // blinds low-entropy private fields against public dictionary attacks.
+  // The relay token is never placed in the claim or returned. Derive separate
+  // purpose-specific HMAC keys with HKDF so bearer auth, the public commitment,
+  // and the replay identifier are cryptographically domain-separated. This also
+  // prevents low-entropy private fields from being dictionary-tested on-chain.
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -112,21 +141,17 @@ export async function buildPrivateEligibilityAttestation(
     false,
     ['deriveKey'],
   );
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: 'HKDF',
-      hash: 'SHA-256',
-      salt: encoder.encode('SWAPPULSE_COMMITMENT_KEY_DERIVATION_V1'),
-      info: encoder.encode('private-identity-assurance'),
-    },
-    keyMaterial,
-    { name: 'HMAC', hash: 'SHA-256', length: 256 },
-    false,
-    ['sign'],
-  );
-  const digest = new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(claim)));
-  const verificationRoot = feltFromDigest(digest);
+  const verificationRoot = await purposeHmacFelt(keyMaterial, 'private-identity-assurance', claim);
   const schemaHash = `0x${BigInt(hash.getSelectorFromName(PRIVATE_ELIGIBILITY_SCHEMA)).toString(16)}`;
+  const replayClaim = JSON.stringify({
+    domain: REPLAY_DOMAIN,
+    identity_id: identityId,
+    verification_root: verificationRoot,
+    schema_hash: schemaHash,
+    policy_version: state.policy_version,
+    revision: state.revision,
+  });
+  const attestationId = await purposeHmacFelt(keyMaterial, 'identity-attestation-replay-v2', replayClaim);
 
   let expiresAt = 0;
   if (state.verifier_expires_at) {
@@ -139,5 +164,8 @@ export async function buildPrivateEligibilityAttestation(
     verification_root: verificationRoot,
     schema_hash: schemaHash,
     expires_at: expiresAt,
+    verification_type: PRIVATE_ASSURANCE_TYPE,
+    verification_level: PRIVATE_ASSURANCE_LEVEL,
+    attestation_id: attestationId,
   };
 }
