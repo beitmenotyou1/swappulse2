@@ -82,7 +82,24 @@ export async function declareClass(account, provider, contract, casm) {
   if (await provider.isClassDeclared({ classHash })) {
     return { class_hash: classHash, transaction_hash: '', already_declared: true };
   }
-  const result = await account.declare({ contract, casm });
+
+  const starknetVersion = await provider.channel.getStarknetVersion();
+  const compiledClassHash = normalizeHex(hash.computeCompiledClassHash(casm, starknetVersion));
+  console.log(
+    `Declaring class ${classHash} on Starknet ${starknetVersion} with compiled class hash ${compiledClassHash}`,
+  );
+
+  let result;
+  try {
+    result = await account.declare({ contract, casm, compiledClassHash });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const mismatch = message.match(/Mismatch compiled class hash[^\n]*/i)?.[0];
+    throw new Error(
+      `Class declaration failed for ${classHash} using compiled class hash ${compiledClassHash}: ${mismatch || message.split('\n')[0]}`,
+    );
+  }
+
   await wait(provider, result.transaction_hash);
   return {
     class_hash: normalizeHex(result.class_hash || classHash),
