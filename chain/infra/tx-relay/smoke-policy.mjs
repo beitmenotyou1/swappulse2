@@ -40,6 +40,7 @@ const accountClassHash = '0x12345';
 const registryClassHash = '0x23456';
 const registryAddress = '0x45678';
 const registryOwner = '0x56789';
+const identityVerifier = '0x67890';
 const identityId = '0x6789a';
 const publicKey = '0x34567';
 const accountAddress = `0x${BigInt(hash.calculateContractAddressFromHash(publicKey, accountClassHash, [publicKey], 0)).toString(16)}`;
@@ -47,6 +48,7 @@ const recoveryController = '0x0';
 const recoveryDelay = 172800;
 const seen = [];
 const ownerSelector = hash.getSelectorFromName('owner');
+const isVerifierSelector = hash.getSelectorFromName('is_verifier');
 const getIdentitySelector = hash.getSelectorFromName('get_identity');
 const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
 const getVerificationSelector = hash.getSelectorFromName('get_verification');
@@ -78,6 +80,7 @@ const upstream = http.createServer(async (req, res) => {
     const call = Array.isArray(payload.params) ? payload.params[0] : {};
     const selector = call?.entry_point_selector;
     if (selector === ownerSelector) result = [registryOwner];
+    else if (selector === isVerifierSelector) result = [identityVerifier === '0x0' ? '0x0' : '0x1'];
     else if (selector === getIdentitySelector) result = mockIdentityStatus === 0
       ? ['0x0', '0x0', '0x0', '0x0', '0x0']
       : [accountAddress, '0x1', identityId, '0x1', '0x0'];
@@ -86,7 +89,7 @@ const upstream = http.createServer(async (req, res) => {
       mockVerificationRoot,
       `0x${BigInt(mockVerificationStatus).toString(16)}`,
       mockVerificationSchema,
-      mockVerificationStatus === 1 ? registryOwner : '0x0',
+      mockVerificationStatus === 1 ? identityVerifier : '0x0',
       mockVerificationStatus === 1 ? '0x1' : '0x0',
       '0x0',
       '0x0',
@@ -137,8 +140,10 @@ const child = spawn(process.execPath, ['server.mjs'], {
     IDENTITY_REGISTRY_CLASS_HASH: registryClassHash,
     IDENTITY_REGISTRY_ADDRESS: registryAddress,
     IDENTITY_REGISTRY_OWNER: registryOwner,
+    IDENTITY_VERIFIER_ADDRESS: identityVerifier,
     REGISTRY_ADMIN_ADDRESS: registryOwner,
     REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
+    IDENTITY_VERIFIER_PRIVATE_KEY: '0x2',
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '5000000000000000',
