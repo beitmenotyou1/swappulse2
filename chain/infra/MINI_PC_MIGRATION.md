@@ -267,7 +267,7 @@ curl -sS --fail-with-body \
   --data '{"jsonrpc":"2.0","id":1,"method":"devnet_load","params":{"path":"/data/swappulse-restore.dump"}}'
 ```
 
-Immediately rerun `verify-network.mjs` against `http://127.0.0.1:5050`. If `devnet_load` itself errors, stop and diagnose that error; do not deploy replacement contracts.
+Immediately rerun `verify-network.mjs` against `http://127.0.0.1:5050`. If `devnet_load` itself errors with `Invalid transaction nonce`, the preserved dump is a partial replay log whose prerequisite transactions were omitted. Do not deploy replacement contracts. Recover the missing prefix on the original Zorin host with `chain/scripts/tooling/recover-devnet-persistence.mjs`, verify the original registry and transaction hashes, write a new self-contained dump, restart Zorin from that repaired dump, and only then migrate the repaired dump to the mini PC.
 
 ## Phase 6: regenerate relay credentials on the mini PC
 
