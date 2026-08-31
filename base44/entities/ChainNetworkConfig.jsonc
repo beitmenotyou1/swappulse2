@@ -35,6 +35,15 @@
       "type": "string",
       "description": "Public verifier/attester account authorised by IdentityRegistry.is_verifier(). This account is deliberately separate from registry ownership."
     },
+    "identity_verification_mode": {
+      "type": "string",
+      "enum": [
+        "V1",
+        "V2"
+      ],
+      "default": "V1",
+      "description": "Public IdentityRegistry attestation ABI/policy mode. V2 enables assurance type/level plus spent attestation replay identifiers after the registry and relay have been upgraded."
+    },
     "recovery_controller": {
       "type": "string",
       "description": "Public recovery-controller contract/account address. Empty disables recovery controller at deployment."
@@ -112,6 +121,10 @@
     "verified_identity_verifier_address": {
       "type": "string",
       "description": "Verifier address confirmed authorised by IdentityRegistry.is_verifier() during the last successful verification."
+    },
+    "verified_identity_verification_mode": {
+      "type": "string",
+      "description": "Identity verification mode independently confirmed by the network verification flow. Consumers fail closed if it differs from identity_verification_mode."
     },
     "verified_account_class_hash": {
       "type": "string",
