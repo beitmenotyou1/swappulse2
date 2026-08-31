@@ -100,8 +100,8 @@ async function getVerifiedConfig(svc: any) {
   return row;
 }
 
-async function relayUrl(rawValue: unknown, pathname = '/rpc'): Promise<string> {
-  const raw = String(rawValue || '').trim();
+async function relayUrl(pathname = '/rpc'): Promise<string> {
+  const raw = String(secrets.get('SWAPPULSE_TX_RELAY_URL') || '').trim();
   if (!raw) throw new Error('TX_RELAY_URL_NOT_CONFIGURED');
   const url = new URL(raw);
   if (url.protocol !== 'https:') throw new Error('TX_RELAY_URL_MUST_USE_HTTPS');
@@ -119,7 +119,7 @@ async function forward(method: string, params: Record<string, unknown>) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(await relayUrl(relayBaseUrl, '/rpc'), {
+    const response = await fetch(await relayUrl('/rpc'), {
       method: 'POST',
       redirect: 'error',
       headers: {
