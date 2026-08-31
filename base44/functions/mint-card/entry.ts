@@ -6,6 +6,7 @@ import {
   jsonError,
   normalizeHex,
   relayMintCard,
+  verifiedContractConfigured,
 } from '../../shared/chainRelay.ts';
 
 // Card NFTs are minted by the relay because the CardNft contract is owner-gated.
@@ -51,8 +52,8 @@ export default async function (req: Request): Promise<Response> {
 
     const config = await getVerifiedConfig(svc);
     if (!config) return jsonError('SwapPulse Testnet verification pins are stale or incomplete', 409, 'CHAIN_VERIFICATION_REQUIRED');
-    if (!String(config.card_nft_address || '').trim()) {
-      return jsonError('Card minting is not enabled on this network yet', 409, 'CARD_NFT_NOT_CONFIGURED');
+    if (!verifiedContractConfigured(config, 'card_nft')) {
+      return jsonError('The card NFT contract is not independently verified yet', 409, 'CARD_NFT_NOT_VERIFIED');
     }
 
     const sessionRows = await svc.entities.CardVerificationSession.filter({ id: sessionId }, '-created_date', 1).catch(() => []);
