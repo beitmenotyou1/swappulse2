@@ -52,16 +52,60 @@ nohup "$CLOUDFLARED_BIN" tunnel \
 cf_pid=$!
 echo "$cf_pid" > "$PIDFILE"
 
-rpc_url=""
+tunnel_base=""
 for _ in $(seq 1 30); do
-  rpc_url="$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG" | head -n 1 || true)"
-  [[ -n "$rpc_url" ]] && break
+  tunnel_base="$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG" | head -n 1 || true)"
+  [[ -n "$tunnel_base" ]] && break
   kill -0 "$cf_pid" 2>/dev/null || break
   sleep 1
 done
 
-if [[ -z "$rpc_url" ]]; then
+if [[ -z "$tunnel_base" ]]; then
   echo "Cloudflare did not generate a Quick Tunnel URL." >&2
+  tail -n 40 "$LOG" >&2
+  kill "$cf_pid" 2>/dev/null || true
+  rm -f "$PIDFILE"
+  exit 1
+fi
+
+# A Quick Tunnel hostname can be printed before Cloudflare's edge route is
+# ready. Wait for an actual JSON-RPC response so HTML 502/1033 pages are never
+# written into .env or the public manifest.
+rpc_url="${tunnel_base}/rpc"
+if ! RPC_URL="$rpc_url" "$NODE_BIN" --input-type=module <<'NODE'
+const rpcUrl = process.env.RPC_URL;
+const deadline = Date.now() + 60_000;
+let lastError = 'no response';
+while (Date.now() < deadline) {
+  try {
+    const response = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'starknet_chainId', params: [] }),
+      redirect: 'error',
+    });
+    const text = await response.text();
+    let payload;
+    try { payload = JSON.parse(text); } catch { throw new Error(`non-JSON HTTP ${response.status}`); }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (payload?.error) throw new Error(`RPC error ${payload.error.code ?? 'unknown'}`);
+    if (typeof payload?.result === 'string' && payload.result.startsWith('0x')) {
+      console.log(`Quick Tunnel JSON-RPC ready: ${rpcUrl}`);
+      process.exit(0);
+    }
+    throw new Error('missing chain id result');
+  } catch (error) {
+    lastError = error instanceof Error ? error.message : String(error);
+  }
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+}
+console.error(`Quick Tunnel did not become JSON-RPC ready: ${lastError}`);
+process.exit(1);
+NODE
+then
+  kill "$cf_pid" 2>/dev/null || true
+  rm -f "$PIDFILE"
+  echo "The new Cloudflare Quick Tunnel never became JSON-RPC ready; existing configuration was not changed." >&2
   tail -n 40 "$LOG" >&2
   exit 1
 fi
