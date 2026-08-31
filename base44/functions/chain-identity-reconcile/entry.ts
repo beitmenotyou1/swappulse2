@@ -92,6 +92,7 @@ async function readVerificationMirror(
   registry: string,
   identityId: string,
   expectedAttester: string,
+  verificationMode: string,
 ) {
   const [values, verifiedValues] = await Promise.all([
     starknetCall(rpcUrl, registry, 'get_effective_verification', [identityId]),
@@ -108,6 +109,19 @@ async function readVerificationMirror(
   const revokedAt = asNumber(values[6], 'verification revoked_at');
   const version = asNumber(values[7], 'verification version');
   const currentlyValid = asNumber(verifiedValues[0], 'is_verified') === 1;
+  let verificationType = 0;
+  let verificationLevel = 0;
+  let attestationId = '';
+  if (verificationMode === 'V2') {
+    const assuranceValues = await starknetCall(rpcUrl, registry, 'get_effective_assurance', [identityId]);
+    if (assuranceValues.length < 3) throw new Error('V2 assurance read returned too few values');
+    verificationType = asNumber(assuranceValues[0], 'verification type');
+    verificationLevel = asNumber(assuranceValues[1], 'verification level');
+    const rawAttestationId = normalizeHex(assuranceValues[2], 'verification attestation id');
+    attestationId = rawAttestationId === '0x0' ? '' : rawAttestationId;
+  } else if (verificationMode !== 'V1') {
+    throw new Error('identity verification mode is invalid');
+  }
 
   if (![0, 1, 2].includes(status)) throw new Error(`unknown verification status ${status}`);
   if (status !== 0 && attestedBy !== expectedAttester) throw new Error('verification attester does not match configured identity verifier');
@@ -123,6 +137,9 @@ async function readVerificationMirror(
     verification_root: root === '0x0' ? '' : root,
     verification_schema_hash: schemaHash === '0x0' ? '' : schemaHash,
     verification_status: mirrorStatus,
+    verification_type: verificationType,
+    verification_level: verificationLevel,
+    verification_attestation_id: attestationId,
     verification_attested_by: attestedBy === '0x0' ? '' : attestedBy,
     verification_verified_at: verifiedAt,
     verification_expires_at: expiresAt,
@@ -136,6 +153,7 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
   const identityId = normalizeHex(row.chain_identity_id, 'chain_identity_id');
   const registry = normalizeHex(config.identity_registry_address, 'identity_registry_address');
   const expectedAttester = normalizeHex(config.identity_verifier_address, 'identity_verifier_address');
+  const verificationMode = String(config.identity_verification_mode || 'V1').trim().toUpperCase();
 
   try {
     const values = await starknetCall(rpcUrl, registry, 'get_identity', [identityId]);
@@ -152,6 +170,9 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
         verification_root: '',
         verification_schema_hash: '',
         verification_status: 'NONE',
+        verification_type: 0,
+        verification_level: 0,
+        verification_attestation_id: '',
         verification_attested_by: '',
         verification_verified_at: 0,
         verification_expires_at: 0,
@@ -163,7 +184,13 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
       return { id: row.id, outcome: 'NOT_REGISTERED' };
     }
 
-    const verification = await readVerificationMirror(rpcUrl, registry, identityId, expectedAttester);
+    const verification = await readVerificationMirror(
+      rpcUrl,
+      registry,
+      identityId,
+      expectedAttester,
+      verificationMode,
+    );
 
     if (chainStatus === 1) {
       if (chainAccount === '0x0') throw new Error('Active identity has zero account');
@@ -294,6 +321,7 @@ export default async function(req: Request): Promise<Response> {
       || String(config.verified_identity_registry_class_hash || '').trim() !== String(config.identity_registry_class_hash || '').trim()
       || String(config.verified_identity_registry_owner || '').trim() !== String(config.identity_registry_owner || '').trim()
       || String(config.verified_identity_verifier_address || '').trim() !== String(config.identity_verifier_address || '').trim()
+      || String(config.verified_identity_verification_mode || '').trim().toUpperCase() !== String(config.identity_verification_mode || 'V1').trim().toUpperCase()
       || String(config.verified_account_class_hash || '').trim() !== String(config.account_class_hash || '').trim()
       || String(config.verified_rpc_url || '').trim() !== String(config.rpc_url || '').trim()
     ) {
