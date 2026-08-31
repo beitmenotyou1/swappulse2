@@ -12,7 +12,7 @@ This is the local-development path for running the private SwapPulse Starknet te
 
 ## 1. Install host tools
 
-The project requires Docker with the Compose plugin, Git, OpenSSL, Node.js 22+, Scarb/Cairo 2.13.1, Starknet Foundry 0.51.2, Universal Sierra Compiler 2.10.0 and `cloudflared`.
+The project requires Docker with the Compose plugin, Git, OpenSSL, Node.js 22+, Scarb/Cairo 2.13.1, Starknet Foundry 0.51.2, Universal Sierra Compiler 2.8.0 and `cloudflared`. Devnet 0.8.2 uses USC 2.8.0 internally, so this pin is required for matching `DECLARE` compiled-class hashes.
 
 Check what you already have first:
 
@@ -64,18 +64,26 @@ At this stage `SWAPPULSE_PUBLIC_RPC_URL` still contains the placeholder value. W
 
 ```bash
 docker compose up -d --build devnet rpc-gateway
-curl -s http://127.0.0.1:8080/healthz
+docker compose ps
+GATEWAY_PORT="$(grep '^SWAPPULSE_GATEWAY_PORT=' .env | cut -d= -f2-)"
+GATEWAY_PORT="${GATEWAY_PORT:-8080}"
+curl -sS --fail-with-body "http://127.0.0.1:${GATEWAY_PORT}/healthz"
 ```
 
-The raw Devnet remains on loopback port `5050`. The public-safe gateway is port `8080`.
+The raw Devnet remains on loopback port `5050`. The public-safe gateway uses `SWAPPULSE_GATEWAY_PORT` from `.env`, defaulting to `8080`. If `docker compose ps` shows a different host port, use that port. Do not assume `8080` when another local service already occupies it.
 
 ## 6. Create a temporary HTTPS URL for the read-only RPC
 
 Open a second terminal and run:
 
 ```bash
-cloudflared tunnel --url http://127.0.0.1:8080
+cd ~/swappulse2/chain/infra
+GATEWAY_PORT="$(grep '^SWAPPULSE_GATEWAY_PORT=' .env | cut -d= -f2-)"
+GATEWAY_PORT="${GATEWAY_PORT:-8080}"
+cloudflared tunnel --protocol http2 --url "http://127.0.0.1:${GATEWAY_PORT}"
 ```
+
+`--protocol http2` is preferred here because it avoids QUIC instability seen on some VPN paths.
 
 Copy the generated `https://...trycloudflare.com` URL. In the first terminal, replace the placeholder in `.env`:
 
@@ -83,10 +91,16 @@ Copy the generated `https://...trycloudflare.com` URL. In the first terminal, re
 nano .env
 ```
 
-Set:
+Set exactly one assignment line:
 
 ```text
 SWAPPULSE_PUBLIC_RPC_URL=https://YOUR-RPC-TUNNEL.trycloudflare.com
+```
+
+Do not add the URL on a separate line by itself. Before deployment, verify only the safe public setting without printing the Devnet seed:
+
+```bash
+grep '^SWAPPULSE_PUBLIC_RPC_URL=' .env
 ```
 
 Keep the RPC tunnel terminal running.
