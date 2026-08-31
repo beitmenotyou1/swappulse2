@@ -8,9 +8,11 @@ use starknet::ContractAddress;
 // confusion. Clean candidates verified against CoinGecko / CoinMarketCap /
 // DexScreener: SWPX, TCGX.
 //
-// This token pays for nothing at the user level: the appchain enforces a zero
-// protocol fee for user transactions at the sequencer fee policy. The token
-// exists to secure the chain through staking, not to charge collectors.
+// This token pays for nothing at the user level: the current testnet keeps
+// collector protocol fees at zero. Phase 2 uses the token as the economic bond
+// for community-operator duties. The present Devnet runtime does not yet have
+// decentralised consensus validators; consensus staking becomes meaningful only
+// after the planned appchain/rollup operator-set migration.
 //
 // Standard ERC-20 behaviour is intentionally provided by OpenZeppelin's
 // ERC20Component. This interface contains only SwapPulse-specific extensions.
