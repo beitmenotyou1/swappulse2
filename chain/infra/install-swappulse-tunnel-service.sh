@@ -40,11 +40,11 @@ if [[ -z "$CREDENTIALS_FILE" || ! -f "$CREDENTIALS_FILE" ]]; then
   exit 1
 fi
 
-# Verify the selected tunnel exists before writing a boot service.
-if ! "$CLOUDFLARED_BIN" tunnel info "$TUNNEL_ID" >/dev/null 2>&1; then
-  echo "Cloudflare tunnel $TUNNEL_ID is not available to the current login." >&2
-  exit 1
-fi
+# A replica host only needs the tunnel-scoped credentials JSON referenced by
+# the config. Do not require cert.pem here: that account certificate can manage
+# every tunnel in the Cloudflare account and should not be copied to a runtime
+# host just to run this one tunnel.
+"$CLOUDFLARED_BIN" tunnel --config "$CONFIG_FILE" ingress validate >/dev/null
 
 unit_tmp="$(mktemp)"
 trap 'rm -f "$unit_tmp"' EXIT
