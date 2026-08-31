@@ -120,7 +120,8 @@ export SWAPPULSE_RECOVERY_DELAY_SECONDS="${SWAPPULSE_RECOVERY_DELAY_SECONDS:-172
 export SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST"
 
 "$NODE_BIN" "$CHAIN_ROOT/scripts/tooling/deploy-network.mjs"
-"$NODE_BIN" "$CHAIN_ROOT/scripts/tooling/verify-network.mjs" "$MANIFEST"
+SWAPPULSE_VERIFY_RPC_URL="$RAW_RPC" \
+  "$NODE_BIN" "$CHAIN_ROOT/scripts/tooling/verify-network.mjs" "$MANIFEST"
 
 unset SWAPPULSE_DEPLOYER_PRIVATE_KEY DEPLOYER_PRIVATE_KEY
 
@@ -128,4 +129,4 @@ echo
 echo "SwapPulse Testnet contracts are deployed and locally verified."
 echo "Public manifest: $MANIFEST"
 echo "The manifest contains the public read-only HTTPS RPC, never the localhost raw RPC."
-echo "Next: import the manifest in Admin → Identity & Federation and use Verify & Activate."
+echo "Before Base44 activation, verify the manifest again without SWAPPULSE_VERIFY_RPC_URL so the public HTTPS gateway is tested too."
