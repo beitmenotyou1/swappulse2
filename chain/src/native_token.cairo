@@ -11,28 +11,16 @@ use starknet::ContractAddress;
 // This token pays for nothing at the user level: the appchain enforces a zero
 // protocol fee for user transactions at the sequencer fee policy. The token
 // exists to secure the chain through staking, not to charge collectors.
+//
+// Standard ERC-20 behaviour is intentionally provided by OpenZeppelin's
+// ERC20Component. This interface contains only SwapPulse-specific extensions.
 #[starknet::interface]
 pub trait INativeToken<TContractState> {
-    fn name(self: @TContractState) -> ByteArray;
-    fn symbol(self: @TContractState) -> ByteArray;
-    fn decimals(self: @TContractState) -> u8;
-    fn total_supply(self: @TContractState) -> u256;
-    fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
-    fn allowance(
-        self: @TContractState, owner: ContractAddress, spender: ContractAddress,
-    ) -> u256;
-    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(
-        ref self: TContractState,
-        sender: ContractAddress,
-        recipient: ContractAddress,
-        amount: u256,
-    ) -> bool;
-    fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
     fn mint(ref self: TContractState, recipient: ContractAddress, amount: u256);
     fn burn(ref self: TContractState, amount: u256);
     fn set_minter(ref self: TContractState, minter: ContractAddress, allowed: bool);
     fn is_minter(self: @TContractState, minter: ContractAddress) -> bool;
+    fn max_supply(self: @TContractState) -> u256;
 }
 
 #[starknet::contract]
@@ -40,6 +28,7 @@ pub mod NativeToken {
     use core::num::traits::Zero;
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_interfaces::upgrades::IUpgradeable;
+    use openzeppelin_token::erc20::{DefaultConfig, ERC20Component, ERC20HooksEmptyImpl};
     use openzeppelin_upgrades::UpgradeableComponent;
     use starknet::storage::{
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
@@ -50,11 +39,17 @@ pub mod NativeToken {
     use super::INativeToken;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
     #[abi(embed_v0)]
     impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
     impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
     #[storage]
@@ -62,13 +57,10 @@ pub mod NativeToken {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
+        erc20: ERC20Component::Storage,
+        #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
-        token_name: ByteArray,
-        token_symbol: ByteArray,
-        total_supply: u256,
         max_supply: u256,
-        balances: Map<ContractAddress, u256>,
-        allowances: Map<(ContractAddress, ContractAddress), u256>,
         minters: Map<ContractAddress, bool>,
     }
 
@@ -78,28 +70,10 @@ pub mod NativeToken {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
+        ERC20Event: ERC20Component::Event,
+        #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
-        Transfer: Transfer,
-        Approval: Approval,
         MinterUpdated: MinterUpdated,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct Transfer {
-        #[key]
-        from: ContractAddress,
-        #[key]
-        to: ContractAddress,
-        value: u256,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct Approval {
-        #[key]
-        owner: ContractAddress,
-        #[key]
-        spender: ContractAddress,
-        value: u256,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -119,68 +93,15 @@ pub mod NativeToken {
     ) {
         self.ownable.initializer(owner);
         assert(max_supply > 0_u256, 'INVALID_MAX_SUPPLY');
-        self.token_name.write(name);
-        self.token_symbol.write(symbol);
+        self.erc20.initializer(name, symbol);
         self.max_supply.write(max_supply);
     }
 
     #[abi(embed_v0)]
     impl NativeTokenImpl of INativeToken<ContractState> {
-        fn name(self: @ContractState) -> ByteArray {
-            self.token_name.read()
-        }
-
-        fn symbol(self: @ContractState) -> ByteArray {
-            self.token_symbol.read()
-        }
-
-        fn decimals(self: @ContractState) -> u8 {
-            18_u8
-        }
-
-        fn total_supply(self: @ContractState) -> u256 {
-            self.total_supply.read()
-        }
-
-        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            self.balances.read(account)
-        }
-
-        fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress,
-        ) -> u256 {
-            self.allowances.read((owner, spender))
-        }
-
-        fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
-            self.move_tokens(get_caller_address(), recipient, amount);
-            true
-        }
-
-        fn transfer_from(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256,
-        ) -> bool {
-            let spender = get_caller_address();
-            let allowed = self.allowances.read((sender, spender));
-            assert(allowed >= amount, 'INSUFFICIENT_ALLOWANCE');
-            self.allowances.write((sender, spender), allowed - amount);
-            self.move_tokens(sender, recipient, amount);
-            true
-        }
-
-        fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
-            let owner = get_caller_address();
-            assert(!spender.is_zero(), 'INVALID_SPENDER');
-            self.allowances.write((owner, spender), amount);
-            self.emit(Approval { owner, spender, value: amount });
-            true
-        }
-
         // Minting is restricted to the owner plus explicitly allowlisted minters
-        // (the staking pool for rewards, the bridge adapter for inbound release).
+        // (the staking/reward path and bridge adapter where enabled). ERC-20
+        // balance and supply updates are delegated to OpenZeppelin.
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             let caller = get_caller_address();
             let authorised = caller == self.ownable.Ownable_owner.read()
@@ -189,21 +110,15 @@ pub mod NativeToken {
             assert(!recipient.is_zero(), 'INVALID_RECIPIENT');
             assert(amount > 0_u256, 'INVALID_AMOUNT');
 
-            let new_supply = self.total_supply.read() + amount;
+            let current_supply = self.erc20.ERC20_total_supply.read();
+            let new_supply = current_supply + amount;
             assert(new_supply <= self.max_supply.read(), 'MAX_SUPPLY_EXCEEDED');
-
-            self.total_supply.write(new_supply);
-            self.balances.write(recipient, self.balances.read(recipient) + amount);
-            self.emit(Transfer { from: Zero::zero(), to: recipient, value: amount });
+            self.erc20.mint(recipient, amount);
         }
 
         fn burn(ref self: ContractState, amount: u256) {
-            let caller = get_caller_address();
-            let balance = self.balances.read(caller);
-            assert(balance >= amount, 'INSUFFICIENT_BALANCE');
-            self.balances.write(caller, balance - amount);
-            self.total_supply.write(self.total_supply.read() - amount);
-            self.emit(Transfer { from: caller, to: Zero::zero(), value: amount });
+            assert(amount > 0_u256, 'INVALID_AMOUNT');
+            self.erc20.burn(get_caller_address(), amount);
         }
 
         fn set_minter(ref self: ContractState, minter: ContractAddress, allowed: bool) {
@@ -216,6 +131,10 @@ pub mod NativeToken {
         fn is_minter(self: @ContractState, minter: ContractAddress) -> bool {
             self.minters.read(minter)
         }
+
+        fn max_supply(self: @ContractState) -> u256 {
+            self.max_supply.read()
+        }
     }
 
     #[abi(embed_v0)]
@@ -224,23 +143,6 @@ pub mod NativeToken {
             self.ownable.assert_only_owner();
             assert(!new_class_hash.is_zero(), 'CLASS_HASH_ZERO');
             self.upgradeable.upgrade(new_class_hash);
-        }
-    }
-
-    #[generate_trait]
-    impl InternalImpl of InternalTrait {
-        fn move_tokens(
-            ref self: ContractState,
-            from: ContractAddress,
-            to: ContractAddress,
-            amount: u256,
-        ) {
-            assert(!to.is_zero(), 'INVALID_RECIPIENT');
-            let balance = self.balances.read(from);
-            assert(balance >= amount, 'INSUFFICIENT_BALANCE');
-            self.balances.write(from, balance - amount);
-            self.balances.write(to, self.balances.read(to) + amount);
-            self.emit(Transfer { from, to, value: amount });
         }
     }
 }
