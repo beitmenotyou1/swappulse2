@@ -12,6 +12,7 @@ import {
   publicRpc,
   recipientCommitment,
   valueFeatureEligible,
+  verifiedContractConfigured,
 } from '../../shared/chainRelay.ts';
 import { issueChainDraftToken, signingHashForTransaction, type ChainDraftAction } from '../../shared/chainTxDraft.ts';
 import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
@@ -78,6 +79,13 @@ export default async function (req: Request): Promise<Response> {
     let recordId = '';
 
     if (action === 'stake') {
+      if (
+        !verifiedContractConfigured(config, 'native_token')
+        || !verifiedContractConfigured(config, 'staking_pool')
+        || !verifiedContractConfigured(config, 'usership')
+      ) {
+        return jsonError('The staking contracts are not independently verified yet', 409, 'STAKING_ECOSYSTEM_NOT_VERIFIED');
+      }
       const kind = String(body.kind || '').trim();
       const allowed = ['register_validator', 'increase_self_stake', 'delegate', 'request_undelegate', 'withdraw', 'exit_validator'];
       if (!allowed.includes(kind)) return jsonError('Unsupported staking action', 400, 'UNSUPPORTED_STAKE_KIND');
@@ -112,6 +120,12 @@ export default async function (req: Request): Promise<Response> {
       const externalChain = String(body.external_chain || '').trim();
       const recipient = String(body.recipient_address || '').trim();
       if (!['token', 'card'].includes(assetKind)) return jsonError('Unsupported asset kind', 400, 'UNSUPPORTED_ASSET_KIND');
+      if (!verifiedContractConfigured(config, 'bridge_adapter') || !verifiedContractConfigured(config, 'native_token')) {
+        return jsonError('The bridge contracts are not independently verified yet', 409, 'BRIDGE_ECOSYSTEM_NOT_VERIFIED');
+      }
+      if (assetKind === 'card' && !verifiedContractConfigured(config, 'card_nft')) {
+        return jsonError('The card NFT contract is not independently verified yet', 409, 'CARD_NFT_NOT_VERIFIED');
+      }
       if (!CHAIN_CODES[externalChain]) return jsonError('Unsupported destination chain', 400, 'UNSUPPORTED_CHAIN');
       if (recipient.length < 8 || recipient.length > 120) return jsonError('A destination recipient address is required', 400, 'RECIPIENT_REQUIRED');
 
