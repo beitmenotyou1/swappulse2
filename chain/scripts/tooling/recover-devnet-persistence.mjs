@@ -21,12 +21,12 @@ const recoverySourceFile = path.resolve(
   process.env.SWAPPULSE_RECOVERY_SOURCE_FILE
     || path.join(chainDir, 'infra/recovery-source/swappulse-restore.dump'),
 );
-const prefixDumpPath = process.env.SWAPPULSE_PREFIX_DUMP_PATH || '/data/swappulse-recovery-prefix.dump';
 const combinedLoadPath = process.env.SWAPPULSE_COMBINED_LOAD_PATH || '/data/swappulse-combined-replay.dump';
 const completeDumpPath = process.env.SWAPPULSE_COMPLETE_DUMP_PATH || '/data/swappulse-testnet-complete.dump';
 const hostDataDir = path.resolve(
   process.env.SWAPPULSE_RECOVERY_HOST_DATA_DIR || path.join(chainDir, 'infra/data'),
 );
+const canonicalDumpHostPath = path.join(hostDataDir, 'swappulse-testnet.dump');
 
 function hostPathForContainerData(containerPath) {
   const normalized = String(containerPath || '').trim();
@@ -185,15 +185,18 @@ if (nonce !== 3n) {
 }
 
 console.log(`Prerequisites reconstructed. Owner nonce: ${nonce}`);
-console.log(`Writing reconstructed prefix dump: ${prefixDumpPath}`);
-await rpc('devnet_dump', { path: prefixDumpPath });
+console.log('Reading nonce 0-2 prefix from Devnet\'s automatic --dump-on block canonical dump...');
 
-const prefixHostPath = hostPathForContainerData(prefixDumpPath);
 const combinedLoadHostPath = hostPathForContainerData(combinedLoadPath);
 const completeHostPath = hostPathForContainerData(completeDumpPath);
-const prefixActions = JSON.parse(await fs.readFile(prefixHostPath, 'utf8'));
+let prefixActions;
+try {
+  prefixActions = JSON.parse(await fs.readFile(canonicalDumpHostPath, 'utf8'));
+} catch (error) {
+  throw new Error(`Could not read automatic canonical prefix dump ${canonicalDumpHostPath}: ${error.message}`);
+}
 if (!Array.isArray(prefixActions)) {
-  throw new Error('Reconstructed prefix dump must contain a JSON action array');
+  throw new Error('Automatic canonical prefix dump must contain a JSON action array');
 }
 
 const ownerPrefix = prefixActions.filter((action) => actionSender(action) === expectedOwner);
@@ -260,12 +263,14 @@ for (const [label, txHash] of [
 
 console.log('Recovered registry and original nonce-3/4 transactions verified.');
 console.log('The combined replay was proven by loading it from pristine nonce 0.');
-console.log(`Writing final self-contained Devnet dump: ${completeDumpPath}`);
-await rpc('devnet_dump', { path: completeDumpPath });
+
+// Persist the exact combined replay only after it has been proven loadable. The
+// replay file contains signed public testnet transactions, never private keys.
+// Mode 0644 keeps it readable by the unprivileged Devnet container after it is
+// promoted to the canonical startup dump.
+await fs.writeFile(completeHostPath, `${JSON.stringify(combinedActions, null, 2)}\n`, { mode: 0o644 });
+await fs.chmod(completeHostPath, 0o644);
 const finalActions = JSON.parse(await fs.readFile(completeHostPath, 'utf8'));
-if (!Array.isArray(finalActions)) {
-  throw new Error('Final self-contained dump must contain a JSON action array');
-}
 const finalOwnerNonces = finalActions
   .filter((action) => actionSender(action) === expectedOwner)
   .map(actionNonce)
@@ -276,6 +281,7 @@ if (
 ) {
   throw new Error(`Final dump must contain owner nonces 0,1,2,3,4; got ${finalOwnerNonces.map(String).join(',')}`);
 }
+console.log(`Final self-contained replay written: ${completeDumpPath}`);
 console.log('Final self-contained dump verified: owner nonces 0,1,2,3,4');
 console.log(JSON.stringify({
   ok: true,
