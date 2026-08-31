@@ -16,6 +16,23 @@ if ! command -v "$NODE_BIN" >/dev/null 2>&1 && [[ ! -x "$NODE_BIN" ]]; then
   echo "NODE_BIN does not point to an executable Node.js runtime: $NODE_BIN" >&2
   exit 1
 fi
+node_major="$("$NODE_BIN" -p "Number(process.versions.node.split('.')[0])")"
+if (( node_major < 22 )); then
+  echo "Node.js 22+ is required for SwapPulse chain tooling. Set NODE_BIN to a Node 22 executable." >&2
+  exit 1
+fi
+if [[ ! -d "$CHAIN_ROOT/scripts/tooling/node_modules/starknet" ]]; then
+  echo "Install chain tooling first: cd chain/scripts/tooling && npm ci" >&2
+  exit 1
+fi
+
+# Relay credentials must never be created for an unverified/stale public
+# manifest. Explicitly remove any local verification override so this check
+# always exercises the HTTPS RPC that Base44 will actually use.
+env -u SWAPPULSE_VERIFY_RPC_URL \
+  "$NODE_BIN" "$CHAIN_ROOT/scripts/tooling/verify-network.mjs" "$MANIFEST" >/dev/null
+
+echo "Public SwapPulse manifest verified before relay credential generation."
 
 readarray -t VALUES < <(
   MANIFEST="$MANIFEST" "$NODE_BIN" --input-type=module <<'NODE'
