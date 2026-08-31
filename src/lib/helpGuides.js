@@ -86,7 +86,7 @@ export const HELP_GUIDES = [
   { slug: 'wallet', title: 'Wallet & Identity', category: 'Wallet & On-Chain', icon: Wallet, description: 'Your self-custodial collector account: identity, attestations, anchored cards, and stake.', relatedRoute: '/wallet' },
   { slug: 'chain-identity', title: 'On-Chain Identity', category: 'Wallet & On-Chain', icon: Fingerprint, description: 'Create a smart account whose private key never leaves your own device.', relatedRoute: '/wallet' },
   { slug: 'card-attestations', title: 'Card Possession Attestations', category: 'Wallet & On-Chain', icon: Camera, description: 'Photograph your cards to prove you physically hold them, across four trust levels.', relatedRoute: '/wallet' },
-  { slug: 'staking', title: 'Network Staking', category: 'Wallet & On-Chain', icon: Coins, description: 'Delegate or run a validator to secure the zero-fee SwapPulse network.', relatedRoute: '/wallet' },
+  { slug: 'staking', title: 'Community Staking', category: 'Wallet & On-Chain', icon: Coins, description: 'Delegate to or run a community operator. Current testnet staking backs accountable services, not decentralised consensus.', relatedRoute: '/wallet' },
   { slug: 'account-recovery', title: 'Account Recovery', category: 'Wallet & On-Chain', icon: LifeBuoy, description: 'Lost your device? Bind a new device key to your smart account with a time-delayed recovery.', relatedRoute: '/recover' },
   { slug: 'on-chain-cards', title: 'On-Chain Cards & Cross-Chain', category: 'Wallet & On-Chain', icon: LayersIcon, description: 'Anchor verified cards on the network and move assets to other chains.', relatedRoute: '/wallet' },
 
