@@ -311,6 +311,7 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_address: identityRegistryAddress,
         identity_registry_owner: identityRegistryOwner,
         identity_verifier_address: identityVerifierAddress,
+        identity_verification_mode: identityVerificationMode,
         recovery_controller: recoveryController,
         recovery_delay_seconds: recoveryDelay,
         rpc_url: rpcUrl,
@@ -374,6 +375,7 @@ export default async function(req: Request): Promise<Response> {
       let identityRegistryAddress = config.identityRegistryAddress;
       let identityRegistryOwner = config.identityRegistryOwner;
       let identityVerifierAddress = config.identityVerifierAddress;
+      let identityVerificationMode = config.identityVerificationMode || 'V1';
       let recoveryController = config.recoveryController;
       try {
         if (body.chain_id) chainId = normalizeHex(body.chain_id, 'chain_id');
@@ -383,6 +385,8 @@ export default async function(req: Request): Promise<Response> {
         if (body.identity_registry_owner) identityRegistryOwner = normalizeAddress(body.identity_registry_owner, 'identity_registry_owner');
         if (body.identity_verifier_address) identityVerifierAddress = normalizeAddress(body.identity_verifier_address, 'identity_verifier_address');
         if (identityVerifierAddress && identityVerifierAddress === identityRegistryOwner) throw new Error('identity_verifier_address must be separate from identity_registry_owner');
+        if (body.identity_verification_mode != null) identityVerificationMode = String(body.identity_verification_mode || '').trim().toUpperCase();
+        if (!['V1', 'V2'].includes(identityVerificationMode)) throw new Error('identity_verification_mode must be V1 or V2');
         if (body.recovery_controller) recoveryController = normalizeAddress(body.recovery_controller, 'recovery_controller');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid chain configuration', 400, 'INVALID_CHAIN_CONFIG');
@@ -413,6 +417,7 @@ export default async function(req: Request): Promise<Response> {
         || identityRegistryAddress !== config.identityRegistryAddress
         || identityRegistryOwner !== config.identityRegistryOwner
         || identityVerifierAddress !== config.identityVerifierAddress
+        || identityVerificationMode !== config.identityVerificationMode
         || rpcUrl !== config.rpcUrl
         // The recovery controller is who can move an account under recovery, and
         // chain-tx-draft builds the on-chain recovery calls straight from it. It has
@@ -432,6 +437,7 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_address: identityRegistryAddress,
         identity_registry_owner: identityRegistryOwner,
         identity_verifier_address: identityVerifierAddress,
+        identity_verification_mode: identityVerificationMode,
         recovery_controller: recoveryController,
         recovery_delay_seconds: Math.floor(parsedDelay),
         rpc_url: rpcUrl,
@@ -442,6 +448,7 @@ export default async function(req: Request): Promise<Response> {
         verified_identity_registry_class_hash: trustedCoordinatesChanged ? '' : config.verifiedRegistryClassHash,
         verified_identity_registry_owner: trustedCoordinatesChanged ? '' : config.verifiedRegistryOwner,
         verified_identity_verifier_address: trustedCoordinatesChanged ? '' : config.verifiedVerifierAddress,
+        verified_identity_verification_mode: trustedCoordinatesChanged ? '' : config.verifiedVerificationMode,
         verified_account_class_hash: trustedCoordinatesChanged ? '' : config.verifiedAccountClassHash,
         verified_rpc_url: trustedCoordinatesChanged ? '' : config.verifiedRpcUrl,
         verified_by: trustedCoordinatesChanged ? '' : config.verifiedBy,
@@ -465,6 +472,7 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_address: saved.identityRegistryAddress,
           identity_registry_owner: saved.identityRegistryOwner,
           identity_verifier_address: saved.identityVerifierAddress,
+          identity_verification_mode: saved.identityVerificationMode,
           recovery_controller: saved.recoveryController,
           recovery_controller_configured: Boolean(saved.recoveryController),
           recovery_delay_seconds: saved.recoveryDelaySeconds,
@@ -475,6 +483,7 @@ export default async function(req: Request): Promise<Response> {
           verified_identity_registry_class_hash: saved.verifiedRegistryClassHash,
           verified_identity_registry_owner: saved.verifiedRegistryOwner,
           verified_identity_verifier_address: saved.verifiedVerifierAddress,
+          verified_identity_verification_mode: saved.verifiedVerificationMode,
           verified_account_class_hash: saved.verifiedAccountClassHash,
           verified_rpc_url: saved.verifiedRpcUrl,
         },
