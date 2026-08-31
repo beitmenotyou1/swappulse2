@@ -121,6 +121,15 @@ export async function valueFeatureEligible(
     if (!Number.isFinite(expiryMs) || expiryMs <= Date.now()) return false;
   }
   if (String(identity?.verification_status || '') !== 'ACTIVE') return false;
+  const verificationMode = String(config?.identity_verification_mode || 'V1').trim().toUpperCase();
+  if (verificationMode === 'V2') {
+    if (Number(identity?.verification_type || 0) !== 1) return false;
+    if (Number(identity?.verification_level || 0) < 2) return false;
+    const replayId = normalizeZeroableHex(identity?.verification_attestation_id || '0x0', 'identity verification attestation id');
+    if (replayId === '0x0') return false;
+  } else if (verificationMode !== 'V1') {
+    return false;
+  }
   const chainExpirySeconds = Number(identity?.verification_expires_at || 0);
   if (!Number.isFinite(chainExpirySeconds) || chainExpirySeconds < 0) return false;
   if (chainExpirySeconds > 0 && chainExpirySeconds * 1000 <= Date.now()) return false;
@@ -142,6 +151,7 @@ export async function getVerifiedConfig(svc: any) {
     || String(row.verified_identity_registry_class_hash || '').trim() !== String(row.identity_registry_class_hash || '').trim()
     || String(row.verified_identity_registry_owner || '').trim() !== String(row.identity_registry_owner || '').trim()
     || String(row.verified_identity_verifier_address || '').trim() !== String(row.identity_verifier_address || '').trim()
+    || String(row.verified_identity_verification_mode || '').trim().toUpperCase() !== String(row.identity_verification_mode || 'V1').trim().toUpperCase()
     || String(row.verified_account_class_hash || '').trim() !== String(row.account_class_hash || '').trim()
     || String(row.verified_rpc_url || '').trim() !== String(row.rpc_url || '').trim()
   ) return null;
