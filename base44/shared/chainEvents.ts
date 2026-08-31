@@ -124,10 +124,10 @@ async function reconcileStakes(svc: any, config: any) {
         did: String(row.did || ''),
         actionType: 'chain_stake',
         groupKey: `chain_stake:${row.id}`,
-        title: isValidator ? 'Your validator is active' : 'Your stake is active',
+        title: isValidator ? 'Your community operator is active' : 'Your stake is active',
         body: isValidator
-          ? 'Your validator registration is confirmed and now secures the network.'
-          : 'Your delegation is confirmed and now secures the network.',
+          ? 'Your operator registration is confirmed and your bonded stake now backs accountable SwapPulse services.'
+          : 'Your delegation is confirmed and now backs an accountable SwapPulse community operator.',
         metadata: { recordId: row.id, validatorAddress: String(row.validator_address), txHash: row.tx_hash || '' },
       });
     } catch (error: any) {
