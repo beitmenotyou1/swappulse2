@@ -70,15 +70,36 @@ After GitHub is connected, merge local changes to the `main` branch. Base44 sync
 base44 dashboard open
 ```
 
-## Local Starknet Relay on Zorin
+## SwapPulse Network and Web3
 
-For the private SwapPulse Starknet testnet, relay token generation and local Cloudflare tunnel setup, follow:
+SwapPulse uses Base44 as the application/orchestration layer and Cairo/Starknet for the self-custodial identity and Web3 trust layer.
+
+Start with:
 
 ```text
+chain/README.md
+chain/OPERATOR_GUIDE.md
+```
+
+The live Milestone 1 deployment contains the Starknet smart-account and privacy-preserving identity registry. Phase 2 token, community staking/operator, reward and additional Web3 components remain undeployed until their pinned Cairo build, Starknet Foundry tests and deployment verification pass.
+
+The current `SWAPPULSE_TESTNET` uses a single Starknet Devnet runtime. Community staking is therefore an economic accountability layer for operator services today, not a claim that the current testnet has decentralised consensus validators. The roadmap in `chain/OPERATOR_GUIDE.md` explains how this evolves towards permissionless appchain/rollup operation and token rewards for useful, verifiable work.
+
+Reference infrastructure and migration documentation lives under:
+
+```text
+chain/infra/MINI_PC_MIGRATION.md
 chain/infra/ZORIN_LOCAL_RELAY.md
 ```
 
-The Starknet identity path uses `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN`. It does not require the legacy `POLYGON_PRIVATE_KEY`.
+The canonical public endpoints are:
+
+```text
+https://rpc.swappulse.org/rpc
+https://relay.swappulse.org
+```
+
+Raw Devnet RPC must remain localhost-only. The public RPC gateway is read-only, and blockchain writes go through the authenticated relay. The Starknet path uses the server-side secrets `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN`; privileged keys and relay credentials must never be placed in browser code or committed to the repository.
 
 ## Docs & Support
 
