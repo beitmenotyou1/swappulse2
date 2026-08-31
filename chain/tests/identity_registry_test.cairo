@@ -449,3 +449,180 @@ fn non_owner_cannot_upgrade_registry() {
     start_cheat_caller_address(registry_address, attacker);
     upgradeable.upgrade(0x123.try_into().unwrap());
 }
+
+#[test]
+fn current_account_can_self_migrate_identity() {
+    let owner = addr(0x111);
+    let old_account = addr(0x222);
+    let new_account = addr(0x333);
+    let identity_id = 0xabc;
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(identity_id, old_account);
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, old_account);
+    registry.change_account_self(identity_id, new_account);
+    stop_cheat_caller_address(registry_address);
+
+    let (stored_account, status, canonical, _, _) = registry.get_identity(identity_id);
+    assert(stored_account == new_account, 'self migration account');
+    assert(status == 1_u8, 'self migration status');
+    assert(canonical == identity_id, 'self migration canonical');
+    assert(registry.get_identity_by_account(old_account) == 0, 'self migration old reverse');
+    assert(registry.get_identity_by_account(new_account) == identity_id, 'self migration reverse');
+}
+
+#[test]
+#[should_panic(expected: 'ONLY_CURRENT_ACCOUNT')]
+fn arbitrary_account_cannot_self_migrate_identity() {
+    let owner = addr(0x111);
+    let current_account = addr(0x222);
+    let attacker = addr(0x999);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, current_account);
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, attacker);
+    registry.change_account_self(0xabc, addr(0x333));
+}
+
+#[test]
+fn verification_v2_records_opaque_assurance_metadata() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let identity_id = 0xabc;
+    let attestation_id = 0xfeed;
+    let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
+
+    start_cheat_block_timestamp(registry_address, 8_000_u64);
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(identity_id, addr(0x222));
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification_v2(identity_id, 0x12345, 0x999, 1_u8, 2_u8, 9_000_u64, attestation_id);
+    stop_cheat_caller_address(registry_address);
+
+    let verification = registry.get_verification(identity_id);
+    let assurance = registry.get_assurance(identity_id);
+    assert(verification.status == 1_u8, 'v2 verification status');
+    assert(verification.version == 1_u64, 'v2 verification version');
+    assert(assurance.verification_type == 1_u8, 'v2 verification type');
+    assert(assurance.verification_level == 2_u8, 'v2 verification level');
+    assert(assurance.attestation_id == attestation_id, 'v2 attestation id');
+    assert(registry.is_attestation_used(attestation_id), 'v2 attestation not spent');
+    stop_cheat_block_timestamp(registry_address);
+}
+
+#[test]
+#[should_panic(expected: 'ATTESTATION_REPLAY')]
+fn verification_v2_rejects_replayed_attestation_id() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let attestation_id = 0xfeed;
+    let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, addr(0x222));
+    registry.register_identity(0xdef, addr(0x333));
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification_v2(0xabc, 0x12345, 0x999, 1_u8, 2_u8, 0_u64, attestation_id);
+    registry.set_verification_v2(0xdef, 0x67890, 0x999, 1_u8, 2_u8, 0_u64, attestation_id);
+}
+
+#[test]
+fn merged_identity_uses_effective_v2_assurance() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let source_id = 0xaaa;
+    let target_id = 0xbbb;
+    let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(source_id, addr(0x222));
+    registry.register_identity(target_id, addr(0x333));
+    registry.merge_identity(source_id, target_id);
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification_v2(target_id, 0x98765, 0x999, 1_u8, 3_u8, 0_u64, 0xbeef);
+    stop_cheat_caller_address(registry_address);
+
+    let direct = registry.get_assurance(source_id);
+    let effective = registry.get_effective_assurance(source_id);
+    assert(direct.verification_type == 0_u8, 'source direct assurance');
+    assert(effective.verification_type == 1_u8, 'effective verification type');
+    assert(effective.verification_level == 3_u8, 'effective verification level');
+    assert(effective.attestation_id == 0xbeef, 'effective attestation id');
+}
+
+#[test]
+fn owner_can_make_v2_verification_one_way_required() {
+    let owner = addr(0x111);
+    let (registry_address, registry) = deploy_registry(owner);
+    assert(!registry.verification_v2_required(), 'v2 starts required');
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.require_verification_v2();
+    registry.require_verification_v2();
+    stop_cheat_caller_address(registry_address);
+
+    assert(registry.verification_v2_required(), 'v2 cutover missing');
+}
+
+#[test]
+#[should_panic]
+fn non_owner_cannot_require_v2_verification() {
+    let owner = addr(0x111);
+    let attacker = addr(0x999);
+    let (registry_address, registry) = deploy_registry(owner);
+
+    start_cheat_caller_address(registry_address, attacker);
+    registry.require_verification_v2();
+}
+
+#[test]
+#[should_panic(expected: 'VERIFY_V2_REQUIRED')]
+fn legacy_verification_is_blocked_after_v2_cutover() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, addr(0x222));
+    registry.require_verification_v2();
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification(0xabc, 0x12345, 0x999, 0_u64);
+}
+
+#[test]
+fn v2_verification_remains_available_after_cutover() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
+
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(0xabc, addr(0x222));
+    registry.require_verification_v2();
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification_v2(0xabc, 0x12345, 0x999, 1_u8, 2_u8, 0_u64, 0xcafe);
+    stop_cheat_caller_address(registry_address);
+
+    assert(registry.is_verified(0xabc), 'v2 cutover verification invalid');
+    assert(registry.is_attestation_used(0xcafe), 'v2 cutover replay id missing');
+}
