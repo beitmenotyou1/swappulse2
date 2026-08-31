@@ -83,6 +83,7 @@ async function verifiedNetwork(svc: any) {
     || String(row.verified_identity_registry_class_hash || '').trim() !== String(row.identity_registry_class_hash || '').trim()
     || String(row.verified_identity_registry_owner || '').trim() !== String(row.identity_registry_owner || '').trim()
     || String(row.verified_identity_verifier_address || '').trim() !== String(row.identity_verifier_address || '').trim()
+    || String(row.verified_identity_verification_mode || '').trim().toUpperCase() !== String(row.identity_verification_mode || 'V1').trim().toUpperCase()
     || String(row.verified_account_class_hash || '').trim() !== String(row.account_class_hash || '').trim()
     || String(row.verified_rpc_url || '').trim() !== String(row.rpc_url || '').trim()
   ) return null;
