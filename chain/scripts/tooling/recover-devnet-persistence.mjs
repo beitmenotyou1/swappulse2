@@ -199,13 +199,27 @@ if (!Array.isArray(prefixActions)) {
   throw new Error('Automatic canonical prefix dump must contain a JSON action array');
 }
 
-const ownerPrefix = prefixActions.filter((action) => actionSender(action) === expectedOwner);
-const prefixNonces = ownerPrefix.map(actionNonce).filter((value) => value !== null);
-if (prefixNonces.length !== 3 || prefixNonces.some((value, index) => value !== BigInt(index))) {
-  throw new Error(`Reconstructed owner prefix must contain nonces 0,1,2; got ${prefixNonces.map(String).join(',')}`);
+const ownerPrefix = prefixActions
+  .map((action, index) => ({ action, index, sender: actionSender(action), nonce: actionNonce(action) }))
+  .filter((row) => row.sender === expectedOwner && row.nonce !== null);
+
+let latestPrefix = null;
+for (let i = ownerPrefix.length - 3; i >= 0; i -= 1) {
+  const candidate = ownerPrefix.slice(i, i + 3);
+  if (candidate[0].nonce === 0n && candidate[1].nonce === 1n && candidate[2].nonce === 2n) {
+    latestPrefix = candidate.map((row) => row.action);
+    break;
+  }
+}
+if (!latestPrefix) {
+  const seen = ownerPrefix.map((row) => row.nonce.toString()).join(',');
+  throw new Error(`Could not find a recent owner nonce prefix 0,1,2 in canonical dump; saw ${seen}`);
 }
 
-const combinedActions = [...prefixActions, ...preservedActions];
+console.log(`Canonical dump currently contains owner nonces: ${ownerPrefix.map((row) => row.nonce.toString()).join(',')}`);
+console.log('Using most recent valid owner prefix: 0,1,2');
+
+const combinedActions = [...latestPrefix, ...preservedActions];
 console.log(`Combined actions prepared in memory: ${combinedActions.length}; owner nonces: 0,1,2,3,4`);
 
 console.log('Resetting Devnet again before proving the combined replay from nonce 0...');
