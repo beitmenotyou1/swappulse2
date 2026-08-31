@@ -4,6 +4,7 @@ import {
   jsonError,
   normalizeHex,
   relaySubmitUsership,
+  verifiedContractConfigured,
 } from '../../shared/chainRelay.ts';
 
 // Proof-of-Usership aggregation. Verified platform activity already recorded in
@@ -44,8 +45,8 @@ export default async function (req: Request): Promise<Response> {
 
     const config = await getVerifiedConfig(svc);
     if (!config) return jsonError('SwapPulse Testnet verification pins are stale or incomplete', 409, 'CHAIN_VERIFICATION_REQUIRED');
-    if (!String(config.usership_address || '').trim()) {
-      return jsonError('Proof-of-Usership is not enabled on this network yet', 409, 'USERSHIP_NOT_CONFIGURED');
+    if (!verifiedContractConfigured(config, 'usership')) {
+      return jsonError('Proof-of-Usership is not independently verified on this network yet', 409, 'USERSHIP_NOT_VERIFIED');
     }
 
     const epoch = Number(config.usership_epoch || 1);
