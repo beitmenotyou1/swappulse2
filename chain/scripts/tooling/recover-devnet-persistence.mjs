@@ -18,7 +18,39 @@ const manifestPath = path.resolve(
   process.env.SWAPPULSE_DEPLOYMENT_MANIFEST || path.join(chainDir, 'deployments/swappulse-testnet.json'),
 );
 const restorePath = process.env.SWAPPULSE_RECOVERY_DUMP_PATH || '/data/swappulse-restore.dump';
+const prefixDumpPath = process.env.SWAPPULSE_PREFIX_DUMP_PATH || '/data/swappulse-recovery-prefix.dump';
 const completeDumpPath = process.env.SWAPPULSE_COMPLETE_DUMP_PATH || '/data/swappulse-testnet-complete.dump';
+const hostDataDir = path.resolve(
+  process.env.SWAPPULSE_RECOVERY_HOST_DATA_DIR || path.join(chainDir, 'infra/data'),
+);
+
+function hostPathForContainerData(containerPath) {
+  const normalized = String(containerPath || '').trim();
+  if (!normalized.startsWith('/data/')) {
+    throw new Error(`Recovery dump path must be under /data inside Devnet: ${normalized}`);
+  }
+  return path.join(hostDataDir, path.basename(normalized));
+}
+
+function transactionForAction(action) {
+  const params = action?.params || {};
+  return params.invoke_transaction
+    || params.declare_transaction
+    || params.deploy_account_transaction
+    || params.transaction
+    || null;
+}
+
+function actionNonce(action) {
+  const tx = transactionForAction(action);
+  return tx?.nonce == null ? null : BigInt(tx.nonce);
+}
+
+function actionSender(action) {
+  const tx = transactionForAction(action);
+  const raw = tx?.sender_address || tx?.contract_address || '';
+  return raw ? normalizeHex(raw, 'dump transaction sender') : '';
+}
 
 async function rpc(method, params = undefined) {
   const body = { jsonrpc: '2.0', id: crypto.randomUUID(), method };
@@ -81,14 +113,15 @@ if (!owner?.address || !owner?.private_key) {
 }
 const deployer = accountFor(provider, owner.address, owner.private_key);
 
-let nonce = await nonceOf(expectedOwner);
-if (nonce > 3n) {
-  throw new Error(`Recovery expects owner nonce <= 3 before dump replay; found ${nonce}`);
-}
-
 console.log(`Recovery owner: ${expectedOwner}`);
-console.log(`Starting owner nonce: ${nonce}`);
 console.log('Private key remains in memory and is never printed.');
+console.log('Resetting Devnet to pristine predeployed state before reconstructing the missing prefix...');
+await rpc('devnet_restart');
+let nonce = await nonceOf(expectedOwner);
+if (nonce !== 0n) {
+  throw new Error(`Recovery requires pristine owner nonce 0 after devnet_restart; found ${nonce}`);
+}
+console.log(`Starting owner nonce: ${nonce}`);
 
 const registryDeclared = await provider.isClassDeclared({ classHash: expectedRegistryClass });
 if (!registryDeclared) {
@@ -123,8 +156,45 @@ if (nonce !== 3n) {
 }
 
 console.log(`Prerequisites reconstructed. Owner nonce: ${nonce}`);
-console.log(`Loading preserved dump: ${restorePath}`);
-await rpc('devnet_load', { path: restorePath });
+console.log(`Writing reconstructed prefix dump: ${prefixDumpPath}`);
+await rpc('devnet_dump', { path: prefixDumpPath });
+
+const prefixHostPath = hostPathForContainerData(prefixDumpPath);
+const restoreHostPath = hostPathForContainerData(restorePath);
+const completeHostPath = hostPathForContainerData(completeDumpPath);
+const [prefixActions, preservedActions] = await Promise.all([
+  fs.readFile(prefixHostPath, 'utf8').then(JSON.parse),
+  fs.readFile(restoreHostPath, 'utf8').then(JSON.parse),
+]);
+if (!Array.isArray(prefixActions) || !Array.isArray(preservedActions)) {
+  throw new Error('Recovery dump files must both contain JSON action arrays');
+}
+
+const ownerPrefix = prefixActions.filter((action) => actionSender(action) === expectedOwner);
+const ownerPreserved = preservedActions.filter((action) => actionSender(action) === expectedOwner);
+const prefixNonces = ownerPrefix.map(actionNonce).filter((value) => value !== null);
+const preservedNonces = ownerPreserved.map(actionNonce).filter((value) => value !== null);
+if (prefixNonces.length !== 3 || prefixNonces.some((value, index) => value !== BigInt(index))) {
+  throw new Error(`Reconstructed owner prefix must contain nonces 0,1,2; got ${prefixNonces.map(String).join(',')}`);
+}
+if (preservedNonces.length !== 2 || preservedNonces[0] !== 3n || preservedNonces[1] !== 4n) {
+  throw new Error(`Preserved owner dump must contain nonces 3,4; got ${preservedNonces.map(String).join(',')}`);
+}
+
+const completeActions = [...prefixActions, ...preservedActions];
+await fs.writeFile(completeHostPath, `${JSON.stringify(completeActions, null, 2)}\n`, { mode: 0o600 });
+await fs.chmod(completeHostPath, 0o600);
+console.log(`Combined complete replay written: ${completeDumpPath}`);
+console.log(`Combined actions: ${completeActions.length}; owner nonces: 0,1,2,3,4`);
+
+console.log('Resetting Devnet again before proving the combined replay from nonce 0...');
+await rpc('devnet_restart');
+const resetNonce = await nonceOf(expectedOwner);
+if (resetNonce !== 0n) {
+  throw new Error(`Owner nonce should be 0 before combined replay; got ${resetNonce}`);
+}
+console.log(`Loading combined replay: ${completeDumpPath}`);
+await rpc('devnet_load', { path: completeDumpPath });
 
 const registryClass = await classHashAt(expectedRegistry);
 if (registryClass !== expectedRegistryClass) {
@@ -162,8 +232,7 @@ for (const [label, txHash] of [
 }
 
 console.log('Recovered registry and original nonce-3/4 transactions verified.');
-console.log(`Writing self-contained recovery dump: ${completeDumpPath}`);
-await rpc('devnet_dump', { path: completeDumpPath });
+console.log('The combined dump was proven by loading it from pristine nonce 0.');
 console.log(JSON.stringify({
   ok: true,
   identity_registry_address: expectedRegistry,
