@@ -33,12 +33,28 @@ pub struct IdentityVerification {
     pub version: u64,
 }
 
+// Additive V2 assurance metadata. This is deliberately separate from
+// `IdentityVerification` so the deployed Milestone 1 getter ABI remains stable
+// for Base44 reconciliation during a staged registry upgrade.
+#[derive(Copy, Drop, Serde)]
+pub struct IdentityAssurance {
+    // Opaque policy-defined category. Zero means the legacy V1 path/no V2 data.
+    pub verification_type: u8,
+    // Opaque assurance strength. Zero means the legacy V1 path/no V2 data.
+    pub verification_level: u8,
+    // Purpose-specific opaque replay identifier. Never encode private evidence.
+    pub attestation_id: felt252,
+}
+
 #[starknet::interface]
 pub trait IIdentityRegistry<TContractState> {
     fn register_identity(
         ref self: TContractState, identity_id: felt252, account_address: ContractAddress,
     );
     fn change_account(
+        ref self: TContractState, identity_id: felt252, new_account: ContractAddress,
+    );
+    fn change_account_self(
         ref self: TContractState, identity_id: felt252, new_account: ContractAddress,
     );
     fn merge_identity(
@@ -56,6 +72,21 @@ pub trait IIdentityRegistry<TContractState> {
         schema_hash: felt252,
         expires_at: u64,
     );
+    fn set_verification_v2(
+        ref self: TContractState,
+        identity_id: felt252,
+        verification_root: felt252,
+        schema_hash: felt252,
+        verification_type: u8,
+        verification_level: u8,
+        expires_at: u64,
+        attestation_id: felt252,
+    );
+    fn require_verification_v2(ref self: TContractState);
+    fn verification_v2_required(self: @TContractState) -> bool;
+    fn is_attestation_used(self: @TContractState, attestation_id: felt252) -> bool;
+    fn get_assurance(self: @TContractState, identity_id: felt252) -> IdentityAssurance;
+    fn get_effective_assurance(self: @TContractState, identity_id: felt252) -> IdentityAssurance;
     fn revoke_verification(ref self: TContractState, identity_id: felt252);
     fn get_verification(
         self: @TContractState, identity_id: felt252,
@@ -78,10 +109,13 @@ pub mod IdentityRegistry {
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_interfaces::upgrades::IUpgradeable;
     use openzeppelin_upgrades::UpgradeableComponent;
-    use starknet::storage::{Map, StorageMapReadAccess, StorageMapWriteAccess};
+    use starknet::storage::{
+        Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
+    };
     use starknet::{get_block_timestamp, get_caller_address, ClassHash, ContractAddress};
 
-    use super::{IIdentityRegistry, IdentityRecord, IdentityVerification};
+    use super::{IIdentityRegistry, IdentityAssurance, IdentityRecord, IdentityVerification};
 
     const STATUS_NONE: u8 = 0;
     const STATUS_ACTIVE: u8 = 1;
@@ -127,6 +161,15 @@ pub mod IdentityRegistry {
         verification_expires_at: Map<felt252, u64>,
         verification_revoked_at: Map<felt252, u64>,
         verification_version: Map<felt252, u64>,
+
+        // V2 assurance metadata is additive so the V1 storage/getter ABI stays
+        // intact across a staged class upgrade. `attestation_identity` is never
+        // cleared: once a replay identifier has been consumed it remains spent.
+        verification_type: Map<felt252, u8>,
+        verification_level: Map<felt252, u8>,
+        verification_attestation_id: Map<felt252, felt252>,
+        attestation_identity: Map<felt252, felt252>,
+        verification_v2_required: bool,
     }
 
     #[event]
@@ -142,6 +185,8 @@ pub mod IdentityRegistry {
         IdentityRecovered: IdentityRecovered,
         VerifierAuthorisationChanged: VerifierAuthorisationChanged,
         IdentityVerified: IdentityVerified,
+        IdentityAssuranceRecorded: IdentityAssuranceRecorded,
+        VerificationV2Required: VerificationV2Required,
         IdentityVerificationRevoked: IdentityVerificationRevoked,
     }
 
@@ -199,6 +244,22 @@ pub mod IdentityRegistry {
     }
 
     #[derive(Drop, starknet::Event)]
+    struct IdentityAssuranceRecorded {
+        #[key]
+        identity_id: felt252,
+        #[key]
+        attestation_id: felt252,
+        verification_type: u8,
+        verification_level: u8,
+        version: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct VerificationV2Required {
+        enabled_at: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
     struct IdentityVerificationRevoked {
         #[key]
         identity_id: felt252,
@@ -237,18 +298,20 @@ pub mod IdentityRegistry {
             ref self: ContractState, identity_id: felt252, new_account: ContractAddress,
         ) {
             self.ownable.assert_only_owner();
+            self.apply_account_change(identity_id, new_account);
+        }
+
+        // Self-sovereign migration path. When called through a Starknet account's
+        // __execute__, get_caller_address() is the current account contract, so a
+        // user explicitly authorises their own identity/account migration without
+        // giving Base44 or the registry owner their signing key.
+        fn change_account_self(
+            ref self: ContractState, identity_id: felt252, new_account: ContractAddress,
+        ) {
             self.assert_active(identity_id);
-            assert(!new_account.is_zero(), 'INVALID_ACCOUNT');
-            assert(self.account_to_identity.read(new_account) == 0, 'ACCOUNT_ALREADY_BOUND');
-
-            let old_account = self.identity_to_account.read(identity_id);
-            assert(!old_account.is_zero(), 'IDENTITY_ACCOUNT_MISSING');
-
-            self.account_to_identity.write(old_account, 0);
-            self.identity_to_account.write(identity_id, new_account);
-            self.account_to_identity.write(new_account, identity_id);
-
-            self.emit(AccountChanged { identity_id, old_account, new_account });
+            let current_account = self.identity_to_account.read(identity_id);
+            assert(get_caller_address() == current_account, 'ONLY_CURRENT_ACCOUNT');
+            self.apply_account_change(identity_id, new_account);
         }
 
         fn merge_identity(
@@ -303,6 +366,7 @@ pub mod IdentityRegistry {
             expires_at: u64,
         ) {
             self.assert_verifier();
+            assert(!self.verification_v2_required.read(), 'VERIFY_V2_REQUIRED');
             self.assert_active(identity_id);
             assert(verification_root != 0, 'INVALID_VERIFY_ROOT');
             assert(schema_hash != 0, 'INVALID_SCHEMA_HASH');
@@ -333,6 +397,111 @@ pub mod IdentityRegistry {
                     version: next_version,
                 },
             );
+        }
+
+        fn set_verification_v2(
+            ref self: ContractState,
+            identity_id: felt252,
+            verification_root: felt252,
+            schema_hash: felt252,
+            verification_type: u8,
+            verification_level: u8,
+            expires_at: u64,
+            attestation_id: felt252,
+        ) {
+            self.assert_verifier();
+            self.assert_active(identity_id);
+            assert(verification_root != 0, 'INVALID_VERIFY_ROOT');
+            assert(schema_hash != 0, 'INVALID_SCHEMA_HASH');
+            assert(verification_type != 0, 'INVALID_VERIFY_TYPE');
+            assert(verification_level != 0, 'INVALID_VERIFY_LEVEL');
+            assert(attestation_id != 0, 'INVALID_ATTESTATION_ID');
+            assert(self.attestation_identity.read(attestation_id) == 0, 'ATTESTATION_REPLAY');
+
+            let verified_at = get_block_timestamp();
+            assert(expires_at == 0 || expires_at > verified_at, 'VERIFY_EXPIRY_PAST');
+
+            let next_version = self.verification_version.read(identity_id) + 1;
+            let attested_by = get_caller_address();
+
+            // Spend the replay id in the same atomic transaction as the
+            // verification write. A reverted transaction consumes nothing.
+            self.attestation_identity.write(attestation_id, identity_id);
+            self.verification_root.write(identity_id, verification_root);
+            self.verification_status.write(identity_id, VERIFICATION_VERIFIED);
+            self.verification_schema_hash.write(identity_id, schema_hash);
+            self.verification_attested_by.write(identity_id, attested_by);
+            self.verification_verified_at.write(identity_id, verified_at);
+            self.verification_expires_at.write(identity_id, expires_at);
+            self.verification_revoked_at.write(identity_id, 0);
+            self.verification_version.write(identity_id, next_version);
+            self.verification_type.write(identity_id, verification_type);
+            self.verification_level.write(identity_id, verification_level);
+            self.verification_attestation_id.write(identity_id, attestation_id);
+
+            self.emit(
+                IdentityVerified {
+                    identity_id,
+                    schema_hash,
+                    verification_root,
+                    attested_by,
+                    verified_at,
+                    expires_at,
+                    version: next_version,
+                },
+            );
+            self.emit(
+                IdentityAssuranceRecorded {
+                    identity_id,
+                    attestation_id,
+                    verification_type,
+                    verification_level,
+                    version: next_version,
+                },
+            );
+        }
+
+        // One-way cut-over guard. Upgrade operators can deploy the additive V2
+        // class, update the relay, then permanently disable the replay-less V1
+        // attestation entrypoint. There is intentionally no method to turn it off.
+        fn require_verification_v2(ref self: ContractState) {
+            self.ownable.assert_only_owner();
+            if self.verification_v2_required.read() {
+                return;
+            }
+            self.verification_v2_required.write(true);
+            self.emit(VerificationV2Required { enabled_at: get_block_timestamp() });
+        }
+
+        fn verification_v2_required(self: @ContractState) -> bool {
+            self.verification_v2_required.read()
+        }
+
+        fn is_attestation_used(self: @ContractState, attestation_id: felt252) -> bool {
+            if attestation_id == 0 {
+                return false;
+            }
+            self.attestation_identity.read(attestation_id) != 0
+        }
+
+        fn get_assurance(self: @ContractState, identity_id: felt252) -> IdentityAssurance {
+            IdentityAssurance {
+                verification_type: self.verification_type.read(identity_id),
+                verification_level: self.verification_level.read(identity_id),
+                attestation_id: self.verification_attestation_id.read(identity_id),
+            }
+        }
+
+        fn get_effective_assurance(
+            self: @ContractState, identity_id: felt252,
+        ) -> IdentityAssurance {
+            let canonical = self.resolve_canonical(identity_id);
+            let subject = if canonical == 0 { identity_id } else { canonical };
+            IdentityAssurance {
+                verification_type: self.verification_type.read(subject),
+                verification_level: self.verification_level.read(subject),
+                attestation_id: self.verification_attestation_id.read(subject),
+            }
         }
 
         fn revoke_verification(ref self: ContractState, identity_id: felt252) {
@@ -469,6 +638,24 @@ pub mod IdentityRegistry {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        fn apply_account_change(
+            ref self: ContractState, identity_id: felt252, new_account: ContractAddress,
+        ) {
+            self.assert_active(identity_id);
+            assert(!new_account.is_zero(), 'INVALID_ACCOUNT');
+
+            let old_account = self.identity_to_account.read(identity_id);
+            assert(!old_account.is_zero(), 'IDENTITY_ACCOUNT_MISSING');
+            assert(old_account != new_account, 'ACCOUNT_UNCHANGED');
+            assert(self.account_to_identity.read(new_account) == 0, 'ACCOUNT_ALREADY_BOUND');
+
+            self.account_to_identity.write(old_account, 0);
+            self.identity_to_account.write(identity_id, new_account);
+            self.account_to_identity.write(new_account, identity_id);
+
+            self.emit(AccountChanged { identity_id, old_account, new_account });
+        }
+
         fn assert_active(self: @ContractState, identity_id: felt252) {
             assert(self.identity_status.read(identity_id) == STATUS_ACTIVE, 'IDENTITY_NOT_ACTIVE');
         }
