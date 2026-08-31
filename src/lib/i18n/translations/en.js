@@ -461,14 +461,14 @@ const en = {
   // Wallet page
   'page.wallet.title': 'Wallet & Identity',
   'page.wallet.seoTitle': 'Wallet & On-Chain Identity',
-  'page.wallet.seoDescription': 'Manage your self-custodial SwapPulse smart account: on-chain identity, card possession attestations, anchored cards, network staking, and cross-chain transfers. Free and open source, with no protocol fees.',
+  'page.wallet.seoDescription': 'Manage your self-custodial SwapPulse smart account: on-chain identity, card possession attestations, anchored cards, community staking, and cross-chain transfers. Free and open source, with no protocol fees on the current testnet.',
   'page.wallet.back': 'Back',
   'page.wallet.viewProfile': 'View your profile',
   'page.wallet.viewProfileSub': 'See your collection status, attestations, and public identity',
   'page.wallet.section.smartAccount': 'Smart Account',
   'page.wallet.section.attestations': 'Card Possession Attestations',
   'page.wallet.section.onChainCards': 'On-Chain Cards',
-  'page.wallet.section.staking': 'Network Staking',
+  'page.wallet.section.staking': 'Community Staking',
   'page.wallet.section.crossChain': 'Cross-Chain',
   // Security step-up gate
   'stepUp.title': 'Verify it is you',
