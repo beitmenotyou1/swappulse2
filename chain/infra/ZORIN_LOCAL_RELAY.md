@@ -131,18 +131,14 @@ bash ./deploy-contracts.sh
 
 A public deployment manifest is written to `chain/deployments/swappulse-testnet.json`. It must not contain private keys. Contract verification during deployment uses the localhost raw RPC so a temporary Cloudflare outage cannot make a successful on-chain deployment appear to have failed.
 
-Before Base44 activation, the public HTTPS RPC in the manifest must also pass verification. Quick Tunnel URLs can change or expire. If that happens, start a fresh read-only RPC tunnel, update `SWAPPULSE_PUBLIC_RPC_URL` in `.env`, then safely adopt the new URL into the existing manifest without redeploying contracts:
+Before Base44 activation, the public HTTPS RPC in the manifest must also pass verification. Quick Tunnel URLs can change or expire. If that happens, refresh it without redeploying contracts:
 
 ```bash
-cd ~/swappulse2/chain/scripts/tooling
-set -a
-source ../../infra/.env
-set +a
-node update-public-rpc.mjs ../../deployments/swappulse-testnet.json
-node verify-network.mjs ../../deployments/swappulse-testnet.json
+cd ~/swappulse2/chain/infra
+bash ./refresh-public-rpc-tunnel.sh
 ```
 
-`update-public-rpc.mjs` checks the candidate URL's chain ID and deployed registry class hash before modifying the manifest. `verify-network.mjs` then performs the full public verification, including owner and verifier authority.
+The helper checks the local read-only gateway first, starts a fresh HTTP/2 Quick Tunnel, updates only `SWAPPULSE_PUBLIC_RPC_URL` in `.env`, confirms the new URL has the expected chain ID and deployed registry class hash, updates the existing manifest, then performs the full public verification including owner and verifier authority. The tunnel PID and log remain under `/tmp`, and no private key or bearer token is printed.
 
 ## 8. Generate the transaction relay token
 
