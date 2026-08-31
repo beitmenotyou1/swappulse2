@@ -2,7 +2,7 @@
   "name": "StakePosition",
   "type": "object",
   "title": "StakePosition",
-  "description": "org.swappulse.stakePosition \u2014 a local mirror of a collector's stake in the SwapPulse appchain StakingPool: either a self-stake as a registered validator or a delegation to another validator. Created at draft time with the exact staking intent, so the submit path can rebuild the transaction calldata server-side instead of trusting the client. Public chain data only.",
+  "description": "org.swappulse.stakePosition \u2014 a local mirror of a collector's stake in the SwapPulse StakingPool: either a self-stake for a community operator or a delegation to an operator. The underlying Cairo ABI retains validator-named fields for compatibility, but the current testnet does not yet have decentralised consensus validators. Created at draft time with the exact staking intent so the submit path can rebuild calldata server-side instead of trusting the client. Public chain data only.",
   "properties": {
     "did": {
       "type": "string",
@@ -18,7 +18,7 @@
         "validator",
         "delegator"
       ],
-      "description": "Whether this position is the collector's own validator self-stake or a delegation"
+      "description": "Whether this position is the collector's own community-operator self-stake or a delegation. The stored enum value validator is retained for ABI/backward compatibility."
     },
     "intent_kind": {
       "type": "string",
@@ -38,7 +38,7 @@
     },
     "validator_address": {
       "type": "string",
-      "description": "Validator this position backs (equals account_address for a validator self-stake)"
+      "description": "Community operator this position backs (legacy field name retained for ABI/backward compatibility; equals account_address for operator self-stake)"
     },
     "chain_identity_id": {
       "type": "string",
@@ -64,7 +64,7 @@
       "minimum": 0,
       "maximum": 3000,
       "default": 0,
-      "description": "Validator commission in basis points (validators only)"
+      "description": "Community operator commission in basis points (legacy validator ABI naming retained internally)"
     },
     "security_weight": {
       "type": "string",
