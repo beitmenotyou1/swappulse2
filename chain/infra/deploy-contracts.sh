@@ -32,6 +32,23 @@ if [[ ! -d "$CHAIN_ROOT/scripts/tooling/node_modules/starknet" ]]; then
   exit 1
 fi
 
+# Devnet persists state after each block. A read-only bind mount can allow the
+# node to start normally but make a successful transaction fail while dumping
+# state, which is especially confusing during contract deployment.
+if command -v docker >/dev/null 2>&1; then
+  devnet_cid="$(cd "$HERE" && docker compose ps -q devnet 2>/dev/null || true)"
+  if [[ -n "$devnet_cid" ]]; then
+    if ! docker exec "$devnet_cid" sh -c \
+      'test -w /data && { test ! -e /data/swappulse-testnet.dump || test -w /data/swappulse-testnet.dump; }' \
+      >/dev/null 2>&1; then
+      echo "Devnet cannot write /data/swappulse-testnet.dump." >&2
+      echo "Repair chain/infra/data ownership for the Devnet container before deploying." >&2
+      echo "See chain/infra/ZORIN_LOCAL_RELAY.md step 5." >&2
+      exit 1
+    fi
+  fi
+fi
+
 if ! command -v "$USC_BIN" >/dev/null 2>&1 && [[ ! -x "$USC_BIN" ]]; then
   echo "Universal Sierra Compiler is required for Devnet-compatible declaration artifacts: $USC_BIN" >&2
   exit 1
