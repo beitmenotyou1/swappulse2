@@ -15,6 +15,7 @@ import {
   sameFelts,
   validateInvokeShape,
   valueFeatureEligible,
+  verifiedContractConfigured,
 } from '../../shared/chainRelay.ts';
 import { signingHashForTransaction, verifyChainDraftToken, type ChainDraftAction } from '../../shared/chainTxDraft.ts';
 
@@ -93,6 +94,13 @@ export default async function (req: Request): Promise<Response> {
     let bridgeRecord: any = null;
 
     if (action === 'stake') {
+      if (
+        !verifiedContractConfigured(config, 'native_token')
+        || !verifiedContractConfigured(config, 'staking_pool')
+        || !verifiedContractConfigured(config, 'usership')
+      ) {
+        return jsonError('The staking contracts are not independently verified yet', 409, 'STAKING_ECOSYSTEM_NOT_VERIFIED');
+      }
       const rows = await svc.entities.StakePosition.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       stakeRecord = rows?.[0];
       if (!stakeRecord || String(stakeRecord.created_by_id) !== String(me.id)) return jsonError('Stake draft not found', 404, 'STAKE_DRAFT_NOT_FOUND');
@@ -108,10 +116,16 @@ export default async function (req: Request): Promise<Response> {
         config,
       );
     } else if (action === 'bridge_out') {
+      if (!verifiedContractConfigured(config, 'bridge_adapter') || !verifiedContractConfigured(config, 'native_token')) {
+        return jsonError('The bridge contracts are not independently verified yet', 409, 'BRIDGE_ECOSYSTEM_NOT_VERIFIED');
+      }
       const rows = await svc.entities.BridgeTransfer.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       bridgeRecord = rows?.[0];
       if (!bridgeRecord || String(bridgeRecord.created_by_id) !== String(me.id)) return jsonError('Bridge draft not found', 404, 'BRIDGE_DRAFT_NOT_FOUND');
       if (bridgeRecord.status !== 'DRAFTED') return jsonError('This bridge draft has already been used', 409, 'DRAFT_ALREADY_USED');
+      if (String(bridgeRecord.asset_kind) === 'card' && !verifiedContractConfigured(config, 'card_nft')) {
+        return jsonError('The card NFT contract is not independently verified yet', 409, 'CARD_NFT_NOT_VERIFIED');
+      }
       expectedCalls = buildBridgeCalls(
         {
           assetKind: String(bridgeRecord.asset_kind) as any,
