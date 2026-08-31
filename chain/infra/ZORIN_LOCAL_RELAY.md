@@ -196,11 +196,15 @@ Do not copy any other line from `.env.relay`.
 
 ## 11. Verify the relay policy
 
-From the repository root:
+The relay image installs its own dependencies inside Docker. The host-side smoke test needs the same locked dependency set locally before Node can import `starknet`:
 
 ```bash
-node chain/infra/tx-relay/smoke-policy.mjs
+cd ~/swappulse2/chain/infra/tx-relay
+npm ci --ignore-scripts
+node smoke-policy.mjs
 ```
+
+The test uses a local mock upstream and does not use `.env.relay`, print the relay bearer token or contact the public RPC. It must finish with `Relay policy smoke checks passed.` before the relay is exposed publicly.
 
 Then import `chain/deployments/swappulse-testnet.json` in SwapPulse Admin under **Identity & Federation**, verify the network through the public RPC, and only then test identity provisioning.
 
