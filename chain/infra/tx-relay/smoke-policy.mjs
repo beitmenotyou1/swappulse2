@@ -323,6 +323,7 @@ try {
     mismatched_registration_blocked: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
+  console.log('Relay policy smoke checks passed.');
 } finally {
   child.kill('SIGTERM');
   upstream.close();
