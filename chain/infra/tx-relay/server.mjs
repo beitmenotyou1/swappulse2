@@ -14,6 +14,7 @@ const identityVerifierAddress = normalizeHex(process.env.IDENTITY_VERIFIER_ADDRE
 const registryAdminAddress = normalizeHex(process.env.REGISTRY_ADMIN_ADDRESS || '', 'REGISTRY_ADMIN_ADDRESS');
 const registryAdminPrivateKey = normalizeHex(process.env.REGISTRY_ADMIN_PRIVATE_KEY || '', 'REGISTRY_ADMIN_PRIVATE_KEY');
 const identityVerifierPrivateKey = normalizeHex(process.env.IDENTITY_VERIFIER_PRIVATE_KEY || '', 'IDENTITY_VERIFIER_PRIVATE_KEY');
+const identityVerificationMode = String(process.env.IDENTITY_VERIFICATION_MODE || 'v1').trim().toLowerCase();
 const nativeTokenAddress = normalizeZeroableHex(process.env.NATIVE_TOKEN_ADDRESS || '0x0', 'NATIVE_TOKEN_ADDRESS');
 const cardNftAddress = normalizeZeroableHex(process.env.CARD_NFT_ADDRESS || '0x0', 'CARD_NFT_ADDRESS');
 const stakingPoolAddress = normalizeZeroableHex(process.env.STAKING_POOL_ADDRESS || '0x0', 'STAKING_POOL_ADDRESS');
@@ -32,6 +33,9 @@ const timeoutMs = 10_000;
 const rateLimitPerMinute = Math.max(5, Math.min(600, Number(process.env.RATE_LIMIT_PER_MINUTE || 60)));
 
 if (relayToken.length < 32) throw new Error('RELAY_TOKEN must be at least 32 characters');
+if (!['v1', 'v2'].includes(identityVerificationMode)) {
+  throw new Error('IDENTITY_VERIFICATION_MODE must be v1 or v2');
+}
 if (!Number.isInteger(recoveryDelaySeconds) || recoveryDelaySeconds < 0 || recoveryDelaySeconds > 2_592_000) {
   throw new Error('RECOVERY_DELAY_SECONDS must be an integer from 0 to 2592000');
 }
@@ -485,6 +489,13 @@ async function assertRelayReady() {
   if (actualOwner !== identityRegistryOwner) throw new Error('RELAY_REGISTRY_OWNER_MISMATCH');
   if (BigInt(verifierValues?.[0] || '0x0') !== 1n) throw new Error('RELAY_IDENTITY_VERIFIER_NOT_AUTHORISED');
 
+  let verificationV2Required = false;
+  if (identityVerificationMode === 'v2') {
+    const requiredValues = await starknetCall(identityRegistryAddress, 'verification_v2_required', []);
+    if (requiredValues.length < 1) throw new Error('RELAY_VERIFICATION_V2_ABI_UNAVAILABLE');
+    verificationV2Required = BigInt(requiredValues[0] || '0x0') === 1n;
+  }
+
   const value = {
     ok: true,
     purpose: 'swappulse-testnet-provisioning-relay',
@@ -494,6 +505,8 @@ async function assertRelayReady() {
     identity_registry_address: identityRegistryAddress,
     identity_registry_owner: actualOwner,
     identity_verifier_address: identityVerifierAddress,
+    identity_verification_mode: identityVerificationMode,
+    verification_v2_required: verificationV2Required,
     recovery_controller: recoveryController,
     recovery_delay_seconds: recoveryDelaySeconds,
   };
@@ -509,24 +522,76 @@ function parsePrivateVerification(body) {
   const schemaHash = normalizeHex(value.schema_hash, 'schema_hash');
   const expiresAt = Number(value.expires_at ?? 0);
   if (!Number.isSafeInteger(expiresAt) || expiresAt < 0) throw new Error('VERIFICATION_EXPIRY_INVALID');
-  return { verificationRoot, schemaHash, expiresAt };
+
+  let verificationType = 0;
+  let verificationLevel = 0;
+  let attestationId = '0x0';
+  if (identityVerificationMode === 'v2') {
+    verificationType = Number(value.verification_type);
+    verificationLevel = Number(value.verification_level);
+    if (!Number.isInteger(verificationType) || verificationType < 1 || verificationType > 255) {
+      throw new Error('VERIFICATION_TYPE_INVALID');
+    }
+    if (!Number.isInteger(verificationLevel) || verificationLevel < 1 || verificationLevel > 255) {
+      throw new Error('VERIFICATION_LEVEL_INVALID');
+    }
+    attestationId = normalizeHex(value.attestation_id, 'attestation_id');
+  }
+
+  return { verificationRoot, schemaHash, expiresAt, verificationType, verificationLevel, attestationId };
 }
 
-function verificationMatches(values, expected) {
+function verificationMatches(values, expected, assuranceValues = null) {
   if (!expected || !Array.isArray(values) || values.length < 8) return false;
   const status = Number(BigInt(values[1] || '0x0'));
-  return status === 1
+  const baseMatch = status === 1
     && normalizeZeroableHex(values[0] || '0x0', 'verification root') === expected.verificationRoot
     && normalizeZeroableHex(values[2] || '0x0', 'verification schema') === expected.schemaHash
     && normalizeZeroableHex(values[3] || '0x0', 'verification attester') === identityVerifierAddress
     && Number(BigInt(values[5] || '0x0')) === expected.expiresAt;
+  if (!baseMatch || identityVerificationMode !== 'v2') return baseMatch;
+  if (!Array.isArray(assuranceValues) || assuranceValues.length < 3) return false;
+  return Number(BigInt(assuranceValues[0] || '0x0')) === expected.verificationType
+    && Number(BigInt(assuranceValues[1] || '0x0')) === expected.verificationLevel
+    && normalizeZeroableHex(assuranceValues[2] || '0x0', 'attestation id') === expected.attestationId;
+}
+
+async function readVerificationState(identityId) {
+  const values = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
+  const assurance = identityVerificationMode === 'v2'
+    ? await starknetCall(identityRegistryAddress, 'get_assurance', [identityId])
+    : null;
+  return { values, assurance };
 }
 
 async function assertVerification(identityId, expected) {
   if (!expected) return null;
-  const values = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
-  if (!verificationMatches(values, expected)) throw new Error('VERIFICATION_FINAL_STATE_MISMATCH');
-  return values;
+  const state = await readVerificationState(identityId);
+  if (!verificationMatches(state.values, expected, state.assurance)) throw new Error('VERIFICATION_FINAL_STATE_MISMATCH');
+  return state;
+}
+
+async function writeVerification(identityId, verification) {
+  const entrypoint = identityVerificationMode === 'v2' ? 'set_verification_v2' : 'set_verification';
+  const calldata = identityVerificationMode === 'v2'
+    ? [
+      identityId,
+      verification.verificationRoot,
+      verification.schemaHash,
+      String(verification.verificationType),
+      String(verification.verificationLevel),
+      String(verification.expiresAt),
+      verification.attestationId,
+    ]
+    : [identityId, verification.verificationRoot, verification.schemaHash, String(verification.expiresAt)];
+  const attested = await identityVerifier.execute({
+    contractAddress: identityRegistryAddress,
+    entrypoint,
+    calldata,
+  });
+  await provider.waitForTransaction(attested.transaction_hash);
+  await assertVerification(identityId, verification);
+  return normalizeHex(attested.transaction_hash, 'verification transaction hash');
 }
 
 async function registerIdentity(body) {
