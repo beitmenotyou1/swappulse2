@@ -118,6 +118,7 @@ async function getNetwork(svc: any) {
   const registryAddress = String(row?.identity_registry_address || '').trim();
   const registryOwner = String(row?.identity_registry_owner || '').trim();
   const identityVerifierAddress = String(row?.identity_verifier_address || '').trim();
+  const identityVerificationMode = String(row?.identity_verification_mode || 'V1').trim().toUpperCase();
   const rpcUrl = String(row?.rpc_url || '').trim();
   const status = String(row?.status || 'UNCONFIGURED');
   const ready = status === 'CONFIGURED'
@@ -126,6 +127,7 @@ async function getNetwork(svc: any) {
     && String(row?.verified_identity_registry_class_hash || '').trim() === registryClassHash
     && String(row?.verified_identity_registry_owner || '').trim() === registryOwner
     && String(row?.verified_identity_verifier_address || '').trim() === identityVerifierAddress
+    && String(row?.verified_identity_verification_mode || '').trim().toUpperCase() === identityVerificationMode
     && String(row?.verified_account_class_hash || '').trim() === accountClassHash
     && String(row?.verified_rpc_url || '').trim() === rpcUrl;
   return {
@@ -137,6 +139,7 @@ async function getNetwork(svc: any) {
     identity_registry_address: registryAddress,
     identity_registry_owner: registryOwner,
     identity_verifier_address: identityVerifierAddress,
+    identity_verification_mode: identityVerificationMode,
     recovery_controller: String(row?.recovery_controller || '').trim(),
     recovery_delay_seconds: Number(row?.recovery_delay_seconds ?? 172800),
   };
@@ -160,6 +163,7 @@ async function relayAutomationStatus(network: any) {
     network.identity_registry_address,
     network.identity_registry_owner,
     network.identity_verifier_address,
+    network.identity_verification_mode,
     network.recovery_controller || '0x0',
     network.recovery_delay_seconds,
   ].join('|');
@@ -197,6 +201,7 @@ async function relayAutomationStatus(network: any) {
     if (normalizeHex(payload.identity_registry_address, 'relay registry address') !== normalizeHex(network.identity_registry_address, 'verified registry address')) throw new Error('TX_RELAY_REGISTRY_ADDRESS_MISMATCH');
     if (normalizeHex(payload.identity_registry_owner, 'relay registry owner') !== normalizeHex(network.identity_registry_owner, 'verified registry owner')) throw new Error('TX_RELAY_REGISTRY_OWNER_MISMATCH');
     if (normalizeHex(payload.identity_verifier_address, 'relay identity verifier') !== normalizeHex(network.identity_verifier_address, 'verified identity verifier')) throw new Error('TX_RELAY_IDENTITY_VERIFIER_MISMATCH');
+    if (String(payload.identity_verification_mode || '').trim().toUpperCase() !== String(network.identity_verification_mode || '').trim().toUpperCase()) throw new Error('TX_RELAY_IDENTITY_VERIFICATION_MODE_MISMATCH');
     if (normalizeZeroableHex(payload.recovery_controller ?? '0x0', 'relay recovery controller') !== normalizeZeroableHex(network.recovery_controller || '0x0', 'verified recovery controller')) throw new Error('TX_RELAY_RECOVERY_CONTROLLER_MISMATCH');
     if (Number(payload.recovery_delay_seconds) !== Number(network.recovery_delay_seconds)) throw new Error('TX_RELAY_RECOVERY_DELAY_MISMATCH');
 
@@ -236,6 +241,9 @@ function safeIdentity(row: any) {
     verification_root: row.verification_root || '',
     verification_schema_hash: row.verification_schema_hash || '',
     verification_status: row.verification_status || 'NONE',
+    verification_type: Number(row.verification_type || 0),
+    verification_level: Number(row.verification_level || 0),
+    verification_attestation_id: row.verification_attestation_id || '',
     verification_attested_by: row.verification_attested_by || '',
     verification_verified_at: Number(row.verification_verified_at || 0),
     verification_expires_at: Number(row.verification_expires_at || 0),
@@ -271,6 +279,7 @@ export default async function(req: Request): Promise<Response> {
           ready: network.ready,
           status: network.status,
           chain_id: network.ready ? network.chain_id : '',
+          identity_verification_mode: network.ready ? network.identity_verification_mode : '',
         },
         identity: safeIdentity(current),
         can_prepare: Boolean(age.eligible && network.ready && !current),
