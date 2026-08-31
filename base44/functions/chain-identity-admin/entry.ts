@@ -134,6 +134,7 @@ async function networkConfig(svc: any) {
   const identityRegistryAddress = String(row?.identity_registry_address || '').trim();
   const identityRegistryOwner = String(row?.identity_registry_owner || '').trim();
   const identityVerifierAddress = String(row?.identity_verifier_address || '').trim();
+  const identityVerificationMode = String(row?.identity_verification_mode || 'V1').trim().toUpperCase();
   const recoveryController = String(row?.recovery_controller || '').trim();
   const parsedDelay = Number(row?.recovery_delay_seconds ?? 172800);
   const recoveryDelaySeconds = Number.isFinite(parsedDelay) && parsedDelay >= 0
@@ -150,6 +151,7 @@ async function networkConfig(svc: any) {
     identityRegistryAddress,
     identityRegistryOwner,
     identityVerifierAddress,
+    identityVerificationMode,
     recoveryController,
     recoveryDelaySeconds,
     rpcUrl: String(row?.rpc_url || '').trim(),
@@ -160,6 +162,7 @@ async function networkConfig(svc: any) {
     verifiedRegistryClassHash: String(row?.verified_identity_registry_class_hash || '').trim(),
     verifiedRegistryOwner: String(row?.verified_identity_registry_owner || '').trim(),
     verifiedVerifierAddress: String(row?.verified_identity_verifier_address || '').trim(),
+    verifiedVerificationMode: String(row?.verified_identity_verification_mode || '').trim().toUpperCase(),
     verifiedAccountClassHash: String(row?.verified_account_class_hash || '').trim(),
     verifiedRpcUrl: String(row?.verified_rpc_url || '').trim(),
     verifiedBy: String(row?.verified_by || '').trim(),
@@ -169,6 +172,7 @@ async function networkConfig(svc: any) {
       && String(row?.verified_identity_registry_class_hash || '').trim() === identityRegistryClassHash
       && String(row?.verified_identity_registry_owner || '').trim() === identityRegistryOwner
       && String(row?.verified_identity_verifier_address || '').trim() === identityVerifierAddress
+      && String(row?.verified_identity_verification_mode || '').trim().toUpperCase() === identityVerificationMode
       && String(row?.verified_account_class_hash || '').trim() === accountClassHash
       && String(row?.verified_rpc_url || '').trim() === String(row?.rpc_url || '').trim(),
   };
@@ -222,6 +226,7 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_address: config.identityRegistryAddress,
           identity_registry_owner: config.identityRegistryOwner,
           identity_verifier_address: config.identityVerifierAddress,
+          identity_verification_mode: config.identityVerificationMode,
           recovery_controller: config.recoveryController,
           recovery_controller_configured: Boolean(config.recoveryController),
           recovery_delay_seconds: config.recoveryDelaySeconds,
@@ -232,6 +237,7 @@ export default async function(req: Request): Promise<Response> {
           verified_identity_registry_class_hash: config.verifiedRegistryClassHash,
           verified_identity_registry_owner: config.verifiedRegistryOwner,
           verified_identity_verifier_address: config.verifiedVerifierAddress,
+          verified_identity_verification_mode: config.verifiedVerificationMode,
           verified_account_class_hash: config.verifiedAccountClassHash,
           verified_rpc_url: config.verifiedRpcUrl,
         },
