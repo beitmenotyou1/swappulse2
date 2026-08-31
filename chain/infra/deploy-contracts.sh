@@ -9,7 +9,7 @@ RAW_RPC="http://127.0.0.1:${RAW_RPC_PORT}"
 MANIFEST="${SWAPPULSE_DEPLOYMENT_MANIFEST:-$CHAIN_ROOT/deployments/swappulse-testnet.json}"
 NODE_BIN="${NODE_BIN:-node}"
 USC_BIN="${USC_BIN:-universal-sierra-compiler}"
-EXPECTED_USC_VERSION="2.10.0"
+EXPECTED_USC_VERSION="2.8.0"
 PUBLIC_RPC_URL="${SWAPPULSE_PUBLIC_RPC_URL:-}"
 
 if [[ -z "$PUBLIC_RPC_URL" ]]; then
@@ -37,6 +37,10 @@ if ! command -v "$USC_BIN" >/dev/null 2>&1 && [[ ! -x "$USC_BIN" ]]; then
   exit 1
 fi
 usc_version="$("$USC_BIN" --version | awk '{print $2}')"
+# Devnet 0.8.2 is built with universal-sierra-compiler 2.8.0 (Cairo 2.17.0).
+# The DECLARE transaction carries a compiled class hash, so using a different
+# USC release can make Devnet compile the same Sierra to a different CASM hash
+# and reject it with "Mismatch compiled class hash".
 if [[ "$usc_version" != "$EXPECTED_USC_VERSION" ]]; then
   echo "Universal Sierra Compiler $EXPECTED_USC_VERSION is required, found ${usc_version:-unknown}." >&2
   echo "Set USC_BIN to the pinned compiler binary before deploying." >&2
