@@ -54,10 +54,10 @@ The verified Milestone 1 toolchain is pinned to:
 - OpenZeppelin Contracts for Cairo: `3.0.0`
 - OpenZeppelin interfaces: `2.1.0`
 - Starknet Foundry / `snforge_std`: `0.51.2` (the version family OpenZeppelin 3.0 was tested against)
-- Universal Sierra Compiler: `2.10.0`
+- Universal Sierra Compiler: `2.8.0` for Devnet 0.8.2 declaration compatibility
 - Starknet Devnet binary: `0.8.2` for local E2E only
 
-Do not casually mix newer `snforge` binaries with the older `snforge_std` package. We reproduced an actual cheatcode protocol incompatibility with Foundry 0.63 + `snforge_std` 0.51.2. Pinning should be revisited deliberately before a public testnet or audit.
+Do not casually mix newer `snforge` binaries with the older `snforge_std` package. We reproduced an actual cheatcode protocol incompatibility with Foundry 0.63 + `snforge_std` 0.51.2. Devnet 0.8.2 is internally locked to Universal Sierra Compiler 2.8.0 with Cairo 2.17.0; generating deployment CASM with another USC release can produce a different compiled-class hash and make `DECLARE` fail. Pinning should be revisited deliberately before a public testnet or audit.
 
 ## Build
 
