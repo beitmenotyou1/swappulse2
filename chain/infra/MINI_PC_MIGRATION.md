@@ -45,9 +45,11 @@ Check that the copied Zorin port assignments will not collide with an existing m
 sudo ss -ltnp | grep -E ':(5050|18080|8081)\\b' || echo 'SwapPulse candidate ports are currently free'
 ```
 
-The migrated `.env` currently decides the actual host ports. If a collision exists, change only the corresponding loopback host-port variable after the transfer (`SWAPPULSE_RAW_RPC_PORT`, `SWAPPULSE_GATEWAY_PORT`, or `SWAPPULSE_TX_RELAY_PORT`); never bind raw Devnet to a public interface.
+The migrated `.env` currently decides the actual host ports. If a collision exists, change only the corresponding loopback host-port variable after the transfer (`SWAPPULSE_RAW_RPC_PORT`, `SWAPPULSE_GATEWAY_PORT`, or `SWAPPULSE_TX_RELAY_PORT`); never bind raw Devnet to a public interface. For example, if another mini-PC service already owns `8081`, use `SWAPPULSE_TX_RELAY_PORT=18081`. The Cloudflare ingress helper reads that value, so the public URL remains `https://relay.swappulse.org`.
 
-Clone or update the existing repository using the host's already-authorised GitHub method:
+Clone or update the existing repository using the host's already-authorised GitHub method. If GitHub authentication is not configured on the mini PC, do **not** enter an account password: copy the already-synchronised repository from Zorin over Tailscale instead.
+
+Preferred when mini-PC GitHub auth already works:
 
 ```bash
 cd ~
@@ -60,7 +62,30 @@ else
 fi
 ```
 
-If the repository is private, authenticate GitHub on the mini PC using a PAT/SSH/`gh auth`; never use an account password or paste a token into chat.
+Fallback when GitHub authentication is unavailable on the mini PC. First make the Zorin checkout current by running Git on Zorin, where its existing credentials remain local:
+
+```bash
+ssh michael@100.104.37.96 \
+  'cd ~/swappulse2 && git pull --ff-only && git log -1 --oneline'
+```
+
+Then copy the repository itself over the private Tailscale SSH path while excluding runtime secrets, live Devnet data and generated dependencies. This preserves the `.git` history without copying the live chain snapshot prematurely:
+
+```bash
+ssh michael@100.104.37.96 \
+  "cd /home/michael && tar --exclude='*/node_modules' \
+    --exclude='swappulse2/chain/infra/.env' \
+    --exclude='swappulse2/chain/infra/.env.relay' \
+    --exclude='swappulse2/chain/infra/data' \
+    -czf - swappulse2" \
+  | tar -xzf - -C "$HOME"
+
+cd ~/swappulse2
+git status --short
+git log -1 --oneline
+```
+
+This fallback does not transfer GitHub tokens, SSH keys or credential stores. GitHub authentication can be configured separately later if the runtime host needs to pull updates directly.
 
 Install the runtime Node tooling:
 
