@@ -80,7 +80,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'wallet', title: 'Wallet & Identity', category: 'Wallet & On-Chain', description: 'Your self-custodial collector account: identity, attestations, anchored cards, and stake.' },
   { slug: 'chain-identity', title: 'On-Chain Identity', category: 'Wallet & On-Chain', description: 'Create a smart account whose private key never leaves your own device.' },
   { slug: 'card-attestations', title: 'Card Possession Attestations', category: 'Wallet & On-Chain', description: 'Photograph your cards to prove you physically hold them, across four trust levels.' },
-  { slug: 'staking', title: 'Network Staking', category: 'Wallet & On-Chain', description: 'Delegate or run a validator to secure the zero-fee SwapPulse network.' },
+  { slug: 'staking', title: 'Community Staking', category: 'Wallet & On-Chain', description: 'Delegate to or run a community operator. Current testnet staking backs accountable services, not decentralised consensus.' },
   { slug: 'on-chain-cards', title: 'On-Chain Cards & Cross-Chain', category: 'Wallet & On-Chain', description: 'Anchor verified cards on the network and move assets to other chains.' },
 
   // Platform
