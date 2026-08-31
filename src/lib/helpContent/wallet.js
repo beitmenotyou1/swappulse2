@@ -16,7 +16,7 @@ export const walletPages = {
           '<b>Smart Account:</b> Your on-chain identity, its status, and its account address.',
           '<b>Card Possession Attestations:</b> Proof that you physically hold the cards you say you hold.',
           '<b>On-Chain Cards:</b> Verified cards anchored on the network as your own tokens.',
-          '<b>Network Staking:</b> Help secure the network and support validators.',
+          '<b>Community Staking:</b> Back accountable community operators with testnet stake.',
           '<b>Cross-Chain:</b> Move a token amount or an anchored card to another chain.',
         ]},
       ]},
@@ -24,7 +24,7 @@ export const walletPages = {
         { type: 'p', text: 'Wallet and attestation features are reserved for accounts confirmed as 18 or over. Set your age band in Settings first. Every collecting, trading, and social feature works without a wallet, so nothing is gated behind the chain.' },
       ]},
       { icon: 'Heart', title: 'Free and open source', blocks: [
-        { type: 'p', text: 'There are no protocol fees for collectors: transactions on the SwapPulse network cost you nothing, and the network is secured by staking rather than by charging you per action. SwapPulse itself is free, ad-free, donation-funded, and open source, so you can audit or self-host every part of this.' },
+        { type: 'p', text: 'There are no protocol fees for collectors on the current SwapPulse testnet. Staking is being developed as the accountability and incentive layer for community-run network services. Today the testnet still uses a single Starknet Devnet runtime, so staking does not yet provide decentralised consensus validation. SwapPulse itself is free, ad-free, donation-funded, and open source, so you can audit or self-host every part of this.' },
       ]},
       { variant: 'warning', title: 'Alpha limitations', blocks: [
         { type: 'list', items: [
@@ -113,31 +113,31 @@ export const walletPages = {
   },
 
   staking: {
-    title: 'Network Staking',
-    subtitle: 'Help secure the SwapPulse network',
+    title: 'Community Staking',
+    subtitle: 'Back accountable SwapPulse operators',
     sections: [
       { icon: 'ShieldCheck', title: 'What is staking?', blocks: [
-        { type: 'p', text: 'The SwapPulse network charges collectors no protocol fees, so it is secured by staking instead. You can either run as a validator with your own stake, or delegate your stake to a validator you trust. Staking is what makes zero-fee, self-custodial card ownership possible without asking collectors to pay per action.' },
+        { type: 'p', text: 'SwapPulse staking is the planned economic accountability layer for community-run services. You can either run an operator with your own stake or delegate to an operator you trust. On the current testnet this stake backs operator duties such as availability, indexing and verification services. It does not yet secure decentralised blockchain consensus because the testnet still runs on one Starknet Devnet runtime.' },
       ]},
       { title: 'Two ways to take part', blocks: [
         { type: 'list', items: [
-          '<b>Delegate:</b> Back a validator with your stake and share in their standing. Simplest option.',
-          '<b>Register as a validator:</b> Stake your own amount, set a commission, and help produce the chain.',
+          '<b>Delegate:</b> Back a community operator with your stake. This is the simplest participation path.',
+          '<b>Register as an operator:</b> Bond your own stake, publish an operator identity and take responsibility for supported network services.',
         ]},
       ]},
       { icon: 'Plus', title: 'Delegating', blocks: [
         { type: 'steps', items: [
           'Secure your on-chain identity first, staking needs a confirmed account.',
           'Open Network Staking on the Wallet page and choose Delegate.',
-          'Enter the validator address and the amount you want to stake.',
+          'Enter the operator address and the amount you want to stake.',
           'Confirm. Your position appears in the list once the network accepts it.',
         ]},
       ]},
-      { icon: 'Users', title: 'Running a validator', blocks: [
-        { type: 'p', text: 'Registering as a validator stakes your own amount and lets you set a commission, capped so that delegators are never charged an unreasonable share. You can increase your self-stake later, or exit and unbond if you stop validating.' },
+      { icon: 'Users', title: 'Running a community operator', blocks: [
+        { type: 'p', text: 'Registering as an operator bonds your own stake and lets you set a commission, capped so delegators are protected from unreasonable rates. Operators are expected to keep supported services available, monitor them, respond to incidents and follow upgrade/security requirements. You can increase your self-stake later, or exit and unbond if you stop operating.' },
       ]},
       { icon: 'Clock', title: 'Unbonding and withdrawal', blocks: [
-        { type: 'p', text: 'Stake is not instantly liquid. When you undelegate, the amount moves to a pending withdrawal and waits out an unbonding period before it can be claimed. Your position shows the pending amount and when it unlocks.' },
+        { type: 'p', text: 'Stake is not instantly liquid. When you undelegate, it stops contributing active operator weight immediately but remains locked during the unbonding period. It can only be withdrawn after the delay. This keeps funds accountable during the exit window and prevents operators from escaping a pending penalty by instantly unstaking.' },
       ]},
       { icon: 'Medal', title: 'Proof of Usership', blocks: [
         { type: 'p', text: 'Real collecting activity, completed trades, vouches, journals, and pack openings, is aggregated into a usership score each period. That score scales your own staked weight, so people who genuinely use the platform carry more weight than people who simply hold a large stake. The score is capped so no single collector can dominate.' },
@@ -145,6 +145,8 @@ export const walletPages = {
       { variant: 'warning', title: 'Alpha limitations', blocks: [
         { type: 'list', items: [
           'Staking runs on the testnet, so amounts are test values, not money.',
+          'Current staking secures operator participation and service accountability, not decentralised consensus.',
+          'Operator rewards and production token economics are not live until the Phase 2 contracts are deployed and governance parameters are published.',
           'Staking is only available once your identity is confirmed on chain.',
         ]},
       ]},
