@@ -51,6 +51,7 @@ async function getVerifiedConfig(svc: any) {
     || String(row.verified_identity_registry_class_hash || '').trim() !== String(row.identity_registry_class_hash || '').trim()
     || String(row.verified_identity_registry_owner || '').trim() !== String(row.identity_registry_owner || '').trim()
     || String(row.verified_identity_verifier_address || '').trim() !== String(row.identity_verifier_address || '').trim()
+    || String(row.verified_identity_verification_mode || '').trim().toUpperCase() !== String(row.identity_verification_mode || 'V1').trim().toUpperCase()
     || String(row.verified_account_class_hash || '').trim() !== String(row.account_class_hash || '').trim()
     || String(row.verified_rpc_url || '').trim() !== String(row.rpc_url || '').trim()
   ) return null;
@@ -228,6 +229,9 @@ export default async function(req: Request): Promise<Response> {
       ...(verification ? {
         verification_root: verification.verification_root,
         verification_schema_hash: verification.schema_hash,
+        verification_type: Number(verification.verification_type || 0),
+        verification_level: Number(verification.verification_level || 0),
+        verification_attestation_id: verification.attestation_id || '',
       } : {}),
       status: 'DEPLOYED',
       failure_code: '',
