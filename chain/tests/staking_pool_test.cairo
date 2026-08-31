@@ -34,8 +34,10 @@ fn deploy_token(
     let contract = declare("NativeToken").unwrap().contract_class();
     let mut calldata = ArrayTrait::new();
     owner.serialize(ref calldata);
-    "SwapPulse".serialize(ref calldata);
-    "SWPX".serialize(ref calldata);
+    let name: ByteArray = "SwapPulse";
+    let symbol: ByteArray = "SWPX";
+    name.serialize(ref calldata);
+    symbol.serialize(ref calldata);
     max_supply.serialize(ref calldata);
     let (contract_address, _) = contract.deploy(@calldata).unwrap();
     (
@@ -272,7 +274,7 @@ fn validator_exit_removes_self_and_delegated_security_weight_but_not_locked_fund
     start_cheat_caller_address(pool_address, delegator);
     pool.request_undelegate(validator, 80_u128);
     stop_cheat_caller_address(pool_address);
-    assert(pool.total_staked() == 0_u128, 'inactive delegation double-counted');
+    assert(pool.total_staked() == 0_u128, 'inactive delegation counted');
     assert(pool.total_locked_stake() == 230_u128, 'request unlocked funds');
 }
 
