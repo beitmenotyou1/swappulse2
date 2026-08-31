@@ -135,6 +135,16 @@ async function networkConfig(svc: any) {
   const identityRegistryOwner = String(row?.identity_registry_owner || '').trim();
   const identityVerifierAddress = String(row?.identity_verifier_address || '').trim();
   const identityVerificationMode = String(row?.identity_verification_mode || 'V1').trim().toUpperCase();
+  const nativeTokenAddress = String(row?.native_token_address || '').trim();
+  const nativeTokenClassHash = String(row?.native_token_class_hash || '').trim();
+  const cardNftAddress = String(row?.card_nft_address || '').trim();
+  const cardNftClassHash = String(row?.card_nft_class_hash || '').trim();
+  const stakingPoolAddress = String(row?.staking_pool_address || '').trim();
+  const stakingPoolClassHash = String(row?.staking_pool_class_hash || '').trim();
+  const usershipAddress = String(row?.usership_address || '').trim();
+  const usershipClassHash = String(row?.usership_class_hash || '').trim();
+  const bridgeAdapterAddress = String(row?.bridge_adapter_address || '').trim();
+  const bridgeAdapterClassHash = String(row?.bridge_adapter_class_hash || '').trim();
   const recoveryController = String(row?.recovery_controller || '').trim();
   const parsedDelay = Number(row?.recovery_delay_seconds ?? 172800);
   const recoveryDelaySeconds = Number.isFinite(parsedDelay) && parsedDelay >= 0
@@ -152,6 +162,17 @@ async function networkConfig(svc: any) {
     identityRegistryOwner,
     identityVerifierAddress,
     identityVerificationMode,
+    nativeTokenAddress,
+    nativeTokenClassHash,
+    nativeTokenSymbol: String(row?.native_token_symbol || '').trim(),
+    cardNftAddress,
+    cardNftClassHash,
+    stakingPoolAddress,
+    stakingPoolClassHash,
+    usershipAddress,
+    usershipClassHash,
+    bridgeAdapterAddress,
+    bridgeAdapterClassHash,
     recoveryController,
     recoveryDelaySeconds,
     rpcUrl: String(row?.rpc_url || '').trim(),
@@ -164,6 +185,11 @@ async function networkConfig(svc: any) {
     verifiedVerifierAddress: String(row?.verified_identity_verifier_address || '').trim(),
     verifiedVerificationMode: String(row?.verified_identity_verification_mode || '').trim().toUpperCase(),
     verifiedAccountClassHash: String(row?.verified_account_class_hash || '').trim(),
+    verifiedNativeTokenClassHash: String(row?.verified_native_token_class_hash || '').trim(),
+    verifiedCardNftClassHash: String(row?.verified_card_nft_class_hash || '').trim(),
+    verifiedStakingPoolClassHash: String(row?.verified_staking_pool_class_hash || '').trim(),
+    verifiedUsershipClassHash: String(row?.verified_usership_class_hash || '').trim(),
+    verifiedBridgeAdapterClassHash: String(row?.verified_bridge_adapter_class_hash || '').trim(),
     verifiedRpcUrl: String(row?.verified_rpc_url || '').trim(),
     verifiedBy: String(row?.verified_by || '').trim(),
     ready: status === 'CONFIGURED'
@@ -175,6 +201,18 @@ async function networkConfig(svc: any) {
       && String(row?.verified_identity_verification_mode || '').trim().toUpperCase() === identityVerificationMode
       && String(row?.verified_account_class_hash || '').trim() === accountClassHash
       && String(row?.verified_rpc_url || '').trim() === String(row?.rpc_url || '').trim(),
+    ecosystemReady: Boolean(
+      nativeTokenAddress && nativeTokenClassHash
+      && cardNftAddress && cardNftClassHash
+      && stakingPoolAddress && stakingPoolClassHash
+      && usershipAddress && usershipClassHash
+      && bridgeAdapterAddress && bridgeAdapterClassHash
+      && String(row?.verified_native_token_class_hash || '').trim() === nativeTokenClassHash
+      && String(row?.verified_card_nft_class_hash || '').trim() === cardNftClassHash
+      && String(row?.verified_staking_pool_class_hash || '').trim() === stakingPoolClassHash
+      && String(row?.verified_usership_class_hash || '').trim() === usershipClassHash
+      && String(row?.verified_bridge_adapter_class_hash || '').trim() === bridgeAdapterClassHash
+    ),
   };
 }
 
