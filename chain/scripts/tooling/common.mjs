@@ -82,25 +82,7 @@ export async function declareClass(account, provider, contract, casm) {
   if (await provider.isClassDeclared({ classHash })) {
     return { class_hash: classHash, transaction_hash: '', already_declared: true };
   }
-
-  // Starknet v0.14.1+ requires the Blake2s compiled class hash. Pass it
-  // explicitly instead of relying on the RPC-reported Starknet version,
-  // because a mismatched/legacy version string can make SDK auto-detection
-  // calculate the old Poseidon compiled hash and the node will reject DECLARE.
-  const compiledClassHash = normalizeHex(hash.computeCompiledClassHashBlake(casm));
-  console.log(`Declaring class ${classHash} with Blake compiled class hash ${compiledClassHash}`);
-
-  let result;
-  try {
-    result = await account.declare({ contract, casm, compiledClassHash });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const mismatch = message.match(/Mismatch compiled class hash[^\n]*/i)?.[0];
-    throw new Error(
-      `Class declaration failed for ${classHash} using Blake compiled class hash ${compiledClassHash}: ${mismatch || message.split('\n')[0]}`,
-    );
-  }
-
+  const result = await account.declare({ contract, casm });
   await wait(provider, result.transaction_hash);
   return {
     class_hash: normalizeHex(result.class_hash || classHash),
