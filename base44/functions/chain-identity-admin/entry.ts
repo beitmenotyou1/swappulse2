@@ -485,6 +485,17 @@ export default async function(req: Request): Promise<Response> {
       let identityRegistryOwner = config.identityRegistryOwner;
       let identityVerifierAddress = config.identityVerifierAddress;
       let identityVerificationMode = config.identityVerificationMode || 'V1';
+      let nativeTokenAddress = config.nativeTokenAddress;
+      let nativeTokenClassHash = config.nativeTokenClassHash;
+      let nativeTokenSymbol = config.nativeTokenSymbol;
+      let cardNftAddress = config.cardNftAddress;
+      let cardNftClassHash = config.cardNftClassHash;
+      let stakingPoolAddress = config.stakingPoolAddress;
+      let stakingPoolClassHash = config.stakingPoolClassHash;
+      let usershipAddress = config.usershipAddress;
+      let usershipClassHash = config.usershipClassHash;
+      let bridgeAdapterAddress = config.bridgeAdapterAddress;
+      let bridgeAdapterClassHash = config.bridgeAdapterClassHash;
       let recoveryController = config.recoveryController;
       try {
         if (body.chain_id) chainId = normalizeHex(body.chain_id, 'chain_id');
@@ -496,6 +507,18 @@ export default async function(req: Request): Promise<Response> {
         if (identityVerifierAddress && identityVerifierAddress === identityRegistryOwner) throw new Error('identity_verifier_address must be separate from identity_registry_owner');
         if (body.identity_verification_mode != null) identityVerificationMode = String(body.identity_verification_mode || '').trim().toUpperCase();
         if (!['V1', 'V2'].includes(identityVerificationMode)) throw new Error('identity_verification_mode must be V1 or V2');
+        if (body.native_token_address) nativeTokenAddress = normalizeAddress(body.native_token_address, 'native_token_address');
+        if (body.native_token_class_hash) nativeTokenClassHash = normalizeHex(body.native_token_class_hash, 'native_token_class_hash');
+        if (body.native_token_symbol != null) nativeTokenSymbol = String(body.native_token_symbol || '').trim().toUpperCase();
+        if (nativeTokenSymbol && nativeTokenSymbol !== 'SWPX') throw new Error('native_token_symbol must be SWPX for SWAPPULSE_TESTNET');
+        if (body.card_nft_address) cardNftAddress = normalizeAddress(body.card_nft_address, 'card_nft_address');
+        if (body.card_nft_class_hash) cardNftClassHash = normalizeHex(body.card_nft_class_hash, 'card_nft_class_hash');
+        if (body.staking_pool_address) stakingPoolAddress = normalizeAddress(body.staking_pool_address, 'staking_pool_address');
+        if (body.staking_pool_class_hash) stakingPoolClassHash = normalizeHex(body.staking_pool_class_hash, 'staking_pool_class_hash');
+        if (body.usership_address) usershipAddress = normalizeAddress(body.usership_address, 'usership_address');
+        if (body.usership_class_hash) usershipClassHash = normalizeHex(body.usership_class_hash, 'usership_class_hash');
+        if (body.bridge_adapter_address) bridgeAdapterAddress = normalizeAddress(body.bridge_adapter_address, 'bridge_adapter_address');
+        if (body.bridge_adapter_class_hash) bridgeAdapterClassHash = normalizeHex(body.bridge_adapter_class_hash, 'bridge_adapter_class_hash');
         if (body.recovery_controller) recoveryController = normalizeAddress(body.recovery_controller, 'recovery_controller');
       } catch (e: any) {
         return jsonError(e?.message || 'Invalid chain configuration', 400, 'INVALID_CHAIN_CONFIG');
@@ -503,6 +526,17 @@ export default async function(req: Request): Promise<Response> {
 
       if (status === 'CONFIGURED' && (!chainId || !accountClassHash || !identityRegistryClassHash || !identityRegistryAddress || !identityRegistryOwner || !identityVerifierAddress)) {
         return jsonError('Configured network requires chain_id, account_class_hash, identity_registry_class_hash, identity_registry_address, identity_registry_owner and identity_verifier_address', 400, 'INCOMPLETE_CHAIN_CONFIG');
+      }
+      const supportPairs = [
+        ['NativeToken', nativeTokenAddress, nativeTokenClassHash],
+        ['CardNft', cardNftAddress, cardNftClassHash],
+        ['StakingPool', stakingPoolAddress, stakingPoolClassHash],
+        ['ProofOfUsership', usershipAddress, usershipClassHash],
+        ['BridgeAdapter', bridgeAdapterAddress, bridgeAdapterClassHash],
+      ];
+      const incompletePair = supportPairs.find(([, address, classHash]) => Boolean(address) !== Boolean(classHash));
+      if (incompletePair) {
+        return jsonError(`${incompletePair[0]} requires both an address and class hash`, 400, 'INCOMPLETE_ECOSYSTEM_CONFIG');
       }
 
       const parsedDelay = Number(body.recovery_delay_seconds ?? 172800);
