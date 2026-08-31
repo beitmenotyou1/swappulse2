@@ -276,6 +276,7 @@ export default async function(req: Request): Promise<Response> {
       let identityRegistryAddress: string;
       let identityRegistryOwner: string;
       let identityVerifierAddress: string;
+      let identityVerificationMode = 'V1';
       let recoveryController = '';
       let rpcUrl: string;
       let explorerUrl = '';
@@ -287,6 +288,8 @@ export default async function(req: Request): Promise<Response> {
         identityRegistryOwner = normalizeAddress(manifest.identity_registry_owner, 'identity_registry_owner');
         identityVerifierAddress = normalizeAddress(manifest.identity_verifier_address, 'identity_verifier_address');
         if (identityVerifierAddress === identityRegistryOwner) throw new Error('identity_verifier_address must be separate from identity_registry_owner');
+        identityVerificationMode = String(manifest.identity_verification_mode || 'V1').trim().toUpperCase();
+        if (!['V1', 'V2'].includes(identityVerificationMode)) throw new Error('identity_verification_mode must be V1 or V2');
         if (manifest.recovery_controller) recoveryController = normalizeAddress(manifest.recovery_controller, 'recovery_controller');
         rpcUrl = normalizePublicHttpsUrl(manifest.rpc_url, 'rpc_url');
         if (!rpcUrl) throw new Error('rpc_url is required');
@@ -318,6 +321,7 @@ export default async function(req: Request): Promise<Response> {
         verified_identity_registry_class_hash: '',
         verified_identity_registry_owner: '',
         verified_identity_verifier_address: '',
+        verified_identity_verification_mode: '',
         verified_account_class_hash: '',
         verified_rpc_url: '',
         verified_by: '',
@@ -341,6 +345,7 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_address: saved.identityRegistryAddress,
           identity_registry_owner: saved.identityRegistryOwner,
           identity_verifier_address: saved.identityVerifierAddress,
+          identity_verification_mode: saved.identityVerificationMode,
           recovery_controller: saved.recoveryController,
           recovery_delay_seconds: saved.recoveryDelaySeconds,
           rpc_url: saved.rpcUrl,
