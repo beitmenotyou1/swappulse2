@@ -100,8 +100,6 @@ pub mod StakingPool {
     const STATUS_SLASHED: u8 = 3;
 
     const MAX_COMMISSION_BPS: u16 = 3000;
-    // Slashing can never take more than half a validator's stake in one action.
-    const MAX_SLASH_BPS: u128 = 5000;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
