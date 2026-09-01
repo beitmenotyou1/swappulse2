@@ -20,3 +20,4 @@ allow-prebuilt-plugins = ["snforge_std"]
 
 [[target.starknet-contract]]
 sierra = true
+casm = true
