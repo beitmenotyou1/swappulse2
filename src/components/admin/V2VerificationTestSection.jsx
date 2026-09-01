@@ -105,7 +105,7 @@ export default function V2VerificationTestSection() {
   };
 
   const isAuthoritative = ['REGISTERED', 'RECOVERED', 'MERGED'].includes(String(identity?.status || ''));
-  const currentIsTest = String(ageStatus?.verifier_event_id || '').startsWith('SWAPPULSE_TEST_VERIFIER:');
+  const currentIsTest = ageStatus?.verifier_source === 'SWAPPULSE_TEST_VERIFIER';
 
   return (
     <section className="rounded-xl border border-border bg-card p-4 shadow-base">
