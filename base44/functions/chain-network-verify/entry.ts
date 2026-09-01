@@ -24,26 +24,44 @@ async function safeRpcUrl(rawUrl: string): Promise<string> {
 }
 
 async function rpcCall(rpcUrl: string, method: string, params: unknown[]): Promise<any> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
-  try {
-    const response = await fetch(rpcUrl, {
-      method: 'POST',
-      redirect: 'error',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }),
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`RPC HTTP ${response.status}`);
-    const payload = await response.json();
-    if (payload?.error) {
-      const code = payload.error?.code ?? 'unknown';
-      throw new Error(`RPC ${method} error ${code}`);
+  const attempts = 3;
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+    try {
+      const response = await fetch(rpcUrl, {
+        method: 'POST',
+        redirect: 'error',
+        headers: {
+          'content-type': 'application/json',
+          'accept': 'application/json',
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (payload?.error) {
+        const code = payload.error?.code ?? 'unknown';
+        throw new Error(`JSON-RPC error ${code}`);
+      }
+      return payload?.result;
+    } catch (error: any) {
+      lastError = error;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+      }
+    } finally {
+      clearTimeout(timer);
     }
-    return payload?.result;
-  } finally {
-    clearTimeout(timer);
   }
+
+  const reason = lastError?.name === 'AbortError'
+    ? 'timed out'
+    : String(lastError?.message || 'request failed').slice(0, 160);
+  throw new Error(`RPC ${method} failed after ${attempts} attempts: ${reason}`);
 }
 
 export default async function(req: Request): Promise<Response> {
@@ -96,11 +114,10 @@ export default async function(req: Request): Promise<Response> {
       return jsonError(error?.message || 'Unsafe RPC URL', 400, 'UNSAFE_RPC_URL');
     }
 
-    stage = 'reading RPC chain information';
-    const [specVersion, chainIdRaw] = await Promise.all([
-      rpcCall(rpcUrl, 'starknet_specVersion', []),
-      rpcCall(rpcUrl, 'starknet_chainId', []),
-    ]);
+    stage = 'reading RPC specification version';
+    const specVersion = await rpcCall(rpcUrl, 'starknet_specVersion', []);
+    stage = 'reading RPC chain ID';
+    const chainIdRaw = await rpcCall(rpcUrl, 'starknet_chainId', []);
     const chainId = normalizeHex(chainIdRaw, 'RPC chain id');
     const expectedChainId = normalizeHex(configuredChainId, 'configured chain id');
     if (chainId !== expectedChainId) {
