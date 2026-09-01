@@ -64,12 +64,18 @@ if [[ "$usc_version" != "$EXPECTED_USC_VERSION" ]]; then
   exit 1
 fi
 
-REGISTRY_SIERRA="$CHAIN_ROOT/target/dev/swappulse_network_IdentityRegistry.contract_class.json"
-REGISTRY_CASM="$CHAIN_ROOT/target/dev/swappulse_network_IdentityRegistry.casm.json"
-ACCOUNT_SIERRA="$CHAIN_ROOT/target/dev/swappulse_network_SwapPulseAccount.contract_class.json"
-ACCOUNT_CASM="$CHAIN_ROOT/target/dev/swappulse_network_SwapPulseAccount.casm.json"
+CONTRACT_NAMES=(
+  IdentityRegistry
+  SwapPulseAccount
+  NativeToken
+  CardNft
+  ProofOfUsership
+  StakingPool
+  BridgeAdapter
+)
 
-for sierra in "$REGISTRY_SIERRA" "$ACCOUNT_SIERRA"; do
+for contract_name in "${CONTRACT_NAMES[@]}"; do
+  sierra="$CHAIN_ROOT/target/dev/swappulse_network_${contract_name}.contract_class.json"
   if [[ ! -f "$sierra" ]]; then
     echo "Missing Sierra artifact: $sierra" >&2
     echo "Build/test the Cairo contracts first: cd chain && SCARB_BIN=scarb SNFORGE_BIN=snforge bash scripts/test-chain.sh" >&2
@@ -77,9 +83,17 @@ for sierra in "$REGISTRY_SIERRA" "$ACCOUNT_SIERRA"; do
   fi
 done
 
-echo "Regenerating deployment CASM with universal-sierra-compiler $usc_version..."
-"$USC_BIN" compile-contract --sierra-path "$REGISTRY_SIERRA" --output-path "$REGISTRY_CASM"
-"$USC_BIN" compile-contract --sierra-path "$ACCOUNT_SIERRA" --output-path "$ACCOUNT_CASM"
+if [[ ! -f "$CHAIN_ROOT/target/dev/swappulse_network.starknet_artifacts.json" ]]; then
+  echo "Missing Scarb Starknet artifact manifest. Run the pinned Cairo build first." >&2
+  exit 1
+fi
+
+echo "Regenerating deployment CASM for all SwapPulse contracts with universal-sierra-compiler $usc_version..."
+for contract_name in "${CONTRACT_NAMES[@]}"; do
+  sierra="$CHAIN_ROOT/target/dev/swappulse_network_${contract_name}.contract_class.json"
+  casm="$CHAIN_ROOT/target/dev/swappulse_network_${contract_name}.casm.json"
+  "$USC_BIN" compile-contract --sierra-path "$sierra" --output-path "$casm"
+done
 
 read -r DEPLOYER_ADDRESS DEPLOYER_PRIVATE_KEY VERIFIER_ADDRESS < <(
   RAW_RPC="$RAW_RPC" "$NODE_BIN" --input-type=module <<'NODE'
@@ -118,12 +132,15 @@ export SWAPPULSE_VERIFIER_ADDRESS="${SWAPPULSE_VERIFIER_ADDRESS:-$VERIFIER_ADDRE
 export SWAPPULSE_RECOVERY_CONTROLLER="${SWAPPULSE_RECOVERY_CONTROLLER:-$DEPLOYER_ADDRESS}"
 export SWAPPULSE_RECOVERY_DELAY_SECONDS="${SWAPPULSE_RECOVERY_DELAY_SECONDS:-172800}"
 export SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST"
+# Force deploy-network.mjs to use the CASM regenerated above by the exact USC
+# version pinned to Devnet 0.8.2, rather than a possibly different Scarb CASM.
+export SWAPPULSE_PINNED_CASM=1
 
 "$NODE_BIN" "$CHAIN_ROOT/scripts/tooling/deploy-network.mjs"
 SWAPPULSE_VERIFY_RPC_URL="$RAW_RPC" \
   "$NODE_BIN" "$CHAIN_ROOT/scripts/tooling/verify-network.mjs" "$MANIFEST"
 
-unset SWAPPULSE_DEPLOYER_PRIVATE_KEY DEPLOYER_PRIVATE_KEY
+unset SWAPPULSE_DEPLOYER_PRIVATE_KEY DEPLOYER_PRIVATE_KEY SWAPPULSE_PINNED_CASM
 
 echo
 echo "SwapPulse Testnet contracts are deployed and locally verified."
