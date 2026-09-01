@@ -341,11 +341,13 @@ export default async function(req: Request): Promise<Response> {
       },
     });
   } catch (error: any) {
-    console.error(`chain-network-verify failed during ${stage}:`, error?.message || error);
+    const detail = String(error?.message || error || 'Unknown verification error').slice(0, 220);
+    console.error(`chain-network-verify failed during ${stage}:`, detail);
     return Response.json({
-      error: `SwapPulse Testnet verification failed while ${stage}`,
+      error: `SwapPulse Testnet verification failed while ${stage}: ${detail}`,
       code: 'CHAIN_NETWORK_VERIFY_FAILED',
       stage,
+      detail,
     }, { status: 500 });
   }
 }
