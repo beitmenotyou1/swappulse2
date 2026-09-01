@@ -158,6 +158,7 @@ const SitemapXml = lazy(() => import('@/pages/SitemapXml'));
 const RobotsTxt = lazy(() => import('@/pages/RobotsTxt'));
 const JournalDetail = lazy(() => import('@/pages/JournalDetail'));
 const HashtagPage = lazy(() => import('@/pages/HashtagPage'));
+const ChainExplorer = lazy(() => import('@/pages/ChainExplorer'));
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
@@ -220,6 +221,7 @@ const AuthenticatedApp = () => {
       <Route path="/invite/:code" element={<Invite />} />
       <Route path="/order-complete" element={<OrderComplete />} />
       <Route path="/status" element={<Status />} />
+      <Route path="/chain" element={<Navigate to="/chain/" replace />} />
       <Route path="/sitemap.xml" element={<SitemapXml />} />
       <Route path="/robots.txt" element={<RobotsTxt />} />
 
@@ -330,6 +332,11 @@ const AuthenticatedApp = () => {
         <Route path="/circles-directory" element={<CircleDirectory />} />
         <Route path="/labelers" element={<Labelers />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/chain/" element={<ChainExplorer />} />
+        <Route path="/chain/tx/:txHash" element={<ChainExplorer />} />
+        <Route path="/chain/block/:blockId" element={<ChainExplorer />} />
+        <Route path="/chain/address/:address" element={<ChainExplorer />} />
+        <Route path="/chain/:identifier" element={<ChainExplorer />} />
       </Route>
       {/* Auth required, login gate */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
