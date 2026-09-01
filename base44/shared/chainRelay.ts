@@ -200,7 +200,7 @@ async function relayPost(pathname: string, body: unknown) {
   try {
     const response = await fetch(await relayUrl(pathname), {
       method: 'POST',
-      redirect: 'error',
+      redirect: 'manual',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -263,7 +263,7 @@ export async function publicRpc(rpcUrl: string, method: string, params: unknown)
   try {
     const response = await fetch(url.toString(), {
       method: 'POST',
-      redirect: 'error',
+      redirect: 'manual',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }),
       signal: controller.signal,
