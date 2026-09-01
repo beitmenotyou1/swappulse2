@@ -488,6 +488,17 @@ async function starknetCall(contractAddress, entrypoint, calldata = []) {
   return payload.result.map((value, index) => normalizeZeroableHex(value, `${entrypoint} result[${index}]`));
 }
 
+async function assertPinnedSupportContract(address, classHash, label) {
+  const classResult = await rpc('starknet_getClassHashAt', ['latest', address]);
+  if (classResult?.error) throw new Error(`RELAY_${label}_CLASS_UNAVAILABLE`);
+  const actualClass = normalizeHex(classResult?.result, `${label} class hash`);
+  if (actualClass !== classHash) throw new Error(`RELAY_${label}_CLASS_MISMATCH`);
+  const ownerValues = await starknetCall(address, 'owner', []);
+  const actualOwner = normalizeHex(ownerValues?.[0], `${label} owner`);
+  if (actualOwner !== identityRegistryOwner) throw new Error(`RELAY_${label}_OWNER_MISMATCH`);
+  return actualClass;
+}
+
 async function assertRelayReady() {
   const now = Date.now();
   if (readinessCache && readinessCache.expiresAt > now) return readinessCache.value;
@@ -512,10 +523,39 @@ async function assertRelayReady() {
   if (BigInt(verifierValues?.[0] || '0x0') !== 1n) throw new Error('RELAY_IDENTITY_VERIFIER_NOT_AUTHORISED');
 
   let verificationV2Required = false;
+  let ecosystemReady = false;
   if (identityVerificationMode === 'v2') {
     const requiredValues = await starknetCall(identityRegistryAddress, 'verification_v2_required', []);
     if (requiredValues.length < 1) throw new Error('RELAY_VERIFICATION_V2_ABI_UNAVAILABLE');
     verificationV2Required = BigInt(requiredValues[0] || '0x0') === 1n;
+    // Probe the additive ABI before accepting any V2 registration/attestation.
+    await starknetCall(identityRegistryAddress, 'get_assurance', ['0x1']);
+
+    await Promise.all([
+      assertPinnedSupportContract(nativeTokenAddress, nativeTokenClassHash, 'NATIVE_TOKEN'),
+      assertPinnedSupportContract(cardNftAddress, cardNftClassHash, 'CARD_NFT'),
+      assertPinnedSupportContract(stakingPoolAddress, stakingPoolClassHash, 'STAKING_POOL'),
+      assertPinnedSupportContract(usershipAddress, usershipClassHash, 'USERSHIP'),
+      assertPinnedSupportContract(bridgeAdapterAddress, bridgeAdapterClassHash, 'BRIDGE_ADAPTER'),
+    ]);
+
+    const [stakingToken, stakingRegistry, stakingUsership, bridgeToken, bridgeCard, cardBridge, bridgeMinter] = await Promise.all([
+      starknetCall(stakingPoolAddress, 'stake_token', []),
+      starknetCall(stakingPoolAddress, 'identity_registry', []),
+      starknetCall(stakingPoolAddress, 'usership', []),
+      starknetCall(bridgeAdapterAddress, 'bridge_token', []),
+      starknetCall(bridgeAdapterAddress, 'card_nft', []),
+      starknetCall(cardNftAddress, 'bridge', []),
+      starknetCall(nativeTokenAddress, 'is_minter', [bridgeAdapterAddress]),
+    ]);
+    if (normalizeZeroableHex(stakingToken?.[0] || '0x0', 'staking token') !== nativeTokenAddress) throw new Error('RELAY_STAKING_TOKEN_MISMATCH');
+    if (normalizeZeroableHex(stakingRegistry?.[0] || '0x0', 'staking registry') !== identityRegistryAddress) throw new Error('RELAY_STAKING_REGISTRY_MISMATCH');
+    if (normalizeZeroableHex(stakingUsership?.[0] || '0x0', 'staking usership') !== usershipAddress) throw new Error('RELAY_STAKING_USERSHIP_MISMATCH');
+    if (normalizeZeroableHex(bridgeToken?.[0] || '0x0', 'bridge token') !== nativeTokenAddress) throw new Error('RELAY_BRIDGE_TOKEN_MISMATCH');
+    if (normalizeZeroableHex(bridgeCard?.[0] || '0x0', 'bridge card') !== cardNftAddress) throw new Error('RELAY_BRIDGE_CARD_MISMATCH');
+    if (normalizeZeroableHex(cardBridge?.[0] || '0x0', 'card bridge') !== bridgeAdapterAddress) throw new Error('RELAY_CARD_BRIDGE_MISMATCH');
+    if (BigInt(bridgeMinter?.[0] || '0x0') !== 1n) throw new Error('RELAY_BRIDGE_MINTER_NOT_AUTHORISED');
+    ecosystemReady = true;
   }
 
   const value = {
@@ -529,6 +569,17 @@ async function assertRelayReady() {
     identity_verifier_address: identityVerifierAddress,
     identity_verification_mode: identityVerificationMode,
     verification_v2_required: verificationV2Required,
+    ecosystem_ready: ecosystemReady,
+    native_token_address: nativeTokenAddress,
+    native_token_class_hash: nativeTokenClassHash,
+    card_nft_address: cardNftAddress,
+    card_nft_class_hash: cardNftClassHash,
+    staking_pool_address: stakingPoolAddress,
+    staking_pool_class_hash: stakingPoolClassHash,
+    usership_address: usershipAddress,
+    usership_class_hash: usershipClassHash,
+    bridge_adapter_address: bridgeAdapterAddress,
+    bridge_adapter_class_hash: bridgeAdapterClassHash,
     recovery_controller: recoveryController,
     recovery_delay_seconds: recoveryDelaySeconds,
   };
