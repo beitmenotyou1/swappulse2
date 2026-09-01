@@ -152,7 +152,7 @@ if [[ -f "$OUT" && "${SWAPPULSE_ROTATE_RELAY_TOKEN:-0}" != "1" ]]; then
     exit 1
   fi
   RELAY_TOKEN="$(awk -F= '$1 == "RELAY_TOKEN" { sub(/^[^=]*=/, ""); print; exit }' "$OUT")"
-  if [[ ! "$RELAY_TOKEN" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+  if (( ${#RELAY_TOKEN} < 32 || ${#RELAY_TOKEN} > 256 )) || [[ "$RELAY_TOKEN" =~ [[:space:]] ]]; then
     echo "Existing RELAY_TOKEN is missing or invalid. Refusing a silent token rotation." >&2
     echo "Set SWAPPULSE_ROTATE_RELAY_TOKEN=1 only when you intend to update the Base44 server-side secret too." >&2
     exit 1
