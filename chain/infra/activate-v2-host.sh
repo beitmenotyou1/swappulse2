@@ -113,7 +113,7 @@ echo "[3/8] Running the pinned Cairo/Foundry suite and relay policy security che
 echo "[4/8] Deploying the V2 contract suite and verifying it against loopback Devnet..."
 SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST" \
 SWAPPULSE_PUBLIC_RPC_URL="$PUBLIC_RPC_URL" \
-  "$HERE/deploy-contracts.sh"
+  bash "$HERE/deploy-contracts.sh"
 
 if [[ ! -f "$MANIFEST" ]]; then
   echo "Deployment completed without producing the canonical manifest: $MANIFEST" >&2
