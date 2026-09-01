@@ -104,7 +104,7 @@ function compactBlock(block: any) {
 async function getTransaction(hashValue: unknown) {
   const txHash = normalizeHex(hashValue);
   const [transaction, receipt] = await Promise.all([
-    rpcCall('starknet_getTransactionByHash', [txHash]),
+    rpcCall('starknet_getTransactionByHash', [txHash, []]),
     rpcCall('starknet_getTransactionReceipt', [txHash]),
   ]);
   return { transaction, receipt };
