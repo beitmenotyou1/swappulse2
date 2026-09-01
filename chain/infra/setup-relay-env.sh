@@ -38,10 +38,21 @@ readarray -t VALUES < <(
   MANIFEST="$MANIFEST" "$NODE_BIN" --input-type=module <<'NODE'
 import fs from 'node:fs';
 const m = JSON.parse(fs.readFileSync(process.env.MANIFEST, 'utf8'));
-const required = ['chain_id', 'account_class_hash', 'identity_registry_class_hash', 'identity_registry_address', 'identity_registry_owner', 'identity_verifier_address'];
+const required = [
+  'chain_id', 'account_class_hash', 'identity_registry_class_hash',
+  'identity_registry_address', 'identity_registry_owner', 'identity_verifier_address',
+  'identity_verification_mode',
+  'native_token_address', 'native_token_class_hash',
+  'card_nft_address', 'card_nft_class_hash',
+  'staking_pool_address', 'staking_pool_class_hash',
+  'usership_address', 'usership_class_hash',
+  'bridge_adapter_address', 'bridge_adapter_class_hash',
+];
 for (const key of required) {
   if (!m[key]) throw new Error(`Manifest is missing ${key}`);
 }
+if (Number(m.schema_version) !== 2) throw new Error('Relay V2 setup requires deployment manifest schema_version 2');
+if (String(m.identity_verification_mode).toUpperCase() !== 'V2') throw new Error('Relay V2 setup requires identity_verification_mode V2');
 const delay = Number(m.recovery_delay_seconds ?? 172800);
 if (!Number.isInteger(delay) || delay < 0 || delay > 2592000) throw new Error('Invalid recovery_delay_seconds');
 console.log(String(m.chain_id));
@@ -50,6 +61,17 @@ console.log(String(m.identity_registry_class_hash));
 console.log(String(m.identity_registry_address));
 console.log(String(m.identity_registry_owner));
 console.log(String(m.identity_verifier_address));
+console.log(String(m.identity_verification_mode).toLowerCase());
+console.log(String(m.native_token_address));
+console.log(String(m.native_token_class_hash));
+console.log(String(m.card_nft_address));
+console.log(String(m.card_nft_class_hash));
+console.log(String(m.staking_pool_address));
+console.log(String(m.staking_pool_class_hash));
+console.log(String(m.usership_address));
+console.log(String(m.usership_class_hash));
+console.log(String(m.bridge_adapter_address));
+console.log(String(m.bridge_adapter_class_hash));
 console.log(String(m.recovery_controller || '0x0'));
 console.log(String(delay));
 NODE
@@ -61,8 +83,19 @@ IDENTITY_REGISTRY_CLASS_HASH="${VALUES[2]:-}"
 IDENTITY_REGISTRY_ADDRESS="${VALUES[3]:-}"
 IDENTITY_REGISTRY_OWNER="${VALUES[4]:-}"
 IDENTITY_VERIFIER_ADDRESS="${VALUES[5]:-}"
-RECOVERY_CONTROLLER="${VALUES[6]:-0x0}"
-RECOVERY_DELAY_SECONDS="${VALUES[7]:-172800}"
+IDENTITY_VERIFICATION_MODE="${VALUES[6]:-v2}"
+NATIVE_TOKEN_ADDRESS="${VALUES[7]:-}"
+NATIVE_TOKEN_CLASS_HASH="${VALUES[8]:-}"
+CARD_NFT_ADDRESS="${VALUES[9]:-}"
+CARD_NFT_CLASS_HASH="${VALUES[10]:-}"
+STAKING_POOL_ADDRESS="${VALUES[11]:-}"
+STAKING_POOL_CLASS_HASH="${VALUES[12]:-}"
+USERSHIP_ADDRESS="${VALUES[13]:-}"
+USERSHIP_CLASS_HASH="${VALUES[14]:-}"
+BRIDGE_ADAPTER_ADDRESS="${VALUES[15]:-}"
+BRIDGE_ADAPTER_CLASS_HASH="${VALUES[16]:-}"
+RECOVERY_CONTROLLER="${VALUES[17]:-0x0}"
+RECOVERY_DELAY_SECONDS="${VALUES[18]:-172800}"
 RAW_RPC_PORT="${SWAPPULSE_RAW_RPC_PORT:-5050}"
 RAW_RPC="http://127.0.0.1:${RAW_RPC_PORT}"
 
@@ -120,6 +153,17 @@ IDENTITY_REGISTRY_ADDRESS=$IDENTITY_REGISTRY_ADDRESS
 IDENTITY_REGISTRY_OWNER=$IDENTITY_REGISTRY_OWNER
 IDENTITY_VERIFIER_ADDRESS=$IDENTITY_VERIFIER_RESOLVED
 IDENTITY_VERIFIER_PRIVATE_KEY=$IDENTITY_VERIFIER_PRIVATE_KEY
+IDENTITY_VERIFICATION_MODE=$IDENTITY_VERIFICATION_MODE
+NATIVE_TOKEN_ADDRESS=$NATIVE_TOKEN_ADDRESS
+NATIVE_TOKEN_CLASS_HASH=$NATIVE_TOKEN_CLASS_HASH
+CARD_NFT_ADDRESS=$CARD_NFT_ADDRESS
+CARD_NFT_CLASS_HASH=$CARD_NFT_CLASS_HASH
+STAKING_POOL_ADDRESS=$STAKING_POOL_ADDRESS
+STAKING_POOL_CLASS_HASH=$STAKING_POOL_CLASS_HASH
+USERSHIP_ADDRESS=$USERSHIP_ADDRESS
+USERSHIP_CLASS_HASH=$USERSHIP_CLASS_HASH
+BRIDGE_ADAPTER_ADDRESS=$BRIDGE_ADAPTER_ADDRESS
+BRIDGE_ADAPTER_CLASS_HASH=$BRIDGE_ADAPTER_CLASS_HASH
 REGISTRY_ADMIN_ADDRESS=$REGISTRY_ADMIN_ADDRESS
 REGISTRY_ADMIN_PRIVATE_KEY=$REGISTRY_ADMIN_PRIVATE_KEY
 RECOVERY_CONTROLLER=$RECOVERY_CONTROLLER
