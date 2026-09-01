@@ -41,6 +41,8 @@ pub trait IBridgeAdapter<TContractState> {
     fn is_chain_enabled(self: @TContractState, destination_chain: u8) -> bool;
     fn locked_token_balance(self: @TContractState) -> u256;
     fn outbound_count(self: @TContractState) -> u64;
+    fn bridge_token(self: @TContractState) -> ContractAddress;
+    fn card_nft(self: @TContractState) -> ContractAddress;
 }
 
 #[starknet::interface]
@@ -330,6 +332,14 @@ pub mod BridgeAdapter {
 
         fn outbound_count(self: @ContractState) -> u64 {
             self.next_nonce.read() - 1_u64
+        }
+
+        fn bridge_token(self: @ContractState) -> ContractAddress {
+            self.bridge_token.read()
+        }
+
+        fn card_nft(self: @ContractState) -> ContractAddress {
+            self.card_nft.read()
         }
     }
 
