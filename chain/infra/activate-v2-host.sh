@@ -120,6 +120,31 @@ if [[ ! -f "$MANIFEST" ]]; then
   exit 1
 fi
 
+# This wrapper is exclusively the V2 activation path. Reject a stale/legacy
+# deployer immediately, before any later verifier can accept schema v1 for
+# backwards-compatible diagnostics.
+MANIFEST="$MANIFEST" "$NODE_BIN" --input-type=module <<'NODE'
+import fs from 'node:fs';
+const m = JSON.parse(fs.readFileSync(process.env.MANIFEST, 'utf8'));
+const required = [
+  'identity_verification_mode',
+  'native_token_address', 'native_token_class_hash',
+  'card_nft_address', 'card_nft_class_hash',
+  'usership_address', 'usership_class_hash',
+  'staking_pool_address', 'staking_pool_class_hash',
+  'bridge_adapter_address', 'bridge_adapter_class_hash',
+];
+if (Number(m.schema_version) !== 2) {
+  throw new Error(`V2 activation requires manifest schema_version 2, got ${m.schema_version ?? 'missing'}`);
+}
+if (String(m.identity_verification_mode || '').toUpperCase() !== 'V2') {
+  throw new Error('V2 activation requires identity_verification_mode V2');
+}
+for (const key of required) {
+  if (!m[key]) throw new Error(`V2 activation manifest is missing ${key}`);
+}
+NODE
+
 echo "[5/8] Independently verifying the canonical manifest through the public HTTPS RPC..."
 env -u SWAPPULSE_VERIFY_RPC_URL \
   SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST" \
