@@ -58,6 +58,7 @@ export default function V2VerificationTestSection() {
     try {
       const res = await base44.functions.invoke('chain-verification-test', {
         action,
+        confirmation: 'SYNTHETIC_TEST_ONLY',
         record_id: recordId,
         ...(action === 'attest' ? { expires_in_seconds: expiresInSeconds } : {}),
       });
