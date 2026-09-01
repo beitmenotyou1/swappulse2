@@ -84,6 +84,11 @@ export default function Wallet() {
           <div>
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.smartAccount')}</h2>
             <WalletDashboard status={status} onReload={load} />
+            {!secured && (
+              <div className="mt-4">
+                <SmartAccountSetup status={status} onReload={load} />
+              </div>
+            )}
           </div>
           <div>
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.faucet')}</h2>
