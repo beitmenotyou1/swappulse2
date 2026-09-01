@@ -196,6 +196,55 @@ export default async function(req: Request): Promise<Response> {
       verifiedSupport[`verified_${item.key}_class_hash`] = actualHash;
     }
     const ecosystemReady = supportContracts.every((item) => Boolean(item.address && item.classHash));
+    if (ecosystemReady) {
+      const readAddress = async (contractAddress: string, entrypoint: string, label: string) => {
+        const values = await rpcCall(rpcUrl, 'starknet_call', [
+          {
+            contract_address: contractAddress,
+            entry_point_selector: hash.getSelectorFromName(entrypoint),
+            calldata: [],
+          },
+          'latest',
+        ]);
+        if (!Array.isArray(values) || !values[0]) throw new Error(`${label} could not be read`);
+        return normalizeHex(values[0], label);
+      };
+      const nativeTokenAddress = canonicalSupport.native_token_address;
+      const cardNftAddress = canonicalSupport.card_nft_address;
+      const stakingPoolAddress = canonicalSupport.staking_pool_address;
+      const usershipAddress = canonicalSupport.usership_address;
+      const bridgeAdapterAddress = canonicalSupport.bridge_adapter_address;
+      try {
+        const [stakingToken, stakingRegistry, stakingUsership, bridgeToken, bridgeCard, cardBridge] = await Promise.all([
+          readAddress(stakingPoolAddress, 'stake_token', 'StakingPool stake_token'),
+          readAddress(stakingPoolAddress, 'identity_registry', 'StakingPool identity_registry'),
+          readAddress(stakingPoolAddress, 'usership', 'StakingPool usership'),
+          readAddress(bridgeAdapterAddress, 'bridge_token', 'BridgeAdapter bridge_token'),
+          readAddress(bridgeAdapterAddress, 'card_nft', 'BridgeAdapter card_nft'),
+          readAddress(cardNftAddress, 'bridge', 'CardNft bridge'),
+        ]);
+        if (stakingToken !== nativeTokenAddress) return jsonError('StakingPool is wired to a different NativeToken', 409, 'STAKING_TOKEN_MISMATCH');
+        if (stakingRegistry !== normalizeHex(registryAddress, 'registry address')) return jsonError('StakingPool is wired to a different IdentityRegistry', 409, 'STAKING_REGISTRY_MISMATCH');
+        if (stakingUsership !== usershipAddress) return jsonError('StakingPool is wired to a different ProofOfUsership', 409, 'STAKING_USERSHIP_MISMATCH');
+        if (bridgeToken !== nativeTokenAddress) return jsonError('BridgeAdapter is wired to a different NativeToken', 409, 'BRIDGE_TOKEN_MISMATCH');
+        if (bridgeCard !== cardNftAddress) return jsonError('BridgeAdapter is wired to a different CardNft', 409, 'BRIDGE_CARD_MISMATCH');
+        if (cardBridge !== bridgeAdapterAddress) return jsonError('CardNft is wired to a different BridgeAdapter', 409, 'CARD_BRIDGE_MISMATCH');
+
+        const minterValues = await rpcCall(rpcUrl, 'starknet_call', [
+          {
+            contract_address: nativeTokenAddress,
+            entry_point_selector: hash.getSelectorFromName('is_minter'),
+            calldata: [bridgeAdapterAddress],
+          },
+          'latest',
+        ]);
+        if (!Array.isArray(minterValues) || BigInt(minterValues[0] || '0x0') !== 1n) {
+          return jsonError('BridgeAdapter is not authorised as a NativeToken minter', 409, 'BRIDGE_MINTER_NOT_AUTHORISED');
+        }
+      } catch (error: any) {
+        return jsonError(error?.message || 'Ecosystem contract wiring could not be verified', 409, 'ECOSYSTEM_WIRING_UNREADABLE');
+      }
+    }
 
     const now = new Date().toISOString();
     // Every consumer treats the network as ready only when each verified_* pin is
