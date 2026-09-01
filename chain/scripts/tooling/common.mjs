@@ -72,12 +72,16 @@ export async function loadArtifacts() {
     const entry = manifest.contracts.find((row) => row?.contract_name === contractName);
     if (!entry?.artifacts?.sierra) throw new Error(`Missing Sierra artifact for ${contractName}`);
     const sierraPath = path.join(targetDir, entry.artifacts.sierra);
-    let casmPath = entry?.artifacts?.casm ? path.join(targetDir, entry.artifacts.casm) : '';
-    if (!casmPath) {
+    const pinnedCasmPath = path.join(targetDir, `swappulse_network_${contractName}.casm.json`);
+    let casmPath = '';
+    if (process.env.SWAPPULSE_PINNED_CASM === '1') {
+      casmPath = await firstExisting([pinnedCasmPath]);
+    } else {
       casmPath = await firstExisting([
+        entry?.artifacts?.casm ? path.join(targetDir, entry.artifacts.casm) : '',
         path.join(targetDir, `swappulse_network_${contractName}.compiled_contract_class.json`),
-        path.join(targetDir, `swappulse_network_${contractName}.casm.json`),
-      ]);
+        pinnedCasmPath,
+      ].filter(Boolean));
     }
     if (!casmPath) {
       throw new Error(`Missing CASM artifact for ${contractName}. Run scarb build with casm = true before deployment.`);
