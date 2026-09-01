@@ -785,6 +785,85 @@ async function registerIdentity(body) {
   };
 }
 
+async function requireVerificationV2(body) {
+  if (identityVerificationMode !== 'v2') throw new Error('V2_CUTOVER_REQUIRES_RELAY_V2_MODE');
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('V2_CUTOVER_BODY_REQUIRED');
+  if (String(body.confirmation || '') !== 'REQUIRE_V2_FOREVER') throw new Error('V2_CUTOVER_CONFIRMATION_REQUIRED');
+
+  const identityId = normalizeHex(body.identity_id, 'identity_id');
+  const accountAddress = normalizeHex(body.account_address, 'account_address');
+  const identityValues = await starknetCall(identityRegistryAddress, 'get_identity', [identityId]);
+  if (normalizeZeroableHex(identityValues?.[0] || '0x0', 'identity account') !== accountAddress) throw new Error('V2_CUTOVER_IDENTITY_ACCOUNT_MISMATCH');
+  if (Number(BigInt(identityValues?.[1] || '0x0')) !== 1) throw new Error('V2_CUTOVER_IDENTITY_NOT_ACTIVE');
+
+  const verification = await starknetCall(identityRegistryAddress, 'get_verification', [identityId]);
+  if (Number(BigInt(verification?.[1] || '0x0')) !== 1) throw new Error('V2_CUTOVER_VERIFICATION_NOT_ACTIVE');
+  const assurance = await starknetCall(identityRegistryAddress, 'get_assurance', [identityId]);
+  const verificationType = Number(BigInt(assurance?.[0] || '0x0'));
+  const verificationLevel = Number(BigInt(assurance?.[1] || '0x0'));
+  const attestationId = normalizeZeroableHex(assurance?.[2] || '0x0', 'attestation id');
+  if (verificationType !== 1 || verificationLevel < 2 || attestationId === '0x0') {
+    throw new Error('V2_CUTOVER_ASSURANCE_INSUFFICIENT');
+  }
+  const spentValues = await starknetCall(identityRegistryAddress, 'is_attestation_used', [attestationId]);
+  if (BigInt(spentValues?.[0] || '0x0') !== 1n) throw new Error('V2_CUTOVER_ATTESTATION_NOT_SPENT');
+  const verifiedValues = await starknetCall(identityRegistryAddress, 'is_verified', [identityId]);
+  if (BigInt(verifiedValues?.[0] || '0x0') !== 1n) throw new Error('V2_CUTOVER_IDENTITY_NOT_VERIFIED');
+
+  const validator = await starknetCall(stakingPoolAddress, 'get_validator', [accountAddress]);
+  if (validator.length < 7) throw new Error('V2_CUTOVER_STAKING_STATE_UNREADABLE');
+  if (normalizeZeroableHex(validator[0] || '0x0', 'validator account') !== accountAddress) throw new Error('V2_CUTOVER_STAKING_ACCOUNT_MISMATCH');
+  if (normalizeZeroableHex(validator[1] || '0x0', 'validator identity') !== identityId) throw new Error('V2_CUTOVER_STAKING_IDENTITY_MISMATCH');
+  const selfStake = BigInt(validator[2] || '0x0');
+  const validatorStatus = Number(BigInt(validator[5] || '0x0'));
+  const minimumValues = await starknetCall(stakingPoolAddress, 'min_self_stake', []);
+  const minimumStake = BigInt(minimumValues?.[0] || '0x0');
+  if (validatorStatus !== 1 || selfStake < minimumStake || minimumStake <= 0n) throw new Error('V2_CUTOVER_ACTIVE_STAKE_REQUIRED');
+
+  const poolBalance = await starknetCall(nativeTokenAddress, 'balance_of', [stakingPoolAddress]);
+  const poolBalanceU256 = BigInt(poolBalance?.[0] || '0x0') + (BigInt(poolBalance?.[1] || '0x0') << 128n);
+  if (poolBalanceU256 < selfStake) throw new Error('V2_CUTOVER_SWPX_ESCROW_MISMATCH');
+
+  const current = await starknetCall(identityRegistryAddress, 'verification_v2_required', []);
+  if (BigInt(current?.[0] || '0x0') === 1n) {
+    return {
+      transaction_hash: '',
+      idempotent: true,
+      verification_v2_required: true,
+      identity_id: identityId,
+      account_address: accountAddress,
+      verification_type: verificationType,
+      verification_level: verificationLevel,
+      attestation_id: attestationId,
+      self_stake: selfStake.toString(),
+      min_self_stake: minimumStake.toString(),
+    };
+  }
+
+  const cutover = await registryAdmin.execute({
+    contractAddress: identityRegistryAddress,
+    entrypoint: 'require_verification_v2',
+    calldata: [],
+  });
+  await provider.waitForTransaction(cutover.transaction_hash);
+  readinessCache = null;
+  const finalRequired = await starknetCall(identityRegistryAddress, 'verification_v2_required', []);
+  if (BigInt(finalRequired?.[0] || '0x0') !== 1n) throw new Error('V2_CUTOVER_FINAL_STATE_MISMATCH');
+
+  return {
+    transaction_hash: normalizeHex(cutover.transaction_hash, 'V2 cutover transaction hash'),
+    idempotent: false,
+    verification_v2_required: true,
+    identity_id: identityId,
+    account_address: accountAddress,
+    verification_type: verificationType,
+    verification_level: verificationLevel,
+    attestation_id: attestationId,
+    self_stake: selfStake.toString(),
+    min_self_stake: minimumStake.toString(),
+  };
+}
+
 async function syncVerification(body, mode) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('VERIFICATION_SYNC_BODY_REQUIRED');
   const identityId = normalizeHex(body.identity_id, 'identity_id');
@@ -846,7 +925,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, 503, { ok: false, error: 'Provisioning relay is not ready', code });
     }
   }
-  if (req.method !== 'POST' || !['/rpc', '/register', '/verification-attest', '/verification-revoke', '/mint-card', '/submit-usership', '/faucet-drip', '/recovery-propose', '/recovery-execute', '/recovery-cancel'].includes(req.url || '')) {
+  if (req.method !== 'POST' || !['/rpc', '/register', '/verification-attest', '/verification-revoke', '/mint-card', '/submit-usership', '/faucet-drip', '/recovery-propose', '/recovery-execute', '/recovery-cancel', '/require-v2'].includes(req.url || '')) {
     return json(res, 404, { error: 'Not found' });
   }
   if (!tokenMatches(req.headers.authorization)) return json(res, 401, { error: 'Unauthorized' });
@@ -868,6 +947,12 @@ const server = http.createServer(async (req, res) => {
       } finally {
         registrationBusy = false;
       }
+    }
+
+    if (req.url === '/require-v2') {
+      const result = await requireVerificationV2(payload);
+      console.log(`require_verification_v2 accepted ${ip} ${result.identity_id} idempotent=${result.idempotent}`);
+      return json(res, 200, { ok: true, ...result });
     }
 
     if (req.url === '/verification-attest' || req.url === '/verification-revoke') {
