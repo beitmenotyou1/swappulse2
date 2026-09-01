@@ -33,7 +33,7 @@ async function rpcCall(rpcUrl: string, method: string, params: unknown[]): Promi
     try {
       const response = await fetch(rpcUrl, {
         method: 'POST',
-        redirect: 'error',
+        redirect: 'manual',
         headers: {
           'content-type': 'application/json',
           'accept': 'application/json',
