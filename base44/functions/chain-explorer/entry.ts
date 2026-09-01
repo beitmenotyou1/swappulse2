@@ -214,7 +214,20 @@ export default async function(req: Request): Promise<Response> {
           const block = await getBlock(normalised);
           return Response.json({ ok: true, kind: 'block', network: network.network, block }, { headers: { 'Cache-Control': 'public, max-age=10' } });
         } catch {
-          return jsonError('LOOKUP_NOT_FOUND', 404);
+          try {
+            const [classHash, nonce] = await Promise.all([
+              rpcCall('starknet_getClassHashAt', ['latest', normalised]),
+              rpcCall('starknet_getNonce', ['latest', normalised]).catch(() => '0x0'),
+            ]);
+            return Response.json({
+              ok: true,
+              kind: 'address',
+              network: network.network,
+              address: { address: normalised, class_hash: classHash || '', nonce: nonce || '0x0' },
+            }, { headers: { 'Cache-Control': 'public, max-age=20' } });
+          } catch {
+            return jsonError('LOOKUP_NOT_FOUND', 404);
+          }
         }
       }
     }
