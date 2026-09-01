@@ -11,6 +11,8 @@ const allowedMethods = new Set([
   'starknet_specVersion',
   'starknet_chainId',
   'starknet_blockNumber',
+  'starknet_getBlockWithTxHashes',
+  'starknet_getTransactionByHash',
   'starknet_getClassHashAt',
   'starknet_getClass',
   'starknet_getClassAt',
