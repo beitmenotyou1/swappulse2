@@ -26,6 +26,7 @@ PUBLIC_RPC_URL="${SWAPPULSE_PUBLIC_RPC_URL:-}"
 RELAY_HOSTNAME="${SWAPPULSE_TX_RELAY_HOSTNAME:-relay.swappulse.org}"
 PUBLIC_RELAY_URL="${SWAPPULSE_TX_RELAY_PUBLIC_URL:-https://${RELAY_HOSTNAME}}"
 RAW_RPC_PORT="${SWAPPULSE_RAW_RPC_PORT:-5050}"
+GATEWAY_PORT="${SWAPPULSE_GATEWAY_PORT:-8080}"
 RELAY_PORT="${SWAPPULSE_TX_RELAY_PORT:-8081}"
 
 if [[ -z "$PUBLIC_RPC_URL" || "$PUBLIC_RPC_URL" != https://* ]]; then
@@ -37,7 +38,7 @@ if [[ "$PUBLIC_RELAY_URL" != https://* ]]; then
   exit 1
 fi
 
-for cmd in curl docker awk stat; do
+for cmd in curl docker awk stat sha256sum; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Required command is missing: $cmd" >&2
     exit 1
@@ -77,14 +78,27 @@ const payload = JSON.parse(process.env.PUBLIC_CHAIN_RESPONSE || '{}');
 if (payload.error || !payload.result) throw new Error('Public RPC did not return starknet_chainId');
 NODE
 
-# A privileged Devnet method must never be available through the public gateway.
-privileged_http="$(curl -sS -o /tmp/swappulse-v2-privileged-check.$$ -w '%{http_code}' --connect-timeout 10 --max-time 20 \
+# The local gateway itself must reject privileged Devnet methods. This proves
+# the policy independently of any Cloudflare/WAF rule on the public hostname.
+local_privileged_http="$(curl -sS -o /tmp/swappulse-v2-local-privileged-check.$$ -w '%{http_code}' --connect-timeout 5 --max-time 10 \
   -H 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","id":2,"method":"devnet_getPredeployedAccounts","params":{}}' \
+  "http://127.0.0.1:${GATEWAY_PORT}/" || true)"
+rm -f /tmp/swappulse-v2-local-privileged-check.$$
+if [[ "$local_privileged_http" != "403" ]]; then
+  echo "Local read-only gateway did not return HTTP 403 for a devnet_* request (got ${local_privileged_http:-unknown})." >&2
+  exit 1
+fi
+
+# The same privileged method must also be rejected on the public path. A WAF
+# may be the rejecting layer, so any successful HTTP 200 response is a failure.
+public_privileged_http="$(curl -sS -o /tmp/swappulse-v2-public-privileged-check.$$ -w '%{http_code}' --connect-timeout 10 --max-time 20 \
+  -H 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":3,"method":"devnet_getPredeployedAccounts","params":{}}' \
   "$PUBLIC_RPC_URL" || true)"
-rm -f /tmp/swappulse-v2-privileged-check.$$
-if [[ "$privileged_http" == "200" ]]; then
-  echo "Public RPC accepted a privileged devnet_* request. Refusing V2 activation." >&2
+rm -f /tmp/swappulse-v2-public-privileged-check.$$
+if [[ "$public_privileged_http" == "200" || "$public_privileged_http" == "000" ]]; then
+  echo "Public RPC did not safely reject a privileged devnet_* request (HTTP ${public_privileged_http:-unknown}). Refusing V2 activation." >&2
   exit 1
 fi
 
