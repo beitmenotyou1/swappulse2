@@ -34,7 +34,7 @@ env -u SWAPPULSE_VERIFY_RPC_URL \
 
 echo "Public SwapPulse manifest verified before relay credential generation."
 
-readarray -t VALUES < <(
+VALUES_OUTPUT="$(
   MANIFEST="$MANIFEST" "$NODE_BIN" --input-type=module <<'NODE'
 import fs from 'node:fs';
 const m = JSON.parse(fs.readFileSync(process.env.MANIFEST, 'utf8'));
@@ -75,7 +75,12 @@ console.log(String(m.bridge_adapter_class_hash));
 console.log(String(m.recovery_controller || '0x0'));
 console.log(String(delay));
 NODE
-)
+)" || {
+  echo "Could not read the required V2 deployment metadata from the manifest." >&2
+  exit 1
+}
+mapfile -t VALUES <<< "$VALUES_OUTPUT"
+unset VALUES_OUTPUT
 
 CHAIN_ID="${VALUES[0]:-}"
 ACCOUNT_CLASS_HASH="${VALUES[1]:-}"
@@ -99,7 +104,7 @@ RECOVERY_DELAY_SECONDS="${VALUES[18]:-172800}"
 RAW_RPC_PORT="${SWAPPULSE_RAW_RPC_PORT:-5050}"
 RAW_RPC="http://127.0.0.1:${RAW_RPC_PORT}"
 
-read -r REGISTRY_ADMIN_ADDRESS REGISTRY_ADMIN_PRIVATE_KEY IDENTITY_VERIFIER_RESOLVED IDENTITY_VERIFIER_PRIVATE_KEY < <(
+KEY_OUTPUT="$(
   RAW_RPC="$RAW_RPC" EXPECTED_OWNER="$IDENTITY_REGISTRY_OWNER" EXPECTED_VERIFIER="$IDENTITY_VERIFIER_ADDRESS" "$NODE_BIN" --input-type=module <<'NODE'
 const response = await fetch(process.env.RAW_RPC, {
   method: 'POST',
@@ -130,7 +135,12 @@ if (BigInt(owner.address) === BigInt(verifier.address)) {
 }
 process.stdout.write(`${owner.address} ${owner.private_key} ${verifier.address} ${verifier.private_key}\n`);
 NODE
-)
+)" || {
+  echo "Could not resolve the registry owner/verifier keys from the loopback-only Devnet RPC." >&2
+  exit 1
+}
+read -r REGISTRY_ADMIN_ADDRESS REGISTRY_ADMIN_PRIVATE_KEY IDENTITY_VERIFIER_RESOLVED IDENTITY_VERIFIER_PRIVATE_KEY <<< "$KEY_OUTPUT"
+unset KEY_OUTPUT
 
 if [[ -z "${REGISTRY_ADMIN_ADDRESS:-}" || -z "${REGISTRY_ADMIN_PRIVATE_KEY:-}" || -z "${IDENTITY_VERIFIER_RESOLVED:-}" || -z "${IDENTITY_VERIFIER_PRIVATE_KEY:-}" ]]; then
   echo "Could not resolve the local registry owner/verifier keys." >&2
