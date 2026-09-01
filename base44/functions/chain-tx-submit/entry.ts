@@ -307,6 +307,6 @@ export default async function(req: Request): Promise<Response> {
     const code = String(error?.message || 'CHAIN_TX_SUBMIT_FAILED').replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 120);
     console.error('chain-tx-submit failed:', code);
     const clientError = code.includes('NOT_CONFIGURED') || code.includes('MUST_') || code.includes('NOT_ALLOWED') || code.includes('WRONG_') || code.includes('MISMATCH') || code.includes('REQUIRED');
-    return jsonError(clientError ? code.replaceAll('_', ' ') : 'Signed testnet transaction submission failed', clientError ? 409 : 502, code);
+    return jsonError(clientError ? code.replaceAll('_', ' ') : `Signed testnet transaction submission failed: ${code}`, clientError ? 409 : 502, code);
   }
 }
