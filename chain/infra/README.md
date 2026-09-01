@@ -131,7 +131,7 @@ chmod +x activate-v2-host.sh
 ./activate-v2-host.sh
 ```
 
-Before any deployment it requires the pinned Scarb/Cairo and Starknet Foundry versions, runs the full contract test suite and relay policy smoke checks, confirms the raw Devnet RPC is loopback-only, and confirms the public gateway blocks `devnet_*` methods. It then deploys all seven V2 components, verifies the canonical manifest both locally and through the public HTTPS RPC, regenerates the relay environment, starts the relay in V2 mode, and checks authenticated `/readyz` locally and through the public relay hostname.
+Before any deployment it requires the pinned Scarb/Cairo and Starknet Foundry versions, runs the full contract test suite and relay policy smoke checks, confirms the raw Devnet RPC is loopback-only, proves the local read-only gateway returns `403` for `devnet_*`, and confirms the same privileged method is rejected on the public path. It then deploys all seven V2 components, verifies the canonical manifest both locally and through the public HTTPS RPC, regenerates the relay environment, starts the relay in V2 mode, and checks authenticated `/readyz` locally and through the public relay hostname.
 
 Existing relay bearer tokens are preserved by default so a V2 environment refresh does not silently invalidate the Base44 server secret. Set `SWAPPULSE_ROTATE_RELAY_TOKEN=1` only for an intentional credential rotation where the Base44 server-side secret will also be updated.
 
