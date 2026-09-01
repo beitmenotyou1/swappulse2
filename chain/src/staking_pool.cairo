@@ -49,6 +49,10 @@ pub trait IStakingPool<TContractState> {
     fn validator_count(self: @TContractState) -> u32;
     fn validator_at(self: @TContractState, index: u32) -> ContractAddress;
     fn min_self_stake(self: @TContractState) -> u128;
+    fn stake_token(self: @TContractState) -> ContractAddress;
+    fn identity_registry(self: @TContractState) -> ContractAddress;
+    fn usership(self: @TContractState) -> ContractAddress;
+    fn unbonding_period(self: @TContractState) -> u64;
 }
 
 #[starknet::interface]
@@ -516,6 +520,22 @@ pub mod StakingPool {
 
         fn min_self_stake(self: @ContractState) -> u128 {
             self.min_self_stake.read()
+        }
+
+        fn stake_token(self: @ContractState) -> ContractAddress {
+            self.stake_token.read()
+        }
+
+        fn identity_registry(self: @ContractState) -> ContractAddress {
+            self.identity_registry.read()
+        }
+
+        fn usership(self: @ContractState) -> ContractAddress {
+            self.usership.read()
+        }
+
+        fn unbonding_period(self: @ContractState) -> u64 {
+            self.unbonding_period.read()
         }
     }
 
