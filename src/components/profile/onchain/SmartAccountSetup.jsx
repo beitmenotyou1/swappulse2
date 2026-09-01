@@ -156,6 +156,11 @@ export default function SmartAccountSetup({ status, onReload }) {
         <div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
           <p className="font-bold">Automatic setup unavailable</p>
           <p className="mt-1">The provisioning relay is not verified yet. Your reservation is safe — continue once the relay is configured.</p>
+          {status?.relay?.code && (
+            <p className="mt-2 font-mono text-[11px]" role="status">
+              Relay check: {status.relay.code}
+            </p>
+          )}
         </div>
       )}
     </div>
