@@ -568,6 +568,18 @@ export default async function(req: Request): Promise<Response> {
         // re-verification rather than taking effect under existing pins.
         || recoveryController !== config.recoveryController
       );
+      const ecosystemCoordinatesChanged = Boolean(config.id) && (
+        nativeTokenAddress !== config.nativeTokenAddress
+        || nativeTokenClassHash !== config.nativeTokenClassHash
+        || cardNftAddress !== config.cardNftAddress
+        || cardNftClassHash !== config.cardNftClassHash
+        || stakingPoolAddress !== config.stakingPoolAddress
+        || stakingPoolClassHash !== config.stakingPoolClassHash
+        || usershipAddress !== config.usershipAddress
+        || usershipClassHash !== config.usershipClassHash
+        || bridgeAdapterAddress !== config.bridgeAdapterAddress
+        || bridgeAdapterClassHash !== config.bridgeAdapterClassHash
+      );
       const effectiveStatus = status === 'PAUSED'
         ? 'PAUSED'
         : (trustedCoordinatesChanged ? 'UNCONFIGURED' : status);
@@ -581,6 +593,17 @@ export default async function(req: Request): Promise<Response> {
         identity_registry_owner: identityRegistryOwner,
         identity_verifier_address: identityVerifierAddress,
         identity_verification_mode: identityVerificationMode,
+        native_token_address: nativeTokenAddress,
+        native_token_class_hash: nativeTokenClassHash,
+        native_token_symbol: nativeTokenSymbol,
+        card_nft_address: cardNftAddress,
+        card_nft_class_hash: cardNftClassHash,
+        staking_pool_address: stakingPoolAddress,
+        staking_pool_class_hash: stakingPoolClassHash,
+        usership_address: usershipAddress,
+        usership_class_hash: usershipClassHash,
+        bridge_adapter_address: bridgeAdapterAddress,
+        bridge_adapter_class_hash: bridgeAdapterClassHash,
         recovery_controller: recoveryController,
         recovery_delay_seconds: Math.floor(parsedDelay),
         rpc_url: rpcUrl,
@@ -593,6 +616,11 @@ export default async function(req: Request): Promise<Response> {
         verified_identity_verifier_address: trustedCoordinatesChanged ? '' : config.verifiedVerifierAddress,
         verified_identity_verification_mode: trustedCoordinatesChanged ? '' : config.verifiedVerificationMode,
         verified_account_class_hash: trustedCoordinatesChanged ? '' : config.verifiedAccountClassHash,
+        verified_native_token_class_hash: trustedCoordinatesChanged || ecosystemCoordinatesChanged ? '' : config.verifiedNativeTokenClassHash,
+        verified_card_nft_class_hash: trustedCoordinatesChanged || ecosystemCoordinatesChanged ? '' : config.verifiedCardNftClassHash,
+        verified_staking_pool_class_hash: trustedCoordinatesChanged || ecosystemCoordinatesChanged ? '' : config.verifiedStakingPoolClassHash,
+        verified_usership_class_hash: trustedCoordinatesChanged || ecosystemCoordinatesChanged ? '' : config.verifiedUsershipClassHash,
+        verified_bridge_adapter_class_hash: trustedCoordinatesChanged || ecosystemCoordinatesChanged ? '' : config.verifiedBridgeAdapterClassHash,
         verified_rpc_url: trustedCoordinatesChanged ? '' : config.verifiedRpcUrl,
         verified_by: trustedCoordinatesChanged ? '' : config.verifiedBy,
         updated_at: new Date().toISOString(),
@@ -610,12 +638,24 @@ export default async function(req: Request): Promise<Response> {
           chain_id: saved.chainId,
           status: saved.status,
           ready: saved.ready,
+          ecosystem_ready: saved.ecosystemReady,
           account_class_hash: saved.accountClassHash,
           identity_registry_class_hash: saved.identityRegistryClassHash,
           identity_registry_address: saved.identityRegistryAddress,
           identity_registry_owner: saved.identityRegistryOwner,
           identity_verifier_address: saved.identityVerifierAddress,
           identity_verification_mode: saved.identityVerificationMode,
+          native_token_address: saved.nativeTokenAddress,
+          native_token_class_hash: saved.nativeTokenClassHash,
+          native_token_symbol: saved.nativeTokenSymbol,
+          card_nft_address: saved.cardNftAddress,
+          card_nft_class_hash: saved.cardNftClassHash,
+          staking_pool_address: saved.stakingPoolAddress,
+          staking_pool_class_hash: saved.stakingPoolClassHash,
+          usership_address: saved.usershipAddress,
+          usership_class_hash: saved.usershipClassHash,
+          bridge_adapter_address: saved.bridgeAdapterAddress,
+          bridge_adapter_class_hash: saved.bridgeAdapterClassHash,
           recovery_controller: saved.recoveryController,
           recovery_controller_configured: Boolean(saved.recoveryController),
           recovery_delay_seconds: saved.recoveryDelaySeconds,
@@ -628,6 +668,11 @@ export default async function(req: Request): Promise<Response> {
           verified_identity_verifier_address: saved.verifiedVerifierAddress,
           verified_identity_verification_mode: saved.verifiedVerificationMode,
           verified_account_class_hash: saved.verifiedAccountClassHash,
+          verified_native_token_class_hash: saved.verifiedNativeTokenClassHash,
+          verified_card_nft_class_hash: saved.verifiedCardNftClassHash,
+          verified_staking_pool_class_hash: saved.verifiedStakingPoolClassHash,
+          verified_usership_class_hash: saved.verifiedUsershipClassHash,
+          verified_bridge_adapter_class_hash: saved.verifiedBridgeAdapterClassHash,
           verified_rpc_url: saved.verifiedRpcUrl,
         },
       });
