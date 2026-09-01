@@ -88,7 +88,12 @@ if [[ "$privileged_http" == "200" ]]; then
   exit 1
 fi
 
-echo "[3/8] Re-running relay policy security checks..."
+echo "[3/8] Running the pinned Cairo/Foundry suite and relay policy security checks..."
+(
+  cd "$CHAIN_ROOT"
+  SCARB_BIN="${SCARB_BIN:-scarb}" SNFORGE_BIN="${SNFORGE_BIN:-snforge}" \
+    bash scripts/test-chain.sh
+)
 "$NODE_BIN" "$HERE/tx-relay/smoke-policy.mjs"
 
 echo "[4/8] Deploying the V2 contract suite and verifying it against loopback Devnet..."
