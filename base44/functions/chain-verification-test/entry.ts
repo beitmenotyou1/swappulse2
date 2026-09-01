@@ -65,6 +65,7 @@ async function loadAge(svc: any, userId: string) {
 
 export default async function(req: Request): Promise<Response> {
   let sessionId = '';
+  let svc: any = null;
   try {
     if (req.method !== 'POST') return jsonError('Method not allowed', 405);
     const base44 = createClientFromRequest(req);
@@ -79,7 +80,7 @@ export default async function(req: Request): Promise<Response> {
     const recordId = String(body.record_id || '').trim();
     if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
 
-    const svc = base44.asServiceRole;
+    svc = base44.asServiceRole;
     const config = await getVerifiedConfig(svc);
     if (!config) return jsonError('SwapPulse Testnet verification pins are stale or incomplete', 409, 'CHAIN_VERIFICATION_REQUIRED');
     if (String(config.identity_verification_mode || '').trim().toUpperCase() !== 'V2') {
@@ -242,10 +243,9 @@ export default async function(req: Request): Promise<Response> {
     });
   } catch (error: any) {
     const code = safeCode(error);
-    if (sessionId) {
+    if (sessionId && svc) {
       try {
-        const base44 = createClientFromRequest(req);
-        await base44.asServiceRole.entities.AgeVerificationSession.update(sessionId, {
+        await svc.entities.AgeVerificationSession.update(sessionId, {
           chain_sync_status: 'FAILED',
           last_error: code,
         });
