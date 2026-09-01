@@ -137,10 +137,33 @@ if [[ -z "${REGISTRY_ADMIN_ADDRESS:-}" || -z "${REGISTRY_ADMIN_PRIVATE_KEY:-}" |
   exit 1
 fi
 
-if command -v openssl >/dev/null 2>&1; then
-  RELAY_TOKEN="$(openssl rand -hex 32)"
+RELAY_TOKEN=""
+TOKEN_ACTION="generated"
+if [[ -f "$OUT" && "${SWAPPULSE_ROTATE_RELAY_TOKEN:-0}" != "1" ]]; then
+  existing_mode="$(stat -c '%a' "$OUT" 2>/dev/null || true)"
+  if [[ ! "$existing_mode" =~ ^[0-7]{3,4}$ ]]; then
+    echo "Could not verify permissions on existing relay environment: $OUT" >&2
+    exit 1
+  fi
+  mode_dec=$((8#$existing_mode))
+  if (( (mode_dec & 077) != 0 )); then
+    echo "Existing relay environment is accessible by group/other users: $OUT (mode $existing_mode)." >&2
+    echo "Fix it with chmod 600 before regenerating the V2 relay environment." >&2
+    exit 1
+  fi
+  RELAY_TOKEN="$(awk -F= '$1 == "RELAY_TOKEN" { sub(/^[^=]*=/, ""); print; exit }' "$OUT")"
+  if [[ ! "$RELAY_TOKEN" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+    echo "Existing RELAY_TOKEN is missing or invalid. Refusing a silent token rotation." >&2
+    echo "Set SWAPPULSE_ROTATE_RELAY_TOKEN=1 only when you intend to update the Base44 server-side secret too." >&2
+    exit 1
+  fi
+  TOKEN_ACTION="preserved"
 else
-  RELAY_TOKEN="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+  if command -v openssl >/dev/null 2>&1; then
+    RELAY_TOKEN="$(openssl rand -hex 32)"
+  else
+    RELAY_TOKEN="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+  fi
 fi
 
 umask 077
@@ -173,7 +196,11 @@ RATE_LIMIT_PER_MINUTE=60
 EOF
 chmod 600 "$OUT"
 
-echo "Relay environment written to $OUT with mode 0600."
+echo "Relay environment written to $OUT with mode 0600; bearer token $TOKEN_ACTION."
 echo "The registry-owner and identity-verifier private keys are stored only in $OUT and are never printed."
-echo "Copy RELAY_TOKEN only into the Base44 server-side secret SWAPPULSE_TX_RELAY_TOKEN, never into browser code or ChainNetworkConfig."
+if [[ "$TOKEN_ACTION" == "generated" ]]; then
+  echo "A new RELAY_TOKEN was generated. Copy it only into the Base44 server-side secret SWAPPULSE_TX_RELAY_TOKEN, never into browser code or ChainNetworkConfig."
+else
+  echo "The existing RELAY_TOKEN was preserved, so the matching Base44 server-side secret does not need to change."
+fi
 echo "Start the relay with: docker compose --env-file .env --env-file .env.relay --profile provisioning up -d --build tx-relay"
