@@ -153,7 +153,7 @@ env -u SWAPPULSE_VERIFY_RPC_URL \
 echo "[6/8] Generating the V2 relay environment without silently rotating its bearer token..."
 SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST" \
 SWAPPULSE_RELAY_ENV_FILE="$RELAY_ENV" \
-  "$HERE/setup-relay-env.sh"
+  bash "$HERE/setup-relay-env.sh"
 
 relay_mode="$(stat -c '%a' "$RELAY_ENV" 2>/dev/null || true)"
 if [[ ! "$relay_mode" =~ ^[0-7]{3,4}$ ]]; then
