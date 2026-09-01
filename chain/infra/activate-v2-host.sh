@@ -122,18 +122,26 @@ if (( (relay_mode_dec & 077) != 0 )); then
   exit 1
 fi
 RELAY_TOKEN="$(awk -F= '$1 == "RELAY_TOKEN" { sub(/^[^=]*=/, ""); print; exit }' "$RELAY_ENV")"
-if [[ ! "$RELAY_TOKEN" =~ ^[0-9A-Fa-f]{64}$ ]]; then
-  echo "Relay environment does not contain a valid 256-bit bearer token." >&2
+if (( ${#RELAY_TOKEN} < 32 || ${#RELAY_TOKEN} > 256 )) || [[ "$RELAY_TOKEN" =~ [[:space:]] ]]; then
+  echo "Relay environment does not contain a valid strong bearer token." >&2
   exit 1
 fi
+
+authenticated_ready() {
+  local url="$1"
+  local retries="$2"
+  # Feed the Authorization header through curl's stdin config so the bearer
+  # token is not exposed in the curl process command line.
+  printf 'header = "Authorization: Bearer %s"\n' "$RELAY_TOKEN" | \
+    curl -fsS --retry "$retries" --retry-delay 1 --retry-connrefused \
+      --connect-timeout 10 --max-time 20 --config - "$url"
+}
 
 echo "[7/8] Rebuilding the transaction relay in V2 mode and checking local readiness..."
 docker compose --env-file "$ENV_FILE" --env-file "$RELAY_ENV" \
   --profile provisioning up -d --build tx-relay
 
-local_ready="$(curl -fsS --retry 8 --retry-delay 1 --retry-connrefused --connect-timeout 5 --max-time 20 \
-  -H "Authorization: Bearer $RELAY_TOKEN" \
-  "http://127.0.0.1:${RELAY_PORT}/readyz")"
+local_ready="$(authenticated_ready "http://127.0.0.1:${RELAY_PORT}/readyz" 8)"
 RELAY_READY_RESPONSE="$local_ready" "$NODE_BIN" --input-type=module <<'NODE'
 const payload = JSON.parse(process.env.RELAY_READY_RESPONSE || '{}');
 if (payload.ok !== true) throw new Error('Local relay readiness did not return ok=true');
@@ -144,9 +152,7 @@ if (payload.ecosystem_ready !== true) throw new Error('Local relay V2 ecosystem 
 NODE
 
 echo "[8/8] Checking the same authenticated V2 readiness path through the public relay hostname..."
-public_ready="$(curl -fsS --retry 4 --retry-delay 1 --connect-timeout 10 --max-time 20 \
-  -H "Authorization: Bearer $RELAY_TOKEN" \
-  "${PUBLIC_RELAY_URL%/}/readyz")"
+public_ready="$(authenticated_ready "${PUBLIC_RELAY_URL%/}/readyz" 4)"
 RELAY_READY_RESPONSE="$public_ready" "$NODE_BIN" --input-type=module <<'NODE'
 const payload = JSON.parse(process.env.RELAY_READY_RESPONSE || '{}');
 if (payload.ok !== true) throw new Error('Public relay readiness did not return ok=true');
