@@ -113,7 +113,7 @@ https://rpc-testnet.example.org  ->  127.0.0.1:8080
 
 Before deployment, verify the URL externally with `starknet_chainId` and confirm `devnet_*` is still rejected. Put this exact HTTPS URL in `SWAPPULSE_PUBLIC_RPC_URL` inside the host's private `.env`.
 
-## 4. Deploy the verified Milestone 1 contracts
+## 4. Activate the verified V2 contract suite on the chain host
 
 Install the separate Node 22 chain tooling first:
 
@@ -124,20 +124,26 @@ npm audit
 cd ../../infra
 ```
 
-Then run:
+For the normal V2 cut-over, use the fail-closed host wrapper:
 
 ```bash
-chmod +x deploy-contracts.sh
-./deploy-contracts.sh
+chmod +x activate-v2-host.sh
+./activate-v2-host.sh
 ```
 
-The script requires `SWAPPULSE_PUBLIC_RPC_URL`, obtains the first Devnet deployment account through the **loopback-only raw RPC**, passes its private key only through the deployment process environment, and never writes or prints the private key. It produces the public manifest at:
+Before any deployment it requires the pinned Scarb/Cairo and Starknet Foundry versions, runs the full contract test suite and relay policy smoke checks, confirms the raw Devnet RPC is loopback-only, and confirms the public gateway blocks `devnet_*` methods. It then deploys all seven V2 components, verifies the canonical manifest both locally and through the public HTTPS RPC, regenerates the relay environment, starts the relay in V2 mode, and checks authenticated `/readyz` locally and through the public relay hostname.
+
+Existing relay bearer tokens are preserved by default so a V2 environment refresh does not silently invalidate the Base44 server secret. Set `SWAPPULSE_ROTATE_RELAY_TOKEN=1` only for an intentional credential rotation where the Base44 server-side secret will also be updated.
+
+For deployment-only troubleshooting, `./deploy-contracts.sh` remains available. It requires `SWAPPULSE_PUBLIC_RPC_URL`, obtains the Devnet deployment account through the **loopback-only raw RPC**, passes its private key only through the deployment process environment, and never writes or prints the private key.
+
+A successful deployment produces the public manifest at:
 
 ```text
 chain/deployments/swappulse-testnet.json
 ```
 
-The manifest contains the chain ID, public read-only HTTPS RPC, declared class hashes, `IdentityRegistry` address/owner, recovery policy and deployment transaction hashes. It never contains the raw localhost RPC or a private key.
+The schema-v2 manifest contains the chain ID, public read-only HTTPS RPC, declared class hashes, V2 contract addresses, `IdentityRegistry` owner/verifier, recovery policy and deployment transaction hashes. It never contains the raw localhost RPC, a bearer token or a private key.
 
 ## 5. Activate in SwapPulse
 
@@ -155,6 +161,8 @@ Base44 independently verifies the RPC chain ID, registry address/class/owner and
 
 ## 6. Start the provisioning relay for self-service test identities
 
+If you used `activate-v2-host.sh`, the relay has already been regenerated, started and checked in V2 mode. The commands below are the manual recovery/troubleshooting path.
+
 After the deployment manifest exists, generate the relay's local environment from that verified public manifest:
 
 ```bash
@@ -163,7 +171,7 @@ chmod +x setup-relay-env.sh
 ./setup-relay-env.sh
 ```
 
-This creates git-ignored `.env.relay` with mode `0600`. It contains a random bearer token, the exact account class hash, registry class/address/owner and recovery policy from the deployment manifest, plus the matching Devnet registry-owner test key resolved through loopback. The key and token are never printed.
+This creates git-ignored `.env.relay` with mode `0600`. On first setup it generates a strong bearer token. On later V2 environment refreshes it preserves the existing valid bearer token unless `SWAPPULSE_ROTATE_RELAY_TOKEN=1` is explicitly set. The file also contains the exact account/contract pins and the matching Devnet owner/verifier test keys resolved through loopback. Private keys and bearer tokens are never printed.
 
 Start only the relay profile:
 
