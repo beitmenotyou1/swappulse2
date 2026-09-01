@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon, Blocks } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -28,6 +28,7 @@ const primary = [
 ];
 
 const more = [
+  { to: '/chain/', icon: Blocks, label: 'Chain Explorer', tKey: 'nav.chainExplorer' },
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
   { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
   { to: '/starter-packs', icon: Box, label: 'Starter Packs', tKey: 'nav.starterPacks' },
