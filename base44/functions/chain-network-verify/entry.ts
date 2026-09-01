@@ -47,12 +47,14 @@ async function rpcCall(rpcUrl: string, method: string, params: unknown[]): Promi
 }
 
 export default async function(req: Request): Promise<Response> {
+  let stage = 'initialising';
   try {
     const base44 = createClientFromRequest(req);
     const caller = await base44.auth.me().catch(() => null);
     if (!caller) return jsonError('Unauthorized', 401);
     if (caller.role !== 'admin') return jsonError('Admin only', 403);
 
+    stage = 'loading saved network configuration';
     const svc = base44.asServiceRole;
     const rows = await svc.entities.ChainNetworkConfig
       .filter({ network: NETWORK }, '-updated_date', 1)
@@ -88,11 +90,13 @@ export default async function(req: Request): Promise<Response> {
 
     let rpcUrl: string;
     try {
+      stage = 'validating the public RPC hostname';
       rpcUrl = await safeRpcUrl(rpcRaw);
     } catch (error: any) {
       return jsonError(error?.message || 'Unsafe RPC URL', 400, 'UNSAFE_RPC_URL');
     }
 
+    stage = 'reading RPC chain information';
     const [specVersion, chainIdRaw] = await Promise.all([
       rpcCall(rpcUrl, 'starknet_specVersion', []),
       rpcCall(rpcUrl, 'starknet_chainId', []),
@@ -103,6 +107,7 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('RPC chain ID does not match the saved SwapPulse Testnet configuration', 409, 'CHAIN_ID_MISMATCH');
     }
 
+    stage = 'verifying IdentityRegistry class';
     const expectedRegistryHash = normalizeHex(configuredRegistryHash, 'configured registry class hash');
     const actualRegistryHash = normalizeHex(
       await rpcCall(rpcUrl, 'starknet_getClassHashAt', ['latest', normalizeHex(registryAddress, 'registry address')]),
@@ -112,6 +117,7 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('IdentityRegistry class hash does not match the saved configuration', 409, 'REGISTRY_CLASS_HASH_MISMATCH');
     }
 
+    stage = 'verifying IdentityRegistry owner';
     const expectedOwner = normalizeHex(configuredRegistryOwner, 'configured registry owner');
     const ownerResult = await rpcCall(rpcUrl, 'starknet_call', [
       {
@@ -129,6 +135,7 @@ export default async function(req: Request): Promise<Response> {
       return jsonError('IdentityRegistry owner does not match the saved configuration', 409, 'REGISTRY_OWNER_MISMATCH');
     }
 
+    stage = 'verifying authorised identity verifier';
     const expectedVerifier = normalizeHex(configuredVerifier, 'configured identity verifier');
     if (expectedVerifier === actualOwner) {
       return jsonError('Identity verifier must be separate from the registry owner', 409, 'VERIFIER_ROLE_NOT_SEPARATED');
@@ -147,6 +154,7 @@ export default async function(req: Request): Promise<Response> {
 
     let verificationV2Required = false;
     if (verificationMode === 'V2') {
+      stage = 'verifying IdentityRegistry V2 ABI';
       const v2Result = await rpcCall(rpcUrl, 'starknet_call', [
         {
           contract_address: normalizeHex(registryAddress, 'registry address'),
@@ -161,6 +169,7 @@ export default async function(req: Request): Promise<Response> {
       verificationV2Required = BigInt(v2Result[0] || '0x0') === 1n;
     }
 
+    stage = 'verifying SwapPulseAccount declaration';
     const expectedAccountHash = normalizeHex(configuredAccountHash, 'configured account class hash');
     const accountClass = await rpcCall(rpcUrl, 'starknet_getClass', ['latest', expectedAccountHash]);
     if (!accountClass || typeof accountClass !== 'object') {
@@ -171,6 +180,7 @@ export default async function(req: Request): Promise<Response> {
     const canonicalSupport: Record<string, string> = {};
     for (const item of supportContracts) {
       if (!item.address) continue;
+      stage = `verifying ${item.label} deployment`; 
       const address = normalizeHex(item.address, `${item.label} address`);
       const expectedHash = normalizeHex(item.classHash, `${item.label} class hash`);
       const actualHash = normalizeHex(
@@ -197,6 +207,7 @@ export default async function(req: Request): Promise<Response> {
     }
     const ecosystemReady = supportContracts.every((item) => Boolean(item.address && item.classHash));
     if (ecosystemReady) {
+      stage = 'verifying ecosystem contract wiring';
       const readAddress = async (contractAddress: string, entrypoint: string, label: string) => {
         const values = await rpcCall(rpcUrl, 'starknet_call', [
           {
@@ -246,6 +257,7 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
+    stage = 'saving verified network pins';
     const now = new Date().toISOString();
     // Every consumer treats the network as ready only when each verified_* pin is
     // byte-identical to its live config field. The pins hold normalised values
@@ -312,7 +324,11 @@ export default async function(req: Request): Promise<Response> {
       },
     });
   } catch (error: any) {
-    console.error('chain-network-verify failed:', error?.message || error);
-    return Response.json({ error: 'SwapPulse Testnet verification failed' }, { status: 500 });
+    console.error(`chain-network-verify failed during ${stage}:`, error?.message || error);
+    return Response.json({
+      error: `SwapPulse Testnet verification failed while ${stage}`,
+      code: 'CHAIN_NETWORK_VERIFY_FAILED',
+      stage,
+    }, { status: 500 });
   }
 }
