@@ -34,6 +34,7 @@ pub trait ICardNft<TContractState> {
     fn get_card(self: @TContractState, token_id: u256) -> CardRecord;
     fn total_minted(self: @TContractState) -> u256;
     fn set_bridge(ref self: TContractState, bridge: ContractAddress);
+    fn bridge(self: @TContractState) -> ContractAddress;
 }
 
 #[starknet::contract]
@@ -264,6 +265,10 @@ pub mod CardNft {
             let old_bridge = self.bridge.read();
             self.bridge.write(bridge);
             self.emit(BridgeUpdated { old_bridge, new_bridge: bridge });
+        }
+
+        fn bridge(self: @ContractState) -> ContractAddress {
+            self.bridge.read()
         }
     }
 
