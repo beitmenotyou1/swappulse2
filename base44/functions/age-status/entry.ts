@@ -23,6 +23,12 @@ function safeStatus(row: any) {
   const verifierCurrent = ageMethod === 'THIRD_PARTY_VERIFIED'
     && verifierStatus === 'VERIFIED'
     && (!verifierExpiry || (Number.isFinite(verifierExpiryMs) && verifierExpiryMs > Date.now()));
+  const effectiveVerifierStatus = verifierStatus === 'VERIFIED'
+    && verifierExpiry
+    && Number.isFinite(verifierExpiryMs)
+    && verifierExpiryMs <= Date.now()
+      ? 'EXPIRED'
+      : verifierStatus;
   const eligibility = isAgeBand(ageBand)
     ? deriveAgeEligibility(ageBand, verifierCurrent ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED')
     : deriveAgeEligibility('13_15', 'SELF_DECLARED');
@@ -38,7 +44,7 @@ function safeStatus(row: any) {
     age_band: ageBand,
     age_method: ageMethod,
     verification_level: verifierCurrent ? 'ADULT_VERIFIED' : 'SELF_DECLARED',
-    verifier_status: verifierStatus,
+    verifier_status: effectiveVerifierStatus,
     verifier_source: verifierSource,
     verifier_expires_at: verifierExpiry,
     verifier_revoked_at: row.verifier_revoked_at || '',
