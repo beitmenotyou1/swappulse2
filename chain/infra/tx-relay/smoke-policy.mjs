@@ -42,6 +42,16 @@ const registryClassHash = '0x23456';
 const registryAddress = '0x45678';
 const registryOwner = '0x56789';
 const identityVerifier = '0x67890';
+const nativeTokenAddress = '0x70101';
+const nativeTokenClassHash = '0x70102';
+const cardNftAddress = '0x70201';
+const cardNftClassHash = '0x70202';
+const stakingPoolAddress = '0x70301';
+const stakingPoolClassHash = '0x70302';
+const usershipAddress = '0x70401';
+const usershipClassHash = '0x70402';
+const bridgeAdapterAddress = '0x70501';
+const bridgeAdapterClassHash = '0x70502';
 const identityId = '0x6789a';
 const publicKey = '0x34567';
 const accountAddress = `0x${BigInt(hash.calculateContractAddressFromHash(publicKey, accountClassHash, [publicKey], 0)).toString(16)}`;
@@ -59,6 +69,13 @@ const verificationV2RequiredSelector = hash.getSelectorFromName('verification_v2
 const setVerificationV2Selector = `0x${BigInt(hash.getSelectorFromName('set_verification_v2')).toString(16)}`;
 const recoveryControllerSelector = hash.getSelectorFromName('get_recovery_controller');
 const recoveryDelaySelector = hash.getSelectorFromName('get_recovery_delay');
+const stakeTokenSelector = hash.getSelectorFromName('stake_token');
+const stakingRegistrySelector = hash.getSelectorFromName('identity_registry');
+const stakingUsershipSelector = hash.getSelectorFromName('usership');
+const bridgeTokenSelector = hash.getSelectorFromName('bridge_token');
+const bridgeCardSelector = hash.getSelectorFromName('card_nft');
+const cardBridgeSelector = hash.getSelectorFromName('bridge');
+const isMinterSelector = hash.getSelectorFromName('is_minter');
 let mockIdentityStatus = 1;
 let mockReverseIdentity = identityId;
 let mockRecoveryController = recoveryController;
@@ -86,7 +103,16 @@ const upstream = http.createServer(async (req, res) => {
   if (payload.method === 'devnet_mint') result = { unit: 'FRI' };
   else if (payload.method === 'starknet_getClassHashAt') {
     const address = Array.isArray(payload.params) ? payload.params[1] : '';
-    result = address === registryAddress ? registryClassHash : accountClassHash;
+    const hashes = new Map([
+      [registryAddress, registryClassHash],
+      [accountAddress, accountClassHash],
+      [nativeTokenAddress, nativeTokenClassHash],
+      [cardNftAddress, cardNftClassHash],
+      [stakingPoolAddress, stakingPoolClassHash],
+      [usershipAddress, usershipClassHash],
+      [bridgeAdapterAddress, bridgeAdapterClassHash],
+    ]);
+    result = hashes.get(address) || accountClassHash;
   }
   else if (payload.method === 'starknet_call') {
     const call = Array.isArray(payload.params) ? payload.params[0] : {};
@@ -115,6 +141,13 @@ const upstream = http.createServer(async (req, res) => {
     else if (selector === verificationV2RequiredSelector) result = ['0x0'];
     else if (selector === recoveryControllerSelector) result = [mockRecoveryController];
     else if (selector === recoveryDelaySelector) result = [`0x${BigInt(mockRecoveryDelay).toString(16)}`];
+    else if (selector === stakeTokenSelector) result = [nativeTokenAddress];
+    else if (selector === stakingRegistrySelector) result = [registryAddress];
+    else if (selector === stakingUsershipSelector) result = [usershipAddress];
+    else if (selector === bridgeTokenSelector) result = [nativeTokenAddress];
+    else if (selector === bridgeCardSelector) result = [cardNftAddress];
+    else if (selector === cardBridgeSelector) result = [bridgeAdapterAddress];
+    else if (selector === isMinterSelector) result = ['0x1'];
     else result = ['0x0'];
   }
   else if (payload.method === 'starknet_specVersion') result = '0.9.0';
@@ -163,6 +196,16 @@ const child = spawn(process.execPath, ['server.mjs'], {
     REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
     IDENTITY_VERIFIER_PRIVATE_KEY: '0x2',
     IDENTITY_VERIFICATION_MODE: 'v2',
+    NATIVE_TOKEN_ADDRESS: nativeTokenAddress,
+    NATIVE_TOKEN_CLASS_HASH: nativeTokenClassHash,
+    CARD_NFT_ADDRESS: cardNftAddress,
+    CARD_NFT_CLASS_HASH: cardNftClassHash,
+    STAKING_POOL_ADDRESS: stakingPoolAddress,
+    STAKING_POOL_CLASS_HASH: stakingPoolClassHash,
+    USERSHIP_ADDRESS: usershipAddress,
+    USERSHIP_CLASS_HASH: usershipClassHash,
+    BRIDGE_ADAPTER_ADDRESS: bridgeAdapterAddress,
+    BRIDGE_ADAPTER_CLASS_HASH: bridgeAdapterClassHash,
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '5000000000000000',
@@ -197,6 +240,7 @@ try {
     || readyBody?.identity_registry_address !== registryAddress
     || readyBody?.identity_verification_mode !== 'v2'
     || readyBody?.verification_v2_required !== false
+    || readyBody?.ecosystem_ready !== true
   ) {
     throw new Error(`Authenticated /readyz did not verify relay pins: ${JSON.stringify({ status: ready.status, body: readyBody })}`);
   }
