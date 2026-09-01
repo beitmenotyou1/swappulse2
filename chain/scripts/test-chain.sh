@@ -1,19 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SwapPulse Network Milestone 1 verification.
-# Expected toolchain:
+# SwapPulse Network V2 contract verification.
+# Pinned toolchain:
 #   Scarb/Cairo 2.13.1
 #   Starknet Foundry 0.51.2
-#   universal-sierra-compiler 2.8.0
+#   universal-sierra-compiler 2.8.0 (enforced again by deploy-contracts.sh)
 #
 # Override the binaries with SCARB_BIN / SNFORGE_BIN when they are not on PATH.
 
 SCARB_BIN="${SCARB_BIN:-scarb}"
 SNFORGE_BIN="${SNFORGE_BIN:-snforge}"
+EXPECTED_SCARB_VERSION="2.13.1"
+EXPECTED_SNFORGE_VERSION="0.51.2"
 
-"$SCARB_BIN" --version
-"$SNFORGE_BIN" --version
+scarb_version="$("$SCARB_BIN" --version | head -n1 | awk '{print $2}')"
+snforge_version="$("$SNFORGE_BIN" --version | head -n1 | awk '{print $2}')"
+if [[ "$scarb_version" != "$EXPECTED_SCARB_VERSION" ]]; then
+  echo "ERROR: Scarb $EXPECTED_SCARB_VERSION is required, found ${scarb_version:-unknown}" >&2
+  exit 1
+fi
+if [[ "$snforge_version" != "$EXPECTED_SNFORGE_VERSION" ]]; then
+  echo "ERROR: Starknet Foundry $EXPECTED_SNFORGE_VERSION is required, found ${snforge_version:-unknown}" >&2
+  exit 1
+fi
+
+echo "Scarb $scarb_version"
+echo "Starknet Foundry $snforge_version"
 
 "$SCARB_BIN" build
 "$SNFORGE_BIN" test
