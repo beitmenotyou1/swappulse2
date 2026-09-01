@@ -9,6 +9,7 @@ const FOOTER_LINKS = [
   { tKey: 'footer.privacy', to: '/privacy' },
   { tKey: 'footer.help', to: '/help' },
   { tKey: 'footer.status', to: '/status' },
+  { tKey: 'footer.chainExplorer', to: '/chain/' },
   { tKey: 'footer.explore', to: '/explore' },
   { tKey: 'footer.donate', to: '/donate' },
 ];
