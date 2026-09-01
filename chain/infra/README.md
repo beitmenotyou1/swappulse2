@@ -14,6 +14,9 @@ The read-only gateway allows only:
 
 - `starknet_specVersion`
 - `starknet_chainId`
+- `starknet_blockNumber`
+- `starknet_getBlockWithTxHashes`
+- `starknet_getTransactionByHash`
 - `starknet_getClassHashAt`
 - `starknet_getClass`
 - `starknet_call`
@@ -21,6 +24,8 @@ The read-only gateway allows only:
 - `starknet_estimateFee`
 - `starknet_getTransactionReceipt`
 - `starknet_getTransactionStatus`
+
+The block/transaction read methods above are the minimal public data surface required by the multilingual `/chain/` explorer. They remain read-only and the gateway still denies JSON-RPC batches, every `devnet_*` method and all transaction-submission methods.
 
 JSON-RPC batches and every `devnet_*` method are denied on the public read gateway.
 
