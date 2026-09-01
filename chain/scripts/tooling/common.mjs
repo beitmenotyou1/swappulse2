@@ -8,10 +8,21 @@ export const chainDir = path.resolve(here, '../..');
 export const targetDir = path.join(chainDir, 'target/dev');
 
 export const artifacts = {
+  manifest: path.join(targetDir, 'swappulse_network.starknet_artifacts.json'),
   registrySierra: path.join(targetDir, 'swappulse_network_IdentityRegistry.contract_class.json'),
-  registryCasm: path.join(targetDir, 'swappulse_network_IdentityRegistry.casm.json'),
+  registryCasm: path.join(targetDir, 'swappulse_network_IdentityRegistry.compiled_contract_class.json'),
   accountSierra: path.join(targetDir, 'swappulse_network_SwapPulseAccount.contract_class.json'),
-  accountCasm: path.join(targetDir, 'swappulse_network_SwapPulseAccount.casm.json'),
+  accountCasm: path.join(targetDir, 'swappulse_network_SwapPulseAccount.compiled_contract_class.json'),
+};
+
+const contractKeys = {
+  IdentityRegistry: 'registry',
+  SwapPulseAccount: 'account',
+  NativeToken: 'nativeToken',
+  CardNft: 'cardNft',
+  ProofOfUsership: 'usership',
+  StakingPool: 'stakingPool',
+  BridgeAdapter: 'bridgeAdapter',
 };
 
 export function requiredEnv(name) {
@@ -40,20 +51,52 @@ export async function readJson(file) {
   return JSON.parse(await fs.readFile(file, 'utf8'));
 }
 
+async function firstExisting(paths) {
+  for (const candidate of paths) {
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {
+      // Try the next compatibility name.
+    }
+  }
+  return '';
+}
+
 export async function loadArtifacts() {
-  const [registrySierra, registryCasm, accountSierra, accountCasm] = await Promise.all([
-    readJson(artifacts.registrySierra),
-    readJson(artifacts.registryCasm),
-    readJson(artifacts.accountSierra),
-    readJson(artifacts.accountCasm),
-  ]);
-  return { registrySierra, registryCasm, accountSierra, accountCasm };
+  const manifest = await readJson(artifacts.manifest);
+  if (!Array.isArray(manifest?.contracts)) throw new Error('Scarb Starknet artifact manifest is invalid');
+
+  const loaded = {};
+  for (const [contractName, key] of Object.entries(contractKeys)) {
+    const entry = manifest.contracts.find((row) => row?.contract_name === contractName);
+    if (!entry?.artifacts?.sierra) throw new Error(`Missing Sierra artifact for ${contractName}`);
+    const sierraPath = path.join(targetDir, entry.artifacts.sierra);
+    let casmPath = entry?.artifacts?.casm ? path.join(targetDir, entry.artifacts.casm) : '';
+    if (!casmPath) {
+      casmPath = await firstExisting([
+        path.join(targetDir, `swappulse_network_${contractName}.compiled_contract_class.json`),
+        path.join(targetDir, `swappulse_network_${contractName}.casm.json`),
+      ]);
+    }
+    if (!casmPath) {
+      throw new Error(`Missing CASM artifact for ${contractName}. Run scarb build with casm = true before deployment.`);
+    }
+    loaded[`${key}Sierra`] = await readJson(sierraPath);
+    loaded[`${key}Casm`] = await readJson(casmPath);
+  }
+  return loaded;
 }
 
 export function publicClassHashes(loaded) {
   return {
     identity_registry_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.registrySierra)),
     account_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.accountSierra)),
+    native_token_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.nativeTokenSierra)),
+    card_nft_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.cardNftSierra)),
+    usership_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.usershipSierra)),
+    staking_pool_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.stakingPoolSierra)),
+    bridge_adapter_class_hash: normalizeHex(hash.computeSierraContractClassHash(loaded.bridgeAdapterSierra)),
   };
 }
 
