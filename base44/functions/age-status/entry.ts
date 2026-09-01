@@ -27,11 +27,19 @@ function safeStatus(row: any) {
     ? deriveAgeEligibility(ageBand, verifierCurrent ? 'THIRD_PARTY_VERIFIED' : 'SELF_DECLARED')
     : deriveAgeEligibility('13_15', 'SELF_DECLARED');
 
+  const verifierEventId = String(row.verifier_event_id || '');
+  const verifierSource = verifierEventId.startsWith('SWAPPULSE_TEST_VERIFIER:')
+    ? 'SWAPPULSE_TEST_VERIFIER'
+    : verifierStatus !== 'NONE'
+      ? 'PRIVATE_VERIFIER'
+      : 'NONE';
+
   return {
     age_band: ageBand,
     age_method: ageMethod,
     verification_level: verifierCurrent ? 'ADULT_VERIFIED' : 'SELF_DECLARED',
     verifier_status: verifierStatus,
+    verifier_source: verifierSource,
     verifier_expires_at: verifierExpiry,
     verifier_revoked_at: row.verifier_revoked_at || '',
     policy_version: AGE_POLICY_VERSION,
