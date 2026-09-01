@@ -42,7 +42,7 @@ async function rpcCall(method: string, params: unknown[]): Promise<any> {
   try {
     const response = await fetch(CANONICAL_RPC, {
       method: 'POST',
-      redirect: 'error',
+      redirect: 'manual',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }),
       signal: controller.signal,
