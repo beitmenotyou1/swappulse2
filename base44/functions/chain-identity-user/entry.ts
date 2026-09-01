@@ -186,7 +186,7 @@ async function relayAutomationStatus(network: any) {
     timer = setTimeout(() => controller?.abort(), RELAY_READY_TIMEOUT_MS);
     const response = await fetch(url, {
       method: 'GET',
-      redirect: 'error',
+      redirect: 'manual',
       headers: { authorization: `Bearer ${token}` },
       signal: controller.signal,
     });
