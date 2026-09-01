@@ -16,10 +16,15 @@ const registryAdminPrivateKey = normalizeHex(process.env.REGISTRY_ADMIN_PRIVATE_
 const identityVerifierPrivateKey = normalizeHex(process.env.IDENTITY_VERIFIER_PRIVATE_KEY || '', 'IDENTITY_VERIFIER_PRIVATE_KEY');
 const identityVerificationMode = String(process.env.IDENTITY_VERIFICATION_MODE || 'v1').trim().toLowerCase();
 const nativeTokenAddress = normalizeZeroableHex(process.env.NATIVE_TOKEN_ADDRESS || '0x0', 'NATIVE_TOKEN_ADDRESS');
+const nativeTokenClassHash = normalizeZeroableHex(process.env.NATIVE_TOKEN_CLASS_HASH || '0x0', 'NATIVE_TOKEN_CLASS_HASH');
 const cardNftAddress = normalizeZeroableHex(process.env.CARD_NFT_ADDRESS || '0x0', 'CARD_NFT_ADDRESS');
+const cardNftClassHash = normalizeZeroableHex(process.env.CARD_NFT_CLASS_HASH || '0x0', 'CARD_NFT_CLASS_HASH');
 const stakingPoolAddress = normalizeZeroableHex(process.env.STAKING_POOL_ADDRESS || '0x0', 'STAKING_POOL_ADDRESS');
+const stakingPoolClassHash = normalizeZeroableHex(process.env.STAKING_POOL_CLASS_HASH || '0x0', 'STAKING_POOL_CLASS_HASH');
 const usershipAddress = normalizeZeroableHex(process.env.USERSHIP_ADDRESS || '0x0', 'USERSHIP_ADDRESS');
+const usershipClassHash = normalizeZeroableHex(process.env.USERSHIP_CLASS_HASH || '0x0', 'USERSHIP_CLASS_HASH');
 const bridgeAdapterAddress = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_ADDRESS || '0x0', 'BRIDGE_ADAPTER_ADDRESS');
+const bridgeAdapterClassHash = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_CLASS_HASH || '0x0', 'BRIDGE_ADAPTER_CLASS_HASH');
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
 const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 5_000_000_000_000_000);
@@ -35,6 +40,23 @@ const rateLimitPerMinute = Math.max(5, Math.min(600, Number(process.env.RATE_LIM
 if (relayToken.length < 32) throw new Error('RELAY_TOKEN must be at least 32 characters');
 if (!['v1', 'v2'].includes(identityVerificationMode)) {
   throw new Error('IDENTITY_VERIFICATION_MODE must be v1 or v2');
+}
+if (identityVerificationMode === 'v2') {
+  const requiredSupport = [
+    ['NATIVE_TOKEN_ADDRESS', nativeTokenAddress],
+    ['NATIVE_TOKEN_CLASS_HASH', nativeTokenClassHash],
+    ['CARD_NFT_ADDRESS', cardNftAddress],
+    ['CARD_NFT_CLASS_HASH', cardNftClassHash],
+    ['STAKING_POOL_ADDRESS', stakingPoolAddress],
+    ['STAKING_POOL_CLASS_HASH', stakingPoolClassHash],
+    ['USERSHIP_ADDRESS', usershipAddress],
+    ['USERSHIP_CLASS_HASH', usershipClassHash],
+    ['BRIDGE_ADAPTER_ADDRESS', bridgeAdapterAddress],
+    ['BRIDGE_ADAPTER_CLASS_HASH', bridgeAdapterClassHash],
+  ];
+  for (const [name, value] of requiredSupport) {
+    if (value === '0x0') throw new Error(`${name} is required in V2 mode`);
+  }
 }
 if (!Number.isInteger(recoveryDelaySeconds) || recoveryDelaySeconds < 0 || recoveryDelaySeconds > 2_592_000) {
   throw new Error('RECOVERY_DELAY_SECONDS must be an integer from 0 to 2592000');
