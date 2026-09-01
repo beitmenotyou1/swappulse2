@@ -245,6 +245,13 @@ export async function relayFaucetDrip(payload: Record<string, unknown>) {
   return relayPost('/faucet-drip', payload);
 }
 
+// Irreversible registry policy cut-over. The caller must already have proved
+// Base44 verification pins and a reconciled V2+staking identity; the relay
+// repeats the chain-state proof before signing the owner-only transaction.
+export async function relayRequireVerificationV2(payload: Record<string, unknown>) {
+  return relayPost('/require-v2', payload);
+}
+
 // Read-only chain access uses the PUBLIC verified rpc_url, never the relay —
 // reads must never consume the relay's privileged path.
 export async function publicRpc(rpcUrl: string, method: string, params: unknown) {
