@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, Blocks } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -31,6 +31,7 @@ function getOwningTab(pathname, fallback) {
 }
 
 const moreItems = [
+  { to: '/chain/', icon: Blocks, label: 'Chain Explorer', tKey: 'nav.chainExplorer' },
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
   { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
   { to: '/starter-packs', icon: Box, label: 'Packs', tKey: 'nav.starterPacks' },
