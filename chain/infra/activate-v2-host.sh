@@ -177,7 +177,7 @@ authenticated_ready() {
   # Feed the Authorization header through curl's stdin config so the bearer
   # token is not exposed in the curl process command line.
   printf 'header = "Authorization: Bearer %s"\n' "$RELAY_TOKEN" | \
-    curl -fsS --retry "$retries" --retry-delay 1 --retry-connrefused \
+    curl -fsS --retry "$retries" --retry-delay 1 --retry-connrefused --retry-all-errors \
       --connect-timeout 10 --max-time 20 --config - "$url"
 }
 
