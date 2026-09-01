@@ -123,7 +123,7 @@ async function forward(method: string, params: Record<string, unknown>) {
   try {
     const response = await fetch(await relayUrl('/rpc'), {
       method: 'POST',
-      redirect: 'error',
+      redirect: 'manual',
       headers: {
         'content-type': 'application/json',
         authorization: `Bearer ${token}`,
