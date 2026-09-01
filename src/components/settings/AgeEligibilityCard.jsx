@@ -25,6 +25,13 @@ function statusCopy(status) {
   if (!status) return null;
   if (status.age_band === '18_PLUS') {
     if (status.value_features_eligible) {
+      if (status.verifier_source === 'SWAPPULSE_TEST_VERIFIER') {
+        return {
+          title: 'Synthetic test verifier assertion active',
+          description: 'This is a SwapPulse Testnet verification exercise, not a production third-party identity-verification result. Value-bearing features still require the matching ACTIVE attestation reconciled from the chain.',
+          tone: 'text-warning',
+        };
+      }
       return {
         title: 'Private adult verification active',
         description: 'Your private verifier assertion is current. Value-bearing features still require the matching ACTIVE attestation reconciled from the chain.',
