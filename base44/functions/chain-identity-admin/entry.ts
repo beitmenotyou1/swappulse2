@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hash } from 'npm:starknet@10.0.2';
 import { deriveAgeEligibility, isAgeBand, type AgeBand } from '../../shared/agePolicy.ts';
+import { readContract, relayRequireVerificationV2 } from '../../shared/chainRelay.ts';
 
 const STARK_FIELD_PRIME = (1n << 251n) + 17n * (1n << 192n) + 1n;
 const ACTIVE_STATUSES = new Set([
@@ -676,6 +677,117 @@ export default async function(req: Request): Promise<Response> {
           verified_rpc_url: saved.verifiedRpcUrl,
         },
       });
+    }
+
+    if (action === 'require_v2') {
+      if (String(body.confirmation || '') !== 'REQUIRE_V2_FOREVER') {
+        return jsonError('Type REQUIRE_V2_FOREVER to confirm the irreversible V2 policy switch', 400, 'V2_CUTOVER_CONFIRMATION_REQUIRED');
+      }
+      if (!config.ready || !config.ecosystemReady) {
+        return jsonError('Identity and economic-layer verification pins must both be green before V2 cut-over', 409, 'V2_CUTOVER_PINS_NOT_READY');
+      }
+      if (config.identityVerificationMode !== 'V2' || config.verifiedVerificationMode !== 'V2') {
+        return jsonError('Base44 and the verified registry pin must both be in V2 mode', 409, 'V2_CUTOVER_MODE_NOT_VERIFIED');
+      }
+
+      const recordId = String(body.record_id || '').trim();
+      if (!recordId) return jsonError('record_id is required', 400, 'V2_CUTOVER_IDENTITY_REQUIRED');
+      const identities = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
+      const identity = identities?.[0];
+      if (!identity) return jsonError('ChainIdentity not found', 404, 'V2_CUTOVER_IDENTITY_NOT_FOUND');
+      if (!['REGISTERED', 'RECOVERED', 'MERGED'].includes(String(identity.status || ''))) {
+        return jsonError('Proof identity must already be reconciled from chain', 409, 'V2_CUTOVER_IDENTITY_NOT_RECONCILED');
+      }
+
+      let identityId: string;
+      let accountAddress: string;
+      let mirroredAttestationId: string;
+      try {
+        identityId = normalizeHex(identity.canonical_identity_id || identity.chain_identity_id, 'proof identity id');
+        accountAddress = normalizeAddress(identity.account_address, 'proof account address');
+        mirroredAttestationId = normalizeHex(identity.verification_attestation_id, 'mirrored attestation id');
+      } catch (error: any) {
+        return jsonError(error?.message || 'Proof identity has invalid chain coordinates', 409, 'V2_CUTOVER_IDENTITY_INVALID');
+      }
+      if (
+        String(identity.verification_status || '') !== 'ACTIVE'
+        || Number(identity.verification_type || 0) !== 1
+        || Number(identity.verification_level || 0) < 2
+      ) {
+        return jsonError('Proof identity must have a reconciled active type-1, level-2+ V2 assurance', 409, 'V2_CUTOVER_ASSURANCE_NOT_RECONCILED');
+      }
+
+      try {
+        const [identityValues, verificationValues, assuranceValues, spentValues, validatorValues, minimumValues, poolBalance] = await Promise.all([
+          readContract(config.rpcUrl, config.identityRegistryAddress, 'get_identity', [identityId]),
+          readContract(config.rpcUrl, config.identityRegistryAddress, 'get_verification', [identityId]),
+          readContract(config.rpcUrl, config.identityRegistryAddress, 'get_assurance', [identityId]),
+          readContract(config.rpcUrl, config.identityRegistryAddress, 'is_attestation_used', [mirroredAttestationId]),
+          readContract(config.rpcUrl, config.stakingPoolAddress, 'get_validator', [accountAddress]),
+          readContract(config.rpcUrl, config.stakingPoolAddress, 'min_self_stake', []),
+          readContract(config.rpcUrl, config.nativeTokenAddress, 'balance_of', [config.stakingPoolAddress]),
+        ]);
+
+        if (normalizeZeroableHex(identityValues?.[0] || '0x0', 'chain identity account') !== accountAddress || BigInt(identityValues?.[1] || '0x0') !== 1n) {
+          return jsonError('Proof identity is not active and bound to the reconciled account on-chain', 409, 'V2_CUTOVER_IDENTITY_CHAIN_MISMATCH');
+        }
+        if (BigInt(verificationValues?.[1] || '0x0') !== 1n) {
+          return jsonError('Proof identity verification is not active on-chain', 409, 'V2_CUTOVER_VERIFICATION_NOT_ACTIVE');
+        }
+        const chainType = Number(BigInt(assuranceValues?.[0] || '0x0'));
+        const chainLevel = Number(BigInt(assuranceValues?.[1] || '0x0'));
+        const chainAttestationId = normalizeZeroableHex(assuranceValues?.[2] || '0x0', 'chain attestation id');
+        if (chainType !== 1 || chainLevel < 2 || chainAttestationId !== mirroredAttestationId) {
+          return jsonError('Reconciled V2 assurance does not match current chain state', 409, 'V2_CUTOVER_ASSURANCE_CHAIN_MISMATCH');
+        }
+        if (BigInt(spentValues?.[0] || '0x0') !== 1n) {
+          return jsonError('V2 replay identifier is not marked spent on-chain', 409, 'V2_CUTOVER_ATTESTATION_NOT_SPENT');
+        }
+
+        if (validatorValues.length < 7) return jsonError('Staking state could not be read', 409, 'V2_CUTOVER_STAKING_UNREADABLE');
+        const validatorAccount = normalizeZeroableHex(validatorValues[0] || '0x0', 'validator account');
+        const validatorIdentity = normalizeZeroableHex(validatorValues[1] || '0x0', 'validator identity');
+        const selfStake = BigInt(validatorValues[2] || '0x0');
+        const validatorStatus = Number(BigInt(validatorValues[5] || '0x0'));
+        const minimumStake = BigInt(minimumValues?.[0] || '0x0');
+        if (validatorAccount !== accountAddress || validatorIdentity !== identityId || validatorStatus !== 1 || minimumStake <= 0n || selfStake < minimumStake) {
+          return jsonError('Proof identity has not completed the active SWPX self-stake path', 409, 'V2_CUTOVER_STAKE_PROOF_FAILED');
+        }
+        const poolBalanceU256 = BigInt(poolBalance?.[0] || '0x0') + (BigInt(poolBalance?.[1] || '0x0') << 128n);
+        if (poolBalanceU256 < selfStake) {
+          return jsonError('StakingPool SWPX escrow does not cover the proof self-stake', 409, 'V2_CUTOVER_SWPX_ESCROW_MISMATCH');
+        }
+
+        const relayResult = await relayRequireVerificationV2({
+          confirmation: 'REQUIRE_V2_FOREVER',
+          identity_id: identityId,
+          account_address: accountAddress,
+        });
+        const finalRequired = await readContract(config.rpcUrl, config.identityRegistryAddress, 'verification_v2_required', []);
+        if (BigInt(finalRequired?.[0] || '0x0') !== 1n) {
+          return jsonError('Registry did not enter the permanent V2-required state', 500, 'V2_CUTOVER_FINAL_STATE_MISMATCH');
+        }
+        return Response.json({
+          ok: true,
+          irreversible: true,
+          verification_v2_required: true,
+          transaction_hash: String(relayResult?.transaction_hash || ''),
+          idempotent: Boolean(relayResult?.idempotent),
+          proof: {
+            record_id: identity.id,
+            identity_id: identityId,
+            account_address: accountAddress,
+            verification_type: chainType,
+            verification_level: chainLevel,
+            attestation_id: chainAttestationId,
+            self_stake: selfStake.toString(),
+            min_self_stake: minimumStake.toString(),
+            staking_pool_balance: poolBalanceU256.toString(),
+          },
+        });
+      } catch (error: any) {
+        return jsonError(error?.message || 'V2 cut-over preflight failed', 409, 'V2_CUTOVER_PREFLIGHT_FAILED');
+      }
     }
 
     if (action === 'prepare') {
