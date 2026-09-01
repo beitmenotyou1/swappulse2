@@ -27,7 +27,7 @@ const bridgeAdapterAddress = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_ADD
 const bridgeAdapterClassHash = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_CLASS_HASH || '0x0', 'BRIDGE_ADAPTER_CLASS_HASH');
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
-const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 5_000_000_000_000_000);
+const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 50_000_000_000_000_000);
 // Fixed testnet faucet drip. The AMOUNT IS NOT CLIENT-SELECTABLE: the relay always
 // transfers exactly this much, so neither Base44 nor a compromised caller can drain
 // the faucet treasury with an inflated request.
