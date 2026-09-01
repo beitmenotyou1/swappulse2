@@ -14,6 +14,7 @@ import pt from './translations/pt';
 import ja from './translations/ja';
 import zh from './translations/zh';
 import ko from './translations/ko';
+import { explorerTranslations } from './explorerTranslations';
 
 // The nine SwapPulse-supported languages (aligned to TCGDex languages).
 // Only these appear in language selectors and are accepted as interface locales.
@@ -32,10 +33,20 @@ export const LOCALE_TO_TCGDEX = {
   'ar-SA': 'en', 'hi-IN': 'en', 'ru-RU': 'ru',
 };
 
-export const translations = {
+const coreTranslations = {
   'en-GB': en, 'en-US': en,
   'fr-FR': fr, 'es-ES': es, 'de-DE': de, 'it-IT': it, 'pt-BR': pt,
   'ja-JP': ja, 'zh-CN': zh, 'ko-KR': ko,
   // Legacy locales fall back to en (not TCGDex languages)
   'ar-SA': en, 'hi-IN': en, 'ru-RU': en,
 };
+
+export const translations = Object.fromEntries(
+  Object.entries(coreTranslations).map(([locale, dict]) => [
+    locale,
+    {
+      ...dict,
+      ...(explorerTranslations[locale] || explorerTranslations['en-GB']),
+    },
+  ]),
+);
