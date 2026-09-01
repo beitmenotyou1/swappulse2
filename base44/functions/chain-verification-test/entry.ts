@@ -76,6 +76,9 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || '').trim();
     if (!['attest', 'revoke'].includes(action)) return jsonError('Unknown test verifier action', 400, 'UNKNOWN_ACTION');
+    if (String(body.confirmation || '') !== 'SYNTHETIC_TEST_ONLY') {
+      return jsonError('Explicit synthetic-test confirmation is required', 400, 'TEST_VERIFIER_CONFIRMATION_REQUIRED');
+    }
 
     const recordId = String(body.record_id || '').trim();
     if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
