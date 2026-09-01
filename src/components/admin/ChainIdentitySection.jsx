@@ -3,10 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { AlertTriangle, Blocks, CheckCircle2, Clipboard, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function ChainIdentitySection() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const t = useT();
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [config, setConfig] = useState(null);
   const [configDraft, setConfigDraft] = useState({
@@ -489,12 +491,16 @@ export default function ChainIdentitySection() {
               placeholder="Public HTTPS RPC URL (optional)"
               className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
              aria-label="Public HTTPS RPC URL (optional)"/>
-            <input
-              value={configDraft.explorer_url}
-              onChange={(e) => setConfigDraft((p) => ({ ...p, explorer_url: e.target.value }))}
-              placeholder="Public explorer URL (optional)"
-              className="rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-             aria-label="Public explorer URL (optional)"/>
+            <label className="text-xs font-semibold text-muted-foreground">
+              <span className="mb-1 block">{t('admin.publicExplorerUrl')}</span>
+              <input
+                value={configDraft.explorer_url}
+                onChange={(e) => setConfigDraft((p) => ({ ...p, explorer_url: e.target.value }))}
+                placeholder="https://swappulse.org/chain/"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground"
+                aria-label={t('admin.publicExplorerUrl')}
+              />
+            </label>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
