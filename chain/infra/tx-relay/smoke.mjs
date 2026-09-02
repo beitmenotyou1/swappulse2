@@ -18,6 +18,8 @@ const publicKey = '0x123456789abcdef';
 const recoveryController = '0x0';
 const recoveryDelay = 172800;
 const expectedAddress = `0x${BigInt(hash.calculateContractAddressFromHash(publicKey, classHash, [publicKey], 0)).toString(16)}`;
+const ownerSelector = hash.getSelectorFromName('owner');
+const isVerifierSelector = hash.getSelectorFromName('is_verifier');
 const observed = { mint: null, methods: [] };
 
 function startMock() {
@@ -38,7 +40,10 @@ function startMock() {
       const address = Array.isArray(payload.params) ? payload.params[1] : '';
       result = address === registryAddress ? registryClassHash : classHash;
     } else if (payload.method === 'starknet_call') {
-      result = [registryOwner];
+      const call = Array.isArray(payload.params) ? payload.params[0] : {};
+      if (call?.entry_point_selector === ownerSelector) result = [registryOwner];
+      else if (call?.entry_point_selector === isVerifierSelector) result = ['0x1'];
+      else result = ['0x0'];
     } else if (payload.method === 'starknet_addDeployAccountTransaction') {
       result = { transaction_hash: '0x222', contract_address: expectedAddress };
     } else if (payload.method === 'starknet_addInvokeTransaction') {
@@ -95,6 +100,10 @@ const relay = spawn(process.execPath, ['server.mjs'], {
     REGISTRY_ADMIN_ADDRESS: registryOwner,
     REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
     IDENTITY_VERIFIER_PRIVATE_KEY: '0x2',
+    // This small smoke intentionally exercises the relay's generic V1-compatible
+    // deploy/recovery surface. Full V2 ecosystem readiness/attestation/faucet
+    // policy is covered by smoke-policy.mjs.
+    IDENTITY_VERIFICATION_MODE: 'v1',
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '500000000000000000',
