@@ -138,7 +138,7 @@ try {
   const recoveryCalldata = transaction.getExecuteCalldata([
     { contractAddress: expectedAddress, entrypoint: 'set_recovery_controller', calldata: [recoveryController] },
     { contractAddress: expectedAddress, entrypoint: 'set_recovery_delay', calldata: [String(recoveryDelay)] },
-  ], '1');
+  ], '1').map((value) => `0x${BigInt(value).toString(16)}`);
   const invokeTx = {
     type: 'INVOKE', version: '0x3', signature: ['0x3', '0x4'], nonce: '0x0',
     sender_address: expectedAddress, calldata: recoveryCalldata, resource_bounds: {},
