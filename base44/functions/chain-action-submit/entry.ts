@@ -103,7 +103,7 @@ export default async function (req: Request): Promise<Response> {
       }
       const rows = await svc.entities.StakePosition.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       stakeRecord = rows?.[0];
-      if (!stakeRecord || String(stakeRecord.created_by_id) !== String(me.id)) return jsonError('Stake draft not found', 404, 'STAKE_DRAFT_NOT_FOUND');
+      if (!stakeRecord || String(stakeRecord.user_id || '') !== String(me.id)) return jsonError('Stake draft not found', 404, 'STAKE_DRAFT_NOT_FOUND');
       if (stakeRecord.status !== 'DRAFTED') return jsonError('This staking draft has already been used', 409, 'DRAFT_ALREADY_USED');
       expectedCalls = buildStakeCalls(
         {
@@ -121,7 +121,7 @@ export default async function (req: Request): Promise<Response> {
       }
       const rows = await svc.entities.BridgeTransfer.filter({ id: recordId }, '-created_date', 1).catch(() => []);
       bridgeRecord = rows?.[0];
-      if (!bridgeRecord || String(bridgeRecord.created_by_id) !== String(me.id)) return jsonError('Bridge draft not found', 404, 'BRIDGE_DRAFT_NOT_FOUND');
+      if (!bridgeRecord || String(bridgeRecord.user_id || '') !== String(me.id)) return jsonError('Bridge draft not found', 404, 'BRIDGE_DRAFT_NOT_FOUND');
       if (bridgeRecord.status !== 'DRAFTED') return jsonError('This bridge draft has already been used', 409, 'DRAFT_ALREADY_USED');
       if (String(bridgeRecord.asset_kind) === 'card' && !verifiedContractConfigured(config, 'card_nft')) {
         return jsonError('The card NFT contract is not independently verified yet', 409, 'CARD_NFT_NOT_VERIFIED');
