@@ -31,7 +31,7 @@ function toDisplay(baseUnits) {
   }
 }
 
-export default function StakingPanel({ identitySecured }) {
+export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const { user } = useAuth();
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +85,22 @@ export default function StakingPanel({ identitySecured }) {
       <div className="rounded-xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
         <p className="text-sm font-bold text-foreground">Community staking</p>
         <p className="mt-1">Secure your on-chain identity first to stake with a SwapPulse community operator.</p>
+      </div>
+    );
+  }
+
+  if (!valueFeaturesReady) {
+    return (
+      <div className="rounded-xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
+        <div className="flex items-start gap-2">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-bold text-foreground">Community staking locked</p>
+            <p className="mt-1">
+              Staking requires a current private verifier assertion plus an ACTIVE Type 1, Level 2 on-chain attestation. Your permanent identity and faucet remain available while verification is expired or revoked.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
