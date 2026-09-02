@@ -21,6 +21,7 @@ export default function Wallet() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [attestations, setAttestations] = useState([]);
+  const [eligibilityNow, setEligibilityNow] = useState(() => Date.now());
 
   useSEO({
     title: t('page.wallet.seoTitle'),
@@ -45,18 +46,34 @@ export default function Wallet() {
   };
 
   useEffect(() => { if (user?.id) load(); }, [user?.id]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setEligibilityNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const identity = status?.identity || null;
   // Staking, minting and bridging all require an identity the chain itself
   // confirmed — a reservation alone is not enough to hold assets.
   const secured = isChainAuthoritative(identity?.status);
+  const privateExpiryMs = status?.age?.verifier_expires_at
+    ? new Date(status.age.verifier_expires_at).getTime()
+    : 0;
+  const chainExpirySeconds = Number(identity?.verification_expires_at || 0);
+  const privateVerificationCurrent = !privateExpiryMs
+    || (Number.isFinite(privateExpiryMs) && privateExpiryMs > eligibilityNow);
+  const chainVerificationCurrent = Number.isFinite(chainExpirySeconds)
+    && chainExpirySeconds >= 0
+    && (chainExpirySeconds === 0 || chainExpirySeconds * 1000 > eligibilityNow);
   const valueFeaturesReady = Boolean(
     secured
     && status?.age?.value_features_eligible
     && status?.age?.verifier_status === 'VERIFIED'
+    && privateVerificationCurrent
     && identity?.verification_status === 'ACTIVE'
+    && chainVerificationCurrent
     && Number(identity?.verification_type || 0) === 1
     && Number(identity?.verification_level || 0) >= 2
+    && Boolean(identity?.verification_attestation_id)
   );
 
   return (
