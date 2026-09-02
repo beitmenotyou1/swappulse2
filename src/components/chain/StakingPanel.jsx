@@ -63,21 +63,33 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   useEffect(() => { load(); }, [load]);
 
   const { busy, step, run } = useChainAction({ userId: user?.id, onDone: load });
+  const activeOperator = positions.find((position) =>
+    position.role === 'validator' && position.status === 'ACTIVE'
+  ) || null;
+  const pendingOperator = positions.find((position) =>
+    position.role === 'validator' && ['SUBMITTED', 'UNBONDING'].includes(position.status)
+  ) || null;
+  const increasingOperatorStake = mode === 'validator' && Boolean(activeOperator);
 
   const submit = async () => {
     const base = toBaseUnits(amount);
     if (!base) return;
     const commissionBps = commissionToBps(commissionPct);
-    if (mode === 'validator' && commissionBps === null) return;
+    if (mode === 'validator' && !activeOperator && commissionBps === null) return;
+    if (mode === 'validator' && pendingOperator && !activeOperator) return;
     const params = mode === 'validator'
-      ? { kind: 'register_validator', amount: base, commission_bps: commissionBps }
+      ? activeOperator
+        ? { kind: 'increase_self_stake', amount: base }
+        : { kind: 'register_validator', amount: base, commission_bps: commissionBps }
       : { kind: 'delegate', amount: base, validator_address: validator.trim() };
 
     const ok = await run('stake', params, {
       preparing: 'Preparing your stake…',
       signing: 'Confirming on this device…',
       submitting: 'Adding your stake to the network…',
-      success: mode === 'validator' ? 'Operator stake submitted' : 'Delegation submitted',
+      success: mode === 'validator'
+        ? increasingOperatorStake ? 'Operator self-stake submitted' : 'Operator registration submitted'
+        : 'Delegation submitted',
       successDescription: 'Your stake backs accountable community services on the SwapPulse testnet.',
       failure: 'Stake not completed',
     });
@@ -90,7 +102,9 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const canSubmit = !busy
     && Boolean(toBaseUnits(amount))
     && (mode === 'validator'
-      ? commissionToBps(commissionPct) !== null
+      ? activeOperator
+        ? true
+        : !pendingOperator && commissionToBps(commissionPct) !== null
       : validator.trim().length > 3);
 
   if (!identitySecured) {
@@ -162,6 +176,20 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-primary"
             />
           </div>
+        ) : activeOperator ? (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs">
+            <p className="font-semibold text-foreground">You already run a community operator.</p>
+            <p className="mt-1 text-muted-foreground">
+              New stake will increase your existing operator self-stake. Your current commission remains {Number(activeOperator.commission_bps || 0) / 100}%.
+            </p>
+          </div>
+        ) : pendingOperator ? (
+          <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs">
+            <p className="font-semibold text-foreground">Operator action pending</p>
+            <p className="mt-1 text-muted-foreground">
+              Wait for the current operator transaction to reconcile before submitting another registration.
+            </p>
+          </div>
         ) : (
           <div>
             <label htmlFor="swappulse-operator-commission" className="text-xs font-semibold">Operator commission (%)</label>
@@ -198,7 +226,15 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
         className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-        {busy ? 'Working…' : mode === 'validator' ? 'Stake and run an operator' : 'Stake to this operator'}
+        {busy
+          ? 'Working…'
+          : mode === 'validator'
+            ? activeOperator
+              ? 'Increase operator self-stake'
+              : pendingOperator
+                ? 'Operator action pending'
+                : 'Stake and run an operator'
+            : 'Stake to this operator'}
       </button>
       {busy && step && (
         <p className="mt-2 text-center text-xs font-medium text-primary" role="status" aria-live="polite">{step}</p>
