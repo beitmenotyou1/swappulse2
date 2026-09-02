@@ -124,9 +124,32 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
           <div>
             <p className="text-sm font-bold text-foreground">Community staking locked</p>
             <p className="mt-1">
-              Staking requires a current private verifier assertion plus an ACTIVE Type 1, Level 2 on-chain attestation. Your permanent identity and faucet remain available while verification is expired or revoked.
+              New staking actions require a current private verifier assertion plus an ACTIVE Type 1, Level 2 on-chain attestation. Your permanent identity, faucet and any existing on-chain stake remain intact while verification is expired or revoked.
             </p>
           </div>
+        </div>
+
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-xs font-bold text-foreground">Existing stake</p>
+          {loading ? (
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+            </div>
+          ) : positions.length === 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">You have no existing stake.</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {positions.map((position) => (
+                <li key={position.id} className="flex items-center justify-between gap-3 rounded-lg bg-background/70 px-3 py-2 text-xs">
+                  <span className="min-w-0">
+                    <span className="font-semibold capitalize text-foreground">{position.role}</span>
+                    <span className="ml-2 text-muted-foreground">{position.status.toLowerCase()}</span>
+                  </span>
+                  <span className="font-mono font-semibold text-foreground">{toDisplay(position.staked_amount)} SWPX</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     );
