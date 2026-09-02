@@ -35,6 +35,7 @@ const relayBaseUrl = `http://127.0.0.1:${relayPort}`;
 const relayUrl = `${relayBaseUrl}/rpc`;
 const registerUrl = `${relayBaseUrl}/register`;
 const verificationAttestUrl = `${relayBaseUrl}/verification-attest`;
+const faucetUrl = `${relayBaseUrl}/faucet-drip`;
 const token = 'a'.repeat(64);
 const chainId = '0x534e5f5345504f4c4941';
 const accountClassHash = '0x12345';
@@ -119,10 +120,16 @@ const upstream = http.createServer(async (req, res) => {
     const selector = call?.entry_point_selector;
     if (selector === ownerSelector) result = [registryOwner];
     else if (selector === isVerifierSelector) result = [identityVerifier === '0x0' ? '0x0' : '0x1'];
-    else if (selector === getIdentitySelector) result = mockIdentityStatus === 0
-      ? ['0x0', '0x0', '0x0', '0x0', '0x0']
-      : [accountAddress, '0x1', identityId, '0x1', '0x0'];
-    else if (selector === reverseSelector) result = [mockReverseIdentity];
+    else if (selector === getIdentitySelector) {
+      const requestedIdentity = Array.isArray(call?.calldata) ? call.calldata[0] : '';
+      result = requestedIdentity !== identityId || mockIdentityStatus === 0
+        ? ['0x0', '0x0', '0x0', '0x0', '0x0']
+        : [accountAddress, '0x1', identityId, '0x1', '0x0'];
+    }
+    else if (selector === reverseSelector) {
+      const requestedAccount = Array.isArray(call?.calldata) ? call.calldata[0] : '';
+      result = requestedAccount === accountAddress ? [mockReverseIdentity] : ['0x0'];
+    }
     else if (selector === getVerificationSelector) result = [
       mockVerificationRoot,
       `0x${BigInt(mockVerificationStatus).toString(16)}`,
@@ -391,13 +398,36 @@ try {
   }, token);
   if (badRegistration.status !== 403) throw new Error('Mismatched registration account was not blocked');
 
-  const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add'));
+  const faucet = await post(faucetUrl, {
+    identity_id: identityId,
+    to: accountAddress,
+  }, token);
+  if (faucet.status !== 200 || faucet.body?.ok !== true || faucet.body?.transaction_hash !== '0xbbb') {
+    throw new Error(`Approved faucet drip failed: ${JSON.stringify(faucet)}`);
+  }
+  const repeatFaucet = await post(faucetUrl, {
+    identity_id: identityId,
+    to: accountAddress,
+  }, token);
+  if (repeatFaucet.status !== 409 || repeatFaucet.body?.code !== 'FAUCET_COOLDOWN_ACTIVE') {
+    throw new Error(`Faucet cooldown did not block replay: ${JSON.stringify(repeatFaucet)}`);
+  }
+  const wrongIdentityFaucet = await post(faucetUrl, {
+    identity_id: '0x999',
+    to: accountAddress,
+  }, token);
+  if (wrongIdentityFaucet.status !== 400 || wrongIdentityFaucet.body?.code !== 'FAUCET_IDENTITY_NOT_ACTIVE') {
+    throw new Error(`Faucet accepted an unbound identity: ${JSON.stringify(wrongIdentityFaucet)}`);
+  }
+
+  const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add')); 
   const expectedWrites = [
     'starknet_addDeployAccountTransaction',
     'starknet_addInvokeTransaction', // approved recovery configuration
     'starknet_addInvokeTransaction', // owner identity registration
     'starknet_addInvokeTransaction', // verifier attestation
-  ];
+    'starknet_addInvokeTransaction', // fixed SWPX faucet transfer
+  ]; 
   if (forwardedWrites.join(',') !== expectedWrites.join(',')) {
     throw new Error(`Unexpected writes reached upstream: ${forwardedWrites.join(',')}`);
   }
@@ -432,6 +462,8 @@ try {
     fresh_owner_registration_and_verification: true,
     fresh_registration_and_verification_retry_idempotent: true,
     mismatched_registration_blocked: true,
+    faucet_identity_binding_enforced: true,
+    faucet_cooldown_replay_blocked: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
   console.log('Relay policy smoke checks passed.');
