@@ -104,6 +104,61 @@ async function reconcileStakes(svc: any, config: any) {
   for (const row of rows || []) {
     if (!String(row.account_address || '').trim() || !String(row.validator_address || '').trim()) continue;
     try {
+      const intent = String(row.intent_kind || '');
+
+      // A withdraw draft is complete only when the chain has cleared the pending
+      // amount. Draft creation already proved pending > 0, so observing zero here
+      // is a meaningful post-transaction state rather than an empty mapping.
+      if (intent === 'withdraw') {
+        const values = await readContract(
+          String(config.rpc_url),
+          pool,
+          'get_delegation',
+          [String(row.account_address), String(row.validator_address)],
+        );
+        const activeAmount = BigInt(values[2] || '0x0');
+        const pending = BigInt(values[4] || '0x0');
+        if (pending > 0n) continue;
+
+        const now = new Date().toISOString();
+        await svc.entities.StakePosition.update(row.id, {
+          status: 'EXITED',
+          pending_withdrawal: '0',
+          unlock_at: null,
+          security_weight: activeAmount.toString(),
+          last_synced_at: now,
+          last_error: '',
+        });
+
+        // Close any older unbonding mirror for this exact account/operator pair.
+        // The chain is authoritative; these rows are only lifecycle history.
+        const related = await svc.entities.StakePosition.filter({
+          user_id: row.user_id,
+          validator_address: row.validator_address,
+          status: 'UNBONDING',
+        }, '-created_date', PAGE).catch(() => []);
+        for (const pendingRow of related || []) {
+          await svc.entities.StakePosition.update(pendingRow.id, {
+            status: 'EXITED',
+            pending_withdrawal: '0',
+            unlock_at: null,
+            last_synced_at: now,
+            last_error: '',
+          });
+        }
+
+        advanced += 1;
+        await notifyChainEvent(svc, {
+          did: String(row.did || ''),
+          actionType: 'chain_withdraw',
+          groupKey: `chain_withdraw:${row.id}`,
+          title: 'Your unstaked SWPX was withdrawn',
+          body: 'The completed unbonding balance has been returned to your smart account.',
+          metadata: { recordId: row.id, validatorAddress: String(row.validator_address), txHash: row.tx_hash || '' },
+        });
+        continue;
+      }
+
       const isValidator = String(row.role) === 'validator';
       const values = isValidator
         ? await readContract(String(config.rpc_url), pool, 'get_validator', [String(row.validator_address)])
@@ -120,14 +175,17 @@ async function reconcileStakes(svc: any, config: any) {
         last_error: '',
       });
       advanced += 1;
+      const increased = intent === 'increase_self_stake';
       await notifyChainEvent(svc, {
         did: String(row.did || ''),
         actionType: 'chain_stake',
         groupKey: `chain_stake:${row.id}`,
-        title: isValidator ? 'Your community operator is active' : 'Your stake is active',
-        body: isValidator
-          ? 'Your operator registration is confirmed and your bonded stake now backs accountable SwapPulse services.'
-          : 'Your delegation is confirmed and now backs an accountable SwapPulse community operator.',
+        title: increased ? 'Operator self-stake increased' : isValidator ? 'Your community operator is active' : 'Your stake is active',
+        body: increased
+          ? 'Your additional operator self-stake is now reflected on chain.'
+          : isValidator
+            ? 'Your operator registration is confirmed and your bonded stake now backs accountable SwapPulse services.'
+            : 'Your delegation is confirmed and now backs an accountable SwapPulse community operator.',
         metadata: { recordId: row.id, validatorAddress: String(row.validator_address), txHash: row.tx_hash || '' },
       });
     } catch (error: any) {
@@ -150,22 +208,49 @@ async function reconcileUnbonding(svc: any, config: any) {
       const values = await readContract(String(config.rpc_url), pool, 'get_delegation', [String(row.account_address), String(row.validator_address)]);
       const unlockAt = BigInt(values[3] || '0x0');
       const pending = BigInt(values[4] || '0x0');
-      if (pending <= 0n || unlockAt === 0n || unlockAt > nowSeconds) continue;
+      const previouslyObservedPending = BigInt(String(row.pending_withdrawal || '0'));
 
-      await svc.entities.StakePosition.update(row.id, {
-        pending_withdrawal: pending.toString(),
-        unlock_at: new Date(Number(unlockAt) * 1000).toISOString(),
-        last_synced_at: new Date().toISOString(),
-      });
-      advanced += 1;
-      await notifyChainEvent(svc, {
-        did: String(row.did || ''),
-        actionType: 'chain_unlock',
-        groupKey: `chain_unlock:${row.id}:${unlockAt}`,
-        title: 'Your unstaked SWPX is claimable',
-        body: 'The unbonding period has finished — you can now withdraw your SWPX.',
-        metadata: { recordId: row.id, validatorAddress: String(row.validator_address), amount: pending.toString() },
-      });
+      // Once a positive pending amount has previously been observed, a later zero
+      // means a withdraw completed. Do not infer completion from zero before the
+      // unbonding transaction itself has appeared on chain.
+      if (pending === 0n) {
+        if (previouslyObservedPending > 0n) {
+          await svc.entities.StakePosition.update(row.id, {
+            status: 'EXITED',
+            pending_withdrawal: '0',
+            unlock_at: null,
+            last_synced_at: new Date().toISOString(),
+            last_error: '',
+          });
+          advanced += 1;
+        }
+        continue;
+      }
+      if (unlockAt === 0n) continue;
+
+      const unlockIso = new Date(Number(unlockAt) * 1000).toISOString();
+      const changed = String(row.pending_withdrawal || '0') !== pending.toString()
+        || String(row.unlock_at || '') !== unlockIso;
+      if (changed) {
+        await svc.entities.StakePosition.update(row.id, {
+          pending_withdrawal: pending.toString(),
+          unlock_at: unlockIso,
+          last_synced_at: new Date().toISOString(),
+          last_error: '',
+        });
+        advanced += 1;
+      }
+
+      if (unlockAt <= nowSeconds) {
+        await notifyChainEvent(svc, {
+          did: String(row.did || ''),
+          actionType: 'chain_unlock',
+          groupKey: `chain_unlock:${row.id}:${unlockAt}`,
+          title: 'Your unstaked SWPX is claimable',
+          body: 'The unbonding period has finished — you can now withdraw your SWPX.',
+          metadata: { recordId: row.id, validatorAddress: String(row.validator_address), amount: pending.toString() },
+        });
+      }
     } catch (error: any) {
       console.warn('reconcileUnbonding skipped', row.id, String(error?.message || error).slice(0, 80));
     }
