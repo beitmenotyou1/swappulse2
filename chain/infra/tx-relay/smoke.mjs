@@ -149,7 +149,9 @@ try {
   if (invoke.status !== 200 || invoke.body?.result?.transaction_hash !== '0x333') throw new Error(`valid recovery invoke was not forwarded: ${JSON.stringify(invoke)}`);
 
   const wrongCall = await request({ jsonrpc: '2.0', id: 6, method: 'starknet_addInvokeTransaction', params: { invoke_transaction: { ...invokeTx, calldata: ['0x1'] } } });
-  if (wrongCall.status !== 403) throw new Error('arbitrary invoke calldata was not rejected');
+  if (wrongCall.status !== 400 || wrongCall.body?.code !== 'CALLDATA_TRUNCATED') {
+    throw new Error(`malformed invoke calldata was not rejected as CALLDATA_TRUNCATED: ${JSON.stringify(wrongCall)}`);
+  }
 
   console.log(JSON.stringify({
     ok: true,
