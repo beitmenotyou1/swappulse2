@@ -73,6 +73,7 @@ export default function FaucetCard() {
     AGE_ELIGIBILITY_REQUIRED: 'faucet.reason.age',
     IDENTITY_NOT_SECURED: 'faucet.reason.identity',
     CHAIN_VERIFICATION_REQUIRED: 'faucet.reason.network',
+    NATIVE_TOKEN_NOT_VERIFIED: 'faucet.reason.network',
     COOLDOWN_ACTIVE: 'faucet.reason.cooldown',
   }[status?.reason];
 
