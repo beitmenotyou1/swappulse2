@@ -253,6 +253,24 @@ export default async function(req: Request): Promise<Response> {
     const config = await networkConfig(svc);
 
     if (action === 'config') {
+      let verificationV2Required = false;
+      let verificationV2RequiredReadable = false;
+      if (config.ready && config.identityVerificationMode === 'V2') {
+        try {
+          const requiredValues = await readContract(
+            config.rpcUrl,
+            config.identityRegistryAddress,
+            'verification_v2_required',
+            [],
+          );
+          verificationV2Required = BigInt(requiredValues?.[0] || '0x0') === 1n;
+          verificationV2RequiredReadable = true;
+        } catch {
+          // Keep configuration inspection available if the public RPC is briefly
+          // unavailable. The UI must treat an unreadable policy bit as unknown,
+          // never as permission to perform the irreversible transition.
+        }
+      }
       return Response.json({
         ok: true,
         config: {
@@ -267,6 +285,8 @@ export default async function(req: Request): Promise<Response> {
           identity_registry_owner: config.identityRegistryOwner,
           identity_verifier_address: config.identityVerifierAddress,
           identity_verification_mode: config.identityVerificationMode,
+          verification_v2_required: verificationV2Required,
+          verification_v2_required_readable: verificationV2RequiredReadable,
           native_token_address: config.nativeTokenAddress,
           native_token_class_hash: config.nativeTokenClassHash,
           native_token_symbol: config.nativeTokenSymbol,
