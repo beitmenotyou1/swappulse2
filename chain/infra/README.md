@@ -37,6 +37,8 @@ The provisioning relay accepts only the exact write operations needed for testne
 
 The relay's privileged Devnet mint helper is not exposed as a faucet. It can mint only a fixed testnet amount to the exact counterfactual account implied by the approved class hash and public key. During host bootstrap, `setup-relay-env.sh` resolves the registry-owner test key from the loopback-only Devnet API, verifies its address matches the deployed registry owner, and stores it only in mode-`0600` `.env.relay`. Registration uses that preloaded host-only signer only after all registration policy checks pass; the key is never returned to Base44.
 
+The user-facing SWPX faucet is a separate `POST /faucet-drip` policy path. It transfers a fixed host-configured amount from the testnet treasury and accepts no caller-supplied amount. Base44 persists a 24-hour cooldown against the canonical chain identity before calling the relay. The relay independently verifies the supplied IdentityRegistry identity-to-account and reverse-account mappings, requires the approved SwapPulseAccount class, and keeps a process-local recipient cooldown so concurrent Base44 workers cannot double-drip. Every Base44 claim attempt consumes the persistent cooldown fail-closed because an apparently failed response may have followed a successfully submitted transfer.
+
 The relay bearer token and HTTPS URL are Base44 **server-side secrets** (`SWAPPULSE_TX_RELAY_TOKEN` and `SWAPPULSE_TX_RELAY_URL`). They must never appear in `ChainNetworkConfig`, frontend code or browser storage.
 
 ## Persistent state
