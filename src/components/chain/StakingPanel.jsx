@@ -118,9 +118,15 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const mirroredPendingOperator = positions.find((position) =>
     position.role === 'validator' && ['SUBMITTED', 'UNBONDING'].includes(position.status)
   ) || null;
+  const pendingExitSubmission = positions.find((position) =>
+    position.role === 'validator'
+    && position.intent_kind === 'exit_validator'
+    && ['SUBMITTED', 'UNBONDING'].includes(position.status)
+    && !position.last_synced_at
+  ) || null;
   const chainOperatorStatus = Number(chainOperator?.status_code || 0);
   const activeOperator = chainOperatorKnown
-    ? chainOperatorStatus === 1
+    ? chainOperatorStatus === 1 && !pendingExitSubmission
       ? {
           ...(mirroredActiveOperator || {}),
           id: mirroredActiveOperator?.id || 'chain-authoritative-operator',
@@ -131,13 +137,15 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
         }
       : null
     : mirroredActiveOperator;
-  const pendingOperator = chainOperatorKnown
-    ? chainOperatorStatus === 2
-      ? { id: 'chain-authoritative-exiting', role: 'validator', status: 'UNBONDING' }
-      : chainOperatorStatus === 0
-        ? mirroredPendingOperator
-        : null
-    : mirroredPendingOperator;
+  const pendingOperator = pendingExitSubmission
+    ? pendingExitSubmission
+    : chainOperatorKnown
+      ? chainOperatorStatus === 2
+        ? { id: 'chain-authoritative-exiting', role: 'validator', status: 'UNBONDING' }
+        : chainOperatorStatus === 0
+          ? mirroredPendingOperator
+          : null
+      : mirroredPendingOperator;
   const blockedOperator = chainOperatorKnown && chainOperatorStatus === 3;
   const selfWithdrawal = chainOperator?.self_withdrawal || null;
   const increasingOperatorStake = mode === 'validator' && Boolean(activeOperator);
@@ -445,7 +453,16 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
               const pendingAmount = BigInt(String(delegation.pending_withdrawal || '0'));
               const entered = unstakeAmounts[delegation.validator_address] || '';
               const requestedBase = toBaseUnits(entered);
-              const canRequest = delegation.can_request_undelegate && requestedBase && BigInt(requestedBase) <= activeAmount;
+              const localLifecyclePending = positions.some((position) =>
+                position.validator_address === delegation.validator_address
+                && ['request_undelegate', 'withdraw'].includes(position.intent_kind)
+                && ['SUBMITTED', 'UNBONDING'].includes(position.status)
+                && !position.last_synced_at
+              );
+              const canRequest = delegation.can_request_undelegate
+                && !localLifecyclePending
+                && requestedBase
+                && BigInt(requestedBase) <= activeAmount;
               return (
                 <div key={delegation.validator_address} className="rounded-xl border border-border bg-secondary/30 p-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -460,9 +477,12 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
                   </div>
 
                   {activeAmount > 0n && pendingAmount === 0n && (
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3">
+                      {localLifecyclePending && <p className="mb-2 text-[11px] text-warning">A staking lifecycle transaction for this operator is waiting for chain confirmation.</p>}
+                      <div className="flex gap-2">
                       <input value={entered} onChange={(e) => setUnstakeAmounts((current) => ({ ...current, [delegation.validator_address]: e.target.value }))} placeholder="Amount to unstake" inputMode="decimal" className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary" aria-label={`Amount to unstake from ${delegation.validator_address}`} />
                       <button type="button" onClick={() => requestUndelegate(delegation.validator_address)} disabled={busy || !canRequest} className="rounded-lg border border-border px-3 py-2 text-xs font-bold hover:bg-secondary disabled:opacity-50">Start unstaking</button>
+                      </div>
                     </div>
                   )}
 
