@@ -207,6 +207,13 @@ export default async function (req: Request): Promise<Response> {
         last_error: code,
       }).catch(() => undefined);
     }
+    if (rawCode === 'INSUFFICIENT_FEE_BALANCE') {
+      return jsonError(
+        'Your smart account does not have enough STRK to cover the transaction fee ceiling',
+        409,
+        code,
+      );
+    }
     const clientError = rawCode.includes('NOT_CONFIGURED') || rawCode.includes('MUST_') || rawCode.includes('NOT_ALLOWED') || rawCode.includes('MISMATCH') || rawCode.includes('REQUIRED');
     return jsonError(clientError ? rawCode.replaceAll('_', ' ') : 'Signed transaction submission failed', clientError ? 409 : 502, code);
   }
