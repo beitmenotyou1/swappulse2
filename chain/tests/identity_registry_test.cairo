@@ -626,3 +626,42 @@ fn v2_verification_remains_available_after_cutover() {
     assert(registry.is_verified(0xabc), 'v2 cutover verification invalid');
     assert(registry.is_attestation_used(0xcafe), 'v2 cutover replay id missing');
 }
+
+#[test]
+fn v2_verification_expires_normally_after_permanent_cutover() {
+    let owner = addr(0x111);
+    let verifier = addr(0x777);
+    let identity_id = 0xabc;
+    let (registry_address, registry) = deploy_registry(owner);
+    authorise_verifier(registry_address, registry, owner, verifier);
+
+    start_cheat_block_timestamp(registry_address, 10_000_u64);
+    start_cheat_caller_address(registry_address, owner);
+    registry.register_identity(identity_id, addr(0x222));
+    registry.require_verification_v2();
+    stop_cheat_caller_address(registry_address);
+
+    start_cheat_caller_address(registry_address, verifier);
+    registry.set_verification_v2(
+        identity_id, 0x12345, 0x999, 1_u8, 2_u8, 10_100_u64, 0xcafe,
+    );
+    stop_cheat_caller_address(registry_address);
+    assert(registry.verification_v2_required(), 'v2 cutover missing');
+    assert(registry.is_verified(identity_id), 'fresh v2 verification invalid');
+
+    start_cheat_block_timestamp(registry_address, 10_101_u64);
+    assert(!registry.is_verified(identity_id), 'expired v2 verification remained valid');
+
+    // Expiry changes effective validity only. The immutable audit record and
+    // consumed replay id remain available, and V1 stays permanently disabled.
+    let verification = registry.get_verification(identity_id);
+    let assurance = registry.get_assurance(identity_id);
+    assert(verification.status == 1_u8, 'expiry rewrote audit status');
+    assert(verification.expires_at == 10_100_u64, 'expiry timestamp changed');
+    assert(assurance.verification_type == 1_u8, 'v2 type lost after expiry');
+    assert(assurance.verification_level == 2_u8, 'v2 level lost after expiry');
+    assert(assurance.attestation_id == 0xcafe, 'v2 replay id lost after expiry');
+    assert(registry.is_attestation_used(0xcafe), 'expired attestation replay id was freed');
+    assert(registry.verification_v2_required(), 'permanent v2 flag changed after expiry');
+    stop_cheat_block_timestamp(registry_address);
+}
