@@ -215,7 +215,7 @@ const child = spawn(process.execPath, ['server.mjs'], {
     BRIDGE_ADAPTER_CLASS_HASH: bridgeAdapterClassHash,
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
-    DEPLOY_MINT_AMOUNT: '50000000000000000',
+    DEPLOY_MINT_AMOUNT: '500000000000000000',
     RATE_LIMIT_PER_MINUTE: '100',
   },
   stdio: ['ignore', 'ignore', 'ignore'],
