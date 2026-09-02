@@ -17,6 +17,9 @@ export default function V2VerificationTestSection() {
   const [identity, setIdentity] = useState(null);
   const [ageStatus, setAgeStatus] = useState(null);
   const [lastResult, setLastResult] = useState(null);
+  const [cutoverConfirmation, setCutoverConfirmation] = useState('');
+  const [cuttingOver, setCuttingOver] = useState(false);
+  const [cutoverResult, setCutoverResult] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -80,6 +83,36 @@ export default function V2VerificationTestSection() {
       });
     } finally {
       setRunning('');
+    }
+  };
+
+  const requireV2Forever = async () => {
+    if (!recordId || cuttingOver || cutoverConfirmation !== 'REQUIRE_V2_FOREVER') return;
+    setCuttingOver(true);
+    setCutoverResult(null);
+    try {
+      const res = await base44.functions.invoke('chain-identity-admin', {
+        action: 'require_v2',
+        confirmation: 'REQUIRE_V2_FOREVER',
+        record_id: recordId,
+      });
+      const data = res?.data || res || {};
+      setCutoverResult(data);
+      await load();
+      toast({
+        title: 'Permanent V2 requirement enabled',
+        description: data?.idempotent
+          ? 'The registry was already permanently V2-only.'
+          : 'The registry now permanently requires V2 verification.',
+      });
+    } catch (error) {
+      toast({
+        title: 'V2 cut-over blocked',
+        description: error?.response?.data?.error || error?.response?.data?.code || error?.message || 'V2 cut-over preflight failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setCuttingOver(false);
     }
   };
 
@@ -204,6 +237,54 @@ export default function V2VerificationTestSection() {
               {running === 'reconcile' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
               Reconcile verification state
             </button>
+          </div>
+
+          <div className="mt-5 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+            <div className="flex items-start gap-2">
+              <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-bold text-destructive">Permanent V2-only cut-over</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This is irreversible. The backend will independently re-check the active Type 1 / Level 2+ assurance, replay marker, operator registration, minimum self-stake and SWPX escrow before writing the one-way registry flag.
+                </p>
+              </div>
+            </div>
+            <label className="mt-3 block text-xs font-semibold text-muted-foreground">
+              Type REQUIRE_V2_FOREVER to enable
+              <input
+                value={cutoverConfirmation}
+                onChange={(e) => setCutoverConfirmation(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                className="mt-1 w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 font-mono text-xs"
+                placeholder="REQUIRE_V2_FOREVER"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={requireV2Forever}
+              disabled={
+                cuttingOver
+                || !recordId
+                || !isAuthoritative
+                || String(identity?.verification_status || '') !== 'ACTIVE'
+                || Number(identity?.verification_type || 0) !== 1
+                || Number(identity?.verification_level || 0) < 2
+                || cutoverConfirmation !== 'REQUIRE_V2_FOREVER'
+              }
+              className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-50"
+            >
+              {cuttingOver ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
+              Require V2 forever
+            </button>
+            {cutoverResult?.verification_v2_required && (
+              <div className="mt-3 rounded-md border border-success/30 bg-success/10 p-2 text-xs">
+                <p className="font-semibold text-success">Permanent V2 requirement confirmed on-chain.</p>
+                {cutoverResult?.transaction_hash && (
+                  <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">Tx {cutoverResult.transaction_hash}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {lastResult && (
