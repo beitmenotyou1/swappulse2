@@ -1,10 +1,33 @@
 {
+  "name": "__noop_entity_cleanup_please_delete_3",
   "type": "object",
+  "description": "Retired empty placeholder. Contains no records. Admin-only until Base44 sandbox file deletion is available.",
   "properties": {
     "noop": {
       "type": "string"
     }
   },
   "required": [],
-  "name": "__noop_entity_cleanup_please_delete_3"
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
