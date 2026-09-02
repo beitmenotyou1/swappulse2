@@ -148,6 +148,59 @@ async function readVerificationMirror(
   };
 }
 
+async function persistNaturalPrivateExpiry(svc: any, row: any, verification: any, now: string) {
+  if (verification?.verification_status !== 'EXPIRED') return;
+  const userId = String(row?.user_id || '').trim();
+  if (!userId) return;
+
+  const ageRows = await svc.entities.AgeStatus
+    .filter({ user_id: userId }, '-updated_date', 5)
+    .catch(() => []);
+  const age = ageRows?.[0] || null;
+  if (!age) return;
+  if (String(age.verifier_status || '') !== 'VERIFIED') return;
+  if (String(age.age_method || '') !== 'THIRD_PARTY_VERIFIED') return;
+
+  const privateExpiry = String(age.verifier_expires_at || '').trim();
+  if (!privateExpiry) return;
+  const privateExpiryMs = new Date(privateExpiry).getTime();
+  if (!Number.isFinite(privateExpiryMs) || privateExpiryMs > Date.now()) return;
+
+  // Natural expiry is not a new verifier event and does not require a revoke
+  // transaction. Preserve the original event id and attestation tx for audit,
+  // but persist the effective fail-closed state so no future code can mistake
+  // stale stored booleans for a current private assertion.
+  await svc.entities.AgeStatus.update(age.id, {
+    verification_level: 'SELF_DECLARED',
+    verifier_status: 'EXPIRED',
+    value_features_eligible: false,
+    proof_of_use_eligible: false,
+    last_checked_at: now,
+    revision: Math.max(1, Number(age.revision || 0) + 1),
+  });
+
+  const eventId = String(age.verifier_event_id || '');
+  if (!eventId) return;
+  const sessions = await svc.entities.AgeVerificationSession
+    .filter({ user_id: userId }, '-created_date', 10)
+    .catch(() => []);
+  const session = (sessions || []).find((item: any) =>
+    String(item.verifier_event_id || '') === eventId
+    && String(item.status || '') === 'VERIFIED'
+  );
+  if (!session?.id) return;
+
+  const sessionExpiry = String(session.expires_at || '').trim();
+  const sessionExpiryMs = sessionExpiry ? new Date(sessionExpiry).getTime() : 0;
+  if (!sessionExpiry || !Number.isFinite(sessionExpiryMs) || sessionExpiryMs > Date.now()) return;
+
+  await svc.entities.AgeVerificationSession.update(session.id, {
+    status: 'EXPIRED',
+    chain_sync_status: 'SYNCED',
+    last_error: '',
+  });
+}
+
 async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
   const now = new Date().toISOString();
   const identityId = normalizeHex(row.chain_identity_id, 'chain_identity_id');
@@ -226,6 +279,7 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
         last_reconciled_at: now,
         failure_code: '',
       });
+      await persistNaturalPrivateExpiry(svc, row, verification, now);
       return {
         id: row.id,
         outcome: nextStatus,
@@ -271,6 +325,7 @@ async function reconcileOne(svc: any, config: any, rpcUrl: string, row: any) {
         last_reconciled_at: now,
         failure_code: '',
       });
+      await persistNaturalPrivateExpiry(svc, row, verification, now);
       return {
         id: row.id,
         outcome: 'MERGED',
