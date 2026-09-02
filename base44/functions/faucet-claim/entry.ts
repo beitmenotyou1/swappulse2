@@ -26,15 +26,28 @@ async function activeIdentity(svc: any, userId: string) {
   return (rows || []).find((row: any) => AUTHORITATIVE.includes(String(row.status || ''))) || null;
 }
 
-async function lastClaim(svc: any, userId: string) {
-  const rows = await svc.entities.FaucetClaim.filter({ created_by_id: userId }, '-created_date', 1).catch(() => []);
+async function lastClaim(svc: any, chainIdentityId: string) {
+  if (!chainIdentityId) return null;
+  const rows = await svc.entities.FaucetClaim
+    .filter({ network: 'SWAPPULSE_TESTNET', chain_identity_id: chainIdentityId }, '-created_date', 1)
+    .catch(() => []);
   return rows?.[0] || null;
 }
 
+function effectiveIdentityId(identity: any): string {
+  const raw = String(identity?.status || '') === 'MERGED'
+    ? String(identity?.canonical_identity_id || '')
+    : String(identity?.chain_identity_id || '');
+  return raw ? normalizeHex(raw, 'chain identity id') : '';
+}
+
 function cooldownRemainingMs(claim: any): number {
-  if (!claim || String(claim.status) === 'FAILED') return 0;
+  if (!claim) return 0;
   const at = Date.parse(String(claim.created_date || ''));
   if (!Number.isFinite(at)) return 0;
+  // Fail closed for every recorded attempt, including an ambiguous FAILED
+  // result. The relay may already have submitted a transfer before a response
+  // was lost, so immediately retrying a failed-looking request could double-drip.
   return Math.max(0, at + COOLDOWN_MS - Date.now());
 }
 
@@ -58,8 +71,9 @@ export default async function (req: Request): Promise<Response> {
 
     const adult = await ageEligible(svc, me.id);
     const identity = await activeIdentity(svc, me.id);
+    const identityId = identity ? effectiveIdentityId(identity) : '';
     const config = await getVerifiedConfig(svc);
-    const claim = await lastClaim(svc, me.id);
+    const claim = await lastClaim(svc, identityId);
     const remaining = cooldownRemainingMs(claim);
 
     const blockedReason = !adult
@@ -99,18 +113,21 @@ export default async function (req: Request): Promise<Response> {
     }
 
     const accountAddress = normalizeHex(identity.account_address, 'account address');
-    // The claim row is written BEFORE the relay call so a crash mid-drip still
-    // consumes the cooldown rather than allowing an unbounded retry loop.
+    if (!identityId) return jsonError('The secured identity has no canonical chain id', 409, 'IDENTITY_ID_MISSING');
+    // The claim row is written BEFORE the relay call so a crash or ambiguous
+    // response still consumes the cooldown. The collector mapping is explicit
+    // because service-role writes do not use the collector as created_by_id.
     const created = await svc.entities.FaucetClaim.create({
+      user_id: String(me.id),
       did: String(me.did || ''),
       network: 'SWAPPULSE_TESTNET',
       account_address: accountAddress,
-      chain_identity_id: String(identity.chain_identity_id || ''),
+      chain_identity_id: identityId,
       status: 'SUBMITTED',
     });
 
     try {
-      const result = await relayFaucetDrip({ to: accountAddress });
+      const result = await relayFaucetDrip({ to: accountAddress, identity_id: identityId });
       const txHash = normalizeHex(result?.transaction_hash, 'faucet transaction hash');
       const amount = String(result?.amount || '0');
       await svc.entities.FaucetClaim.update(created.id, {
