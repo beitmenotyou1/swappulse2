@@ -976,7 +976,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.url === '/require-v2') {
       const result = await requireVerificationV2(payload);
-      console.log(`require_verification_v2 accepted ${ip} ${result.identity_id} idempotent=${result.idempotent}`);
+      console.log(`require_verification_v2 accepted ${ip} idempotent=${result.idempotent}`);
       return json(res, 200, { ok: true, ...result });
     }
 
