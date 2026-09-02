@@ -94,6 +94,7 @@ const verificationType = 1;
 const verificationLevel = 2;
 const attestationId = '0x9abcd';
 let mockVerificationStatus = 0;
+let mockVerificationCurrentlyValid = true;
 let mockVerificationRoot = '0x0';
 let mockVerificationSchema = '0x0';
 let mockVerificationType = 0;
@@ -156,7 +157,7 @@ const upstream = http.createServer(async (req, res) => {
     ];
     else if (selector === verificationV2RequiredSelector) result = [mockV2Required ? '0x1' : '0x0'];
     else if (selector === isAttestationUsedSelector) result = [mockAttestationId === '0x0' ? '0x0' : '0x1'];
-    else if (selector === isVerifiedSelector) result = [mockVerificationStatus === 1 ? '0x1' : '0x0'];
+    else if (selector === isVerifiedSelector) result = [mockVerificationStatus === 1 && mockVerificationCurrentlyValid ? '0x1' : '0x0'];
     else if (selector === getValidatorSelector) result = [
       accountAddress,
       identityId,
@@ -305,8 +306,7 @@ try {
     jsonrpc: '2.0', id: 3, method: 'starknet_addInvokeTransaction', params: { invoke_transaction: invokeTx },
   }, token);
   if (allowedInvoke.status !== 200 || allowedInvoke.body?.result?.transaction_hash !== '0xbbb') {
-    console.error('ALLOWED_INVOKE_DEBUG', JSON.stringify(allowedInvoke));
-    throw new Error('Allowed recovery invoke was not forwarded');
+    throw new Error(`Allowed recovery invoke was not forwarded: ${JSON.stringify(allowedInvoke)}`);
   }
 
   const forbiddenCalldata = transaction.getExecuteCalldata([
@@ -469,6 +469,9 @@ try {
     throw new Error(`Permanent V2 cutover did not complete: ${JSON.stringify(cutover)}`);
   }
 
+  // Once the policy is permanent, natural expiry of the proof attestation must
+  // lock value-bearing use without making the global cut-over appear incomplete.
+  mockVerificationCurrentlyValid = false;
   const repeatCutover = await post(requireV2Url, {
     confirmation: 'REQUIRE_V2_FOREVER',
     identity_id: identityId,
@@ -536,7 +539,7 @@ try {
     faucet_cooldown_replay_blocked: true,
     v2_cutover_confirmation_required: true,
     v2_cutover_proof_enforced: true,
-    v2_cutover_retry_idempotent: true,
+    v2_cutover_retry_idempotent_after_proof_expiry: true,
     readyz_reflects_permanent_v2: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
