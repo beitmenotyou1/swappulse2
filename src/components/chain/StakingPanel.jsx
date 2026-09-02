@@ -47,14 +47,31 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const [mode, setMode] = useState('delegate');
   const [validator, setValidator] = useState('');
   const [commissionPct, setCommissionPct] = useState('5');
+  const [chainOperator, setChainOperator] = useState(null);
+  const [chainOperatorKnown, setChainOperatorKnown] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const rows = await base44.entities.StakePosition.filter({ user_id: user?.id, network: 'SWAPPULSE_TESTNET' }, '-created_date', 25);
-      setPositions((rows || []).filter((row) => row.status !== 'DRAFTED'));
-    } catch {
-      setPositions([]);
+      const [positionsResult, operatorResult] = await Promise.allSettled([
+        base44.entities.StakePosition.filter({ user_id: user?.id, network: 'SWAPPULSE_TESTNET' }, '-created_date', 25),
+        base44.functions.invoke('chain-staking-status', {}),
+      ]);
+
+      if (positionsResult.status === 'fulfilled') {
+        setPositions((positionsResult.value || []).filter((row) => row.status !== 'DRAFTED'));
+      } else {
+        setPositions([]);
+      }
+
+      if (operatorResult.status === 'fulfilled') {
+        const data = operatorResult.value?.data || operatorResult.value || {};
+        setChainOperator(data?.operator || null);
+        setChainOperatorKnown(Boolean(data?.chain_authoritative));
+      } else {
+        setChainOperator(null);
+        setChainOperatorKnown(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -63,12 +80,31 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   useEffect(() => { load(); }, [load]);
 
   const { busy, step, run } = useChainAction({ userId: user?.id, onDone: load });
-  const activeOperator = positions.find((position) =>
+  const mirroredActiveOperator = positions.find((position) =>
     position.role === 'validator' && position.status === 'ACTIVE'
   ) || null;
-  const pendingOperator = positions.find((position) =>
+  const mirroredPendingOperator = positions.find((position) =>
     position.role === 'validator' && ['SUBMITTED', 'UNBONDING'].includes(position.status)
   ) || null;
+  const chainOperatorStatus = Number(chainOperator?.status_code || 0);
+  const activeOperator = chainOperatorKnown
+    ? chainOperatorStatus === 1
+      ? {
+          ...(mirroredActiveOperator || {}),
+          id: mirroredActiveOperator?.id || 'chain-authoritative-operator',
+          role: 'validator',
+          status: 'ACTIVE',
+          staked_amount: String(chainOperator?.self_stake || '0'),
+          commission_bps: Number(chainOperator?.commission_bps || 0),
+        }
+      : null
+    : mirroredActiveOperator;
+  const pendingOperator = chainOperatorKnown
+    ? chainOperatorStatus === 2
+      ? { id: 'chain-authoritative-exiting', role: 'validator', status: 'UNBONDING' }
+      : null
+    : mirroredPendingOperator;
+  const blockedOperator = chainOperatorKnown && chainOperatorStatus === 3;
   const increasingOperatorStake = mode === 'validator' && Boolean(activeOperator);
 
   const submit = async () => {
@@ -76,7 +112,7 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
     if (!base) return;
     const commissionBps = commissionToBps(commissionPct);
     if (mode === 'validator' && !activeOperator && commissionBps === null) return;
-    if (mode === 'validator' && pendingOperator && !activeOperator) return;
+    if (mode === 'validator' && (pendingOperator || blockedOperator) && !activeOperator) return;
     const params = mode === 'validator'
       ? activeOperator
         ? { kind: 'increase_self_stake', amount: base }
@@ -104,7 +140,7 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
     && (mode === 'validator'
       ? activeOperator
         ? true
-        : !pendingOperator && commissionToBps(commissionPct) !== null
+        : !pendingOperator && !blockedOperator && commissionToBps(commissionPct) !== null
       : validator.trim().length > 3);
 
   if (!identitySecured) {
@@ -208,9 +244,16 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
           </div>
         ) : pendingOperator ? (
           <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs">
-            <p className="font-semibold text-foreground">Operator action pending</p>
+            <p className="font-semibold text-foreground">Operator exit pending</p>
             <p className="mt-1 text-muted-foreground">
-              Wait for the current operator transaction to reconcile before submitting another registration.
+              The staking pool reports this operator as exiting. A second registration is blocked while that on-chain state remains.
+            </p>
+          </div>
+        ) : blockedOperator ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs">
+            <p className="font-semibold text-destructive">Operator registration unavailable</p>
+            <p className="mt-1 text-muted-foreground">
+              The staking pool reports this operator as slashed. The current contract does not allow a second operator registration for the same smart account.
             </p>
           </div>
         ) : (
@@ -255,8 +298,10 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
             ? activeOperator
               ? 'Increase operator self-stake'
               : pendingOperator
-                ? 'Operator action pending'
-                : 'Stake and run an operator'
+                ? 'Operator exit pending'
+                : blockedOperator
+                  ? 'Operator unavailable'
+                  : 'Stake and run an operator'
             : 'Stake to this operator'}
       </button>
       {busy && step && (
