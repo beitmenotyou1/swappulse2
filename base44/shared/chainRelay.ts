@@ -207,7 +207,13 @@ async function relayPost(pathname: string, body: unknown) {
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(String(payload?.code || payload?.error || `TX_RELAY_HTTP_${response.status}`));
-    if (payload?.error) throw new Error(`TX_RELAY_RPC_${payload.error?.code ?? 'ERROR'}`);
+    if (payload?.error) {
+      // Starknet JSON-RPC code 54 is INSUFFICIENT_ACCOUNT_BALANCE for the fee
+      // ceiling. Convert it to a stable app-facing machine code and never pass
+      // arbitrary upstream error.data/details through to collectors.
+      if (Number(payload.error?.code) === 54) throw new Error('INSUFFICIENT_FEE_BALANCE');
+      throw new Error(`TX_RELAY_RPC_${payload.error?.code ?? 'ERROR'}`);
+    }
     return payload?.result || payload || {};
   } finally {
     clearTimeout(timer);
