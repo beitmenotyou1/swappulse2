@@ -92,7 +92,14 @@ export default async function (req: Request): Promise<Response> {
       if (!allowed.includes(kind)) return jsonError('Unsupported staking action', 400, 'UNSUPPORTED_STAKE_KIND');
 
       const isValidatorAction = ['register_validator', 'increase_self_stake', 'exit_validator'].includes(kind);
-      const validatorAddress = isValidatorAction ? accountAddress : String(body.validator_address || '');
+      let validatorAddress: string;
+      try {
+        validatorAddress = isValidatorAction
+          ? accountAddress
+          : normalizeHex(String(body.validator_address || ''), 'validator address');
+      } catch {
+        return jsonError('A valid community operator address is required', 400, 'VALIDATOR_ADDRESS_REQUIRED');
+      }
       const intent = {
         kind: kind as any,
         amount: body.amount === undefined ? undefined : String(body.amount),
@@ -101,6 +108,9 @@ export default async function (req: Request): Promise<Response> {
         commissionBps: body.commission_bps === undefined ? 0 : Number(body.commission_bps),
       };
 
+      const poolAddress = String(config.staking_pool_address);
+      const rpcUrl = String(config.rpc_url);
+
       if (kind === 'register_validator') {
         const amount = String(intent.amount ?? '');
         if (!/^[0-9]+$/.test(amount) || BigInt(amount) <= 0n) {
@@ -108,8 +118,8 @@ export default async function (req: Request): Promise<Response> {
         }
 
         const [minimumValues, validatorValues] = await Promise.all([
-          readContract(String(config.rpc_url), String(config.staking_pool_address), 'min_self_stake'),
-          readContract(String(config.rpc_url), String(config.staking_pool_address), 'get_validator', [accountAddress]),
+          readContract(rpcUrl, poolAddress, 'min_self_stake'),
+          readContract(rpcUrl, poolAddress, 'get_validator', [accountAddress]),
         ]);
         const minimumSelfStake = BigInt(minimumValues?.[0] || '0x0');
         if (minimumSelfStake <= 0n) {
@@ -126,6 +136,54 @@ export default async function (req: Request): Promise<Response> {
         if (currentValidatorStatus !== 0n) {
           return jsonError('This smart account is already registered as a community operator', 409, 'OPERATOR_ALREADY_REGISTERED');
         }
+      } else if (kind === 'increase_self_stake' || kind === 'exit_validator') {
+        const validatorValues = await readContract(rpcUrl, poolAddress, 'get_validator', [accountAddress]);
+        const currentValidatorStatus = BigInt(validatorValues?.[5] || '0x0');
+        if (currentValidatorStatus !== 1n) {
+          return jsonError('Your community operator is not currently active', 409, 'OPERATOR_NOT_ACTIVE');
+        }
+        if (kind === 'increase_self_stake') {
+          const amount = String(intent.amount ?? '');
+          if (!/^[0-9]+$/.test(amount) || BigInt(amount) <= 0n) {
+            return jsonError('A positive self-stake increase is required', 400, 'AMOUNT_REQUIRED');
+          }
+        }
+      } else if (kind === 'delegate') {
+        if (validatorAddress === accountAddress) {
+          return jsonError('You cannot delegate to your own operator account', 409, 'SELF_DELEGATION_NOT_ALLOWED');
+        }
+        const amount = String(intent.amount ?? '');
+        if (!/^[0-9]+$/.test(amount) || BigInt(amount) <= 0n) {
+          return jsonError('A positive delegation amount is required', 400, 'AMOUNT_REQUIRED');
+        }
+        const validatorValues = await readContract(rpcUrl, poolAddress, 'get_validator', [validatorAddress]);
+        if (BigInt(validatorValues?.[5] || '0x0') !== 1n) {
+          return jsonError('The selected community operator is not active', 409, 'VALIDATOR_NOT_ACTIVE');
+        }
+      } else if (kind === 'request_undelegate') {
+        const amount = String(intent.amount ?? '');
+        if (!/^[0-9]+$/.test(amount) || BigInt(amount) <= 0n) {
+          return jsonError('A positive undelegation amount is required', 400, 'AMOUNT_REQUIRED');
+        }
+        const delegationValues = await readContract(rpcUrl, poolAddress, 'get_delegation', [accountAddress, validatorAddress]);
+        const activeAmount = BigInt(delegationValues?.[2] || '0x0');
+        const pendingAmount = BigInt(delegationValues?.[4] || '0x0');
+        if (activeAmount < BigInt(amount)) {
+          return jsonError('The undelegation amount exceeds your active delegation', 409, 'INSUFFICIENT_DELEGATION');
+        }
+        if (pendingAmount !== 0n) {
+          return jsonError('This delegation already has an unbonding withdrawal', 409, 'UNDELEGATION_ALREADY_PENDING');
+        }
+      } else if (kind === 'withdraw') {
+        const delegationValues = await readContract(rpcUrl, poolAddress, 'get_delegation', [accountAddress, validatorAddress]);
+        const pendingAmount = BigInt(delegationValues?.[4] || '0x0');
+        const unlockAt = Number(BigInt(delegationValues?.[3] || '0x0'));
+        if (pendingAmount <= 0n) {
+          return jsonError('There is no pending SWPX withdrawal for this operator', 409, 'NOTHING_PENDING');
+        }
+        if (!Number.isFinite(unlockAt) || unlockAt <= 0 || Math.floor(Date.now() / 1000) < unlockAt) {
+          return jsonError('The unbonding period has not finished yet', 409, 'STILL_UNBONDING');
+        }
       }
 
       calls = buildStakeCalls(intent, config);
@@ -134,7 +192,7 @@ export default async function (req: Request): Promise<Response> {
         user_id: String(me.id),
         did: String(me.did || ''),
         network: 'SWAPPULSE_TESTNET',
-        role: isValidatorAction ? 'validator' : 'delegator',
+        role: isValidatorAction || (kind === 'withdraw' && validatorAddress === accountAddress) ? 'validator' : 'delegator',
         account_address: accountAddress,
         validator_address: normalizeHex(validatorAddress, 'validator address'),
         chain_identity_id: String(identity.chain_identity_id || ''),
