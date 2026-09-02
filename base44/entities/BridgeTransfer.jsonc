@@ -2,8 +2,12 @@
   "name": "BridgeTransfer",
   "type": "object",
   "title": "BridgeTransfer",
-  "description": "org.swappulse.bridgeTransfer \u2014 a cross-chain transfer of a native token amount or a card NFT between the SwapPulse appchain and an external chain (Ethereum, an L2, or Solana). Outbound transfers lock or burn on the appchain and are minted/released by the relay on the destination; inbound transfers are keyed on the source transaction hash for replay protection. The appchain remains the canonical home for the asset.",
+  "description": "org.swappulse.bridgeTransfer \u2014 a cross-chain transfer of a native token amount or a card NFT between the SwapPulse appchain and an external chain. The private Base44 user mapping controls draft ownership; outbound transfers lock or burn on the appchain and inbound transfers are keyed on the source transaction hash for replay protection. The appchain remains the canonical home for the asset.",
   "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Private Base44 owner mapping for draft ownership and row-level access. Never written on-chain."
+    },
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the collector who initiated the transfer"
@@ -106,6 +110,7 @@
     }
   },
   "required": [
+    "user_id",
     "did",
     "direction",
     "asset_kind",
@@ -116,7 +121,7 @@
     "read": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {
