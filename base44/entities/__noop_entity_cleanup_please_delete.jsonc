@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "noop": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "__noop_entity_cleanup_please_delete"
+}

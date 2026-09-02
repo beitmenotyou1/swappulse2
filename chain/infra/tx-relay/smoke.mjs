@@ -2,8 +2,11 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { hash, transaction } from 'starknet';
 
-const upstreamPort = 19050;
-const relayPort = 18081;
+// Keep smoke-test listeners isolated from the live mini-server ports. The live
+// tx relay commonly binds host port 18081, so reusing it here can make this
+// harness accidentally probe the real relay with the fake test token.
+const upstreamPort = Number(process.env.SMOKE_UPSTREAM_PORT || 29050);
+const relayPort = Number(process.env.SMOKE_RELAY_PORT || 28081);
 const token = 'test-only-relay-token-0123456789abcdef';
 const chainId = '0x534e5f5345504f4c4941';
 const classHash = '0x492c4b3e137468b6f6a805970d2c28b44f11bfd9f3cc6bd3187db5d83cb0a1c';
