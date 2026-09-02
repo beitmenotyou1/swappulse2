@@ -650,7 +650,7 @@ fn v2_verification_expires_normally_after_permanent_cutover() {
     assert(registry.is_verified(identity_id), 'fresh v2 verification invalid');
 
     start_cheat_block_timestamp(registry_address, 10_101_u64);
-    assert(!registry.is_verified(identity_id), 'expired v2 verification remained valid');
+    assert(!registry.is_verified(identity_id), 'expired v2 remained valid');
 
     // Expiry changes effective validity only. The immutable audit record and
     // consumed replay id remain available, and V1 stays permanently disabled.
@@ -661,7 +661,7 @@ fn v2_verification_expires_normally_after_permanent_cutover() {
     assert(assurance.verification_type == 1_u8, 'v2 type lost after expiry');
     assert(assurance.verification_level == 2_u8, 'v2 level lost after expiry');
     assert(assurance.attestation_id == 0xcafe, 'v2 replay id lost after expiry');
-    assert(registry.is_attestation_used(0xcafe), 'expired attestation replay id was freed');
-    assert(registry.verification_v2_required(), 'permanent v2 flag changed after expiry');
+    assert(registry.is_attestation_used(0xcafe), 'replay id freed after expiry');
+    assert(registry.verification_v2_required(), 'v2 flag changed after expiry');
     stop_cheat_block_timestamp(registry_address);
 }
