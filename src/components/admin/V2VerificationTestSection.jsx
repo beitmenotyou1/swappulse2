@@ -251,7 +251,9 @@ export default function V2VerificationTestSection() {
 
           <div className={`mt-5 rounded-lg border p-4 ${v2Required ? 'border-success/40 bg-success/5' : 'border-destructive/40 bg-destructive/5'}`}>
             <div className="flex items-start gap-2">
-              <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              {v2Required
+                ? <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                : <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />}
               <div>
                 <p className={`text-sm font-bold ${v2Required ? 'text-success' : 'text-destructive'}`}>Permanent V2-only cut-over</p>
                 <p className="mt-1 text-xs text-muted-foreground">
