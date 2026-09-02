@@ -102,6 +102,7 @@ export default async function (req: Request): Promise<Response> {
       calls = buildStakeCalls(intent, config);
 
       const created = await svc.entities.StakePosition.create({
+        user_id: String(me.id),
         did: String(me.did || ''),
         network: 'SWAPPULSE_TESTNET',
         role: isValidatorAction ? 'validator' : 'delegator',
@@ -153,6 +154,7 @@ export default async function (req: Request): Promise<Response> {
       );
 
       const created = await svc.entities.BridgeTransfer.create({
+        user_id: String(me.id),
         did: String(me.did || ''),
         network: 'SWAPPULSE_TESTNET',
         direction: 'outbound',
