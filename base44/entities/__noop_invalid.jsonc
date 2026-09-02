@@ -1,0 +1,33 @@
+{
+  "name": "__noop_invalid",
+  "type": "object",
+  "description": "Unused placeholder schema created accidentally during maintenance. Contains no records and is locked to administrators pending deletion.",
+  "properties": {
+    "x": {
+      "type": "string"
+    }
+  },
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "required": []
+}
