@@ -102,7 +102,9 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const pendingOperator = chainOperatorKnown
     ? chainOperatorStatus === 2
       ? { id: 'chain-authoritative-exiting', role: 'validator', status: 'UNBONDING' }
-      : null
+      : chainOperatorStatus === 0
+        ? mirroredPendingOperator
+        : null
     : mirroredPendingOperator;
   const blockedOperator = chainOperatorKnown && chainOperatorStatus === 3;
   const increasingOperatorStake = mode === 'validator' && Boolean(activeOperator);
