@@ -690,6 +690,32 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('Base44 and the verified registry pin must both be in V2 mode', 409, 'V2_CUTOVER_MODE_NOT_VERIFIED');
       }
 
+      // The policy flag is global and irreversible. Once it is already enabled,
+      // report that state idempotently before asking a particular proof identity
+      // to still be current. This matters after the proof attestation naturally
+      // expires: expiry must lock value-bearing actions, but it must not make an
+      // already-completed one-way cut-over look incomplete or retryable.
+      try {
+        const alreadyRequired = await readContract(
+          config.rpcUrl,
+          config.identityRegistryAddress,
+          'verification_v2_required',
+          [],
+        );
+        if (BigInt(alreadyRequired?.[0] || '0x0') === 1n) {
+          return Response.json({
+            ok: true,
+            irreversible: true,
+            verification_v2_required: true,
+            transaction_hash: '',
+            idempotent: true,
+            proof: null,
+          });
+        }
+      } catch (error: any) {
+        return jsonError(error?.message || 'Could not read the permanent V2 policy state', 409, 'V2_CUTOVER_STATE_UNREADABLE');
+      }
+
       const recordId = String(body.record_id || '').trim();
       if (!recordId) return jsonError('record_id is required', 400, 'V2_CUTOVER_IDENTITY_REQUIRED');
       const identities = await svc.entities.ChainIdentity.filter({ id: recordId }, '-created_date', 1).catch(() => []);
