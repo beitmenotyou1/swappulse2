@@ -124,7 +124,6 @@ async function reconcileStakes(svc: any, config: any) {
         await svc.entities.StakePosition.update(row.id, {
           status: 'EXITED',
           pending_withdrawal: '0',
-          unlock_at: null,
           security_weight: activeAmount.toString(),
           last_synced_at: now,
           last_error: '',
@@ -141,8 +140,7 @@ async function reconcileStakes(svc: any, config: any) {
           await svc.entities.StakePosition.update(pendingRow.id, {
             status: 'EXITED',
             pending_withdrawal: '0',
-            unlock_at: null,
-            last_synced_at: now,
+              last_synced_at: now,
             last_error: '',
           });
         }
@@ -218,8 +216,7 @@ async function reconcileUnbonding(svc: any, config: any) {
           await svc.entities.StakePosition.update(row.id, {
             status: 'EXITED',
             pending_withdrawal: '0',
-            unlock_at: null,
-            last_synced_at: new Date().toISOString(),
+              last_synced_at: new Date().toISOString(),
             last_error: '',
           });
           advanced += 1;
