@@ -119,7 +119,7 @@ export default function Wallet() {
           </div>
           <div>
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.crossChain')}</h2>
-            <BridgePanel identitySecured={secured} />
+            <BridgePanel identitySecured={secured} valueFeaturesReady={valueFeaturesReady} />
           </div>
         </div>
       ) : (
