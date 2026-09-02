@@ -24,7 +24,7 @@ function toBaseUnits(input) {
 // Moving an asset out to an external chain. The appchain stays the canonical
 // home: tokens are escrowed and cards are burned here before the relay issues
 // the wrapped asset on the destination, so the same card is never live twice.
-export default function BridgePanel({ identitySecured }) {
+export default function BridgePanel({ identitySecured, valueFeaturesReady }) {
   const { user } = useAuth();
   const [transfers, setTransfers] = useState([]);
   const [cards, setCards] = useState([]);
@@ -39,7 +39,7 @@ export default function BridgePanel({ identitySecured }) {
     setLoading(true);
     try {
       const [transferRows, cardRows] = await Promise.all([
-        base44.entities.BridgeTransfer.filter({ network: 'SWAPPULSE_TESTNET' }, '-created_date', 20),
+        base44.entities.BridgeTransfer.filter({ user_id: user?.id, network: 'SWAPPULSE_TESTNET' }, '-created_date', 20),
         base44.entities.ChainCardToken.filter({ status: 'MINTED' }, '-created_date', 40),
       ]);
       setTransfers((transferRows || []).filter((row) => row.status !== 'DRAFTED'));
@@ -50,7 +50,7 @@ export default function BridgePanel({ identitySecured }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -89,6 +89,47 @@ export default function BridgePanel({ identitySecured }) {
       <div className="rounded-xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
         <p className="text-sm font-bold text-foreground">Move assets out</p>
         <p className="mt-1">Secure your on-chain identity first to move assets to another chain.</p>
+      </div>
+    );
+  }
+
+  if (!valueFeaturesReady) {
+    return (
+      <div className="rounded-xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground">
+        <div className="flex items-start gap-2">
+          <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-bold text-foreground">Cross-chain transfers locked</p>
+            <p className="mt-1">
+              Moving assets out requires a current private verifier assertion plus an ACTIVE Type 1, Level 2 on-chain attestation. Existing transfer history remains visible while verification is expired or revoked.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-xs font-bold text-foreground">Recent transfers</p>
+          {loading ? (
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+            </div>
+          ) : transfers.length === 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">No transfers yet.</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {transfers.map((transfer) => (
+                <li key={transfer.id} className="flex items-center justify-between gap-3 rounded-lg bg-background/70 px-3 py-2 text-xs">
+                  <span className="min-w-0 truncate">
+                    <span className="font-semibold capitalize text-foreground">{transfer.asset_kind}</span>
+                    <span className="ml-2 text-muted-foreground capitalize">to {transfer.external_chain}</span>
+                  </span>
+                  <span className="shrink-0 font-semibold text-muted-foreground">
+                    {String(transfer.status || '').replaceAll('_', ' ').toLowerCase()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     );
   }
