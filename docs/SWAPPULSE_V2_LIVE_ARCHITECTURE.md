@@ -390,3 +390,31 @@ Verified live behaviour:
 - local and public relay `/readyz` agree with the canonical public RPC
 
 No further irreversible chain action is required for this hardening phase.
+
+## 17. Mini-server operational baseline
+
+Final host-health inspection on the always-on mini-server showed:
+
+- uptime approximately 14 days 21 hours
+- load average around 1.48 / 1.13 / 1.27
+- approximately 14 GiB RAM total with about 4.3 GiB `MemAvailable`
+- 4 GiB swap fully occupied, but no sustained swap-in/swap-out activity during the live sample
+- no kernel OOM-killer or memory-cgroup OOM events this boot
+- root filesystem approximately 25% used and inode usage approximately 6%
+- zero failed systemd units
+- Devnet, RPC gateway and hardened transaction relay all running
+- tx-relay memory approximately 61 MiB
+- rpc-gateway memory approximately 24 MiB
+- Devnet memory approximately 173 MiB
+
+The full swap allocation is therefore treated as stale/cold-page occupancy rather than evidence of current memory thrashing. Do not force `swapoff` merely to make the usage counter fall, especially while available RAM is only marginally larger than the amount currently swapped.
+
+One zombie process was observed: `auto-setup.sh`, parented by the long-running Temporal server process. A zombie consumes no meaningful CPU or RAM. Do not restart the Temporal service solely to remove this single zombie; handle it during a normal Temporal maintenance window if it persists or multiplies.
+
+Host-health action threshold:
+
+- investigate if `vmstat` shows sustained non-zero `si`/`so`
+- investigate if `MemAvailable` remains low under ordinary load
+- investigate any kernel OOM event
+- investigate if zombie count grows rather than remaining isolated
+- do not restart SwapPulse chain services for cosmetic swap or zombie cleanup
