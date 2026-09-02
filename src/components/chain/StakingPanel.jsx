@@ -42,14 +42,14 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const rows = await base44.entities.StakePosition.filter({ network: 'SWAPPULSE_TESTNET' }, '-created_date', 25);
+      const rows = await base44.entities.StakePosition.filter({ user_id: user?.id, network: 'SWAPPULSE_TESTNET' }, '-created_date', 25);
       setPositions((rows || []).filter((row) => row.status !== 'DRAFTED'));
     } catch {
       setPositions([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
