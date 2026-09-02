@@ -280,6 +280,8 @@ export default async function(req: Request): Promise<Response> {
           status: network.status,
           chain_id: network.ready ? network.chain_id : '',
           identity_verification_mode: network.ready ? network.identity_verification_mode : '',
+          recovery_delay_seconds: network.ready ? network.recovery_delay_seconds : 0,
+          recovery_configured: Boolean(network.ready && network.recovery_controller && network.recovery_controller !== '0x0'),
         },
         identity: safeIdentity(current),
         can_prepare: Boolean(age.eligible && network.ready && !current),
