@@ -31,6 +31,14 @@ function toDisplay(baseUnits) {
   }
 }
 
+function commissionToBps(input) {
+  const raw = String(input || '').trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(raw)) return null;
+  const [whole, fraction = ''] = raw.split('.');
+  const bps = Number(whole) * 100 + Number((fraction + '00').slice(0, 2));
+  return Number.isInteger(bps) && bps >= 0 && bps <= 3000 ? bps : null;
+}
+
 export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const { user } = useAuth();
   const [positions, setPositions] = useState([]);
@@ -38,6 +46,7 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState('delegate');
   const [validator, setValidator] = useState('');
+  const [commissionPct, setCommissionPct] = useState('5');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,8 +67,10 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
   const submit = async () => {
     const base = toBaseUnits(amount);
     if (!base) return;
+    const commissionBps = commissionToBps(commissionPct);
+    if (mode === 'validator' && commissionBps === null) return;
     const params = mode === 'validator'
-      ? { kind: 'register_validator', amount: base, commission_bps: 500 }
+      ? { kind: 'register_validator', amount: base, commission_bps: commissionBps }
       : { kind: 'delegate', amount: base, validator_address: validator.trim() };
 
     const ok = await run('stake', params, {
@@ -78,7 +89,9 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
 
   const canSubmit = !busy
     && Boolean(toBaseUnits(amount))
-    && (mode === 'validator' || validator.trim().length > 3);
+    && (mode === 'validator'
+      ? commissionToBps(commissionPct) !== null
+      : validator.trim().length > 3);
 
   if (!identitySecured) {
     return (
@@ -137,7 +150,7 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
       </div>
 
       <div className="mt-3 space-y-2">
-        {mode === 'delegate' && (
+        {mode === 'delegate' ? (
           <div>
             <label htmlFor="swappulse-validator" className="text-xs font-semibold">Operator address</label>
             <input
@@ -148,6 +161,21 @@ export default function StakingPanel({ identitySecured, valueFeaturesReady }) {
               spellCheck={false}
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs outline-none focus:border-primary"
             />
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="swappulse-operator-commission" className="text-xs font-semibold">Operator commission (%)</label>
+            <input
+              id="swappulse-operator-commission"
+              value={commissionPct}
+              onChange={(e) => setCommissionPct(e.target.value)}
+              placeholder="5.00"
+              inputMode="decimal"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Stored on-chain when this operator is registered. Choose 0–30%; the default is 5%.
+            </p>
           </div>
         )}
         <div>
