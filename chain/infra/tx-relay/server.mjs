@@ -76,6 +76,11 @@ if (identityVerifierAddress === identityRegistryOwner) {
 }
 
 const windows = new Map();
+// Defence-in-depth for the faucet. Base44 persists the 24h cooldown by canonical
+// identity, while the single relay process also remembers recipient attempts so
+// concurrent requests from separate Base44 workers cannot double-drip.
+const faucetAttemptAt = new Map();
+const faucetCooldownMs = 24 * 60 * 60 * 1000;
 const provider = new RpcProvider({ nodeUrl: upstream.toString() });
 const registryAdmin = new Account({ provider, address: registryAdminAddress, signer: registryAdminPrivateKey });
 const identityVerifier = new Account({ provider, address: identityVerifierAddress, signer: identityVerifierPrivateKey });
@@ -333,19 +338,41 @@ async function submitUsership(body) {
   return { transaction_hash: normalizeHex(executed.transaction_hash, 'usership transaction hash') };
 }
 
-// Owner-signed testnet faucet drip. Only the recipient is caller-supplied, and it
-// must be a deployed account of the approved SwapPulse class — so the faucet can
-// only ever fund real collector smart accounts, never an arbitrary address. The
-// per-collector 24h cooldown is enforced by Base44 before this is called.
+// Owner-signed testnet faucet drip. Base44 supplies only the canonical identity
+// and its own smart-account address; the relay independently proves that binding
+// against IdentityRegistry before spending treasury SWPX. The amount is fixed by
+// this host and is never caller-selectable.
 async function faucetDrip(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('FAUCET_BODY_REQUIRED');
   if (nativeTokenAddress === '0x0') throw new Error('NATIVE_TOKEN_NOT_CONFIGURED');
 
   const to = normalizeHex(body.to, 'to');
+  const identityId = normalizeHex(body.identity_id, 'identity_id');
   const recipientClass = await rpc('starknet_getClassHashAt', ['latest', to]);
   if (recipientClass?.error || normalizeHex(recipientClass?.result, 'recipient class hash') !== accountClassHash) {
     throw new Error('FAUCET_RECIPIENT_CLASS_MISMATCH');
   }
+
+  const [identityValues, reverseValues] = await Promise.all([
+    starknetCall(identityRegistryAddress, 'get_identity', [identityId]),
+    starknetCall(identityRegistryAddress, 'get_identity_by_account', [to]),
+  ]);
+  if (identityValues.length < 5 || reverseValues.length < 1) throw new Error('FAUCET_IDENTITY_READ_INVALID');
+  const chainAccount = normalizeZeroableHex(identityValues[0] || '0x0', 'faucet identity account');
+  const chainStatus = BigInt(identityValues[1] || '0x0');
+  const canonicalId = normalizeZeroableHex(identityValues[2] || '0x0', 'faucet canonical identity');
+  const reverseId = normalizeZeroableHex(reverseValues[0] || '0x0', 'faucet reverse identity');
+  if (chainStatus !== 1n || canonicalId !== identityId) throw new Error('FAUCET_IDENTITY_NOT_ACTIVE');
+  if (chainAccount !== to || reverseId !== identityId) throw new Error('FAUCET_IDENTITY_ACCOUNT_MISMATCH');
+
+  const now = Date.now();
+  const previousAttempt = Number(faucetAttemptAt.get(to) || 0);
+  if (previousAttempt > 0 && now - previousAttempt < faucetCooldownMs) {
+    throw new Error('FAUCET_COOLDOWN_ACTIVE');
+  }
+  // Set this before the transaction call. If submission succeeds but the relay
+  // loses the response while waiting for confirmation, retry remains fail-closed.
+  faucetAttemptAt.set(to, now);
 
   const executed = await registryAdmin.execute({
     contractAddress: nativeTokenAddress,
@@ -354,6 +381,8 @@ async function faucetDrip(body) {
   });
   await provider.waitForTransaction(executed.transaction_hash);
   return {
+    identity_id: identityId,
+    account_address: to,
     transaction_hash: normalizeHex(executed.transaction_hash, 'faucet transaction hash'),
     amount: faucetDripAmount.toString(),
   };
@@ -1015,7 +1044,13 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { ...upstreamPayload, id: payload.id ?? upstreamPayload.id ?? null });
   } catch (error) {
     const code = String(error?.message || 'TX_RELAY_ERROR').replace(/[^A-Z0-9_:-]/gi, '_').slice(0, 120);
-    const status = code === 'BODY_TOO_LARGE' ? 413 : code.includes('NOT_ALLOWED') || code.includes('MUST_') || code.includes('ONLY_') || code.includes('WRONG_') || code.includes('MISMATCH') || code.includes('ALREADY_BOUND') || code.includes('NOT_AVAILABLE') ? 403 : 400;
+    const status = code === 'BODY_TOO_LARGE'
+      ? 413
+      : code.includes('COOLDOWN')
+        ? 409
+        : code.includes('NOT_ALLOWED') || code.includes('MUST_') || code.includes('ONLY_') || code.includes('WRONG_') || code.includes('MISMATCH') || code.includes('ALREADY_BOUND') || code.includes('NOT_AVAILABLE')
+          ? 403
+          : 400;
     console.warn(`Provisioning relay rejected request from ${clientIp(req)}: ${code}`);
     return json(res, status, { error: 'Provisioning request rejected', code });
   }
