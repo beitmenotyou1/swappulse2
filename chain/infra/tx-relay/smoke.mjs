@@ -91,7 +91,7 @@ const relay = spawn(process.execPath, ['server.mjs'], {
     REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
-    DEPLOY_MINT_AMOUNT: '50000000000000000',
+    DEPLOY_MINT_AMOUNT: '500000000000000000',
     RATE_LIMIT_PER_MINUTE: '100',
   },
   stdio: ['ignore', 'ignore', 'ignore'],
@@ -115,7 +115,7 @@ try {
   const deploy = await request({ jsonrpc: '2.0', id: 3, method: 'starknet_addDeployAccountTransaction', params: { deploy_account_transaction: deployTx } });
   if (deploy.status !== 200 || deploy.body?.result?.transaction_hash !== '0x222') throw new Error('valid deploy was not forwarded');
   if (observed.mint?.address !== expectedAddress) throw new Error('mint recipient was not the deterministic account address');
-  if (observed.mint?.amount !== 50000000000000000) throw new Error('mint amount was not fixed');
+  if (String(observed.mint?.amount) !== '500000000000000000') throw new Error('mint amount was not fixed');
 
   const wrongClass = await request({ jsonrpc: '2.0', id: 4, method: 'starknet_addDeployAccountTransaction', params: { deploy_account_transaction: { ...deployTx, class_hash: '0x123' } } });
   if (wrongClass.status !== 403) throw new Error('wrong account class was not rejected');
