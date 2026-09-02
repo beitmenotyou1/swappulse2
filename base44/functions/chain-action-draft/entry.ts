@@ -10,6 +10,7 @@ import {
   jsonError,
   normalizeHex,
   publicRpc,
+  readContract,
   recipientCommitment,
   valueFeatureEligible,
   verifiedContractConfigured,
@@ -17,10 +18,10 @@ import {
 import { issueChainDraftToken, signingHashForTransaction, type ChainDraftAction } from '../../shared/chainTxDraft.ts';
 import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 
-// The SwapPulse appchain charges collectors nothing: the sequencer fee policy
-// sets a zero price for user transactions. These are fixed protective ceilings
-// rather than RPC-derived estimates, so a hostile or misconfigured RPC cannot
-// inflate what a collector's account is willing to pay.
+// Fixed protective ceilings rather than RPC-derived estimates, so a hostile or
+// misconfigured RPC cannot inflate what a collector's account is willing to pay.
+// The current pinned Devnet still enforces fee-balance admission against these
+// ceilings, so provisioned smart accounts are funded with enough STRK separately.
 const MAX_L1_GAS = 0x2000;
 const MAX_L2_GAS = 0x4000000;
 const MAX_L1_DATA_GAS = 0x2000;
@@ -99,6 +100,34 @@ export default async function (req: Request): Promise<Response> {
         chainIdentityId: identity.chain_identity_id,
         commissionBps: body.commission_bps === undefined ? 0 : Number(body.commission_bps),
       };
+
+      if (kind === 'register_validator') {
+        const amount = String(intent.amount ?? '');
+        if (!/^[0-9]+$/.test(amount) || BigInt(amount) <= 0n) {
+          return jsonError('A positive operator self-stake is required', 400, 'AMOUNT_REQUIRED');
+        }
+
+        const [minimumValues, validatorValues] = await Promise.all([
+          readContract(String(config.rpc_url), String(config.staking_pool_address), 'min_self_stake'),
+          readContract(String(config.rpc_url), String(config.staking_pool_address), 'get_validator', [accountAddress]),
+        ]);
+        const minimumSelfStake = BigInt(minimumValues?.[0] || '0x0');
+        if (minimumSelfStake <= 0n) {
+          return jsonError('The current operator minimum could not be verified from the staking pool', 409, 'STAKING_MINIMUM_UNAVAILABLE');
+        }
+        if (BigInt(amount) < minimumSelfStake) {
+          return jsonError('Operator self-stake is below the current on-chain minimum', 409, 'STAKE_BELOW_CHAIN_MINIMUM');
+        }
+
+        // ValidatorInfo: [account, identity_id, self_stake, delegated, commission_bps, status, registered_at].
+        // A non-zero status means this smart account already has operator state;
+        // do not issue a second register_validator draft that the contract must reject.
+        const currentValidatorStatus = BigInt(validatorValues?.[5] || '0x0');
+        if (currentValidatorStatus !== 0n) {
+          return jsonError('This smart account is already registered as a community operator', 409, 'OPERATOR_ALREADY_REGISTERED');
+        }
+      }
+
       calls = buildStakeCalls(intent, config);
 
       const created = await svc.entities.StakePosition.create({
