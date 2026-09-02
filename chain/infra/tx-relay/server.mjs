@@ -27,7 +27,7 @@ const bridgeAdapterAddress = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_ADD
 const bridgeAdapterClassHash = normalizeZeroableHex(process.env.BRIDGE_ADAPTER_CLASS_HASH || '0x0', 'BRIDGE_ADAPTER_CLASS_HASH');
 const recoveryController = normalizeZeroableHex(process.env.RECOVERY_CONTROLLER || '0x0', 'RECOVERY_CONTROLLER');
 const recoveryDelaySeconds = Number(process.env.RECOVERY_DELAY_SECONDS || 172800);
-const deployMintAmount = Number(process.env.DEPLOY_MINT_AMOUNT || 50_000_000_000_000_000);
+const deployMintAmount = BigInt(process.env.DEPLOY_MINT_AMOUNT || '50000000000000000');
 // Fixed testnet faucet drip. The AMOUNT IS NOT CLIENT-SELECTABLE: the relay always
 // transfers exactly this much, so neither Base44 nor a compromised caller can drain
 // the faucet treasury with an inflated request.
@@ -61,8 +61,8 @@ if (identityVerificationMode === 'v2') {
 if (!Number.isInteger(recoveryDelaySeconds) || recoveryDelaySeconds < 0 || recoveryDelaySeconds > 2_592_000) {
   throw new Error('RECOVERY_DELAY_SECONDS must be an integer from 0 to 2592000');
 }
-if (!Number.isSafeInteger(deployMintAmount) || deployMintAmount <= 0) {
-  throw new Error('DEPLOY_MINT_AMOUNT must be a positive safe integer');
+if (deployMintAmount <= 0n || deployMintAmount > (1n << 100n)) {
+  throw new Error('DEPLOY_MINT_AMOUNT must be a positive amount within the supported range');
 }
 if (faucetDripAmount <= 0n || faucetDripAmount > (1n << 100n)) {
   throw new Error('FAUCET_DRIP_AMOUNT must be a positive amount within the supported range');
@@ -230,7 +230,7 @@ async function validateDeploy(tx) {
   // the approved class hash + public-key constructor/salt.
   const minted = await rpc('devnet_mint', {
     address: accountAddress,
-    amount: deployMintAmount,
+    amount: deployMintAmount.toString(),
     unit: 'FRI',
   });
   if (minted?.error) throw new Error(`DEVNET_MINT_FAILED_${minted.error.code ?? 'UNKNOWN'}`);
