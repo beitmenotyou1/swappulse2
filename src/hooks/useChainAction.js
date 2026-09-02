@@ -47,7 +47,10 @@ export default function useChainAction({ userId, onDone }) {
       if (onDone) await onDone();
       return result;
     } catch (error) {
-      const message = error?.response?.data?.error || error?.message || 'The action could not be completed.';
+      const payload = error?.response?.data;
+      const baseMessage = payload?.error || error?.message || 'The action could not be completed.';
+      const code = String(payload?.code || '').trim();
+      const message = code ? `${baseMessage} (${code})` : baseMessage;
       toast({ title: labels.failure || 'Action failed', description: message, variant: 'destructive' });
       return null;
     } finally {
