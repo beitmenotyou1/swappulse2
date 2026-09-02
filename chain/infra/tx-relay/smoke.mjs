@@ -13,6 +13,7 @@ const classHash = '0x492c4b3e137468b6f6a805970d2c28b44f11bfd9f3cc6bd3187db5d83cb
 const registryClassHash = '0x23456';
 const registryAddress = '0x45678';
 const registryOwner = '0x56789';
+const identityVerifier = '0x67890';
 const publicKey = '0x123456789abcdef';
 const recoveryController = '0x0';
 const recoveryDelay = 172800;
@@ -90,8 +91,10 @@ const relay = spawn(process.execPath, ['server.mjs'], {
     IDENTITY_REGISTRY_CLASS_HASH: registryClassHash,
     IDENTITY_REGISTRY_ADDRESS: registryAddress,
     IDENTITY_REGISTRY_OWNER: registryOwner,
+    IDENTITY_VERIFIER_ADDRESS: identityVerifier,
     REGISTRY_ADMIN_ADDRESS: registryOwner,
     REGISTRY_ADMIN_PRIVATE_KEY: '0x1',
+    IDENTITY_VERIFIER_PRIVATE_KEY: '0x2',
     RECOVERY_CONTROLLER: recoveryController,
     RECOVERY_DELAY_SECONDS: String(recoveryDelay),
     DEPLOY_MINT_AMOUNT: '500000000000000000',
