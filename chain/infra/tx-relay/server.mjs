@@ -819,6 +819,18 @@ async function requireVerificationV2(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('V2_CUTOVER_BODY_REQUIRED');
   if (String(body.confirmation || '') !== 'REQUIRE_V2_FOREVER') throw new Error('V2_CUTOVER_CONFIRMATION_REQUIRED');
 
+  // The switch is global and irreversible. After it has been written once, an
+  // expired proof identity must not make a harmless retry fail. The proof below
+  // is required only for the first transition from false to true.
+  const current = await starknetCall(identityRegistryAddress, 'verification_v2_required', []);
+  if (BigInt(current?.[0] || '0x0') === 1n) {
+    return {
+      transaction_hash: '',
+      idempotent: true,
+      verification_v2_required: true,
+    };
+  }
+
   const identityId = normalizeHex(body.identity_id, 'identity_id');
   const accountAddress = normalizeHex(body.account_address, 'account_address');
   const identityValues = await starknetCall(identityRegistryAddress, 'get_identity', [identityId]);
@@ -852,22 +864,6 @@ async function requireVerificationV2(body) {
   const poolBalance = await starknetCall(nativeTokenAddress, 'balance_of', [stakingPoolAddress]);
   const poolBalanceU256 = BigInt(poolBalance?.[0] || '0x0') + (BigInt(poolBalance?.[1] || '0x0') << 128n);
   if (poolBalanceU256 < selfStake) throw new Error('V2_CUTOVER_SWPX_ESCROW_MISMATCH');
-
-  const current = await starknetCall(identityRegistryAddress, 'verification_v2_required', []);
-  if (BigInt(current?.[0] || '0x0') === 1n) {
-    return {
-      transaction_hash: '',
-      idempotent: true,
-      verification_v2_required: true,
-      identity_id: identityId,
-      account_address: accountAddress,
-      verification_type: verificationType,
-      verification_level: verificationLevel,
-      attestation_id: attestationId,
-      self_stake: selfStake.toString(),
-      min_self_stake: minimumStake.toString(),
-    };
-  }
 
   const cutover = await registryAdmin.execute({
     contractAddress: identityRegistryAddress,
