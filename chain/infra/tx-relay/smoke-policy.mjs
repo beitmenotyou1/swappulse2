@@ -36,6 +36,7 @@ const relayUrl = `${relayBaseUrl}/rpc`;
 const registerUrl = `${relayBaseUrl}/register`;
 const verificationAttestUrl = `${relayBaseUrl}/verification-attest`;
 const faucetUrl = `${relayBaseUrl}/faucet-drip`;
+const requireV2Url = `${relayBaseUrl}/require-v2`;
 const token = 'a'.repeat(64);
 const chainId = '0x534e5f5345504f4c4941';
 const accountClassHash = '0x12345';
@@ -67,7 +68,13 @@ const reverseSelector = hash.getSelectorFromName('get_identity_by_account');
 const getVerificationSelector = hash.getSelectorFromName('get_verification');
 const getAssuranceSelector = hash.getSelectorFromName('get_assurance');
 const verificationV2RequiredSelector = hash.getSelectorFromName('verification_v2_required');
+const isAttestationUsedSelector = hash.getSelectorFromName('is_attestation_used');
+const isVerifiedSelector = hash.getSelectorFromName('is_verified');
+const getValidatorSelector = hash.getSelectorFromName('get_validator');
+const minSelfStakeSelector = hash.getSelectorFromName('min_self_stake');
+const balanceOfSelector = hash.getSelectorFromName('balance_of');
 const setVerificationV2Selector = `0x${BigInt(hash.getSelectorFromName('set_verification_v2')).toString(16)}`;
+const requireVerificationV2Selector = `0x${BigInt(hash.getSelectorFromName('require_verification_v2')).toString(16)}`;
 const recoveryControllerSelector = hash.getSelectorFromName('get_recovery_controller');
 const recoveryDelaySelector = hash.getSelectorFromName('get_recovery_delay');
 const stakeTokenSelector = hash.getSelectorFromName('stake_token');
@@ -92,7 +99,9 @@ let mockVerificationSchema = '0x0';
 let mockVerificationType = 0;
 let mockVerificationLevel = 0;
 let mockAttestationId = '0x0';
+let mockV2Required = false;
 let registrationMode = false;
+const mockSelfStake = 100n * 10n ** 18n;
 
 const upstream = http.createServer(async (req, res) => {
   const chunks = [];
@@ -145,7 +154,20 @@ const upstream = http.createServer(async (req, res) => {
       `0x${BigInt(mockVerificationLevel).toString(16)}`,
       mockAttestationId,
     ];
-    else if (selector === verificationV2RequiredSelector) result = ['0x0'];
+    else if (selector === verificationV2RequiredSelector) result = [mockV2Required ? '0x1' : '0x0'];
+    else if (selector === isAttestationUsedSelector) result = [mockAttestationId === '0x0' ? '0x0' : '0x1'];
+    else if (selector === isVerifiedSelector) result = [mockVerificationStatus === 1 ? '0x1' : '0x0'];
+    else if (selector === getValidatorSelector) result = [
+      accountAddress,
+      identityId,
+      `0x${mockSelfStake.toString(16)}`,
+      '0x0',
+      '0x1f4',
+      '0x1',
+      '0x1',
+    ];
+    else if (selector === minSelfStakeSelector) result = [`0x${mockSelfStake.toString(16)}`];
+    else if (selector === balanceOfSelector) result = [`0x${mockSelfStake.toString(16)}`, '0x0'];
     else if (selector === recoveryControllerSelector) result = [mockRecoveryController];
     else if (selector === recoveryDelaySelector) result = [`0x${BigInt(mockRecoveryDelay).toString(16)}`];
     else if (selector === stakeTokenSelector) result = [nativeTokenAddress];
@@ -168,6 +190,10 @@ const upstream = http.createServer(async (req, res) => {
   }];
   else if (payload.method === 'starknet_addDeployAccountTransaction') result = { transaction_hash: '0xaaa', contract_address: accountAddress };
   else if (payload.method === 'starknet_addInvokeTransaction') {
+    const params = payload?.params;
+    const tx = Array.isArray(params) ? params[0] : params?.invoke_transaction;
+    const calldata = Array.isArray(tx?.calldata) ? tx.calldata.map((value) => `0x${BigInt(value).toString(16)}`) : [];
+    if (calldata.includes(requireVerificationV2Selector)) mockV2Required = true;
     if (registrationMode) {
       mockIdentityStatus = 1;
       mockReverseIdentity = identityId;
@@ -420,6 +446,49 @@ try {
     throw new Error(`Faucet accepted an unbound identity: ${JSON.stringify(wrongIdentityFaucet)}`);
   }
 
+  const missingCutoverConfirmation = await post(requireV2Url, {
+    identity_id: identityId,
+    account_address: accountAddress,
+  }, token);
+  if (missingCutoverConfirmation.status !== 400 || missingCutoverConfirmation.body?.code !== 'V2_CUTOVER_CONFIRMATION_REQUIRED') {
+    throw new Error(`V2 cutover accepted missing confirmation: ${JSON.stringify(missingCutoverConfirmation)}`);
+  }
+
+  const cutover = await post(requireV2Url, {
+    confirmation: 'REQUIRE_V2_FOREVER',
+    identity_id: identityId,
+    account_address: accountAddress,
+  }, token);
+  if (
+    cutover.status !== 200
+    || cutover.body?.ok !== true
+    || cutover.body?.verification_v2_required !== true
+    || cutover.body?.idempotent !== false
+    || cutover.body?.transaction_hash !== '0xbbb'
+  ) {
+    throw new Error(`Permanent V2 cutover did not complete: ${JSON.stringify(cutover)}`);
+  }
+
+  const repeatCutover = await post(requireV2Url, {
+    confirmation: 'REQUIRE_V2_FOREVER',
+    identity_id: identityId,
+    account_address: accountAddress,
+  }, token);
+  if (
+    repeatCutover.status !== 200
+    || repeatCutover.body?.verification_v2_required !== true
+    || repeatCutover.body?.idempotent !== true
+    || repeatCutover.body?.transaction_hash !== ''
+  ) {
+    throw new Error(`Permanent V2 cutover retry was not idempotent: ${JSON.stringify(repeatCutover)}`);
+  }
+
+  const readyAfterCutover = await fetch(`${relayBaseUrl}/readyz`, { headers: { authorization: `Bearer ${token}` } });
+  const readyAfterCutoverBody = await readyAfterCutover.json();
+  if (readyAfterCutover.status !== 200 || readyAfterCutoverBody?.verification_v2_required !== true) {
+    throw new Error(`Relay readiness did not reflect permanent V2 cutover: ${JSON.stringify({ status: readyAfterCutover.status, body: readyAfterCutoverBody })}`);
+  }
+
   const forwardedWrites = seen.filter((method) => method.startsWith('starknet_add')); 
   const expectedWrites = [
     'starknet_addDeployAccountTransaction',
@@ -427,6 +496,7 @@ try {
     'starknet_addInvokeTransaction', // owner identity registration
     'starknet_addInvokeTransaction', // verifier attestation
     'starknet_addInvokeTransaction', // fixed SWPX faucet transfer
+    'starknet_addInvokeTransaction', // one-way require_verification_v2 cutover
   ]; 
   if (forwardedWrites.join(',') !== expectedWrites.join(',')) {
     throw new Error(`Unexpected writes reached upstream: ${forwardedWrites.join(',')}`);
@@ -464,6 +534,10 @@ try {
     mismatched_registration_blocked: true,
     faucet_identity_binding_enforced: true,
     faucet_cooldown_replay_blocked: true,
+    v2_cutover_confirmation_required: true,
+    v2_cutover_proof_enforced: true,
+    v2_cutover_retry_idempotent: true,
+    readyz_reflects_permanent_v2: true,
     upstream_write_methods: forwardedWrites,
   }, null, 2));
   console.log('Relay policy smoke checks passed.');
