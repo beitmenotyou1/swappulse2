@@ -20,19 +20,25 @@ export default function V2VerificationTestSection() {
   const [cutoverConfirmation, setCutoverConfirmation] = useState('');
   const [cuttingOver, setCuttingOver] = useState(false);
   const [cutoverResult, setCutoverResult] = useState(null);
+  const [v2Required, setV2Required] = useState(false);
+  const [v2RequiredReadable, setV2RequiredReadable] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [chainRes, ageRes] = await Promise.all([
+      const [chainRes, ageRes, configRes] = await Promise.all([
         base44.functions.invoke('chain-identity-user', { action: 'status' }),
         base44.functions.invoke('age-status', { action: 'get' }),
+        base44.functions.invoke('chain-identity-admin', { action: 'config' }),
       ]);
       const chainData = chainRes?.data || chainRes || {};
       const ageData = ageRes?.data || ageRes || {};
+      const configData = configRes?.data || configRes || {};
       const currentIdentity = chainData?.identity || null;
       setIdentity(currentIdentity);
       setAgeStatus(ageData?.status || null);
+      setV2Required(Boolean(configData?.config?.verification_v2_required));
+      setV2RequiredReadable(Boolean(configData?.config?.verification_v2_required_readable));
       if (currentIdentity?.id && !recordId) setRecordId(currentIdentity.id);
     } catch (error) {
       toast({
@@ -98,6 +104,10 @@ export default function V2VerificationTestSection() {
       });
       const data = res?.data || res || {};
       setCutoverResult(data);
+      if (data?.verification_v2_required) {
+        setV2Required(true);
+        setV2RequiredReadable(true);
+      }
       await load();
       toast({
         title: 'Permanent V2 requirement enabled',
@@ -239,45 +249,55 @@ export default function V2VerificationTestSection() {
             </button>
           </div>
 
-          <div className="mt-5 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <div className={`mt-5 rounded-lg border p-4 ${v2Required ? 'border-success/40 bg-success/5' : 'border-destructive/40 bg-destructive/5'}`}>
             <div className="flex items-start gap-2">
               <ShieldOff className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               <div>
-                <p className="text-sm font-bold text-destructive">Permanent V2-only cut-over</p>
+                <p className={`text-sm font-bold ${v2Required ? 'text-success' : 'text-destructive'}`}>Permanent V2-only cut-over</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  This is irreversible. The backend will independently re-check the active Type 1 / Level 2+ assurance, replay marker, operator registration, minimum self-stake and SWPX escrow before writing the one-way registry flag.
+                  {v2Required
+                    ? 'Confirmed on-chain. V1 verification can never be re-enabled. Individual V2 attestations can still expire or be revoked, which locks value-bearing actions without changing this permanent registry policy.'
+                    : 'This is irreversible. The backend will independently re-check the active Type 1 / Level 2+ assurance, replay marker, operator registration, minimum self-stake and SWPX escrow before writing the one-way registry flag.'}
                 </p>
               </div>
             </div>
-            <label className="mt-3 block text-xs font-semibold text-muted-foreground">
-              Type REQUIRE_V2_FOREVER to enable
-              <input
-                value={cutoverConfirmation}
-                onChange={(e) => setCutoverConfirmation(e.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                className="mt-1 w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 font-mono text-xs"
-                placeholder="REQUIRE_V2_FOREVER"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={requireV2Forever}
-              disabled={
-                cuttingOver
-                || !recordId
-                || !isAuthoritative
-                || String(identity?.verification_status || '') !== 'ACTIVE'
-                || Number(identity?.verification_type || 0) !== 1
-                || Number(identity?.verification_level || 0) < 2
-                || cutoverConfirmation !== 'REQUIRE_V2_FOREVER'
-              }
-              className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-50"
-            >
-              {cuttingOver ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
-              Require V2 forever
-            </button>
-            {cutoverResult?.verification_v2_required && (
+            {!v2Required && (
+              <>
+                <label className="mt-3 block text-xs font-semibold text-muted-foreground">
+                  Type REQUIRE_V2_FOREVER to enable
+                  <input
+                    value={cutoverConfirmation}
+                    onChange={(e) => setCutoverConfirmation(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="mt-1 w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 font-mono text-xs"
+                    placeholder="REQUIRE_V2_FOREVER"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={requireV2Forever}
+                  disabled={
+                    cuttingOver
+                    || !v2RequiredReadable
+                    || !recordId
+                    || !isAuthoritative
+                    || String(identity?.verification_status || '') !== 'ACTIVE'
+                    || Number(identity?.verification_type || 0) !== 1
+                    || Number(identity?.verification_level || 0) < 2
+                    || cutoverConfirmation !== 'REQUIRE_V2_FOREVER'
+                  }
+                  className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-50"
+                >
+                  {cuttingOver ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
+                  Require V2 forever
+                </button>
+                {!v2RequiredReadable && (
+                  <p className="mt-2 text-xs text-warning">The current V2 policy flag could not be read from the public RPC. The irreversible action stays disabled until that read succeeds.</p>
+                )}
+              </>
+            )}
+            {(v2Required || cutoverResult?.verification_v2_required) && (
               <div className="mt-3 rounded-md border border-success/30 bg-success/10 p-2 text-xs">
                 <p className="font-semibold text-success">Permanent V2 requirement confirmed on-chain.</p>
                 {cutoverResult?.transaction_hash && (
