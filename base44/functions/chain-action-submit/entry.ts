@@ -43,12 +43,17 @@ async function activeIdentity(svc: any, userId: string) {
 }
 
 export default async function (req: Request): Promise<Response> {
+  let diagnosticStage = 'START';
+  let diagnosticAction = '';
+  let diagnosticRecordId = '';
+  let diagnosticSvc: any = null;
   try {
     if (req.method !== 'POST') return jsonError('Method not allowed', 405);
     const base44 = createClientFromRequest(req);
     const me = await base44.auth.me().catch(() => null);
     if (!me?.id) return jsonError('Unauthorized', 401);
     const svc = base44.asServiceRole;
+    diagnosticSvc = svc;
     if (!(await ageEligible(svc, me.id))) {
       return jsonError('Adult testnet eligibility is required', 403, 'AGE_ELIGIBILITY_REQUIRED');
     }
@@ -56,6 +61,8 @@ export default async function (req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || '').trim();
     const recordId = String(body.record_id || '').trim();
+    diagnosticAction = action;
+    diagnosticRecordId = recordId;
     const draftToken = String(body.draft_token || '').trim();
     if (!['stake', 'bridge_out', 'add_signer'].includes(action)) return jsonError('Unknown action', 400, 'UNKNOWN_ACTION');
     if (!recordId) return jsonError('record_id is required', 400, 'RECORD_ID_REQUIRED');
@@ -80,6 +87,7 @@ export default async function (req: Request): Promise<Response> {
       );
     }
 
+    diagnosticStage = 'TRANSACTION_SHAPE';
     const tx = body.transaction;
     validateInvokeShape(tx);
     if (normalizeHex(tx.sender_address, 'sender_address') !== accountAddress) {
@@ -141,12 +149,14 @@ export default async function (req: Request): Promise<Response> {
       expectedCalls = buildAddSignerCalls(accountAddress, String(body.signer_public_key || ''));
     }
 
+    diagnosticStage = 'CALLDATA';
     const expectedCalldata = executeCalldata(expectedCalls);
     const actualCalldata = feltArray(tx.calldata, 'calldata');
     if (!sameFelts(actualCalldata, expectedCalldata)) {
       return jsonError('Only the drafted calls are allowed', 403, 'CALLDATA_MISMATCH');
     }
 
+    diagnosticStage = 'SIGNING_HASH';
     const canonical = canonicalV3Invoke(tx, accountAddress, expectedCalldata);
     const signingHash = signingHashForTransaction(
       action as ChainDraftAction,
@@ -155,13 +165,16 @@ export default async function (req: Request): Promise<Response> {
       accountAddress,
       accountClassHash,
     );
+    diagnosticStage = 'DRAFT_TOKEN';
     if (!(await verifyChainDraftToken(draftToken, me.id, recordId, action as ChainDraftAction, signingHash))) {
       return jsonError('Transaction draft is expired or does not match the signed transaction', 409, 'DRAFT_TOKEN_MISMATCH');
     }
+    diagnosticStage = 'SIGNATURE';
     if (!verifyDeviceSignature(feltArray(tx.signature, 'signature'), signingHash, publicKey)) {
       return jsonError('Transaction signature does not match your device signer', 403, 'INVALID_STARK_SIGNATURE');
     }
 
+    diagnosticStage = 'RELAY';
     const result = await relayRpc('starknet_addInvokeTransaction', { invoke_transaction: canonical });
     if (!result?.transaction_hash) return jsonError('Relay response did not include a transaction hash', 502, 'RELAY_TX_HASH_MISSING');
     const txHash = normalizeHex(result.transaction_hash, 'transaction hash');
@@ -186,9 +199,15 @@ export default async function (req: Request): Promise<Response> {
 
     return Response.json({ ok: true, action, record_id: recordId, transaction_hash: txHash });
   } catch (error: any) {
-    const code = String(error?.message || 'CHAIN_ACTION_SUBMIT_FAILED').replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 120);
+    const rawCode = String(error?.message || 'CHAIN_ACTION_SUBMIT_FAILED').replace(/[^A-Za-z0-9_:-]/g, '').slice(0, 90);
+    const code = `CHAIN_SUBMIT_${diagnosticStage}_${rawCode}`.slice(0, 120);
     console.error('chain-action-submit failed:', code);
-    const clientError = code.includes('NOT_CONFIGURED') || code.includes('MUST_') || code.includes('NOT_ALLOWED') || code.includes('MISMATCH') || code.includes('REQUIRED');
-    return jsonError(clientError ? code.replaceAll('_', ' ') : 'Signed transaction submission failed', clientError ? 409 : 502, code);
+    if (diagnosticAction === 'stake' && diagnosticRecordId && diagnosticSvc) {
+      await diagnosticSvc.entities.StakePosition.update(diagnosticRecordId, {
+        last_error: code,
+      }).catch(() => undefined);
+    }
+    const clientError = rawCode.includes('NOT_CONFIGURED') || rawCode.includes('MUST_') || rawCode.includes('NOT_ALLOWED') || rawCode.includes('MISMATCH') || rawCode.includes('REQUIRED');
+    return jsonError(clientError ? rawCode.replaceAll('_', ' ') : 'Signed transaction submission failed', clientError ? 409 : 502, code);
   }
 }
