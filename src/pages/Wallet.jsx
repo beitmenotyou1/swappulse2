@@ -50,6 +50,14 @@ export default function Wallet() {
   // Staking, minting and bridging all require an identity the chain itself
   // confirmed — a reservation alone is not enough to hold assets.
   const secured = isChainAuthoritative(identity?.status);
+  const valueFeaturesReady = Boolean(
+    secured
+    && status?.age?.value_features_eligible
+    && status?.age?.verifier_status === 'VERIFIED'
+    && identity?.verification_status === 'ACTIVE'
+    && Number(identity?.verification_type || 0) === 1
+    && Number(identity?.verification_level || 0) >= 2
+  );
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -107,7 +115,7 @@ export default function Wallet() {
           </div>
           <div>
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.staking')}</h2>
-            <StakingPanel identitySecured={secured} />
+            <StakingPanel identitySecured={secured} valueFeaturesReady={valueFeaturesReady} />
           </div>
           <div>
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.crossChain')}</h2>
