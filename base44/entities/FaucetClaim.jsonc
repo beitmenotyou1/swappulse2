@@ -2,11 +2,15 @@
   "name": "FaucetClaim",
   "type": "object",
   "title": "FaucetClaim",
-  "description": "org.swappulse.faucetClaim \u2014 a testnet SWPX drip issued to a collector's smart account by the faucet. One record per claim attempt. The 24h per-identity cooldown is enforced server-side by reading the most recent claim for the account, so a client cannot bypass it. Contains only public chain data.",
+  "description": "org.swappulse.faucetClaim \u2014 a testnet SWPX drip issued to a collector's smart account by the faucet. One record per claim attempt. The 24h cooldown is keyed to the canonical chain identity and every attempt fails closed against replay. The private Base44 user mapping is never written on-chain.",
   "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Private Base44 owner mapping used only for row-level access control. Never written on-chain."
+    },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the claiming collector (metadata only; access is controlled by created_by_id)"
+      "description": "AT Protocol DID of the claiming collector (metadata only)"
     },
     "network": {
       "type": "string",
@@ -48,15 +52,17 @@
     }
   },
   "required": [
+    "user_id",
     "did",
     "account_address",
+    "chain_identity_id",
     "status"
   ],
   "rls": {
     "read": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.user_id": "{{user.id}}"
         },
         {
           "user_condition": {
