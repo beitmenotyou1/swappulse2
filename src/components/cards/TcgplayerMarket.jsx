@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ExternalLink, Loader2, Store } from 'lucide-react';
 import { getTcgplayerMarket } from '@/lib/cardEnrichment';
 import { useI18n } from '@/lib/i18n/I18nProvider';
+import { tcgplayerOutboundLink, TCGPLAYER_AFFILIATE_DISCLOSURE } from '@/lib/tcgplayerAffiliate';
 
 const COPY = {
   en: { title: 'TCGplayer market', subtitle: 'Direct TCGplayer market-price cross-check', market: 'Market', low: 'Low', mid: 'Mid', high: 'High', buy: 'View on TCGplayer', source: 'Source', stale: 'cached fallback' },
@@ -55,6 +56,7 @@ export default function TcgplayerMarket({ card }) {
 
   if (!result?.matched || !result?.product) return null;
   const rows = Array.isArray(result.prices) ? result.prices : [];
+  const productLink = tcgplayerOutboundLink(result.product.url);
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4" aria-label={labels.title}>
@@ -85,14 +87,15 @@ export default function TcgplayerMarket({ card }) {
         </div>
       )}
 
-      {result.product.url && (
-        <a href={result.product.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+      {productLink.url && (
+        <a href={productLink.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
           {labels.buy} <ExternalLink className="h-3.5 w-3.5" />
         </a>
       )}
 
       <p className="mt-3 text-[10px] text-muted-foreground">{labels.source}: TCGplayer. TCGDex remains SwapPulse’s canonical card catalogue. Prices are informational and may change.</p>
       <p className="mt-1 text-[10px] text-muted-foreground">This product uses TCGplayer data but is not endorsed or certified by TCGplayer.</p>
+      {productLink.affiliate && <p className="mt-1 text-[10px] font-medium text-muted-foreground">{TCGPLAYER_AFFILIATE_DISCLOSURE}</p>}
     </section>
   );
 }
