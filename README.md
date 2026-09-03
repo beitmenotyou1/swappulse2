@@ -465,17 +465,44 @@ Raw Devnet port `5050` must remain localhost-only.
 - [Forking and rebranding](docs/FORKING_AND_REBRANDING.md)
 - [Change protocol](docs/CHANGE_PROTOCOL.md)
 - [Contributor guide](CONTRIBUTING.md)
+- [Release process](docs/RELEASING.md)
+- [Changelog / release history](CHANGELOG.md)
+- [Licence options](docs/LICENSE_OPTIONS.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
 - [Deployment guide](DEPLOYMENT.md)
 - [Chain README](chain/README.md)
 - [Operator guide](chain/OPERATOR_GUIDE.md)
 - [Developer onboarding](docs/developer-onboarding.md)
 - [API endpoints](docs/api-endpoints.md)
 
-## Open-source principles
+## Releases and project history
+
+SwapPulse uses versioned GitHub releases for significant website, AT Protocol, Base44, Web3, infrastructure and documentation updates.
+
+Release history is kept from oldest to newest in [CHANGELOG.md](CHANGELOG.md). Each version also has full release notes under `.github/releases/`, and [RELEASE_MANIFEST.json](RELEASE_MANIFEST.json) is the machine-readable source used by the GitHub release publisher.
+
+Current release line:
+
+```text
+v0.1.0  Frozen V2 live baseline
+v0.2.0  Identity and staking product layer
+v0.3.0  Navigation and standalone Chain Explorer
+v0.4.0  Wallet overview UX refresh
+v0.5.0  Complete project handbook and deployment documentation
+v0.6.0  Automated GitHub release discipline
+```
+
+Future significant updates should follow [docs/RELEASING.md](docs/RELEASING.md) and explain what was added, changed, removed, why it changed, security/privacy impact, compatibility/migration impact, accessibility/localisation work and checks actually performed.
+
+## Open-source and licensing principles
 
 The project direction is community-readable, inspectable and contribution-friendly. Architecture, trust boundaries and security-sensitive changes should be documented rather than hidden behind marketing language.
 
 Before formally advertising unrestricted open-source redistribution, the project owner should select and add an explicit root software licence. Until then, contributors should treat the repository as source-available with contribution intent rather than assuming a particular legal licence.
+
+The licence decision is documented in [docs/LICENSE_OPTIONS.md](docs/LICENSE_OPTIONS.md). The strongest current shortlist is Apache-2.0 for broad permissive/commercial reuse with explicit patent protection, or MPL-2.0 for commercial reuse with file-level reciprocal openness.
+
+A future SwapPulse software licence will apply only to material the project has the right to license. It will **not** relicense Pokémon artwork/trademarks, TCGdex as a third-party service/project, Base44's platform, user content or separately licensed dependencies. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## AI-assisted development disclosure
 
