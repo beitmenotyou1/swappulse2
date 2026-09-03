@@ -232,12 +232,28 @@ export default function MobileNav() {
                 </button>
               )}
             </div>
-            <p className="mt-3 px-1 text-[11px] font-medium text-muted-foreground">
-              {t('footer.builtOn')}
-            </p>
-            <p className="mt-1.5 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
-              {t('footer.disclaimer')}
-            </p>
+            <div className="mt-4 border-t border-border pt-3">
+              <nav className="flex flex-wrap gap-x-4 gap-y-2 px-1" aria-label={t('nav.more')}>
+                <Link to="/chain/" onClick={() => setMoreOpen(false)} className="text-xs font-semibold text-primary hover:underline">
+                  {t('footer.chainExplorer')}
+                </Link>
+                <a
+                  href="https://github.com/beitmenotyou1/swappulse2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-primary hover:underline"
+                  aria-label={t('footer.githubNewTab')}
+                >
+                  {t('footer.github')}
+                </a>
+              </nav>
+              <p className="mt-3 px-1 text-[11px] font-medium text-muted-foreground">
+                {t('footer.builtOn')}
+              </p>
+              <p className="mt-1.5 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
+                {t('footer.disclaimer')}
+              </p>
+            </div>
           </div>
         </div>
       )}
