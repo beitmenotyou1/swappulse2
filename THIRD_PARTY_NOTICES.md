@@ -1,0 +1,74 @@
+# Third-Party Notices and Intellectual Property Boundaries
+
+SwapPulse is built with and integrates third-party open-source software, hosted services, public protocols and data sources. A SwapPulse software licence applies only to material the SwapPulse rightsholders/contributors are entitled to license.
+
+This file is not a substitute for the licence files shipped with individual dependencies. Dependency licences in package managers/source distributions remain authoritative for those components.
+
+## TCGdex
+
+SwapPulse uses TCGdex for Pokémon Trading Card Game catalogue/data functionality and uses the `@tcgdex/sdk` package.
+
+Upstream resources:
+
+- https://tcgdex.dev/
+- https://github.com/tcgdex/cards-database
+- https://github.com/tcgdex/javascript-sdk
+
+The TCGdex cards-database repository states that the database is licensed under the MIT License and that it is not produced, endorsed, supported or affiliated with Nintendo or The Pokémon Company. TCGdex SDK repositories are also published under MIT licensing.
+
+TCGdex remains an independent third-party project. SwapPulse does not claim ownership of TCGdex, its name, its API service or third-party rights that may be represented in data returned by the service.
+
+If a SwapPulse distribution copies/substantially redistributes TCGdex MIT-licensed source/database material rather than merely calling the hosted API, preserve the applicable upstream MIT copyright/licence notices as required by that licence.
+
+## Pokémon and related intellectual property
+
+Pokémon, Pokémon character names, card artwork, game artwork and associated trademarks/copyrights are owned by their respective rightsholders, including Nintendo, Creatures Inc., GAME FREAK inc. and/or The Pokémon Company/The Pokémon Company International as applicable.
+
+SwapPulse is an independent community project and is not affiliated with, endorsed by, sponsored by or approved by Nintendo, Creatures Inc., GAME FREAK inc. or The Pokémon Company.
+
+A SwapPulse source-code licence does **not** grant rights to use third-party Pokémon names, logos, characters, card artwork or other protected material.
+
+Fork maintainers are responsible for ensuring they have lawful rights/permissions for the content, branding, data and media used by their fork.
+
+Relevant public rights/terms information includes:
+
+- https://www.pokemon.com/uk/legal/terms-of-use
+- https://www.pokemon.com/us/legal/copyright
+
+## Base44
+
+SwapPulse uses Base44 as its application/orchestration platform, including managed application services, entities, authentication, backend functions and workflows.
+
+The SwapPulse repository licence does not license the Base44 platform itself. Base44 services and SDK components remain subject to their own applicable terms and licences.
+
+## AT Protocol
+
+SwapPulse integrates AT Protocol concepts and services including decentralised identifiers, PDS/federation and related protocol functionality.
+
+AT Protocol specifications, libraries and implementations remain subject to their own licences and terms. SwapPulse's licence applies only to SwapPulse-owned integration/application code.
+
+## Cairo, Starknet and OpenZeppelin
+
+SwapPulse's Web3 layer is built using Cairo/Starknet tooling and established OpenZeppelin Cairo components where appropriate.
+
+Cairo, Starknet tooling, OpenZeppelin components and other chain dependencies remain subject to their own upstream licences. Their inclusion does not transfer their copyrights/trademarks to SwapPulse.
+
+## npm and other dependencies
+
+See `package.json`, lockfiles and individual dependency distributions for applicable third-party software licences.
+
+The repository's project licence must not be read as replacing or overriding an individual dependency's licence.
+
+## User content
+
+Content posted/uploaded by users remains subject to the site's Terms, privacy policies, user rights and applicable law. Open-sourcing the SwapPulse application source does not place user posts, messages, uploaded images or personal data under the source-code licence.
+
+## Trademarks and project identity
+
+An open-source code licence generally grants copyright/patent permissions specified by that licence. It should not be interpreted as a blanket trademark licence to present an independent fork as the official SwapPulse service.
+
+Independent forks should use branding that avoids misleading users about origin, endorsement, network identity, token identity or operator status.
+
+## Reporting an issue
+
+If you believe a third-party attribution, licence notice or intellectual-property boundary in this repository is incomplete or incorrect, please open a GitHub issue or submit a focused documentation pull request without including confidential information.
