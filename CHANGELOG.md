@@ -252,7 +252,7 @@ Target: `main` when this release manifest lands.
 - Admin TCGplayer request-budget visibility.
 - Impact Partner Tracking Links API integration for approved TCGplayer affiliate deep links.
 - Affiliate disclosure adjacent to active TCGplayer links.
-- Root `openapi.yaml` using OpenAPI 3.2.0 for supported public/authenticated product functions.
+- Root `openapi.yaml` using OpenAPI 3.1.0 for ReadMe-compatible supported public/authenticated product functions.
 - `x-base44-*` and `x-swappulse-*` specification extensions for function mapping, trust, privacy, source authority, cache/rate policy and fail-soft behaviour.
 - `docs/OPENAPI.md` maintainer guide and build-time publication of the authoritative contract at `/openapi.yaml`.
 
