@@ -26,7 +26,7 @@ async function cachedEnrichment(key, ttlMs, fetcher) {
 
 export async function getPokeWalletMarket(cardId) {
   if (!cardId) return null;
-  return cachedEnrichment(`pokewallet-market:${cardId}`, 5 * 60 * 1000, async () => {
+  return cachedEnrichment(`pokewallet-market:${cardId}`, 15 * 60 * 1000, async () => {
     const res = await base44.functions.invoke('pokewallet-market', { cardId });
     return res?.data ?? null;
   });
