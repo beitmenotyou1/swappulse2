@@ -11,6 +11,7 @@ import { getCard } from '../../shared/tcgdexClient.ts';
 import {
   PokeWalletError,
   PokeWalletFreeTier,
+  isPokeWalletConfigured,
   resolvePokeWalletMarket,
 } from '../../shared/pokewalletClient.ts';
 
@@ -29,7 +30,34 @@ export default async function (req: Request): Promise<Response> {
       }, { status: 400 });
     }
 
-    const tcgdexCard = await getCard(cardId, 'en').catch(() => null);
+    if (!isPokeWalletConfigured()) {
+      return Response.json({
+        available: false,
+        matched: false,
+        temporary: true,
+        reason: 'not_configured',
+        canonicalCardId: cardId,
+        canonicalSource: 'TCGDex',
+        marketSource: 'PokéWallet',
+      }, {
+        headers: { 'Cache-Control': 'private, max-age=300' },
+      });
+    }
+
+    // Prefer SwapPulse's existing persistent TCGDex catalogue cache. This avoids
+    // spending another TCGDex request for normal card-detail views. Fall back to
+    // the live canonical API only when that cache has not yet seen the card.
+    const cachedRows = await svc.entities.TcgdexCard
+      .filter({ card_id: cardId }, '-updated_date', 1)
+      .catch(() => []);
+    const cachedCard = cachedRows?.[0];
+    const tcgdexCard = cachedCard ? {
+      id: cachedCard.card_id,
+      name: cachedCard.name,
+      localId: cachedCard.local_id,
+      rarity: cachedCard.rarity,
+      set: { id: cachedCard.set_id, name: cachedCard.set_name },
+    } : await getCard(cardId, 'en').catch(() => null);
     if (!tcgdexCard) {
       return Response.json({
         available: false,
