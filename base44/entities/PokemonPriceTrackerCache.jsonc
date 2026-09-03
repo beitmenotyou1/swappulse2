@@ -1,0 +1,82 @@
+{
+  "name": "PokemonPriceTrackerCache",
+  "type": "object",
+  "title": "Pok\u00e9mon Price Tracker Cache",
+  "description": "Private backend cache for normalized PokemonPriceTracker API responses and conservative TCGDex-to-PriceTracker mappings. Never exposed directly to browser clients.",
+  "properties": {
+    "cache_key": {
+      "type": "string"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "card",
+        "search",
+        "mapping",
+        "sets",
+        "sealed",
+        "parse_title"
+      ]
+    },
+    "resource_id": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "source_path": {
+      "type": "string"
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stale_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "credits_consumed": {
+      "type": "integer",
+      "default": 0
+    },
+    "schema_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "cache_key",
+    "resource_type",
+    "resource_id",
+    "payload",
+    "fetched_at",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

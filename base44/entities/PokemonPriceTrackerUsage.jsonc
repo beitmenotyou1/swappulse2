@@ -1,0 +1,82 @@
+{
+  "name": "PokemonPriceTrackerUsage",
+  "type": "object",
+  "title": "Pok\u00e9mon Price Tracker Usage Budget",
+  "description": "Private server-side quota ledger for PokemonPriceTracker credits and request rate. Used to stop before provider limits and preserve operational headroom.",
+  "properties": {
+    "bucket_key": {
+      "type": "string"
+    },
+    "bucket_type": {
+      "type": "string",
+      "enum": [
+        "minute",
+        "day"
+      ]
+    },
+    "calls_used": {
+      "type": "integer",
+      "default": 0
+    },
+    "credits_used": {
+      "type": "integer",
+      "default": 0
+    },
+    "provider_call_limit": {
+      "type": "integer"
+    },
+    "soft_call_limit": {
+      "type": "integer"
+    },
+    "provider_credit_limit": {
+      "type": "integer"
+    },
+    "soft_credit_limit": {
+      "type": "integer"
+    },
+    "provider_credits_remaining": {
+      "type": "integer"
+    },
+    "provider_calls_consumed": {
+      "type": "integer"
+    },
+    "last_request_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "blocked_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "bucket_key",
+    "bucket_type"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
