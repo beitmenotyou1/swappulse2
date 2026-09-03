@@ -1,0 +1,74 @@
+{
+  "name": "ImpactAffiliateCache",
+  "type": "object",
+  "title": "Impact Affiliate Cache",
+  "description": "Private backend cache for Impact.com partner programme discovery and generated TCGplayer tracking links. Never exposed directly to browser clients.",
+  "properties": {
+    "cache_key": {
+      "type": "string"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "program",
+        "tracking_link"
+      ]
+    },
+    "destination_url": {
+      "type": "string"
+    },
+    "tracking_url": {
+      "type": "string"
+    },
+    "program_id": {
+      "type": "string"
+    },
+    "program_name": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schema_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "cache_key",
+    "resource_type",
+    "fetched_at",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

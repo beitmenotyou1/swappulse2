@@ -1,0 +1,71 @@
+{
+  "name": "ImpactAffiliateUsage",
+  "type": "object",
+  "title": "Impact Affiliate API Usage",
+  "description": "Private server-side usage ledger for Impact.com affiliate API calls and provider rate-limit headers.",
+  "properties": {
+    "bucket_key": {
+      "type": "string"
+    },
+    "bucket_type": {
+      "type": "string",
+      "enum": [
+        "hour"
+      ]
+    },
+    "calls_used": {
+      "type": "integer",
+      "default": 0
+    },
+    "soft_call_limit": {
+      "type": "integer",
+      "default": 800
+    },
+    "provider_limit": {
+      "type": "integer"
+    },
+    "provider_remaining": {
+      "type": "integer"
+    },
+    "reset_seconds": {
+      "type": "integer"
+    },
+    "last_status": {
+      "type": "integer"
+    },
+    "last_request_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "blocked_until": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "bucket_key",
+    "bucket_type"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
