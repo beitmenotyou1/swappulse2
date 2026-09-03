@@ -463,6 +463,7 @@ Raw Devnet port `5050` must remain localhost-only.
 
 - [User guide](docs/USER_GUIDE.md)
 - [Project architecture](docs/PROJECT_ARCHITECTURE.md)
+- [Pokémon data providers](docs/POKEMON_DATA_PROVIDERS.md)
 - [V2 live architecture](docs/SWAPPULSE_V2_LIVE_ARCHITECTURE.md)
 - [Node architecture roadmap](docs/NODE_ARCHITECTURE.md)
 - [Forking and rebranding](docs/FORKING_AND_REBRANDING.md)
@@ -470,7 +471,7 @@ Raw Devnet port `5050` must remain localhost-only.
 - [Contributor guide](CONTRIBUTING.md)
 - [Release process](docs/RELEASING.md)
 - [Changelog / release history](CHANGELOG.md)
-- [Licence options](docs/LICENSE_OPTIONS.md)
+- [Licence decision history](docs/LICENSE_OPTIONS.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
 - [Deployment guide](DEPLOYMENT.md)
 - [Chain README](chain/README.md)
