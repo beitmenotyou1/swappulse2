@@ -1,190 +1,179 @@
 # Getting Started with SwapPulse
 
-Welcome to SwapPulse, your community-owned Pokémon TCG platform. This guide helps you get started with collecting, trading, and engaging with the community.
+SwapPulse is a Pokémon TCG collecting, trading and community platform with AT Protocol federation and an optional Cairo/Starknet Web3 layer.
 
----
+If you are a normal collector, you can use the social and TCG features without understanding blockchain technology.
 
-## Quick Start
+For the complete end-user guide, see `docs/USER_GUIDE.md`.
 
-### 1. Create Your Account
+## Quick start
 
-1. Visit [SwapPulse](https://swap-pulse-hub.base44.app)
-2. Click **Sign Up** in the top-right corner
-3. Choose your authentication method:
-   - Email + password
-   - Google OAuth
-4. Verify your email address
-5. Set up 2FA (recommended for wallet features)
+### 1. Create or sign in to your account
 
-### 2. Set Up Your Collection
+Open SwapPulse and create an account or sign in using the authentication methods currently offered by the site.
 
-Once logged in:
+After signing in:
 
-1. Navigate to **Collection** (or tap the Collection tab on mobile)
-2. Click **+ Add Card**
-3. Search for cards by name, set, or card number
-4. Select variant (normal, holo, reverse holo, etc.)
-5. Add notes, condition, and acquisition details
+- complete your collector profile;
+- choose your language;
+- review privacy/security settings;
+- set up stronger account security where available.
 
-Your collection automatically tracks:
-- Set completion progress
-- Total portfolio value
-- Duplicate detection
-- Missing cards per set
+### 2. Explore Pokémon TCG content
 
-### 3. Browse the Marketplace
+Use **Explore** to discover cards, sets, posts and collectors.
 
-The trade board lets you buy, sell, and trade cards with other collectors:
+SwapPulse uses TCGDex-backed card/set catalogue data and builds collection/trading/community features around it.
 
-1. Click **Trades** in the main navigation
-2. Use filters to find cards: set, rarity, price range, condition
-3. Click **Make an Offer** to start negotiations
-4. Messages are end-to-end encrypted
-5. Escrow protects both parties until delivery is confirmed
+### 3. Build your collection
 
-### 4. Join the Community
+Open **Collection** and add the cards you own.
 
-SwapPulse offers several ways to engage:
+Collection data can feed into:
 
-**Pack Opening Threads**
-- Share your pulls with animated reveal effects
-- Get reactions from other collectors
-- Archive statistics for future reference
+- binders;
+- trade matching;
+- portfolio/market views;
+- card verification;
+- on-chain card workflows where enabled.
 
-**Journals**
-- Write long-form reviews of cards or sets
-- Embed pricing charts and stats
-- Tag your posts for discoverability
+### 4. Organise cards with Binders
 
-**Challenges**
-- Participate in weekly collecting challenges
-- Earn achievements and badges
-- Compete on leaderboards
+Use **Binders** to create more focused views of your collection, such as trade binders, favourite sets or showcase groups.
 
-**Voice Spaces**
-- Join live audio discussions about cards
-- Host your own pack opening streams
+### 5. Use the Trade Board
 
----
+Open **Trade Board** to browse or create collector-to-collector trade listings.
 
-## Wallet Features
+Keep physical-card safety in mind:
 
-### Topping Up
+- verify condition/details;
+- use clear communication;
+- keep evidence of agreements/shipping where appropriate;
+- use community/trust signals as context, not as an absolute guarantee.
 
-1. Navigate to **Wallet**
-2. Click **Top Up**
-3. Choose amount and currency (GBP, EUR, USD)
-4. Pay via Stripe (card) or crypto (NOWPayments)
+### 6. Join the community
 
-### Converting Fiat to Crypto
+SwapPulse includes features such as:
 
-1. Go to **Wallet → Convert**
-2. Choose **Buy Crypto** mode
-3. Select target token (PULSE, USDC, WETH, etc.)
-4. Enter amount — 2% platform fee shown upfront
-5. Confirm — tokens arrive in your wallet instantly
+- profiles and follows;
+- posts/comments/reactions;
+- Circles;
+- Meetups;
+- live/community spaces;
+- notifications;
+- private messages;
+- starter packs;
+- feeds and discovery tools.
 
-### Sending Crypto
+## AT Protocol in plain English
 
-1. Go to **Wallet → Send**
-2. Enter recipient address or @username
-3. Enter amount and select token
-4. Unlock wallet via passkey or PIN
-5. Enter the 6-digit send code displayed on screen
+SwapPulse uses the AT Protocol so your social identity/data can become more portable and federated than in a conventional closed social network.
 
-### Bridging Between Chains
+You may see concepts such as:
 
-1. Go to **Wallet → Bridge**
-2. Choose source and destination chain (PulseChain ↔ Polygon)
-3. Enter amount of $PULSE to bridge
-4. Confirm — LayerZero handles the transfer
-5. Tokens arrive within 1-5 minutes
+- DID;
+- handle;
+- PDS (Personal Data Server);
+- app password;
+- federation.
 
-### Porting NFTs Between Chains
+You do not need to manage these manually for ordinary browsing. The site and backend handle the relevant provisioning/synchronisation flows.
 
-1. Go to **Wallet → Bridge** → **Bridge Wallet** tab
-2. View your NFT assets across both chains
-3. Click **Port** on any dual-chained asset
-4. Confirm in the modal — the relayer processes the burn + unlock
-5. Track progress in the **Pending** tab
+For architecture details, see `docs/PROJECT_ARCHITECTURE.md`.
 
----
+## SwapPulse Wallet
 
-## Advanced Features
+The **SwapPulse Wallet** is the optional self-custodial/Web3 area.
 
-### Using Meta-Transactions (Gas Station)
+The overview can show:
 
-Don't have MATIC or PLS for gas? No problem:
+- SWPX testnet balance;
+- smart-account address;
+- Receive/copy;
+- Get testnet SWPX;
+- Stake;
+- Send/bridge controls;
+- direct Chain Explorer link.
 
-1. The platform sponsors gas for custodial wallet users
-2. For external wallets, meta-transactions let you sign off-chain
-3. A relayer submits the transaction on your behalf
-4. No gas balance needed in your wallet
+The detailed sections show:
 
-### Setting Up Notifications
+- V2 identity assurance;
+- expiry/revocation state;
+- recovery protection;
+- card possession attestations;
+- on-chain cards;
+- community staking;
+- cross-chain tools.
 
-Customise your notification preferences:
+### Important privacy point
 
-1. Go to **Settings → Notifications**
-2. Choose what to receive:
-   - Pack opening alerts from followed users
-   - Trade matches for your wishlist
-   - Price drop alerts
-   - Challenge reminders
-3. Select delivery method (push, email, or both)
+The Cairo identity registry does **not** store names, emails, dates of birth or identity documents. It stores opaque commitments and public assurance metadata only.
 
-### Earning $PULSE via Usage Mining
+### Verification expiry
 
-You earn $PULSE tokens by using the platform:
-- Opening packs and sharing threads
-- Completing trades
-- Publishing journals
-- Showcasing binders
-- Posting card reviews
-- Vouching for other collectors
+If V2 verification expires or is revoked:
 
-Points are tracked off-chain and distributed on-chain via signed claims.
+- your identity does not disappear;
+- existing on-chain stake/history remains visible;
+- new value-bearing actions such as staking/bridging lock until eligibility is restored.
 
----
+## SWPX testnet token
 
-## Tips for Collectors
+SWPX is used for current testnet staking and Web3 flows.
 
-### Efficient Collection Management
-- Use the search to find cards quickly
-- Set completion progress tracks missing cards automatically
-- Duplicate detection flags multi-copy cards
-- Export your collection for insurance purposes
+The Wallet faucet can issue testnet SWPX according to eligibility and cooldown rules.
 
-### Maximising Value
-- Track market trends with Market Watch
-- Set price alerts for desired cards
-- Engage in the community to spot deals early
-- Use the Portfolio view to track total value
+Testnet SWPX should not be treated as guaranteed financial value.
 
-### Building Reputation
-- Complete trades promptly to earn positive feedback
-- Vouch for trustworthy traders
-- Maintain a trust score of 70+ for premium features
-- Higher trust scores unlock staking multipliers (up to 2x)
+## Community staking
 
----
+The current staking UI supports:
 
-## Support
+- registering an operator;
+- increasing operator self-stake;
+- delegating;
+- undelegating;
+- withdrawing after the unlock period;
+- operator exit.
 
-If you need help:
-- 📚 **Help Center**: Visit `/help` for guides on every feature
-- 📊 **Status Page**: Check `/status` for service health
-- 📖 **API Docs**: See `docs/api-endpoints.md` for developer documentation
+If you already run an operator, SwapPulse should offer **Increase operator self-stake** rather than trying to register a duplicate operator.
 
----
+The current staking pool is not yet decentralised multi-validator block consensus. See `docs/NODE_ARCHITECTURE.md` for the node/validator roadmap.
 
-## Next Steps
+## Chain Explorer
 
-- [Understanding Card Variants](#) — Normal, holo, reverse, first edition
-- [Trading Best Practices](#) — Escrow, feedback, disputes
-- [Wallet Security](#) — Passkeys, PINs, seed phrases
-- [Bridge Wallet](#) — Managing assets across chains
+Open **Chain Explorer** from the footer.
 
----
+The explorer can show:
 
-Last Updated: 2026-08-26
+- latest blocks;
+- latest transaction hashes;
+- block details;
+- transaction/receipt details;
+- smart-account/contract addresses;
+- SwapPulse-indexed public smart-account activity.
+
+Wallet transaction hashes link directly to their explorer pages.
+
+## Language and accessibility
+
+SwapPulse offers nine main UI languages and is being developed with keyboard, screen-reader, focus, contrast, reduced-motion and responsive/reflow considerations.
+
+If a new permanent feature appears only in English, that should be treated as incomplete localisation rather than normal behaviour.
+
+## Help and troubleshooting
+
+Use:
+
+- `/help` for in-app guides;
+- `/status` for service health;
+- `/chain/` for public chain state;
+- `docs/USER_GUIDE.md` for detailed product usage.
+
+For developers:
+
+- `README.md`;
+- `docs/developer-onboarding.md`;
+- `CONTRIBUTING.md`;
+- `docs/PROJECT_ARCHITECTURE.md`.
