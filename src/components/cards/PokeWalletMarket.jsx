@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, RefreshCw, Store, Tag } from 'lucide-react';
 import { getPokeWalletMarket } from '@/lib/cardEnrichment';
 import { useI18n } from '@/lib/i18n/I18nProvider';
-import { tcgplayerOutboundLink, TCGPLAYER_AFFILIATE_DISCLOSURE } from '@/lib/tcgplayerAffiliate';
 
 const COPY = {
   en: { title: 'Market cross-check', subtitle: 'Additional live market data from PokéWallet', tcg: 'TCGPlayer', cm: 'CardMarket', market: 'Market', low: 'Low', mid: 'Mid', high: 'High', avg: 'Average', trend: 'Trend', cached: 'cached', stale: 'stale cache', source: 'Source', open: 'Open marketplace' },
@@ -92,8 +91,8 @@ export default function PokeWalletMarket({ card }) {
   }, [card?.id]);
 
   const market = result?.matched ? result.market : null;
-  const tcgLink = useMemo(() => tcgplayerOutboundLink(market?.tcgplayer?.url), [market?.tcgplayer?.url]);
-  const tcgUrl = tcgLink.url;
+  const tcgUrl = useMemo(() => safeExternalUrl(market?.tcgplayer?.url), [market?.tcgplayer?.url]);
+  const tcgAffiliate = Boolean(market?.tcgplayer?.affiliate || result?.tcgplayerAffiliate?.active);
   const cmUrl = useMemo(() => safeExternalUrl(market?.cardmarket?.url), [market?.cardmarket?.url]);
 
   if (loading && !result) {
@@ -146,7 +145,7 @@ export default function PokeWalletMarket({ card }) {
       <p className="mt-3 text-[10px] text-muted-foreground">
         {labels.source}: PokéWallet → TCGPlayer / CardMarket. TCGDex remains SwapPulse’s canonical card catalogue.
       </p>
-      {tcgLink.affiliate && <p className="mt-1 text-[10px] font-medium text-muted-foreground">{TCGPLAYER_AFFILIATE_DISCLOSURE}</p>}
+      {tcgAffiliate && <p className="mt-1 text-[10px] font-medium text-muted-foreground">Affiliate link: SwapPulse may earn a commission from qualifying TCGplayer purchases at no extra cost to you.</p>}
     </section>
   );
 }
