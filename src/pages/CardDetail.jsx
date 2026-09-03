@@ -17,6 +17,8 @@ import { formatPrice } from '@/lib/format';
 import useSEO from '@/hooks/useSEO';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import CardSocialTabs from '@/components/cards/CardSocialTabs';
+import PokeWalletMarket from '@/components/cards/PokeWalletMarket';
+import PokemonProfile from '@/components/cards/PokemonProfile';
 export default function CardDetail() {
   const { cardId } = useParams();
   const [card, setCard] = useState(null);
@@ -275,6 +277,10 @@ export default function CardDetail() {
           <CardVariantPricing card={card} />
         </div>
 
+        <div className="mt-5">
+          <PokeWalletMarket card={card} />
+        </div>
+
         <div className="mt-5 rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 text-sm font-bold">{t('card.variants')}</h3>
           <div className="flex flex-wrap gap-2">
@@ -334,6 +340,7 @@ export default function CardDetail() {
       </div>
 
       <div className="mt-5 space-y-4 px-4">
+        <PokemonProfile card={card} />
         <CardEvolutionChain card={card} />
         <CardSetRail card={card} />
       </div>
