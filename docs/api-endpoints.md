@@ -98,6 +98,21 @@ The Free plan is treated as a 100-credit/day, 60-call/minute development budget 
 
 Population reports, bulk exports and other Business-only data are not exposed by the Free-tier integration. The function is a product-only enrichment endpoint and must never become a public proxy/feed for PokemonPriceTracker data.
 
+### `tcgplayer-market`
+
+Optional direct TCGplayer catalogue/pricing enrichment for one canonical TCGDex Pokémon card. The browser supplies only the TCGDex card ID. The backend uses existing authorised TCGplayer developer credentials to obtain a Bearer token, searches Pokémon category 3, conservatively resolves a matching product, and fetches product market prices.
+
+Required server configuration:
+
+- `TCGPLAYER_PUBLIC_KEY`;
+- `TCGPLAYER_PRIVATE_KEY`;
+- `TCGPLAYER_APPROVED_USE=true` only when the TCGplayer developer-key approval covers SwapPulse's use;
+- optional `TCGPLAYER_SOFT_CALLS_PER_MINUTE` and `TCGPLAYER_SOFT_CALLS_PER_DAY` overrides.
+
+TCGplayer currently says it is no longer granting new API access. SwapPulse therefore supports existing approved developer credentials only. Current public documentation does not provide a fixed numeric API ceiling, but the API Terms prohibit excessive/unreasonable volume and reserve a right to limit use. SwapPulse defaults to its own 30 calls/minute and 1,000 calls/day safety ceilings, caches card mappings for 30 days and pricing for 6 hours, and honours provider `429`/`Retry-After` responses.
+
+The SwapPulse TCGplayer client exposes no store, order, customer, inventory, buylist or seller-price mutation endpoint. When TCGplayer pricing is displayed, the UI identifies TCGplayer as the source, links to the matched TCGplayer product and includes the required provider attribution notice.
+
 Pricing/enrichment data is informational and can be delayed relative to live marketplaces or upstream databases. TCGDex remains the canonical SwapPulse card catalogue and card identifier namespace.
 
 ## 2. Collection and card workflows
