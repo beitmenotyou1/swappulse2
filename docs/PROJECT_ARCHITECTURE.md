@@ -87,6 +87,7 @@ SwapPulse uses multiple Pokémon data providers for distinct purposes rather tha
 - **PokéAPI** provides optional species/game enrichment linked by TCGDex National Pokédex IDs.
 - **PokéWallet** provides optional cached TCGPlayer/CardMarket market cross-checks.
 - **PokemonPriceTracker** provides optional RAW/graded sold-price/recent-history enrichment, subject to provider plan/licensing constraints.
+- **TCGplayer** provides an optional direct TCGplayer catalogue/pricing cross-check for existing authorised developer accounts.
 
 TCGDex remains authoritative when provider records disagree about card identity.
 
@@ -105,6 +106,8 @@ Base44 records/cache are used so collection, trade and social workflows can refe
 Pricing/enrichment providers are accessed only through narrow Base44 backend functions. Their credentials never ship to the browser. Each provider has its own persistent cache and quota/fallback policy so one upstream outage or rate-limit event cannot take down the canonical catalogue.
 
 PokemonPriceTracker is additionally licence-gated: ordinary production users receive no provider data while SwapPulse is configured on a non-commercial Free/API plan. Admin-only development/evaluation can still exercise the integration without enabling public use.
+
+TCGplayer is approval-gated: current TCGplayer documentation says new API access is no longer granted, and existing keys may only be used for the purpose approved by TCGplayer. SwapPulse therefore requires existing developer credentials plus `TCGPLAYER_APPROVED_USE=true` before it sends any direct TCGplayer request. Only catalog/product/pricing reads are implemented; seller/store mutation APIs are outside the product architecture.
 
 ### Why this is separate from Web3
 
