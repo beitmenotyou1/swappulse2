@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import HealthSection from '@/components/admin/HealthSection';
 import MetricsSection from '@/components/admin/MetricsSection';
+import ExternalApiBudgetSection from '@/components/admin/ExternalApiBudgetSection';
 import InviteCodesSection from '@/components/admin/InviteCodesSection';
 import EmailTestSection from '@/components/admin/EmailTestSection';
 import IncidentsSection from '@/components/admin/IncidentsSection';
@@ -109,6 +110,7 @@ export default function Admin() {
             {data && (
               <>
                 <HealthSection health={data.health} generatedAt={data.generated_at} onRefresh={load} />
+                <ExternalApiBudgetSection pokewallet={data.pokewallet_usage} priceTracker={data.pokemon_price_tracker_usage} />
                 <MetricsSection counts={data.counts} />
                 <DsarSummaryCard />
               </>
