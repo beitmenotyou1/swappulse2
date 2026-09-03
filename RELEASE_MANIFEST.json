@@ -69,7 +69,7 @@
     },
     {
       "version": "v0.9.0",
-      "title": "Dormant TCGplayer API and Impact affiliate integration",
+      "title": "Dormant TCGplayer API, Impact affiliate integration and OpenAPI contract",
       "target": "main",
       "notes": ".github/releases/v0.9.0.md",
       "prerelease": true,
