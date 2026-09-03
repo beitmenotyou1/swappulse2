@@ -402,9 +402,9 @@ Changes to Web3, identity, authentication, PDS/federation, permissions, secrets 
 
 SwapPulse is intentionally structured so communities can study and adapt the architecture, but there is an important legal prerequisite:
 
-> **This repository currently has no root `LICENSE` file.** Public source visibility by itself does not automatically grant broad redistribution/modification rights. A formal software licence must be selected and added by the project owner before third parties are told they have unrestricted reuse rights.
+> **SwapPulse is licensed under the Mozilla Public License 2.0 (MPL-2.0).** You may use, modify, distribute and commercially build on SwapPulse subject to the MPL-2.0 terms. Modifications to MPL-covered files that you distribute must remain available under MPL-2.0. Third-party Pokémon material, APIs, hosted services and separately licensed dependencies are not relicensed by SwapPulse.
 
-Once licensing is resolved, the practical fork process is documented in [docs/FORKING_AND_REBRANDING.md](docs/FORKING_AND_REBRANDING.md).
+The practical fork process is documented in [docs/FORKING_AND_REBRANDING.md](docs/FORKING_AND_REBRANDING.md).
 
 That guide covers:
 
@@ -500,11 +500,11 @@ Future significant updates should follow [docs/RELEASING.md](docs/RELEASING.md) 
 
 The project direction is community-readable, inspectable and contribution-friendly. Architecture, trust boundaries and security-sensitive changes should be documented rather than hidden behind marketing language.
 
-Before formally advertising unrestricted open-source redistribution, the project owner should select and add an explicit root software licence. Until then, contributors should treat the repository as source-available with contribution intent rather than assuming a particular legal licence.
+SwapPulse-owned source code and original project documentation are licensed under **Mozilla Public License 2.0 (MPL-2.0)**. See the root [LICENSE](LICENSE) file. MPL-2.0 permits personal and commercial use, modification and redistribution while requiring distributed modifications to MPL-covered files to remain under MPL-2.0.
 
-The licence decision is documented in [docs/LICENSE_OPTIONS.md](docs/LICENSE_OPTIONS.md). The strongest current shortlist is Apache-2.0 for broad permissive/commercial reuse with explicit patent protection, or MPL-2.0 for commercial reuse with file-level reciprocal openness.
+The historical licence comparison remains available in [docs/LICENSE_OPTIONS.md](docs/LICENSE_OPTIONS.md), but MPL-2.0 is now the selected project licence.
 
-A future SwapPulse software licence will apply only to material the project has the right to license. It will **not** relicense Pokémon artwork/trademarks, TCGdex as a third-party service/project, Base44's platform, user content or separately licensed dependencies. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MPL-2.0 applies only to material the project has the right to license. It does **not** relicense Pokémon artwork/trademarks, TCGDex, PokéAPI, PokéWallet, Base44's platform, user content or separately licensed dependencies. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## AI-assisted development disclosure
 
