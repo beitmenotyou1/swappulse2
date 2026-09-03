@@ -62,8 +62,16 @@
     {
       "version": "v0.8.0",
       "title": "PokemonPriceTracker graded and recent-market enrichment",
-      "target": "main",
+      "target": "80042e87e325707ade209e4c2e2b348fa1bd1b47",
       "notes": ".github/releases/v0.8.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.9.0",
+      "title": "Dormant TCGplayer API and Impact affiliate integration",
+      "target": "main",
+      "notes": ".github/releases/v0.9.0.md",
       "prerelease": true,
       "historical": false
     }
