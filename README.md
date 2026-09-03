@@ -63,13 +63,14 @@ Collectors and community
 | Pokémon data sources       |
 | TCGDex canonical catalogue |
 | PokéWallet market data     |
+| PokemonPriceTracker prices |
 | PokéAPI species enrichment |
 +----------------------------+
 ```
 
 ### 1. Pokémon TCG layer
 
-TCGDex remains the canonical catalogue and card-ID source for Pokémon cards and sets. PokéWallet is used only as an optional, cached market-price enrichment layer, while PokéAPI provides optional species/game enrichment linked by TCGDex National Pokédex IDs. SwapPulse builds collector workflows around those sources, including:
+TCGDex remains the canonical catalogue and card-ID source for Pokémon cards and sets. PokéWallet is used only as an optional, cached TCGPlayer/CardMarket market-price enrichment layer. PokemonPriceTracker adds optional RAW, graded sold-price and recent-history enrichment where its subscription/licensing terms permit the deployment. PokéAPI provides optional species/game enrichment linked by TCGDex National Pokédex IDs. SwapPulse builds collector workflows around those sources, including:
 
 - browsing cards and sets;
 - collection tracking;
@@ -80,7 +81,7 @@ TCGDex remains the canonical catalogue and card-ID source for Pokémon cards and
 - grading-related workflows;
 - card verification and on-chain card anchoring.
 
-The TCGDex catalogue is periodically synchronised into the Base44 application layer so the rest of the site does not need to make every page depend on a live third-party request. PokéWallet requests are server-only, persistently cached, protected by a free-tier safety budget, and fail soft so a pricing-provider outage cannot take down card pages. PokéAPI resources are also cached server-side and are never joined by guessing from a card name.
+The TCGDex catalogue is periodically synchronised into the Base44 application layer so the rest of the site does not need to make every page depend on a live third-party request. PokéWallet and PokemonPriceTracker requests are server-only, persistently cached, protected by provider-specific safety budgets, and fail soft so a pricing-provider outage cannot take down card pages. PokemonPriceTracker public production use is additionally fail-closed unless the configured plan/permission allows the site's deployment model. PokéAPI resources are also cached server-side and are never joined by guessing from a card name.
 
 ### 2. AT Protocol layer
 
@@ -504,7 +505,7 @@ SwapPulse-owned source code and original project documentation are licensed unde
 
 The historical licence comparison remains available in [docs/LICENSE_OPTIONS.md](docs/LICENSE_OPTIONS.md), but MPL-2.0 is now the selected project licence.
 
-MPL-2.0 applies only to material the project has the right to license. It does **not** relicense Pokémon artwork/trademarks, TCGDex, PokéAPI, PokéWallet, Base44's platform, user content or separately licensed dependencies. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MPL-2.0 applies only to material the project has the right to license. It does **not** relicense Pokémon artwork/trademarks, TCGDex, PokéAPI, PokéWallet, PokemonPriceTracker, Base44's platform, user content or separately licensed dependencies. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## AI-assisted development disclosure
 
