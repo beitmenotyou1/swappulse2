@@ -178,7 +178,10 @@ Current server-side secret/config names:
 - `TCGPLAYER_APPROVED_USE` (defaults to false)
 - `TCGPLAYER_SOFT_CALLS_PER_MINUTE` (defaults to 30)
 - `TCGPLAYER_SOFT_CALLS_PER_DAY` (defaults to 1000)
-- `TCGPLAYER_AFFILIATE_URL_TEMPLATE` (optional, only after Impact affiliate approval; must contain `{url}`)
+- `IMPACT_ACCOUNT_SID` (required for Impact affiliate API)
+- `IMPACT_AUTH_TOKEN` (required; scoped Impact partner API token, backend-only)
+- `IMPACT_TCGPLAYER_PROGRAM_ID` (optional override; otherwise SwapPulse discovers the joined TCGplayer programme)
+- `IMPACT_SOFT_CALLS_PER_HOUR` (optional, defaults to 800 below Impact's current 1,000/hour "Other" endpoint limit)
 
 PokeAPI and TCGDex currently do not require the same private credential pattern for these integrations.
 
@@ -226,9 +229,11 @@ SwapPulse's MPL-2.0 licence covers only SwapPulse-owned/licensable source. It do
 
 Because new direct API applications are currently closed, SwapPulse's practical outbound-commerce path is the separate TCGplayer Affiliate Program operated through Impact. TCGplayer says approved affiliates can create links to specific products/tools and currently uses first-click attribution with a 48-hour purchase window.
 
-SwapPulse does not invent an Impact URL format. Until an approved Impact account provides a real deep-link template, outbound links remain ordinary TCGplayer links. After approval, maintainers may configure `TCGPLAYER_AFFILIATE_URL_TEMPLATE` with an HTTPS template containing `{url}`. The backend validates the normal TCGplayer destination, substitutes the encoded destination into the approved template and marks the response as affiliate-linked.
+SwapPulse now uses Impact's Partner Tracking Links API directly rather than inventing a tracking URL template. The backend authenticates with the Impact Account SID and scoped Auth Token, discovers the joined TCGplayer programme when no programme override is configured, verifies that the programme is active and allows deep-linking to TCGplayer, then creates a regular tracking link whose `DeepLink` is the validated TCGplayer destination. Generated links are cached for 30 days.
 
-When affiliate tracking is active, the card UI displays a clear disclosure adjacent to the link: `Affiliate link: SwapPulse may earn a commission from qualifying TCGplayer purchases at no extra cost to you.` This is separate from, and does not enable, the dormant direct TCGplayer API integration.
+Impact currently documents its default Partner API limit for the "Other" endpoint group as 1,000 requests/hour and returns live `X-RateLimit-*`, `RateLimit-Reset` and `Retry-After` headers. SwapPulse uses an 800/hour soft ceiling, records the provider headers privately and falls back to the ordinary TCGplayer URL if Impact is unavailable or throttled.
+
+When affiliate tracking is active, the card UI displays a clear disclosure adjacent to the link: `Affiliate link: SwapPulse may earn a commission from qualifying TCGplayer purchases at no extra cost to you.` This is separate from, and does not enable, the dormant direct TCGplayer catalogue/pricing API integration.
 
 See `THIRD_PARTY_NOTICES.md` and the provider's own current terms before changing how data is displayed, stored, redistributed or monetised.
 
