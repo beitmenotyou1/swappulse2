@@ -46,8 +46,24 @@
     {
       "version": "v0.6.0",
       "title": "Automated GitHub release discipline",
-      "target": "main",
+      "target": "063ca7c436c2e8dc7a52f2310bb276fdec900e31",
       "notes": ".github/releases/v0.6.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.7.0",
+      "title": "MPL-2.0 and multi-source Pokémon enrichment",
+      "target": "063ca7c436c2e8dc7a52f2310bb276fdec900e31",
+      "notes": ".github/releases/v0.7.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.8.0",
+      "title": "PokemonPriceTracker graded and recent-market enrichment",
+      "target": "main",
+      "notes": ".github/releases/v0.8.0.md",
       "prerelease": true,
       "historical": false
     }
