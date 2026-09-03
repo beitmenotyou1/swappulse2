@@ -327,44 +327,70 @@ export default function ChainExplorer() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-black">{t('explorer.latestBlocks')}</h2>
-                <button
-                  type="button"
-                  onClick={load}
-                  className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" /> {t('explorer.refresh')}
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-                  <caption className="sr-only">{t('explorer.latestBlocks')}</caption>
-                  <thead>
-                    <tr className="border-b border-border text-xs text-muted-foreground">
-                      <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.blockNumber')}</th>
-                      <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.timestamp')}</th>
-                      <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.transactionCount')}</th>
-                      <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.blockHash')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.latest_blocks || []).map((item) => (
-                      <tr key={item.block_hash || item.block_number} className="border-b border-border/60 last:border-0">
-                        <td className="px-2 py-3">
-                          <Link to={`/chain/block/${item.block_number}`} className="font-bold text-primary hover:underline">
-                            {item.block_number}
-                          </Link>
-                        </td>
-                        <td className="px-2 py-3 whitespace-nowrap">{formatTime(item.timestamp)}</td>
-                        <td className="px-2 py-3 tabular-nums">{item.transaction_count}</td>
-                        <td className="px-2 py-3 font-mono text-xs" dir="ltr">{shortHex(item.block_hash)}</td>
+            <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-black">{t('explorer.latestBlocks')}</h2>
+                  <button
+                    type="button"
+                    onClick={load}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" /> {t('explorer.refresh')}
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                    <caption className="sr-only">{t('explorer.latestBlocks')}</caption>
+                    <thead>
+                      <tr className="border-b border-border text-xs text-muted-foreground">
+                        <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.blockNumber')}</th>
+                        <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.timestamp')}</th>
+                        <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.transactionCount')}</th>
+                        <th scope="col" className="px-2 py-2 font-semibold">{t('explorer.blockHash')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {(data.latest_blocks || []).map((item) => (
+                        <tr key={item.block_hash || item.block_number} className="border-b border-border/60 last:border-0">
+                          <td className="px-2 py-3">
+                            <Link to={`/chain/block/${item.block_number}`} className="font-bold text-primary hover:underline">
+                              {item.block_number}
+                            </Link>
+                          </td>
+                          <td className="px-2 py-3 whitespace-nowrap">{formatTime(item.timestamp)}</td>
+                          <td className="px-2 py-3 tabular-nums">{item.transaction_count}</td>
+                          <td className="px-2 py-3 font-mono text-xs" dir="ltr">{shortHex(item.block_hash)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+
+              <section className="rounded-2xl border border-border bg-card p-4 sm:p-5" aria-labelledby="latest-transactions-title">
+                <h2 id="latest-transactions-title" className="text-lg font-black">{t('explorer.latestTransactions')}</h2>
+                {Array.isArray(data.latest_transactions) && data.latest_transactions.length > 0 ? (
+                  <ol className="mt-3 divide-y divide-border">
+                    {data.latest_transactions.map((item) => (
+                      <li key={`${item.transaction_hash}:${item.block_number}`} className="py-3">
+                        <Link
+                          to={`/chain/tx/${item.transaction_hash}`}
+                          className="block rounded-xl p-2 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="min-w-0 truncate font-mono text-xs font-semibold text-primary" dir="ltr">{shortHex(item.transaction_hash, 14, 10)}</span>
+                            <span className="shrink-0 text-[11px] text-muted-foreground">#{item.block_number}</span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted-foreground">{formatTime(item.timestamp)}</p>
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">{t('explorer.noTransactions')}</p>
+                )}
+              </section>
             </div>
           </section>
         )}
@@ -472,8 +498,38 @@ export default function ChainExplorer() {
                 <DataRow label={t('explorer.contractClass')}><CopyValue value={address.class_hash} label={t('explorer.contractClass')} t={t} /></DataRow>
                 <DataRow label={t('explorer.accountNonce')}><span className="font-mono text-xs" dir="ltr">{address.nonce ?? t('explorer.unknown')}</span></DataRow>
               </dl>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  to="/wallet"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <WalletIcon className="h-4 w-4" aria-hidden="true" /> {t('explorer.openWallet')}
+                </Link>
+              </div>
               <p className="mt-4 text-xs text-muted-foreground">{t('explorer.directLinkHint')}</p>
             </div>
+
+            <section className="rounded-2xl border border-border bg-card p-5" aria-labelledby="indexed-activity-title">
+              <h3 id="indexed-activity-title" className="text-lg font-black">{t('explorer.indexedActivity')}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t('explorer.indexedActivityHelp')}</p>
+              {Array.isArray(address.indexed_activity) && address.indexed_activity.length > 0 ? (
+                <ol className="mt-3 divide-y divide-border">
+                  {address.indexed_activity.map((item) => (
+                    <li key={item.hash} className="py-3">
+                      <Link
+                        to={`/chain/tx/${item.hash}`}
+                        className="flex items-center justify-between gap-3 rounded-xl p-2 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <span className="min-w-0 truncate font-mono text-xs font-semibold text-primary" dir="ltr">{item.hash}</span>
+                        <span className="shrink-0 text-xs font-bold">{t('explorer.viewTransaction')}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">{t('explorer.noIndexedActivity')}</p>
+              )}
+            </section>
             <TechnicalDetails data={address} t={t} />
           </article>
         )}
