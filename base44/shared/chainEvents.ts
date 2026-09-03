@@ -148,7 +148,7 @@ async function reconcileStakes(svc: any, config: any) {
         advanced += 1;
         await notifyChainEvent(svc, {
           did: String(row.did || ''),
-          actionType: 'chain_withdraw',
+          actionType: 'chain_unlock',
           groupKey: `chain_withdraw:${row.id}`,
           title: 'Your unstaked SWPX was withdrawn',
           body: 'The completed unbonding balance has been returned to your smart account.',
