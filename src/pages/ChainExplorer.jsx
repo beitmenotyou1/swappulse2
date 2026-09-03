@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Blocks, Check, Copy, RefreshCw, Search } from 'lucide-react';
+import { ArrowLeft, Blocks, Check, Copy, Github, RefreshCw, Search, Wallet as WalletIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useI18n } from '@/lib/i18n/I18nProvider';
+import Logo from '@/components/Logo';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeToggle from '@/components/ThemeToggle';
 import useSEO from '@/hooks/useSEO';
 
 function shortHex(value, head = 10, tail = 8) {
