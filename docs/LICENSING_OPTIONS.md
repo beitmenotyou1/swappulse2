@@ -1,6 +1,8 @@
 # SwapPulse Licensing Options
 
-> This document is a project-planning comparison, not legal advice. Before adopting a final licence for a public commercial/community project that interacts with third-party intellectual property, obtain appropriate legal review if practical.
+> **Historical decision record:** SwapPulse selected the Mozilla Public License 2.0 (MPL-2.0) on 3 September 2026. The root `LICENSE` file is authoritative. This comparison is retained only to document the alternatives considered and must not be read as a current recommendation for Apache-2.0 or another licence.
+>
+> This document is a project-planning comparison, not legal advice. For a public commercial/community project that interacts with third-party intellectual property and hosted data services, obtain appropriate legal review if practical.
 
 SwapPulse wants to be genuinely open source: people should be able to inspect the code, contribute improvements, fork it, modify it and create personal or commercial derivatives.
 
@@ -235,7 +237,7 @@ CC0/Unlicense-style approaches can be attractive for maximum freedom, but patent
 
 # Best fits for SwapPulse
 
-## Recommended default: Apache-2.0
+## Historical permissive candidate: Apache-2.0
 
 For the requirements currently stated:
 
@@ -248,7 +250,7 @@ For the requirements currently stated:
 - wallet/identity/blockchain code;
 - no requirement that every commercial derivative must publish all changes;
 
-**Apache License 2.0 is the strongest default recommendation.**
+**Apache License 2.0 was the strongest permissive candidate considered before the project selected MPL-2.0.**
 
 Why Apache over MIT for SwapPulse:
 
@@ -259,9 +261,9 @@ Why Apache over MIT for SwapPulse:
 5. this is useful for a project involving cryptographic identity, blockchain contracts, wallet/recovery flows and protocol implementations;
 6. third-party assets can still be clearly excluded via notices.
 
-## Alternative if community reciprocity matters more: MPL-2.0
+## Selected project licence: MPL-2.0
 
-Choose MPL-2.0 if the desired social contract is closer to:
+SwapPulse chose MPL-2.0 because the desired social contract is:
 
 > Commercial use and proprietary extensions are welcome, but when you distribute modifications to SwapPulse's existing covered files, those modified files should remain open.
 
@@ -273,13 +275,13 @@ Choose AGPL only if requiring hosted/SaaS forks to offer their modified source i
 
 ---
 
-# Suggested project licensing structure
+# Selected project licensing structure
 
-If Apache-2.0 is selected, a clean structure would be:
+With MPL-2.0 selected, the project structure is:
 
 ```text
 LICENSE
-  Apache License 2.0 for SwapPulse-owned source code
+  Mozilla Public License 2.0 for SwapPulse-owned/licensable source code
 
 THIRD_PARTY_NOTICES.md
   TCGdex attribution/licence
