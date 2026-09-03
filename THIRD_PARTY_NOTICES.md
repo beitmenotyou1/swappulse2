@@ -49,6 +49,24 @@ The provider also prohibits redistributing its data as a competing/substitute da
 
 The API key must remain in backend secret management and must never be committed to source code or shipped to browser clients.
 
+## TCGplayer
+
+SwapPulse includes an optional direct TCGplayer API integration for read-only Pokémon catalogue matching and market-price cross-checks.
+
+Upstream resources:
+
+- https://docs.tcgplayer.com/docs/welcome
+- https://docs.tcgplayer.com/docs/getting-started
+- https://help.tcgplayer.com/hc/en-us/articles/360061115874-TCGplayer-API-Terms-Conditions
+
+TCGplayer currently states that it is no longer granting new API access. SwapPulse therefore supports only existing authorised TCGplayer developer credentials. The provider's API Terms limit use to the purpose approved by TCGplayer and reserve the right to limit excessive or unreasonable request volume.
+
+SwapPulse keeps `TCGPLAYER_PUBLIC_KEY` and `TCGPLAYER_PRIVATE_KEY` in backend secret management, caches the resulting Bearer token in server memory only, and requires `TCGPLAYER_APPROVED_USE=true` before any provider request is sent. Store/inventory/order/buylist mutation endpoints are deliberately outside the integration.
+
+When TCGplayer pricing is displayed, SwapPulse identifies TCGplayer as the source, links to the relevant TCGplayer product, and displays the provider-required notice: “This product uses TCGplayer data but is not endorsed or certified by TCGplayer.”
+
+TCGplayer content/data remains subject to TCGplayer's own API Terms and is not licensed under SwapPulse's MPL-2.0 licence. If API use is terminated, maintainers must follow TCGplayer's termination/data-deletion obligations for cached TCG Content.
+
 ## PokéAPI
 
 SwapPulse optionally uses the public PokéAPI for Pokémon species and game-data enrichment. The integration is linked through National Pokédex IDs supplied by TCGDex and caches fetched resources server-side in line with PokéAPI's fair-use guidance.
