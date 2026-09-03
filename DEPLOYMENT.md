@@ -1,275 +1,553 @@
-# SwapPulse Production Deployment Guide
+# SwapPulse Deployment and Operations Guide
 
-This guide covers deploying SwapPulse to production on the Base44 platform.
+This document describes the **current** SwapPulse deployment model. It replaces older documentation that described the application as Base44-only or treated Polygon/PulseChain deployment paths as the main Web3 architecture.
 
----
+## 1. Current production/testnet architecture
 
-## Architecture Overview
+SwapPulse is a multi-service system:
 
-SwapPulse runs entirely on Base44 — no separate Docker, Kubernetes, or server management is required. The platform handles hosting, scaling, SSL, and CDN automatically.
-
-```
-┌─────────────────────────────────────────────────┐
-│                  Users                          │
-│   [Web Browser]  [iOS App]  [Android App]       │
-└──────────────────────┬──────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────┐
-│            Base44 Platform                       │
-│                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ React    │  │ Backend  │  │ Database │        │
-│  │ Frontend │  │ Functions│  │ (Entities)│       │
-│  │ (Vite)   │  │ (Deno)   │  │           │       │
-│  └──────────┘  └──────────┘  └──────────┘        │
-│                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Workflows│  │ Auth     │  │ Analytics│        │
-│  │ (Cron)   │  │ (OTP/OAuth)│  │ (Built-in)│      │
-│  └──────────┘  └──────────┘  └──────────┘        │
-└──────────────────────┬──────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────┐
-│           External Services                     │
-│                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Polygon  │  │ PulseChain│  │ TCGDex   │        │
-│  │ (NFTs,  │  │ (Mirror,  │  │ (Card    │        │
-│  │  Bridge) │  │  $PULSE)  │  │  Catalog)│       │
-│  └──────────┘  └──────────┘  └──────────┘        │
-│                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Stripe  │  │ AT Proto  │  │ SMTP     │        │
-│  │ (Payments)│  │ (PDS)    │  │ (Email)  │        │
-│  └──────────┘  └──────────┘  └──────────┘        │
-└─────────────────────────────────────────────────┘
+```text
+Users
+  |
+  v
+swappulse.org
+  |
+  +--> Base44-hosted React application / backend functions / entities / workflows
+  |
+  +--> AT Protocol / PDS / federation services
+  |
+  +--> TCGDex and other approved external data services
+  |
+  +--> https://rpc.swappulse.org/rpc
+  |       read-only Starknet RPC gateway
+  |
+  +--> https://relay.swappulse.org
+          authenticated transaction relay
+                 |
+                 v
+          always-on mini-server
+                 |
+          Starknet Devnet runtime
 ```
 
----
+The live V2 Web3 baseline runs on the mini-server. Base44 orchestrates application and trusted backend workflows but is not itself the blockchain runtime.
 
-## Step 1: Publish the App
+## 2. Deployment responsibilities
 
-Base44 handles deployment via the **Publish** button in the builder:
+### Base44
 
-1. Click **Publish** in the top-right of the Base44 builder
-2. Choose visibility:
-   - `public_without_login` — fully public app
-   - `public_with_login` — public app, login required for actions
-3. The app is deployed to `https://swap-pulse-hub.base44.app` automatically
-4. Each publish creates a new version; rollback is available from the dashboard
+Responsible for:
 
-### Mobile App Publishing (iOS / Android)
+- React site hosting/build deployment;
+- backend functions;
+- Base44 entities and RLS;
+- workflows/schedules;
+- authentication;
+- application secrets;
+- application-to-chain reconciliation;
+- AT Protocol/TCG/social orchestration.
 
-Base44 publishes the same React codebase to native mobile apps:
+### Mini-server
 
-1. Navigate to **Mobile** in the dashboard sidebar
-2. Configure app name, icon, and splash screen
-3. Submit to App Store Connect and Google Play Console
-4. The platform handles native build, push notifications, and deep linking
+Responsible for the current SwapPulse Starknet testnet infrastructure:
 
-No separate Expo project is needed — the web app is already responsive and mobile-ready.
+- Starknet Devnet;
+- read-only RPC gateway;
+- hardened transaction relay;
+- host-side privileged Starknet keys required by the current testnet model;
+- public HTTPS/tunnel connectivity.
 
----
+### Public endpoints
 
-## Step 2: Connect a Custom Domain
+Canonical chain endpoints:
 
-1. Navigate to **Settings → Custom Domain** in the Base44 dashboard
-2. Add your domain (e.g., `swappulse.org`)
-3. Configure DNS records:
-   - **A record**: Point to the Base44 IP (shown in dashboard)
-   - **CNAME**: `www` → `swap-pulse-hub.base44.app`
-4. SSL is provisioned automatically via Let's Encrypt
-5. Update `published_app` URL references in backend functions
+```text
+https://rpc.swappulse.org/rpc
+https://relay.swappulse.org
+```
 
----
+The raw Devnet RPC is bound to localhost and must not be exposed directly to the public internet.
 
-## Step 3: Configure Secrets
+## 3. Source control and Base44 sync
 
-All secrets are managed in **Settings → Environment Variables**. Configure only the secrets required by the feature set you are actively running.
+The repository is Git-connected to the Base44 application.
 
-### Current Starknet Identity Testnet Secrets
-- `SWAPPULSE_TX_RELAY_URL` — public HTTPS URL for the bearer-protected provisioning transaction relay on port 8081
-- `SWAPPULSE_TX_RELAY_TOKEN` — random 32-byte bearer token shared only between Base44 server-side functions and the relay host
+Base44 MCP/remote-dev file changes are committed/synchronised by the platform. Git remains the project history and review surface.
 
-The relay token must never be exposed in frontend code, browser storage, `ChainNetworkConfig`, logs, screenshots or GitHub.
+Before a substantial feature group:
 
-`POLYGON_PRIVATE_KEY` is **not required** for the current Starknet identity/provisioning architecture.
+1. save a Base44 checkpoint;
+2. make the focused change;
+3. run the relevant tests;
+4. verify live/user-facing behaviour;
+5. update docs;
+6. save a post-feature checkpoint.
 
-### Legacy Polygon / PulseChain Secrets
-These remain only for older Polygon/PulseChain features that are still intentionally enabled. Do not create them merely to operate the Starknet identity testnet.
+See `docs/CHANGE_PROTOCOL.md`.
 
-- `POLYGON_RPC_URL` — legacy Polygon RPC endpoint
-- `POLYGON_PRIVATE_KEY` — legacy Polygon deployer/relayer key
-- `POLYGON_CARD_CONTRACT` — legacy Card NFT contract address
-- `POLYGON_USERNAME_CONTRACT` — legacy Username NFT address
-- `PULSE_RPC_URL` — legacy PulseChain RPC endpoint
-- `PULSE_PRIVATE_KEY` — legacy PulseChain deployer key
-- `PULSE_CHAIN_ID` — legacy PulseChain chain ID
+## 4. Frontend build
 
-### Payment Secrets
-- `STRIPE_SECRET_KEY` — Stripe API key
-- `STRIPE_PUBLISHABLE_KEY` — Stripe client key
-- `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
-- `NOWPAYMENTS_API_KEY` — NOWPayments API key
-- `NOWPAYMENTS_IPN_SECRET` — NOWPayments IPN secret
+The Base44 project config uses:
 
-### AT Protocol Secrets
-- `PDS_URL` — Personal Data Server URL
-- `PDS_APP_PASSWORD` — PDS app password
-- `PDS_IDENTIFIER` — PDS handle
-- `PDS_ADMIN_PASSWORD` — PDS admin password
+```json5
+{
+  "site": {
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "serveCommand": "npm run dev",
+    "outputDirectory": "./dist"
+  }
+}
+```
 
-### Auth & Security
-- `APP_PASSWORD_ENCRYPTION_KEY` — Wallet encryption key
-- `BACKEND_FUNCTION_SECRET` — Scheduled function auth
-- `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — Bot protection
+Local/repository checks:
 
-### Email & Notifications
-- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_TOKEN` — Email
-- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — Web Push
+```bash
+npm install
+npm run typecheck
+npm run lint
+npm run build
+```
 
-### After Starknet Identity Testnet Deployment
-Follow `chain/infra/README.md` to deploy the private testnet, start the read-only RPC gateway and provisioning relay, then set `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN` in Base44.
+### Current Base44 sandbox-shell limitation
 
-`META_RELAY_CONTRACT_ADDRESS` belongs to the older Polygon meta-transaction design and is not required by the current Starknet identity relay.
+The Base44 MCP file API can read/write the authoritative project normally, but the current sandbox command shell has intermittently mounted an empty `/workspace` and therefore cannot be trusted to prove `npm run build` for this project.
 
----
+Until that platform issue is resolved, run the final frontend checks from an actual Git checkout such as the mini-server copy:
 
-## Step 4: Deploy Smart Contracts
+```bash
+cd ~/swappulse2
 
-For the **current Starknet identity testnet**, use the host-side deployment flow documented in `chain/infra/README.md`. The registry-owner key and relay bearer token stay on the host and are never committed to Base44 or GitHub.
+git status --short
+npm install
+npm run typecheck
+npm run lint
+npm run build
+```
 
-The following are **legacy Polygon/PulseChain deployment paths** and are needed only if those older features are intentionally enabled:
+Do not interpret `MODULE_NOT_FOUND /workspace/...` from the broken MCP shell as an application compile result.
 
-1. **Polygon contracts**: Invoke `deploy-polygon-contracts` from the Admin dashboard
-2. **PulseChain contracts**: Invoke `deploy-pulse-contracts`
-3. **Polygon bridge**: Invoke `deploy-polygon-bridge`
-4. **LayerZero OFT**: Invoke `deploy-lz-pulse-token`
-5. **Metadata anchor**: Invoke `deploy-card-metadata-anchor`
-6. **Configure LayerZero peers**: Invoke `configure-lz-peers`
+## 5. Base44 publication
 
-Legacy contract addresses are stored in their corresponding secrets (`POLYGON_CARD_CONTRACT`, etc.).
+Normal application publication is performed through the existing Base44 app, not by creating a replacement app.
 
----
+Before publishing:
 
-## Step 5: Enable Scheduled Workflows
+- review the latest checkpoint;
+- ensure frontend checks pass from a real checkout;
+- verify migrations/schema/RLS changes;
+- verify any new server-side secret names are registered;
+- test primary user flows;
+- verify accessibility/localisation for changed UI;
+- verify `/status` and Web3 readiness if chain features changed.
 
-The following workflows are pre-configured and should be active in production:
+## 6. Base44 secrets
 
-| Workflow | Schedule | Purpose |
-|----------|----------|---------|
-| TCGDex Catalog Sync | Every 5 min | Sync card catalogue |
-| Pricing Sync | Hourly | Sync card pricing |
-| Localization Sync | Every 2 hours | Sync 17 languages |
-| Bridge Queue Processor | Every 5 min | Retry failed bridges |
-| Meta Transaction Processor | Every 5 min | Process gas-less txs |
-| Fee Sweep | Daily | Collect platform fees |
-| Low Balance Alerts | Hourly | Alert users on low balance |
-| Status Monitoring | Every 5 min | Service health checks |
-| Firehose Ingestion | Every 5 min | AT Protocol firehose |
-| Notification Ingestion | Every 5 min | Process notifications |
-| Weekly Digest | Weekly | Email digest |
-| Weekly SEO Audit | Weekly | SEO health check |
+Secrets must be stored in server-side environment/secret management only.
 
-Verify each is **active** in the Workflows dashboard.
+Examples of current security-sensitive categories:
 
----
+- transaction relay URL/token;
+- age/identity verifier webhook secret;
+- AT Protocol/PDS credentials;
+- email/push credentials;
+- payment provider secrets;
+- security/encryption keys.
 
-## Step 6: Pre-Launch Checklist
+Never expose secret values in:
 
-### Content
-- [ ] Help pages published (`/help` and sub-pages)
-- [ ] Terms of Service published (`/terms`)
-- [ ] Privacy Policy published (`/privacy`)
-- [ ] About page published (`/about`)
-- [ ] Status page published (`/status`)
-- [ ] Sitemap generated (`/sitemap.xml`)
-- [ ] `robots.txt` configured (`/robots.txt`)
+- frontend `VITE_*` variables unless the value is explicitly public;
+- committed `.env` files;
+- `ChainNetworkConfig` public fields;
+- screenshots;
+- README/issues/PRs;
+- browser local storage.
 
-### SEO
-- [ ] Open Graph images generated (`seo-og-image` function)
-- [ ] Meta tags configured in `index.html`
-- [ ] Canonical URLs set
-- [ ] Favicon configured
+## 7. AT Protocol / PDS deployment
 
-### Analytics
-- [ ] `base44.analytics.track()` calls verified in key flows
-- [ ] Event names consistent (see `src/lib/analytics.ts`)
+The application includes PDS/federation functions and workflows.
 
-### Security
-- [ ] Complete `SECURITY_AUDIT.md` checklist
-- [ ] RLS rules verified on all entities
-- [ ] Secrets all configured (no missing values)
-- [ ] Admin dashboard access restricted
+Deployment responsibilities include:
 
-### Payments
-- [ ] Stripe webhook endpoint registered
-- [ ] NOWPayments IPN URL configured
-- [ ] Test purchase flow completed
-- [ ] Refund flow tested
+- PDS URL/credentials;
+- handle/domain configuration;
+- app-password handling;
+- custom lexicon registration;
+- PDS synchronisation;
+- firehose ingestion;
+- federation finalisation;
+- profile/follow/record reconciliation.
 
-### Blockchain
-- [ ] Starknet identity contracts build and test successfully
-- [ ] Private testnet deployment manifest verified through the read-only HTTPS RPC
-- [ ] Provisioning relay `/health` endpoint responds on its HTTPS URL
-- [ ] `SWAPPULSE_TX_RELAY_URL` and `SWAPPULSE_TX_RELAY_TOKEN` are stored only as Base44 server-side secrets
-- [ ] Raw Devnet RPC port 5050 is not publicly exposed
-- [ ] Legacy Polygon/PulseChain relayers are funded only if those legacy features are intentionally enabled
+Changes to PDS identity or lexicons should be treated as compatibility-sensitive changes and rehearsed before production.
 
-### Mobile
-- [ ] App icon and splash screen configured
-- [ ] Push notification VAPID keys set
-- [ ] Deep linking configured
-- [ ] TestFlight / Internal Testing build verified
+Relevant functions/workflows live under:
 
----
+```text
+base44/functions/atproto-*
+base44/functions/*pds*
+base44/functions/firehose-ingest
+base44/functions/register-lexicons
+base44/functions/federation-*
+base44/workflows/PDS Sync.jsonc
+base44/workflows/Firehose Ingestion.jsonc
+base44/workflows/Federation Finalization.jsonc
+```
 
-## Step 7: Post-Launch Monitoring
+## 8. TCGDex/catalogue deployment
 
-### Status Page
-- The `/status` page monitors 14 services via the `StatusService` entity
-- The `Status Monitoring` workflow checks health every 5 minutes
-- Subscribe users via the `StatusSubscriber` entity
+Catalogue/pricing/localisation services are application dependencies, not chain dependencies.
 
-### Error Tracking
-- Backend function errors appear in the dashboard function logs
-- Use `base44/shared/logger.ts` for structured JSON logging
-- Check the Workflows dashboard for failed workflow runs
+Key workflows currently include:
 
-### Analytics
-- Built-in analytics available in the dashboard
-- Custom events tracked via `base44.analytics.track()`
-- Event names defined in `src/lib/analytics.ts`
+- `TCGDex Catalog Sync`;
+- `Pricing Sync`;
+- `Localization Sync`.
 
-### Incident Response
-1. Check the Status page for service outages
-2. Review workflow run history for failures
-3. Check backend function logs for errors
-4. Use `manage-service` to update service status
-5. Use `manage-incident` to create incident records
-6. Notify subscribers via the status page
+If TCGDex is unavailable, collection/social functionality should degrade gracefully where possible rather than taking down the chain or authentication stack.
 
----
+## 9. Current Cairo/Starknet toolchain
 
-## Rollback
+The known-good V2 baseline uses:
 
-Base44 supports instant rollback from the dashboard:
-1. Navigate to **Publish History**
-2. Select the previous version
-3. Click **Restore**
-4. The app reverts immediately
+```text
+Scarb 2.13.1
+Starknet Foundry 0.51.2
+universal-sierra-compiler 2.8.0
+```
 
----
+Use the repository-pinned/verified versions for contract work. Do not casually upgrade compiler/testing versions as part of an unrelated frontend change.
 
-## Backup
+## 10. Chain tests
 
-- **Database**: Base44 manages automatic backups
-- **Entity data**: Export via `export-my-data` function (per user)
-- **Smart contracts**: Immutable on-chain — no backup needed
-- **Secrets**: Stored in Base44 secrets manager (no export needed)
+Run from a real checkout:
 
----
+```bash
+cd ~/swappulse2/chain
+bash scripts/test-chain.sh
+```
 
-Last Updated: 2026-08-26
+Known frozen baseline:
+
+```text
+Collected 64 tests
+63 passed
+0 failed
+1 intentionally ignored
+```
+
+The wrapper separately verifies the zero-public-key constructor rejection required by the current Foundry behaviour.
+
+A lower test count or a newly failing test is a blocker for chain deployment unless explicitly investigated and approved.
+
+## 11. Relay policy tests
+
+Before replacing/restarting the relay after source/policy changes:
+
+```bash
+cd ~/swappulse2/chain/infra/tx-relay
+node smoke-policy.mjs
+```
+
+The hardened policy regression includes checks for:
+
+- allowed deployment/recovery calls;
+- wrong class rejection;
+- arbitrary invoke rejection;
+- Devnet method rejection;
+- missing token rejection;
+- idempotent identity registration;
+- V2 assurance requirements;
+- faucet identity/cooldown enforcement;
+- V2 cut-over confirmation/proof enforcement;
+- post-cut-over idempotency after proof expiry;
+- permanent V2 readiness reporting.
+
+## 12. Canonical deployment manifest
+
+The canonical current deployment manifest lives at:
+
+```text
+chain/deployments/swappulse-testnet.json
+```
+
+Do not construct Base44 ChainNetworkConfig values from memory or placeholder addresses.
+
+The correct order for a new independent deployment/network is:
+
+1. build/test contracts;
+2. deploy contracts;
+3. generate canonical manifest;
+4. independently verify manifest through approved public RPC;
+5. import/create Base44 ChainNetworkConfig;
+6. run Base44 Verify & Activate;
+7. configure relay pins;
+8. verify `/readyz`;
+9. exercise a genuine identity/verification/value flow;
+10. perform any irreversible protocol switch only after all prerequisites pass.
+
+For the existing SwapPulse V2 network, the irreversible V2 switch is already complete. Do not rerun it as a normal deployment step.
+
+## 13. Verify deployment against public RPC
+
+From the repository tooling directory:
+
+```bash
+cd ~/swappulse2/chain/scripts/tooling
+
+SWAPPULSE_VERIFY_RPC_URL="https://rpc.swappulse.org/rpc" \
+node verify-network.mjs ../../deployments/swappulse-testnet.json
+```
+
+Expected high-level state includes:
+
+```text
+ok: true
+identity_verification_mode: V2
+verification_v2_required: true
+ecosystem_ready: true
+```
+
+The verifier should also confirm the expected class hashes/addresses for the live V2 contract set.
+
+## 14. Chain services
+
+Current Compose services include:
+
+- `devnet`;
+- `rpc-gateway`;
+- `tx-relay`.
+
+Inspect without exposing secrets:
+
+```bash
+cd ~/swappulse2/chain/infra
+
+docker compose \
+  --env-file .env \
+  --env-file .env.relay \
+  --profile provisioning \
+  ps
+```
+
+## 15. Relay replacement
+
+When only relay source/policy changes:
+
+1. run chain/relay tests first;
+2. build `tx-relay` only;
+3. replace `tx-relay` with `--no-deps`;
+4. do not restart Devnet/RPC gateway unnecessarily;
+5. verify local `/readyz`;
+6. verify public `/readyz`;
+7. verify an idempotent/read-safe policy probe if relevant.
+
+Avoid broad Compose restarts during a relay-only change.
+
+## 16. Readiness
+
+The authenticated relay `/readyz` response should confirm the network pins and readiness, including:
+
+```text
+ok: true
+identity_verification_mode: v2
+verification_v2_required: true
+ecosystem_ready: true
+```
+
+Never print the bearer token when testing readiness.
+
+## 17. V2 permanent cut-over
+
+The V2-only verification requirement is already active and one-way.
+
+Operational rules:
+
+- do not attempt to disable it;
+- do not call the irreversible transition unnecessarily;
+- a retry should return idempotently without a new transaction;
+- individual V2 assurance expiry/revocation does not change the global permanent flag;
+- legacy V1 verification remains unavailable.
+
+## 18. Chain identity provisioning
+
+`ChainIdentity` should be created by the normal Base44 provisioning flow, not manually inserted by operators.
+
+The private Base44 mirror contains mappings/metadata required for reconciliation, while public chain state remains authoritative for confirmed Web3 state.
+
+Do not manually create identity rows to bypass provisioning checks.
+
+## 19. Chain reconciliation
+
+The project includes scheduled `Chain Event Reconcile` behaviour plus user/admin reconciliation functions.
+
+Reconciliation should:
+
+- read public chain state;
+- update Base44 mirrors;
+- preserve audit/history;
+- mark expiry/revocation correctly;
+- close completed staking lifecycle records;
+- never manufacture a chain-confirmed state without chain evidence.
+
+## 20. Current Base44 workflows
+
+The repository currently defines workflows including:
+
+- AI moderation for posts/trades/messages;
+- Agent Learning Loop;
+- Weekly Feed Digest;
+- Onboarding Emails;
+- Trade Status Notifications;
+- Notification Ingestion;
+- Status Monitoring;
+- Collection Trade Opportunity Alert;
+- Help Article Promo;
+- Federation Finalization;
+- Activation Lifecycle;
+- Localization Sync;
+- Firehose Ingestion;
+- New Message Notifications;
+- Portfolio Snapshot Capture;
+- TCGDex Catalog Sync;
+- Weekly Sentiment Report;
+- Achievement Recalculation;
+- Promo Poster;
+- Chain Event Reconcile;
+- PDS Sync;
+- Toxic Label Handling;
+- Proof of Usership Aggregation;
+- Story Expiry;
+- Pricing Sync;
+- Wishlist Alerts;
+- Weekly Digest;
+- Poll Resolution;
+- Weekly SEO Audit.
+
+The JSONC files under `base44/workflows/` are authoritative for their actual schedules/settings. Do not copy a stale schedule table into this document and assume it remains correct forever.
+
+## 21. Public Chain Explorer deployment
+
+The Chain Explorer is part of the React application and uses the approved read-only Base44 `chain-explorer` backend/RPC path.
+
+Routes:
+
+```text
+/chain/
+/chain/block/:blockId
+/chain/tx/:txHash
+/chain/address/:address
+```
+
+It must not receive relay credentials and must not expose write-capable Devnet methods.
+
+## 22. Monitoring
+
+Check:
+
+- Base44 `/status` and workflow failures;
+- public RPC availability;
+- public relay availability;
+- local Compose service state;
+- host memory/disk/OOM health;
+- failed systemd units;
+- reconciliation lag;
+- failed chain action codes.
+
+### Current host baseline
+
+The post-cut-over mini-server diagnostic showed:
+
+- no OOM events;
+- no failed systemd units;
+- healthy root disk/inodes;
+- available RAM despite full swap occupancy;
+- no persistent live `si`/`so` swap activity;
+- one harmless zombie associated with a long-running Temporal service;
+- healthy Devnet/RPC/relay services.
+
+Full swap occupancy alone is not a reason to force `swapoff`. Check `MemAvailable` and live `vmstat si/so` first.
+
+## 23. Backup and rollback
+
+### Application
+
+Use Git history and Base44 checkpoints.
+
+### Chain infrastructure
+
+Back up configuration/manifests and follow the chain infra guides. Do not back up by copying plaintext private-key output into documentation.
+
+### Irreversible state
+
+Some on-chain changes cannot be rolled back. The V2 requirement is an intentional example.
+
+A rollback plan applies to software/config around an irreversible state, not to pretending the chain state can be undone.
+
+## 24. Security pre-release checklist
+
+- [ ] no secrets in frontend bundle;
+- [ ] no new public RLS exposure;
+- [ ] no PII added to chain storage/events;
+- [ ] public RPC still read-only;
+- [ ] relay allowlist unchanged or explicitly reviewed;
+- [ ] chain class/address pins verified;
+- [ ] relevant tests pass;
+- [ ] accessibility/localisation checked;
+- [ ] AT/PDS compatibility reviewed for federation changes;
+- [ ] docs updated;
+- [ ] checkpoint created.
+
+## 25. Legacy Polygon/PulseChain code
+
+The repository may still contain historical/optional Polygon/PulseChain-era functions or schemas.
+
+They are **not the canonical V2 SwapPulse identity/token/staking deployment path**.
+
+Do not provision legacy private keys or deploy legacy contracts merely because old code remains in the repository.
+
+Any legacy feature retained for compatibility should be explicitly documented, isolated and removed when no longer required.
+
+## 26. Node/decentralisation future
+
+The current mini-server Devnet is not the final full-node/validator network.
+
+Before deploying public community node software, follow `docs/NODE_ARCHITECTURE.md`:
+
+1. independent observer prototype;
+2. benchmark harness;
+3. Raspberry Pi/mini-PC measurement;
+4. lite-client design;
+5. multi-operator dev network;
+6. validator/reward architecture;
+7. permissionless/community rollout only after security evidence.
+
+## 27. Post-deploy smoke checks
+
+After an application-only release:
+
+- open Home/Explore/Collection/Wallet;
+- verify primary navigation/mobile More;
+- verify one AT/federation read path;
+- verify TCG card/search path;
+- verify Chain Explorer home;
+- verify a known transaction detail route;
+- verify Wallet still fails closed if assurance is expired;
+- verify no unexpected console/server errors.
+
+After a chain/relay release, additionally run the full chain/readiness verification described above.
+
+## 28. Related documentation
+
+- `README.md`
+- `docs/USER_GUIDE.md`
+- `docs/PROJECT_ARCHITECTURE.md`
+- `docs/SWAPPULSE_V2_LIVE_ARCHITECTURE.md`
+- `docs/NODE_ARCHITECTURE.md`
+- `docs/CHANGE_PROTOCOL.md`
+- `docs/FORKING_AND_REBRANDING.md`
+- `CONTRIBUTING.md`
+- `SECURITY_AUDIT.md`
+- `chain/README.md`
+- `chain/OPERATOR_GUIDE.md`
+- `chain/infra/README.md`
+- `chain/infra/MINI_PC_MIGRATION.md`
