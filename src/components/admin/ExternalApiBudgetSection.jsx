@@ -23,6 +23,8 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcg
   const [testCardId, setTestCardId] = useState('swsh3-136');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [impactTesting, setImpactTesting] = useState(false);
+  const [impactTestResult, setImpactTestResult] = useState(null);
 
   const runPriceTrackerTest = async () => {
     const cardId = String(testCardId || '').trim();
@@ -38,6 +40,22 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcg
       setTestResult({ ok: false, error: error?.response?.data?.error || error?.message || 'Test failed' });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const runImpactAffiliateTest = async () => {
+    if (impactTesting) return;
+    setImpactTesting(true);
+    setImpactTestResult(null);
+    try {
+      const res = await base44.functions.invoke('impact-affiliate-test', {});
+      const data = res?.data ?? res;
+      setImpactTestResult({ ok: true, data });
+      await onRefresh?.();
+    } catch (error) {
+      setImpactTestResult({ ok: false, error: error?.response?.data?.error || error?.message || 'Impact test failed' });
+    } finally {
+      setImpactTesting(false);
     }
   };
 
@@ -100,6 +118,29 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcg
             />
             {impactAffiliate.hour?.providerRemaining != null && <p className="text-[10px] text-muted-foreground">Impact-reported remaining calls this hour: {impactAffiliate.hour.providerRemaining}</p>}
             <p className="text-[10px] text-muted-foreground">Generated tracking links are cached for 30 days. A failed Impact call falls back to the normal TCGplayer URL instead of breaking Card Detail.</p>
+
+            <div className="rounded-xl border border-border bg-background/60 p-3">
+              <div className="flex items-center gap-2">
+                <TestTube2 className="h-4 w-4 text-primary" />
+                <p className="text-xs font-bold">Admin affiliate-link test</p>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">Creates one real Impact deep link to a fixed TCGplayer Pokémon destination. Repeating the test should be served from the 30-day backend cache.</p>
+              <Button className="mt-3" size="sm" onClick={runImpactAffiliateTest} disabled={impactTesting || !impactAffiliate.policy?.configured}>
+                {impactTesting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <TestTube2 className="mr-1.5 h-3.5 w-3.5" />}
+                Test affiliate link
+              </Button>
+              {impactTestResult && (
+                <div className={`mt-3 rounded-lg px-3 py-2 text-[11px] ${impactTestResult.ok ? 'bg-secondary/60 text-foreground' : 'bg-destructive/10 text-destructive'}`}>
+                  {impactTestResult.ok ? (
+                    <>
+                      <p className="font-semibold">{impactTestResult.data?.affiliate ? 'Affiliate link created' : `Fallback only: ${impactTestResult.data?.reason || 'unknown'}`}</p>
+                      <p className="mt-1 text-muted-foreground">{impactTestResult.data?.fromCache ? 'Served from 30-day cache' : impactTestResult.data?.affiliate ? 'Fresh Impact API request' : 'No tracking link created'}{impactTestResult.data?.programId ? ` · programme ${impactTestResult.data.programId}` : ''}</p>
+                      {impactTestResult.data?.trackingHost && <p className="mt-1 text-muted-foreground">Tracking host: {impactTestResult.data.trackingHost}</p>}
+                    </>
+                  ) : impactTestResult.error}
+                </div>
+              )}
+            </div>
           </div>
         )}
         {priceTracker && (
