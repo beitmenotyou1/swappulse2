@@ -479,6 +479,8 @@ Raw Devnet port `5050` must remain localhost-only.
 - [Operator guide](chain/OPERATOR_GUIDE.md)
 - [Developer onboarding](docs/developer-onboarding.md)
 - [API endpoints](docs/api-endpoints.md)
+- [OpenAPI contract](openapi.yaml)
+- [OpenAPI maintainer guide](docs/OPENAPI.md)
 
 ## Releases and project history
 
@@ -497,7 +499,7 @@ v0.5.0  Complete project handbook and deployment documentation
 v0.6.0  Automated GitHub release discipline
 v0.7.0  MPL-2.0 and multi-source Pokémon enrichment
 v0.8.0  PokemonPriceTracker graded and recent-market enrichment
-v0.9.0  Dormant TCGplayer API integration and affiliate-ready links
+v0.9.0  Dormant TCGplayer API, Impact affiliate integration and OpenAPI contract
 ```
 
 Future significant updates should follow [docs/RELEASING.md](docs/RELEASING.md) and explain what was added, changed, removed, why it changed, security/privacy impact, compatibility/migration impact, accessibility/localisation work and checks actually performed.
