@@ -18,10 +18,10 @@ const PROVIDER_DAILY_LIMIT = 1000;
 const SOFT_HOURLY_LIMIT = 80;
 const SOFT_DAILY_LIMIT = 800;
 
-const CARD_TTL_MS = 30 * 60 * 1000;
+const CARD_TTL_MS = 6 * 60 * 60 * 1000;
 const SEARCH_TTL_MS = 24 * 60 * 60 * 1000;
 const SETS_TTL_MS = 24 * 60 * 60 * 1000;
-const MAPPING_TTL_MS = 24 * 60 * 60 * 1000;
+const MAPPING_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const STALE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const inflight = new Map<string, Promise<any>>();
@@ -237,6 +237,10 @@ async function recordProviderLimits(svc: any, res: Response): Promise<void> {
     update(keys.hour, hourRemaining, hourLimit),
     update(keys.day, dayRemaining, dayLimit),
   ]);
+}
+
+export function isPokeWalletConfigured(): boolean {
+  return !!String(Deno.env.get('POKEWALLET_API_KEY') || '').trim();
 }
 
 function getApiKey(): string {
@@ -597,8 +601,7 @@ export async function resolvePokeWalletMarket(svc: any, tcgdexCard: any): Promis
 export async function checkPokeWalletHealth(): Promise<{ status: 'up' | 'down'; latencyMs?: number; error?: string }> {
   const started = Date.now();
   try {
-    const configured = !!String(Deno.env.get('POKEWALLET_API_KEY') || '').trim();
-    if (!configured) {
+    if (!isPokeWalletConfigured()) {
       return { status: 'down', latencyMs: 0, error: 'POKEWALLET_API_KEY not configured' };
     }
     const res = await fetch(`${POKEWALLET_BASE_URL}/health`, {
