@@ -60,14 +60,16 @@ Collectors and community
         |
         v
 +----------------------+
-| TCGDex / card data   |
-| cards, sets, images  |
-+----------------------+
+| Pokémon data sources       |
+| TCGDex canonical catalogue |
+| PokéWallet market data     |
+| PokéAPI species enrichment |
++----------------------------+
 ```
 
 ### 1. Pokémon TCG layer
 
-TCGDex is used as the catalogue source for Pokémon cards and sets. SwapPulse builds collector workflows around that catalogue, including:
+TCGDex remains the canonical catalogue and card-ID source for Pokémon cards and sets. PokéWallet is used only as an optional, cached market-price enrichment layer, while PokéAPI provides optional species/game enrichment linked by TCGDex National Pokédex IDs. SwapPulse builds collector workflows around those sources, including:
 
 - browsing cards and sets;
 - collection tracking;
@@ -78,7 +80,7 @@ TCGDex is used as the catalogue source for Pokémon cards and sets. SwapPulse bu
 - grading-related workflows;
 - card verification and on-chain card anchoring.
 
-The catalogue is periodically synchronised into the Base44 application layer so the rest of the site does not need to make every page depend on a live third-party request.
+The TCGDex catalogue is periodically synchronised into the Base44 application layer so the rest of the site does not need to make every page depend on a live third-party request. PokéWallet requests are server-only, persistently cached, protected by a free-tier safety budget, and fail soft so a pricing-provider outage cannot take down card pages. PokéAPI resources are also cached server-side and are never joined by guessing from a card name.
 
 ### 2. AT Protocol layer
 
