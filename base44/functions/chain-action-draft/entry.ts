@@ -111,6 +111,29 @@ export default async function (req: Request): Promise<Response> {
       const poolAddress = String(config.staking_pool_address);
       const rpcUrl = String(config.rpc_url);
 
+      // Secondary replay/race guard for transactions that Base44 has already
+      // submitted but the public RPC may not show in `latest` yet. Confirmed
+      // balances/status still come from the chain below; this mirror is used only
+      // to suppress an obvious duplicate intent during that short propagation gap.
+      const recentStakeRows = await svc.entities.StakePosition
+        .filter({ user_id: String(me.id), network: 'SWAPPULSE_TESTNET' }, '-created_date', 40)
+        .catch(() => []);
+      const transientDuplicate = (recentStakeRows || []).find((row: any) => {
+        if (row.last_synced_at) return false;
+        const rowKind = String(row.intent_kind || '');
+        const rowStatus = String(row.status || '');
+        const rowValidator = String(row.validator_address || '').toLowerCase();
+        const sameValidator = rowValidator === String(validatorAddress).toLowerCase();
+        if (kind === 'register_validator') return rowKind === kind && rowStatus === 'SUBMITTED';
+        if (kind === 'exit_validator') return rowKind === kind && rowStatus === 'UNBONDING';
+        if (kind === 'request_undelegate') return sameValidator && rowKind === kind && rowStatus === 'UNBONDING';
+        if (kind === 'withdraw') return sameValidator && rowKind === kind && rowStatus === 'SUBMITTED';
+        return false;
+      });
+      if (transientDuplicate) {
+        return jsonError('A matching staking transaction is already waiting for chain confirmation', 409, 'STAKE_ACTION_ALREADY_PENDING');
+      }
+
       if (kind === 'register_validator') {
         const amount = String(intent.amount ?? '');
         if (!/^[0-9]+$/.test(amount) || BigInt(amount) <= 0n) {
