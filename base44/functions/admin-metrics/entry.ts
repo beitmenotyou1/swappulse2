@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { checkTcgdex, checkDatabase } from '../../shared/healthChecks.ts';
+import { checkTcgdex, checkPokewallet, checkDatabase } from '../../shared/healthChecks.ts';
+import { getPokeWalletUsageStatus } from '../../shared/pokewalletClient.ts';
 
 async function count(base44, name, query) {
   try {
@@ -17,9 +18,11 @@ export default async function (req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-    const [tcgdex, database, users, trades, collections, posts, circles, invites] = await Promise.all([
+    const [tcgdex, pokewallet, database, pokewalletUsage, users, trades, collections, posts, circles, invites] = await Promise.all([
       checkTcgdex(),
+      checkPokewallet(),
       checkDatabase(base44),
+      getPokeWalletUsageStatus(base44.asServiceRole).catch(() => null),
       count(base44, 'User'),
       count(base44, 'TradeListing', { status: 'open' }),
       count(base44, 'CollectionEntry'),
@@ -29,7 +32,8 @@ export default async function (req) {
     ]);
 
     return Response.json({
-      health: { tcgdex, database },
+      health: { tcgdex, pokewallet, database },
+      pokewallet_usage: pokewalletUsage,
       counts: { users, trades, collections, posts, circles, invites },
       generated_at: new Date().toISOString(),
     });
