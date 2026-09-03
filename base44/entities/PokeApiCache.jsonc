@@ -1,0 +1,76 @@
+{
+  "name": "PokeApiCache",
+  "type": "object",
+  "title": "PokeAPI Cache",
+  "description": "Private backend cache for normalized PokeAPI species, pokemon and evolution resources. Public clients never read this entity directly; the pokemon-enrichment backend serves a minimized merged view. Caching is required by SwapPulse's fair-use policy for PokeAPI.",
+  "properties": {
+    "cache_key": {
+      "type": "string",
+      "description": "Stable cache key such as pokemon:25 or species:25"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "pokemon",
+        "species",
+        "evolution"
+      ],
+      "description": "PokeAPI resource family"
+    },
+    "resource_id": {
+      "type": "string",
+      "description": "Canonical PokeAPI id or slug"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Normalized PokeAPI response payload, excluding unnecessary bulk fields"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Canonical PokeAPI source URL"
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schema_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "cache_key",
+    "resource_type",
+    "resource_id",
+    "payload",
+    "fetched_at",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

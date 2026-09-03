@@ -1,0 +1,70 @@
+{
+  "name": "PokeWalletUsage",
+  "type": "object",
+  "title": "Pok\u00e9Wallet Usage Budget",
+  "description": "Private server-side soft quota ledger for the Pok\u00e9Wallet free tier. One record is kept per fixed hour/day bucket so SwapPulse can leave provider quota headroom and fail gracefully before upstream 429 responses.",
+  "properties": {
+    "bucket_key": {
+      "type": "string",
+      "description": "UTC bucket identifier, e.g. hour:2026-09-03T08 or day:2026-09-03"
+    },
+    "bucket_type": {
+      "type": "string",
+      "enum": [
+        "hour",
+        "day"
+      ]
+    },
+    "count": {
+      "type": "integer",
+      "default": 0
+    },
+    "provider_limit": {
+      "type": "integer"
+    },
+    "soft_limit": {
+      "type": "integer"
+    },
+    "provider_remaining": {
+      "type": "integer"
+    },
+    "last_request_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "blocked_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "bucket_key",
+    "bucket_type"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

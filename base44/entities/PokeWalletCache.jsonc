@@ -1,0 +1,83 @@
+{
+  "name": "PokeWalletCache",
+  "type": "object",
+  "title": "Pok\u00e9Wallet Cache",
+  "description": "Private backend cache for normalized Pok\u00e9Wallet API responses and TCGDex\u2194Pok\u00e9Wallet card mappings. Browser clients never read this entity directly. It protects the Pok\u00e9Wallet free-tier request budget and enables stale fallback during upstream outages or quota exhaustion.",
+  "properties": {
+    "cache_key": {
+      "type": "string",
+      "description": "Stable cache key such as card:pk_x, search:hash, sets:index or mapping:tcgdex-card-id"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "search",
+        "card",
+        "sets",
+        "set",
+        "mapping"
+      ],
+      "description": "Pok\u00e9Wallet resource family"
+    },
+    "resource_id": {
+      "type": "string",
+      "description": "Pok\u00e9Wallet card/set id, TCGDex id for mappings, or stable logical id"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Normalized response payload. Never contains the Pok\u00e9Wallet API key."
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Pok\u00e9Wallet API path or public source URL without credentials"
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stale_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time cached data may be served as a graceful stale fallback"
+    },
+    "schema_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "cache_key",
+    "resource_type",
+    "resource_id",
+    "payload",
+    "fetched_at",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
