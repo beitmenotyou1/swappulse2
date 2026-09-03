@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const LAST_UPDATED = '17 August 2026';
+const LAST_UPDATED = '3 September 2026';
 
 const SECTIONS = [
   { id: 'acceptance', title: '1. Acceptance of Terms' },
