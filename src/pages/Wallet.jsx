@@ -10,6 +10,7 @@ import MintedCardsPanel from '@/components/chain/MintedCardsPanel';
 import FaucetCard from '@/components/chain/FaucetCard';
 import StakingPanel from '@/components/chain/StakingPanel';
 import BridgePanel from '@/components/chain/BridgePanel';
+import WalletOverviewCard from '@/components/chain/WalletOverviewCard';
 import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
 import GuideFooterLink from '@/components/help/GuideFooterLink';
 import useSEO from '@/hooks/useSEO';
@@ -106,8 +107,9 @@ export default function Wallet() {
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : identity ? (
         <div className="space-y-6">
-          <div>
-            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.smartAccount')}</h2>
+          <WalletOverviewCard identity={identity} network={status?.network} />
+          <div id="wallet-identity" className="scroll-mt-24">
+            <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('wallet.overview.security')}</h2>
             <WalletDashboard status={status} onReload={load} />
             {!secured && (
               <div className="mt-4">
@@ -115,7 +117,7 @@ export default function Wallet() {
               </div>
             )}
           </div>
-          <div>
+          <div id="wallet-funding" className="scroll-mt-24">
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.faucet')}</h2>
             <FaucetCard />
           </div>
@@ -130,11 +132,11 @@ export default function Wallet() {
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.onChainCards')}</h2>
             <MintedCardsPanel identitySecured={secured} />
           </div>
-          <div>
+          <div id="wallet-staking" className="scroll-mt-24">
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.staking')}</h2>
             <StakingPanel identitySecured={secured} valueFeaturesReady={valueFeaturesReady} />
           </div>
-          <div>
+          <div id="wallet-bridge" className="scroll-mt-24">
             <h2 className="mb-3 text-sm font-bold uppercase text-muted-foreground">{t('page.wallet.section.crossChain')}</h2>
             <BridgePanel identitySecured={secured} valueFeaturesReady={valueFeaturesReady} />
           </div>
