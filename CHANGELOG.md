@@ -235,3 +235,40 @@ Target: `main` when this release manifest lands.
 
 ### Rationale
 Add uniquely useful graded and short-history data while preserving TCGDex as canonical, protecting a scarce credit budget and respecting the provider's licensing boundary.
+
+---
+
+## v0.9.0 — Dormant TCGplayer API integration and affiliate-ready links
+
+**Current release-series change.** 2026-09-03
+
+Target: `main` when this release manifest lands.
+
+### Added
+- Read-only TCGplayer API client for existing authorised developer accounts.
+- Private TCGplayer cache and request-usage ledger.
+- Conservative TCGDex → TCGplayer product matching.
+- Optional direct TCGplayer pricing panel with required attribution and product links.
+- Admin TCGplayer request-budget visibility.
+- Backend affiliate URL decoration for approved Impact tracking templates.
+- Affiliate disclosure adjacent to active TCGplayer links.
+
+### Access state
+- TCGplayer currently says it is no longer granting new API access.
+- Direct API use remains dormant unless existing developer credentials are configured and `TCGPLAYER_APPROVED_USE=true` confirms that SwapPulse is within the purpose approved by TCGplayer.
+- The affiliate path is separate and can be pursued through Impact without enabling direct API access.
+
+### Performance/rate safety
+- TCGplayer publishes no fixed numeric API ceiling in the current public docs reviewed for this integration.
+- SwapPulse therefore uses its own 30 calls/minute and 1,000 calls/day soft ceilings.
+- Product mappings cache for 30 days and prices for 6 hours.
+- `429` / `Retry-After` automatically pauses fresh upstream calls.
+
+### Security/privacy
+- Developer keys and Bearer tokens are backend-only.
+- Bearer tokens remain in server process memory rather than Base44 entities.
+- Store/inventory/order/customer/buylist mutation APIs are not exposed.
+- Browser calls contain only the canonical TCGDex card ID.
+
+### Rationale
+Prepare a compliant direct TCGplayer read path without pretending new developer access is available, while making the separate affiliate programme the practical outbound-commerce route if SwapPulse is accepted by TCGplayer/Impact.
