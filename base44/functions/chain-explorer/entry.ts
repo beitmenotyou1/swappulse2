@@ -116,6 +116,61 @@ async function getBlock(idValue: unknown) {
   return block;
 }
 
+function addIndexedActivity(
+  items: Array<{ hash: string; category: string; action: string; sort_key: string }>,
+  seen: Set<string>,
+  category: string,
+  action: string,
+  hashValue: unknown,
+  sortKey: unknown,
+) {
+  const raw = String(hashValue || '').trim();
+  if (!raw) return;
+  let hash: string;
+  try { hash = normalizeHex(raw); } catch { return; }
+  if (seen.has(hash)) return;
+  seen.add(hash);
+  items.push({ hash, category, action, sort_key: String(sortKey || '') });
+}
+
+// Public activity that SwapPulse already knows how to tie to a smart-account
+// address. This is intentionally labelled as indexed activity rather than a
+// complete archive: Starknet JSON-RPC itself is not an address-history indexer.
+// Only public transaction hashes and coarse action names leave this function.
+async function indexedAddressActivity(req: Request, address: string) {
+  const base44 = createClientFromRequest(req);
+  const svc = base44.asServiceRole;
+  const [identities, stakes, cards, bridges] = await Promise.all([
+    svc.entities.ChainIdentity.filter({ account_address: address }, '-updated_date', 20).catch(() => []),
+    svc.entities.StakePosition.filter({ account_address: address }, '-created_date', 100).catch(() => []),
+    svc.entities.ChainCardToken.filter({ owner_address: address }, '-created_date', 100).catch(() => []),
+    svc.entities.BridgeTransfer.filter({ sender_address: address }, '-created_date', 100).catch(() => []),
+  ]);
+
+  const items: Array<{ hash: string; category: string; action: string; sort_key: string }> = [];
+  const seen = new Set<string>();
+
+  for (const row of identities || []) {
+    addIndexedActivity(items, seen, 'identity', 'account_deployment', row.deployment_tx_hash, row.created_date || row.updated_date);
+    addIndexedActivity(items, seen, 'identity', 'recovery_configuration', row.recovery_config_tx_hash, row.created_date || row.updated_date);
+    addIndexedActivity(items, seen, 'identity', 'identity_registration', row.registration_tx_hash, row.created_date || row.updated_date);
+    addIndexedActivity(items, seen, 'identity', 'v2_verification', row.verification_tx_hash, row.updated_date);
+    addIndexedActivity(items, seen, 'identity', 'verification_revocation', row.verification_revoke_tx_hash, row.updated_date);
+  }
+  for (const row of stakes || []) {
+    addIndexedActivity(items, seen, 'staking', String(row.intent_kind || 'stake'), row.tx_hash, row.created_date || row.updated_date);
+  }
+  for (const row of cards || []) {
+    addIndexedActivity(items, seen, 'card', 'card_mint', row.tx_hash, row.created_date || row.updated_date);
+  }
+  for (const row of bridges || []) {
+    addIndexedActivity(items, seen, 'bridge', `bridge_${String(row.direction || 'outbound')}_${String(row.asset_kind || 'asset')}`, row.source_tx_hash, row.created_date || row.updated_date);
+  }
+
+  items.sort((a, b) => b.sort_key.localeCompare(a.sort_key));
+  return items.slice(0, 50).map(({ sort_key, ...item }) => item);
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     if (req.method !== 'POST') return jsonError('METHOD_NOT_ALLOWED', 405);
@@ -132,6 +187,14 @@ export default async function(req: Request): Promise<Response> {
       const latest = Number(blockNumber);
       const ids = Array.from({ length: Math.min(LATEST_BLOCK_LIMIT, latest + 1) }, (_, i) => ({ block_number: latest - i }));
       const blocks = await Promise.all(ids.map((id) => rpcCall('starknet_getBlockWithTxHashes', [id]).catch(() => null)));
+      const availableBlocks = blocks.filter(Boolean);
+      const latestTransactions = availableBlocks
+        .flatMap((block: any) => (Array.isArray(block?.transactions) ? block.transactions : []).map((hash: string) => ({
+          transaction_hash: hash,
+          block_number: block.block_number ?? null,
+          timestamp: block.timestamp ?? null,
+        })))
+        .slice(0, 12);
       return Response.json({
         ok: true,
         kind: 'summary',
@@ -139,7 +202,8 @@ export default async function(req: Request): Promise<Response> {
         chain_id: chainId || network.chain_id,
         rpc_spec_version: String(specVersion || ''),
         latest_block_number: latest,
-        latest_blocks: blocks.filter(Boolean).map(compactBlock),
+        latest_blocks: availableBlocks.map(compactBlock),
+        latest_transactions: latestTransactions,
       }, { headers: { 'Cache-Control': 'public, max-age=5, stale-while-revalidate=10' } });
     }
 
@@ -172,15 +236,16 @@ export default async function(req: Request): Promise<Response> {
         return jsonError('INVALID_IDENTIFIER', 400);
       }
       try {
-        const [classHash, nonce] = await Promise.all([
+        const [classHash, nonce, activity] = await Promise.all([
           rpcCall('starknet_getClassHashAt', ['latest', address]),
           rpcCall('starknet_getNonce', ['latest', address]).catch(() => '0x0'),
+          indexedAddressActivity(req, address),
         ]);
         return Response.json({
           ok: true,
           kind: 'address',
           network: network.network,
-          address: { address, class_hash: classHash || '', nonce: nonce || '0x0' },
+          address: { address, class_hash: classHash || '', nonce: nonce || '0x0', indexed_activity: activity },
         }, { headers: { 'Cache-Control': 'public, max-age=20' } });
       } catch (error) {
         if (error instanceof RpcError) return jsonError('ADDRESS_NOT_FOUND', 404);
@@ -215,15 +280,16 @@ export default async function(req: Request): Promise<Response> {
           return Response.json({ ok: true, kind: 'block', network: network.network, block }, { headers: { 'Cache-Control': 'public, max-age=10' } });
         } catch {
           try {
-            const [classHash, nonce] = await Promise.all([
+            const [classHash, nonce, activity] = await Promise.all([
               rpcCall('starknet_getClassHashAt', ['latest', normalised]),
               rpcCall('starknet_getNonce', ['latest', normalised]).catch(() => '0x0'),
+              indexedAddressActivity(req, normalised),
             ]);
             return Response.json({
               ok: true,
               kind: 'address',
               network: network.network,
-              address: { address: normalised, class_hash: classHash || '', nonce: nonce || '0x0' },
+              address: { address: normalised, class_hash: classHash || '', nonce: nonce || '0x0', indexed_activity: activity },
             }, { headers: { 'Cache-Control': 'public, max-age=20' } });
           } catch {
             return jsonError('LOOKUP_NOT_FOUND', 404);
