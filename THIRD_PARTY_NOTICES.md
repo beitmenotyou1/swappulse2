@@ -20,6 +20,28 @@ TCGdex remains an independent third-party project. SwapPulse does not claim owne
 
 If a SwapPulse distribution copies/substantially redistributes TCGdex MIT-licensed source/database material rather than merely calling the hosted API, preserve the applicable upstream MIT copyright/licence notices as required by that licence.
 
+## PokéWallet
+
+SwapPulse optionally uses the PokéWallet hosted API for cached Pokémon TCG market-price enrichment, including data aggregated from TCGPlayer and CardMarket. TCGDex remains SwapPulse's canonical catalogue/identity source for cards.
+
+Upstream resources:
+
+- https://www.pokewallet.io/
+- https://www.pokewallet.io/api-docs
+
+PokéWallet is a hosted third-party service and remains subject to its own terms, usage tiers and rate limits. The API key used by SwapPulse must remain in backend secret management and must never be shipped in browser code, logs or source control.
+
+## PokéAPI
+
+SwapPulse optionally uses the public PokéAPI for Pokémon species and game-data enrichment. The integration is linked through National Pokédex IDs supplied by TCGDex and caches fetched resources server-side in line with PokéAPI's fair-use guidance.
+
+Upstream resources:
+
+- https://pokeapi.co/
+- https://pokeapi.co/docs/v2
+
+PokéAPI and its data remain third-party resources subject to their own terms/licensing. SwapPulse does not claim ownership of PokéAPI or the Pokémon intellectual property represented by that data.
+
 ## Pokémon and related intellectual property
 
 Pokémon, Pokémon character names, card artwork, game artwork and associated trademarks/copyrights are owned by their respective rightsholders, including Nintendo, Creatures Inc., GAME FREAK inc. and/or The Pokémon Company/The Pokémon Company International as applicable.
