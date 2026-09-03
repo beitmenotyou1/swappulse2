@@ -493,6 +493,8 @@ v0.3.0  Navigation and standalone Chain Explorer
 v0.4.0  Wallet overview UX refresh
 v0.5.0  Complete project handbook and deployment documentation
 v0.6.0  Automated GitHub release discipline
+v0.7.0  MPL-2.0 and multi-source Pokémon enrichment
+v0.8.0  PokemonPriceTracker graded and recent-market enrichment
 ```
 
 Future significant updates should follow [docs/RELEASING.md](docs/RELEASING.md) and explain what was added, changed, removed, why it changed, security/privacy impact, compatibility/migration impact, accessibility/localisation work and checks actually performed.
