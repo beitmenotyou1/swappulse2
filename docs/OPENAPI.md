@@ -68,6 +68,14 @@ and an operation such as `get-card-detail` is represented as:
 POST /functions/get-card-detail
 ```
 
+The repository-root file is authoritative. The `prebuild` script copies it into Vite's `public/` directory during a normal build, so deployed builds can expose the same contract at:
+
+```text
+https://swappulse.org/openapi.yaml
+```
+
+Do not hand-edit a second public copy. Change the root `openapi.yaml` and let the build copy it.
+
 The SDK remains the preferred first-party browser transport because it carries the current Base44 authentication context automatically.
 
 ## Specification extensions
