@@ -1,0 +1,78 @@
+{
+  "name": "TcgplayerCache",
+  "type": "object",
+  "title": "TCGplayer Cache",
+  "description": "Private backend cache for TCGplayer catalog/product/pricing responses and conservative TCGDex-to-TCGplayer mappings. Never exposed directly to browser clients.",
+  "properties": {
+    "cache_key": {
+      "type": "string"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "token_meta",
+        "category",
+        "group",
+        "product",
+        "pricing",
+        "mapping"
+      ]
+    },
+    "resource_id": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "source_path": {
+      "type": "string"
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stale_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schema_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "cache_key",
+    "resource_type",
+    "resource_id",
+    "payload",
+    "fetched_at",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
