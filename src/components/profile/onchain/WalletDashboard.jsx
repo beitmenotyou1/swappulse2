@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Clock3, Copy, LifeBuoy, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Blocks, CheckCircle2, Clock3, Copy, LifeBuoy, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { identityStatusConfig, isChainAuthoritative, shortHex } from '@/lib/chainIdentityDisplay';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function formatUtc(seconds) {
   const value = Number(seconds || 0);
@@ -38,6 +39,7 @@ function verificationPresentation(identity, nowMs) {
 
 export default function WalletDashboard({ status, onReload }) {
   const { toast } = useToast();
+  const t = useT();
   const [reconciling, setReconciling] = useState(false);
   const [recovery, setRecovery] = useState(null);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
@@ -135,6 +137,14 @@ export default function WalletDashboard({ status, onReload }) {
           <p className="text-xs font-semibold text-muted-foreground">Smart account address</p>
           <div className="mt-2 flex items-center gap-2">
             <code className="min-w-0 flex-1 truncate font-mono text-sm">{identity.account_address}</code>
+            <Link
+              to={`/chain/address/${identity.account_address}`}
+              className="shrink-0 rounded-lg p-2 text-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={t('explorer.viewAddress')}
+              title={t('explorer.viewAddress')}
+            >
+              <Blocks className="h-4 w-4" />
+            </Link>
             <button onClick={() => copy(identity.account_address, 'Address')} className="shrink-0 rounded-lg p-2 hover:bg-secondary" aria-label="Copy smart account address">
               <Copy className="h-4 w-4" />
             </button>
@@ -233,10 +243,14 @@ export default function WalletDashboard({ status, onReload }) {
           <div className="mt-2 space-y-2">
             {txs.map((tx) => (
               <div key={`${tx.label}:${tx.hash}`} className="flex items-center gap-2">
-                <div className="min-w-0 flex-1">
+                <Link
+                  to={`/chain/tx/${tx.hash}`}
+                  className="min-w-0 flex-1 rounded-lg p-1 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label={`${t('explorer.viewTransaction')}: ${tx.label}`}
+                >
                   <p className="text-xs font-medium">{tx.label}</p>
-                  <p className="truncate font-mono text-[11px] text-muted-foreground" title={tx.hash}>{shortHex(tx.hash)}</p>
-                </div>
+                  <p className="truncate font-mono text-[11px] text-primary" title={tx.hash}>{shortHex(tx.hash)}</p>
+                </Link>
                 <button onClick={() => copy(tx.hash, 'Tx hash')} className="shrink-0 rounded-lg p-1.5 hover:bg-secondary" aria-label={`Copy ${tx.label} transaction hash`}>
                   <Copy className="h-3.5 w-3.5" />
                 </button>
