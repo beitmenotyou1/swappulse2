@@ -121,6 +121,19 @@ If a new feature needs sensitive information, keep it off-chain and document:
 - how long it is retained;
 - what public commitment/proof, if any, is written on-chain.
 
+## Release expectations
+
+Every pull request must make an explicit release-impact decision using `.github/PULL_REQUEST_TEMPLATE.md`.
+
+For significant updates, follow `docs/RELEASING.md` and update:
+
+- `CHANGELOG.md`;
+- `.github/releases/vX.Y.Z.md`;
+- `RELEASE_MANIFEST.json`;
+- `package.json` version where appropriate.
+
+Do not backfill invented historical versions. Historical releases require a trustworthy preserved checkpoint/commit.
+
 ## Documentation expectations
 
 Update docs in the same pull request when behaviour changes.
@@ -133,6 +146,8 @@ At minimum, consider whether the change affects:
 - `docs/CHANGE_PROTOCOL.md`
 - `DEPLOYMENT.md`
 - `SECURITY_AUDIT.md`
+- `docs/RELEASING.md`
+- `docs/LICENSE_OPTIONS.md` / `THIRD_PARTY_NOTICES.md` when third-party/licensing boundaries change
 
 ## Pull request checklist
 
