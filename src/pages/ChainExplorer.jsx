@@ -7,6 +7,7 @@ import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 import useSEO from '@/hooks/useSEO';
+import { useApplyAccessibility } from '@/hooks/useSettings';
 
 function shortHex(value, head = 10, tail = 8) {
   const raw = String(value || '');
@@ -164,6 +165,7 @@ function ExplorerSearch({ initialValue = '', onInvalid }) {
 }
 
 export default function ChainExplorer() {
+  useApplyAccessibility();
   const { t, locale } = useI18n();
   const location = useLocation();
   const params = useParams();
