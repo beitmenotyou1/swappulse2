@@ -174,3 +174,64 @@ Target: `main` when this release manifest lands.
 
 ### Rationale
 A transparent release process makes it easier for users, contributors and fork maintainers to understand what changed, why it changed and whether an update affects security, privacy, compatibility or deployment.
+
+---
+
+## v0.7.0 — MPL-2.0 and multi-source Pokémon enrichment
+
+**Release milestone.** 2026-09-03
+
+Target checkpoint commit: `063ca7c436c2e8dc7a52f2310bb276fdec900e31`
+
+### Added
+- Root Mozilla Public License 2.0.
+- PokéAPI species/game enrichment linked by TCGDex National Pokédex IDs.
+- Cached PokéWallet TCGPlayer/CardMarket market cross-checks.
+- Card Detail Pokémon profile and additional market panels.
+- Provider cache/usage monitoring and third-party notices.
+
+### Updated
+- About, Terms, README and package metadata consistently use MPL-2.0.
+- TCGDex is documented as the canonical catalogue while PokéAPI/PokéWallet remain optional enrichment sources.
+
+### Security/privacy
+- Enrichment provider credentials remain backend-only.
+- No personal identity or private collection data is required by enrichment requests.
+- External provider failures fail soft.
+
+### Rationale
+Enrich card detail pages without weakening the stable TCGDex identity/catalogue layer or exposing provider secrets.
+
+---
+
+## v0.8.0 — PokemonPriceTracker graded and recent-market enrichment
+
+**Current release-series change.** 2026-09-03
+
+Target: `main` when this release manifest lands.
+
+### Added
+- Server-only PokemonPriceTracker integration.
+- RAW/condition, graded sold-price and recent-history Card Detail enrichment.
+- Private response cache and provider-credit ledger.
+- Admin quota/headroom visibility.
+- Provider-specific privacy, API, architecture and licensing documentation.
+
+### Performance/quota
+- Free tier is treated as 100 credits/day, 60 requests/minute and 3-day history.
+- SwapPulse uses an 80-credit/day soft ceiling and a 75% request-rate ceiling.
+- Fully enriched card requests are budgeted as 3 credits and cached for 24 hours.
+- No collection-wide/background provider sync is enabled on Free.
+
+### Licensing
+- Public production use fails closed on Free/API plans under the provider's dedicated licensing guidance for revenue-bearing deployments.
+- Admin development/evaluation remains available without enabling public provider data.
+- Provider data is not exposed as a substitute API, feed or bulk export.
+
+### Security/privacy
+- `POKEMON_PRICE_TRACKER_API_KEY` remains backend-only.
+- Browser requests contain only the canonical TCGDex card ID.
+- Conservative matching rejects low-confidence provider candidates instead of guessing.
+
+### Rationale
+Add uniquely useful graded and short-history data while preserving TCGDex as canonical, protecting a scarce credit budget and respecting the provider's licensing boundary.
