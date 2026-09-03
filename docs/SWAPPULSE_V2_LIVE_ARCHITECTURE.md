@@ -418,3 +418,55 @@ Host-health action threshold:
 - investigate any kernel OOM event
 - investigate if zombie count grows rather than remaining isolated
 - do not restart SwapPulse chain services for cosmetic swap or zombie cleanup
+
+## 18. V2 product layer: Identity and staking UX
+
+The first post-baseline product layer builds on the frozen V2 trust model without changing deployed Cairo contracts or permanent cut-over state.
+
+### Identity UX
+
+The Wallet smart-account dashboard now surfaces only public or coarse V2 state:
+
+- chain-authoritative identity status
+- smart-account address and opaque chain identity ID
+- V2 assurance type and level
+- verification ACTIVE / EXPIRED / REVOKED presentation
+- public verification expiry and remaining time
+- last public-chain reconciliation time
+- public deployment, registration, verification and revocation transaction hashes
+- completed recovery count
+- configured recovery delay and live pending-recovery state
+
+The UI explicitly explains that names, email addresses, dates of birth and identity documents are not stored on-chain. It does not display private verifier evidence or privileged verifier/relay credentials.
+
+### Staking UX
+
+`chain-staking-status` is the read model for the staking panel. It reads the verified public RPC and returns:
+
+- current community-operator status
+- self-stake and delegated stake
+- commission
+- self-stake unbonding/withdrawal state
+- known external delegations and their current active/pending balances
+- current minimum operator self-stake
+- current unbonding period
+
+Base44 stake rows are used to discover a collector's historical operator addresses and to suppress a clearly duplicated transaction during the short submitted-but-not-yet-visible propagation window. They are not treated as authoritative balances.
+
+The Wallet staking UI supports:
+
+- operator registration
+- operator self-stake increase
+- delegation to an active external operator
+- partial undelegation
+- timed withdrawal after unbonding
+- deliberate two-step operator exit confirmation
+- operator self-stake withdrawal after the delay
+- read-only display of existing stake while V2 value features are locked
+- recent Base44 staking activity as history, separately from current on-chain balances
+
+`chain-action-draft` independently rechecks chain state before issuing a signed transaction draft. It verifies active operator state, delegation balances, pending unbonding state, withdrawal maturity and duplicate registration/lifecycle conditions. `chain-action-submit` continues to rebuild calldata from the stored server-side intent and verifies the user's Stark signature before relay submission.
+
+The five-minute Chain Event Reconcile workflow advances submitted stake mirrors, records unbonding timestamps and pending amounts, recognises completed withdrawals, and sends existing `chain_stake` / `chain_unlock` notification categories.
+
+All staking and bridge writes continue to fail closed when the private verifier assertion or public V2 attestation is no longer current. No permanent V2 invariant was relaxed for this UX work.
