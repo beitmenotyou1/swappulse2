@@ -31,6 +31,24 @@ Upstream resources:
 
 PokéWallet is a hosted third-party service and remains subject to its own terms, usage tiers and rate limits. The API key used by SwapPulse must remain in backend secret management and must never be shipped in browser code, logs or source control.
 
+## PokemonPriceTracker
+
+SwapPulse includes an optional integration with the PokemonPriceTracker hosted API for RAW card prices, graded sold-price data and recent price history.
+
+Upstream resources:
+
+- https://www.pokemonpricetracker.com/
+- https://www.pokemonpricetracker.com/docs
+- https://www.pokemonpricetracker.com/licensing
+
+PokemonPriceTracker is a hosted third-party service. Its data, API service, terms, subscription limits and commercial-use permissions are not licensed under SwapPulse's MPL-2.0 licence.
+
+Current provider terms distinguish non-commercial/personal/development use from commercial deployments and reserve commercial use for qualifying Business/Enterprise plans. SwapPulse therefore fails closed for ordinary public production display when configured on Free/API plans unless the maintainer has explicit permission covering the deployment and deliberately enables the documented override.
+
+The provider also prohibits redistributing its data as a competing/substitute data API or bulk data product. SwapPulse's integration is therefore a product UI enrichment only, not a public PokemonPriceTracker proxy/feed.
+
+The API key must remain in backend secret management and must never be committed to source code or shipped to browser clients.
+
 ## PokéAPI
 
 SwapPulse optionally uses the public PokéAPI for Pokémon species and game-data enrichment. The integration is linked through National Pokédex IDs supplied by TCGDex and caches fetched resources server-side in line with PokéAPI's fair-use guidance.
