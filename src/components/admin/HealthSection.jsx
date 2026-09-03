@@ -29,6 +29,7 @@ export default function HealthSection({ health, generatedAt, onRefresh }) {
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <Status label="TCGDex API" status={health?.tcgdex?.status} error={health?.tcgdex?.error} />
+        <Status label="PokéWallet API" status={health?.pokewallet?.status} error={health?.pokewallet?.error} />
         <Status label="Database" status={health?.database?.status} error={health?.database?.error} />
       </div>
       {generatedAt && <p className="mt-2 text-xs text-muted-foreground">Checked {new Date(generatedAt).toLocaleString()}</p>}
