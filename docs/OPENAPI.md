@@ -2,7 +2,7 @@
 
 The repository root `openapi.yaml` is the machine-readable contract for SwapPulse's supported **public and authenticated product API**.
 
-It uses OpenAPI 3.2.0 and describes the Base44 backend-function HTTP surface exposed through the SwapPulse application domain.
+It uses OpenAPI 3.1.0 for compatibility with ReadMe's currently supported OpenAPI range and describes the Base44 backend-function HTTP surface exposed through the SwapPulse application domain.
 
 ## What is documented
 
