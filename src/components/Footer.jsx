@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Github } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
 import PWAInstallButton from '@/components/PWAInstallButton';
 
@@ -10,7 +11,6 @@ const FOOTER_LINKS = [
   { tKey: 'footer.help', to: '/help' },
   { tKey: 'footer.status', to: '/status' },
   { tKey: 'footer.chainExplorer', to: '/chain/' },
-  { tKey: 'footer.explore', to: '/explore' },
   { tKey: 'footer.donate', to: '/donate' },
 ];
 
@@ -33,6 +33,16 @@ export default function Footer() {
                 {t(link.tKey)}
               </Link>
             ))}
+            <a
+              href="https://github.com/beitmenotyou1/swappulse2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={t('footer.githubNewTab')}
+            >
+              <Github className="h-3.5 w-3.5" aria-hidden="true" />
+              {t('footer.github')}
+            </a>
             <PWAInstallButton />
           </nav>
         </div>
