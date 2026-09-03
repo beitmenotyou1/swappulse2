@@ -79,9 +79,16 @@ The primary product areas include Home, Explore, Collection, SwapPulse Wallet, B
 
 The Chain Explorer is intentionally routed outside the normal social-site layout so it behaves like a dedicated blockchain tool while remaining part of the same application.
 
-## 4. Pokémon TCG / TCGDex layer
+## 4. Pokémon TCG data layer
 
-TCGDex provides the external Pokémon card/set catalogue data used by the application.
+SwapPulse uses multiple Pokémon data providers for distinct purposes rather than treating them as interchangeable databases:
+
+- **TCGDex** is the canonical card/set catalogue and SwapPulse card-ID namespace.
+- **PokéAPI** provides optional species/game enrichment linked by TCGDex National Pokédex IDs.
+- **PokéWallet** provides optional cached TCGPlayer/CardMarket market cross-checks.
+- **PokemonPriceTracker** provides optional RAW/graded sold-price/recent-history enrichment, subject to provider plan/licensing constraints.
+
+TCGDex remains authoritative when provider records disagree about card identity.
 
 Relevant backend areas include functions such as:
 
@@ -94,6 +101,10 @@ Relevant backend areas include functions such as:
 - pricing/localisation workflows.
 
 Base44 records/cache are used so collection, trade and social workflows can reference stable application data without coupling every request directly to a third-party API call.
+
+Pricing/enrichment providers are accessed only through narrow Base44 backend functions. Their credentials never ship to the browser. Each provider has its own persistent cache and quota/fallback policy so one upstream outage or rate-limit event cannot take down the canonical catalogue.
+
+PokemonPriceTracker is additionally licence-gated: ordinary production users receive no provider data while SwapPulse is configured on a non-commercial Free/API plan. Admin-only development/evaluation can still exercise the integration without enabling public use.
 
 ### Why this is separate from Web3
 
