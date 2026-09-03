@@ -55,7 +55,7 @@ export default async function (req: Request): Promise<Response> {
 
     try {
       const result = await resolveTcgplayerMarket(svc, canonical);
-      const productLink = decorateTcgplayerAffiliateUrl(result?.product?.url);
+      const productLink = await decorateTcgplayerAffiliateUrl(svc, result?.product?.url);
       const decorated = result?.product ? { ...result, product: { ...result.product, url: productLink.url, affiliate: productLink.affiliate } } : result;
       return Response.json({
         available: true,
