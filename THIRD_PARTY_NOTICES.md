@@ -67,6 +67,14 @@ When TCGplayer pricing is displayed, SwapPulse identifies TCGplayer as the sourc
 
 TCGplayer content/data remains subject to TCGplayer's own API Terms and is not licensed under SwapPulse's MPL-2.0 licence. If API use is terminated, maintainers must follow TCGplayer's termination/data-deletion obligations for cached TCG Content.
 
+### Impact affiliate tracking
+
+SwapPulse can create TCGplayer affiliate deep links through the separate Impact.com Partner API. Impact authentication is backend-only using `IMPACT_ACCOUNT_SID` and a scoped `IMPACT_AUTH_TOKEN`; neither value is returned to browsers or committed to source control.
+
+The backend sends Impact only the validated TCGplayer destination URL and generic tracking metadata required to create the link. It does not include a SwapPulse user ID, email address, AT Protocol identifier, private collection notes or Web3 identity. Generated links are cached to minimise Impact API traffic. If a user chooses to follow an affiliate tracking link, subsequent click/conversion attribution is handled by Impact/TCGplayer under their own terms and privacy policies.
+
+SwapPulse displays an affiliate disclosure next to active affiliate links. Impact's API rate limits and tracking-link rules remain third-party service terms and are not governed by SwapPulse's MPL-2.0 licence.
+
 ## PokéAPI
 
 SwapPulse optionally uses the public PokéAPI for Pokémon species and game-data enrichment. The integration is linked through National Pokédex IDs supplied by TCGDex and caches fetched resources server-side in line with PokéAPI's fair-use guidance.
