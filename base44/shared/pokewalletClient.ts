@@ -176,10 +176,10 @@ async function reserveFreeTierRequest(svc: any): Promise<{ hour: any; day: any }
     }
   }
 
-  if ((hour?.count || 0) >= SOFT_HOURLY_LIMIT) {
+  if ((hour?.count || 0) >= SOFT_HOURLY_LIMIT || (hour?.provider_remaining != null && hour.provider_remaining <= PROVIDER_HOURLY_LIMIT - SOFT_HOURLY_LIMIT)) {
     throw new PokeWalletError('SOFT_HOURLY_LIMIT', 'PokéWallet hourly safety budget reached.', 429, true);
   }
-  if ((day?.count || 0) >= SOFT_DAILY_LIMIT) {
+  if ((day?.count || 0) >= SOFT_DAILY_LIMIT || (day?.provider_remaining != null && day.provider_remaining <= PROVIDER_DAILY_LIMIT - SOFT_DAILY_LIMIT)) {
     throw new PokeWalletError('SOFT_DAILY_LIMIT', 'PokéWallet daily safety budget reached.', 429, true);
   }
 
@@ -597,6 +597,10 @@ export async function resolvePokeWalletMarket(svc: any, tcgdexCard: any): Promis
 export async function checkPokeWalletHealth(): Promise<{ status: 'up' | 'down'; latencyMs?: number; error?: string }> {
   const started = Date.now();
   try {
+    const configured = !!String(Deno.env.get('POKEWALLET_API_KEY') || '').trim();
+    if (!configured) {
+      return { status: 'down', latencyMs: 0, error: 'POKEWALLET_API_KEY not configured' };
+    }
     const res = await fetch(`${POKEWALLET_BASE_URL}/health`, {
       headers: { Accept: 'application/json', 'User-Agent': 'SwapPulse/0.7 (+https://swappulse.org)' },
       signal: AbortSignal.timeout(7000),
