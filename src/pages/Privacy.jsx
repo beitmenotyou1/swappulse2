@@ -316,7 +316,9 @@ export default function Privacy() {
               SwapPulse integrates with or relies on the following third-party services:
             </p>
             <ul>
-              <li><strong>TCGDex</strong>, Card catalog data (card names, sets, rarities, images). Your collection references TCGDex card IDs.</li>
+              <li><strong>TCGDex</strong>, Our canonical Pokémon TCG catalogue source for card names, sets, rarities, images, identifiers, and baseline pricing data. Your collection references TCGDex card IDs.</li>
+              <li><strong>PokéWallet</strong>, Optional market-price enrichment from TCGPlayer and CardMarket. Requests are made only from the SwapPulse backend using card/set identifiers and catalogue metadata, not your name, email, account ID, or private collection notes. Results are cached to reduce third-party requests.</li>
+              <li><strong>PokéAPI</strong>, Optional Pokémon species and game-data enrichment linked using the National Pokédex IDs supplied by TCGDex. SwapPulse sends numeric Pokémon resource IDs, not user account or personal data, and caches responses in the backend.</li>
               <li><strong>AT Protocol / Bluesky</strong>, Federated identity and content storage. Your DID and records are visible on the AT Protocol network.</li>
               <li><strong>AI / LLM providers</strong>, Power the card scanner, AI assistants, and automated moderation. Prompts and card photos are sent to these providers for processing.</li>
               <li><strong>Image generation</strong>, Used for AI-generated images when you request them. Generated images are stored and linked to your account.</li>
