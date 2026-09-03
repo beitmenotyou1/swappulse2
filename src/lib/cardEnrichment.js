@@ -48,3 +48,11 @@ export async function getPokemonPriceTrackerMarket(cardId) {
     return res?.data ?? null;
   });
 }
+
+export async function getTcgplayerMarket(cardId) {
+  if (!cardId) return null;
+  return cachedEnrichment(`tcgplayer-market:${cardId}`, 30 * 60 * 1000, async () => {
+    const res = await base44.functions.invoke('tcgplayer-market', { cardId });
+    return res?.data ?? null;
+  });
+}
