@@ -62,9 +62,21 @@ Synchronises catalogue data into the application layer. This is a trusted/admin/
 
 ### `get-pricing` / `syncPricing`
 
-Read/synchronise pricing information.
+Read/synchronise the existing TCGDex-backed pricing information.
 
-Pricing is informational and can be delayed relative to live marketplaces.
+### `pokewallet-market`
+
+Optional market enrichment for one canonical TCGDex card. The browser supplies only the TCGDex card ID. The backend resolves a conservative TCGDex-to-PokéWallet mapping, uses the server-side `POKEWALLET_API_KEY`, and returns normalised TCGPlayer/CardMarket variant prices. Ambiguous matches are not guessed.
+
+The PokéWallet free tier is protected by persistent response/mapping caches plus a SwapPulse soft budget below the upstream ceiling. Provider limits are 100 requests/hour and 1,000/day; SwapPulse currently reserves headroom by stopping new upstream requests at 80/hour and 800/day. Cached stale data may be served during temporary provider/rate-limit failures rather than breaking the canonical card page.
+
+Pro-only and not-yet-released PokéWallet endpoints are not exposed by SwapPulse on the free tier.
+
+### `pokemon-enrichment`
+
+Optional PokéAPI species/game enrichment. It uses the TCGDex `dexId` field as the only species join, so it does not guess Pokémon from card names. PokeAPI resources are cached persistently server-side and no API key is required.
+
+Pricing/enrichment data is informational and can be delayed relative to live marketplaces or upstream databases. TCGDex remains the canonical SwapPulse card catalogue and card identifier namespace.
 
 ## 2. Collection and card workflows
 
