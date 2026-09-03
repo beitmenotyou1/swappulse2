@@ -103,8 +103,8 @@ export default function WalletDashboard({ status, onReload }) {
   const txs = [
     { label: 'Account deployment', hash: identity.deployment_tx_hash },
     { label: 'Identity registration', hash: identity.registration_tx_hash },
-    { label: 'V2 verification', hash: identity.verification_tx_hash },
-    { label: 'Verification revocation', hash: identity.verification_revoke_tx_hash },
+    { label: 'Latest V2 verification', hash: identity.verification_tx_hash },
+    { label: identity.verification_status === 'REVOKED' ? 'Current verification revocation' : 'Previous verification revocation', hash: identity.verification_revoke_tx_hash },
   ].filter((t) => t.hash);
 
   const recoveryDelayHours = Math.round(Number(network?.recovery_delay_seconds || recovery?.recovery_delay_seconds || 0) / 3600);
