@@ -40,3 +40,11 @@ export async function getPokemonEnrichment(cardId, locale = 'en') {
     return res?.data ?? null;
   });
 }
+
+export async function getPokemonPriceTrackerMarket(cardId) {
+  if (!cardId) return null;
+  return cachedEnrichment(`pokemon-price-tracker:${cardId}`, 30 * 60 * 1000, async () => {
+    const res = await base44.functions.invoke('pokemon-price-tracker-market', { cardId });
+    return res?.data ?? null;
+  });
+}
