@@ -8,6 +8,7 @@ SwapPulse deliberately uses multiple Pokémon data services for different jobs. 
 2. **PokéAPI** enriches the Pokémon species/game information behind eligible Pokémon cards.
 3. **PokéWallet** adds optional TCGPlayer/CardMarket market cross-checks.
 4. **PokemonPriceTracker** adds optional RAW/condition, graded sold-price and recent-history enrichment where its subscription/licensing terms permit the deployment.
+5. **TCGplayer** adds an optional direct TCGplayer catalogue/pricing cross-check for existing authorised developer accounts.
 
 When an enrichment provider disagrees with TCGDex about which card is being viewed, SwapPulse keeps the TCGDex identity and rejects/omits the enrichment rather than silently remapping the card.
 
@@ -129,6 +130,39 @@ Therefore:
 
 Provider data is never exposed as a standalone API/feed, bulk dataset or substitute pricing service.
 
+## TCGplayer
+
+Role:
+
+- direct TCGplayer product matching for a canonical TCGDex card;
+- market/low/mid/high pricing by printing/subtype;
+- direct link to the matched TCGplayer product;
+- independent market cross-check alongside TCGDex/PokéWallet/PokemonPriceTracker.
+
+Access and terms:
+
+- TCGplayer currently states that it is no longer granting new API access;
+- SwapPulse therefore supports existing authorised developer credentials only;
+- TCGplayer API use is limited to the purpose approved by TCGplayer;
+- `TCGPLAYER_APPROVED_USE=true` must be set before any provider request is made;
+- required TCGplayer attribution and product links are displayed with provider pricing.
+
+Rate/performance policy:
+
+- TCGplayer publishes no fixed numeric provider ceiling in the current public docs reviewed for this integration;
+- its API Terms prohibit excessive/unreasonable volume and reserve a right to limit calls;
+- SwapPulse therefore defaults to 30 calls/minute and 1,000 calls/day as internal soft ceilings;
+- these are SwapPulse safety limits, not claims about TCGplayer's provider limits;
+- `429`/`Retry-After` pauses fresh provider work;
+- catalogue mappings are cached for 30 days and pricing for 6 hours;
+- TCGplayer's own documentation recommends local caching/search rather than repeated live queries.
+
+Scope restriction:
+
+- catalog/product reads and pricing reads only;
+- no store authorization workflow is exposed to ordinary users;
+- no inventory, order, customer, buylist or seller-price mutation endpoint is present in the SwapPulse TCGplayer client.
+
 ## Backend-only secrets
 
 Provider credentials must never be present in `src/` or browser bundles.
@@ -139,6 +173,11 @@ Current server-side secret/config names:
 - `POKEMON_PRICE_TRACKER_API_KEY`
 - `POKEMON_PRICE_TRACKER_PLAN` (defaults to `free`)
 - `POKEMON_PRICE_TRACKER_PUBLIC_USE_ALLOWED` (defaults to false)
+- `TCGPLAYER_PUBLIC_KEY`
+- `TCGPLAYER_PRIVATE_KEY`
+- `TCGPLAYER_APPROVED_USE` (defaults to false)
+- `TCGPLAYER_SOFT_CALLS_PER_MINUTE` (defaults to 30)
+- `TCGPLAYER_SOFT_CALLS_PER_DAY` (defaults to 1000)
 
 PokeAPI and TCGDex currently do not require the same private credential pattern for these integrations.
 
@@ -150,6 +189,7 @@ Card Detail can independently render:
 - TCGDex baseline market data;
 - PokéWallet market cross-check;
 - PokemonPriceTracker graded/recent-market enrichment when licence/plan policy permits;
+- direct TCGplayer market cross-check when authorised use is configured;
 - PokéAPI species profile for cards with a valid TCGDex `dexId`.
 
 Each panel must fail independently. A timeout, quota exhaustion, licensing gate or ambiguous mapping from one optional provider must not hide the canonical card page or the output of the other providers.
@@ -178,6 +218,7 @@ SwapPulse's MPL-2.0 licence covers only SwapPulse-owned/licensable source. It do
 - PokéAPI;
 - PokéWallet;
 - PokemonPriceTracker data;
+- TCGplayer content/data;
 - TCGPlayer, CardMarket, eBay or grading-service data/marks referenced through providers.
 
 See `THIRD_PARTY_NOTICES.md` and the provider's own current terms before changing how data is displayed, stored, redistributed or monetised.
