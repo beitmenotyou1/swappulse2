@@ -19,7 +19,7 @@ function Meter({ label, used = 0, soft = 0, provider = 0, suffix = '' }) {
   );
 }
 
-export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcgplayer, onRefresh }) {
+export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcgplayer, impactAffiliate, onRefresh }) {
   const [testCardId, setTestCardId] = useState('swsh3-136');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -41,7 +41,7 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcg
     }
   };
 
-  if (!pokewallet && !priceTracker && !tcgplayer) return null;
+  if (!pokewallet && !priceTracker && !tcgplayer && !impactAffiliate) return null;
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-3">
@@ -77,6 +77,29 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcg
               <div className="flex items-center justify-between gap-3 text-sm"><span className="font-semibold">Daily calls</span><span className="text-muted-foreground">{tcgplayer.day?.callsUsed || 0}/{tcgplayer.day?.softCallLimit || 0}</span></div>
               <p className="mt-1 text-[10px] text-muted-foreground">429/Retry-After responses automatically pause new upstream calls.</p>
             </div>
+          </div>
+        )}
+        {impactAffiliate && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold">Impact · TCGplayer affiliate</p>
+              <div className="flex flex-wrap gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${impactAffiliate.policy?.configured ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                  {impactAffiliate.policy?.configured ? 'Account SID + token configured' : 'Impact credentials missing'}
+                </span>
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                  {impactAffiliate.policy?.programOverrideConfigured ? 'Programme ID pinned' : 'TCGplayer programme auto-discovery'}
+                </span>
+              </div>
+            </div>
+            <Meter
+              label="Hourly API calls"
+              used={impactAffiliate.hour?.callsUsed || 0}
+              soft={impactAffiliate.hour?.softCallLimit || 0}
+              provider={impactAffiliate.hour?.providerReportedLimit || impactAffiliate.hour?.providerDefaultLimit || 1000}
+            />
+            {impactAffiliate.hour?.providerRemaining != null && <p className="text-[10px] text-muted-foreground">Impact-reported remaining calls this hour: {impactAffiliate.hour.providerRemaining}</p>}
+            <p className="text-[10px] text-muted-foreground">Generated tracking links are cached for 30 days. A failed Impact call falls back to the normal TCGplayer URL instead of breaking Card Detail.</p>
           </div>
         )}
         {priceTracker && (
