@@ -79,6 +79,15 @@ jobs:
               target="$GITHUB_SHA"
             fi
 
+            if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+              tag_target="$(git rev-list -n 1 "$version")"
+              if [ "$tag_target" != "$target" ]; then
+                echo "Existing tag $version points to $tag_target, expected $target. Refusing to rewrite release history."
+                exit 1
+              fi
+              echo "Existing tag $version points to the expected commit."
+            fi
+
             args=(
               release create "$version"
               --repo "$GITHUB_REPOSITORY"
