@@ -72,6 +72,18 @@ The PokéWallet free tier is protected by persistent response/mapping caches plu
 
 Pro-only and not-yet-released PokéWallet endpoints are not exposed by SwapPulse on the free tier.
 
+### `pokemon-price-tracker-market`
+
+Optional RAW/graded/recent-history enrichment from PokemonPriceTracker for one canonical TCGDex card. The browser submits only the TCGDex card ID; the Base44 backend resolves catalogue metadata and authenticates upstream using `POKEMON_PRICE_TRACKER_API_KEY`.
+
+The integration intentionally performs one strict `limit=1` query with the card name, set and collector number, requesting basic pricing, the plan-allowed recent history window and graded/eBay data in the same call. Automatic matching requires the collector number and a strong name/set score; weak matches are discarded rather than guessed.
+
+PokemonPriceTracker uses credit-based billing. On the Free plan, a fully enriched card is expected to cost 3 credits (1 base + 1 history + 1 graded/eBay), against 100 credits/day and 60 requests/minute. SwapPulse therefore reserves headroom with an 80-credit/day and 45-call/minute soft budget, persists results for 24 hours, and can use a short stale fallback during temporary provider failures.
+
+Current provider terms restrict Free/API plans to personal/non-commercial/development use and require a qualifying commercial plan for revenue-generating production services. SwapPulse therefore returns `license_plan_required` to ordinary users on Free/API before reading the API key or spending credits. Admin development/evaluation remains available. Public production enablement occurs automatically for Business/Enterprise, or only via the documented explicit permission override.
+
+The endpoint is not a generic proxy and must never be used to redistribute PokemonPriceTracker data as a substitute API/feed.
+
 ### `pokemon-enrichment`
 
 Optional PokéAPI species/game enrichment. It uses the TCGDex `dexId` field as the only species join, so it does not guess Pokémon from card names. PokeAPI resources are cached persistently server-side and no API key is required.
