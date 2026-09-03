@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, ArrowLeftRight, Sparkles, UserPlus, Loader2 } from 'lucide-react';
+import { TrendingUp, ArrowLeftRight, Sparkles, UserPlus, Loader2, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
@@ -188,8 +188,17 @@ export default function RightSidebar({ online = [] }) {
           <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.privacy')}</Link>
           <Link to="/help" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.help')}</Link>
           <Link to="/status" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.status')}</Link>
-          <Link to="/explore" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.explore')}</Link>
+          <Link to="/chain/" className="text-xs font-medium transition-colors hover:text-foreground">{tr('footer.chainExplorer')}</Link>
           <Link to="/donate" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.donate')}</Link>
+          <a
+            href="https://github.com/beitmenotyou1/swappulse2"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={tr('footer.githubNewTab')}
+            className="inline-flex items-center gap-1 text-xs font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <Github className="h-3 w-3" aria-hidden="true" /> {tr('footer.github')}
+          </a>
         </nav>
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
           {tr('footer.disclaimer')}
