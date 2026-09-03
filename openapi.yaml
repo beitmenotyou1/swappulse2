@@ -1,0 +1,1194 @@
+openapi: 3.2.0
+$self: https://swappulse.org/openapi.yaml
+info:
+  title: SwapPulse Public & Product API
+  version: 0.9.0
+  summary: Public catalogue, community, enrichment and authenticated SwapPulse product endpoints.
+  description: |
+    SwapPulse is an open Pokémon TCG community platform combining a TCG catalogue,
+    social/federated features, a self-custodial Wallet and a Cairo/Starknet trust layer.
+
+    This OpenAPI description covers the supported public and authenticated product
+    surface. It deliberately excludes privileged relay endpoints, private verifier
+    webhooks, secret-management operations, scheduled workflows and irreversible
+    administration controls.
+
+    TCGDex remains the canonical Pokémon TCG card/set identity source. PokéAPI,
+    PokéWallet, PokemonPriceTracker and TCGplayer are optional enrichment sources
+    with independent cache, licensing and availability policies.
+
+    Base44 backend functions are the HTTP implementation. Frontend code normally
+    calls them with `base44.functions.invoke(functionName, payload)`, which carries
+    the current authentication context automatically.
+  termsOfService: https://swappulse.org/terms
+  contact:
+    name: SwapPulse
+    url: https://swappulse.org
+  license:
+    name: Mozilla Public License 2.0
+    identifier: MPL-2.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+servers:
+  - url: https://swappulse.org
+    description: SwapPulse production/custom-domain endpoint
+externalDocs:
+  description: SwapPulse repository and full architecture documentation
+  url: https://github.com/beitmenotyou1/swappulse2
+
+x-swappulse-release: v0.9.0
+x-swappulse-api-scope: public-and-product
+x-swappulse-transport:
+  runtime: Base44 backend functions
+  httpPattern: /functions/{function-name}
+  sdkPattern: base44.functions.invoke(functionName, payload)
+x-swappulse-canonical-sources:
+  pokemonTcg: TCGDex
+  socialFederation: AT Protocol / Base44 application mirror
+  chainState: SwapPulse Starknet public RPC
+x-swappulse-third-party-enrichment:
+  - PokeAPI
+  - PokéWallet
+  - PokemonPriceTracker
+  - TCGplayer
+  - Impact (affiliate link generation only)
+x-swappulse-privacy:
+  piiOnChain: false
+  providerRequestsAreCatalogueLevel: true
+  privilegedSecretsInBrowser: false
+x-swappulse-excluded-internal-surfaces:
+  - authenticated transaction relay
+  - private age-verifier webhook
+  - admin V2 cut-over/test harness controls
+  - provider API credentials and Impact authentication
+  - scheduled catalogue/federation/reconciliation workflows
+
+security: []
+
+tags:
+  - name: Catalogue
+    description: Canonical Pokémon TCG card and set data.
+  - name: Enrichment
+    description: Optional species and market enrichment. These endpoints fail soft where possible.
+  - name: Community
+    description: Public and personalised SwapPulse/AT Protocol feeds.
+  - name: Chain Explorer
+    description: Public read-only SwapPulse Starknet explorer data.
+  - name: Identity
+    description: Authenticated age/identity read models and provisioning.
+  - name: Wallet
+    description: Authenticated staking, faucet, recovery and signed action workflows.
+
+paths:
+  /functions/get-cards:
+    post:
+      tags: [Catalogue]
+      operationId: getCards
+      summary: Browse Pokémon TCG cards
+      description: Returns paginated TCGDex-backed card catalogue data with filters.
+      x-base44-function-name: get-cards
+      x-base44-sdk-call: "base44.functions.invoke('get-cards', payload)"
+      x-swappulse-visibility: public
+      x-swappulse-data-classification: public-catalogue
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-cache-policy: public; max-age=900
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardBrowseRequest'
+      responses:
+        '200':
+          description: Card page
+          headers:
+            Cache-Control:
+              schema: { type: string }
+            X-Response-Time:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /functions/get-card-detail:
+    post:
+      tags: [Catalogue]
+      operationId: getCardDetail
+      summary: Get a canonical card
+      description: Returns full TCGDex card data, including game text and baseline pricing when available.
+      x-base44-function-name: get-card-detail
+      x-base44-sdk-call: "base44.functions.invoke('get-card-detail', { cardId, lang })"
+      x-swappulse-visibility: public
+      x-swappulse-data-classification: public-catalogue
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-cache-policy: public; max-age=3600
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { $ref: '#/components/schemas/CardId' }
+                lang: { $ref: '#/components/schemas/Language' }
+      responses:
+        '200':
+          description: Full card detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDetailResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /functions/get-sets:
+    post:
+      tags: [Catalogue]
+      operationId: getSets
+      summary: Browse Pokémon TCG sets
+      x-base44-function-name: get-sets
+      x-base44-sdk-call: "base44.functions.invoke('get-sets', payload)"
+      x-swappulse-visibility: public
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-cache-policy: public; max-age=86400
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lang: { $ref: '#/components/schemas/Language' }
+                serieId:
+                  type: string
+                  maxLength: 80
+      responses:
+        '200':
+          description: Set list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetListResponse'
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /functions/search-cards:
+    post:
+      tags: [Catalogue]
+      operationId: searchCards
+      summary: Search cards by name, set code, number and rarity
+      description: Searches the local multilingual TCGDex cache first and falls back to live TCGDex coverage when necessary.
+      x-base44-function-name: search-cards
+      x-base44-sdk-call: "base44.functions.invoke('search-cards', { query, lang, perPage })"
+      x-swappulse-visibility: public
+      x-swappulse-canonical-source: TCGDex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  examples: ["swsh3 136", "Furret Darkness Ablaze"]
+                lang:
+                  oneOf:
+                    - $ref: '#/components/schemas/Language'
+                    - type: string
+                      const: all
+                perPage:
+                  type: integer
+                  minimum: 1
+                  maximum: 50
+                  default: 24
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchCard'
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /functions/pokemon-enrichment:
+    post:
+      tags: [Enrichment]
+      operationId: getPokemonEnrichment
+      summary: Enrich a TCG card with Pokémon species/game data
+      description: Uses TCGDex `dexId` values only. It does not infer species from card names.
+      x-base44-function-name: pokemon-enrichment
+      x-base44-sdk-call: "base44.functions.invoke('pokemon-enrichment', { cardId, lang })"
+      x-swappulse-visibility: public
+      x-swappulse-upstream: PokeAPI
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-provider-role: species-game-enrichment
+      x-swappulse-cache-policy: persistent backend cache; HTTP public max-age=3600
+      x-swappulse-fail-soft: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId: { $ref: '#/components/schemas/CardId' }
+                lang: { $ref: '#/components/schemas/Language' }
+      responses:
+        '200':
+          description: Species profile(s), or a typed unavailable result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PokemonEnrichmentResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /functions/pokewallet-market:
+    post:
+      tags: [Enrichment]
+      operationId: getPokeWalletMarket
+      summary: Get cached PokéWallet market cross-check data
+      x-base44-function-name: pokewallet-market
+      x-base44-sdk-call: "base44.functions.invoke('pokewallet-market', { cardId })"
+      x-swappulse-visibility: public
+      x-swappulse-upstream: PokéWallet
+      x-swappulse-provider-role: TCGPlayer-and-CardMarket-cross-check
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-fail-soft: true
+      x-swappulse-rate-policy:
+        providerHourlyLimit: 100
+        providerDailyLimit: 1000
+        swapPulseSoftHourlyLimit: 80
+        swapPulseSoftDailyLimit: 800
+      x-swappulse-cache-policy:
+        marketHours: 6
+        searchHours: 24
+        mappingDays: 30
+      requestBody:
+        $ref: '#/components/requestBodies/CardIdRequest'
+      responses:
+        '200':
+          description: Market enrichment or typed soft-failure result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketEnrichmentResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /functions/pokemon-price-tracker-market:
+    post:
+      tags: [Enrichment]
+      operationId: getPokemonPriceTrackerMarket
+      summary: Get RAW, graded and recent-history enrichment
+      description: |
+        Availability depends on the configured PokemonPriceTracker plan/licensing state.
+        Free/API plans are development/admin-only unless explicit permission covers public use.
+      x-base44-function-name: pokemon-price-tracker-market
+      x-base44-sdk-call: "base44.functions.invoke('pokemon-price-tracker-market', { cardId })"
+      x-swappulse-visibility: conditional
+      x-swappulse-upstream: PokemonPriceTracker
+      x-swappulse-provider-role: raw-graded-recent-history
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-fail-soft: true
+      x-swappulse-license-gate: true
+      x-swappulse-rate-policy:
+        providerCreditsPerDay: 100
+        providerCallsPerMinute: 60
+        swapPulseSoftCreditsPerDay: 80
+        swapPulseSoftCallsPerMinute: 45
+        fullyEnrichedCardCredits: 3
+      x-swappulse-cache-policy: 24-hour persistent card cache
+      security:
+        - {}
+        - Base44Session: []
+      requestBody:
+        $ref: '#/components/requestBodies/CardIdRequest'
+      responses:
+        '200':
+          description: Enrichment, licence-gated result or typed soft failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketEnrichmentResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /functions/tcgplayer-market:
+    post:
+      tags: [Enrichment]
+      operationId: getDirectTcgplayerMarket
+      summary: Get direct TCGplayer pricing when approved API access exists
+      description: Direct TCGplayer developer access is currently dormant unless existing credentials are approved for SwapPulse.
+      x-base44-function-name: tcgplayer-market
+      x-base44-sdk-call: "base44.functions.invoke('tcgplayer-market', { cardId })"
+      x-swappulse-visibility: public-when-configured
+      x-swappulse-current-state: dormant
+      x-swappulse-upstream: TCGplayer
+      x-swappulse-provider-role: direct-market-cross-check
+      x-swappulse-canonical-source: TCGDex
+      x-swappulse-approved-use-gate: TCGPLAYER_APPROVED_USE
+      x-swappulse-soft-rate-policy:
+        callsPerMinute: 30
+        callsPerDay: 1000
+        providerNumericLimitPublished: false
+      x-swappulse-cache-policy:
+        mappingDays: 30
+        pricesHours: 6
+      requestBody:
+        $ref: '#/components/requestBodies/CardIdRequest'
+      responses:
+        '200':
+          description: Direct market enrichment or a dormant/unavailable result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketEnrichmentResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /functions/get-explore-feed:
+    post:
+      tags: [Community]
+      operationId: getExploreFeed
+      summary: Get the public SwapPulse Explore feed
+      x-base44-function-name: get-explore-feed
+      x-base44-sdk-call: "base44.functions.invoke('get-explore-feed', { limit })"
+      x-swappulse-visibility: public
+      x-swappulse-data-classification: public-social-content
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedRequest'
+      responses:
+        '200':
+          description: Recent public posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedResponse'
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /functions/get-follow-feed:
+    post:
+      tags: [Community]
+      operationId: getFollowFeed
+      summary: Get the current user's followed-account/hashtag feed
+      description: Guests receive an empty, explicitly unauthenticated result. Signed-in users receive only followed-account and followed-hashtag content across local SwapPulse and supported AT Protocol AppView reads.
+      x-base44-function-name: get-follow-feed
+      x-base44-sdk-call: "base44.functions.invoke('get-follow-feed', { limit })"
+      x-swappulse-visibility: optional-auth
+      x-swappulse-upstream: AT Protocol AppView
+      security:
+        - {}
+        - Base44Session: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedRequest'
+      responses:
+        '200':
+          description: Follow feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowFeedResponse'
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /functions/chain-explorer:
+    post:
+      tags: [Chain Explorer]
+      operationId: chainExplorer
+      summary: Read public SwapPulse Starknet explorer data
+      description: Read-only gateway to the pinned public RPC plus explicitly-labelled SwapPulse-indexed account activity.
+      x-base44-function-name: chain-explorer
+      x-base44-sdk-call: "base44.functions.invoke('chain-explorer', payload)"
+      x-swappulse-visibility: public
+      x-swappulse-chain-network: SWAPPULSE_TESTNET
+      x-swappulse-rpc: https://rpc.swappulse.org/rpc
+      x-swappulse-write-capability: false
+      x-swappulse-address-history-is-complete-archive: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChainExplorerRequest'
+      responses:
+        '200':
+          description: Explorer result determined by `action`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainExplorerResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /functions/age-status:
+    post:
+      tags: [Identity]
+      operationId: ageStatus
+      summary: Read or update the signed-in user's age-band/verification state
+      description: Does not store date of birth. Private verifier evidence remains off-chain and outside this API.
+      x-base44-function-name: age-status
+      x-base44-sdk-call: "base44.functions.invoke('age-status', payload)"
+      x-swappulse-visibility: authenticated
+      x-swappulse-data-classification: private-user-eligibility
+      x-swappulse-stores-date-of-birth: false
+      security:
+        - Base44Session: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgeStatusRequest'
+      responses:
+        '200':
+          description: Current or updated age/verification state
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /functions/chain-identity-user:
+    post:
+      tags: [Identity]
+      operationId: chainIdentityUser
+      summary: Get or prepare the signed-in user's SwapPulse chain identity
+      description: Provides the Wallet identity/network read model and controlled provisioning operations. Secret-like fields are rejected from imported provisioning results.
+      x-base44-function-name: chain-identity-user
+      x-base44-sdk-call: "base44.functions.invoke('chain-identity-user', payload)"
+      x-swappulse-visibility: authenticated
+      x-swappulse-data-classification: private-user-to-public-chain-mapping
+      x-swappulse-private-key-required-by-base44: false
+      security:
+        - Base44Session: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChainIdentityUserRequest'
+      responses:
+        '200':
+          description: Identity status/provisioning response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /functions/chain-staking-status:
+    post:
+      tags: [Wallet]
+      operationId: getChainStakingStatus
+      summary: Get chain-authoritative operator/delegation state
+      x-base44-function-name: chain-staking-status
+      x-base44-sdk-call: "base44.functions.invoke('chain-staking-status', {})"
+      x-swappulse-visibility: authenticated
+      x-swappulse-authority: verified-public-rpc
+      x-swappulse-local-mirror-authority: false
+      security:
+        - Base44Session: []
+      responses:
+        '200':
+          description: Current staking state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StakingStatusResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /functions/faucet-claim:
+    post:
+      tags: [Wallet]
+      operationId: faucetClaim
+      summary: Get faucet status or claim fixed testnet SWPX
+      x-base44-function-name: faucet-claim
+      x-base44-sdk-call: "base44.functions.invoke('faucet-claim', { action })"
+      x-swappulse-visibility: authenticated
+      x-swappulse-network: SWAPPULSE_TESTNET
+      x-swappulse-cooldown-hours: 24
+      x-swappulse-client-controls-amount: false
+      security:
+        - Base44Session: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [status, claim]
+                  default: status
+      responses:
+        '200':
+          description: Faucet status or successful claim
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /functions/chain-recovery:
+    post:
+      tags: [Wallet]
+      operationId: chainRecovery
+      summary: Read or manage delayed smart-account recovery
+      description: Mutating recovery actions require a fresh MFA/step-up token and remain protected by the on-chain recovery delay.
+      x-base44-function-name: chain-recovery
+      x-base44-sdk-call: "base44.functions.invoke('chain-recovery', payload)"
+      x-swappulse-visibility: authenticated
+      x-swappulse-mfa-step-up-required-for: [propose, execute, cancel]
+      x-swappulse-on-chain-delay: true
+      security:
+        - Base44Session: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryRequest'
+      responses:
+        '200':
+          description: Recovery state/result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /functions/chain-action-draft:
+    post:
+      tags: [Wallet]
+      operationId: chainActionDraft
+      summary: Create a policy-checked unsigned chain transaction draft
+      description: Supports staking, bridge-out and signer-add workflows. Value-bearing actions require current verified eligibility.
+      x-base44-function-name: chain-action-draft
+      x-base44-sdk-call: "base44.functions.invoke('chain-action-draft', payload)"
+      x-swappulse-visibility: authenticated
+      x-swappulse-client-supplied-arbitrary-calldata: false
+      x-swappulse-value-feature-verification-required: true
+      security:
+        - Base44Session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChainActionDraftRequest'
+      responses:
+        '200':
+          description: Draft transaction, server-issued draft token and associated record
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+  /functions/chain-action-submit:
+    post:
+      tags: [Wallet]
+      operationId: chainActionSubmit
+      summary: Submit a signed, server-drafted chain action
+      description: Rebuilds expected calls server-side, validates calldata, draft token and Stark signature, then uses the hardened relay.
+      x-base44-function-name: chain-action-submit
+      x-base44-sdk-call: "base44.functions.invoke('chain-action-submit', payload)"
+      x-swappulse-visibility: authenticated
+      x-swappulse-relay-directly-exposed: false
+      x-swappulse-rebuilds-expected-calldata: true
+      x-swappulse-replay-protection: server-draft-token-and-chain-nonce
+      security:
+        - Base44Session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChainActionSubmitRequest'
+      responses:
+        '200':
+          description: Submitted transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, action, record_id, transaction_hash]
+                properties:
+                  ok: { type: boolean, const: true }
+                  action: { type: string, enum: [stake, bridge_out, add_signer] }
+                  record_id: { type: string }
+                  transaction_hash: { $ref: '#/components/schemas/FeltHex' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/UpstreamError' }
+
+components:
+  securitySchemes:
+    Base44Session:
+      type: http
+      scheme: bearer
+      bearerFormat: Base44 user session/access token
+      description: |
+        The SwapPulse frontend normally uses the Base44 SDK, which supplies the
+        current user's authentication automatically. Direct HTTP clients must use
+        a Base44-supported user authentication token/session. Never use service-role
+        or provider secret credentials from a browser/client.
+      x-base44-sdk-auth: automatic-current-user-context
+
+  requestBodies:
+    CardIdRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [cardId]
+            properties:
+              cardId: { $ref: '#/components/schemas/CardId' }
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Caller is authenticated but not eligible/authorised
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Request conflicts with current state or verified policy
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    MethodNotAllowed:
+      description: HTTP method is not supported
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    UpstreamError:
+      description: Verified chain/provider operation could not be completed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    InternalError:
+      description: Unexpected server failure
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    CardId:
+      type: string
+      minLength: 1
+      maxLength: 180
+      pattern: '^[A-Za-z0-9._:-]+$'
+      examples: [swsh3-136]
+
+    FeltHex:
+      type: string
+      pattern: '^0x[0-9a-fA-F]+$'
+      examples: ['0x1234abcd']
+
+    Language:
+      type: string
+      enum: [en, fr, de, it, es, pt, jp, ja, zh, ko]
+      default: en
+
+    ResponseMeta:
+      type: object
+      properties:
+        page: { type: integer, minimum: 1 }
+        itemsPerPage: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+        language: { type: string }
+        fromCache: { type: boolean }
+        generatedAt: { type: string, format: date-time }
+      required: [language, fromCache, generatedAt]
+
+    ErrorResponse:
+      oneOf:
+        - type: object
+          required: [success, error]
+          properties:
+            success: { type: boolean, const: false }
+            error:
+              type: object
+              required: [code, message]
+              properties:
+                code: { type: string }
+                message: { type: string }
+                details:
+                  type: object
+                  additionalProperties: true
+        - type: object
+          required: [error]
+          properties:
+            error: { type: string }
+            code: { type: string }
+            error_code: { type: string }
+          additionalProperties: true
+
+    CardBrowseRequest:
+      type: object
+      properties:
+        lang: { $ref: '#/components/schemas/Language' }
+        setId: { type: string }
+        serieId: { type: string }
+        rarity: { type: string }
+        category: { type: string, enum: [Pokemon, Trainer, Energy] }
+        type: { type: string }
+        illustrator: { type: string }
+        page: { type: integer, minimum: 1, maximum: 10000, default: 1 }
+        itemsPerPage: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        sortBy: { type: string, default: releaseDate }
+        sortOrder: { type: string, enum: [ASC, DESC], default: DESC }
+
+    CardListItem:
+      type: object
+      required: [id, localId, name, hasPricing]
+      properties:
+        id: { $ref: '#/components/schemas/CardId' }
+        localId: { type: string }
+        name: { type: string }
+        image: { type: [string, 'null'], format: uri }
+        category: { type: [string, 'null'] }
+        rarity: { type: [string, 'null'] }
+        setId: { type: [string, 'null'] }
+        setName: { type: [string, 'null'] }
+        variants:
+          type: [object, 'null']
+          additionalProperties: { type: boolean }
+        hasPricing: { type: boolean }
+
+    CardListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: { type: boolean, const: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/CardListItem' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    CardDetail:
+      type: object
+      required: [id, localId, name, category, types, attacks, weaknesses, legal, pricing, availableLanguages, requestedLanguage, languageFallback]
+      properties:
+        id: { $ref: '#/components/schemas/CardId' }
+        localId: { type: string }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        image: { type: [string, 'null'], format: uri }
+        category: { type: string }
+        illustrator: { type: [string, 'null'] }
+        rarity: { type: [string, 'null'] }
+        setId: { type: [string, 'null'] }
+        setName: { type: [string, 'null'] }
+        serieId: { type: [string, 'null'] }
+        serieName: { type: [string, 'null'] }
+        variants:
+          type: [object, 'null']
+          additionalProperties: { type: boolean }
+        hp: { type: [integer, 'null'] }
+        types:
+          type: array
+          items: { type: string }
+        stage: { type: [string, 'null'] }
+        evolveFrom: { type: [string, 'null'] }
+        attacks:
+          type: array
+          items: { type: object, additionalProperties: true }
+        weaknesses:
+          type: array
+          items: { type: object, additionalProperties: true }
+        retreat: { type: [integer, 'null'] }
+        regulationMark: { type: [string, 'null'] }
+        legal:
+          type: object
+          properties:
+            standard: { type: boolean }
+            expanded: { type: boolean }
+        pricing:
+          type: object
+          properties:
+            cardmarket: { type: [object, 'null'], additionalProperties: true }
+            tcgplayer: { type: [object, 'null'], additionalProperties: true }
+            updatedAt: { type: [string, 'null'] }
+        availableLanguages:
+          type: array
+          items: { type: string }
+        requestedLanguage: { type: string }
+        languageFallback: { type: boolean }
+
+    CardDetailResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: { type: boolean, const: true }
+        data: { $ref: '#/components/schemas/CardDetail' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    SetListItem:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        logo: { type: [string, 'null'], format: uri }
+        symbol: { type: [string, 'null'], format: uri }
+        releaseDate: { type: [string, 'null'] }
+        serieId: { type: [string, 'null'] }
+        serieName: { type: [string, 'null'] }
+        cardCount:
+          type: [object, 'null']
+          additionalProperties: true
+        legal:
+          type: object
+          additionalProperties: true
+        tcgOnlineCode: { type: [string, 'null'] }
+
+    SetListResponse:
+      type: object
+      required: [success, data, meta]
+      properties:
+        success: { type: boolean, const: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/SetListItem' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    SearchCard:
+      type: object
+      required: [id, name]
+      properties:
+        id: { $ref: '#/components/schemas/CardId' }
+        name: { type: string }
+        image: { type: [string, 'null'] }
+        rarity: { type: [string, 'null'] }
+        local_id: { type: [string, 'null'] }
+        set:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+
+    PokemonProfile:
+      type: object
+      additionalProperties: true
+      description: Normalised PokéAPI species/game profile. Fields may grow without changing the canonical card schema.
+
+    PokemonEnrichmentResponse:
+      type: object
+      required: [available, profiles]
+      properties:
+        available: { type: boolean }
+        reason: { type: [string, 'null'] }
+        canonicalCardId: { type: string }
+        canonicalSource: { type: string, const: TCGDex }
+        enrichmentSource: { type: string, const: PokeAPI }
+        dexIds:
+          type: array
+          maxItems: 3
+          items: { type: integer, minimum: 1 }
+        profiles:
+          type: array
+          items: { $ref: '#/components/schemas/PokemonProfile' }
+
+    MarketEnrichmentResponse:
+      type: object
+      properties:
+        available: { type: boolean }
+        matched: { type: boolean }
+        temporary: { type: boolean }
+        reason: { type: [string, 'null'] }
+        canonicalCardId: { type: string }
+        canonicalSource: { type: string, const: TCGDex }
+        marketSource: { type: string }
+        enrichmentSource: { type: string }
+        market:
+          type: object
+          additionalProperties: true
+        product:
+          type: object
+          additionalProperties: true
+        prices:
+          type: array
+          items: { type: object, additionalProperties: true }
+        freshness:
+          type: object
+          additionalProperties: true
+        affiliate:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+
+    FeedRequest:
+      type: object
+      properties:
+        limit: { type: integer, minimum: 1, maximum: 100, default: 50 }
+
+    Post:
+      type: object
+      additionalProperties: true
+      properties:
+        id: { type: string }
+        content: { type: string }
+        did: { type: string }
+        at_uri: { type: string }
+        created_date: { type: string }
+        external: { type: boolean }
+
+    FeedResponse:
+      type: object
+      required: [items, source]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Post' }
+        source: { type: string, const: explore }
+
+    FollowFeedResponse:
+      type: object
+      required: [items, source, authed]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Post' }
+        source: { type: string, const: follow }
+        authed: { type: boolean }
+        followed_count: { type: integer, minimum: 0 }
+
+    ChainExplorerRequest:
+      oneOf:
+        - type: object
+          properties:
+            action: { type: string, const: summary }
+        - type: object
+          required: [action, hash]
+          properties:
+            action: { type: string, const: transaction }
+            hash: { $ref: '#/components/schemas/FeltHex' }
+        - type: object
+          required: [action, id]
+          properties:
+            action: { type: string, const: block }
+            id:
+              oneOf:
+                - type: integer
+                  minimum: 0
+                - $ref: '#/components/schemas/FeltHex'
+        - type: object
+          required: [action, address]
+          properties:
+            action: { type: string, const: address }
+            address: { $ref: '#/components/schemas/FeltHex' }
+        - type: object
+          required: [action, identifier]
+          properties:
+            action: { type: string, const: resolve }
+            identifier:
+              type: string
+              maxLength: 80
+
+    ChainExplorerResponse:
+      type: object
+      required: [ok, kind, network]
+      properties:
+        ok: { type: boolean, const: true }
+        kind: { type: string, enum: [summary, transaction, block, address, resolve] }
+        network: { type: string, const: SWAPPULSE_TESTNET }
+      additionalProperties: true
+
+    AgeStatusRequest:
+      oneOf:
+        - type: object
+          properties:
+            action: { type: string, const: get, default: get }
+        - type: object
+          required: [action, age_band, confirm_age_band]
+          properties:
+            action: { type: string, const: declare }
+            age_band: { type: string, enum: ['13_15', '16_17', '18_PLUS'] }
+            confirm_age_band: { type: boolean, const: true }
+        - type: object
+          required: [action]
+          properties:
+            action: { type: string, const: start_verification }
+
+    ChainIdentityUserRequest:
+      oneOf:
+        - type: object
+          properties:
+            action: { type: string, const: status, default: status }
+        - type: object
+          required: [action, public_key]
+          properties:
+            action: { type: string, const: prepare }
+            public_key: { $ref: '#/components/schemas/FeltHex' }
+        - type: object
+          required: [action, record_id, result]
+          properties:
+            action: { type: string, const: import_provisioning_result }
+            record_id: { type: string }
+            result:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: string
+                  description: JSON-encoded provisioning result. Secret-like fields are rejected.
+
+    DelegationState:
+      type: object
+      properties:
+        delegator_address: { $ref: '#/components/schemas/FeltHex' }
+        validator_address: { $ref: '#/components/schemas/FeltHex' }
+        amount: { type: string, pattern: '^[0-9]+$' }
+        pending_withdrawal: { type: string, pattern: '^[0-9]+$' }
+        unlock_at: { type: integer, minimum: 0 }
+        unlock_at_iso: { type: string }
+        can_request_undelegate: { type: boolean }
+        can_withdraw: { type: boolean }
+
+    StakingStatusResponse:
+      type: object
+      required: [ok, chain_authoritative, delegations]
+      properties:
+        ok: { type: boolean, const: true }
+        chain_authoritative: { type: boolean }
+        policy:
+          type: object
+          properties:
+            min_self_stake: { type: string, pattern: '^[0-9]+$' }
+            unbonding_period_seconds: { type: integer, minimum: 0 }
+        operator:
+          type: [object, 'null']
+          additionalProperties: true
+        delegations:
+          type: array
+          items: { $ref: '#/components/schemas/DelegationState' }
+
+    RecoveryRequest:
+      oneOf:
+        - type: object
+          properties:
+            action: { type: string, const: status, default: status }
+        - type: object
+          required: [action, step_up_token, new_public_key]
+          properties:
+            action: { type: string, const: propose }
+            step_up_token: { type: string, minLength: 1 }
+            new_public_key: { $ref: '#/components/schemas/FeltHex' }
+        - type: object
+          required: [action, step_up_token]
+          properties:
+            action: { type: string, enum: [execute, cancel] }
+            step_up_token: { type: string, minLength: 1 }
+
+    ChainActionDraftRequest:
+      oneOf:
+        - type: object
+          required: [action, kind]
+          properties:
+            action: { type: string, const: stake }
+            kind:
+              type: string
+              enum: [register_validator, increase_self_stake, delegate, request_undelegate, withdraw, exit_validator]
+            amount: { type: string, pattern: '^[0-9]+$' }
+            validator_address: { $ref: '#/components/schemas/FeltHex' }
+            commission_bps: { type: integer, minimum: 0, maximum: 10000 }
+        - type: object
+          required: [action]
+          properties:
+            action: { type: string, const: bridge_out }
+            asset_kind: { type: string }
+            external_chain: { type: string }
+            amount: { type: string }
+            card_token_id: { type: string }
+            recipient: { type: string }
+        - type: object
+          required: [action, signer_public_key]
+          properties:
+            action: { type: string, const: add_signer }
+            signer_public_key: { $ref: '#/components/schemas/FeltHex' }
+
+    StarknetInvokeTransaction:
+      type: object
+      description: Canonical Starknet v3 invoke transaction supplied back exactly as drafted, with the user's signature added.
+      additionalProperties: true
+
+    ChainActionSubmitRequest:
+      type: object
+      required: [action, record_id, draft_token, transaction]
+      properties:
+        action: { type: string, enum: [stake, bridge_out, add_signer] }
+        record_id: { type: string }
+        draft_token: { type: string, minLength: 1 }
+        transaction: { $ref: '#/components/schemas/StarknetInvokeTransaction' }
+        signer_public_key:
+          $ref: '#/components/schemas/FeltHex'
