@@ -19,6 +19,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider';
 import CardSocialTabs from '@/components/cards/CardSocialTabs';
 import PokeWalletMarket from '@/components/cards/PokeWalletMarket';
 import PokemonPriceTrackerMarket from '@/components/cards/PokemonPriceTrackerMarket';
+import TcgplayerMarket from '@/components/cards/TcgplayerMarket';
 import PokemonProfile from '@/components/cards/PokemonProfile';
 export default function CardDetail() {
   const { cardId } = useParams();
@@ -284,6 +285,10 @@ export default function CardDetail() {
 
         <div className="mt-5">
           <PokemonPriceTrackerMarket card={card} />
+        </div>
+
+        <div className="mt-5">
+          <TcgplayerMarket card={card} />
         </div>
 
         <div className="mt-5 rounded-2xl border border-border bg-card p-4">
