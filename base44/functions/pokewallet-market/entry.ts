@@ -14,6 +14,7 @@ import {
   isPokeWalletConfigured,
   resolvePokeWalletMarket,
 } from '../../shared/pokewalletClient.ts';
+import { decorateTcgplayerAffiliateUrl, TCGPLAYER_AFFILIATE_DISCLOSURE } from '../../shared/tcgplayerAffiliate.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -68,12 +69,25 @@ export default async function (req: Request): Promise<Response> {
 
     try {
       const result = await resolvePokeWalletMarket(svc, tcgdexCard);
-      return Response.json({
+      const tcgLink = decorateTcgplayerAffiliateUrl(result?.market?.tcgplayer?.url);
+      const decorated = result?.market?.tcgplayer ? {
         ...result,
+        market: {
+          ...result.market,
+          tcgplayer: {
+            ...result.market.tcgplayer,
+            url: tcgLink.url,
+            affiliate: tcgLink.affiliate,
+          },
+        },
+      } : result;
+      return Response.json({
+        ...decorated,
         canonicalCardId: tcgdexCard.id || cardId,
         canonicalSource: 'TCGDex',
         marketSource: 'PokéWallet',
         underlyingMarkets: ['TCGPlayer', 'CardMarket'],
+        tcgplayerAffiliate: tcgLink.affiliate ? { active: true, disclosure: TCGPLAYER_AFFILIATE_DISCLOSURE } : { active: false },
         freeTierPolicy: {
           upstreamHourlyLimit: PokeWalletFreeTier.providerHourlyLimit,
           upstreamDailyLimit: PokeWalletFreeTier.providerDailyLimit,
