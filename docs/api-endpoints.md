@@ -1,316 +1,392 @@
-# SwapPulse API Documentation
+# SwapPulse Backend Function Guide
 
-## Overview
+SwapPulse backend behaviour is implemented as Base44 backend functions. This document is a practical guide to the main public/product function families rather than a frozen promise that every function name will exist forever.
 
-SwapPulse's backend is built on Base44 backend functions. All endpoints are invoked through the Base44 SDK — there are no raw HTTP endpoints to call directly.
+The authoritative function inventory is the `base44/functions/` directory.
 
-## Invocation Pattern
+## Invocation pattern
 
-From the frontend, invoke functions via the pre-initialized SDK:
+Frontend code normally uses the preconfigured Base44 SDK client:
 
 ```javascript
 import { base44 } from '@/api/base44Client';
 
-const response = await base44.functions.invoke('functionName', {
-  param1: 'value',
-  param2: 123,
+const response = await base44.functions.invoke('function-name', {
+  example: 'value',
 });
-// Response is an Axios response object — your data is in response.data
-const data = response.data;
+
+const data = response?.data || response;
 ```
 
-From other backend functions, use `createClientFromRequest(req)`:
-
-```typescript
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-
-export default async function(req) {
-  const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
-  // ...
-}
-```
+Do not call privileged relay/private infrastructure directly from browser code.
 
 ## Authentication
 
-All authenticated endpoints require a valid Base44 session token (managed automatically by the SDK). Public endpoints (browsing cards, sets, trades) do not require auth.
+Functions fall into several classes:
 
----
+- public read functions;
+- authenticated user functions;
+- admin-only functions;
+- webhook/system functions;
+- scheduled workflow functions.
 
-## Card Catalogue API
+A frontend button being hidden is not an access-control mechanism. Backend functions must enforce authentication, ownership, role and eligibility themselves.
 
-### get-cards
-Retrieve paginated card catalogue with filters.
+## 1. Pokémon TCG catalogue
 
-```javascript
-await base44.functions.invoke('get-cards', {
-  page: 1,
-  perPage: 24,
-  setId: 'sv4',       // optional
-  rarity: 'Rare',     // optional
-  lang: 'en',         // optional (default: en)
-  search: 'Charizard' // optional
-});
+Representative functions:
+
+### `get-cards`
+
+Retrieve card catalogue data with paging/filtering.
+
+### `get-card-detail`
+
+Retrieve a card with richer catalogue/application detail.
+
+### `get-sets`
+
+Retrieve Pokémon TCG set data.
+
+### `search-cards`
+
+Search the card catalogue.
+
+### `tcgdex`
+
+Shared TCGDex integration path used by catalogue workflows/features.
+
+### `sync-tcgdex-catalog`
+
+Synchronises catalogue data into the application layer. This is a trusted/admin/workflow operation, not an arbitrary public mutation endpoint.
+
+### `get-pricing` / `syncPricing`
+
+Read/synchronise pricing information.
+
+Pricing is informational and can be delayed relative to live marketplaces.
+
+## 2. Collection and card workflows
+
+Collection records are mainly accessed through Base44 entities plus feature functions.
+
+Representative functions include:
+
+- `auto-attest-collection-card`;
+- `create-card-attestation`;
+- `mint-card`;
+- `card-metadata-localized`;
+- `extract-collection-import`;
+- `capture-portfolio-snapshots`;
+- collection-analysis/advisor functions.
+
+The current canonical on-chain card architecture is Cairo/Starknet-based, not the old Polygon mint/bridge path described by earlier docs.
+
+## 3. Social/feed functions
+
+Representative functions:
+
+- `get-follow-feed`;
+- `get-explore-feed`;
+- `get-author-feed`;
+- `network-feed`;
+- `get-visible-posts`;
+- `resolve-post-by-uri`;
+- `notify-interaction`;
+- follow/reaction/repost/like synchronisation functions.
+
+Many social reads are backed by Base44 records that are synchronised/bridged with AT Protocol data.
+
+## 4. AT Protocol and federation
+
+Representative functions:
+
+### Identity/auth
+
+- `atproto-auth`;
+- `resolve-atproto-actor`;
+- `get-profile-by-did`;
+- `ensure-local-identity`;
+- `provision-identity`;
+- `provision-all-identities`.
+
+### PDS/account portability
+
+- `migrate-pds`;
+- `migrate-to-swappulse`;
+- `update-pds-handle`;
+- `manage-app-password`;
+- `list-app-passwords`;
+- `pds-blob-upload`;
+- `pds-blob-stats`.
+
+### Federation/sync
+
+- `atproto-bridge`;
+- `firehose-ingest`;
+- `sync-from-pds`;
+- `get-sync-status`;
+- `federation-diagnostics`;
+- `verify-federation`;
+- `request-appview-crawl`;
+- `import-atproto-graph`.
+
+### Lexicons/publication
+
+- `register-lexicons`;
+- `publish-standard-document`;
+- `publish-standard-publication`;
+- other standard-record functions.
+
+PDS/app-password/admin credentials must remain server-side/private.
+
+## 5. Chain identity
+
+### `chain-identity-user`
+
+Returns authenticated-user chain identity/network state for the Wallet/product UI. This is one of the key read models for current eligibility presentation.
+
+### `chain-identity-register`
+
+Provisioning/registration path for a user's chain identity.
+
+### `chain-identity-reconcile`
+
+Reads authoritative public chain state and updates the Base44 mirror.
+
+### `chain-identity-admin`
+
+Admin-only chain identity/network operations. Irreversible V2 operations require strict confirmation/policy and are not ordinary user actions.
+
+### `get-my-chain-identity`
+
+Authenticated helper for current user chain identity where used.
+
+### `chain-verification-test`
+
+Admin test-harness functionality for controlled V2 test attestations/expiry/revocation tests. It is not a production third-party identity-verification provider.
+
+## 6. Age/private verifier functions
+
+Representative functions:
+
+- `age-status`;
+- `age-verification-session`;
+- `age-verifier-webhook`.
+
+Private identity evidence must remain off-chain.
+
+Webhook handlers must authenticate requests (for example with the configured signing/HMAC secret) before mutating verifier state.
+
+## 7. Chain action drafting/submission
+
+### `chain-action-draft`
+
+Creates a policy-checked transaction/action draft for supported chain actions.
+
+Examples currently include staking lifecycle actions such as:
+
+- `register_validator`;
+- `increase_self_stake`;
+- `delegate`;
+- `request_undelegate`;
+- `withdraw`;
+- `exit_validator`.
+
+It performs server-side state/eligibility checks and should reject duplicate/invalid lifecycle operations before submission.
+
+### `chain-action-submit`
+
+Submits an approved action through the hardened chain/relay path and updates application records as appropriate.
+
+### `chain-tx-draft` / `chain-tx-submit`
+
+Additional generic/specialised chain transaction paths used by existing features. Do not expand these into arbitrary public RPC write proxies.
+
+## 8. Staking
+
+### `chain-staking-status`
+
+Returns chain-authoritative staking information through the verified public RPC, including the current operator/delegation/unbonding state needed by the Wallet UI.
+
+Confirmed chain state is authoritative over Base44 mirrors.
+
+### Reconciliation
+
+Staking lifecycle records are reconciled through chain event/state reconciliation jobs/functions rather than assuming a submitted transaction succeeded permanently.
+
+## 9. Faucet
+
+### `faucet-claim`
+
+Supports status/claim behaviour for testnet SWPX.
+
+Eligibility, drip amount, identity binding and cooldown are backend-enforced.
+
+The faucet is testnet infrastructure and should not be used as a model for uncontrolled production token minting.
+
+## 10. Bridge
+
+Representative current functions:
+
+- `bridge-record`;
+- bridge-related `chain-action-*` handling;
+- `outbound-reconcile`;
+- scheduled queue/reconciliation where configured.
+
+The current canonical bridge contract is the Cairo `BridgeAdapter` in the SwapPulse V2 architecture.
+
+Older Polygon/PulseChain/LayerZero-oriented functions may still exist in the repository for historical/compatibility reasons; they are not the canonical V2 deployment path and should not be activated merely because their files exist.
+
+## 11. Chain Explorer
+
+### `chain-explorer`
+
+Read-only public chain query function used by `/chain/*`.
+
+Supported UI query concepts include:
+
+- summary/latest blocks;
+- latest transaction hashes;
+- block lookup;
+- transaction/receipt lookup;
+- address/class/nonce lookup;
+- SwapPulse-indexed public smart-account activity.
+
+The function uses the approved public RPC path and must not expose privileged relay credentials or write-capable Devnet methods.
+
+## 12. Recovery/WebAuthn/security
+
+Representative functions:
+
+- `chain-recovery`;
+- `webauthn-reg-options`;
+- `webauthn-verify-reg`;
+- `webauthn-auth-options`;
+- `webauthn-verify-auth`;
+- WebAuthn management functions;
+- `security-stepup-send` / `security-stepup-verify`;
+- `security-factor-management`;
+- 2FA setup/verify functions.
+
+Security-sensitive functions must validate the authenticated account and should use step-up/recovery protections appropriate to the action.
+
+## 13. Trades and community
+
+Representative functions include:
+
+- `get-visible-trades`;
+- `getTradeInterest`;
+- trade notification/advice functions;
+- Circle/Meetup functions;
+- starter-pack functions;
+- challenge/leaderboard functions;
+- notification/message functions.
+
+The exact entity/function used depends on the feature. Inspect the current page/component before adding a duplicate endpoint.
+
+## 14. Moderation
+
+Representative functions:
+
+- `moderatePost`;
+- `autoModerateComment`;
+- `moderation`;
+- `moderation-review`;
+- `autonomous-moderation`;
+- `ai-moderation`;
+- toxic/community label functions;
+- message/trade report functions.
+
+Moderation functions can handle sensitive content. Avoid logging private report/message contents unnecessarily.
+
+## 15. Notifications/push/email
+
+Representative functions:
+
+- `send-notification`;
+- `notify-system-event`;
+- `sendPush`;
+- `register-push-token`;
+- `send-branded-email`;
+- `sendEmail`;
+- digest/onboarding/activation functions.
+
+Delivery credentials belong in server-side secrets.
+
+## 16. Status/operations
+
+Representative functions:
+
+- `health-check`;
+- `status-monitor`;
+- `manage-service`;
+- `admin-metrics`;
+- `subscribe-status`;
+- incident functions.
+
+Use the site `/status` page plus infrastructure readiness checks for operations.
+
+## 17. Scheduled workflows
+
+The authoritative workflow definitions are under `base44/workflows/`.
+
+Current categories include TCGDex/pricing sync, PDS/federation/firehose, notifications, moderation, chain reconciliation, Proof of Usership aggregation, portfolio snapshots and digests.
+
+Do not hard-code schedule assumptions in client code.
+
+## 18. Errors
+
+Functions should return a useful HTTP status and a non-secret error/machine code.
+
+Typical statuses:
+
+```text
+200 success
+400 invalid request/state
+401 unauthenticated
+403 unauthorised/policy blocked
+404 not found
+409 duplicate/conflict where appropriate
+429 rate/cooldown limit where appropriate
+500 unexpected backend failure
+502/503 upstream/service unavailable where appropriate
 ```
 
-**Response:**
-```json
-{
-  "cards": [
-    {
-      "card_id": "sv4-001",
-      "name": "Sprigatito",
-      "image": "https://cdn.tcgdex.net/...",
-      "rarity": "Common",
-      "set_id": "sv4",
-      "set_name": "Paradox Rift"
-    }
-  ],
-  "total": 284,
-  "page": 1,
-  "perPage": 24
-}
-```
+Frontend code should not depend on parsing secret-bearing server logs.
 
-### get-card-detail
-Retrieve detailed card information with pricing and localised metadata.
+## 19. Rate limits
 
-```javascript
-await base44.functions.invoke('get-card-detail', {
-  cardId: 'sv4-001',
-  lang: 'en'
-});
-```
+Do not rely on old documentation values such as a universal `100 requests/minute` unless the actual current Base44/function configuration proves that limit.
 
-### get-sets
-Retrieve all TCG sets with localisation.
+Rate/cooldown policy is feature-specific and may be enforced by Base44, external providers and individual backend functions.
 
-```javascript
-await base44.functions.invoke('get-sets', { lang: 'en' });
-```
+## 20. Adding a backend function
 
-### search-cards
-Full-text search across the card catalogue.
+Before creating a new function:
 
-```javascript
-await base44.functions.invoke('search-cards', {
-  query: 'Charizard',
-  lang: 'en',
-  limit: 10
-});
-```
+1. search `base44/functions/` for an existing path;
+2. define authentication/role requirements;
+3. validate input;
+4. decide whether service-role access is genuinely required;
+5. use existing guarded RPC/relay/external-service helpers;
+6. keep secrets server-side;
+7. add relevant tests/negative cases;
+8. document the function if it becomes a public developer surface.
 
-### get-pricing
-Retrieve current and historical pricing for a card.
+## 21. Security boundaries
 
-```javascript
-await base44.functions.invoke('get-pricing', {
-  cardId: 'sv4-001',
-  days: 90
-});
-```
+Browser -> Base44 backend -> hardened relay -> Cairo/Starknet is the normal trusted write path for current privileged Web3 operations.
 
-### card-metadata-localized
-Retrieve localised ERC-721/ERC-1155 NFT metadata for a card.
+Public Chain Explorer -> Base44 read function -> read-only RPC is the normal public read path.
 
-```javascript
-await base44.functions.invoke('card-metadata-localized', {
-  cardId: 'sv4-001',
-  variant: 'normal',
-  lang: 'en'
-});
-```
+Do not collapse those into one general-purpose endpoint.
 
----
+## 22. Related docs
 
-## Wallet API
-
-### get-wallet-balance
-Retrieve the user's fiat and crypto balances.
-
-```javascript
-await base44.functions.invoke('get-wallet-balance', {});
-```
-
-**Response:**
-```json
-{
-  "balance": {
-    "fiat_cents": 5000,
-    "usdc_wei": "1000000",
-    "currency": "GBP"
-  }
-}
-```
-
-### execute-conversion
-Convert between fiat and crypto (fiat→crypto, crypto→crypto, USDC→fiat).
-
-```javascript
-await base44.functions.invoke('execute-conversion', {
-  mode: 'fiat_to_crypto',
-  fiat_cents: 5000,
-  target_token: '0x...', // or 'PULSE' sentinel
-  currency: 'GBP'
-});
-```
-
-### send-crypto
-Send USDC or PULSE to an address or username.
-
-```javascript
-await base44.functions.invoke('send-crypto', {
-  toAddress: '0x...',
-  amount: '1000000', // USDC base units
-  asset: 'USDC'
-});
-```
-
-### cross-chain-transfer
-Bridge $PULSE between PulseChain and Polygon via LayerZero.
-
-```javascript
-await base44.functions.invoke('cross-chain-transfer', {
-  action: 'transfer',
-  fromChain: 'pulse',
-  toChain: 'polygon',
-  toAddress: '0x...',
-  amount: '1000000000000000000' // wei
-});
-```
-
-### initiate-unbridge
-Port an NFT asset back from one chain to the other.
-
-```javascript
-await base44.functions.invoke('initiate-unbridge', {
-  assetId: 'on-chain-asset-id'
-});
-```
-
----
-
-## Trading API
-
-### create-escrow-trade
-Create a new escrow-protected trade.
-
-### confirm-escrow-receipt
-Confirm receipt of a traded card (releases escrow).
-
-### resolve-escrow-dispute
-Resolve a trade dispute (admin/moderation).
-
-### matchWishlistListings
-Find trade listings matching a user's wishlist.
-
----
-
-## Social API
-
-### get-follow-feed
-Retrieve the authenticated user's follow feed.
-
-### get-explore-feed
-Retrieve the explore/discover feed.
-
-### get-author-feed
-Retrieve posts by a specific author.
-
-### notify-interaction
-Send a notification when a user interacts (like, repost, comment).
-
----
-
-## NFT / Minting API
-
-### mint-card
-Mint a card NFT on Polygon (and auto-bridge to PulseChain).
-
-```javascript
-await base44.functions.invoke('mint-card', {
-  cardId: 'sv4-001',
-  variant: 'normal',
-  verificationLevel: 1
-});
-```
-
-### mint-username
-Mint a username NFT (soulbound identity).
-
-### bulk-mint-cards
-Batch mint multiple card NFTs.
-
-### get-on-chain-assets
-Retrieve a user's on-chain NFT assets.
-
-### get-wallet-nfts
-Retrieve NFTs in a user's wallet.
-
----
-
-## Sync / Admin API
-
-### sync-tcgdex-catalog
-Incremental TCGDex catalogue sync (admin only).
-
-### trigger-sync
-Manually trigger a sync job (admin only).
-
-### deploy-polygon-contracts
-Deploy smart contracts to Polygon (admin only).
-
-### admin-metrics
-Retrieve platform admin metrics (admin only).
-
----
-
-## Real-Time Events
-
-SwapPulse uses Base44's entity subscriptions for real-time updates:
-
-```javascript
-useEffect(() => {
-  const unsubscribe = base44.entities.Notification.subscribe((event) => {
-    if (event.type === 'create') {
-      // New notification received
-    }
-  });
-  return unsubscribe;
-}, []);
-```
-
-**Event types:** `create`, `update`, `delete`
-
----
-
-## Rate Limits
-
-- Auth endpoints: 5 attempts per minute
-- API endpoints: 100 requests per minute per user
-- Sync functions: 1 concurrent run per function
-
----
-
-## Error Handling
-
-All functions return errors in a consistent format:
-
-```json
-{
-  "error": "Human-readable error message",
-  "details": "Optional additional context"
-}
-```
-
-HTTP status codes:
-- `200` — Success
-- `400` — Bad request (validation error)
-- `401` — Unauthorized
-- `403` — Forbidden (insufficient permissions)
-- `404` — Not found
-- `500` — Internal server error
-
----
-
-Last Updated: 2026-08-26
+- `README.md`
+- `docs/PROJECT_ARCHITECTURE.md`
+- `docs/developer-onboarding.md`
+- `docs/SWAPPULSE_V2_LIVE_ARCHITECTURE.md`
+- `DEPLOYMENT.md`
+- `CONTRIBUTING.md`
