@@ -110,7 +110,7 @@ export default function Admin() {
             {data && (
               <>
                 <HealthSection health={data.health} generatedAt={data.generated_at} onRefresh={load} />
-                <ExternalApiBudgetSection pokewallet={data.pokewallet_usage} priceTracker={data.pokemon_price_tracker_usage} />
+                <ExternalApiBudgetSection pokewallet={data.pokewallet_usage} priceTracker={data.pokemon_price_tracker_usage} onRefresh={load} />
                 <MetricsSection counts={data.counts} />
                 <DsarSummaryCard />
               </>
