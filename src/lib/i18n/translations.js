@@ -15,6 +15,7 @@ import ja from './translations/ja';
 import zh from './translations/zh';
 import ko from './translations/ko';
 import { explorerTranslations } from './explorerTranslations';
+import { walletTranslations } from './walletTranslations';
 
 // The nine SwapPulse-supported languages (aligned to TCGDex languages).
 // Only these appear in language selectors and are accepted as interface locales.
@@ -47,6 +48,7 @@ export const translations = Object.fromEntries(
     {
       ...dict,
       ...(explorerTranslations[locale] || explorerTranslations['en-GB']),
+      ...(walletTranslations[locale] || walletTranslations['en-GB']),
     },
   ]),
 );
