@@ -10,6 +10,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getCard } from '../../shared/tcgdexClient.ts';
 import { getTcgplayerPolicy, resolveTcgplayerMarket, TcgplayerError } from '../../shared/tcgplayerClient.ts';
+import { decorateTcgplayerAffiliateUrl, TCGPLAYER_AFFILIATE_DISCLOSURE } from '../../shared/tcgplayerAffiliate.ts';
 
 export default async function (req: Request): Promise<Response> {
   try {
@@ -54,13 +55,16 @@ export default async function (req: Request): Promise<Response> {
 
     try {
       const result = await resolveTcgplayerMarket(svc, canonical);
+      const productLink = decorateTcgplayerAffiliateUrl(result?.product?.url);
+      const decorated = result?.product ? { ...result, product: { ...result.product, url: productLink.url, affiliate: productLink.affiliate } } : result;
       return Response.json({
         available: true,
-        ...result,
+        ...decorated,
         canonicalCardId: canonical.id || cardId,
         canonicalSource: 'TCGDex',
         enrichmentSource: 'TCGplayer',
         attribution: 'This product uses TCGplayer data but is not endorsed or certified by TCGplayer.',
+        affiliate: productLink.affiliate ? { active: true, disclosure: TCGPLAYER_AFFILIATE_DISCLOSURE } : { active: false },
         usagePolicy: {
           providerNumericLimitPublished: false,
           swapPulseSoftCallsPerMinute: policy.softCallsPerMinute,
