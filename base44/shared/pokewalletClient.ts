@@ -619,6 +619,30 @@ export async function checkPokeWalletHealth(): Promise<{ status: 'up' | 'down'; 
   }
 }
 
+export async function getPokeWalletUsageStatus(svc: any): Promise<any> {
+  const keys = bucketKeys();
+  const [hour, day] = await Promise.all([
+    loadUsageBucket(svc, keys.hour),
+    loadUsageBucket(svc, keys.day),
+  ]);
+  return {
+    hour: {
+      used: hour?.count || 0,
+      softLimit: SOFT_HOURLY_LIMIT,
+      providerLimit: hour?.provider_limit || PROVIDER_HOURLY_LIMIT,
+      providerRemaining: hour?.provider_remaining ?? null,
+      blockedUntil: hour?.blocked_until || null,
+    },
+    day: {
+      used: day?.count || 0,
+      softLimit: SOFT_DAILY_LIMIT,
+      providerLimit: day?.provider_limit || PROVIDER_DAILY_LIMIT,
+      providerRemaining: day?.provider_remaining ?? null,
+      blockedUntil: day?.blocked_until || null,
+    },
+  };
+}
+
 export const PokeWalletFreeTier = Object.freeze({
   providerHourlyLimit: PROVIDER_HOURLY_LIMIT,
   providerDailyLimit: PROVIDER_DAILY_LIMIT,
