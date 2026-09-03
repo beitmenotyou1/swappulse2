@@ -69,7 +69,7 @@ export default async function (req: Request): Promise<Response> {
 
     try {
       const result = await resolvePokeWalletMarket(svc, tcgdexCard);
-      const tcgLink = decorateTcgplayerAffiliateUrl(result?.market?.tcgplayer?.url);
+      const tcgLink = await decorateTcgplayerAffiliateUrl(svc, result?.market?.tcgplayer?.url);
       const decorated = result?.market?.tcgplayer ? {
         ...result,
         market: {
