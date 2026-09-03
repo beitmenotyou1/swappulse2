@@ -238,7 +238,7 @@ Add uniquely useful graded and short-history data while preserving TCGDex as can
 
 ---
 
-## v0.9.0 — Dormant TCGplayer API integration and affiliate-ready links
+## v0.9.0 — Dormant TCGplayer API, Impact affiliate integration and OpenAPI contract
 
 **Current release-series change.** 2026-09-03
 
@@ -250,8 +250,11 @@ Target: `main` when this release manifest lands.
 - Conservative TCGDex → TCGplayer product matching.
 - Optional direct TCGplayer pricing panel with required attribution and product links.
 - Admin TCGplayer request-budget visibility.
-- Backend affiliate URL decoration for approved Impact tracking templates.
+- Impact Partner Tracking Links API integration for approved TCGplayer affiliate deep links.
 - Affiliate disclosure adjacent to active TCGplayer links.
+- Root `openapi.yaml` using OpenAPI 3.2.0 for supported public/authenticated product functions.
+- `x-base44-*` and `x-swappulse-*` specification extensions for function mapping, trust, privacy, source authority, cache/rate policy and fail-soft behaviour.
+- `docs/OPENAPI.md` maintainer guide and build-time publication of the authoritative contract at `/openapi.yaml`.
 
 ### Access state
 - TCGplayer currently says it is no longer granting new API access.
