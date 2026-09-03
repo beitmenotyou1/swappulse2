@@ -19,7 +19,7 @@ function Meter({ label, used = 0, soft = 0, provider = 0, suffix = '' }) {
   );
 }
 
-export default function ExternalApiBudgetSection({ pokewallet, priceTracker, onRefresh }) {
+export default function ExternalApiBudgetSection({ pokewallet, priceTracker, tcgplayer, onRefresh }) {
   const [testCardId, setTestCardId] = useState('swsh3-136');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -41,7 +41,7 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, onR
     }
   };
 
-  if (!pokewallet && !priceTracker) return null;
+  if (!pokewallet && !priceTracker && !tcgplayer) return null;
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-3">
@@ -54,6 +54,29 @@ export default function ExternalApiBudgetSection({ pokewallet, priceTracker, onR
             <p className="text-xs font-bold">PokéWallet</p>
             <Meter label="Hour requests" used={pokewallet.hour?.used || 0} soft={pokewallet.hour?.softLimit || 0} provider={pokewallet.hour?.providerLimit || 0} />
             <Meter label="Day requests" used={pokewallet.day?.used || 0} soft={pokewallet.day?.softLimit || 0} provider={pokewallet.day?.providerLimit || 0} />
+          </div>
+        )}
+        {tcgplayer && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold">TCGplayer</p>
+              <div className="flex flex-wrap gap-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tcgplayer.policy?.configured ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                  {tcgplayer.policy?.configured ? 'Developer keys configured' : 'Developer keys missing'}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tcgplayer.policy?.approvedUse ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                  {tcgplayer.policy?.approvedUse ? 'Approved use confirmed' : 'Approved use not confirmed'}
+                </span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-secondary/35 p-3">
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="font-semibold">Minute calls</span><span className="text-muted-foreground">{tcgplayer.minute?.callsUsed || 0}/{tcgplayer.minute?.softCallLimit || 0}</span></div>
+              <p className="mt-1 text-[10px] text-muted-foreground">TCGplayer publishes no fixed numeric provider ceiling; this is SwapPulse's own safety budget.</p>
+            </div>
+            <div className="rounded-xl border border-border bg-secondary/35 p-3">
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="font-semibold">Daily calls</span><span className="text-muted-foreground">{tcgplayer.day?.callsUsed || 0}/{tcgplayer.day?.softCallLimit || 0}</span></div>
+              <p className="mt-1 text-[10px] text-muted-foreground">429/Retry-After responses automatically pause new upstream calls.</p>
+            </div>
           </div>
         )}
         {priceTracker && (
