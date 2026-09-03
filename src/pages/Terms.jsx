@@ -287,7 +287,7 @@ export default function Terms() {
 
             <h2 id="ip" className="mt-8 scroll-mt-20 text-xl font-bold">15. Intellectual Property</h2>
             <p>
-              The SwapPulse name, logo, software, and design are owned by SwapPulse and licensed under AGPL-3.0.
+              The SwapPulse name, logo, software, and design are owned by SwapPulse and licensed under MPL-2.0.
               Pokémon, Pokémon TCG, and all related characters and imagery are trademarks of Nintendo, Game Freak,
               and The Pokémon Company International. SwapPulse is not affiliated with, endorsed by, or sponsored by
               these entities. Card data is sourced from TCGDex under its open data licence.
