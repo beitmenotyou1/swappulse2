@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, Blocks } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -15,7 +15,7 @@ const primary = [
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
-  { to: '/wallet', icon: WalletIcon, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
+  { to: '/wallet', icon: WalletIcon, label: 'SwapPulse Wallet', tKey: 'nav.chainWallet', authOnly: true },
 ];
 
 const TAB_ROOTS = ['/', '/explore', '/trades', '/collection', '/wallet'];
@@ -31,7 +31,6 @@ function getOwningTab(pathname, fallback) {
 }
 
 const moreItems = [
-  { to: '/chain/', icon: Blocks, label: 'Chain Explorer', tKey: 'nav.chainExplorer' },
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
   { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
   { to: '/starter-packs', icon: Box, label: 'Packs', tKey: 'nav.starterPacks' },
@@ -50,7 +49,6 @@ const moreItems = [
   { to: '/market', icon: BarChart3, label: 'Market', tKey: 'nav.market' },
   { to: '/predictions', icon: Vote, label: 'Polls', tKey: 'nav.predictions' },
   { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
-  { to: '/wallet', icon: WalletIcon, label: 'Wallet', tKey: 'nav.wallet', authOnly: true },
   { to: '/spaces', icon: Radio, label: 'Live', tKey: 'nav.live' },
   { to: '/notifications', icon: Bell, label: 'Alerts', tKey: 'nav.notifications', authOnly: true },
   { to: '/messages', icon: MessageSquare, label: 'Messages', tKey: 'nav.messages', authOnly: true },
@@ -166,7 +164,7 @@ export default function MobileNav() {
       {moreOpen && (
         <div className="fixed inset-0 z-50 md:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="absolute bottom-0 left-0 right-0 animate-slide-up rounded-t-2xl border-t border-border bg-card p-3" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute bottom-0 left-0 right-0 max-h-[85dvh] overflow-y-auto overscroll-contain animate-slide-up rounded-t-2xl border-t border-border bg-card p-3 pb-[max(1rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between px-1">
               <p className="text-sm font-bold">{t('nav.more')}</p>
               <button onClick={() => setMoreOpen(false)} aria-label={t('common.close')} className="rounded-full p-1 hover:bg-secondary">
