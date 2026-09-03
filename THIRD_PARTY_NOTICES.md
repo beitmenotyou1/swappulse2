@@ -43,7 +43,7 @@ Upstream resources:
 
 PokemonPriceTracker is a hosted third-party service. Its data, API service, terms, subscription limits and commercial-use permissions are not licensed under SwapPulse's MPL-2.0 licence.
 
-The provider's dedicated licensing page (last updated 27 July 2026) distinguishes non-commercial/personal/development use from revenue-bearing deployments and says revenue-bearing apps/sites require Business. Some separate pricing/marketing pages currently contain broader "commercial use" wording for lower plans. SwapPulse follows the stricter dedicated licensing page until the provider confirms otherwise in writing. It therefore fails closed for ordinary public production display when configured on Free/API plans unless the maintainer has explicit permission covering the deployment and deliberately enables the documented override.
+The provider's dedicated licensing page (last updated 17 August 2026) distinguishes non-commercial/personal/development use from revenue-bearing deployments and says revenue-bearing apps/sites require Business. Some separate pricing/marketing pages currently contain broader "commercial use" wording for lower plans. SwapPulse follows the stricter dedicated licensing page until the provider confirms otherwise in writing. It therefore fails closed for ordinary public production display when configured on Free/API plans unless the maintainer has explicit permission covering the deployment and deliberately enables the documented override.
 
 The provider also prohibits redistributing its data as a competing/substitute data API or bulk data product. SwapPulse's integration is therefore a product UI enrichment only, not a public PokemonPriceTracker proxy/feed.
 
