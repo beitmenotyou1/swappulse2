@@ -234,21 +234,55 @@ export default function ChainExplorer() {
     : '';
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8">
-      <header className="mb-5">
-        <div className="flex items-start gap-3">
-          <div className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary" aria-hidden="true">
-            <Blocks className="h-5 w-5" />
+    <div className="min-h-screen bg-background text-foreground">
+      <a
+        href="#chain-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:font-semibold focus:text-primary-foreground"
+      >
+        {t('common.skipToContent')}
+      </a>
+
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 py-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link to="/" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={t('explorer.backToSwapPulse')}>
+              <Logo size={44} withText={true} />
+            </Link>
+            <span className="hidden rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-primary sm:inline-flex">
+              {t('explorer.networkBadge')}
+            </span>
           </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{t('explorer.title')}</h1>
-            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t('explorer.subtitle')}</p>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <LanguageSwitcher />
+            <Link
+              to="/wallet"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-bold transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <WalletIcon className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{t('nav.chainWallet')}</span>
+            </Link>
           </div>
         </div>
-        <p className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed">
-          {t('explorer.readOnlyNotice')}
-        </p>
       </header>
+
+      <main id="chain-main" className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-8">
+        <section className="mb-6 overflow-hidden rounded-3xl border border-border bg-card shadow-base">
+          <div className="border-b border-border bg-gradient-to-br from-primary/10 via-background to-background p-5 sm:p-7">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm" aria-hidden="true">
+                <Blocks className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight sm:text-4xl">{t('explorer.title')}</h1>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t('explorer.subtitle')}</p>
+              </div>
+            </div>
+          </div>
+          <p className="m-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm leading-relaxed sm:m-5">
+            {t('explorer.readOnlyNotice')}
+          </p>
+        </section>
 
       <ExplorerSearch
         initialValue={params.identifier || params.txHash || params.blockId || params.address || ''}
@@ -444,6 +478,24 @@ export default function ChainExplorer() {
           </article>
         )}
       </div>
+      </main>
+
+      <footer className="border-t border-border bg-card/60">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <Link to="/" className="inline-flex items-center gap-2 font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t('explorer.backToSwapPulse')}
+          </Link>
+          <a
+            href="https://github.com/beitmenotyou1/swappulse2"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t('footer.githubNewTab')}
+            className="inline-flex items-center gap-2 font-semibold hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <Github className="h-4 w-4" aria-hidden="true" /> {t('footer.github')}
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
