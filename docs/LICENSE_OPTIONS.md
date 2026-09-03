@@ -1,5 +1,7 @@
 # Open-source licence options for SwapPulse
 
+> **Decision: SwapPulse selected Mozilla Public License 2.0 (MPL-2.0) on 2026-09-03.** The comparison below is retained as the decision record and for fork maintainers evaluating alternatives.
+>
 > This document is a project-planning comparison, not legal advice. Before adopting a licence for a public/commercial project, the maintainer should consider obtaining legal advice, particularly because SwapPulse integrates third-party Pokémon TCG data/media, AT Protocol components and blockchain dependencies.
 
 SwapPulse wants to support:
@@ -343,6 +345,6 @@ See `THIRD_PARTY_NOTICES.md` and `docs/FORKING_AND_REBRANDING.md`.
 
 ## Decision status
 
-**No SwapPulse root software licence has been selected yet.**
+**Selected: Mozilla Public License 2.0 (MPL-2.0).**
 
-Do not add a `LICENSE` file until the maintainer chooses the intended licence and copyright holder wording.
+The authoritative licence text is the root `LICENSE` file. MPL-2.0 applies only to SwapPulse-owned/licensable material and does not relicense the third-party content and services identified in `THIRD_PARTY_NOTICES.md`.
