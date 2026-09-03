@@ -1,300 +1,373 @@
-# Developer Onboarding Guide
+# SwapPulse Developer Onboarding
 
-SwapPulse is open-source and welcomes contributions. This guide helps you set up your development environment on the Base44 platform.
+SwapPulse combines a React/Base44 application, Pokémon TCG catalogue integration, AT Protocol federation and a Cairo/Starknet Web3 layer.
 
----
+Start with:
 
-## Tech Stack
+- `README.md` for the whole project;
+- `docs/PROJECT_ARCHITECTURE.md` for system boundaries;
+- `CONTRIBUTING.md` for contribution standards;
+- `docs/CHANGE_PROTOCOL.md` before security-sensitive work.
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, Vite, Tailwind CSS, shadcn/ui |
-| **Backend** | Base44 backend functions (Deno / TypeScript) |
-| **Database** | Base44 entities (managed PostgreSQL) |
-| **Blockchain** | Solidity 0.8.24, OpenZeppelin v5, Ethers.js v6 |
-| **Protocol** | AT Protocol (Bluesky fork) |
-| **Mobile** | Base44 native build (iOS/Android from same codebase) |
-| **Auth** | Base44 Auth (email OTP, Google OAuth, 2FA) |
+## Tech stack
 
----
+| Layer | Current technology |
+| --- | --- |
+| Frontend | React 18, Vite, Tailwind CSS, Radix/shadcn-style components |
+| Application backend | Base44 backend functions (TypeScript/Deno-style runtime) |
+| Data | Base44 entities with row-level security |
+| Workflows | Base44 scheduled/event workflows |
+| Pokémon catalogue | TCGDex integration and local sync/cache |
+| Federation | AT Protocol, DIDs, PDS, custom records, firehose/sync |
+| Blockchain | Cairo / Starknet |
+| Contract testing | Scarb + Starknet Foundry |
+| Web3 security components | OpenZeppelin Cairo where appropriate |
+| Chain infrastructure | Starknet Devnet + read-only RPC gateway + hardened tx relay |
+
+## Development philosophy
+
+Do not treat the layers as interchangeable.
+
+Examples:
+
+- TCGDex catalogue data does not need to be put on-chain;
+- AT Protocol DIDs are not the same thing as Base44 user IDs;
+- Base44 private user mappings must not be written into public Cairo storage;
+- chain mirrors improve UX but do not override authoritative chain state;
+- frontend code must never contain privileged verifier/relay/admin keys.
 
 ## Prerequisites
 
-- Node.js 18+ (for local Vite dev server)
-- A Base44 account (the platform handles hosting, DB, and backend)
-- Git
-- MetaMask or similar wallet (for blockchain testing)
+For frontend/Base44 work:
 
-No local PostgreSQL, Redis, or Docker required — Base44 manages all infrastructure.
+- Git;
+- Node.js/npm compatible with the repository;
+- access to the appropriate Base44 app/environment if working on hosted backend features.
 
----
+For chain work:
 
-## Project Structure
+- Scarb;
+- Starknet Foundry;
+- required Sierra compiler/tooling versions.
 
-```
-swap-pulse-hub/
-├── src/                        # Frontend (React + Vite)
-│   ├── pages/                  # Route components
-│   ├── components/             # Reusable UI components
-│   ├── lib/                    # Hooks, contexts, utilities
-│   ├── hooks/                  # TanStack Query hooks
-│   └── api/base44Client.js    # Pre-initialized Base44 SDK
-├── base44/
-│   ├── entities/              # Entity schemas (JSON)
-│   ├── functions/             # Backend functions (Deno)
-│   ├── workflows/             # Scheduled/event workflows
-│   ├── agents/                # AI agent configs
-│   ├── shared/                # Shared backend modules
-│   └── lexicons/              # AT Protocol lexicons
-├── contracts/                 # Solidity source (reference)
-├── docs/                      # Documentation
-├── SECURITY_AUDIT.md          # Security checklist
-└── DEPLOYMENT.md              # Deployment guide
+Known frozen V2 toolchain baseline:
+
+```text
+Scarb 2.13.1
+Starknet Foundry 0.51.2
+universal-sierra-compiler 2.8.0
 ```
 
----
+Do not upgrade the chain toolchain as a side effect of an unrelated UI change.
 
-## Getting Started
+## Repository structure
 
-### 1. Access the Base44 Builder
+```text
+src/
+  pages/                 Routed React pages
+  components/            Shared UI and feature components
+  components/chain/      Wallet/staking/bridge/on-chain UI
+  lib/i18n/              Translation dictionaries
 
-1. Log in to the Base44 platform
-2. Open the SwapPulse app in the builder
-3. The live preview shows your changes instantly
-4. Use the left sidebar for pages, entities, functions, workflows
+base44/
+  entities/              Entity schemas and RLS
+  functions/             Backend functions
+  workflows/             Scheduled/event workflows
+  shared/                Shared backend utilities
 
-### 2. Understand the Data Model
+chain/
+  src/                   Cairo contracts
+  tests/                 Starknet Foundry tests
+  infra/                 Devnet/RPC/relay infrastructure
+  scripts/               Build/test/verification tooling
+  deployments/           Canonical deployment manifests
 
-Read entity schemas in `base44/entities/`:
-- `CollectionEntry.jsonc` — User's card collection
-- `TradeListing.jsonc` — Marketplace listings
-- `EscrowTrade.jsonc` — Escrow-protected trades
-- `OnChainAsset.jsonc` — NFT assets (cards, usernames)
-- `WalletBalance.jsonc` — Fiat + crypto balances
-- `Post.jsonc` — Social feed posts
-- `Notification.jsonc` — User notifications
-
-Each entity has Row-Level Security (RLS) rules defining access.
-
-### 3. Frontend Development
-
-Pages are React components in `src/pages/`. Routes are defined in `src/App.jsx`.
-
-```jsx
-// src/pages/MyPage.jsx
-import React from 'react';
-import { base44 } from '@/api/base44Client';
-
-export default function MyPage() {
-  const [data, setData] = React.useState(null);
-
-  React.useEffect(() => {
-    base44.entities.CollectionEntry.list().then(setData);
-  }, []);
-
-  return <div>{JSON.stringify(data)}</div>;
-}
+docs/                    User/developer/architecture docs
 ```
 
-**Key conventions:**
-- Use `@/` alias for imports (never relative `../../`)
-- Use shadcn/ui components from `@/components/ui/`
-- Use Tailwind classes with design tokens (`bg-card`, `text-primary`)
-- Use `useSEO` hook for page meta tags
-- Use `PageHeader` component for consistent headers
+## Frontend development
 
-### 4. Backend Function Development
-
-Backend functions live in `base44/functions/<name>/entry.ts`:
-
-```typescript
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-
-export default async function(req) {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const body = await req.json();
-    // ... your logic ...
-
-    return Response.json({ success: true, data: result });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-}
-```
-
-**Key conventions:**
-- Use `Deno.serve()` or `export default async function(req)` pattern
-- Use `npm:` specifier for external packages
-- Use `base44:runtime` for secrets: `import { secrets } from 'base44:runtime'`
-- Extract shared logic to `base44/shared/` modules
-- Test with `test_backend_function` tool
-
-### 5. Workflow Development
-
-Workflows are `.jsonc` files in `base44/workflows/`. They use the CNCF Serverless Workflow format.
-
-```json
-{
-  "name": "My Workflow",
-  "description": "What it does",
-  "trigger": {
-    "config": {
-      "trigger_type": "scheduled",
-      "cron_expression": "0 9 * * *",
-      "timezone": "Europe/London"
-    }
-  },
-  "definition": {
-    "document": { "dsl": "1.0.0", "name": "my_workflow", "version": "1.0", "namespace": "base44" },
-    "do": [
-      {
-        "my_step": {
-          "call": "invoke_backend_function",
-          "with": { "function_name": "myFunction", "args": {} },
-          "then": "end",
-          "x-base44": { "title": "My Step" }
-        }
-      }
-    ]
-  }
-}
-```
-
-**Trigger types:** `scheduled`, `entity`, `connector`, `in_app_agent`, `app_user_auth`, `app_publish`, `app_payment`
-
----
-
-## Development Workflow
-
-### Making Changes
-
-1. Edit files in the builder (or via the AI assistant)
-2. The live preview updates instantly
-3. Test interactions using the preview tools
-4. Verify backend functions with `test_backend_function`
-5. Publish when ready
-
-### Code Quality
-
-- **ESLint**: Configured in `eslint.config.js`
-- **TypeScript**: Backend functions use `.ts` extension
-- **Formatting**: Prettier-compatible
-- **Imports**: Always use `@/` alias for frontend, `npm:` for backend
-
-### Creating a Pull Request
-
-1. Fork the repository on GitHub
-2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Make your changes in the Base44 builder
-4. Sync to GitHub via the 2-way repo sync
-5. Open a PR on GitHub
-
-### Branch Naming
-
-| Type | Prefix | Example |
-|------|--------|---------|
-| Feature | `feat/` | `feat/add-trading-feedback` |
-| Bugfix | `fix/` | `fix/corrupt-image-handling` |
-| Refactor | `refactor/` | `refactor/optimize-queries` |
-| Docs | `docs/` | `docs/update-api-docs` |
-
-### Commit Message Format
-
-```
-<type>(<scope>): <subject>
-
-<body>
-```
-
-Example:
-```
-feat(trading): implement smart bundle suggestions
-
-Uses collaborative filtering to suggest optimal
-multi-card bundles for trade balancing.
-```
-
----
-
-## Testing
-
-### Backend Functions
+Install dependencies:
 
 ```bash
-# Test via the builder's test_backend_function tool
-test_backend_function('myFunction', { param: 'value' })
+npm install
 ```
 
-### Frontend Verification
-
-Use the preview tools in the builder:
-- `preview_screenshot` — capture the current page
-- `preview_execute_code` — run a verification script
-- Drive real interactions (click, fill, navigate) and assert DOM/state changes
-
-### Smart Contract Tests
-
-Solidity source files in `contracts/` are reference only — they're not compiled on Base44. Test them off-platform with Hardhat:
+Start Vite:
 
 ```bash
-npx hardhat test
+npm run dev
 ```
 
----
+Configured checks:
 
-## Contributing Areas
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
 
-### High Priority
-- Mobile app improvements (responsive UI, PWA features)
-- Smart contract gas optimisation
-- AI agent accuracy
-- Localization expansion (currently 17 languages)
-- Accessibility (WCAG 2.1 AA)
+### Current Base44 MCP shell note
 
-### Good First Issues
-Look for issues tagged `good-first-issue` or `help-wanted` on GitHub.
+The authoritative Base44 MCP file API can edit/read the project, but the current sandbox command shell has intermittently mounted an empty `/workspace`. Do not treat a `/workspace` `MODULE_NOT_FOUND` error from that shell as proof the project fails to build.
 
----
+Run final frontend checks from a real Git checkout (for example the mini-server repository) until the sandbox mount issue is fixed.
 
-## Key Concepts
+## Frontend conventions
 
-### Entities
-Entities are JSON schemas defining stored data. Built-in fields: `id`, `created_date`, `updated_date`, `created_by_id`. Use `base44.entities.EntityName.list()`, `.filter()`, `.create()`, `.update()`, `.delete()`.
+- use the `@/` import alias;
+- reuse existing UI primitives/components;
+- use design tokens instead of hard-coded theme colours where possible;
+- keep mobile and desktop behaviour aligned;
+- do not add duplicate navigation destinations;
+- permanent copy must go through the translation system;
+- preserve keyboard/screen-reader accessibility;
+- use public Chain Explorer routes for public transaction/address links.
 
-### Row-Level Security (RLS)
-RLS rules define who can read/create/update/delete each entity's records. Always check RLS when creating new entities.
+## Localisation
 
-### Workflows
-Automated processes triggered by schedules, entity changes, connectors, or app events. Use `invoke_backend_function` activity to run backend logic.
+Supported primary UI locales:
 
-### Agents
-AI agents with entity access, backend function tools, and conversation UI. Configured in `base44/agents/`.
+```text
+en-GB
+es-ES
+fr-FR
+de-DE
+it-IT
+pt-BR
+ja-JP
+zh-CN
+ko-KR
+```
 
-### Secrets
-API keys and sensitive values stored in Settings → Environment Variables. Accessed via `secrets.get('NAME')` in backend functions.
+For feature-specific vocabulary, consider a dedicated translation bundle (as the Chain Explorer and Wallet do) rather than duplicating strings in components.
 
----
+## Base44 entities and RLS
 
-## Getting Help
+Entity schemas live in `base44/entities/`.
 
-- 📚 **Help Center**: `/help` in the app
-- 📖 **API Docs**: `docs/api-endpoints.md`
-- 🔒 **Security**: `SECURITY_AUDIT.md`
-- 🚀 **Deployment**: `DEPLOYMENT.md`
-- 📊 **Status**: `/status` in the app
+Before changing an entity:
 
----
+1. inspect the current schema;
+2. identify whether data is public or user-private;
+3. define/read existing RLS;
+4. preserve owner/admin restrictions;
+5. plan migration/defaults for new required fields;
+6. avoid storing chain-private/signing secrets entirely.
 
-## Code of Conduct
+Web3 mirrors such as ChainIdentity/StakePosition are application records, not the blockchain itself.
 
-We follow the Contributor Covenant. Please be respectful and inclusive.
+## Backend functions
 
-Happy hacking! 🚀
+Functions live under:
 
----
+```text
+base44/functions/<function-name>/entry.ts
+```
 
-Last Updated: 2026-08-26
+A typical authenticated function should:
+
+- create the Base44 client from the request;
+- authenticate the user;
+- validate input;
+- enforce ownership/role/policy server-side;
+- call external services through approved guarded clients;
+- return non-secret machine-readable failures;
+- avoid trusting frontend eligibility flags.
+
+### Service-role use
+
+Service-role access can bypass ordinary user RLS. Use it only when the backend function has already established why the caller/action is authorised.
+
+Never expose service-role credentials to the browser.
+
+## Workflows
+
+Workflow definitions live in `base44/workflows/`.
+
+Current categories include:
+
+- TCGDex catalogue and pricing sync;
+- PDS/federation/firehose sync;
+- notification/status jobs;
+- moderation;
+- chain event reconciliation;
+- Proof of Usership aggregation;
+- portfolio/digest/alert jobs.
+
+The workflow files are the source of truth for schedules.
+
+## Pokémon/TCGDex development
+
+Relevant backend functions include the catalogue/search/detail/sync/pricing functions.
+
+Rules:
+
+- keep catalogue metadata separate from user collection state;
+- handle third-party API failure gracefully;
+- do not overwrite user-entered condition/notes during catalogue refresh;
+- pricing is informational, not a guaranteed sale price;
+- preserve trademark/independent-project disclosures.
+
+## AT Protocol development
+
+Relevant areas include:
+
+- `atproto-auth`;
+- `resolve-atproto-actor`;
+- `atproto-bridge`;
+- PDS provisioning/migration/password functions;
+- `register-lexicons`;
+- `firehose-ingest`;
+- federation diagnostics/verification;
+- PDS/profile/follow sync functions.
+
+### Identity boundaries
+
+Keep these distinct:
+
+- Base44 user ID: private local application identity;
+- AT Protocol DID: portable/federated social identity;
+- chain identity ID: opaque public Starknet identity reference;
+- smart-account address: public blockchain account.
+
+Do not write private Base44 user IDs or PDS credentials to the public chain.
+
+## Cairo/Starknet development
+
+Contracts live in `chain/src/`.
+
+Current V2 set includes:
+
+- IdentityRegistry;
+- SwapPulseAccount;
+- native SWPX token;
+- CardNft;
+- ProofOfUsership;
+- StakingPool;
+- BridgeAdapter.
+
+Run:
+
+```bash
+cd chain
+bash scripts/test-chain.sh
+```
+
+Known baseline:
+
+```text
+64 collected
+63 passed
+0 failed
+1 intentionally ignored and separately verified
+```
+
+### Contract test expectations
+
+Depending on the change, test:
+
+- unauthorised writes;
+- duplicate registration;
+- invalid state changes;
+- replay attempts;
+- revoked identity;
+- expired verification;
+- invalid/zero addresses;
+- ownership/admin changes;
+- verifier permissions;
+- unexpected/malicious callers;
+- fuzz/property cases.
+
+## Relay development
+
+The relay is under:
+
+```text
+chain/infra/tx-relay/
+```
+
+Run:
+
+```bash
+node smoke-policy.mjs
+```
+
+The relay is a strict policy boundary. Do not turn it into a generic public Starknet write proxy.
+
+## Chain Explorer development
+
+The explorer uses the read-only backend function:
+
+```text
+base44/functions/chain-explorer/
+```
+
+Public UI routes:
+
+```text
+/chain/
+/chain/block/:blockId
+/chain/tx/:txHash
+/chain/address/:address
+```
+
+The explorer intentionally distinguishes RPC-derived chain data from **SwapPulse-indexed activity** linked through public transaction hashes.
+
+Do not claim complete address archive history unless a real indexer has been implemented.
+
+## Security-sensitive changes
+
+Treat changes to these areas as high risk:
+
+- auth/2FA/WebAuthn;
+- RLS;
+- age/identity verification;
+- PDS credentials/federation identity;
+- transaction construction/signing;
+- relay policy;
+- contract ownership/verifier authority;
+- staking/slashing/rewards;
+- bridge/replay;
+- recovery;
+- secrets.
+
+Follow `docs/CHANGE_PROTOCOL.md`.
+
+## Documentation
+
+Update docs in the same change when behaviour changes.
+
+Primary docs:
+
+- `README.md`;
+- `docs/USER_GUIDE.md`;
+- `docs/PROJECT_ARCHITECTURE.md`;
+- `docs/SWAPPULSE_V2_LIVE_ARCHITECTURE.md`;
+- `docs/NODE_ARCHITECTURE.md`;
+- `docs/FORKING_AND_REBRANDING.md`;
+- `DEPLOYMENT.md`;
+- `CONTRIBUTING.md`.
+
+## Forking
+
+For an independent deployment, do not reuse SwapPulse production/testnet secrets, PDS namespace or deployed contract addresses.
+
+Read `docs/FORKING_AND_REBRANDING.md`.
+
+## AI-assisted development
+
+ChatGPT and Base44 are core tools used throughout SwapPulse development.
+
+AI-assisted code receives the same standards as any contribution:
+
+- understand the change;
+- test it;
+- verify security boundaries;
+- do not expose secrets/private user data;
+- do not invent APIs/guarantees;
+- document important behaviour.
+
+## Pull requests
+
+See `CONTRIBUTING.md` for the full process.
