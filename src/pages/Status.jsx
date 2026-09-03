@@ -16,6 +16,7 @@ const HEALTH_TO_SLUG = {
   base44: 'web-app',
   database: 'postgresql',
   tcgdex: 'tcgdex-api',
+  pokewallet: 'pokewallet-api',
   'atproto-relay': 'atproto-relay',
   smtp: 'smtp',
   vapid: 'push-notifications',
