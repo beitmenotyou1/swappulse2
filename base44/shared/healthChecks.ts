@@ -1,4 +1,5 @@
 import { fetchTcgdex } from './tcgdexClient.ts';
+import { checkPokeWalletHealth } from './pokewalletClient.ts';
 
 export async function checkTcgdex() {
   try {
@@ -7,6 +8,10 @@ export async function checkTcgdex() {
   } catch (e) {
     return { status: 'down', error: e?.message || String(e) };
   }
+}
+
+export async function checkPokewallet() {
+  return checkPokeWalletHealth();
 }
 
 export async function checkDatabase(base44) {
