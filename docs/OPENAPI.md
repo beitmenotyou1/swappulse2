@@ -141,9 +141,9 @@ A breaking contract change should be treated as a release-impacting change under
 
 ## Compatibility guidance
 
-The contract currently uses OpenAPI 3.2.0. If a third-party tool has not yet implemented 3.2 support, use a validator/toolchain that supports the current specification rather than silently deleting SwapPulse extensions or changing endpoint semantics.
+The contract currently uses OpenAPI 3.1.0, which is the newest OpenAPI version ReadMe currently supports. Keep the root contract at 3.1.0 unless the documentation platform is deliberately changed or ReadMe adds support for a newer specification version.
 
-If a temporary 3.1-compatible export is needed for a specific integration, generate it as a derived compatibility file. Keep `openapi.yaml` as the authoritative project contract.
+Do not remove SwapPulse `x-base44-*`, `x-swappulse-*` or future `x-readme` extensions merely to satisfy a validator unless that validator is known to reject valid OpenAPI specification extensions. ReadMe supports OpenAPI 3.1 and custom extensions.
 
 ## Licensing
 
