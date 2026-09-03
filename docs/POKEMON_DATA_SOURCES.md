@@ -10,6 +10,7 @@ SwapPulse deliberately combines several Pokémon/TCG data providers, but each pr
 | PokéAPI | Pokémon species/game enrichment via National Pokédex ID | No | No key | Persistent backend resource cache |
 | PokéWallet | TCGPlayer/CardMarket market cross-check | No | Never | Persistent market/mapping cache + quota ledger |
 | PokemonPriceTracker | RAW/condition, graded sold-price and recent-history enrichment | No | Never | 24-hour card cache + credit ledger + stale fallback |
+| TCGplayer | Direct TCGplayer product/pricing cross-check for existing authorised developer accounts | No | Never | 30-day mapping + 6-hour pricing cache + usage ledger |
 
 When provider records disagree about which card is being described, the TCGDex card remains the SwapPulse identity.
 
@@ -149,6 +150,9 @@ PokéWallet unavailable or quota-limited
 
 PokemonPriceTracker unavailable, quota-limited or licence-gated
     -> graded/recent panel omitted / permitted stale cache used
+
+TCGplayer unconfigured, not approved, unavailable or rate-limited
+    -> direct TCGplayer panel omitted / cached pricing used where permitted
 ```
 
 A failure in an enrichment provider must never block collection access, trading, social features, Wallet, AT Protocol functionality or the Cairo/Starknet V2 layer.
@@ -164,6 +168,11 @@ POKEWALLET_API_KEY
 POKEMON_PRICE_TRACKER_API_KEY
 POKEMON_PRICE_TRACKER_PLAN
 POKEMON_PRICE_TRACKER_PUBLIC_USE_ALLOWED
+TCGPLAYER_PUBLIC_KEY
+TCGPLAYER_PRIVATE_KEY
+TCGPLAYER_APPROVED_USE
+TCGPLAYER_SOFT_CALLS_PER_MINUTE
+TCGPLAYER_SOFT_CALLS_PER_DAY
 ```
 
 Do not place secret values in `.env` files committed to Git, frontend code, screenshots, issue reports or documentation.
@@ -175,4 +184,6 @@ Do not place secret values in `.env` files committed to Git, frontend code, scre
 - PokéWallet: https://www.pokewallet.io/api-docs
 - PokemonPriceTracker API: https://www.pokemonpricetracker.com/docs
 - PokemonPriceTracker licensing: https://www.pokemonpricetracker.com/licensing
+- TCGplayer developer docs: https://docs.tcgplayer.com/docs/welcome
+- TCGplayer API Terms: https://help.tcgplayer.com/hc/en-us/articles/360061115874-TCGplayer-API-Terms-Conditions
 - Third-party boundaries: `THIRD_PARTY_NOTICES.md`
