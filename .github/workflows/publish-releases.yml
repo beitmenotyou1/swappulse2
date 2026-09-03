@@ -1,0 +1,96 @@
+name: Publish SwapPulse releases
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - RELEASE_MANIFEST.json
+      - CHANGELOG.md
+      - .github/releases/**
+      - .github/workflows/publish-releases.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'beitmenotyou1/swappulse2'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release manifest
+        shell: bash
+        run: |
+          jq -e '.schema_version == 1 and (.releases | type == "array")' RELEASE_MANIFEST.json >/dev/null
+
+          previous=""
+          while IFS= read -r release; do
+            version="$(jq -r '.version' <<<"$release")"
+            target="$(jq -r '.target' <<<"$release")"
+            notes="$(jq -r '.notes' <<<"$release")"
+
+            if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid release version: $version"
+              exit 1
+            fi
+
+            if [ ! -f "$notes" ]; then
+              echo "Missing release notes file: $notes"
+              exit 1
+            fi
+
+            if [ "$target" != "main" ] && ! git cat-file -e "${target}^{commit}" 2>/dev/null; then
+              echo "Release $version points to missing commit $target"
+              exit 1
+            fi
+
+            if [ -n "$previous" ] && [ "$previous" = "$version" ]; then
+              echo "Duplicate adjacent version: $version"
+              exit 1
+            fi
+            previous="$version"
+          done < <(jq -c '.releases[]' RELEASE_MANIFEST.json)
+
+      - name: Create missing GitHub releases oldest to newest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          while IFS= read -r release; do
+            version="$(jq -r '.version' <<<"$release")"
+            title="$(jq -r '.title' <<<"$release")"
+            target="$(jq -r '.target' <<<"$release")"
+            notes="$(jq -r '.notes' <<<"$release")"
+            prerelease="$(jq -r '.prerelease // false' <<<"$release")"
+
+            if gh release view "$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "Release $version already exists; leaving it unchanged."
+              continue
+            fi
+
+            if [ "$target" = "main" ]; then
+              target="$GITHUB_SHA"
+            fi
+
+            args=(
+              release create "$version"
+              --repo "$GITHUB_REPOSITORY"
+              --target "$target"
+              --title "SwapPulse $version — $title"
+              --notes-file "$notes"
+            )
+
+            if [ "$prerelease" = "true" ]; then
+              args+=(--prerelease)
+            fi
+
+            echo "Publishing $version from $target"
+            gh "${args[@]}"
+          done < <(jq -c '.releases[]' RELEASE_MANIFEST.json)
