@@ -88,6 +88,16 @@ The endpoint is not a generic proxy and must never be used to redistribute Pokem
 
 Optional PokéAPI species/game enrichment. It uses the TCGDex `dexId` field as the only species join, so it does not guess Pokémon from card names. PokeAPI resources are cached persistently server-side and no API key is required.
 
+### `pokemon-price-tracker-market`
+
+Optional PokemonPriceTracker enrichment for one canonical TCGDex card. The browser supplies only the TCGDex card ID. The backend resolves a conservative match and can return RAW/condition pricing, graded sold-price data and the plan-appropriate recent history window.
+
+The secret is read only server-side from `POKEMON_PRICE_TRACKER_API_KEY`. `POKEMON_PRICE_TRACKER_PLAN` defaults to `free` and may be set to `api`, `business` or `enterprise`. Public production use fails closed on Free/API plans under the provider's dedicated licensing guidance unless the maintainer has explicit written permission and deliberately enables `POKEMON_PRICE_TRACKER_PUBLIC_USE_ALLOWED=true`.
+
+The Free plan is treated as a 100-credit/day, 60-call/minute development budget with 3-day history. SwapPulse reserves 20% daily credit headroom and 25% request-rate headroom. One fully enriched card request is budgeted as 3 credits: 1 basic card + 1 history + 1 graded/eBay data. Results are persistently cached for 24 hours and may use a short stale fallback during temporary provider failures. No collection-wide/background bulk refresh runs on the Free plan.
+
+Population reports, bulk exports and other Business-only data are not exposed by the Free-tier integration. The function is a product-only enrichment endpoint and must never become a public proxy/feed for PokemonPriceTracker data.
+
 Pricing/enrichment data is informational and can be delayed relative to live marketplaces or upstream databases. TCGDex remains the canonical SwapPulse card catalogue and card identifier namespace.
 
 ## 2. Collection and card workflows
