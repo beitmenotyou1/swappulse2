@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "project": "SwapPulse",
+  "release_order": "oldest_to_newest",
+  "releases": [
+    {
+      "version": "v0.1.0",
+      "title": "Frozen V2 live baseline",
+      "target": "a10a91ba8260d34aed78afc08180c875ecdb8247",
+      "notes": ".github/releases/v0.1.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.2.0",
+      "title": "Identity and staking product layer",
+      "target": "c2ea788da2dd5825cb6631ff2093dab1eb65a203",
+      "notes": ".github/releases/v0.2.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.3.0",
+      "title": "Navigation and standalone Chain Explorer",
+      "target": "4b5b6ef7c6adebd70a3936876b10ec5bace47327",
+      "notes": ".github/releases/v0.3.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.4.0",
+      "title": "Wallet overview UX refresh",
+      "target": "bfb29db50942dd1e0c659d08fc0f717c9516fb1a",
+      "notes": ".github/releases/v0.4.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.5.0",
+      "title": "Complete project handbook and deployment documentation",
+      "target": "3249aaac2b4eec3b5123c38df83ef5954a9e3156",
+      "notes": ".github/releases/v0.5.0.md",
+      "prerelease": true,
+      "historical": true
+    },
+    {
+      "version": "v0.6.0",
+      "title": "Automated GitHub release discipline",
+      "target": "main",
+      "notes": ".github/releases/v0.6.0.md",
+      "prerelease": true,
+      "historical": false
+    }
+  ]
+}
