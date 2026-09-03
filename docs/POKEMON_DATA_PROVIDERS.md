@@ -178,6 +178,7 @@ Current server-side secret/config names:
 - `TCGPLAYER_APPROVED_USE` (defaults to false)
 - `TCGPLAYER_SOFT_CALLS_PER_MINUTE` (defaults to 30)
 - `TCGPLAYER_SOFT_CALLS_PER_DAY` (defaults to 1000)
+- `TCGPLAYER_AFFILIATE_URL_TEMPLATE` (optional, only after Impact affiliate approval; must contain `{url}`)
 
 PokeAPI and TCGDex currently do not require the same private credential pattern for these integrations.
 
@@ -220,6 +221,14 @@ SwapPulse's MPL-2.0 licence covers only SwapPulse-owned/licensable source. It do
 - PokemonPriceTracker data;
 - TCGplayer content/data;
 - TCGPlayer, CardMarket, eBay or grading-service data/marks referenced through providers.
+
+### TCGplayer affiliate path
+
+Because new direct API applications are currently closed, SwapPulse's practical outbound-commerce path is the separate TCGplayer Affiliate Program operated through Impact. TCGplayer says approved affiliates can create links to specific products/tools and currently uses first-click attribution with a 48-hour purchase window.
+
+SwapPulse does not invent an Impact URL format. Until an approved Impact account provides a real deep-link template, outbound links remain ordinary TCGplayer links. After approval, maintainers may configure `TCGPLAYER_AFFILIATE_URL_TEMPLATE` with an HTTPS template containing `{url}`. The backend validates the normal TCGplayer destination, substitutes the encoded destination into the approved template and marks the response as affiliate-linked.
+
+When affiliate tracking is active, the card UI displays a clear disclosure adjacent to the link: `Affiliate link: SwapPulse may earn a commission from qualifying TCGplayer purchases at no extra cost to you.` This is separate from, and does not enable, the dormant direct TCGplayer API integration.
 
 See `THIRD_PARTY_NOTICES.md` and the provider's own current terms before changing how data is displayed, stored, redistributed or monetised.
 
