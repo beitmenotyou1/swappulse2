@@ -9,6 +9,7 @@ CHAIN_ROOT="${1:-${NODELAB_CHAIN_ROOT:-}}"
 ENV_LOCAL="$HERE/.env.local"
 MANIFEST_REL="deployments/swappulse-nodelab-1.json"
 EXPECTED_CHAIN_ID="0x5357415050554c53455f4e4f44454c41425f31"
+LEGACY_UDC_ADDRESS="0x041a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf"
 
 if [ -z "$CHAIN_ROOT" ]; then
   printf 'Usage: bash deploy-v2.sh /path/to/clean/chain\n'
@@ -61,6 +62,19 @@ if [ "$(printf '%s' "$ACTUAL_CHAIN_ID" | tr 'A-F' 'a-f')" != "$EXPECTED_CHAIN_ID
   exit 1
 fi
 
+printf '\n=== verify Madara legacy UDC on both nodes ===\n'
+for rpc in http://127.0.0.1:19950 http://127.0.0.1:19951; do
+  UDC_HASH="$(curl -fsS "$rpc" \
+    -H 'content-type: application/json' \
+    --data-binary "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"starknet_getClassHashAt\",\"params\":[\"latest\",\"$LEGACY_UDC_ADDRESS\"]}" \
+    | python3 -c 'import json,sys; p=json.load(sys.stdin); print(p.get("result", ""))')"
+  if ! printf '%s' "$UDC_HASH" | grep -Eq '^0x[0-9a-fA-F]+$'; then
+    printf 'Legacy Madara UDC is not readable through %s.\n' "$rpc"
+    exit 1
+  fi
+  printf '%s UDC class hash: %s\n' "$rpc" "$UDC_HASH"
+done
+
 MANIFEST="$CHAIN_ROOT/$MANIFEST_REL"
 mkdir -p "$(dirname "$MANIFEST")"
 
@@ -79,6 +93,8 @@ SWAPPULSE_RECOVERY_DELAY_SECONDS=172800 \
 SWAPPULSE_DEPLOYMENT_MANIFEST="$MANIFEST" \
 SWAPPULSE_TOKEN_NAME='SwapPulse NodeLab 1' \
 SWAPPULSE_TOKEN_SYMBOL=SWPX \
+SWAPPULSE_UDC_ADDRESS="$LEGACY_UDC_ADDRESS" \
+SWAPPULSE_UDC_ENTRYPOINT=deployContract \
 node "$CHAIN_ROOT/scripts/tooling/deploy-network.mjs" || exit 1
 
 unset DEPLOYER_KEY
