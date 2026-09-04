@@ -16,7 +16,9 @@ chain/node/
 │   ├── docker-compose.yml
 │   └── README.md
 ├── full/
-│   └── ...                        Madara full-node/appchain lab
+│   └── ...                        Madara full-node/appchain qualification lab
+├── nodelab/
+│   └── ...                        SWAPPULSE_NODELAB_1 sequencer/observer lab
 └── benchmark/
     └── ...                        hardware/soak measurement tooling
 ```
@@ -96,7 +98,14 @@ SWAPPULSE_TESTNET
 
 The Madara migration lab/new network must use a **different chain ID**. Reusing the current chain ID for an independent incompatible chain would create replay/confusion risk.
 
-A final name/chain ID for the next network will be pinned only when deterministic genesis is ready.
+The first isolated multi-node development network is now pinned as:
+
+```text
+SWAPPULSE_NODELAB_1
+felt: 0x5357415050554c53455f4e4f44454c41425f31
+```
+
+It is a disposable development-network identity, not the final production/mainnet chain ID. It must never be confused with or substituted for the frozen live `SWAPPULSE_TESTNET`.
 
 ## Development rule
 
