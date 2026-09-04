@@ -3,7 +3,9 @@ name: swappulse-full-lab
 services:
   madara-full-lab:
     image: ${MADARA_IMAGE:?Set MADARA_IMAGE to a verified immutable Madara image digest}
-    restart: unless-stopped
+    # Stage-A is an interactive qualification lab, not a production daemon.
+    # Do not crash-loop under OOM or configuration failure on the always-on host.
+    restart: "no"
     command:
       - --name
       - SwapPulse-Full-Client-Lab
@@ -21,6 +23,12 @@ services:
       - madara-full-lab-data:/var/lib/madara
     ports:
       - "127.0.0.1:${SWAPPULSE_FULL_LAB_RPC_PORT:-19944}:9944"
+    # Hard resource guardrails protect the existing live SwapPulse services.
+    # These are qualification limits, not claimed Madara production requirements.
+    mem_limit: ${MADARA_MEMORY_LIMIT:-3g}
+    cpus: ${MADARA_CPU_LIMIT:-2.0}
+    pids_limit: ${MADARA_PIDS_LIMIT:-512}
+    stop_grace_period: 60s
     security_opt:
       - no-new-privileges:true
 
