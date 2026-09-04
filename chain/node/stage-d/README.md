@@ -52,6 +52,20 @@ The base node-lab Compose intentionally does not publish Madara's feeder gateway
 
 Run the preflight first. Enabling the override may recreate only the node-lab sequencer container, so it must not be done until the second physical host is ready and the same-host lite verifier is healthy. The live `SWAPPULSE_TESTNET` containers remain separate.
 
+Primary-host commands:
+
+```bash
+export NODELAB_STAGE_D_TAILSCALE_IP=<primary-100.x.y.z>
+bash primary-gateway-preflight.sh
+
+NODELAB_CONFIRM_STAGE_D_GATEWAY=YES \
+  bash enable-primary-gateway.sh
+
+bash create-primary-checkpoint.sh
+```
+
+The enable script refuses non-Tailscale bind addresses, rechecks all current services, recreates only the node-lab sequencer if necessary, then requires the same-host observer agreement to recover before returning success.
+
 ## Remote observer
 
 The remote observer runs:
@@ -70,6 +84,16 @@ Its RPC must bind only to the remote host's Tailscale IPv4, for example:
 ```text
 100.x.y.z:19961 -> observer:9944
 ```
+
+On the remote host, copy `.env.example` to `.env.remote`, replace both example `100.64.0.x` values with the real primary/remote Tailscale IPv4 addresses, install the chain tooling dependencies with `npm ci` under `chain/scripts/tooling`, then run:
+
+```bash
+bash preflight.sh
+bash start.sh
+bash verify.sh /path/to/chain /path/to/stage-d-primary-checkpoint.json
+```
+
+The primary checkpoint is public block/hash evidence and may be copied to the remote host. Do not copy `.env.local` or any authority key material.
 
 ## Verification gate
 
