@@ -1,0 +1,60 @@
+{
+  "schema_version": 2,
+  "network": "SWAPPULSE_NODELAB_1",
+  "chain_id": "0x5357415050554c53455f4e4f44454c41425f31",
+  "rpc_url": "http://127.0.0.1:19950/",
+  "account_class_hash": "0x492c4b3e137468b6f6a805970d2c28b44f11bfd9f3cc6bd3187db5d83cb0a1c",
+  "identity_registry_class_hash": "0x3179723520ee8e08450cf31e9c4c1e9b7c6491959f97bf5ce0fba020a84d1f1",
+  "identity_registry_address": "0x717ec7ddc5d87e0e8fd693ea5c93df7ef23ed80d11bc4e7d6086f959a531696",
+  "identity_registry_owner": "0x6f0d8c4486a57d5e88be0ffe9b2819b53b315bcbcb082c1017e1608b7c3dbb3",
+  "identity_verifier_address": "0x6a51b1f7a7c9cec10b442ee790c0c21627f362f796cfb57d7e262aa621c6d3b",
+  "identity_verification_mode": "V2",
+  "recovery_controller": "0x6f0d8c4486a57d5e88be0ffe9b2819b53b315bcbcb082c1017e1608b7c3dbb3",
+  "recovery_delay_seconds": 172800,
+  "native_token_address": "0x2986d89c16806cd8f7347b9ca960eb38589d26bdcd68fd4f98f246e2a7c13e6",
+  "native_token_class_hash": "0x8e4030b0fa645e0ad92265a382901681d584cc50a35f07d5a27b170e7a444e",
+  "native_token_symbol": "SWPX",
+  "card_nft_address": "0x2c42a168f1e83030d0851fb911b803b49219bf3bb4470512637e673d69db0ba",
+  "card_nft_class_hash": "0x1f921907ef4e4ef40aec02b3b0863bf789849ef1d3c5a6fab2ff675989efb87",
+  "usership_address": "0x1be5cf5d304085b14db171b44208c2f6356d84dc9de56141266cbe05a385854",
+  "usership_class_hash": "0x66cb61c761fdc756d0d8984c51c8d6e8389d7b58f7a11228cd7f7aeec81a256",
+  "staking_pool_address": "0x44eea955000097144598f6ba1f7d0b47ad5531b217f54963b210ffa74ab68c3",
+  "staking_pool_class_hash": "0x69d90f5e6997d905e6418622553aad7ec624f151b18d5efd4dbc999def2bbaf",
+  "bridge_adapter_address": "0x4b314af54ab47ff455668d43c3c92ee73bc2e83918d2b886fd5ef79d7ba6ed4",
+  "bridge_adapter_class_hash": "0x502a8c9953ed362307784df498bcfee81953337610e9560574915ecae9b53fc",
+  "staking": {
+    "min_self_stake": "100000000000000000000",
+    "unbonding_period_seconds": 86400,
+    "reputation_weight_bps": 1000
+  },
+  "token": {
+    "name": "SwapPulse NodeLab 1",
+    "symbol": "SWPX",
+    "max_supply": "1000000000000000000000000000",
+    "treasury_target_balance": "1000000000000000000000000"
+  },
+  "bridge": {
+    "external_chains_enabled": false
+  },
+  "deployment": {
+    "deployer_address": "0x6f0d8c4486a57d5e88be0ffe9b2819b53b315bcbcb082c1017e1608b7c3dbb3",
+    "identity_registry_declare_tx": "",
+    "account_declare_tx": "",
+    "native_token_declare_tx": "",
+    "card_nft_declare_tx": "",
+    "usership_declare_tx": "",
+    "staking_pool_declare_tx": "",
+    "bridge_adapter_declare_tx": "",
+    "identity_registry_deploy_tx": "0x3e81c871f44d9a94aabee3d691dfd85f251ad1086d4eae2241c483e2b78667d",
+    "native_token_deploy_tx": "0x508b542ff66fbe092d884bf2c466e6aaa560ed4d4776b177e1df68658f876c4",
+    "card_nft_deploy_tx": "0x16563a387b65fa073d20bd6671e3f641b06ec2e3c3a8358567f6e20f0b8f558",
+    "usership_deploy_tx": "0x4d306f84befb9edf87fdb7fe43461c95be063cb3e08bab0b1595c24c214342e",
+    "staking_pool_deploy_tx": "0x511648bdd2e515fbbc430b3b2c51666ffb5823d4910738c005db68be537959e",
+    "bridge_adapter_deploy_tx": "0x19d2735dcbdee7ead7e5e728698ddd73b635a83d21b251131386b28610ad64",
+    "identity_verifier_authorise_tx": "0x3d748f5ef6b0fc0997c716aac8956dc43d0aa455dc8861810205721f5e9ce3d",
+    "bridge_token_minter_authorise_tx": "0x12c3ab9624336b652d5feeb6e9d6c2429ff35c98e5a6ff3aeb198fc5a71d0c5",
+    "card_nft_bridge_configure_tx": "0x4275490f970c8367ca165d5a08daed1b55d3f5d84ab9c0fb34054feb0541b12",
+    "treasury_mint_tx": "0x72a22d0dbcff60ee95d8608b8227d34df2345cb75dfdd1837efc651fca75760"
+  },
+  "generated_at": "2026-09-04T19:32:51.403Z"
+}
