@@ -167,6 +167,26 @@ Deployment order:
 
 `deploy-v2.sh` deliberately does **not** invoke the irreversible `require_verification_v2()` switch. The node-lab first has to exercise a genuine V2 identity/assurance transaction through the freshly deployed contracts, then the one-way cut-over can be tested separately.
 
+After a successful deployment, run the bounded pre-cutover exercise from the same clean, tested `chain/` workspace:
+
+```bash
+bash exercise-v2.sh /path/to/clean/chain
+```
+
+`exercise-v2.sh` keeps all generated test keys in local mode-0600 `.env.local` and verifies, before any permanent cut-over:
+
+- a fresh SwapPulseAccount test user is deployed and bound to a random opaque identity id;
+- the separately authorised verifier records a real V2 commitment/assurance;
+- reusing the same attestation id fails with `ATTESTATION_REPLAY`;
+- the verified user can register application stake and then use `increase_self_stake`;
+- a short-lived V2 assurance expires while its audit record and locked stake remain intact;
+- explicit revocation makes verification ineffective;
+- a final fresh V2 assurance reactivates the identity for the later cut-over test;
+- the independent observer reproduces the final identity, assurance and staking state;
+- `verification_v2_required` remains false throughout this exercise.
+
+Only after this exercise passes should a separate one-way cut-over harness invoke `require_verification_v2()` and prove that legacy V1 writes are permanently rejected while V2 writes continue to work.
+
 Do not import node-lab addresses into live `ChainNetworkConfig`.
 
 ## Lite-node integration
