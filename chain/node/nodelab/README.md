@@ -89,6 +89,14 @@ This creates:
 
 Neither file should be committed.
 
+Run the read-only host/image/configuration preflight before starting either node:
+
+```bash
+bash preflight-nodelab.sh
+```
+
+It verifies the immutable image, required Madara CLI flags, local secret-file permissions, ports, host headroom, Compose parsing and live SwapPulse health without printing secret values.
+
 ## Start sequencer first
 
 ```bash
