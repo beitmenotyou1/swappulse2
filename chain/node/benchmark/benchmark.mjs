@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 
 const role = String(process.env.NODE_ROLE || 'lite').trim().toLowerCase();
-const endpoint = String(process.env.NODE_ENDPOINT || (role === 'lite' ? 'http://127.0.0.1:18100' : 'http://127.0.0.1:19944/rpc/v0_10_0')).trim();
+const endpoint = String(process.env.NODE_ENDPOINT || (role === 'lite' ? 'http://127.0.0.1:18100' : 'http://127.0.0.1:19944')).trim();
 const durationSeconds = intEnv('DURATION_SECONDS', 300, 10, 604800);
 const intervalMs = intEnv('INTERVAL_MS', 5000, 1000, 60000);
 const output = String(process.env.OUTPUT || `swappulse-node-benchmark-${role}-${Date.now()}.json`).trim();
