@@ -12,12 +12,35 @@ const manifestPath = path.resolve(requiredEnv('SWAPPULSE_DEPLOYMENT_MANIFEST'));
 const exercisePath = path.resolve(requiredEnv('NODELAB_V2_EXERCISE_RESULT_FILE'));
 const sequencerRpc = requiredEnv('SWAPPULSE_RPC_URL');
 const observerRpc = requiredEnv('SWAPPULSE_OBSERVER_RPC_URL');
-const ownerPrivateKey = normalizeHex(requiredEnv('NODELAB_DEPLOYER_PRIVATE_KEY'), 'node-lab deployer key');
-const verifierPrivateKey = normalizeHex(requiredEnv('NODELAB_VERIFIER_PRIVATE_KEY'), 'node-lab verifier key');
-const userPrivateKey = normalizeHex(requiredEnv('NODELAB_TEST_USER_PRIVATE_KEY'), 'node-lab test user key');
-const identityId = normalizeHex(requiredEnv('NODELAB_TEST_IDENTITY_ID'), 'node-lab identity id');
-const expiringAttestation = normalizeHex(requiredEnv('NODELAB_CUTOVER_ATTESTATION_1'), 'cut-over attestation 1');
-const finalAttestation = normalizeHex(requiredEnv('NODELAB_CUTOVER_ATTESTATION_2'), 'cut-over attestation 2');
+
+// For the irreversible node-lab cut-over, local authority/test secrets are read
+// directly from the mode-0600 node-lab env file so the shell wrapper never has
+// to echo, interpolate or export their values.
+const localEnvPathRaw = String(process.env.NODELAB_ENV_FILE || '').trim();
+if (!localEnvPathRaw) throw new Error('NODELAB_ENV_FILE is required for cut-over secret loading');
+const localEnvPath = path.resolve(localEnvPathRaw);
+const stat = await fs.stat(localEnvPath);
+if ((stat.mode & 0o077) !== 0) throw new Error('NODELAB_ENV_FILE must not be group/world accessible');
+const localEnv = {};
+for (const rawLine of (await fs.readFile(localEnvPath, 'utf8')).split(/\r?\n/)) {
+  const line = rawLine.trim();
+  if (!line || line.startsWith('#')) continue;
+  const idx = line.indexOf('=');
+  if (idx <= 0) continue;
+  localEnv[line.slice(0, idx)] = line.slice(idx + 1);
+}
+function localHex(name, label) {
+  const value = String(localEnv[name] || '').trim();
+  if (!value) throw new Error(`${name} is missing from NODELAB_ENV_FILE`);
+  return normalizeHex(value, label);
+}
+
+const ownerPrivateKey = localHex('NODELAB_DEPLOYER_PRIVATE_KEY', 'node-lab deployer key');
+const verifierPrivateKey = localHex('NODELAB_VERIFIER_PRIVATE_KEY', 'node-lab verifier key');
+const userPrivateKey = localHex('NODELAB_TEST_USER_PRIVATE_KEY', 'node-lab test user key');
+const identityId = localHex('NODELAB_TEST_IDENTITY_ID', 'node-lab identity id');
+const expiringAttestation = localHex('NODELAB_CUTOVER_ATTESTATION_1', 'cut-over attestation 1');
+const finalAttestation = localHex('NODELAB_CUTOVER_ATTESTATION_2', 'cut-over attestation 2');
 if (expiringAttestation === finalAttestation) throw new Error('Cut-over attestation ids must differ');
 
 const [manifestRaw, exerciseRaw] = await Promise.all([
