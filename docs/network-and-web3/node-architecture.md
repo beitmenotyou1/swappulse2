@@ -6,12 +6,12 @@ description: Node Architecture documentation for SwapPulse.
 
 This document defines the target architecture for community-operated SwapPulse nodes. It deliberately separates the **current network reality** from the decentralised architecture we want to build.
 
-## 1. Current reality
+### 1. Current reality
 
 There are two deliberately separate environments:
 
 1. The live `SWAPPULSE_TESTNET` uses a single Shardlabs Starknet Devnet runtime on the always-on mini-server. Its public read gateway, protected relay and lite node are live.
-2. The isolated `SWAPPULSE_NODELAB_1` uses a Madara testing sequencer and a separately synchronising full observer with different databases and a unique chain ID. The two-node consistency, V2 deployment, application exercise, permanent V2 cut-over and lite-node agreement tests passed on 4 September 2026.
+2. The isolated `SWAPPULSE_NODELAB_1` uses a Madara testing sequencer and a separately synchronising full observer with different databases and a unique chain ID. The two-node consistency, V2 deployment, application exercise, permanent V2 cut-over, lite-node agreement, observer-loss recovery and sequencer-loss recovery tests passed on 4 September 2026.
 
 Live infrastructure:
 
@@ -31,6 +31,10 @@ Node-lab infrastructure:
 
 The node-lab observer has no sequencer or deployer private key and reproduced the final V2 state from its own database. Both nodes currently run on the same physical mini-server, and only the testing sequencer produces blocks. This is independent state synchronisation, not independent operators or permissionless consensus.
 
+In both single-node loss tests, the lite verifier failed closed with HTTP `503` instead of treating the remaining peer as sufficient trust. It automatically restored `multi-peer-agreement` after the stopped node restarted from its preserved volume.
+
+Stage D now has a complete guarded workflow for a Tailscale-bound feeder gateway, primary and remote-host preflights, a block/hash checkpoint, a resource-limited remote Madara Compose service, remote verification and a clean stop that preserves state. A successful second-physical-host pass is still pending, so the feeder gateway remains private and the same-host observer stays in place.
+
 The current community `StakingPool` is an on-chain economic/accountability layer for SwapPulse operator services. **It is not currently decentralised block consensus.**
 
 A second machine cannot become a real consensus validator merely by running the existing Docker Compose file.
@@ -42,7 +46,7 @@ Dedicated hosting guides:
 * [Read-only RPC gateway](rpc-gateway.md)
 * [Transaction relay](transaction-relay.md)
 
-## 2. Goal
+### 2. Goal
 
 The long-term goal is a network where independent community members can run useful SwapPulse infrastructure without needing data-centre hardware or specialist expertise.
 
@@ -61,9 +65,9 @@ Target principles:
 
 Raspberry Pi 4/5-class devices are important target hardware, but support must be proven by benchmarks for each node role before it is advertised as production-ready.
 
-## 3. Node roles
+### 3. Node roles
 
-### 3.1 Lite node
+#### 3.1 Lite node
 
 A lite node is the lowest-resource community node.
 
@@ -91,7 +95,7 @@ SSD strongly preferred over SD card for sustained operation
 
 Exact CPU/RAM/storage/bandwidth requirements remain benchmark outputs, not promises.
 
-### 3.2 Full observer node
+#### 3.2 Full observer node
 
 A full observer independently synchronises and verifies the full chain state required by the chosen SwapPulse appchain/rollup architecture.
 
@@ -118,7 +122,7 @@ Tier H: x86-64/ARM mini PC, 16GB+ RAM, NVMe
 
 The project objective is to make Tier L practical in a pruned/full-observer mode if performance data proves it safe. If it does not, the requirement must be published honestly rather than lowering validation guarantees.
 
-### 3.3 Validator / sequencer / block producer
+#### 3.3 Validator / sequencer / block producer
 
 This is a future role and does **not** exist as decentralised consensus on the current Devnet.
 
@@ -136,7 +140,7 @@ Possible responsibilities:
 
 A validator must also be capable of full verification. A low-resource `lite node` must never be described as a validator unless the final protocol specifically enables that security model.
 
-### 3.4 Archive/indexer node
+#### 3.4 Archive/indexer node
 
 Explorer-style history is a separate resource problem from consensus validation.
 
@@ -152,15 +156,15 @@ This role may need substantially more disk than a pruned full validator/observer
 
 Separating indexing from validation is what allows ordinary full nodes to remain affordable while still supporting a rich Etherscan-style Explorer through volunteer/community indexers.
 
-### 3.5 Gateway/relay node
+#### 3.5 Gateway/relay node
 
 During migration, some community nodes may provide read gateways, transaction relays or peer gateways without holding consensus power.
 
 These services must be labelled accurately.
 
-## 4. Proposed network evolution
+### 4. Proposed network evolution
 
-### Phase 0: current hardened V2 testnet
+#### Phase 0: current hardened V2 testnet
 
 Status: complete baseline.
 
@@ -171,9 +175,9 @@ Status: complete baseline.
 * SWPX/staking/application contracts live;
 * community operator staking is not consensus.
 
-### Phase 1: reproducible observer package
+#### Phase 1: reproducible observer package
 
-Status: working on the same-host node lab; independent physical-host/operator deployment remains pending.
+Status: the same-host observer and both reversible node-loss recovery tests passed. The complete Stage D remote-observer workflow exists, while successful independent physical-host/operator evidence remains pending.
 
 Goal: make it easy for another machine to reproduce and independently verify the public chain state/read surface.
 
@@ -190,9 +194,9 @@ Deliverables:
 
 The current node-lab observer already runs without relay, owner, verifier, sequencer or deployer keys and reproduces the expected state. The remaining success criterion is to repeat that result on an independently administered physical machine and prove restart, offline catch-up and upgrade behaviour.
 
-### Phase 2: lite client
+#### Phase 2: lite client
 
-Status: v0.1 prototype is runnable. It verifies chain and contract pins and detects multi-peer agreement or disagreement. Cryptographic storage-proof or consensus-proof verification remains future work.
+Status: v0.1 is runnable. It verifies chain and contract pins, detects multi-peer agreement or disagreement, and fails closed when a required peer disappears. Cryptographic storage-proof or consensus-proof verification remains future work.
 
 Goal: low-resource client that can verify enough network information to avoid blindly trusting a single SwapPulse RPC.
 
@@ -205,9 +209,9 @@ Deliverables:
 * offline/peer-conflict diagnostics;
 * Pi 4/5 package.
 
-### Phase 3: multi-operator development network
+#### Phase 3: multi-operator development network
 
-Status: the one-sequencer/one-observer Madara topology is proven on one host. Multiple independent operators and consensus/finality are not yet implemented.
+Status: the one-sequencer/one-observer Madara topology and same-host loss/recovery tests are proven on one host. Stage D primary-host preparation has started, but multiple independent physical hosts, operators and consensus/finality are not yet implemented.
 
 Goal: replace the single-runtime assumption with an actual multi-node network architecture.
 
@@ -226,7 +230,7 @@ Requirements:
 * state-sync testing;
 * version upgrade procedure.
 
-### Phase 4: permissionless/community validator testnet
+#### Phase 4: permissionless/community validator testnet
 
 Goal: allow eligible community operators to join using documented public software.
 
@@ -241,13 +245,13 @@ Requirements before opening participation:
 * reward model;
 * monitoring and reproducible node builds.
 
-### Phase 5: hardened decentralised network
+#### Phase 5: hardened decentralised network
 
 Goal: remove single-operator assumptions from critical network availability/validation.
 
 This is the point where marketing can accurately describe community validators as securing/validating the network, provided independent security/reliability evidence supports it.
 
-## 5. Hardware benchmark protocol
+### 5. Hardware benchmark protocol
 
 Do not define support only by whether the process starts.
 
@@ -268,7 +272,7 @@ Each candidate device must be tested for:
 * sustained operation (minimum multi-day soak test);
 * upgrade/migration time.
 
-### Suggested acceptance profile
+#### Suggested acceptance profile
 
 A device can be labelled supported for a role only if it:
 
@@ -280,7 +284,7 @@ A device can be labelled supported for a role only if it:
 * passes verification/state-root checks;
 * has enough free storage headroom for expected growth.
 
-## 6. Raspberry Pi design principles
+### 6. Raspberry Pi design principles
 
 To make low-cost hardware viable:
 
@@ -296,7 +300,7 @@ To make low-cost hardware viable:
 
 A Pi running a node should not need to host the entire SwapPulse website stack.
 
-## 7. Network identity and keys
+### 7. Network identity and keys
 
 Node/operator identity must be separate from ordinary user private identity.
 
@@ -318,7 +322,7 @@ Never distribute:
 * user signer private key;
 * PDS admin password.
 
-## 8. SWPX incentives
+### 8. SWPX incentives
 
 The goal is to reward useful, verifiable network contribution, not simply claimed uptime.
 
@@ -333,7 +337,7 @@ Potential future reward categories:
 
 Rewards should be based on objective on-chain or cryptographically verifiable evidence where possible.
 
-### What not to do
+#### What not to do
 
 Do not pay solely because a central Base44 database says a node was online.
 
@@ -343,7 +347,7 @@ Do not promise a fixed financial return.
 
 Do not enable rewards before the emission/tokenomics impact is explicitly reviewed.
 
-## 9. Staking integration
+### 9. Staking integration
 
 The existing `StakingPool` provides a starting economic primitive but it must not be assumed to be the final consensus staking mechanism.
 
@@ -361,7 +365,7 @@ Future consensus integration needs to decide:
 
 Security-sensitive slashing logic should favour objectively provable protocol violations over subjective admin judgement.
 
-## 10. Governance
+### 10. Governance
 
 Community participation may eventually include protocol governance.
 
@@ -382,7 +386,7 @@ Critical safety constraints:
 * upgrades need delay/review mechanisms where practical;
 * token wealth alone should not automatically grant unlimited control over user identity/security.
 
-## 11. Lite-node trust model
+### 11. Lite-node trust model
 
 A lite node should minimise trust, not merely forward all requests to `rpc.swappulse.org`.
 
@@ -397,13 +401,13 @@ The final design should prefer:
 
 If a capability cannot be independently verified by the lite client, the UI/docs must disclose the remaining trust assumption.
 
-## 12. Full-node trust model
+### 12. Full-node trust model
 
 A full observer should be able to derive/verify the canonical state under the final protocol without trusting Base44.
 
 Base44 may consume full-node data but must not be required for the node to decide whether a chain state transition is valid.
 
-## 13. Explorer/indexer architecture
+### 13. Explorer/indexer architecture
 
 A future full explorer should query independent indexer services rather than force every validator/full node to maintain expensive address-history indexes.
 
@@ -423,7 +427,7 @@ full nodes / validator nodes
 
 The public Explorer should be capable of comparing/failing over between multiple indexers once available.
 
-## 14. Network upgrades
+### 14. Network upgrades
 
 Every node release should have:
 
@@ -435,7 +439,7 @@ Every node release should have:
 * network upgrade activation height/time where required;
 * testnet rehearsal before mandatory upgrades.
 
-## 15. Security tests for the decentralised phase
+### 15. Security tests for the decentralised phase
 
 At minimum:
 
@@ -457,13 +461,13 @@ At minimum:
 * clock skew;
 * unclean power loss on Pi-class hardware.
 
-## 16. Privacy
+### 16. Privacy
 
 Nodes should replicate public chain data only.
 
 Private Base44 records, private AT/PDS credentials, identity evidence and private messages must not become node-state requirements.
 
-## 17. Packaging goal
+### 17. Packaging goal
 
 Eventually the node UX should be closer to:
 
@@ -482,7 +486,7 @@ swappulse-node update
 
 The actual installer should be signed/versioned and should not be introduced until the node implementation exists.
 
-## 18. Definition of done for 'community full nodes'
+### 18. Definition of done for 'community full nodes'
 
 SwapPulse should only claim community full-node support when:
 
@@ -494,7 +498,7 @@ SwapPulse should only claim community full-node support when:
 * network upgrade process is documented;
 * monitoring demonstrates more than one independent operator.
 
-## 19. Definition of done for 'community validators'
+### 19. Definition of done for 'community validators'
 
 SwapPulse should only claim decentralised/community validation when:
 
@@ -506,7 +510,7 @@ SwapPulse should only claim decentralised/community validation when:
 * staking/reward/slashing semantics are live and independently verifiable;
 * public network metrics prove distribution.
 
-## 20. Next implementation step
+### 20. Next implementation step
 
 Do **not** jump directly from the current Devnet into public permissionless validation.
 

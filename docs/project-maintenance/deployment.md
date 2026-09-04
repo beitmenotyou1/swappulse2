@@ -6,7 +6,7 @@ description: Deploy and operate the complete SwapPulse application and network s
 
 This document describes the **current** SwapPulse deployment model. It replaces older documentation that described the application as Base44-only or treated Polygon/PulseChain deployment paths as the main Web3 architecture.
 
-## 1. Current production/testnet architecture
+### 1. Current production/testnet architecture
 
 SwapPulse is a multi-service system:
 
@@ -36,9 +36,9 @@ swappulse.org
 
 The live V2 Web3 baseline runs on the mini-server. Base44 orchestrates application and trusted backend workflows but is not itself the blockchain runtime.
 
-## 2. Deployment responsibilities
+### 2. Deployment responsibilities
 
-### Base44
+#### Base44
 
 Responsible for:
 
@@ -51,7 +51,7 @@ Responsible for:
 * application-to-chain reconciliation;
 * AT Protocol/TCG/social orchestration.
 
-### Mini-server
+#### Mini-server
 
 Responsible for the current SwapPulse Starknet testnet infrastructure:
 
@@ -61,7 +61,7 @@ Responsible for the current SwapPulse Starknet testnet infrastructure:
 * host-side privileged Starknet keys required by the current testnet model;
 * public HTTPS/tunnel connectivity.
 
-### Public endpoints
+#### Public endpoints
 
 Canonical chain endpoints:
 
@@ -72,7 +72,7 @@ https://relay.swappulse.org
 
 The raw Devnet RPC is bound to localhost and must not be exposed directly to the public internet.
 
-## 3. Source control and Base44 sync
+### 3. Source control and Base44 sync
 
 The repository is Git-connected to the Base44 application.
 
@@ -89,7 +89,7 @@ Before a substantial feature group:
 
 See [change protocol](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/change-protocol).
 
-## 4. Frontend build
+### 4. Frontend build
 
 The Base44 project config uses:
 
@@ -113,7 +113,7 @@ npm run lint
 npm run build
 ```
 
-### Current Base44 sandbox-shell limitation
+#### Current Base44 sandbox-shell limitation
 
 The Base44 MCP file API can read/write the authoritative project normally, but the current sandbox command shell has intermittently mounted an empty `/workspace` and therefore cannot be trusted to prove `npm run build` for this project.
 
@@ -131,7 +131,7 @@ npm run build
 
 Do not interpret `MODULE_NOT_FOUND /workspace/...` from the broken MCP shell as an application compile result.
 
-## 5. Base44 publication
+### 5. Base44 publication
 
 Normal application publication is performed through the existing Base44 app, not by creating a replacement app.
 
@@ -145,7 +145,7 @@ Before publishing:
 * verify accessibility/localisation for changed UI;
 * verify `/status` and Web3 readiness if chain features changed.
 
-## 6. Base44 secrets
+### 6. Base44 secrets
 
 Secrets must be stored in server-side environment/secret management only.
 
@@ -167,7 +167,7 @@ Never expose secret values in:
 * README/issues/PRs;
 * browser local storage.
 
-## 7. AT Protocol / PDS deployment
+### 7. AT Protocol / PDS deployment
 
 The application includes PDS/federation functions and workflows.
 
@@ -197,7 +197,7 @@ base44/workflows/Firehose Ingestion.jsonc
 base44/workflows/Federation Finalization.jsonc
 ```
 
-## 8. TCGDex/catalogue deployment
+### 8. TCGDex/catalogue deployment
 
 Catalogue/pricing/localisation services are application dependencies, not chain dependencies.
 
@@ -209,7 +209,7 @@ Key workflows currently include:
 
 If TCGDex is unavailable, collection/social functionality should degrade gracefully where possible rather than taking down the chain or authentication stack.
 
-## 9. Current Cairo/Starknet toolchain
+### 9. Current Cairo/Starknet toolchain
 
 The known-good V2 baseline uses:
 
@@ -221,7 +221,7 @@ universal-sierra-compiler 2.8.0
 
 Use the repository-pinned/verified versions for contract work. Do not casually upgrade compiler/testing versions as part of an unrelated frontend change.
 
-## 10. Chain tests
+### 10. Chain tests
 
 Run from a real checkout:
 
@@ -243,7 +243,7 @@ The wrapper separately verifies the zero-public-key constructor rejection requir
 
 A lower test count or a newly failing test is a blocker for chain deployment unless explicitly investigated and approved.
 
-## 11. Relay policy tests
+### 11. Relay policy tests
 
 Before replacing/restarting the relay after source/policy changes:
 
@@ -266,7 +266,7 @@ The hardened policy regression includes checks for:
 * post-cut-over idempotency after proof expiry;
 * permanent V2 readiness reporting.
 
-## 12. Canonical deployment manifest
+### 12. Canonical deployment manifest
 
 The canonical current deployment manifest lives at:
 
@@ -291,7 +291,7 @@ The correct order for a new independent deployment/network is:
 
 For the existing SwapPulse V2 network, the irreversible V2 switch is already complete. Do not rerun it as a normal deployment step.
 
-## 13. Verify deployment against public RPC
+### 13. Verify deployment against public RPC
 
 From the repository tooling directory:
 
@@ -313,7 +313,7 @@ ecosystem_ready: true
 
 The verifier should also confirm the expected class hashes/addresses for the live V2 contract set.
 
-## 14. Chain services
+### 14. Chain services
 
 Current Compose services include:
 
@@ -333,7 +333,7 @@ docker compose \
   ps
 ```
 
-## 15. Relay replacement
+### 15. Relay replacement
 
 When only relay source/policy changes:
 
@@ -347,7 +347,7 @@ When only relay source/policy changes:
 
 Avoid broad Compose restarts during a relay-only change.
 
-## 16. Readiness
+### 16. Readiness
 
 The authenticated relay `/readyz` response should confirm the network pins and readiness, including:
 
@@ -360,7 +360,7 @@ ecosystem_ready: true
 
 Never print the bearer token when testing readiness.
 
-## 17. V2 permanent cut-over
+### 17. V2 permanent cut-over
 
 The V2-only verification requirement is already active and one-way.
 
@@ -372,7 +372,7 @@ Operational rules:
 * individual V2 assurance expiry/revocation does not change the global permanent flag;
 * legacy V1 verification remains unavailable.
 
-## 18. Chain identity provisioning
+### 18. Chain identity provisioning
 
 `ChainIdentity` should be created by the normal Base44 provisioning flow, not manually inserted by operators.
 
@@ -380,7 +380,7 @@ The private Base44 mirror contains mappings/metadata required for reconciliation
 
 Do not manually create identity rows to bypass provisioning checks.
 
-## 19. Chain reconciliation
+### 19. Chain reconciliation
 
 The project includes scheduled `Chain Event Reconcile` behaviour plus user/admin reconciliation functions.
 
@@ -393,7 +393,7 @@ Reconciliation should:
 * close completed staking lifecycle records;
 * never manufacture a chain-confirmed state without chain evidence.
 
-## 20. Current Base44 workflows
+### 20. Current Base44 workflows
 
 The repository currently defines workflows including:
 
@@ -429,7 +429,7 @@ The repository currently defines workflows including:
 
 The JSONC files under `base44/workflows/` are authoritative for their actual schedules/settings. Do not copy a stale schedule table into this document and assume it remains correct forever.
 
-## 21. Public Chain Explorer deployment
+### 21. Public Chain Explorer deployment
 
 The Chain Explorer is part of the React application and uses the approved read-only Base44 `chain-explorer` backend/RPC path.
 
@@ -444,7 +444,7 @@ Routes:
 
 It must not receive relay credentials and must not expose write-capable Devnet methods.
 
-## 22. Monitoring
+### 22. Monitoring
 
 Check:
 
@@ -457,7 +457,7 @@ Check:
 * reconciliation lag;
 * failed chain action codes.
 
-### Current host baseline
+#### Current host baseline
 
 The post-cut-over mini-server diagnostic showed:
 
@@ -471,23 +471,23 @@ The post-cut-over mini-server diagnostic showed:
 
 Full swap occupancy alone is not a reason to force `swapoff`. Check `MemAvailable` and live `vmstat si/so` first.
 
-## 23. Backup and rollback
+### 23. Backup and rollback
 
-### Application
+#### Application
 
 Use Git history and Base44 checkpoints.
 
-### Chain infrastructure
+#### Chain infrastructure
 
 Back up configuration/manifests and follow the chain infra guides. Do not back up by copying plaintext private-key output into documentation.
 
-### Irreversible state
+#### Irreversible state
 
 Some on-chain changes cannot be rolled back. The V2 requirement is an intentional example.
 
 A rollback plan applies to software/config around an irreversible state, not to pretending the chain state can be undone.
 
-## 24. Security pre-release checklist
+### 24. Security pre-release checklist
 
 * [ ] no secrets in frontend bundle;
 * [ ] no new public RLS exposure;
@@ -501,7 +501,7 @@ A rollback plan applies to software/config around an irreversible state, not to 
 * [ ] docs updated;
 * [ ] checkpoint created.
 
-## 25. Legacy Polygon/PulseChain code
+### 25. Legacy Polygon/PulseChain code
 
 The repository may still contain historical/optional Polygon/PulseChain-era functions or schemas.
 
@@ -511,7 +511,7 @@ Do not provision legacy private keys or deploy legacy contracts merely because o
 
 Any legacy feature retained for compatibility should be explicitly documented, isolated and removed when no longer required.
 
-## 26. Node/decentralisation future
+### 26. Node/decentralisation future
 
 The current mini-server Devnet is not the final full-node/validator network.
 
@@ -525,7 +525,7 @@ Before deploying public community node software, follow [node architecture roadm
 6. validator/reward architecture;
 7. permissionless/community rollout only after security evidence.
 
-## 27. Post-deploy smoke checks
+### 27. Post-deploy smoke checks
 
 After an application-only release:
 
@@ -540,7 +540,7 @@ After an application-only release:
 
 After a chain/relay release, additionally run the full chain/readiness verification described above.
 
-## 28. Related documentation
+### 28. Related documentation
 
 * [documentation home](https://swappulse.gitbook.io/swappulse-docs/)
 * [user guide](https://swappulse.gitbook.io/swappulse-docs/start-here/user-guide)
@@ -554,4 +554,7 @@ After a chain/relay release, additionally run the full chain/readiness verificat
 * [chain overview](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/chain-overview)
 * [operator guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/operator-guide)
 * [infrastructure operations guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/infrastructure-operations)
-* [mini PC migration guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/mini-pc-migration)
+* [full node and full observer guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/full-node)
+* [lite node guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/lite-node)
+* [read-only RPC gateway guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/rpc-gateway)
+* [transaction relay guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/transaction-relay)

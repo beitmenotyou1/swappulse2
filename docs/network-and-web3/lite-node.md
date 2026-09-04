@@ -12,7 +12,7 @@ You may also hear this called a **light node**. The current package uses the nam
 The runnable v0.1 package reduces blind trust and detects disagreement between configured peers. It does not yet verify storage proofs or consensus signatures locally.
 {% endhint %}
 
-## What it does
+### What it does
 
 The node reads `chain/node/config/swappulse-testnet.json` and verifies:
 
@@ -34,7 +34,7 @@ It does not:
 * replace a full observer or archive indexer;
 * prove consensus by comparing JSON-RPC responses alone.
 
-## Trust modes
+### Trust modes
 
 | Mode                      | Meaning                                                                     | What you should do                                                                                                       |
 | ------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -47,7 +47,24 @@ On the current live `SWAPPULSE_TESTNET`, one genuine execution source is availab
 
 The same-host `SWAPPULSE_NODELAB_1` test reached `multi-peer-agreement` using the sequencer and separate full-observer databases. Because both ran on one mini-server, that result proves state-source agreement rather than independent-operator decentralisation.
 
-## HTTP interface
+### Verified agreement and fault recovery
+
+The node-lab evidence now covers the complete same-host availability fault pair:
+
+| Test                  | Observed state                                                        | Verified behaviour                                                                                              |
+| --------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Both peers healthy    | Two of two peers agreed and both passed the V2 contract-pin checks    | `ready: true`, `pins_verified: true`, `multi-peer-agreement` and read-only RPC available                        |
+| Observer stopped      | One of two peers remained healthy                                     | `ready: false`, `pins_verified: false`, `INSUFFICIENT_PEER_AGREEMENT`, and HTTP `503` from `/readyz` and `/rpc` |
+| Sequencer stopped     | One of two peers remained healthy                                     | `ready: false`, `pins_verified: false`, `INSUFFICIENT_PEER_AGREEMENT`, and HTTP `503` from `/readyz` and `/rpc` |
+| Stopped peer restored | The peer restarted from its preserved database and agreement returned | `ready: true`, both contract-pin checks passed and `multi-peer-agreement` recovered automatically               |
+
+This behaviour matters because a read proxy can otherwise appear healthy while silently falling back to one source. The current implementation gates `/rpc` on the complete readiness condition, so losing the required peer or contract-pin quorum also stops proxied reads with `NO_VERIFIED_PEER`.
+
+{% hint style="info" %}
+These tests cover availability loss and recovery. They do not test Byzantine consensus, validator failover, leader election, proof verification or independent physical operators.
+{% endhint %}
+
+### HTTP interface
 
 The supplied Compose package binds to `127.0.0.1:18100`.
 
@@ -57,11 +74,11 @@ The supplied Compose package binds to `127.0.0.1:18100`.
 | `/readyz`     | `GET`  | Returns readiness, pins, peer agreement and errors; returns `503` when not ready |
 | `/status`     | `GET`  | Public-safe peer and checkpoint details                                          |
 | `/metrics`    | `GET`  | Low-overhead Prometheus text metrics                                             |
-| `/rpc` or `/` | `POST` | Read-only Starknet JSON-RPC through the best verified peer                       |
+| `/rpc` or `/` | `POST` | Read-only Starknet JSON-RPC through the best verified peer while readiness holds |
 
 The local RPC accepts a small read allowlist, denies JSON-RPC batches, caps request bodies at 64 KiB and rate-limits clients. Write, admin and `devnet_*` methods are rejected.
 
-## Host requirements
+### Host requirements
 
 The service has no runtime npm dependencies and runs in the supplied Node 22 container.
 
@@ -76,11 +93,11 @@ Recommended starting point:
 
 In the first ten-minute Intel N95 test, the container used roughly 29 to 49 MiB of memory and remained available for every sample. This is evidence from one short run, not a universal minimum. Pi 4 and Pi 5 support still needs dedicated restart, network-loss, low-disk and multi-day soak tests.
 
-## Host the lite node
+### Host the lite node
 
 {% stepper %}
 {% step %}
-### Obtain the current repository
+#### Obtain the current repository
 
 ```bash
 git clone https://github.com/beitmenotyou1/swappulse2.git
@@ -89,7 +106,7 @@ cd swappulse2/chain/node/lite
 {% endstep %}
 
 {% step %}
-### Create the local configuration
+#### Create the local configuration
 
 ```bash
 cp .env.example .env
@@ -111,7 +128,7 @@ Remote peers must use HTTPS. Plain HTTP is accepted only for `localhost`, `127.0
 {% endstep %}
 
 {% step %}
-### Start the service
+#### Start the service
 
 ```bash
 docker compose up -d --build
@@ -122,7 +139,7 @@ The container runs read-only, drops all Linux capabilities, enables `no-new-priv
 {% endstep %}
 
 {% step %}
-### Verify health and trust state
+#### Verify health and trust state
 
 ```bash
 curl -fsS http://127.0.0.1:18100/healthz
@@ -134,7 +151,7 @@ For the live baseline, `ready: true` together with `trust_mode: single-peer-degr
 {% endstep %}
 
 {% step %}
-### Test the local read-only RPC
+#### Test the local read-only RPC
 
 ```bash
 curl -fsS http://127.0.0.1:18100/rpc \
@@ -155,7 +172,7 @@ Expected result: HTTP `403` with `METHOD_NOT_ALLOWED`.
 {% endstep %}
 
 {% step %}
-### Stop or update safely
+#### Stop or update safely
 
 ```bash
 docker compose down
@@ -165,7 +182,7 @@ This preserves `data/checkpoint.json`. To update, review the repository changes,
 {% endstep %}
 {% endstepper %}
 
-## Example status interpretation
+### Example status interpretation
 
 A healthy single-peer response has this shape:
 
@@ -185,7 +202,7 @@ A healthy single-peer response has this shape:
 
 The block height and hash will change as the chain advances. Never copy values from an old example into a manifest as if they were permanent pins.
 
-## Choosing peers honestly
+### Choosing peers honestly
 
 Use peers that represent distinct state sources. Before describing two peers as independent, confirm that they have:
 
@@ -198,7 +215,7 @@ Use peers that represent distinct state sources. Before describing two peers as 
 
 The lite node requires a majority of all configured peers, not merely a majority of those that answered. With two configured peers, both must agree.
 
-## Monitoring
+### Monitoring
 
 Prometheus metrics include readiness, peer agreement, independent-verification state, healthy peer count, pin-verified peer count and common height.
 
@@ -213,7 +230,7 @@ Alert when:
 
 The checkpoint is an observation record, not authoritative chain state. Losing it does not lose funds or identities. The node will rebuild its status from the configured peers.
 
-## Security guidelines
+### Security guidelines
 
 * Keep the service bound to loopback unless you have a separate authenticated local-network design.
 * Do not place `SWAPPULSE_TX_RELAY_TOKEN` or any private key in `.env`.
@@ -223,18 +240,18 @@ The checkpoint is an observation record, not authoritative chain state. Losing i
 * Treat peer disagreement as a fault, not as an inconvenience to bypass.
 * Do not market `multi-peer-agreement` as cryptographic proof verification.
 
-## Troubleshooting
+### Troubleshooting
 
-| Status or symptom             | Likely cause                                         | Check                                                             |
-| ----------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------- |
-| `NO_HEALTHY_PINNED_PEER`      | RPC unavailable, wrong chain ID or pins not checked  | Peer URL, TLS, timeout and manifest                               |
-| `INSUFFICIENT_PIN_QUORUM`     | Too few peers match every contract class hash        | Contract addresses, class hashes and network selection            |
-| `INSUFFICIENT_PEER_AGREEMENT` | Common-height hashes differ or peers are unavailable | Each peer's status and block hash at the reported common height   |
-| HTTP `429`                    | Local client exceeded the configured minute limit    | Reduce polling or raise the limit carefully                       |
-| HTTP `503` from `/rpc`        | No healthy verified peer is available                | Resolve upstream health or pin failure before retrying            |
-| Checkpoint write warning      | `data/` permissions or storage problem               | Directory ownership, free space and read-only mount configuration |
+| Status or symptom             | Likely cause                                                        | Check                                                             |
+| ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `NO_HEALTHY_PINNED_PEER`      | RPC unavailable, wrong chain ID or pins not checked                 | Peer URL, TLS, timeout and manifest                               |
+| `INSUFFICIENT_PIN_QUORUM`     | Too few peers match every contract class hash                       | Contract addresses, class hashes and network selection            |
+| `INSUFFICIENT_PEER_AGREEMENT` | Common-height hashes differ or peers are unavailable                | Each peer's status and block hash at the reported common height   |
+| HTTP `429`                    | Local client exceeded the configured minute limit                   | Reduce polling or raise the limit carefully                       |
+| HTTP `503` from `/rpc`        | No healthy verified peer or required multi-peer quorum is available | Resolve upstream health, agreement or pin failure before retrying |
+| Checkpoint write warning      | `data/` permissions or storage problem                              | Directory ownership, free space and read-only mount configuration |
 
-## Related pages
+### Related pages
 
 * [Full node and full observer](full-node.md)
 * [Read-only RPC gateway](rpc-gateway.md)

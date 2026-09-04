@@ -94,8 +94,6 @@
   * [Community Operator Guide](network-and-web3/operator-guide.md)
   * [Identity Registry](network-and-web3/identity-registry.md)
   * [Infrastructure Operations](network-and-web3/infrastructure-operations.md)
-  * [Mini PC Migration](network-and-web3/mini-pc-migration.md)
-  * [Zorin Local Relay](network-and-web3/zorin-local-relay.md)
 * [Project Maintenance](project-maintenance/README.md)
   * [SwapPulse Change Protocol](project-maintenance/change-protocol.md)
   * [Releasing SwapPulse](project-maintenance/releasing.md)
