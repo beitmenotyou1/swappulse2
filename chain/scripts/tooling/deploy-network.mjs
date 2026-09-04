@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { CallData, byteArray, cairo } from 'starknet';
+import { CallData, byteArray, cairo, hash } from 'starknet';
 import {
   chainDir,
   requiredEnv,
