@@ -33,7 +33,10 @@ services:
     mem_limit: ${MADARA_MEMORY_LIMIT:-3g}
     cpus: ${MADARA_CPU_LIMIT:-2.0}
     pids_limit: ${MADARA_PIDS_LIMIT:-512}
-    stop_grace_period: 60s
+    # Post-hardening Madara may wait several minutes for in-flight trie/Rayon
+    # work to drain safely before the final database flush. Keep Docker's stop
+    # timeout longer than that protection so it is not cut off mid-shutdown.
+    stop_grace_period: ${MADARA_STOP_GRACE_PERIOD:-330s}
     security_opt:
       - no-new-privileges:true
 
