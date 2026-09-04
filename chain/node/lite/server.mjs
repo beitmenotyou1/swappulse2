@@ -7,6 +7,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MANIFEST = resolve(here, '../config/swappulse-testnet.json');
 const manifestPath = process.env.SWAPPULSE_NODE_MANIFEST || DEFAULT_MANIFEST;
 const port = clampInt(process.env.PORT, 18100, 1, 65535);
+const bindAddress = String(process.env.BIND_ADDRESS || '0.0.0.0').trim();
+if (!bindAddress || /[\s/]/.test(bindAddress)) throw new Error('INVALID_BIND_ADDRESS');
 const pollMs = clampInt(process.env.POLL_INTERVAL_MS, 15_000, 5_000, 300_000);
 const pinPollMs = clampInt(process.env.PIN_CHECK_INTERVAL_MS, 300_000, 30_000, 3_600_000);
 const timeoutMs = clampInt(process.env.RPC_TIMEOUT_MS, 5_000, 1_000, 30_000);
@@ -406,7 +408,7 @@ const server = http.createServer(async (req, res) => {
 
 await poll();
 setInterval(() => void poll(), pollMs).unref();
-server.listen(port, '0.0.0.0', () => {
-  console.log(`SwapPulse lite node listening on :${port}`);
+server.listen(port, bindAddress, () => {
+  console.log(`SwapPulse lite node listening on ${bindAddress}:${port}`);
   console.log(`network=${manifest.network} peers=${peers.length} trust=${status.trust_mode}`);
 });
