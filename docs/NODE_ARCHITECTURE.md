@@ -172,6 +172,8 @@ Deliverables:
 
 Success criterion: an independent machine can reproduce/verify the expected state without being given the privileged relay/owner keys.
 
+**2026-09-04 Stage-A qualification update:** the N95 reference mini-server passed short-run Madara full-client runtime, RPC, resource-isolation, clean-stop and post-hardening restart/recovery testing using an immutable `v0.11.0-alpha.9` image. A five-minute active-sync benchmark completed 60/60 samples with 100% availability, ~809 MiB average / ~959 MiB peak Madara container memory, ~37.84% average / ~200.8% peak container CPU, low memory pressure, and materially higher I/O pressure. This authorises progression to the isolated `SWAPPULSE_NODELAB_1` sequencer/observer laboratory. It is not a full-history production hardware support claim.
+
 ### Phase 2: lite client
 
 Goal: low-resource client that can verify enough network information to avoid blindly trusting a single SwapPulse RPC.
