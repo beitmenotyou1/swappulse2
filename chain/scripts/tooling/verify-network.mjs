@@ -6,7 +6,8 @@ const manifestPath = path.resolve(
   process.argv[2] || process.env.SWAPPULSE_DEPLOYMENT_MANIFEST || path.join(chainDir, 'deployments/swappulse-testnet.json'),
 );
 const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
-if (manifest.network !== 'SWAPPULSE_TESTNET') throw new Error('Manifest network must be SWAPPULSE_TESTNET');
+const expectedNetwork = String(process.env.SWAPPULSE_EXPECTED_NETWORK || 'SWAPPULSE_TESTNET').trim();
+if (manifest.network !== expectedNetwork) throw new Error(`Manifest network must be ${expectedNetwork}`);
 if (![1, 2].includes(Number(manifest.schema_version))) throw new Error('Unsupported deployment manifest schema_version');
 
 const verificationRpc = String(process.env.SWAPPULSE_VERIFY_RPC_URL || manifest.rpc_url).trim();
