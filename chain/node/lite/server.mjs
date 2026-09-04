@@ -43,6 +43,8 @@ function safePeerUrl(value) {
 
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const expectedChainId = normalizeHex(manifest.chain_id);
+const operatorIndependence = manifest?.trust?.peer_operator_independence === true;
+const observerStateIndependent = manifest?.trust?.observer_state_independent === true;
 const contractPins = Object.entries(manifest?.expected?.contracts || {}).map(([name, value]) => ({
   name,
   address: normalizeHex(value.address),
@@ -93,7 +95,10 @@ let status = {
   agreement_count: 0,
   required_agreement: peers.length > 1 ? Math.floor(peers.length / 2) + 1 : 1,
   pins_verified: false,
+  pin_verified_peer_count: 0,
   independently_verified: false,
+  observer_state_independent: observerStateIndependent,
+  operator_independence: operatorIndependence,
   last_poll_at: null,
   last_error: null,
   peers: [],
@@ -187,6 +192,8 @@ async function persistCheckpoint(next) {
       common_block_hash: next.common_block_hash,
       peer_agreement: next.peer_agreement,
       independently_verified: next.independently_verified,
+      observer_state_independent: next.observer_state_independent,
+      operator_independence: next.operator_independence,
       observed_at: next.last_poll_at,
     };
     await writeFile(temp, `${JSON.stringify(payload, null, 2)}\n`, { mode: 0o644 });
@@ -255,7 +262,16 @@ async function poll() {
     const peerAgreement = peers.length > 1 && agreeing.length >= required;
     const pinsVerifiedPeers = healthy.filter((p) => p.pins?.ok);
     const pinsVerified = pinsVerifiedPeers.length > 0;
-    const independent = peerAgreement && pinsVerifiedPeers.length >= Math.min(required, healthy.length);
+    const pinQuorumVerified = pinsVerifiedPeers.length >= (peers.length > 1 ? required : 1);
+    const independent = peerAgreement && pinQuorumVerified;
+    const ready = healthy.length > 0 && pinQuorumVerified && (peers.length < 2 || peerAgreement);
+    const lastError = healthy.length === 0
+      ? 'NO_HEALTHY_PINNED_PEER'
+      : peers.length > 1 && !peerAgreement
+        ? 'INSUFFICIENT_PEER_AGREEMENT'
+        : !pinQuorumVerified
+          ? 'INSUFFICIENT_PIN_QUORUM'
+          : null;
 
     const next = {
       schema_version: 1,
@@ -263,7 +279,7 @@ async function poll() {
       node_version: '0.1.0',
       network: manifest.network,
       chain_id: expectedChainId,
-      ready: healthy.length > 0 && pinsVerified,
+      ready,
       peer_agreement: peerAgreement,
       trust_mode: peers.length < 2
         ? 'single-peer-degraded'
@@ -277,9 +293,12 @@ async function poll() {
       agreement_count: agreeing.length,
       required_agreement: required,
       pins_verified: pinsVerified,
+      pin_verified_peer_count: pinsVerifiedPeers.length,
       independently_verified: independent,
+      observer_state_independent: observerStateIndependent,
+      operator_independence: operatorIndependence,
       last_poll_at: nowIso(),
-      last_error: healthy.length ? null : 'NO_HEALTHY_PINNED_PEER',
+      last_error: lastError,
       peers: [...peerState.values()].map((p) => ({
         peer: p.peer,
         healthy: Boolean(p.healthy),
@@ -370,6 +389,9 @@ function metrics() {
     '# HELP swappulse_lite_healthy_peers Number of healthy peers on the expected chain.',
     '# TYPE swappulse_lite_healthy_peers gauge',
     `swappulse_lite_healthy_peers ${status.healthy_peer_count}`,
+    '# HELP swappulse_lite_pin_verified_peers Number of healthy peers matching all configured contract pins.',
+    '# TYPE swappulse_lite_pin_verified_peers gauge',
+    `swappulse_lite_pin_verified_peers ${status.pin_verified_peer_count ?? 0}`,
     '# HELP swappulse_lite_common_height Common comparison block height.',
     '# TYPE swappulse_lite_common_height gauge',
     `swappulse_lite_common_height ${status.common_height ?? -1}`,
