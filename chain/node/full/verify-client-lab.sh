@@ -4,7 +4,10 @@
 # It does not modify the live SwapPulse chain or submit transactions.
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-RPC="http://127.0.0.1:${SWAPPULSE_FULL_LAB_RPC_PORT:-19944}/rpc/v0_10_2/"
+# The pinned 2026-04-27 Madara image exposes user RPC through v0.10.0.
+# Its v0.10.2 route returns -32700 Parse error even though newer Madara docs
+# advertise that route. Keep this aligned with the immutable Stage-A image.
+RPC="http://127.0.0.1:${SWAPPULSE_FULL_LAB_RPC_PORT:-19944}/rpc/v0_10_0"
 CONTAINER="swappulse-full-lab-madara-full-lab-1"
 FAIL=0
 
@@ -14,9 +17,18 @@ fail() { printf 'FAIL: %s\n' "$*"; FAIL=1; }
 rpc() {
   local method="$1"
   local params="${2:-[]}" 
-  curl -fsS --max-time 10 "$RPC" \
-    -H 'content-type: application/json' \
-    --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"$method\",\"params\":$params}"
+  METHOD="$method" PARAMS="$params" python3 - <<'PY' | \
+    curl -fsS --max-time 10 "$RPC" \
+      -H 'content-type: application/json' \
+      --data-binary @-
+import json, os
+print(json.dumps({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": os.environ["METHOD"],
+    "params": json.loads(os.environ["PARAMS"]),
+}))
+PY
 }
 
 say "=== Madara Stage-A verification ==="
