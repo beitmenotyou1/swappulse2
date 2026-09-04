@@ -38,7 +38,7 @@ Configured peers disagree or there is insufficient agreement. The node reports t
 
 ## HTTP surface
 
-The service listens on `127.0.0.1:18100` by default when started with the supplied Compose file.
+The service listens on `127.0.0.1:18100` by default when started with the supplied Compose file. The Node process itself supports `BIND_ADDRESS`; its default remains `0.0.0.0` for container use, while same-host laboratory runs should set `BIND_ADDRESS=127.0.0.1` explicitly.
 
 - `GET /healthz` — process health only.
 - `GET /readyz` — current chain/pin readiness and trust state.
@@ -93,7 +93,7 @@ Set a comma-separated list in `.env`:
 SWAPPULSE_RPC_PEERS=https://rpc.swappulse.org/rpc,https://second-independent.example/rpc
 ```
 
-Do not add two hostnames that ultimately proxy the same underlying node and call that decentralisation. The second peer should be independently operated and independently synchronised.
+Do not add two hostnames that ultimately proxy the same underlying node and call that decentralisation. For a production trust claim, the second peer should be independently operated and independently synchronised. The `SWAPPULSE_NODELAB_1` same-host test is narrower: its sequencer and observer use separate databases and independent sync state, but they share one physical host, so it demonstrates multi-source state agreement rather than independent-operator decentralisation.
 
 ## Security
 
