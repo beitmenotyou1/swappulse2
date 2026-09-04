@@ -1,6 +1,9 @@
 import os from 'node:os';
-import { readFile, writeFile } from 'node:fs/promises';
-import { statfs } from 'node:fs/promises';
+import { readFile, writeFile, statfs } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 const role = String(process.env.NODE_ROLE || 'lite').trim().toLowerCase();
 const endpoint = String(process.env.NODE_ENDPOINT || (role === 'lite' ? 'http://127.0.0.1:18100' : 'http://127.0.0.1:19944/rpc/v0_10_2/')).trim();
@@ -8,6 +11,7 @@ const durationSeconds = intEnv('DURATION_SECONDS', 300, 10, 604800);
 const intervalMs = intEnv('INTERVAL_MS', 5000, 1000, 60000);
 const output = String(process.env.OUTPUT || `swappulse-node-benchmark-${role}-${Date.now()}.json`).trim();
 const diskPath = String(process.env.DISK_PATH || '/').trim();
+const containerName = String(process.env.CONTAINER_NAME || '').trim();
 
 if (!['lite', 'full'].includes(role)) throw new Error('NODE_ROLE must be lite or full');
 
@@ -62,8 +66,10 @@ async function liteProbe() {
     ready: Boolean(status.data?.ready),
     trust_mode: status.data?.trust_mode || '',
     independent: Boolean(status.data?.independently_verified),
+    pins_verified: Boolean(status.data?.pins_verified),
     healthy_peers: Number(status.data?.healthy_peer_count || 0),
     common_height: status.data?.common_height ?? null,
+    common_block_hash: status.data?.common_block_hash ?? null,
     rpc_http: rpcChain.status,
     rpc_latency_ms: rpcChain.latency_ms,
   };
@@ -111,11 +117,15 @@ async function cpuTemp() {
   const candidates = [
     '/sys/class/thermal/thermal_zone0/temp',
     '/sys/class/hwmon/hwmon0/temp1_input',
+    '/sys/class/hwmon/hwmon1/temp1_input',
+    '/sys/class/hwmon/hwmon2/temp1_input',
   ];
   for (const file of candidates) {
     try {
       const raw = Number.parseFloat((await readFile(file, 'utf8')).trim());
-      if (Number.isFinite(raw)) return raw > 1000 ? raw / 1000 : raw;
+      if (!Number.isFinite(raw)) continue;
+      const c = raw > 1000 ? raw / 1000 : raw;
+      if (c > 1 && c < 130) return Math.round(c * 10) / 10;
     } catch {}
   }
   return null;
@@ -131,6 +141,101 @@ async function diskInfo() {
     };
   } catch {
     return { disk_path: diskPath, disk_total_bytes: null, disk_free_bytes: null };
+  }
+}
+
+function parsePsiLine(line) {
+  const parts = String(line || '').trim().split(/\s+/);
+  if (!parts.length) return null;
+  const row = { scope: parts[0] };
+  for (const part of parts.slice(1)) {
+    const [key, value] = part.split('=');
+    if (!key) continue;
+    const parsed = Number(value);
+    row[key] = Number.isFinite(parsed) ? parsed : value;
+  }
+  return row;
+}
+
+async function pressureInfo() {
+  const out = {};
+  for (const resource of ['cpu', 'memory', 'io']) {
+    try {
+      const raw = await readFile(`/proc/pressure/${resource}`, 'utf8');
+      const rows = raw.trim().split('\n').map(parsePsiLine).filter(Boolean);
+      const some = rows.find((r) => r.scope === 'some') || {};
+      const full = rows.find((r) => r.scope === 'full') || {};
+      out[`psi_${resource}_some_avg10`] = Number.isFinite(some.avg10) ? some.avg10 : null;
+      out[`psi_${resource}_full_avg10`] = Number.isFinite(full.avg10) ? full.avg10 : null;
+    } catch {
+      out[`psi_${resource}_some_avg10`] = null;
+      out[`psi_${resource}_full_avg10`] = null;
+    }
+  }
+  return out;
+}
+
+function humanBytes(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^([0-9.]+)\s*([KMGTPE]?i?B)$/i);
+  if (!match) return null;
+  const n = Number(match[1]);
+  if (!Number.isFinite(n)) return null;
+  const unit = match[2].toUpperCase();
+  const powers = {
+    B: 0,
+    KB: 1,
+    KIB: 1,
+    MB: 2,
+    MIB: 2,
+    GB: 3,
+    GIB: 3,
+    TB: 4,
+    TIB: 4,
+    PB: 5,
+    PIB: 5,
+    EB: 6,
+    EIB: 6,
+  };
+  const power = powers[unit];
+  if (power === undefined) return null;
+  const base = unit.includes('IB') ? 1024 : 1000;
+  return Math.round(n * (base ** power));
+}
+
+function parsePair(value) {
+  const [left, right] = String(value || '').split('/').map((v) => v.trim());
+  return [humanBytes(left), humanBytes(right)];
+}
+
+async function dockerContainerStats() {
+  if (!containerName) return null;
+  try {
+    const { stdout } = await execFileAsync('docker', [
+      'stats', '--no-stream', '--format', '{{json .}}', containerName,
+    ], { timeout: 10_000, maxBuffer: 256 * 1024 });
+    const line = stdout.trim().split('\n').filter(Boolean)[0];
+    if (!line) return { available: false, error: 'NO_DOCKER_STATS' };
+    const row = JSON.parse(line);
+    const cpu = Number.parseFloat(String(row.CPUPerc || '').replace('%', ''));
+    const [memUsage, memLimit] = parsePair(row.MemUsage);
+    const [netRx, netTx] = parsePair(row.NetIO);
+    const [blockRead, blockWrite] = parsePair(row.BlockIO);
+    const pids = Number.parseInt(String(row.PIDs || ''), 10);
+    return {
+      available: true,
+      name: row.Name || containerName,
+      cpu_percent: Number.isFinite(cpu) ? cpu : null,
+      memory_usage_bytes: memUsage,
+      memory_limit_bytes: memLimit,
+      network_rx_bytes: netRx,
+      network_tx_bytes: netTx,
+      block_read_bytes: blockRead,
+      block_write_bytes: blockWrite,
+      pids: Number.isFinite(pids) ? pids : null,
+    };
+  } catch (error) {
+    return { available: false, error: String(error?.message || error) };
   }
 }
 
@@ -154,9 +259,10 @@ function cpuDelta(before, after) {
 }
 
 const report = {
-  schema_version: 1,
+  schema_version: 2,
   role,
   endpoint,
+  container_name: containerName || null,
   started_at: new Date().toISOString(),
   requested_duration_seconds: durationSeconds,
   interval_ms: intervalMs,
@@ -176,11 +282,13 @@ const start = Date.now();
 let previousCpu = cpuTimes();
 while (Date.now() - start < durationSeconds * 1000) {
   const sampleStarted = Date.now();
-  const [probe, mem, temp, disk] = await Promise.all([
+  const [probe, mem, temp, disk, pressure, container] = await Promise.all([
     role === 'lite' ? liteProbe() : fullProbe(),
     memInfo(),
     cpuTemp(),
     diskInfo(),
+    pressureInfo(),
+    dockerContainerStats(),
   ]);
   const currentCpu = cpuTimes();
   report.samples.push({
@@ -189,11 +297,13 @@ while (Date.now() - start < durationSeconds * 1000) {
     load_1m: os.loadavg()[0],
     load_5m: os.loadavg()[1],
     load_15m: os.loadavg()[2],
-    cpu_busy_percent: cpuDelta(previousCpu, currentCpu),
-    process_rss_bytes: process.memoryUsage().rss,
+    host_cpu_busy_percent: cpuDelta(previousCpu, currentCpu),
+    benchmark_process_rss_bytes: process.memoryUsage().rss,
     cpu_temperature_c: temp,
     ...mem,
     ...disk,
+    ...pressure,
+    container,
     probe,
   });
   previousCpu = currentCpu;
@@ -209,24 +319,41 @@ const max = (values) => values.length ? Math.max(...values) : null;
 const min = (values) => values.length ? Math.min(...values) : null;
 const avg = (values) => values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100 : null;
 
-const cpu = finite(report.samples.map((s) => s.cpu_busy_percent));
+const hostCpu = finite(report.samples.map((s) => s.host_cpu_busy_percent));
 const memAvail = finite(report.samples.map((s) => s.mem_available_bytes));
 const swapFree = finite(report.samples.map((s) => s.swap_free_bytes));
 const temp = finite(report.samples.map((s) => s.cpu_temperature_c));
 const latency = finite(report.samples.map((s) => role === 'lite' ? s.probe.status_latency_ms : s.probe.block_latency_ms));
 const failures = report.samples.filter((s) => role === 'lite' ? !s.probe.ready : s.probe.block_http !== 200).length;
+const containerCpu = finite(report.samples.map((s) => s.container?.cpu_percent));
+const containerMem = finite(report.samples.map((s) => s.container?.memory_usage_bytes));
+const psiMem = finite(report.samples.map((s) => s.psi_memory_some_avg10));
+const psiIo = finite(report.samples.map((s) => s.psi_io_some_avg10));
+
+const firstContainer = report.samples.find((s) => s.container?.available)?.container || null;
+const lastContainer = [...report.samples].reverse().find((s) => s.container?.available)?.container || null;
 
 report.summary = {
   samples: report.samples.length,
   failed_samples: failures,
   availability_percent: report.samples.length ? Math.round(((report.samples.length - failures) / report.samples.length) * 10000) / 100 : 0,
-  cpu_busy_percent_avg: avg(cpu),
-  cpu_busy_percent_max: max(cpu),
+  host_cpu_busy_percent_avg: avg(hostCpu),
+  host_cpu_busy_percent_max: max(hostCpu),
   mem_available_bytes_min: min(memAvail),
   swap_free_bytes_min: min(swapFree),
   cpu_temperature_c_max: max(temp),
   rpc_latency_ms_avg: avg(latency),
   rpc_latency_ms_max: max(latency),
+  container_cpu_percent_avg: avg(containerCpu),
+  container_cpu_percent_max: max(containerCpu),
+  container_memory_usage_bytes_avg: avg(containerMem),
+  container_memory_usage_bytes_max: max(containerMem),
+  container_network_rx_delta_bytes: firstContainer && lastContainer && firstContainer.network_rx_bytes != null && lastContainer.network_rx_bytes != null ? Math.max(0, lastContainer.network_rx_bytes - firstContainer.network_rx_bytes) : null,
+  container_network_tx_delta_bytes: firstContainer && lastContainer && firstContainer.network_tx_bytes != null && lastContainer.network_tx_bytes != null ? Math.max(0, lastContainer.network_tx_bytes - firstContainer.network_tx_bytes) : null,
+  container_block_read_delta_bytes: firstContainer && lastContainer && firstContainer.block_read_bytes != null && lastContainer.block_read_bytes != null ? Math.max(0, lastContainer.block_read_bytes - firstContainer.block_read_bytes) : null,
+  container_block_write_delta_bytes: firstContainer && lastContainer && firstContainer.block_write_bytes != null && lastContainer.block_write_bytes != null ? Math.max(0, lastContainer.block_write_bytes - firstContainer.block_write_bytes) : null,
+  psi_memory_some_avg10_max: max(psiMem),
+  psi_io_some_avg10_max: max(psiIo),
 };
 
 await writeFile(output, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o644 });
