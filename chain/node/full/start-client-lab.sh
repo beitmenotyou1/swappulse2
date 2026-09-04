@@ -4,6 +4,7 @@
 # Existing SwapPulse Devnet/RPC/relay/lite containers are not stopped or recreated.
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+PROJECT="${SWAPPULSE_FULL_LAB_PROJECT:-swappulse-full-lab}"
 
 if command -v ss >/dev/null 2>&1; then
   if ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq '(^|:)19944$'; then
@@ -24,15 +25,15 @@ if [ ! -f "$HERE/.env.image" ]; then
   exit 1
 fi
 
-printf 'Starting isolated Compose project: swappulse-full-lab\n'
-docker compose -p swappulse-full-lab \
+printf 'Starting isolated Compose project: %s\n' "$PROJECT"
+docker compose -p "$PROJECT" \
   --env-file "$HERE/.env" \
   --env-file "$HERE/.env.image" \
   -f "$HERE/docker-compose.client-lab.yml" \
   up -d
 
 printf '\nMadara lab container:\n'
-docker compose -p swappulse-full-lab \
+docker compose -p "$PROJECT" \
   --env-file "$HERE/.env" \
   --env-file "$HERE/.env.image" \
   -f "$HERE/docker-compose.client-lab.yml" ps
