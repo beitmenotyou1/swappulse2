@@ -76,13 +76,13 @@ The RPC is bound to host loopback only:
 Check the client:
 
 ```bash
-curl -fsS http://127.0.0.1:19944/rpc/v0_10_2/ \
+curl -fsS http://127.0.0.1:19944/rpc/v0_10_0 \
   -H 'content-type: application/json' \
-  --data '{"jsonrpc":"2.0","id":1,"method":"starknet_syncing","params":[]}' \
+  --data-binary '{"jsonrpc":"2.0","id":1,"method":"starknet_syncing","params":[]}' \
   | python3 -m json.tool
 ```
 
-Madara currently documents v0.10.2 as its default modern RPC route, while also supporting several earlier versioned routes.
+The immutable Stage-A image used in the 2026-09-04 N95 qualification exposes the bare RPC root plus versioned routes through v0.10.0. Its `/rpc/v0_10_2` route returns JSON-RPC `-32700 Parse error`, despite newer Madara documentation advertising v0.10.2. Stage-A tooling is pinned to the behaviour of the exact image under test rather than assuming current-main routing.
 
 ### Stop
 
