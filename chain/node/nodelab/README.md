@@ -251,6 +251,19 @@ bash stop-lite-agreement.sh
 
 Its checkpoint and log files are preserved under `lite-agreement-data/`.
 
+### Observer-loss fail-closed test
+
+After `verify-lite-agreement.sh` passes, the next safety gate deliberately stops only the node-lab observer and proves the lite verifier does not silently fall back to trusting the sequencer alone:
+
+```bash
+NODELAB_CONFIRM_OBSERVER_FAULT=YES \
+  bash test-lite-observer-fault.sh /path/to/clean/chain
+```
+
+The test requires `/readyz` and read-only `/rpc` to return HTTP `503` while only one of the two configured peers remains healthy. It then restarts the observer from its preserved named volume, requires the observer head to be at least its pre-fault confirmed height, and requires automatic restoration of `multi-peer-agreement` plus the full permanent-V2 verification suite.
+
+This is a reversible node-lab availability fault, not a consensus or slashing test. The sequencer and all live `SWAPPULSE_TESTNET` services remain running throughout.
+
 ## Stop
 
 ```bash
