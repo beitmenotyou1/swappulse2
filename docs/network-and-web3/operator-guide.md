@@ -6,7 +6,7 @@ description: >-
 
 # Community Operator Guide
 
-SwapPulse is being designed so that network services can be maintained by community members rather than by one permanent central operator. This document explains the current testnet, the staking model being built, and the path to permissionless operation.
+SwapPulse is being designed so that network services can be maintained by community members rather than by one permanent central operator. This document explains the current testnet, the live application-staking model and the path to permissionless network operation.
 
 ## Important: what is live today
 
@@ -14,8 +14,8 @@ The current `SWAPPULSE_TESTNET` is a Starknet Devnet-based development network. 
 
 That means:
 
-* community members can run compatible infrastructure, read replicas, monitoring, indexing and other network services;
-* the Phase 2 staking contracts can bond operators to service responsibilities;
+* community members can run the lite node, compatible infrastructure, monitoring, indexing and experimental full-observer services;
+* the live testnet `StakingPool` can bond operators to application and service responsibilities;
 * staking on the current testnet must **not** be described as securing decentralised consensus;
 * production token rewards are **not live** until the Phase 2 contracts, reward policy and governance parameters are deployed and published;
 * running a node today does not create an entitlement to future tokens or financial returns.
@@ -40,7 +40,7 @@ An operator is expected to:
 
 ## Staking design
 
-The undeployed Phase 2 `StakingPool` provides the economic bond for operator participation.
+The live testnet `StakingPool` provides an economic bond for community-operator participation. It is application staking, not consensus staking.
 
 ### Self-stake
 
@@ -74,7 +74,7 @@ A second undelegation cannot reset an existing unlock window. Operator self-stak
 
 ### Slashing
 
-The Phase 2 contract supports owner-governed testnet slashing while governance is still centralised.
+The current testnet contract supports owner-governed slashing while governance is still centralised.
 
 Current contract safety properties include:
 
@@ -124,7 +124,10 @@ The canonical SwapPulse deployment currently exposes:
 * raw Devnet RPC: localhost only, never public;
 * read-only public RPC gateway: `rpc.swappulse.org`;
 * authenticated write relay: `relay.swappulse.org`;
+* live lite node: localhost only on the reference host;
 * privileged relay/admin credentials: host-only environment files or a secret manager.
+
+The separate `SWAPPULSE_NODELAB_1` environment has one Madara testing sequencer and one full observer with independent state databases. It is a development proof, not a replacement for the live testnet or a permissionless validator network.
 
 Never expose the raw Devnet RPC to the Internet. Devnet includes administrative methods that are intentionally blocked by the public RPC gateway and transaction relay policy.
 
@@ -186,7 +189,7 @@ cd chain
 SCARB_BIN=scarb SNFORGE_BIN=snforge bash scripts/test-chain.sh
 ```
 
-Do not deploy a Phase 2 class if the Cairo build or Foundry suite fails.
+Do not deploy a contract class if the Cairo build or Foundry suite fails.
 
 ## Becoming a permissionless operator
 
@@ -211,8 +214,7 @@ The goal is that no special relationship with SwapPulse is required beyond satis
 
 Before the phrase "anyone can maintain the blockchain and earn rewards" is literally true, SwapPulse must complete these steps:
 
-* deploy and audit the OpenZeppelin-based token contract;
-* deploy and audit the staking pool;
+* complete external review of the deployed OpenZeppelin-based token and staking contracts before real value is introduced;
 * implement a deterministic reward distributor with replay/duplicate protection;
 * publish reward epochs, emissions, commission rules and supply limits;
 * replace central testnet slashing with governance/provable-fault rules;
@@ -226,9 +228,13 @@ Until those steps are complete, documentation and UI must describe rewards and d
 
 ## Related documentation
 
-* [chain overview](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/chain-overview) - Cairo architecture, privacy boundary and pinned toolchain
-* [mini PC migration guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/mini-pc-migration) - reference always-on runtime migration
-* [Zorin local relay guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/zorin-local-relay) - historical/local relay notes
+* [Full node and full observer](full-node.md), current Madara and node-lab status
+* [Lite node](lite-node.md), low-resource multi-RPC verification and local reads
+* [Read-only RPC gateway](rpc-gateway.md), public read hosting and method policy
+* [Transaction relay](transaction-relay.md), protected write hosting and policy controls
+* [Cairo and Starknet chain overview](chain-overview.md), contract architecture and privacy boundary
+* [Mini PC migration](mini-pc-migration.md), reference always-on runtime migration
+* [Zorin local relay](zorin-local-relay.md), historical local relay notes
 * `chain/deployments/swappulse-testnet.json` - public deployment metadata only
 
 SwapPulse's objective is permissionless participation without surrendering user custody or privacy. Operators should be able to earn for useful, verifiable work, while users keep control of their own accounts and sensitive identity data remains off-chain.

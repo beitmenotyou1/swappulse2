@@ -33,7 +33,6 @@ npx skills add base44/skills
 - Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
 - Run the relevant checks from `package.json` before finishing code changes.
 
-
 <!-- gitbook-agent-instructions:start -->
 
 ## GitBook Documentation Editing

@@ -6,6 +6,15 @@ description: Run the local chain, RPC gateway and transaction relay safely.
 
 This package turns the Milestone 1 contracts into a long-lived **development testnet**, without pretending that Starknet Devnet is the future sovereign SwapPulse L3.
 
+For component-specific explanations and hosting procedures, use:
+
+* [Full node and full observer](full-node.md)
+* [Lite node](lite-node.md)
+* [Read-only RPC gateway](rpc-gateway.md)
+* [Transaction relay](transaction-relay.md)
+
+The port numbers on this page are repository defaults. The current reference host maps the RPC gateway to `127.0.0.1:18080`, the transaction relay to `127.0.0.1:18081` and the live lite node to `127.0.0.1:18100` to avoid local service conflicts. Public hostnames remain unchanged.
+
 ## Security model
 
 There are three deliberately separate chain surfaces:

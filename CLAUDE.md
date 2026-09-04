@@ -2,7 +2,6 @@
 
 Follow the instructions in `AGENTS.md`.
 
-
 <!-- gitbook-agent-instructions:start -->
 
 ## GitBook Documentation Editing

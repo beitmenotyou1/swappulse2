@@ -8,27 +8,39 @@ This document defines the target architecture for community-operated SwapPulse n
 
 ## 1. Current reality
 
-The current `SWAPPULSE_TESTNET` uses a single Starknet Devnet runtime hosted on the always-on mini-server.
+There are two deliberately separate environments:
 
-Current infrastructure:
+1. The live `SWAPPULSE_TESTNET` uses a single Shardlabs Starknet Devnet runtime on the always-on mini-server. Its public read gateway, protected relay and lite node are live.
+2. The isolated `SWAPPULSE_NODELAB_1` uses a Madara testing sequencer and a separately synchronising full observer with different databases and a unique chain ID. The two-node consistency, V2 deployment, application exercise, permanent V2 cut-over and lite-node agreement tests passed on 4 September 2026.
 
-```
-Internet
-  |
-  +--> https://rpc.swappulse.org/rpc
-  |       read-only RPC gateway
-  |
-  +--> https://relay.swappulse.org
-          authenticated / allowlisted tx relay
-                  |
-                  v
-           Starknet Devnet
-           localhost:5050
-```
+Live infrastructure:
+
+| Public surface                  | Local service                                            | Upstream                                        |
+| ------------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
+| `https://rpc.swappulse.org/rpc` | Read-only RPC gateway on loopback                        | Private Starknet Devnet RPC on `127.0.0.1:5050` |
+| `https://relay.swappulse.org`   | Authenticated, allowlisted transaction relay on loopback | Private Starknet Devnet RPC on `127.0.0.1:5050` |
+
+Node-lab infrastructure:
+
+| Component                | Host endpoint                  | Connection                                       |
+| ------------------------ | ------------------------------ | ------------------------------------------------ |
+| Madara testing sequencer | `127.0.0.1:19950`              | Produces isolated node-lab blocks                |
+| Madara full observer     | `127.0.0.1:19951`              | Synchronises through the internal feeder gateway |
+| Feeder gateway           | Docker bridge port `8080` only | Never published to the host or Internet          |
+| Lite agreement verifier  | `127.0.0.1:18101`              | Compares sequencer and observer state            |
+
+The node-lab observer has no sequencer or deployer private key and reproduced the final V2 state from its own database. Both nodes currently run on the same physical mini-server, and only the testing sequencer produces blocks. This is independent state synchronisation, not independent operators or permissionless consensus.
 
 The current community `StakingPool` is an on-chain economic/accountability layer for SwapPulse operator services. **It is not currently decentralised block consensus.**
 
 A second machine cannot become a real consensus validator merely by running the existing Docker Compose file.
+
+Dedicated hosting guides:
+
+* [Full node and full observer](full-node.md)
+* [Lite node](lite-node.md)
+* [Read-only RPC gateway](rpc-gateway.md)
+* [Transaction relay](transaction-relay.md)
 
 ## 2. Goal
 
@@ -161,6 +173,8 @@ Status: complete baseline.
 
 ### Phase 1: reproducible observer package
 
+Status: working on the same-host node lab; independent physical-host/operator deployment remains pending.
+
 Goal: make it easy for another machine to reproduce and independently verify the public chain state/read surface.
 
 Deliverables:
@@ -174,9 +188,11 @@ Deliverables:
 * Pi/mini-PC benchmark harness;
 * documentation for backup/upgrade/recovery.
 
-Success criterion: an independent machine can reproduce/verify the expected state without being given the privileged relay/owner keys.
+The current node-lab observer already runs without relay, owner, verifier, sequencer or deployer keys and reproduces the expected state. The remaining success criterion is to repeat that result on an independently administered physical machine and prove restart, offline catch-up and upgrade behaviour.
 
 ### Phase 2: lite client
+
+Status: v0.1 prototype is runnable. It verifies chain and contract pins and detects multi-peer agreement or disagreement. Cryptographic storage-proof or consensus-proof verification remains future work.
 
 Goal: low-resource client that can verify enough network information to avoid blindly trusting a single SwapPulse RPC.
 
@@ -190,6 +206,8 @@ Deliverables:
 * Pi 4/5 package.
 
 ### Phase 3: multi-operator development network
+
+Status: the one-sequencer/one-observer Madara topology is proven on one host. Multiple independent operators and consensus/finality are not yet implemented.
 
 Goal: replace the single-runtime assumption with an actual multi-node network architecture.
 
