@@ -1,0 +1,33 @@
+name: swappulse-nodelab-1-stage-d-remote
+
+services:
+  observer:
+    image: ${MADARA_IMAGE:?Set MADARA_IMAGE to the reviewed immutable digest}
+    restart: "no"
+    command:
+      - --name
+      - SwapPulse-NodeLab-Remote-Observer
+      - --full
+      - --base-path
+      - /var/lib/madara
+      - --preset
+      - devnet
+      - --chain-config-override
+      - chain_id=${NODELAB_CHAIN_ID:-SWAPPULSE_NODELAB_1},chain_name=${NODELAB_CHAIN_NAME:-SwapPulse_NodeLab_1},feeder_gateway_url=${NODELAB_SEQUENCER_GATEWAY_URL:?Set private primary gateway URL}/feeder_gateway/,gateway_url=${NODELAB_SEQUENCER_GATEWAY_URL:?Set private primary gateway URL}/gateway/,block_time=${NODELAB_BLOCK_TIME:-2s}
+      - --no-l1-sync
+      - --rpc-external
+      - --rpc-port
+      - "9944"
+    volumes:
+      - remote-observer-data:/var/lib/madara
+    ports:
+      - "${NODELAB_REMOTE_TAILSCALE_IP:?Set this host Tailscale IPv4}:${NODELAB_REMOTE_OBSERVER_RPC_PORT:-19961}:9944"
+    mem_limit: ${NODELAB_REMOTE_OBSERVER_MEMORY_LIMIT:-2g}
+    cpus: ${NODELAB_REMOTE_OBSERVER_CPU_LIMIT:-2.0}
+    pids_limit: ${NODELAB_REMOTE_PIDS_LIMIT:-512}
+    stop_grace_period: ${NODELAB_REMOTE_STOP_GRACE_PERIOD:-330s}
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  remote-observer-data:
