@@ -35,3 +35,11 @@ base44/.app.jsonc
 # SwapPulse private testnet runtime state / local test signers
 chain/infra/data/
 chain/infra/secrets/
+
+# Node/lab local runtime evidence and checkpoints. Public milestone summaries are
+# tracked under chain/node/**/results instead of committing mutable runtime data.
+chain/node/lite/data/
+chain/node/nodelab/authority-bootstrap.json
+chain/node/nodelab/v2-exercise.json
+chain/node/nodelab/v2-cutover.json
+chain/node/nodelab/lite-agreement-data/
