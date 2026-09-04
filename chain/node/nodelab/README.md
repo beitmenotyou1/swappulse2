@@ -264,6 +264,19 @@ The test requires `/readyz` and read-only `/rpc` to return HTTP `503` while only
 
 This is a reversible node-lab availability fault, not a consensus or slashing test. The sequencer and all live `SWAPPULSE_TESTNET` services remain running throughout.
 
+### Sequencer-loss fail-closed test
+
+After the observer-loss test passes and two-peer agreement has recovered, run the mirror availability fault:
+
+```bash
+NODELAB_CONFIRM_SEQUENCER_FAULT=YES \
+  bash test-lite-sequencer-fault.sh /path/to/clean/chain
+```
+
+This stops only the node-lab sequencer while leaving the full observer running. The test requires the lite verifier to fail closed with one healthy peer, requires `/readyz` and read-only `/rpc` to return HTTP `503`, then restarts the sequencer from its preserved named volume. The sequencer must return at or above its pre-fault confirmed height, the observer must remain at or above its own pre-fault height, and the lite verifier must automatically recover `multi-peer-agreement` before the full permanent-V2 verification suite is rerun.
+
+This tests availability and trust-quorum loss. It does not prove Byzantine consensus safety, validator failover, leader election or independent physical operators.
+
 ## Stop
 
 ```bash
