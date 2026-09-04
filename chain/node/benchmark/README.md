@@ -17,10 +17,13 @@ Start the lite node first, then run:
 cd chain/node/benchmark
 NODE_ROLE=lite \
 NODE_ENDPOINT=http://127.0.0.1:18100 \
+CONTAINER_NAME=swappulse-lite-node-swappulse-lite-1 \
 DURATION_SECONDS=3600 \
 OUTPUT=lite-1h.json \
 node benchmark.mjs
 ```
+
+`CONTAINER_NAME` is optional, but strongly recommended for Docker-hosted nodes. Benchmark schema v2 records the actual node container's CPU, RAM, network I/O and block I/O in addition to host-level measurements.
 
 For a multi-day soak test use a larger duration, for example 259200 seconds for three days.
 
@@ -32,6 +35,7 @@ After the client lab is running:
 cd chain/node/benchmark
 NODE_ROLE=full \
 NODE_ENDPOINT=http://127.0.0.1:19944/rpc/v0_10_2/ \
+CONTAINER_NAME=swappulse-full-lab-madara-full-lab-1 \
 DURATION_SECONDS=3600 \
 OUTPUT=madara-full-1h.json \
 node benchmark.mjs
@@ -42,29 +46,29 @@ node benchmark.mjs
 Each sample includes:
 
 - host load averages;
-- CPU busy percentage between samples;
+- host CPU busy percentage between samples;
 - available RAM;
 - total/free/cached swap where Linux exposes it;
-- CPU temperature where a common thermal sysfs path exists;
+- CPU temperature where a sensible thermal sysfs value is available;
+- Linux PSI CPU/memory/I/O pressure where supported;
 - disk total/free capacity for `DISK_PATH`;
 - RPC/status latency;
-- node role-specific health/sync information.
+- node role-specific health/sync information;
+- optional Docker container CPU, RAM, network I/O, block I/O and PID count.
 
-The final report includes availability, average/peak CPU, minimum available RAM, minimum swap-free, maximum temperature and average/maximum RPC latency.
+The final report includes availability, average/peak host CPU, minimum available RAM, minimum swap-free, maximum valid temperature, average/maximum RPC latency, Docker container averages/peaks and I/O deltas, plus peak PSI memory/I/O pressure.
 
 ## What this first harness does not yet measure
 
-The first version does not yet calculate:
+Benchmark schema v2 now adds Docker container and Linux PSI measurements. It still does not directly calculate:
 
-- disk write amplification/I/O operations per second;
-- network bytes/sec by process/container;
-- Madara database growth rate directly;
+- disk write amplification or IOPS;
+- per-interval container network throughput rates (the report stores cumulative deltas across the run);
+- Madara database growth rate by database directory;
 - blocks/sec catch-up rate from logs;
-- power draw;
-- kernel PSI memory/CPU/I/O pressure;
-- Docker container-specific RSS/CPU independent of the host.
+- power draw.
 
-Those are planned for the next benchmark iteration after the first live measurements tell us which signals are most useful.
+Those remain planned for the full-node qualification phase.
 
 ## Support rule
 
@@ -81,3 +85,5 @@ Before a full-node hardware profile becomes supported it must also pass:
 - state/hash comparison against an independent node.
 
 The benchmark JSON should be kept with the node release/test evidence so support claims are reproducible.
+
+The first reference result is documented in `results/N95_LITE_10M_2026-09-04.md`. It is a short-run pass, not a production support claim.
