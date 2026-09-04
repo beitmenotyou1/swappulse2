@@ -178,6 +178,8 @@ Success criterion: an independent machine can reproduce/verify the expected stat
 
 Goal: low-resource client that can verify enough network information to avoid blindly trusting a single SwapPulse RPC.
 
+**2026-09-04 node-lab update:** the isolated `SWAPPULSE_NODELAB_1` lite verifier reached `multi-peer-agreement` across the Madara testing sequencer and separately synchronising full observer, with 2/2 contract-pin quorum and permanent V2 state independently reproduced through both RPCs. Deliberate loss of either observer or sequencer forced `/readyz` and read-only `/rpc` to fail closed with HTTP `503`; restoring the affected node from its preserved database automatically restored the two-peer trust condition. This closes the same-host Stage-C availability fault pair. It does not prove independent physical operators or permissionless consensus.
+
 Deliverables:
 
 - multiple peer/RPC support;
@@ -190,6 +192,8 @@ Deliverables:
 ### Phase 3: multi-operator development network
 
 Goal: replace the single-runtime assumption with an actual multi-node network architecture.
+
+The next concrete gate is Stage D: move a full observer to a second physical host over a private authenticated transport, reproduce a primary block/hash checkpoint plus the permanent V2 deployment without any privileged signing key, and then replace the same-host observer in the lite verifier with that remote state source. Physical-host independence can only be claimed after that succeeds. Independent-operator decentralisation requires a separately controlled operator as a later gate.
 
 Before implementation, select/validate the appropriate Starknet appchain/rollup stack and consensus/settlement model.
 
