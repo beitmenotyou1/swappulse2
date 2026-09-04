@@ -27,6 +27,23 @@ docker compose -p "$PROJECT" \
   --env-file "$HERE/.env.image" \
   -f "$HERE/docker-compose.yml" ps sequencer
 
+printf '\nWaiting for loopback sequencer RPC on 127.0.0.1:19950...\n'
+READY=0
+for _ in $(seq 1 30); do
+  if curl -fsS --max-time 2 http://127.0.0.1:19950/health >/dev/null 2>&1; then
+    READY=1
+    break
+  fi
+  sleep 2
+done
+if [ "$READY" -ne 1 ]; then
+  printf 'Sequencer container started but loopback RPC did not become ready.\n'
+  printf 'Recent sequencer logs:\n'
+  docker logs --tail 80 swappulse-nodelab-1-sequencer-1 2>&1 || true
+  exit 1
+fi
+printf 'Sequencer RPC: ready\n'
+
 printf '\nLive SwapPulse services are separate and were not modified:\n'
 docker ps --format '{{.Names}}\t{{.Status}}' | \
   grep -E 'infra-(devnet|rpc-gateway|tx-relay)-1|swappulse-lite-node' || true
