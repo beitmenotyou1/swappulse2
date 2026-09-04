@@ -102,6 +102,8 @@ Current upstream Madara later merged shutdown hardening that waits for in-flight
 
 The next recovery test must use a fresh Compose project/volume and a reviewed post-hardening Madara image resolved to an immutable digest. The helper scripts accept `SWAPPULSE_FULL_LAB_PROJECT`, allowing a project such as `swappulse-full-lab-v2` to run without touching the preserved `swappulse-full-lab_madara-full-lab-data` evidence volume.
 
+That fresh-volume retest was completed on 2026-09-04 with `v0.11.0-alpha.9` pinned to digest `sha256:3c931fa515bbd3760fd5cbc0bcdceb557d3edbd44bec0231cdf52dd6abb475f6`. The node saved a pre-stop confirmed head of `6424`, was stopped while actively syncing, restarted from the same `swappulse-full-lab-v2` volume, and advanced to at least `8681` during the guarded restart window with no global state-root mismatch. Treat this as a short-run Stage-A restart/recovery PASS, not a full-history production support claim. Full evidence is in `results/N95_STAGE_A_V2_RESTART_RECOVERY_PASS_2026-09-04.md`.
+
 ## Stage B — custom SwapPulse Madara appchain laboratory
 
 This is where full-node work becomes relevant to SwapPulse itself.
