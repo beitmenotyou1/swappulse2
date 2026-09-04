@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
-# Resolve the current official Madara image to an immutable digest for lab use.
-# Pulling :latest is allowed only as the discovery step. The Compose lab then
-# uses the resolved ghcr.io/...@sha256:... value from .env.image.
+# Resolve a tagged official Madara image to an immutable digest for lab use.
+# Stage-A must not benchmark a mutable :latest tag. The default candidate is a
+# post-shutdown-hardening prerelease; operators can override it explicitly with
+# MADARA_DISCOVERY_TAG for a later reviewed tag.
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-IMAGE_TAG="ghcr.io/madara-alliance/madara:latest"
+IMAGE_TAG="${MADARA_DISCOVERY_TAG:-ghcr.io/madara-alliance/madara:v0.11.0-alpha.9}"
 OUT="$HERE/.env.image"
 
-printf '=== pulling current official Madara image ===\n'
+printf '=== pulling reviewed Madara candidate image ===\n'
+printf 'tag: %s\n' "$IMAGE_TAG"
 if ! docker pull "$IMAGE_TAG"; then
   printf 'Failed to pull %s\n' "$IMAGE_TAG"
   exit 1
