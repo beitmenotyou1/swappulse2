@@ -37,7 +37,7 @@ say
 say '=== required Madara CLI surface ==='
 if [ -n "$IMAGE" ] && docker image inspect "$IMAGE" >/dev/null 2>&1; then
   HELP="$(docker run --rm "$IMAGE" --help 2>&1 || true)"
-  for flag in --devnet --full --chain-config-override --gateway --rpc-external --rpc-port --private-key --no-l1-sync; do
+  for flag in --devnet --full --base-path --chain-config-override --gateway --rpc-external --rpc-port --private-key --no-l1-sync; do
     if printf '%s\n' "$HELP" | grep -Fq -- "$flag"; then
       say "$flag: present"
     else
@@ -78,6 +78,27 @@ do
     say "$name: healthy"
   else
     fail "$name health check failed"
+  fi
+done
+
+say
+say '=== persistence / loopback wiring ==='
+BASE_PATH_COUNT="$(grep -c -- '^      - --base-path$' "$HERE/docker-compose.yml" 2>/dev/null || true)"
+if [ "$BASE_PATH_COUNT" = '2' ] && [ "$(grep -c -- '^      - /var/lib/madara$' "$HERE/docker-compose.yml" 2>/dev/null || true)" = '2' ]; then
+  say 'Madara base paths: persistent volume path wired for both nodes'
+else
+  fail 'both nodes must explicitly use --base-path /var/lib/madara'
+fi
+if grep -Fq 'internal: true' "$HERE/docker-compose.yml" 2>/dev/null; then
+  fail 'node-lab bridge must not be internal:true because host loopback RPC publication would be isolated'
+else
+  say 'Docker network: host-loopback-capable bridge'
+fi
+for mapping in '127.0.0.1:${NODELAB_SEQUENCER_RPC_PORT:-19950}:9944' '127.0.0.1:${NODELAB_OBSERVER_RPC_PORT:-19951}:9944'; do
+  if grep -Fq "$mapping" "$HERE/docker-compose.yml" 2>/dev/null; then
+    say "loopback mapping present: $mapping"
+  else
+    fail "missing loopback RPC mapping: $mapping"
   fi
 done
 
