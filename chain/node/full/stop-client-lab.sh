@@ -4,14 +4,15 @@
 # The named volume is preserved for restart/recovery testing.
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+PROJECT="${SWAPPULSE_FULL_LAB_PROJECT:-swappulse-full-lab}"
 
 if [ ! -f "$HERE/.env" ] || [ ! -f "$HERE/.env.image" ]; then
   printf 'Missing .env or .env.image. Refusing to guess Compose configuration.\n'
   exit 1
 fi
 
-printf 'Stopping only Compose project swappulse-full-lab (volume preserved).\n'
-docker compose -p swappulse-full-lab \
+printf 'Stopping only Compose project %s (volume preserved).\n' "$PROJECT"
+docker compose -p "$PROJECT" \
   --env-file "$HERE/.env" \
   --env-file "$HERE/.env.image" \
   -f "$HERE/docker-compose.client-lab.yml" \
