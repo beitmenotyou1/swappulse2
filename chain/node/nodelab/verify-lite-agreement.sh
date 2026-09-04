@@ -32,11 +32,14 @@ say "=== node-lab lite status ==="
 STATUS="$(curl -fsS --max-time 15 "$ENDPOINT/status" 2>/dev/null || true)"
 printf '%s\n' "$STATUS" | python3 -m json.tool 2>/dev/null || printf '%s\n' "$STATUS"
 
-if ! printf '%s' "$STATUS" | python3 - "$EXPECTED_CHAIN_ID" <<'PY'
+STATUS_FILE="$(mktemp)"
+printf '%s' "$STATUS" > "$STATUS_FILE"
+if ! python3 - "$STATUS_FILE" "$EXPECTED_CHAIN_ID" <<'PY'
 import json, sys
-expected = sys.argv[1].lower()
+status_file, expected = sys.argv[1], sys.argv[2].lower()
 try:
-    s = json.load(sys.stdin)
+    with open(status_file, encoding='utf-8') as f:
+        s = json.load(f)
 except Exception:
     raise SystemExit(1)
 checks = [
@@ -61,6 +64,7 @@ PY
 then
   fail "lite status did not prove two healthy pinned peers in multi-peer agreement"
 fi
+rm -f "$STATUS_FILE"
 
 say
 say "=== chain id through lite read-only RPC ==="
