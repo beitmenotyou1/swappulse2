@@ -5,6 +5,8 @@
 # live-service health, and stops Madara automatically if guard thresholds trip.
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+PROJECT="${SWAPPULSE_FULL_LAB_PROJECT:-swappulse-full-lab}"
+CONTAINER="${PROJECT}-madara-full-lab-1"
 DURATION_SECONDS="${STAGE_A_DURATION_SECONDS:-900}"
 INTERVAL_SECONDS="${STAGE_A_INTERVAL_SECONDS:-15}"
 MIN_MEM_KIB="${STAGE_A_MIN_MEM_KIB:-1572864}" # 1.5 GiB
@@ -12,14 +14,14 @@ MAX_MEM_PSI_AVG10="${STAGE_A_MAX_MEM_PSI_AVG10:-10.0}"
 FAIL=0
 
 stop_lab() {
-  docker compose -p swappulse-full-lab \
+  docker compose -p "$PROJECT" \
     --env-file "$HERE/.env" \
     --env-file "$HERE/.env.image" \
     -f "$HERE/docker-compose.client-lab.yml" \
     down >/dev/null 2>&1 || true
 }
 
-trap 'printf "\nInterrupted. Stopping only swappulse-full-lab...\n"; stop_lab; exit 130' INT TERM
+trap 'printf "\nInterrupted. Stopping only %s...\n" "$PROJECT"; stop_lab; exit 130' INT TERM
 
 check_http() {
   local url="$1"
@@ -61,7 +63,7 @@ while :; do
 
   MEM="$(mem_available_kib)"
   PSI="$(memory_psi_avg10)"
-  CONTAINER_STATE="$(docker inspect -f '{{.State.Status}}' swappulse-full-lab-madara-full-lab-1 2>/dev/null || true)"
+  CONTAINER_STATE="$(docker inspect -f '{{.State.Status}}' "$CONTAINER" 2>/dev/null || true)"
 
   printf '[%4ss] container=%s mem_available_kib=%s memory_psi_avg10=%s\n' \
     "$ELAPSED" "${CONTAINER_STATE:-missing}" "${MEM:-unknown}" "${PSI:-unknown}"
@@ -104,10 +106,10 @@ while :; do
 done
 
 printf '\n=== final Madara container snapshot ===\n'
-docker stats --no-stream swappulse-full-lab-madara-full-lab-1 2>/dev/null || true
+docker stats --no-stream "$CONTAINER" 2>/dev/null || true
 
 printf '\n=== recent Madara logs ===\n'
-docker logs --tail 80 swappulse-full-lab-madara-full-lab-1 2>&1 || true
+docker logs --tail 80 "$CONTAINER" 2>&1 || true
 
 if [ "$FAIL" -ne 0 ]; then
   printf '\nStage-A guard failed. Stopping only Madara lab now.\n'
