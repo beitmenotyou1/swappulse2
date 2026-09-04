@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "network": "SWAPPULSE_NODELAB_1",
+  "network_generation": "madara-nodelab-v2",
+  "chain_id": "0x5357415050554c53455f4e4f44454c41425f31",
+  "rpc_peers": [
+    "http://127.0.0.1:19950",
+    "http://127.0.0.1:19951"
+  ],
+  "expected": {
+    "verification_mode": "V2",
+    "verification_v2_required": true,
+    "contracts": {
+      "identity_registry": {
+        "address": "0x717ec7ddc5d87e0e8fd693ea5c93df7ef23ed80d11bc4e7d6086f959a531696",
+        "class_hash": "0x3179723520ee8e08450cf31e9c4c1e9b7c6491959f97bf5ce0fba020a84d1f1"
+      },
+      "native_token": {
+        "address": "0x2986d89c16806cd8f7347b9ca960eb38589d26bdcd68fd4f98f246e2a7c13e6",
+        "class_hash": "0x8e4030b0fa645e0ad92265a382901681d584cc50a35f07d5a27b170e7a444e"
+      },
+      "card_nft": {
+        "address": "0x2c42a168f1e83030d0851fb911b803b49219bf3bb4470512637e673d69db0ba",
+        "class_hash": "0x1f921907ef4e4ef40aec02b3b0863bf789849ef1d3c5a6fab2ff675989efb87"
+      },
+      "proof_of_usership": {
+        "address": "0x1be5cf5d304085b14db171b44208c2f6356d84dc9de56141266cbe05a385854",
+        "class_hash": "0x66cb61c761fdc756d0d8984c51c8d6e8389d7b58f7a11228cd7f7aeec81a256"
+      },
+      "staking_pool": {
+        "address": "0x44eea955000097144598f6ba1f7d0b47ad5531b217f54963b210ffa74ab68c3",
+        "class_hash": "0x69d90f5e6997d905e6418622553aad7ec624f151b18d5efd4dbc999def2bbaf"
+      },
+      "bridge_adapter": {
+        "address": "0x4b314af54ab47ff455668d43c3c92ee73bc2e83918d2b886fd5ef79d7ba6ed4",
+        "class_hash": "0x502a8c9953ed362307784df498bcfee81953337610e9560574915ecae9b53fc"
+      }
+    }
+  },
+  "trust": {
+    "current_execution_runtime": "Madara v0.11.0-alpha.9, immutable digest sha256:3c931fa515bbd3760fd5cbc0bcdceb557d3edbd44bec0231cdf52dd6abb475f6",
+    "full_node_sync_available": true,
+    "observer_state_independent": true,
+    "peer_operator_independence": false,
+    "consensus_decentralised": false,
+    "note": "The sequencer and full observer use separate databases and the observer independently synchronises and reproduces blocks/state. They currently run on the same physical mini-server, so this is multi-source state agreement rather than independent-operator decentralisation or permissionless consensus."
+  }
+}
