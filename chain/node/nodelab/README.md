@@ -138,23 +138,36 @@ Only after this passes should we deploy the Cairo V2 contracts.
 
 ## Cairo V2 deployment order
 
-The node-lab must use the same audited source contracts, but a completely new deployment manifest and fresh node-lab account:
+The node-lab must use the same audited source contracts, but a completely new deployment manifest and fresh node-lab authority accounts.
 
-1. SwapPulseAccount class;
-2. IdentityRegistry;
-3. SWPX NativeToken;
-4. CardNft;
-5. ProofOfUsership;
-6. StakingPool;
-7. BridgeAdapter.
+Madara's deterministic devnet bootstrap accounts are deliberately public fixtures. They may be used only as a one-time funding/declaration bootstrap. They must not become the IdentityRegistry owner or long-lived verifier. `bootstrap-authorities.sh` uses the first fixture without displaying its private key to declare `SwapPulseAccount`, fund two future addresses, then deploys fresh SwapPulse accounts derived from `.env.local` for the node-lab deployer/owner and verifier.
 
-After deployment, generate a dedicated manifest such as:
+Use a clean exported `chain/` workspace from `origin/main`, install the chain tooling there and run the full pinned Cairo security suite before bootstrap/deployment. Then:
 
-```text
-chain/deployments/swappulse-nodelab-1.json
+```bash
+bash bootstrap-authorities.sh /path/to/clean/chain
+bash deploy-v2.sh /path/to/clean/chain
 ```
 
-Then independently query both sequencer and observer for every deployed address/class hash. Do not import node-lab addresses into live `ChainNetworkConfig`.
+Deployment order:
+
+1. declare `SwapPulseAccount` through the public one-time bootstrap;
+2. deploy fresh node-lab owner/deployer `SwapPulseAccount`;
+3. deploy fresh node-lab verifier `SwapPulseAccount`;
+4. declare the remaining audited V2 classes using the fresh deployer;
+5. deploy IdentityRegistry;
+6. deploy SWPX NativeToken;
+7. deploy CardNft;
+8. deploy ProofOfUsership;
+9. deploy StakingPool;
+10. deploy BridgeAdapter;
+11. authorise the fresh verifier and bridge relationships;
+12. generate `chain/deployments/swappulse-nodelab-1.json`;
+13. verify the complete manifest first through the sequencer and then independently through the observer.
+
+`deploy-v2.sh` deliberately does **not** invoke the irreversible `require_verification_v2()` switch. The node-lab first has to exercise a genuine V2 identity/assurance transaction through the freshly deployed contracts, then the one-way cut-over can be tested separately.
+
+Do not import node-lab addresses into live `ChainNetworkConfig`.
 
 ## Lite-node integration
 
