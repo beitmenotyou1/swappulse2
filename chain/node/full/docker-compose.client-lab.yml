@@ -1,0 +1,26 @@
+services:
+  madara-full-lab:
+    image: ${MADARA_IMAGE:?Set MADARA_IMAGE to a verified immutable Madara image digest}
+    restart: unless-stopped
+    command:
+      - --name
+      - SwapPulse-Full-Client-Lab
+      - --full
+      - --base-path
+      - /var/lib/madara
+      - --network
+      - ${MADARA_NETWORK:-sepolia}
+      - --l1-endpoint
+      - ${MADARA_L1_ENDPOINT:?Set MADARA_L1_ENDPOINT to a private Ethereum endpoint}
+      - --rpc-external
+      - --rpc-port
+      - "9944"
+    volumes:
+      - madara-full-lab-data:/var/lib/madara
+    ports:
+      - "127.0.0.1:${SWAPPULSE_FULL_LAB_RPC_PORT:-19944}:9944"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  madara-full-lab-data:
