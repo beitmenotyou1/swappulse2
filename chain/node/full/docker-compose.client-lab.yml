@@ -1,3 +1,5 @@
+name: swappulse-full-lab
+
 services:
   madara-full-lab:
     image: ${MADARA_IMAGE:?Set MADARA_IMAGE to a verified immutable Madara image digest}
@@ -11,7 +13,7 @@ services:
       - --network
       - ${MADARA_NETWORK:-sepolia}
       - --l1-endpoint
-      - ${MADARA_L1_ENDPOINT:?Set MADARA_L1_ENDPOINT to a private Ethereum endpoint}
+      - ${MADARA_L1_ENDPOINT:?Set MADARA_L1_ENDPOINT to an Ethereum Sepolia endpoint}
       - --rpc-external
       - --rpc-port
       - "9944"
