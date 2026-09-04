@@ -118,6 +118,28 @@ This is not yet a cryptographic Starknet light client. In particular it does not
 
 It is also not a validator and cannot produce blocks.
 
+## First live mini-server verification
+
+On 4 September 2026, lite-node v0.1 was started on the reference Intel N95 mini-server alongside the existing frozen V2 Devnet, RPC gateway and transaction relay without restarting or modifying those services.
+
+Observed live evidence:
+
+- process/container health: healthy;
+- canonical upstream: `https://rpc.swappulse.org/rpc`;
+- chain ID: `0x534e5f5345504f4c4941`;
+- observed block height: 51;
+- observed common block hash: `0x308206d5becb7b7cf0d37a4175136a35d34b616873fc7d96b5d0968d025b463`;
+- frozen V2 contract pins: verified;
+- local read-only RPC: working;
+- `starknet_addInvokeTransaction`: rejected with HTTP 403 / `METHOD_NOT_ALLOWED`;
+- trust mode: `single-peer-degraded`;
+- peer agreement: false;
+- independently verified: false.
+
+That result is the expected security posture while only one genuine SwapPulse RPC/node exists. The block height/hash above are test evidence from that run, not permanent network constants.
+
+Use `verify-lite-live.sh` for the repeatable read-only verification sequence.
+
 ## Next lite-node milestones
 
 1. Run against two genuinely independent SwapPulse full-node RPCs.
