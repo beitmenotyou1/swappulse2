@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { Account, CallData, cairo, ec, hash } from 'starknet';
 import {
   loadArtifacts,
@@ -125,7 +127,7 @@ if (deployerIdentity.address === bootstrapAddress || verifierIdentity.address ==
 const deployer = await deployFreshAccount(deployerIdentity, 'deployer');
 const verifier = await deployFreshAccount(verifierIdentity, 'verifier');
 
-console.log(JSON.stringify({
+const result = {
   schema_version: 1,
   kind: 'SWAPPULSE_NODELAB_AUTHORITY_BOOTSTRAP',
   ok: true,
@@ -144,4 +146,12 @@ console.log(JSON.stringify({
     verifier_deploy: verifier.deploy_tx,
   },
   note: 'No private key is printed or written. The public Madara devnet fixture is used only for one-time funding/declaration bootstrap.',
-}, null, 2));
+};
+
+const resultFile = String(process.env.NODELAB_AUTHORITY_RESULT_FILE || '').trim();
+if (resultFile) {
+  const target = path.resolve(resultFile);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o644 });
+}
+console.log(JSON.stringify(result, null, 2));
