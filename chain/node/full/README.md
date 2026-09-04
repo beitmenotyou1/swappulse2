@@ -82,7 +82,7 @@ curl -fsS http://127.0.0.1:19944/rpc/v0_10_0 \
   | python3 -m json.tool
 ```
 
-The immutable Stage-A image used in the 2026-09-04 N95 qualification exposes the bare RPC root plus versioned routes through v0.10.0. Its `/rpc/v0_10_2` route returns JSON-RPC `-32700 Parse error`, despite newer Madara documentation advertising v0.10.2. Stage-A tooling is pinned to the behaviour of the exact image under test rather than assuming current-main routing.
+The immutable Stage-A image used in the first 2026-09-04 N95 qualification exposes the bare RPC root plus versioned routes through v0.10.0. Its `/rpc/v0_10_2` route returns JSON-RPC `-32700 Parse error`, despite newer Madara documentation advertising v0.10.2. The reusable Stage-A tooling now uses the bare user-RPC root so it remains compatible across reviewed image versions; explicit versioned routes are still useful for protocol-specific checks.
 
 ### Stop
 
@@ -91,6 +91,16 @@ docker compose --env-file .env -f docker-compose.client-lab.yml down
 ```
 
 Do not delete the volume until benchmark data/state-recovery tests are complete.
+
+### 2026-09-04 restart-recovery finding
+
+The April 2026 image used for the first N95 qualification reopened its preserved Sepolia database at confirmed block `#77540`, but failed immediately after restart when applying blocks `77541..77542` with `Global state root mismatch`.
+
+Treat that preserved database volume as forensic evidence only. Do not resume it, migrate it in place, or use it for benchmark/support claims.
+
+Current upstream Madara later merged shutdown hardening that waits for in-flight global Rayon trie work before the final database flush. The first N95 image predates that hardening. This is strongly consistent with the observed failure, but does not by itself prove the exact root cause.
+
+The next recovery test must use a fresh Compose project/volume and a reviewed post-hardening Madara image resolved to an immutable digest. The helper scripts accept `SWAPPULSE_FULL_LAB_PROJECT`, allowing a project such as `swappulse-full-lab-v2` to run without touching the preserved `swappulse-full-lab_madara-full-lab-data` evidence volume.
 
 ## Stage B — custom SwapPulse Madara appchain laboratory
 
