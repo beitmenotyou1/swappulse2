@@ -16,6 +16,11 @@ services:
       - ${MADARA_NETWORK:-sepolia}
       - --l1-endpoint
       - ${MADARA_L1_ENDPOINT:?Set MADARA_L1_ENDPOINT to an Ethereum Sepolia endpoint}
+      # Current Madara requires either an oracle provider or a fixed STRK/ETH
+      # quote for its gas-price worker. Stage A uses a fixed lab-only quote so
+      # hardware qualification does not depend on a third-party price oracle.
+      - --strk-per-eth
+      - ${MADARA_STRK_PER_ETH:-1.0}
       - --rpc-external
       - --rpc-port
       - "9944"
