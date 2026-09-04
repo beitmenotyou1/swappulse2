@@ -8,6 +8,8 @@ services:
       - --name
       - SwapPulse-NodeLab-Sequencer
       - --devnet
+      - --base-path
+      - /var/lib/madara
       - --devnet-contracts
       - ${NODELAB_DEVNET_CONTRACTS:-5}
       - --chain-config-override
@@ -39,6 +41,8 @@ services:
       - --name
       - SwapPulse-NodeLab-Observer
       - --full
+      - --base-path
+      - /var/lib/madara
       - --preset
       - devnet
       - --chain-config-override
@@ -64,7 +68,10 @@ services:
 
 networks:
   nodelab:
-    internal: true
+    # Normal bridge is required for loopback-published RPC ports. External
+    # inbound access is still prevented because both RPC mappings explicitly
+    # bind to 127.0.0.1. The gateway itself is not host-published.
+    driver: bridge
 
 volumes:
   sequencer-data:
