@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+
+# Deliberately stop only the SWAPPULSE_NODELAB_1 full observer, prove the
+# two-peer lite verifier fails closed, then restore the observer from its
+# preserved database and require automatic return to multi-peer agreement.
+#
+# This script does not stop the sequencer, the live SWAPPULSE_TESTNET services,
+# or the existing lite node on 127.0.0.1:18100.
+
+HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+CHAIN_ROOT="${1:-${NODELAB_CHAIN_ROOT:-}}"
+PROJECT="swappulse-nodelab-1"
+LITE="http://127.0.0.1:${NODELAB_LITE_PORT:-18101}"
+SEQ="http://127.0.0.1:${NODELAB_SEQUENCER_RPC_PORT:-19950}"
+OBS="http://127.0.0.1:${NODELAB_OBSERVER_RPC_PORT:-19951}"
+FAIL=0
+
+say() { printf '%s\n' "$*"; }
+fail() { printf 'FAIL: %s\n' "$*"; FAIL=1; }
+
+if [ "${NODELAB_CONFIRM_OBSERVER_FAULT:-}" != "YES" ]; then
+  printf 'Refusing deliberate observer fault without NODELAB_CONFIRM_OBSERVER_FAULT=YES.\n'
+  exit 1
+fi
+if [ -z "$CHAIN_ROOT" ]; then
+  printf 'Usage: NODELAB_CONFIRM_OBSERVER_FAULT=YES bash test-lite-observer-fault.sh /path/to/clean/chain\n'
+  exit 1
+fi
+for FILE in "$HERE/.env.local" "$HERE/.env.image" "$HERE/start-observer.sh" "$HERE/verify-lite-agreement.sh"; do
+  if [ ! -f "$FILE" ]; then
+    printf 'Missing required file: %s\n' "$FILE"
+    exit 1
+  fi
+done
+
+rpc_result() {
+  URL="$1"
+  METHOD="$2"
+  curl -fsS --max-time 10 "$URL" \
+    -H 'content-type: application/json' \
+    --data-binary "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"$METHOD\",\"params\":[]}" 2>/dev/null \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin).get("result", ""))' 2>/dev/null
+}
+
+say "=== pre-fault agreement gate ==="
+if ! bash "$HERE/verify-lite-agreement.sh" "$CHAIN_ROOT"; then
+  printf 'Pre-fault multi-peer agreement is not healthy. Refusing fault injection.\n'
+  exit 1
+fi
+
+PRE_OBS_HEAD="$(rpc_result "$OBS" starknet_blockNumber || true)"
+if ! printf '%s' "$PRE_OBS_HEAD" | grep -Eq '^[0-9]+$'; then
+  printf 'Could not read observer head before fault injection.\n'
+  exit 1
+fi
+say "pre_fault_observer_head=$PRE_OBS_HEAD"
+
+say
+say "=== stop ONLY the node-lab observer ==="
+if ! docker compose -p "$PROJECT" \
+  --env-file "$HERE/.env.local" \
+  --env-file "$HERE/.env.image" \
+  -f "$HERE/docker-compose.yml" \
+  stop observer; then
+  printf 'Observer stop failed. Aborting fault injection.\n'
+  exit 1
+fi
+
+say
+say "=== prove observer is unavailable while sequencer/live services survive ==="
+if curl -fsS --max-time 3 "$OBS/health" >/dev/null 2>&1; then
+  fail "observer RPC still responds after deliberate stop"
+else
+  say "observer RPC: unavailable as intended"
+fi
+if curl -fsS --max-time 5 "$SEQ/health" >/dev/null 2>&1; then
+  say "sequencer RPC: healthy"
+else
+  fail "sequencer RPC was affected by observer stop"
+fi
+for URL in \
+  http://127.0.0.1:18080/healthz \
+  http://127.0.0.1:18081/healthz \
+  http://127.0.0.1:18100/healthz
+do
+  if curl -fsS --max-time 5 "$URL" >/dev/null 2>&1; then
+    say "$URL -> healthy"
+  else
+    fail "$URL was affected by observer stop"
+  fi
+done
+
+say
+say "=== wait for lite verifier to fail closed ==="
+DEGRADED=0
+for _ in $(seq 1 20); do
+  STATUS="$(curl -fsS --max-time 5 "$LITE/status" 2>/dev/null || true)"
+  if printf '%s' "$STATUS" | python3 -c '
+import json,sys
+try:
+    s=json.load(sys.stdin)
+except Exception:
+    raise SystemExit(1)
+ok=(
+    s.get("ready") is False and
+    s.get("peer_agreement") is False and
+    s.get("trust_mode")=="multi-peer-disagreement" and
+    s.get("configured_peer_count")==2 and
+    s.get("healthy_peer_count")==1 and
+    s.get("required_agreement")==2 and
+    s.get("pin_verified_peer_count") < 2 and
+    s.get("pins_verified") is False and
+    s.get("independently_verified") is False
+)
+raise SystemExit(0 if ok else 1)
+' 2>/dev/null; then
+    DEGRADED=1
+    break
+  fi
+  sleep 2
+done
+if [ "$DEGRADED" -ne 1 ]; then
+  fail "lite verifier did not enter fail-closed two-peer disagreement state"
+fi
+printf '%s\n' "$STATUS" | python3 -m json.tool 2>/dev/null || printf '%s\n' "$STATUS"
+
+say
+say "=== readyz must fail ==="
+TMP="$(mktemp)"
+READY_HTTP="$(curl -sS --max-time 10 -o "$TMP" -w '%{http_code}' "$LITE/readyz" 2>/dev/null || true)"
+printf 'HTTP %s\n' "$READY_HTTP"
+cat "$TMP" 2>/dev/null || true
+printf '\n'
+[ "$READY_HTTP" = "503" ] || fail "readyz did not return HTTP 503 during peer loss"
+rm -f "$TMP"
+
+say
+say "=== read RPC must fail closed instead of trusting sequencer alone ==="
+TMP="$(mktemp)"
+RPC_HTTP="$(curl -sS --max-time 10 -o "$TMP" -w '%{http_code}' "$LITE/rpc" \
+  -H 'content-type: application/json' \
+  --data-binary '{"jsonrpc":"2.0","id":3,"method":"starknet_chainId","params":[]}' 2>/dev/null || true)"
+printf 'HTTP %s\n' "$RPC_HTTP"
+cat "$TMP" 2>/dev/null || true
+printf '\n'
+[ "$RPC_HTTP" = "503" ] || fail "lite read RPC did not return HTTP 503 during peer loss"
+grep -q 'NO_VERIFIED_PEER' "$TMP" 2>/dev/null || fail "lite read RPC did not report NO_VERIFIED_PEER"
+rm -f "$TMP"
+
+say
+say "=== restore observer from preserved database ==="
+if bash "$HERE/start-observer.sh"; then
+  say "observer restart command: PASS"
+else
+  fail "observer did not restart cleanly"
+fi
+
+say
+say "=== wait for restored observer to catch up and lite agreement to recover ==="
+RECOVERED=0
+for _ in $(seq 1 60); do
+  STATUS="$(curl -fsS --max-time 5 "$LITE/status" 2>/dev/null || true)"
+  if printf '%s' "$STATUS" | python3 -c '
+import json,sys
+try:
+    s=json.load(sys.stdin)
+except Exception:
+    raise SystemExit(1)
+ok=(
+    s.get("ready") is True and
+    s.get("peer_agreement") is True and
+    s.get("trust_mode")=="multi-peer-agreement" and
+    s.get("healthy_peer_count")==2 and
+    s.get("agreement_count")==2 and
+    s.get("pin_verified_peer_count")==2 and
+    s.get("pins_verified") is True and
+    s.get("independently_verified") is True
+)
+raise SystemExit(0 if ok else 1)
+' 2>/dev/null; then
+    RECOVERED=1
+    break
+  fi
+  sleep 2
+done
+if [ "$RECOVERED" -ne 1 ]; then
+  fail "lite verifier did not automatically recover multi-peer agreement"
+fi
+printf '%s\n' "$STATUS" | python3 -m json.tool 2>/dev/null || printf '%s\n' "$STATUS"
+
+POST_OBS_HEAD="$(rpc_result "$OBS" starknet_blockNumber || true)"
+if printf '%s' "$POST_OBS_HEAD" | grep -Eq '^[0-9]+$'; then
+  say "post_restore_observer_head=$POST_OBS_HEAD"
+  if [ "$POST_OBS_HEAD" -lt "$PRE_OBS_HEAD" ]; then
+    fail "restored observer head is below its pre-fault confirmed head"
+  fi
+else
+  fail "could not read observer head after restoration"
+fi
+
+say
+say "=== final full agreement verification ==="
+if ! bash "$HERE/verify-lite-agreement.sh" "$CHAIN_ROOT"; then
+  fail "final lite agreement verification failed after observer restoration"
+fi
+
+say
+say "=== result ==="
+if [ "$FAIL" -eq 0 ]; then
+  say "LITE OBSERVER FAULT/RECOVERY: PASS"
+  say "Observer loss forced readiness/read-RPC failure; observer restoration recovered the two-peer trust condition automatically."
+  exit 0
+fi
+say "LITE OBSERVER FAULT/RECOVERY: ATTENTION REQUIRED"
+say "The script attempted observer restoration before returning this failure. Inspect current observer/lite state before another fault run."
+exit 1
