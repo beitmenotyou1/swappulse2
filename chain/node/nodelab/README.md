@@ -185,7 +185,27 @@ bash exercise-v2.sh /path/to/clean/chain
 - the independent observer reproduces the final identity, assurance and staking state;
 - `verification_v2_required` remains false throughout this exercise.
 
-Only after this exercise passes should a separate one-way cut-over harness invoke `require_verification_v2()` and prove that legacy V1 writes are permanently rejected while V2 writes continue to work.
+Only after this exercise passes should the separate one-way cut-over harness invoke `require_verification_v2()`:
+
+```bash
+NODELAB_CONFIRM_V2_CUTOVER=YES bash cutover-v2.sh /path/to/clean/chain
+```
+
+The explicit confirmation environment variable exists because this transaction is deliberately irreversible for the deployed IdentityRegistry. The cut-over harness reads local authority/test secrets directly from the mode-0600 `.env.local` file rather than exporting or displaying them. It requires the successful `v2-exercise.json` evidence and a fresh two-node consistency pass immediately before the cut-over.
+
+The cut-over is not considered complete merely because the boolean flips. The harness must also prove:
+
+- `verification_v2_required` becomes true on the sequencer and independent observer;
+- legacy `set_verification()` fails with `VERIFY_V2_REQUIRED` immediately after cut-over and again after a V2 assurance expires;
+- fresh `set_verification_v2()` remains functional;
+- replaying a post-cutover attestation id fails with `ATTESTATION_REPLAY`;
+- the already-registered operator uses `increase_self_stake` after cut-over rather than duplicate registration, increasing the exercise stake from 110 to 115 SWPX;
+- post-cutover verification expiry leaves the immutable assurance record, replay id and application stake intact;
+- a final non-expiring V2 assurance restores active verification;
+- calling `require_verification_v2()` again cannot disable the permanent state;
+- the independent observer reproduces the final V2 flag, assurance and staking state.
+
+If the cut-over harness exits non-zero after starting, do **not** automatically rerun it. Inspect on-chain state first because the one-way flag may already have committed.
 
 Do not import node-lab addresses into live `ChainNetworkConfig`.
 
