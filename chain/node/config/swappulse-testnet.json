@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "network": "SWAPPULSE_TESTNET",
+  "network_generation": "legacy-devnet-v2",
+  "chain_id": "0x534e5f5345504f4c4941",
+  "rpc_peers": [
+    "https://rpc.swappulse.org/rpc"
+  ],
+  "expected": {
+    "verification_mode": "V2",
+    "verification_v2_required": true,
+    "contracts": {
+      "identity_registry": {
+        "address": "0x3e884bce5b994cede34f6660db1c28bc37e3cbbffb539de6b5f8dd8f761ecbb",
+        "class_hash": "0x3179723520ee8e08450cf31e9c4c1e9b7c6491959f97bf5ce0fba020a84d1f1"
+      },
+      "native_token": {
+        "address": "0x5ef7e120c7bc5ba44fa5cfe11801db89a8648fccf03b16570d312b17afee30d",
+        "class_hash": "0x8e4030b0fa645e0ad92265a382901681d584cc50a35f07d5a27b170e7a444e"
+      },
+      "card_nft": {
+        "address": "0xb34b3a03fd9addaedcd030b4d07d1684892b02461f23463c129bd264438ab9",
+        "class_hash": "0x1f921907ef4e4ef40aec02b3b0863bf789849ef1d3c5a6fab2ff675989efb87"
+      },
+      "proof_of_usership": {
+        "address": "0x4e07106ffe0aef5e26512cfc78dbfae834e61f6bfbc488b698efa5f121a8698",
+        "class_hash": "0x66cb61c761fdc756d0d8984c51c8d6e8389d7b58f7a11228cd7f7aeec81a256"
+      },
+      "staking_pool": {
+        "address": "0x71374bd9e755408c590415c44201d53213fd2b422210c826f6c3d7f2c0e9ded",
+        "class_hash": "0x69d90f5e6997d905e6418622553aad7ec624f151b18d5efd4dbc999def2bbaf"
+      },
+      "bridge_adapter": {
+        "address": "0x18278c6a97de413b1ea4b63070c09e976e183bd4d69d1f697cefa4f48a9210",
+        "class_hash": "0x502a8c9953ed362307784df498bcfee81953337610e9560574915ecae9b53fc"
+      }
+    }
+  },
+  "trust": {
+    "current_execution_runtime": "Shardlabs Starknet Devnet 0.8.2",
+    "full_node_sync_available": false,
+    "consensus_decentralised": false,
+    "note": "This manifest describes the frozen V2 live baseline. Multiple RPC agreement improves fault detection but does not turn the current Devnet into decentralised consensus."
+  }
+}

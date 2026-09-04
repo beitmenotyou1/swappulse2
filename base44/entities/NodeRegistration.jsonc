@@ -1,0 +1,85 @@
+{
+  "name": "NodeRegistration",
+  "type": "object",
+  "title": "Node Registration",
+  "description": "Public-safe metadata for future SwapPulse community nodes. No private node keys or user identity evidence.",
+  "properties": {
+    "node_id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "lite",
+        "full",
+        "indexer",
+        "gateway",
+        "validator_candidate"
+      ]
+    },
+    "operator_account": {
+      "type": "string"
+    },
+    "endpoint": {
+      "type": "string"
+    },
+    "software_version": {
+      "type": "string"
+    },
+    "protocol_version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "ACTIVE",
+        "DEGRADED",
+        "OFFLINE",
+        "RETIRED"
+      ]
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_verified_block": {
+      "type": "integer"
+    },
+    "last_verified_hash": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "node_id",
+    "role",
+    "status"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
