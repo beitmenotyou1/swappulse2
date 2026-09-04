@@ -12,7 +12,8 @@ if [ ! -f "$PID_FILE" ]; then
   exit 0
 fi
 
-PID="$(cat "$PID_FILE" 2>/dev/null || true)"
+PID="$(sed -n '1p' "$PID_FILE" 2>/dev/null || true)"
+EXPECTED_SERVER="$(sed -n '2p' "$PID_FILE" 2>/dev/null || true)"
 if ! printf '%s' "$PID" | grep -Eq '^[0-9]+$'; then
   printf 'Invalid node-lab lite PID file. Refusing to signal an unknown process.\n'
   exit 1
@@ -23,6 +24,19 @@ if ! kill -0 "$PID" 2>/dev/null; then
   rm -f "$PID_FILE"
   exit 0
 fi
+
+if [ -z "$EXPECTED_SERVER" ] || [ ! -r "/proc/$PID/cmdline" ]; then
+  printf 'Could not verify PID %s belongs to the node-lab lite server. Refusing to signal it.\n' "$PID"
+  exit 1
+fi
+CMDLINE="$(tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null || true)"
+case "$CMDLINE" in
+  *"$EXPECTED_SERVER"*) ;;
+  *)
+    printf 'PID %s no longer matches the recorded node-lab lite server. Refusing to signal it.\n' "$PID"
+    exit 1
+    ;;
+esac
 
 printf 'Stopping only node-lab lite verifier PID %s with SIGTERM.\n' "$PID"
 kill "$PID"
