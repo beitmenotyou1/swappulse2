@@ -4,11 +4,11 @@
 # It does not modify the live SwapPulse chain or submit transactions.
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-# The pinned 2026-04-27 Madara image exposes user RPC through v0.10.0.
-# Its v0.10.2 route returns -32700 Parse error even though newer Madara docs
-# advertise that route. Keep this aligned with the immutable Stage-A image.
-RPC="http://127.0.0.1:${SWAPPULSE_FULL_LAB_RPC_PORT:-19944}/rpc/v0_10_0"
-CONTAINER="swappulse-full-lab-madara-full-lab-1"
+PROJECT="${SWAPPULSE_FULL_LAB_PROJECT:-swappulse-full-lab}"
+CONTAINER="${PROJECT}-madara-full-lab-1"
+# Use the bare user-RPC root because it works across the April v0.10.2 image
+# and newer Madara builds even when their versioned route sets differ.
+RPC="http://127.0.0.1:${SWAPPULSE_FULL_LAB_RPC_PORT:-19944}"
 FAIL=0
 
 say() { printf '%s\n' "$*"; }
