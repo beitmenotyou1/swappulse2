@@ -53,6 +53,9 @@ checks = [
     s.get('agreement_count') == 2,
     s.get('required_agreement') == 2,
     s.get('pins_verified') is True,
+    s.get('pin_verified_peer_count') == 2,
+    s.get('observer_state_independent') is True,
+    s.get('operator_independence') is False,
 ]
 peers = s.get('peers') or []
 checks.append(len(peers) == 2)
