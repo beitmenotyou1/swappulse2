@@ -43,3 +43,5 @@ chain/node/nodelab/authority-bootstrap.json
 chain/node/nodelab/v2-exercise.json
 chain/node/nodelab/v2-cutover.json
 chain/node/nodelab/lite-agreement-data/
+chain/node/stage-d/stage-d-primary-checkpoint.json
+chain/node/stage-d/remote-observer/.env.remote
