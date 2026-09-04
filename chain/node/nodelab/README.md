@@ -103,7 +103,13 @@ It verifies the immutable image, required Madara CLI flags, local secret-file pe
 bash start-sequencer.sh
 ```
 
-Before starting the observer, confirm the sequencer returns the node-lab chain ID and advances confirmed blocks.
+Before starting the observer, verify the sequencer-only state:
+
+```bash
+bash verify-sequencer.sh
+```
+
+It requires the exact node-lab chain ID, at least one confirmed block and healthy live SwapPulse services.
 
 ## Start independent observer
 
