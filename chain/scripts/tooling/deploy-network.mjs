@@ -14,6 +14,8 @@ import {
 } from './common.mjs';
 
 const rpc = requiredEnv('SWAPPULSE_RPC_URL');
+const networkName = String(process.env.SWAPPULSE_NETWORK_NAME || 'SWAPPULSE_TESTNET').trim();
+if (!/^[A-Z0-9_]{3,64}$/.test(networkName)) throw new Error('SWAPPULSE_NETWORK_NAME must be an uppercase network identifier');
 const deployerAddress = requiredEnv('SWAPPULSE_DEPLOYER_ADDRESS');
 const deployerPrivateKey = requiredEnv('SWAPPULSE_DEPLOYER_PRIVATE_KEY');
 const verifierAddress = normalizeHex(requiredEnv('SWAPPULSE_VERIFIER_ADDRESS'), 'verifier address');
@@ -43,10 +45,10 @@ function numberEnv(name, fallback, { min = 0, max = Number.MAX_SAFE_INTEGER } = 
 }
 
 const ONE_SWPX = 10n ** 18n;
-const tokenName = String(process.env.SWAPPULSE_TOKEN_NAME || 'SwapPulse Testnet').trim();
+const tokenName = String(process.env.SWAPPULSE_TOKEN_NAME || (networkName === 'SWAPPULSE_TESTNET' ? 'SwapPulse Testnet' : 'SwapPulse NodeLab')).trim();
 const tokenSymbol = String(process.env.SWAPPULSE_TOKEN_SYMBOL || 'SWPX').trim().toUpperCase();
 if (!tokenName) throw new Error('SWAPPULSE_TOKEN_NAME must not be empty');
-if (tokenSymbol !== 'SWPX') throw new Error('SWAPPULSE_TOKEN_SYMBOL must be SWPX for SWAPPULSE_TESTNET');
+if (tokenSymbol !== 'SWPX') throw new Error('SWAPPULSE_TOKEN_SYMBOL must be SWPX');
 const tokenMaxSupply = bigintEnv('SWAPPULSE_TOKEN_MAX_SUPPLY', 1_000_000_000n * ONE_SWPX, { min: 1n });
 const treasuryTargetBalance = bigintEnv('SWAPPULSE_TREASURY_TARGET_BALANCE', 1_000_000n * ONE_SWPX, { min: 0n, max: tokenMaxSupply });
 const reputationWeightBps = numberEnv('SWAPPULSE_REPUTATION_WEIGHT_BPS', 1000, { min: 0, max: 2000 });
@@ -251,7 +253,7 @@ const recoveryController = recoveryControllerRaw
 
 const manifest = {
   schema_version: 2,
-  network: 'SWAPPULSE_TESTNET',
+  network: networkName,
   chain_id: chainId,
   rpc_url: publicRpcUrl,
   account_class_hash: declarations.account.class_hash,
