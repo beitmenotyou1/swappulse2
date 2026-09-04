@@ -52,8 +52,9 @@ The deterministic Madara devnet bootstrap accounts are public test fixtures only
 - no live deployment manifest reused as a node-lab manifest;
 - sequencer and observer have separate databases;
 - observer receives no sequencer/deployer private key;
-- node-lab Docker network is internal;
-- host RPC ports bind to loopback only;
+- node-lab uses a dedicated bridge so host loopback RPC publication works;
+- host RPC ports bind explicitly to `127.0.0.1` only;
+- sequencer feeder/gateway port `8080` is never host-published;
 - named volumes are preserved on normal stop for recovery tests;
 - resource caps protect the live SwapPulse services.
 
@@ -74,7 +75,7 @@ sequencer RPC: 127.0.0.1:19950
 observer RPC:  127.0.0.1:19951
 ```
 
-The sequencer feeder gateway stays inside the private Compose network on port `8080`; it is not published to the host or Internet.
+The sequencer feeder gateway stays inside the dedicated Compose bridge on port `8080`; it is not published to the host or Internet. The bridge itself is not `internal: true`, because Docker internal networks isolate host-interface publication. Only the RPC ports are published, and both are explicitly bound to host loopback.
 
 ## Prepare
 
@@ -95,7 +96,7 @@ Run the read-only host/image/configuration preflight before starting either node
 bash preflight-nodelab.sh
 ```
 
-It verifies the immutable image, required Madara CLI flags, local secret-file permissions, ports, host headroom, Compose parsing and live SwapPulse health without printing secret values.
+It verifies the immutable image, required Madara CLI flags, local secret-file permissions, ports, host headroom, explicit persistent `--base-path /var/lib/madara` wiring for both nodes, loopback port mappings, Compose parsing and live SwapPulse health without printing secret values.
 
 ## Start sequencer first
 
@@ -179,3 +180,7 @@ bash stop-nodelab.sh
 ```
 
 Normal stop preserves both node-lab volumes for restart/catch-up tests. Do not use `docker compose down -v` unless the node-lab state is intentionally being destroyed and its evidence has already been recorded.
+
+### First-start configuration discovery, 2026-09-04
+
+The first scaffold start exposed two harness defects before any Cairo V2 deployment: the bridge was incorrectly marked `internal: true`, preventing the expected host loopback RPC publication, and `--base-path /var/lib/madara` was missing even though the named volumes were mounted there. Current Madara defaults its database to `/tmp/madara`, so that first ephemeral run is not valid persistence/genesis evidence. The corrected harness uses a normal dedicated bridge with loopback-only host RPC mappings, explicitly sets the persistent base path for both nodes, and waits for each RPC to become ready before returning success.
