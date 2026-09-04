@@ -211,12 +211,27 @@ Do not import node-lab addresses into live `ChainNetworkConfig`.
 
 ## Lite-node integration
 
-Once the independent observer reproduces the sequencer state and V2 class-hash pins, create a node-lab lite manifest with both RPC peers:
+After the permanent V2 cut-over, the tracked node-lab lite manifest is:
 
 ```text
-http://127.0.0.1:19950
-http://127.0.0.1:19951
+chain/node/config/swappulse-nodelab-1.json
 ```
+
+It pins the deployed V2 contracts and configures both local state sources:
+
+```text
+http://127.0.0.1:19950   sequencer
+http://127.0.0.1:19951   independently synchronising full observer
+```
+
+Do **not** replace the existing live lite node on `127.0.0.1:18100` during this proof. Instead, use the isolated host-process verifier on `127.0.0.1:18101` from a clean exported `chain/` workspace:
+
+```bash
+bash start-lite-agreement.sh /path/to/clean/chain
+bash verify-lite-agreement.sh /path/to/clean/chain
+```
+
+The host-process form is intentional for this same-host laboratory. Both Madara RPCs are bound to host loopback only, so a separate bridge-network container cannot reach them without widening their bind surface or using host networking. The lite server therefore supports an explicit `BIND_ADDRESS`; the node-lab wrapper binds it only to `127.0.0.1`.
 
 The expected trust transition is:
 
@@ -224,7 +239,17 @@ The expected trust transition is:
 single-peer-degraded -> multi-peer-agreement
 ```
 
-This is still multi-source fault detection, not a cryptographic Starknet light-client proof system.
+`verify-lite-agreement.sh` requires two healthy peers, matching common block hashes, all V2 class-hash pins, read-only lite RPC enforcement, and `verification_v2_required=true` independently through both full-node RPCs.
+
+This proves multi-source state agreement across separate Madara databases/sync processes. Both peers still run on the same physical mini-server, so it is **not** independent-operator decentralisation, permissionless consensus or a cryptographic Starknet light-client proof system.
+
+Stop only the isolated node-lab lite verifier with:
+
+```bash
+bash stop-lite-agreement.sh
+```
+
+Its checkpoint and log files are preserved under `lite-agreement-data/`.
 
 ## Stop
 
