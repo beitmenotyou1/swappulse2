@@ -1,0 +1,4 @@
+services:
+  sequencer:
+    ports:
+      - "${NODELAB_STAGE_D_TAILSCALE_IP:?Set the primary host Tailscale IPv4}:${NODELAB_STAGE_D_GATEWAY_PORT:-19952}:8080"
