@@ -1,0 +1,71 @@
+name: swappulse-nodelab-1
+
+services:
+  sequencer:
+    image: ${MADARA_IMAGE:?Set MADARA_IMAGE to the reviewed immutable Madara digest}
+    restart: "no"
+    command:
+      - --name
+      - SwapPulse-NodeLab-Sequencer
+      - --devnet
+      - --devnet-contracts
+      - ${NODELAB_DEVNET_CONTRACTS:-5}
+      - --chain-config-override
+      - chain_id=${NODELAB_CHAIN_ID:-SWAPPULSE_NODELAB_1},chain_name=${NODELAB_CHAIN_NAME:-SwapPulse_NodeLab_1},feeder_gateway_url=http://sequencer:8080/feeder_gateway/,gateway_url=http://sequencer:8080/gateway/,block_time=${NODELAB_BLOCK_TIME:-2s}
+      - --private-key
+      - ${NODELAB_SEQUENCER_PRIVATE_KEY:?Generate a lab-only sequencer key with prepare-nodelab.sh}
+      - --gateway
+      - --rpc-external
+      - --rpc-port
+      - "9944"
+      - --no-l1-sync
+    volumes:
+      - sequencer-data:/var/lib/madara
+    ports:
+      - "127.0.0.1:${NODELAB_SEQUENCER_RPC_PORT:-19950}:9944"
+    mem_limit: ${NODELAB_SEQUENCER_MEMORY_LIMIT:-2g}
+    cpus: ${NODELAB_SEQUENCER_CPU_LIMIT:-2.0}
+    pids_limit: ${NODELAB_PIDS_LIMIT:-512}
+    stop_grace_period: ${NODELAB_STOP_GRACE_PERIOD:-330s}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - nodelab
+
+  observer:
+    image: ${MADARA_IMAGE:?Set MADARA_IMAGE to the reviewed immutable Madara digest}
+    restart: "no"
+    command:
+      - --name
+      - SwapPulse-NodeLab-Observer
+      - --full
+      - --preset
+      - devnet
+      - --chain-config-override
+      - chain_id=${NODELAB_CHAIN_ID:-SWAPPULSE_NODELAB_1},chain_name=${NODELAB_CHAIN_NAME:-SwapPulse_NodeLab_1},feeder_gateway_url=http://sequencer:8080/feeder_gateway/,gateway_url=http://sequencer:8080/gateway/,block_time=${NODELAB_BLOCK_TIME:-2s}
+      - --no-l1-sync
+      - --rpc-external
+      - --rpc-port
+      - "9944"
+    depends_on:
+      - sequencer
+    volumes:
+      - observer-data:/var/lib/madara
+    ports:
+      - "127.0.0.1:${NODELAB_OBSERVER_RPC_PORT:-19951}:9944"
+    mem_limit: ${NODELAB_OBSERVER_MEMORY_LIMIT:-2g}
+    cpus: ${NODELAB_OBSERVER_CPU_LIMIT:-2.0}
+    pids_limit: ${NODELAB_PIDS_LIMIT:-512}
+    stop_grace_period: ${NODELAB_STOP_GRACE_PERIOD:-330s}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - nodelab
+
+networks:
+  nodelab:
+    internal: true
+
+volumes:
+  sequencer-data:
+  observer-data:
