@@ -261,8 +261,8 @@ async function poll() {
     const required = agreementRequired(peers.length);
     const peerAgreement = peers.length > 1 && agreeing.length >= required;
     const pinsVerifiedPeers = healthy.filter((p) => p.pins?.ok);
-    const pinsVerified = pinsVerifiedPeers.length > 0;
     const pinQuorumVerified = pinsVerifiedPeers.length >= (peers.length > 1 ? required : 1);
+    const pinsVerified = pinQuorumVerified;
     const independent = peerAgreement && pinQuorumVerified;
     const ready = healthy.length > 0 && pinQuorumVerified && (peers.length < 2 || peerAgreement);
     const lastError = healthy.length === 0
@@ -369,6 +369,10 @@ async function proxyRead(payload) {
   if (Array.isArray(payload)) throw new Error('BATCH_DISABLED');
   if (!payload || payload.jsonrpc !== '2.0' || typeof payload.method !== 'string') throw new Error('INVALID_JSON_RPC');
   if (!allowedRpcMethods.has(payload.method)) throw new Error('METHOD_NOT_ALLOWED');
+  // In multi-peer mode a disagreement or insufficient pin quorum must fail
+  // closed. Do not silently proxy through one preferred peer while /readyz is
+  // reporting that the configured trust condition has not been satisfied.
+  if (!status.ready) throw new Error('NO_VERIFIED_PEER');
   const peer = bestPeer();
   if (!peer) throw new Error('NO_VERIFIED_PEER');
   const response = await rpc(peer, payload.method, Array.isArray(payload.params) ? payload.params : payload.params ?? []);
