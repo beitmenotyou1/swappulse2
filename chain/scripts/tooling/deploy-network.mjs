@@ -19,6 +19,14 @@ if (!/^[A-Z0-9_]{3,64}$/.test(networkName)) throw new Error('SWAPPULSE_NETWORK_N
 const deployerAddress = requiredEnv('SWAPPULSE_DEPLOYER_ADDRESS');
 const deployerPrivateKey = requiredEnv('SWAPPULSE_DEPLOYER_PRIVATE_KEY');
 const verifierAddress = normalizeHex(requiredEnv('SWAPPULSE_VERIFIER_ADDRESS'), 'verifier address');
+const explicitUdcAddressRaw = String(process.env.SWAPPULSE_UDC_ADDRESS || '').trim();
+const explicitUdcAddress = explicitUdcAddressRaw
+  ? normalizeHex(explicitUdcAddressRaw, 'explicit UDC address')
+  : '';
+const explicitUdcEntrypoint = String(process.env.SWAPPULSE_UDC_ENTRYPOINT || 'deployContract').trim();
+if (explicitUdcAddress && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(explicitUdcEntrypoint)) {
+  throw new Error('SWAPPULSE_UDC_ENTRYPOINT is invalid');
+}
 const outputFile = path.resolve(
   process.env.SWAPPULSE_DEPLOYMENT_MANIFEST || path.join(chainDir, 'deployments/swappulse-testnet.json'),
 );
@@ -83,6 +91,18 @@ for (const [key, sierra, casm] of declarationSpecs) {
   declarations[key] = await declareClass(deployer, provider, sierra, casm);
 }
 
+async function classHashAtOrZero(address) {
+  try {
+    return normalizeHex(await provider.getClassHashAt(address), 'deployed class hash');
+  } catch (error) {
+    const message = String(error?.message || error);
+    if (/(contract[^\n]*not found|contract address[^\n]*(not found|unavailable)|uninitialized contract)/i.test(message)) {
+      return '0x0';
+    }
+    throw error;
+  }
+}
+
 async function deployOrReuse({ label, envName, declaration, constructorCalldata }) {
   const existingRaw = String(process.env[envName] || '').trim();
   if (existingRaw) {
@@ -94,6 +114,56 @@ async function deployOrReuse({ label, envName, declaration, constructorCalldata 
     console.log(`Reusing ${label} at ${address}`);
     return { address, transaction_hash: '', reused: true };
   }
+
+  if (explicitUdcAddress) {
+    // Madara devnet currently deploys the legacy OpenZeppelin UDC at a different
+    // address/entrypoint from starknet.js 10's default UDC. Use an explicit,
+    // deterministic non-unique UDC deployment for node-lab compatibility.
+    // With unique=0 the contract address is calculated with deployer_address=0.
+    const salt = declaration.class_hash;
+    const calldata = Array.from(constructorCalldata || [], (value) => String(value));
+    const address = normalizeHex(
+      hash.calculateContractAddressFromHash(
+        salt,
+        declaration.class_hash,
+        calldata,
+        0,
+      ),
+      `${label} deterministic address`,
+    );
+    const before = await classHashAtOrZero(address);
+    if (before !== '0x0') {
+      if (before !== declaration.class_hash) {
+        throw new Error(`${label} deterministic address ${address} is occupied by unexpected class ${before}`);
+      }
+      console.log(`Reusing ${label} at deterministic UDC address ${address}`);
+      return { address, transaction_hash: '', reused: true };
+    }
+
+    const udcClassHash = await classHashAtOrZero(explicitUdcAddress);
+    if (udcClassHash === '0x0') {
+      throw new Error(`Configured UDC ${explicitUdcAddress} is not deployed`);
+    }
+    const deployed = await deployer.execute({
+      contractAddress: explicitUdcAddress,
+      entrypoint: explicitUdcEntrypoint,
+      calldata: [
+        declaration.class_hash,
+        salt,
+        '0x0',
+        String(calldata.length),
+        ...calldata,
+      ],
+    });
+    await wait(provider, deployed.transaction_hash);
+    const actualHash = await classHashAtOrZero(address);
+    if (actualHash !== declaration.class_hash) {
+      throw new Error(`${label} class hash verification failed after explicit UDC deployment`);
+    }
+    console.log(`${label} deployed via explicit UDC: ${address}`);
+    return { address, transaction_hash: deployed.transaction_hash || '', reused: false };
+  }
+
   const deployed = await deployer.deployContract({
     classHash: declaration.class_hash,
     constructorCalldata,
