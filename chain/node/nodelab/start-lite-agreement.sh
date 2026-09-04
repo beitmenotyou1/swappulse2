@@ -30,7 +30,7 @@ fi
 mkdir -p "$DATA_DIR"
 
 if [ -f "$PID_FILE" ]; then
-  PID="$(cat "$PID_FILE" 2>/dev/null || true)"
+  PID="$(sed -n '1p' "$PID_FILE" 2>/dev/null || true)"
   if printf '%s' "$PID" | grep -Eq '^[0-9]+$' && kill -0 "$PID" 2>/dev/null; then
     printf 'Node-lab lite verifier is already running as PID %s.\n' "$PID"
     exit 1
@@ -88,7 +88,7 @@ nohup env \
   CHECKPOINT_PATH="$DATA_DIR/checkpoint.json" \
   node "$SERVER" >"$LOG_FILE" 2>&1 &
 PID=$!
-printf '%s\n' "$PID" > "$PID_FILE"
+printf '%s\n%s\n' "$PID" "$SERVER" > "$PID_FILE"
 
 READY=0
 for ATTEMPT in $(seq 1 30); do
