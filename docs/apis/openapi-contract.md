@@ -1,8 +1,10 @@
 ---
-description: OpenAPI Contract documentation for SwapPulse.
+description: >-
+  The authoritative OpenAPI 3.1 contract, GitBook rendering and maintenance
+  workflow.
 ---
 
-# SwapPulse OpenAPI contract
+# OpenAPI Contract
 
 The repository root `openapi.yaml` is the machine-readable contract for SwapPulse's supported **public and authenticated product API**.
 

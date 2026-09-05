@@ -10,8 +10,8 @@ For component-specific explanations and hosting procedures, use:
 
 * [Full node and full observer](full-node.md)
 * [Lite node](lite-node.md)
-* [Read-only RPC gateway](rpc-gateway.md)
-* [Transaction relay](transaction-relay.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
 
 The port numbers on this page are repository defaults. The current reference host maps the RPC gateway to `127.0.0.1:18080`, the transaction relay to `127.0.0.1:18081` and the live lite node to `127.0.0.1:18100` to avoid local service conflicts. Public hostnames remain unchanged.
 

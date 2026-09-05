@@ -14,12 +14,12 @@ Network and staking features remain testnet functionality unless a page explicit
 
 ### Choose the component you want to understand
 
-| Component         | What it is                                                                           | Start here                                  |
-| ----------------- | ------------------------------------------------------------------------------------ | ------------------------------------------- |
-| Full observer     | A Madara node that keeps and verifies its own chain state                            | [Full node and full observer](full-node.md) |
-| Lite node         | A low-resource local read layer that checks chain and contract pins across RPC peers | [Lite node](lite-node.md)                   |
-| RPC gateway       | The public, unauthenticated and read-only chain interface                            | [Read-only RPC gateway](rpc-gateway.md)     |
-| Transaction relay | The authenticated, policy-enforcing server-side write interface                      | [Transaction relay](transaction-relay.md)   |
+| Component         | What it is                                                                           | Start here                                                |
+| ----------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| Full observer     | A Madara node that keeps and verifies its own chain state                            | [Full node and full observer](full-node.md)               |
+| Lite node         | A low-resource local read layer that checks chain and contract pins across RPC peers | [Lite node](lite-node.md)                                 |
+| RPC gateway       | The public, unauthenticated and read-only chain interface                            | [Read-only RPC gateway](../apis/read-only-rpc-gateway.md) |
+| Transaction relay | The authenticated, policy-enforcing server-side write interface                      | [Transaction relay](../apis/transaction-relay-api.md)     |
 
 {% hint style="info" %}
 The live `SWAPPULSE_TESTNET` and the isolated `SWAPPULSE_NODELAB_1` are different networks. Do not reuse chain IDs, contract addresses, manifests or authority keys between them.

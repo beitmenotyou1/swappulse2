@@ -43,8 +43,8 @@ Dedicated hosting guides:
 
 * [Full node and full observer](full-node.md)
 * [Lite node](lite-node.md)
-* [Read-only RPC gateway](rpc-gateway.md)
-* [Transaction relay](transaction-relay.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
 
 ### 2. Goal
 

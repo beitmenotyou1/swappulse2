@@ -2,7 +2,7 @@
 description: Host and secure the public read-only SwapPulse Starknet RPC gateway.
 ---
 
-# Read-only RPC gateway
+# Read-only RPC Gateway
 
 The SwapPulse RPC gateway is the public **read path** into the chain. It accepts a deliberately small set of Starknet JSON-RPC methods and forwards them to a private upstream node. It is not a blockchain node and it never submits transactions.
 
@@ -239,18 +239,18 @@ After any gateway, node, proxy or tunnel update, repeat:
 
 ## Troubleshooting
 
-| Response                         | Meaning                                                  | Action                                                                                           |
-| -------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `403`                            | Method is not on the read allowlist                      | Use the [transaction relay](transaction-relay.md) through the Base44 backend for approved writes |
-| `400`                            | Invalid JSON-RPC or a disabled batch                     | Send one valid JSON-RPC 2.0 request                                                              |
-| `413`                            | Request exceeds 64 KiB                                   | Reduce the request. Do not raise the limit without an abuse review                               |
-| `429`                            | Client exceeded the minute limit                         | Reduce polling or review the rate limit and proxy client-IP forwarding                           |
-| `502`                            | Upstream timeout, invalid response or oversized response | Check the private node, Docker network and logs                                                  |
-| Public timeout but local success | Tunnel, DNS or TLS fault                                 | Inspect the proxy path without exposing the raw node                                             |
+| Response                         | Meaning                                                  | Action                                                                                               |
+| -------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `403`                            | Method is not on the read allowlist                      | Use the [transaction relay](transaction-relay-api.md) through the Base44 backend for approved writes |
+| `400`                            | Invalid JSON-RPC or a disabled batch                     | Send one valid JSON-RPC 2.0 request                                                                  |
+| `413`                            | Request exceeds 64 KiB                                   | Reduce the request. Do not raise the limit without an abuse review                                   |
+| `429`                            | Client exceeded the minute limit                         | Reduce polling or review the rate limit and proxy client-IP forwarding                               |
+| `502`                            | Upstream timeout, invalid response or oversized response | Check the private node, Docker network and logs                                                      |
+| Public timeout but local success | Tunnel, DNS or TLS fault                                 | Inspect the proxy path without exposing the raw node                                                 |
 
 ## Related pages
 
-* [Transaction relay](transaction-relay.md)
-* [Lite node](lite-node.md)
-* [Full node and full observer](full-node.md)
-* [Infrastructure Operations](infrastructure-operations.md)
+* [Transaction relay](transaction-relay-api.md)
+* [Lite node](../network-and-web3/lite-node.md)
+* [Full node and full observer](../network-and-web3/full-node.md)
+* [Infrastructure Operations](../network-and-web3/infrastructure-operations.md)

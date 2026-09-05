@@ -274,7 +274,7 @@ The deployment, assurance exercise and irreversible V2 cut-over scripts are engi
 
 ### Keep the RPC local
 
-The raw Madara RPC should remain bound to `127.0.0.1`. If users need remote reads, place the [read-only RPC gateway](rpc-gateway.md) in front of a reviewed upstream and publish only the gateway through HTTPS.
+The raw Madara RPC should remain bound to `127.0.0.1`. If users need remote reads, place the [read-only RPC gateway](../apis/read-only-rpc-gateway.md) in front of a reviewed upstream and publish only the gateway through HTTPS.
 
 ### Monitor the host
 
@@ -334,7 +334,7 @@ A full observer validates public protocol state. It must not depend on private B
 ## Related pages
 
 * [Lite node](lite-node.md)
-* [Read-only RPC gateway](rpc-gateway.md)
-* [Transaction relay](transaction-relay.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
 * [SwapPulse Node Architecture Roadmap](node-architecture.md)
 * [Cairo and Starknet Chain Overview](chain-overview.md)

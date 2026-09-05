@@ -254,6 +254,6 @@ The checkpoint is an observation record, not authoritative chain state. Losing i
 ### Related pages
 
 * [Full node and full observer](full-node.md)
-* [Read-only RPC gateway](rpc-gateway.md)
-* [Transaction relay](transaction-relay.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
 * [SwapPulse Node Architecture Roadmap](node-architecture.md)

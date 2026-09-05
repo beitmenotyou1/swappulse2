@@ -230,8 +230,8 @@ Until those steps are complete, documentation and UI must describe rewards and d
 
 * [Full node and full observer](full-node.md), current Madara and node-lab status
 * [Lite node](lite-node.md), low-resource multi-RPC verification and local reads
-* [Read-only RPC gateway](rpc-gateway.md), public read hosting and method policy
-* [Transaction relay](transaction-relay.md), protected write hosting and policy controls
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md), public read hosting and method policy
+* [Transaction relay](../apis/transaction-relay-api.md), protected write hosting and policy controls
 * [Cairo and Starknet chain overview](chain-overview.md), contract architecture and privacy boundary
 * [Infrastructure operations](infrastructure-operations.md), current live testnet hosting and recovery procedures
 * [SwapPulse Node Architecture Roadmap](node-architecture.md), tested stages and remaining decentralisation work

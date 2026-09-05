@@ -4,7 +4,7 @@ description: >-
   privileged keys.
 ---
 
-# Transaction relay
+# Transaction Relay API
 
 The SwapPulse transaction relay is the protected **write path** into the current testnet. It is a server-side policy boundary, not a general-purpose Starknet RPC proxy. Base44 backend functions call it only after authenticating the user, checking private policy and constructing or validating the permitted chain action.
 
@@ -271,8 +271,8 @@ If the relay is suspected of compromise:
 
 ## Related pages
 
-* [Read-only RPC gateway](rpc-gateway.md)
-* [Full node and full observer](full-node.md)
-* [Lite node](lite-node.md)
-* [Infrastructure Operations](infrastructure-operations.md)
-* [SwapPulse V2 Live Architecture](v2-live-architecture.md)
+* [Read-only RPC gateway](read-only-rpc-gateway.md)
+* [Full node and full observer](../network-and-web3/full-node.md)
+* [Lite node](../network-and-web3/lite-node.md)
+* [Infrastructure Operations](../network-and-web3/infrastructure-operations.md)
+* [SwapPulse V2 Live Architecture](../network-and-web3/v2-live-architecture.md)

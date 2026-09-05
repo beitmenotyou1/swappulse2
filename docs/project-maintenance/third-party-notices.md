@@ -125,6 +125,16 @@ SwapPulse's Web3 layer is built using Cairo/Starknet tooling and established Ope
 
 Cairo, Starknet tooling, OpenZeppelin components and other chain dependencies remain subject to their own upstream licences. Their inclusion does not transfer their copyrights/trademarks to SwapPulse.
 
+## Other hosted services and protocols
+
+The audited application also contains active or conditional integrations with Stripe Checkout, Cloudflare Turnstile and Tunnel, SMTP providers, Web Push, Have I Been Pwned Pwned Passwords, Bluesky AppView, PLC directory services, Google DNS over HTTPS, Discord webhooks, the Telegram Bot API and approved media-embed providers.
+
+These services, protocols, content and provider APIs remain subject to their own current terms, privacy notices, rate limits and intellectual-property rights. SwapPulse's MPL-2.0 licence does not license a provider's service or data.
+
+For the implementation status, credential boundary and usage guidance for each integration, see [Third-party APIs](../apis/third-party-apis/).
+
+The current repository does not expose a working NowPayments donation API. It also treats automated Mastodon, Nostr and Twitter/X cross-post paths as simulated. Their names in configuration or dispatcher code must not be interpreted as a live service integration.
+
 ## npm and other dependencies
 
 See `package.json`, lockfiles and individual dependency distributions for applicable third-party software licences.
