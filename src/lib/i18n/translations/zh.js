@@ -57,6 +57,7 @@ const zh = {
   'page.trades.title': '交易', 'page.trades.subtitle': '开放交易列表', 'page.trades.newListing': '新列表',
   'page.trades.empty': '没有活跃交易', 'page.trades.emptySub': '创建列表开始交易。',
   'footer.tagline': '去中心化的宝可梦TCG社区',
+  'footer.documentation': '文档', 'docs.readOfficial': '阅读官方文档',
   'footer.terms': '条款', 'footer.privacy': '隐私政策', 'footer.help': '帮助', 'footer.status': '状态', 'footer.explore': '探索', 'footer.donate': '捐赠',
   'footer.disclaimer': 'SwapPulse是一个免费的开源平台。宝可梦和宝可梦TCG是任天堂、Game Freak和宝可梦公司的商标。SwapPulse不隶属于他们，也未获得他们的认可。',
   'footer.builtOn': '© SwapPulse - 构建于AT Protocol · 由TCGdex驱动',
