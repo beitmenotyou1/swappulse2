@@ -98,7 +98,7 @@
   * [SwapPulse Change Protocol](project-maintenance/change-protocol.md)
   * [Releasing SwapPulse](project-maintenance/releasing.md)
   * [Forking and Rebranding SwapPulse](project-maintenance/forking-and-rebranding.md)
-  * [Licensing](project-maintenance/licensing.md)
+  * [SwapPulse Licence](project-maintenance/licensing.md)
   * [Contributing to SwapPulse](project-maintenance/contributing.md)
   * [Deployment Guide](project-maintenance/deployment.md)
   * [Security Audit](project-maintenance/security-audit.md)
