@@ -57,6 +57,7 @@ const ko = {
   'page.trades.title': '교환', 'page.trades.subtitle': '공개 교환 목록', 'page.trades.newListing': '새 목록',
   'page.trades.empty': '활성 교환 없음', 'page.trades.emptySub': '목록을 만들어 교환을 시작하세요.',
   'footer.tagline': '탈중앙화 포켓몬 TCG 커뮤니티',
+  'footer.documentation': '문서', 'docs.readOfficial': '공식 문서 보기',
   'footer.terms': '약관', 'footer.privacy': '개인정보처리방침', 'footer.help': '도움말', 'footer.status': '상태', 'footer.explore': '탐색', 'footer.donate': '기부',
   'footer.disclaimer': 'SwapPulse는 무료 오픈소스 플랫폼입니다. 포켓몬 및 포켓몬 TCG는 Nintendo, Game Freak, The Pokémon Company의 상표입니다. SwapPulse는 이들과 제휴하거나 보증받지 않았습니다.',
   'footer.builtOn': '© SwapPulse - AT Protocol 기반 · TCGdex 제공',
