@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, ExternalLink } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -10,6 +10,7 @@ import { PopoverTrigger } from '@/components/ui/popover';
 import NotificationPopover from '@/components/notifications/NotificationPopover';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
@@ -52,7 +53,6 @@ const moreItems = [
   { to: '/spaces', icon: Radio, label: 'Live', tKey: 'nav.live' },
   { to: '/notifications', icon: Bell, label: 'Alerts', tKey: 'nav.notifications', authOnly: true },
   { to: '/messages', icon: MessageSquare, label: 'Messages', tKey: 'nav.messages', authOnly: true },
-  { to: '/help', icon: HelpCircle, label: 'Help', tKey: 'nav.help' },
   { to: '/terms', icon: FileText, label: 'Terms', tKey: 'nav.terms' },
   { to: '/privacy', icon: Lock, label: 'Privacy', tKey: 'nav.privacy' },
   { to: '/status', icon: Activity, label: 'Status', tKey: 'nav.status' },
@@ -234,11 +234,22 @@ export default function MobileNav() {
             </div>
             <div className="mt-4 border-t border-border pt-3">
               <nav className="flex flex-wrap gap-x-4 gap-y-2 px-1" aria-label={t('nav.more')}>
+                <a
+                  href={SITE_LINKS.documentation}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                >
+                  <BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> {t('footer.documentation')} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                </a>
+                <Link to="/status" onClick={() => setMoreOpen(false)} className="text-xs font-semibold text-primary hover:underline">
+                  {t('footer.status')}
+                </Link>
                 <Link to="/chain/" onClick={() => setMoreOpen(false)} className="text-xs font-semibold text-primary hover:underline">
                   {t('footer.chainExplorer')}
                 </Link>
                 <a
-                  href="https://github.com/beitmenotyou1/swappulse2"
+                  href={SITE_LINKS.github}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs font-semibold text-primary hover:underline"
