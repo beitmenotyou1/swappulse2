@@ -4,6 +4,7 @@ import { Shield, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 const LAST_UPDATED = '3 September 2026';
 
@@ -369,8 +370,9 @@ export default function Privacy() {
               <li><strong>Do Not Sell or Share (CCPA)</strong>, Opt out of having your data federated to the wider AT Protocol network. See Section 4 for details on how this limits site functions.</li>
             </ul>
             <p>
-              To exercise these rights, use the Data & Privacy Rights center in Settings, or contact us through the
-              Help page. We will respond to all requests within 30 days, as required by law.
+              To exercise these rights, use the Data & Privacy Rights centre in Settings or the platform feedback
+              mechanism. Reference documentation is available in the official SwapPulse GitBook. We will respond to
+              all requests within 30 days, as required by law.
             </p>
 
             <h2 id="children" className="mt-8 scroll-mt-20 text-xl font-bold">17. Children's Privacy</h2>
@@ -401,8 +403,8 @@ export default function Privacy() {
             <h2 id="contact" className="mt-8 scroll-mt-20 text-xl font-bold">20. Contact</h2>
             <p>
               Questions about this Privacy Policy or requests to exercise your data rights can be submitted through
-              the platform's{' '}
-              <Link to="/help" className="text-primary hover:underline">Help</Link> page or feedback mechanism.
+              the platform feedback mechanism. Product and privacy documentation is available in the{' '}
+              <a href={SITE_LINKS.documentation} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">official SwapPulse documentation</a>.
               SwapPulse is an open-source project; the source code is available for review and self-hosting.
             </p>
 
