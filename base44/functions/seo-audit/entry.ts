@@ -17,7 +17,7 @@ export default async function(req: Request): Promise<Response> {
     const origin = getAppUrl(req);
 
     const staticPages = [
-      '/', '/explore', '/sets', '/trades', '/packs', '/market', '/help', '/status',
+      '/', '/explore', '/sets', '/trades', '/packs', '/market', '/status',
       '/challenges', '/meetups', '/circles', '/spaces', '/binders', '/donate',
     ];
 
