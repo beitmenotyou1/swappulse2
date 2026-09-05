@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, ArrowLeftRight, Sparkles, UserPlus, Loader2, Github } from 'lucide-react';
+import { TrendingUp, ArrowLeftRight, Sparkles, UserPlus, Loader2, Github, BookOpen, ExternalLink, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/format';
 import { useToast } from '@/components/ui/use-toast';
 import { createBridgedFollow } from '@/lib/followBridge';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 // Compute real trending cards from live CardPricing movers (public read).
 // Returns [] when there is no meaningful price movement — the section hides.
@@ -184,14 +185,18 @@ export default function RightSidebar({ online = [] }) {
       <div className="mt-auto rounded-2xl px-4 py-4 text-muted-foreground">
         <p className="text-xs font-medium">{tr('sidebar.copyright')}</p>
         <nav className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+          <a href={SITE_LINKS.documentation} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-primary transition-colors hover:underline">
+            <BookOpen className="h-3 w-3" aria-hidden="true" /> {tr('footer.documentation')} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
+          <Link to="/status" className="inline-flex items-center gap-1 text-xs font-semibold text-success transition-colors hover:underline">
+            <Activity className="h-3 w-3" aria-hidden="true" /> {tr('nav.status')}
+          </Link>
           <Link to="/terms" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.terms')}</Link>
           <Link to="/privacy" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.privacy')}</Link>
-          <Link to="/help" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.help')}</Link>
-          <Link to="/status" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.status')}</Link>
           <Link to="/chain/" className="text-xs font-medium transition-colors hover:text-foreground">{tr('footer.chainExplorer')}</Link>
           <Link to="/donate" className="text-xs font-medium transition-colors hover:text-foreground">{tr('nav.donate')}</Link>
           <a
-            href="https://github.com/beitmenotyou1/swappulse2"
+            href={SITE_LINKS.github}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={tr('footer.githubNewTab')}
