@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, HelpCircle, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon } from 'lucide-react';
+import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -43,7 +43,6 @@ const more = [
   { to: '/market', icon: BarChart3, label: 'Market Watch', tKey: 'nav.market' },
   { to: '/predictions', icon: Vote, label: 'Predictions', tKey: 'nav.predictions' },
   { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
-  { to: '/help', icon: HelpCircle, label: 'Help & Info', tKey: 'nav.help' },
   { to: '/donate', icon: Heart, label: 'Donate', tKey: 'nav.donate' },
   { to: '/admin', icon: Shield, label: 'Admin', tKey: 'nav.admin', adminOnly: true },
   { to: '/moderation', icon: ShieldAlert, label: 'Moderation', tKey: 'nav.moderation', adminOnly: true },
