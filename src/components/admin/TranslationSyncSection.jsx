@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { translations, SUPPORTED_LOCALES, LOCALE_TO_TCGDEX } from '@/lib/i18n/translations';
-import { HELP_CONTENT } from '@/lib/helpContent';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
-// Admin tool for managing translations. Three actions:
-// 1. Seed missing UI keys — scans translations.js for English keys missing from
-//    each non-English locale and creates pending TranslationOverride records.
-// 2. Sync translations — triggers the sync-translations backend function to
-//    process pending records via InvokeLLM.
-// 3. Translate help content — sends all help page content to the
-//    translate-help-content backend function for AI translation into 8 languages.
+// Admin tool for managing interface translations. Help/documentation content
+// now lives in GitBook and is maintained there independently of the app UI.
 
 // Map locale codes to TCGDex language codes (reverse of LOCALE_TO_TCGDEX)
 const LOCALE_TO_LANG = {};
@@ -26,7 +20,6 @@ export default function TranslationSyncSection() {
   const { toast } = useToast();
   const [seeding, setSeeding] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [translatingHelp, setTranslatingHelp] = useState(false);
   const [auditing, setAuditing] = useState(false);
   const [report, setReport] = useState(null);
   const [auditReport, setAuditReport] = useState(null);
@@ -108,34 +101,7 @@ export default function TranslationSyncSection() {
     }
   };
 
-  // Action 3: Translate all help page content
-  const handleTranslateHelp = async () => {
-    setTranslatingHelp(true);
-    try {
-      const pages = Object.entries(HELP_CONTENT).map(([slug, content]) => ({
-        slug,
-        content: { ...content, slug },
-      }));
-
-      const res = await base44.functions.invoke('translate-help-content', { pages });
-      const data = res.data || res;
-      if (data.error) {
-        toast({ title: 'Help translation failed', description: data.error, variant: 'destructive' });
-      } else {
-        toast({
-          title: 'Help content translated',
-          description: `Translated: ${data.translated}, Skipped: ${data.skipped}, Errors: ${data.errors}. ${data.message || ''}`,
-        });
-        setReport(data);
-      }
-    } catch (e) {
-      toast({ title: 'Error', description: e?.message || 'Failed to translate help content', variant: 'destructive' });
-    } finally {
-      setTranslatingHelp(false);
-    }
-  };
-
-  // Action 4: Audit translation coverage across all languages
+  // Action 3: Audit translation coverage across all interface languages
   const handleAudit = async () => {
     setAuditing(true);
     setAuditReport(null);
@@ -148,8 +114,8 @@ export default function TranslationSyncSection() {
         toast({
           title: data.summary.complete ? 'Translations complete' : 'Missing translations found',
           description: data.summary.complete
-            ? `All ${data.uiKeysTotal} UI keys and ${data.helpPagesTotal} help pages translated into all 8 languages.`
-            : `${data.summary.totalMissing} missing: ${data.summary.totalMissingUI} UI keys, ${data.summary.totalMissingHelp} help pages.`,
+            ? `All ${data.uiKeysTotal} UI keys are translated into all 8 non-English languages.`
+            : `${data.summary.totalMissing} interface translations are missing.`,
           variant: data.summary.complete ? 'default' : 'destructive',
         });
         setAuditReport(data);
@@ -166,8 +132,7 @@ export default function TranslationSyncSection() {
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="mb-1 font-bold">Translation Management</h3>
         <p className="mb-4 text-sm text-muted-foreground">
-          Keep all nine supported languages in sync. Seed missing keys, then sync to generate AI translations via InvokeLLM.
-          Translate help page content separately (45 pages × 8 languages). Run an audit to flag any missing translations.
+          Keep all nine supported interface languages in sync. Seed missing keys, sync approved translations, and audit coverage. Product documentation is maintained separately in GitBook.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={handleSeedMissing} disabled={seeding} variant="outline">
@@ -175,9 +140,6 @@ export default function TranslationSyncSection() {
           </Button>
           <Button onClick={handleSync} disabled={syncing}>
             {syncing ? 'Syncing…' : 'Sync Translations'}
-          </Button>
-          <Button onClick={handleTranslateHelp} disabled={translatingHelp} variant="secondary">
-            {translatingHelp ? 'Translating Help…' : 'Translate Help Content'}
           </Button>
           <Button onClick={handleAudit} disabled={auditing} variant="outline">
             {auditing ? 'Auditing…' : 'Audit Translations'}
@@ -197,7 +159,7 @@ export default function TranslationSyncSection() {
               </span>
             </div>
             <p className="mb-2 text-xs text-muted-foreground">
-              {auditReport.uiKeysTotal} UI keys · {auditReport.helpPagesTotal} help pages · {auditReport.languagesChecked} languages checked
+              {auditReport.uiKeysTotal} UI keys · {auditReport.languagesChecked} languages checked
             </p>
             {auditReport.summary.complete ? (
               <p className="text-success">All translations present — no pages falling back to English.</p>
@@ -207,12 +169,6 @@ export default function TranslationSyncSection() {
                   <div key={`ui-${lang}`}>
                     <p className="font-semibold text-destructive">UI ({lang}): {keys.length} missing</p>
                     <p className="text-xs text-muted-foreground">{keys.slice(0, 10).join(', ')}{keys.length > 10 ? ` … +${keys.length - 10} more` : ''}</p>
-                  </div>
-                ))}
-                {Object.entries(auditReport.missingHelp).map(([lang, slugs]) => (
-                  <div key={`help-${lang}`}>
-                    <p className="font-semibold text-destructive">Help ({lang}): {slugs.length} missing</p>
-                    <p className="text-xs text-muted-foreground">{slugs.join(', ')}</p>
                   </div>
                 ))}
               </div>
