@@ -5,6 +5,7 @@ import Logo from '@/components/Logo';
 import FiatDonationForm from '@/components/donate/FiatDonationForm';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 export default function Donate() {
   const t = useT();
@@ -55,8 +56,8 @@ export default function Donate() {
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Questions about donating? Read our{' '}
-          <Link to="/help/donations" className="font-semibold text-primary hover:underline">donations help article</Link>.
+          Questions about donating? Visit the{' '}
+          <a href={SITE_LINKS.documentation} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">SwapPulse documentation</a>.
         </p>
       </main>
     </div>
