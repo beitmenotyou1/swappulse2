@@ -57,6 +57,7 @@ const de = {
   'page.trades.title': 'Tauschbörse', 'page.trades.subtitle': 'Offene Tauschanzeigen', 'page.trades.newListing': 'Neue Anzeige',
   'page.trades.empty': 'Keine aktiven Tauschgeschäfte', 'page.trades.emptySub': 'Erstelle eine Anzeige um zu tauschen.',
   'footer.tagline': 'Eine dezentrale Pokémon TCG Community',
+  'footer.documentation': 'Dokumentation', 'docs.readOfficial': 'Offizielle Dokumentation lesen',
   'footer.terms': 'AGB', 'footer.privacy': 'Datenschutz', 'footer.help': 'Hilfe', 'footer.status': 'Status', 'footer.explore': 'Entdecken', 'footer.donate': 'Spenden',
   'footer.disclaimer': 'SwapPulse ist eine kostenlose Open-Source-Plattform. Pokémon und Pokémon TCG sind Marken von Nintendo, Game Freak und The Pokémon Company. SwapPulse ist nicht mit ihnen verbunden oder von ihnen unterstützt.',
   'footer.builtOn': '© SwapPulse - Erstellt auf AT Protocol · Powered by TCGdex',
