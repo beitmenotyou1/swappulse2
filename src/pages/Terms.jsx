@@ -4,6 +4,7 @@ import { FileText, ArrowLeft } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 const LAST_UPDATED = '3 September 2026';
 
@@ -353,8 +354,9 @@ export default function Terms() {
 
             <h2 id="contact" className="mt-8 scroll-mt-20 text-xl font-bold">22. Contact</h2>
             <p>
-              Questions about these Terms can be submitted through the platform's{' '}
-              <Link to="/help" className="text-primary hover:underline">Help</Link> page or feedback mechanism.
+              Questions about these Terms can be submitted through the platform feedback mechanism. Product and policy
+              documentation is available in the{' '}
+              <a href={SITE_LINKS.documentation} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">official SwapPulse documentation</a>.
               SwapPulse is an open-source project; the source code is available for review and self-hosting.
             </p>
 
