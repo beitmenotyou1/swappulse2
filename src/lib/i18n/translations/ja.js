@@ -57,6 +57,7 @@ const ja = {
   'page.trades.title': 'トレード', 'page.trades.subtitle': 'オープンなトレード募集', 'page.trades.newListing': '新規募集',
   'page.trades.empty': 'アクティブなトレードなし', 'page.trades.emptySub': '募集を作成してトレードを始めましょう。',
   'footer.tagline': '非中央集権型ポケモンTCGコミュニティ',
+  'footer.documentation': 'ドキュメント', 'docs.readOfficial': '公式ドキュメントを読む',
   'footer.terms': '利用規約', 'footer.privacy': 'プライバシー', 'footer.help': 'ヘルプ', 'footer.status': 'ステータス', 'footer.explore': '探す', 'footer.donate': '寄付',
   'footer.disclaimer': 'SwapPulseは無料のオープンソースプラットフォームです。ポケモンおよびポケモンTCGは任天堂、ゲームフリーク、株式会社ポケモンの商標です。SwapPulseはこれらと提携または承認されていません。',
   'footer.builtOn': '© SwapPulse - AT Protocol上で構築 · TCGdex提供',
