@@ -23,7 +23,6 @@ import DataSubjectRequestsSection from '@/components/admin/DataSubjectRequestsSe
 import DsarSummaryCard from '@/components/admin/DsarSummaryCard';
 import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection';
 import StandardSiteSection from '@/components/admin/StandardSiteSection';
-import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
@@ -133,7 +132,6 @@ export default function Admin() {
           <>
             <SiteWideStarterPackSection />
             <StandardSiteSection />
-            <HelpPromoSection />
             <TranslationSyncSection />
           </>
         )}
