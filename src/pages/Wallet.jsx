@@ -12,7 +12,7 @@ import StakingPanel from '@/components/chain/StakingPanel';
 import BridgePanel from '@/components/chain/BridgePanel';
 import WalletOverviewCard from '@/components/chain/WalletOverviewCard';
 import { isChainAuthoritative } from '@/lib/chainIdentityDisplay';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -155,7 +155,7 @@ export default function Wallet() {
         {t('wallet.recoverLink')}
       </Link>
 
-      <GuideFooterLink slug="wallet" />
+      <DocumentationLink slug="wallet" />
     </div>
   );
 }

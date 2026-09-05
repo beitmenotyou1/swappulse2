@@ -10,7 +10,7 @@ import { visibilityLabel } from '@/lib/postVisibility';
 import useSEO from '@/hooks/useSEO';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useT } from '@/lib/i18n/I18nProvider';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 
 // Dedicated post detail page: renders a single post with its full reply
 // thread and a composer. Handles two routes:
@@ -166,7 +166,7 @@ export default function PostDetail() {
         </h2>
         <PostReplyThread parentPost={post} showFullThreadLink={false} full />
       </div>
-      <GuideFooterLink slug="post-detail" />
+      <DocumentationLink slug="post-detail" />
     </div>
   );
 }

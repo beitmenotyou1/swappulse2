@@ -8,7 +8,7 @@ import AchievementNotificationCard from '@/components/notifications/AchievementN
 import NotificationFilterTabs from '@/components/notifications/NotificationFilterTabs';
 import NotificationGroup from '@/components/notifications/NotificationGroup';
 import NotificationCard from '@/components/notifications/NotificationCard';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 import PullToRefresh from '@/components/PullToRefresh';
@@ -147,7 +147,7 @@ export default function Notifications() {
         </div>
       )}
       </PullToRefresh>
-      <GuideFooterLink slug="notifications" />
+      <DocumentationLink slug="notifications" />
     </div>
   );
 }

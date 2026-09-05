@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { formatPrice } from '@/lib/format';
 import { cardImageUrl } from '@/lib/tcgdex';
 import GradingForm from '@/components/grading/GradingForm';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -175,7 +175,7 @@ export default function Grading() {
           onSaved={(s) => { setItems((prev) => [s, ...prev]); setShowForm(false); }}
         />
       )}
-      <GuideFooterLink slug="grading" />
+      <DocumentationLink slug="grading" />
     </div>
   );
 }

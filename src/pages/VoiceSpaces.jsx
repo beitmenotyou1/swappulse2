@@ -7,7 +7,7 @@ import GoLiveModal from '@/components/spaces/GoLiveModal';
 import EpisodeCard from '@/components/podcast/EpisodeCard';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // Platform names are proper nouns — no translation needed.
@@ -170,7 +170,7 @@ export default function VoiceSpaces() {
       )}
 
       {showGoLive && <GoLiveModal onClose={() => setShowGoLive(false)} onLive={() => { setShowGoLive(false); load(); }} />}
-      <GuideFooterLink slug="voice-spaces" />
+      <DocumentationLink slug="voice-spaces" />
     </div>
   );
 }

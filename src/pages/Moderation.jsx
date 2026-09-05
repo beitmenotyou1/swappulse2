@@ -14,7 +14,7 @@ import TradeDisputesSection from '@/components/moderation/TradeDisputesSection';
 import AccountEnforcementSection from '@/components/moderation/AccountEnforcementSection';
 import BotAttemptsSection from '@/components/moderation/BotAttemptsSection';
 import ManualReviewQueue from '@/components/moderation/ManualReviewQueue';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -225,7 +225,7 @@ export default function Moderation() {
       </div>
 
       <ReviewPanel post={selectedPost} open={!!selectedPost} onClose={() => setSelectedPost(null)} onResolve={handleResolve} resolving={resolving} />
-      <GuideFooterLink slug="moderation" />
+      <DocumentationLink slug="moderation" />
     </div>
   );
 }

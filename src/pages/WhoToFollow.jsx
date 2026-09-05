@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import ExternalActorSearch from '@/components/follow/ExternalActorSearch';
 import BlueskyMutualsSection from '@/components/follow/BlueskyMutualsSection';
 import { createBridgedFollow } from '@/lib/followBridge';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -249,7 +249,7 @@ export default function WhoToFollow() {
           })
         )}
       </div>
-      <GuideFooterLink slug="who-to-follow" />
+      <DocumentationLink slug="who-to-follow" />
     </div>
   );
 }

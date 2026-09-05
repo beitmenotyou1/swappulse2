@@ -19,7 +19,7 @@ import SiteWidePackCard from '@/components/home/SiteWidePackCard';
 import RarityFilter from '@/components/feed/RarityFilter';
 import CategoryFilterChips from '@/components/feed/CategoryFilterChips';
 import { useT } from '@/lib/i18n/I18nProvider';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import PullToRefresh from '@/components/PullToRefresh';
 import SecurityPromptBanner from '@/components/home/SecurityPromptBanner';
 
@@ -264,7 +264,7 @@ export default function Home() {
       )}
       </PullToRefresh>
       <PushOnboardingPrompt open={showPushPrompt} onClose={() => setShowPushPrompt(false)} />
-      <GuideFooterLink slug="home-feed" />
+      <DocumentationLink slug="home-feed" />
     </div>
   );
 }

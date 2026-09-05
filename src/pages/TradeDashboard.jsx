@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import TradeDashboardCard from '@/components/trade/TradeDashboardCard';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -117,7 +117,7 @@ export default function TradeDashboard() {
           </section>
         </div>
       )}
-      <GuideFooterLink slug="trade-dashboard" />
+      <DocumentationLink slug="trade-dashboard" />
     </div>
   );
 }

@@ -13,7 +13,7 @@ import TradeFeedbackForm from '@/components/trade/TradeFeedbackForm';
 import TradeDisputeForm from '@/components/trade/TradeDisputeForm';
 import RichText from '@/components/RichText';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import LabelBadges from '@/components/labelers/LabelBadges';
 import LabelContentButton from '@/components/labelers/LabelContentButton';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -269,7 +269,7 @@ export default function TradeThread() {
           onFiled={() => setAlreadyDisputed(true)}
         />
       )}
-      <GuideFooterLink slug="trade-threads" />
+      <DocumentationLink slug="trade-threads" />
     </div>
   );
 }

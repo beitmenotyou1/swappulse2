@@ -6,7 +6,7 @@ import { Loader2, Sparkles, Calendar, Users, Plus, Radio } from 'lucide-react';
 import Avatar from '@/components/Avatar';
 import { formatDistanceToNow } from 'date-fns';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // PackParties — synchronized pack-opening events. Collectors schedule or join
@@ -77,7 +77,7 @@ export default function PackParties() {
           onCreated={() => { setShowCreate(false); loadParties(); }}
         />
       )}
-      <GuideFooterLink slug="pack-parties" />
+      <DocumentationLink slug="pack-parties" />
     </div>
   );
 }

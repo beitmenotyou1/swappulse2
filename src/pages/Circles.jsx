@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import CreateCircleModal from '@/components/circles/CreateCircleModal';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const THEME_TKEYS = {
@@ -115,7 +115,7 @@ export default function Circles() {
       </div>
 
       <CreateCircleModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={load} />
-      <GuideFooterLink slug="circles" />
+      <DocumentationLink slug="circles" />
     </div>
   );
 }

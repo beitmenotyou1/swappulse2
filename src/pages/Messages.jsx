@@ -6,7 +6,7 @@ import ConversationList from '@/components/messages/ConversationList';
 import MessageThread from '@/components/messages/MessageThread';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid } from '@/lib/atproto';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -107,7 +107,7 @@ export default function Messages() {
           )}
         </div>
       </div>
-      <GuideFooterLink slug="messages" />
+      <DocumentationLink slug="messages" />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import Avatar from '@/components/Avatar';
 import { format, getISOWeek } from 'date-fns';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 // PullOfTheWeek — weekly community contest where collectors nominate their best
@@ -155,7 +155,7 @@ export default function PullOfTheWeek() {
           onCreated={() => { setShowNominate(false); loadData(); }}
         />
       )}
-      <GuideFooterLink slug="pull-of-the-week" />
+      <DocumentationLink slug="pull-of-the-week" />
     </div>
   );
 }

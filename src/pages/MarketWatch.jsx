@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import PriceAlertModal from '@/components/market/PriceAlertModal';
 import PriceAlertsList from '@/components/market/PriceAlertsList';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function MarketWatch() {
@@ -201,7 +201,7 @@ export default function MarketWatch() {
           card={null}
         />
       )}
-      <GuideFooterLink slug="market-watch" />
+      <DocumentationLink slug="market-watch" />
     </div>
   );
 }

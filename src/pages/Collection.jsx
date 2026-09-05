@@ -15,7 +15,7 @@ import InsuranceExport from '@/components/collection/InsuranceExport';
 import BulkActionsBar from '@/components/collection/BulkActionsBar';
 import CollectionCardRow from '@/components/collection/CollectionCardRow';
 import { useToast } from "@/components/ui/use-toast";
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -410,7 +410,7 @@ export default function Collection() {
           </div>
         )
       )}
-      <GuideFooterLink slug="collection" />
+      <DocumentationLink slug="collection" />
     </div>
   );
 }

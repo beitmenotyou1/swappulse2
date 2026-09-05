@@ -14,7 +14,7 @@ import { useMergedProfile } from '@/hooks/useMergedProfile';
 import { usePaginatedPosts } from '@/hooks/usePaginatedPosts';
 import { useOwnProfileConfig } from '@/hooks/useProfileConfig';
 import { DEFAULT_OWNER_SECTIONS, ALL_TAB_LABELS } from '@/lib/profileThemes';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import MovedFromBlueskyBadge from '@/components/profile/MovedFromBlueskyBadge';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
@@ -231,7 +231,7 @@ export default function Profile() {
           onSave={async (draft) => { await saveConfig(draft); reloadConfig(); }}
         />
       )}
-      <GuideFooterLink slug="your-profile" />
+      <DocumentationLink slug="your-profile" />
     </div>
   );
 }

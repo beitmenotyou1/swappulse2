@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'sentiment_conversationalist';
@@ -245,7 +245,7 @@ export default function SentimentConversationalist() {
           )}
         </div>
       </div>
-      <GuideFooterLink slug="sentiment-assistant" />
+      <DocumentationLink slug="sentiment-assistant" />
     </div>
   );
 }

@@ -19,7 +19,7 @@ import LanguageFilter from '@/components/cards/LanguageFilter';
 import TrendingRail from '@/components/explore/TrendingRail';
 import { usePostVisibility } from '@/hooks/usePostVisibility';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { sortPostsDescending } from '@/lib/postSort';
 import PullToRefresh from '@/components/PullToRefresh';
@@ -389,7 +389,7 @@ export default function Explore() {
           </div>
         </div>
       )}
-      <GuideFooterLink slug="explore" />
+      <DocumentationLink slug="explore" />
       </PullToRefresh>
     </div>
   );

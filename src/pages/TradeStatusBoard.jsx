@@ -7,7 +7,7 @@ import Avatar from '@/components/Avatar';
 import { timeAgo } from '@/lib/format';
 import { useRealtimeEvent } from '@/hooks/useRealtimeEvent';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const COLUMN_TKEYS = {
@@ -175,7 +175,7 @@ export default function TradeStatusBoard() {
           </div>
         </div>
       )}
-      <GuideFooterLink slug="trade-status-board" />
+      <DocumentationLink slug="trade-status-board" />
     </div>
   );
 }

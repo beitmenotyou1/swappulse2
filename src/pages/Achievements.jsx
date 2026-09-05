@@ -7,7 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import AchievementMedallion from '@/components/achievements/AchievementMedallion';
 import ProofViewerModal from '@/components/achievements/ProofViewerModal';
 import { ACHIEVEMENT_ICONS, categoryToPillar, PILLARS } from '@/lib/achievementSpecs';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -110,7 +110,7 @@ export default function Achievements() {
           onClose={() => setSelected(null)}
         />
       )}
-      <GuideFooterLink slug="achievements" />
+      <DocumentationLink slug="achievements" />
     </div>
   );
 }

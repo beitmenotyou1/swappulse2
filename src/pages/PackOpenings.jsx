@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import PostCard from '@/components/feed/PostCard';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { sortPostsDescending } from '@/lib/postSort';
 
@@ -42,7 +42,7 @@ export default function PackOpenings() {
       ) : (
         posts.map((p) => <PostCard key={p.id} post={p} />)
       )}
-      <GuideFooterLink slug="pack-openings" />
+      <DocumentationLink slug="pack-openings" />
     </div>
   );
 }

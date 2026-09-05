@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import ComposeBox from '@/components/feed/ComposeBox';
 import PageHeader from '@/components/PageHeader';
 import BlueskyLinkPrompt from '@/components/BlueskyLinkPrompt';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -22,7 +22,7 @@ export default function Compose() {
       <PageHeader title={replyTo ? t('page.compose.reply') : t('page.compose.newPost')} />
       <BlueskyLinkPrompt />
       <ComposeBox onPosted={() => navigate('/')} replyTo={replyTo} />
-      <GuideFooterLink slug="compose" />
+      <DocumentationLink slug="compose" />
     </div>
   );
 }

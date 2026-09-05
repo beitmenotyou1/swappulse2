@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ServiceRow from '@/components/status/ServiceRow';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
@@ -417,7 +417,7 @@ export default function Status() {
           </div>
         </section>
       </div>
-      <GuideFooterLink slug="status" />
+      <DocumentationLink slug="status" />
     </div>
   );
 }

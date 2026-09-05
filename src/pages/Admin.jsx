@@ -27,7 +27,7 @@ import HelpPromoSection from '@/components/admin/HelpPromoSection';
 import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -154,7 +154,7 @@ export default function Admin() {
           </>
         )}
       </div>
-      <GuideFooterLink slug="admin" />
+      <DocumentationLink slug="admin" />
     </>
   );
 }

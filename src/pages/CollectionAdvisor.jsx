@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'collection_advisor';
@@ -249,7 +249,7 @@ export default function CollectionAdvisor() {
           )}
         </div>
       </div>
-      <GuideFooterLink slug="collection-advisor" />
+      <DocumentationLink slug="collection-advisor" />
     </div>
   );
 }

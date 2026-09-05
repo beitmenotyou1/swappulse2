@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, LifeBuoy } from 'lucide-react';
 import StepUpGate from '@/components/security/StepUpGate';
 import RecoveryPanel from '@/components/chain/RecoveryPanel';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import useSEO from '@/hooks/useSEO';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -34,7 +34,7 @@ export default function Recover() {
         {({ token, lock }) => <RecoveryPanel stepUpToken={token} onLock={lock} />}
       </StepUpGate>
 
-      <GuideFooterLink slug="account-recovery" />
+      <DocumentationLink slug="account-recovery" />
     </div>
   );
 }

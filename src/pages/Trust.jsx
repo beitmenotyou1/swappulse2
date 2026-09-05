@@ -6,7 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import Avatar from '@/components/Avatar';
 import VouchForm from '@/components/trust/VouchForm';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const REL_TKEYS = {
@@ -183,7 +183,7 @@ export default function Trust() {
           </div>
         </div>
       </div>
-      <GuideFooterLink slug="trust" />
+      <DocumentationLink slug="trust" />
     </div>
   );
 }

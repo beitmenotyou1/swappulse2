@@ -16,6 +16,8 @@ import Layout from '@/components/Layout';
 import ExternalLinkConfirm from '@/components/ExternalLinkConfirm';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
 import { LightboxProvider } from '@/lib/lightboxContext';
+import ExternalRedirect from '@/components/ExternalRedirect';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 // Lazy-load all page components to split the bundle and improve initial paint.
 const Home = lazy(() => import('@/pages/Home'));
@@ -66,71 +68,11 @@ const Notifications = lazy(() => import('@/pages/Notifications'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
 const Recover = lazy(() => import('@/pages/Recover'));
-const Help = lazy(() => import('@/pages/Help'));
 const Status = lazy(() => import('@/pages/Status'));
 const IncidentDetail = lazy(() => import('@/pages/IncidentDetail'));
 const Donate = lazy(() => import('@/pages/Donate'));
 const DonateThanks = lazy(() => import('@/pages/DonateThanks'));
 const FiatSuccess = lazy(() => import('@/pages/FiatSuccess'));
-const HelpDonations = lazy(() => import('@/pages/HelpDonations'));
-const HelpExplore = lazy(() => import('@/pages/help/HelpExplore'));
-const HelpCardDetail = lazy(() => import('@/pages/help/HelpCardDetail'));
-const HelpSets = lazy(() => import('@/pages/help/HelpSets'));
-const HelpCollection = lazy(() => import('@/pages/help/HelpCollection'));
-const HelpGrading = lazy(() => import('@/pages/help/HelpGrading'));
-const HelpMarketWatch = lazy(() => import('@/pages/help/HelpMarketWatch'));
-const HelpTradeBoard = lazy(() => import('@/pages/help/HelpTradeBoard'));
-const HelpTradeStatusBoard = lazy(() => import('@/pages/help/HelpTradeStatusBoard'));
-const HelpTradeThread = lazy(() => import('@/pages/help/HelpTradeThread'));
-const HelpTradeDashboard = lazy(() => import('@/pages/help/HelpTradeDashboard'));
-const HelpTrust = lazy(() => import('@/pages/help/HelpTrust'));
-const HelpHomeFeed = lazy(() => import('@/pages/help/HelpHomeFeed'));
-const HelpCompose = lazy(() => import('@/pages/help/HelpCompose'));
-const HelpPostDetail = lazy(() => import('@/pages/help/HelpPostDetail'));
-const HelpHashtags = lazy(() => import('@/pages/help/HelpHashtags'));
-const HelpProfiles = lazy(() => import('@/pages/help/HelpProfiles'));
-const HelpJournals = lazy(() => import('@/pages/help/HelpJournals'));
-const HelpBinders = lazy(() => import('@/pages/help/HelpBinders'));
-const HelpCircles = lazy(() => import('@/pages/help/HelpCircles'));
-const HelpStarterPacks = lazy(() => import('@/pages/help/HelpStarterPacks'));
-const HelpMeetups = lazy(() => import('@/pages/help/HelpMeetups'));
-const HelpPackOpenings = lazy(() => import('@/pages/help/HelpPackOpenings'));
-const HelpPackParties = lazy(() => import('@/pages/help/HelpPackParties'));
-const HelpPullOfTheWeek = lazy(() => import('@/pages/help/HelpPullOfTheWeek'));
-const HelpWeeklyDigest = lazy(() => import('@/pages/help/HelpWeeklyDigest'));
-const HelpPredictions = lazy(() => import('@/pages/help/HelpPredictions'));
-const HelpNotifications = lazy(() => import('@/pages/help/HelpNotifications'));
-const HelpMessages = lazy(() => import('@/pages/help/HelpMessages'));
-const HelpWhoToFollow = lazy(() => import('@/pages/help/HelpWhoToFollow'));
-const HelpShare = lazy(() => import('@/pages/help/HelpShare'));
-const HelpVoiceSpaces = lazy(() => import('@/pages/help/HelpVoiceSpaces'));
-const HelpPodcasts = lazy(() => import('@/pages/help/HelpPodcasts'));
-const HelpChallenges = lazy(() => import('@/pages/help/HelpChallenges'));
-const HelpAchievements = lazy(() => import('@/pages/help/HelpAchievements'));
-const HelpTradeAssistant = lazy(() => import('@/pages/help/HelpTradeAssistant'));
-const HelpMarketWatchAssistant = lazy(() => import('@/pages/help/HelpMarketWatchAssistant'));
-const HelpCollectionAdvisor = lazy(() => import('@/pages/help/HelpCollectionAdvisor'));
-const HelpSentimentAssistant = lazy(() => import('@/pages/help/HelpSentimentAssistant'));
-const HelpAchievementGoalTracker = lazy(() => import('@/pages/help/HelpAchievementGoalTracker'));
-const HelpNetworkingConcierge = lazy(() => import('@/pages/help/HelpNetworkingConcierge'));
-const HelpSettings = lazy(() => import('@/pages/help/HelpSettings'));
-const HelpYourProfile = lazy(() => import('@/pages/help/HelpYourProfile'));
-const HelpAccount = lazy(() => import('@/pages/help/HelpAccount'));
-const HelpStatus = lazy(() => import('@/pages/help/HelpStatus'));
-const HelpAdmin = lazy(() => import('@/pages/help/HelpAdmin'));
-const HelpModeration = lazy(() => import('@/pages/help/HelpModeration'));
-const HelpFeeds = lazy(() => import('@/pages/help/HelpFeeds'));
-const HelpBookmarkBoards = lazy(() => import('@/pages/help/HelpBookmarkBoards'));
-const HelpLabelers = lazy(() => import('@/pages/help/HelpLabelers'));
-const HelpSearch = lazy(() => import('@/pages/help/HelpSearch'));
-const HelpTradeTemplates = lazy(() => import('@/pages/help/HelpTradeTemplates'));
-const HelpOnlineNow = lazy(() => import('@/pages/help/HelpOnlineNow'));
-const HelpWallet = lazy(() => import('@/pages/help/HelpWallet'));
-const HelpChainIdentity = lazy(() => import('@/pages/help/HelpChainIdentity'));
-const HelpCardAttestations = lazy(() => import('@/pages/help/HelpCardAttestations'));
-const HelpStaking = lazy(() => import('@/pages/help/HelpStaking'));
-const HelpOnChainCards = lazy(() => import('@/pages/help/HelpOnChainCards'));
-const HelpAccountRecovery = lazy(() => import('@/pages/help/HelpAccountRecovery'));
 const HandleProfile = lazy(() => import('@/pages/HandleProfile'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const Moderation = lazy(() => import('@/pages/Moderation'));
@@ -221,6 +163,8 @@ const AuthenticatedApp = () => {
       <Route path="/invite/:code" element={<Invite />} />
       <Route path="/order-complete" element={<OrderComplete />} />
       <Route path="/status" element={<Status />} />
+      <Route path="/help" element={<ExternalRedirect to={SITE_LINKS.documentation} label="Open documentation" />} />
+      <Route path="/help/*" element={<ExternalRedirect to={SITE_LINKS.documentation} label="Open documentation" />} />
       <Route path="/chain" element={<Navigate to="/chain/" replace />} />
       <Route path="/chain/" element={<ChainExplorer />} />
       <Route path="/chain/tx/:txHash" element={<ChainExplorer />} />
@@ -266,66 +210,6 @@ const AuthenticatedApp = () => {
         <Route path="/challenges/:challengeId/leaderboard" element={<Leaderboard />} />
         <Route path="/pack-parties" element={<PackParties />} />
         <Route path="/pull-of-the-week" element={<PullOfTheWeek />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/help/donations" element={<HelpDonations />} />
-        <Route path="/help/explore" element={<HelpExplore />} />
-        <Route path="/help/card-detail" element={<HelpCardDetail />} />
-        <Route path="/help/sets" element={<HelpSets />} />
-        <Route path="/help/collection" element={<HelpCollection />} />
-        <Route path="/help/grading" element={<HelpGrading />} />
-        <Route path="/help/market-watch" element={<HelpMarketWatch />} />
-        <Route path="/help/trade-board" element={<HelpTradeBoard />} />
-        <Route path="/help/trade-status-board" element={<HelpTradeStatusBoard />} />
-        <Route path="/help/trade-threads" element={<HelpTradeThread />} />
-        <Route path="/help/trade-dashboard" element={<HelpTradeDashboard />} />
-        <Route path="/help/trust" element={<HelpTrust />} />
-        <Route path="/help/home-feed" element={<HelpHomeFeed />} />
-        <Route path="/help/compose" element={<HelpCompose />} />
-        <Route path="/help/post-detail" element={<HelpPostDetail />} />
-        <Route path="/help/hashtags" element={<HelpHashtags />} />
-        <Route path="/help/profiles" element={<HelpProfiles />} />
-        <Route path="/help/journals" element={<HelpJournals />} />
-        <Route path="/help/binders" element={<HelpBinders />} />
-        <Route path="/help/circles" element={<HelpCircles />} />
-        <Route path="/help/starter-packs" element={<HelpStarterPacks />} />
-        <Route path="/help/meetups" element={<HelpMeetups />} />
-        <Route path="/help/pack-openings" element={<HelpPackOpenings />} />
-        <Route path="/help/pack-parties" element={<HelpPackParties />} />
-        <Route path="/help/pull-of-the-week" element={<HelpPullOfTheWeek />} />
-        <Route path="/help/weekly-digest" element={<HelpWeeklyDigest />} />
-        <Route path="/help/predictions" element={<HelpPredictions />} />
-        <Route path="/help/notifications" element={<HelpNotifications />} />
-        <Route path="/help/messages" element={<HelpMessages />} />
-        <Route path="/help/who-to-follow" element={<HelpWhoToFollow />} />
-        <Route path="/help/share" element={<HelpShare />} />
-        <Route path="/help/voice-spaces" element={<HelpVoiceSpaces />} />
-        <Route path="/help/podcasts" element={<HelpPodcasts />} />
-        <Route path="/help/challenges" element={<HelpChallenges />} />
-        <Route path="/help/achievements" element={<HelpAchievements />} />
-        <Route path="/help/trade-assistant" element={<HelpTradeAssistant />} />
-        <Route path="/help/market-watch-assistant" element={<HelpMarketWatchAssistant />} />
-        <Route path="/help/collection-advisor" element={<HelpCollectionAdvisor />} />
-        <Route path="/help/sentiment-assistant" element={<HelpSentimentAssistant />} />
-        <Route path="/help/achievement-goal-tracker" element={<HelpAchievementGoalTracker />} />
-        <Route path="/help/networking-concierge" element={<HelpNetworkingConcierge />} />
-        <Route path="/help/settings" element={<HelpSettings />} />
-        <Route path="/help/your-profile" element={<HelpYourProfile />} />
-        <Route path="/help/account" element={<HelpAccount />} />
-        <Route path="/help/status" element={<HelpStatus />} />
-        <Route path="/help/admin" element={<HelpAdmin />} />
-        <Route path="/help/moderation" element={<HelpModeration />} />
-        <Route path="/help/feeds" element={<HelpFeeds />} />
-        <Route path="/help/bookmark-boards" element={<HelpBookmarkBoards />} />
-        <Route path="/help/labelers" element={<HelpLabelers />} />
-        <Route path="/help/search" element={<HelpSearch />} />
-        <Route path="/help/trade-templates" element={<HelpTradeTemplates />} />
-        <Route path="/help/online-now" element={<HelpOnlineNow />} />
-        <Route path="/help/wallet" element={<HelpWallet />} />
-        <Route path="/help/chain-identity" element={<HelpChainIdentity />} />
-        <Route path="/help/card-attestations" element={<HelpCardAttestations />} />
-        <Route path="/help/staking" element={<HelpStaking />} />
-        <Route path="/help/on-chain-cards" element={<HelpOnChainCards />} />
-        <Route path="/help/account-recovery" element={<HelpAccountRecovery />} />
         <Route path="/about" element={<About />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />

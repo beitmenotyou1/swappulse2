@@ -14,7 +14,7 @@ import AtProtoSection from '@/components/settings/AtProtoSection';
 import AppPasswordsSection from '@/components/settings/AppPasswordsSection';
 import DataPrivacyRightsSection from '@/components/settings/DataPrivacyRightsSection';
 import InviteLinkSection from '@/components/settings/InviteLinkSection';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -67,7 +67,7 @@ export default function Settings() {
           <Active settings={settings} update={update} />
         )}
       </div>
-      <GuideFooterLink slug="settings" />
+      <DocumentationLink slug="settings" />
     </div>
   );
 }

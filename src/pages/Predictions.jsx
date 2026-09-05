@@ -7,7 +7,7 @@ import CreatePollModal from '@/components/predictions/CreatePollModal';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import useSEO from '@/hooks/useSEO';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const TABS = [
@@ -113,7 +113,7 @@ export default function Predictions() {
       </div>
 
       <CreatePollModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={load} />
-      <GuideFooterLink slug="predictions" />
+      <DocumentationLink slug="predictions" />
     </div>
   );
 }

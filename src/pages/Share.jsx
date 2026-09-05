@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Share2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { idbGet, idbDelete } from '@/lib/offlineDB';
-import GuideFooterLink from '@/components/help/GuideFooterLink';
+import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
@@ -64,7 +64,7 @@ export default function Share() {
           </div>
         )}
       </div>
-      <GuideFooterLink slug="share" />
+      <DocumentationLink slug="share" />
     </div>
   );
 }
