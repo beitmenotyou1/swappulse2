@@ -47,7 +47,7 @@ export default async function(req: Request): Promise<Response> {
       '/', '/explore', '/sets', '/trades', '/trade-board', '/packs', '/market',
       '/share', '/binders', '/trust', '/circles', '/meetups', '/profile',
       '/predictions', '/spaces', '/challenges', '/pack-parties', '/pull-of-the-week',
-      '/help', '/status', '/donate', '/discover/users',
+      '/status', '/donate', '/discover/users',
     ];
 
     const now = new Date().toISOString();
