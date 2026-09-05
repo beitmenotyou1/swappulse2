@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { X, FlaskConical } from 'lucide-react';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 const KEY = 'swappulse-beta-notice-v1';
 
@@ -24,7 +24,7 @@ export default function AlphaNotice() {
         <p className="flex-1 text-foreground/90">
           <span className="font-bold">{t('banner.alpha.title')}</span>{' '}
           {t('banner.alpha.desc')}{' '}
-          <Link to="/help" className="font-semibold text-primary underline-offset-2 hover:underline">{t('banner.alpha.learnMore')}</Link>.
+          <a href={SITE_LINKS.documentation} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline-offset-2 hover:underline">{t('banner.alpha.learnMore')}</a>.
         </p>
         <button onClick={dismiss} aria-label={t('common.dismiss')} className="rounded-full p-1 text-muted-foreground hover:bg-accent/20 hover:text-foreground">
           <X className="h-4 w-4" />
