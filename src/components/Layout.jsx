@@ -8,6 +8,7 @@ import BellToaster from '@/components/follow/BellToaster';
 import AlphaNotice from '@/components/AlphaNotice';
 import ActivationBanner from '@/components/ActivationBanner';
 import FeedbackButton from '@/components/feedback/FeedbackButton';
+import Footer from '@/components/Footer';
 import SignInBanner from '@/components/SignInBanner';
 import BannerProvider from '@/components/notifications/BannerProvider';
 import NotificationHandler from '@/components/notifications/NotificationHandler';
@@ -42,6 +43,7 @@ export default function Layout() {
         <ActivationBanner />
         <SignInBanner />
         <Outlet />
+        <Footer />
         <StickyPlayerBar />
       </main>
       <div className="hidden w-80 shrink-0 lg:block">
