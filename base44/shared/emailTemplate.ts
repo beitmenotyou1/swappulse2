@@ -104,7 +104,7 @@ export function buildBrandedHtml(input: BrandedEmailInput): string {
             <p style="margin:0 0 4px;font-size:13px;color:${COLORS.muted};">
               <a href="https://swappulse.org/settings" style="color:${COLORS.primary};text-decoration:none;">Email preferences</a>
               &nbsp;·&nbsp;
-              <a href="https://swappulse.org/help" style="color:${COLORS.primary};text-decoration:none;">Help</a>
+              <a href="https://swappulse.gitbook.io/swappulse-docs/" style="color:${COLORS.primary};text-decoration:none;">Documentation</a>
             </p>
             <p style="margin:12px 0 0;font-size:12px;color:${COLORS.muted};">SwapPulse Alpha · swappulse.org</p>
           </td>
