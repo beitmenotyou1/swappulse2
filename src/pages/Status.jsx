@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CheckCircle2, XCircle, AlertCircle, RefreshCw, ArrowLeft, Bell, Activity, Clock,
-  Mail, ChevronDown, AlertTriangle, Loader2, Wrench,
+  Mail, ChevronDown, AlertTriangle, Loader2, Wrench, BookOpen, ExternalLink,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ServiceRow from '@/components/status/ServiceRow';
-import DocumentationLink from '@/components/DocumentationLink';
+import Footer from '@/components/Footer';
+import { SITE_LINKS } from '@/lib/siteLinks';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
@@ -401,23 +402,28 @@ export default function Status() {
           </div>
         </section>
 
-        {/* Help link */}
-        <section className="rounded-2xl border border-border bg-card p-4">
+        {/* Documentation */}
+        <section className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
           <div className="flex items-start gap-3">
-            <Activity className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <div className="flex-1">
-              <h3 className="font-bold">Need help?</h3>
+              <h3 className="font-bold">Documentation & troubleshooting</h3>
               <p className="text-sm text-muted-foreground">
-                Check the Help Centre for guides, FAQ, and troubleshooting tips.
+                Setup guides, FAQs and troubleshooting now live in the official SwapPulse GitBook documentation.
               </p>
-              <Link to="/help" className="mt-2 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-bold hover:bg-secondary">
-                Help Centre
-              </Link>
+              <a
+                href={SITE_LINKS.documentation}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                Open documentation <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              </a>
             </div>
           </div>
         </section>
       </div>
-      <DocumentationLink slug="status" />
+      <Footer />
     </div>
   );
 }
