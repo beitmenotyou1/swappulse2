@@ -1,4 +1,4 @@
-// donation-contact — handles the contact form on the /help/donations page.
+// donation-contact — handles donation enquiries submitted through SwapPulse.
 // Validates the fields, verifies a Turnstile token, and sends the message to
 // contact@swappulse.org via SMTP (the built-in SendEmail only reaches
 // registered app users, so the shared SMTP sender is used instead). Public.
