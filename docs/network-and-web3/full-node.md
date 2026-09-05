@@ -10,7 +10,7 @@ A SwapPulse **full observer** maintains its own chain database, follows the netw
 Full-observer support is currently an engineering and node-lab capability. The live `SWAPPULSE_TESTNET` still uses the separate Shardlabs Starknet Devnet runtime. The tested `SWAPPULSE_NODELAB_1` observer has one sequencer and does not provide permissionless consensus or independent-operator decentralisation.
 {% endhint %}
 
-### What this node does
+## What this node does
 
 The current Madara observer can:
 
@@ -31,7 +31,7 @@ It does **not**:
 * replace an archive indexer for rich historical search;
 * make its raw RPC safe for public exposure.
 
-### Node roles compared
+## Node roles compared
 
 | Role              | Stores and verifies chain state | Produces blocks          | Typical use                                          |
 | ----------------- | ------------------------------- | ------------------------ | ---------------------------------------------------- |
@@ -40,9 +40,9 @@ It does **not**:
 | Archive/indexer   | Yes, plus extended indexes      | No                       | Explorer history, search and analytics               |
 | Lite node         | No complete state database      | No                       | Low-resource checks across one or more RPC peers     |
 
-### Current tested implementations
+## Current tested implementations
 
-#### Madara Stage A
+### Madara Stage A
 
 `chain/node/full` follows public Starknet Sepolia to qualify the client and hardware. It answers whether a host can run Madara under a real synchronisation workload. It does not make the host a SwapPulse full node.
 
@@ -56,7 +56,7 @@ The current guarded profile uses:
 
 The reference Intel N95 mini-server passed the short restart and recovery test with Madara `v0.11.0-alpha.9`, pinned to digest `sha256:3c931fa515bbd3760fd5cbc0bcdceb557d3edbd44bec0231cdf52dd6abb475f6`. Extended Sepolia sync also revealed substantial storage I/O and write amplification, so this is not a production full-history support claim.
 
-#### SWAPPULSE\_NODELAB\_1 full observer
+### SWAPPULSE\_NODELAB\_1 full observer
 
 `chain/node/nodelab` runs the first SwapPulse-specific two-node topology:
 
@@ -79,12 +79,13 @@ Later fault tests stopped the observer and sequencer separately. In both cases, 
 
 Both nodes were on the same physical host, so these results prove separate state, fail-closed read behaviour and restart recovery. They do not prove separate operator control or permissionless consensus.
 
-#### Stage D preparation
+### Stage D preparation
 
 `chain/node/stage-d` now contains the first host packages for moving the full observer to a second physical machine:
 
 * an opt-in Compose override that binds the sequencer feeder gateway only to the primary host's Tailscale IPv4 address;
 * a read-only preflight that checks the private bind, reviewed image and node-lab state;
+* a confirmation-gated enable script that recreates only the node-lab sequencer, waits for same-host agreement to recover and rechecks the live RPC, relay and lite node;
 * a checkpoint generator that records a public confirmed block number and hash for remote verification;
 * a public, secret-free remote-observer environment template;
 * a resource-limited remote Madara Compose service with no private signing key;
@@ -98,7 +99,77 @@ Stage D has not passed. The complete guarded workflow is now present, but the re
 
 The planned second-host test must use a private overlay such as Tailscale, reproduce the exact chain ID, checkpoint block hash and permanent V2 contract pins, preserve its own database across restart, and then replace the same-host observer as one of the lite verifier's peers. Even after that, `operator_independence` remains false if one person administers both machines.
 
-### Host requirements
+### Prepare the Stage D remote observer
+
+Run this workflow only when the second physical host is ready, both machines have reviewed Tailscale IPv4 addresses in `100.64.0.0/10`, and the same-host node lab and lite verifier are healthy.
+
+{% stepper %}
+{% step %}
+#### Enable the primary host's private gateway
+
+From `chain/node/stage-d` on the primary host:
+
+```bash
+export NODELAB_STAGE_D_TAILSCALE_IP=<primary-100.x.y.z>
+bash primary-gateway-preflight.sh
+
+NODELAB_CONFIRM_STAGE_D_GATEWAY=YES \
+  bash enable-primary-gateway.sh
+
+bash create-primary-checkpoint.sh
+```
+
+The guarded enable script refuses a non-Tailscale bind, recreates only the node-lab sequencer if required, waits for same-host agreement to return, and rechecks the live RPC, relay and lite node. It publishes the feeder gateway as `<primary-Tailscale-IP>:19952` to the private overlay only.
+{% endstep %}
+
+{% step %}
+#### Configure the remote host
+
+Install the repository and Docker prerequisites, then install the verification tooling and create the remote environment file:
+
+```bash
+cd swappulse2/chain/scripts/tooling
+npm ci
+
+cd ../../node/stage-d/remote-observer
+cp .env.example .env.remote
+```
+
+In `.env.remote`, replace both example `100.64.0.x` values with the primary and remote hosts' actual Tailscale IPv4 addresses. Keep the immutable `MADARA_IMAGE` digest and the `SWAPPULSE_NODELAB_1` identity unchanged unless a new image has completed qualification.
+{% endstep %}
+
+{% step %}
+#### Transfer the public checkpoint
+
+Copy `stage-d-primary-checkpoint.json` from the primary host to the remote host. This file contains public block and hash evidence only.
+
+Do not transfer `.env.local`, sequencer keys, deployment keys, registry-owner keys, verifier keys or user keys.
+{% endstep %}
+
+{% step %}
+#### Start and verify the remote observer
+
+From `chain/node/stage-d/remote-observer` on the remote host:
+
+```bash
+bash preflight.sh
+bash start.sh
+bash verify.sh /path/to/chain /path/to/stage-d-primary-checkpoint.json
+```
+
+The verification must prove the exact chain ID, confirmed checkpoint block hash, permanent V2 deployment pins and full-observer mode without a private signing key. Its RPC must remain bound only to the remote host's Tailscale address, normally on port `19961`.
+{% endstep %}
+
+{% step %}
+#### Prove restart and lite-peer recovery
+
+Stop the remote observer with `bash stop.sh`, confirm its named volume remains, restart it and repeat verification. Only then replace the same-host observer endpoint in the lite verifier and require `multi-peer-agreement` again.
+
+Do not remove the same-host observer or report Stage D as passed until the repository contains this evidence.
+{% endstep %}
+{% endstepper %}
+
+## Host requirements
 
 Use a dedicated or carefully resource-limited 64-bit Linux host.
 
@@ -113,11 +184,11 @@ Use a dedicated or carefully resource-limited 64-bit Linux host.
 
 Pi 4 and Pi 5 devices remain candidate hardware. Do not describe them as supported full observers until their restart, catch-up, storage, thermal and multi-day soak tests pass.
 
-### Host the tested node-lab observer
+## Host the tested node-lab observer
 
 {% stepper %}
 {% step %}
-#### Obtain the current repository
+### Obtain the current repository
 
 ```bash
 git clone https://github.com/beitmenotyou1/swappulse2.git
@@ -128,7 +199,7 @@ If the repository already exists, use its normal authenticated update workflow a
 {% endstep %}
 
 {% step %}
-#### Prepare local configuration
+### Prepare local configuration
 
 ```bash
 bash prepare-nodelab.sh
@@ -139,7 +210,7 @@ Preparation creates `.env.image` and a mode-`0600` `.env.local`. They contain th
 {% endstep %}
 
 {% step %}
-#### Start and verify the sequencer
+### Start and verify the sequencer
 
 ```bash
 bash start-sequencer.sh
@@ -150,7 +221,7 @@ The verification must return the exact node-lab chain ID and at least one confir
 {% endstep %}
 
 {% step %}
-#### Start the full observer
+### Start the full observer
 
 ```bash
 bash start-observer.sh
@@ -161,7 +232,7 @@ The final verifier checks both chain IDs, compares the block hash at the common 
 {% endstep %}
 
 {% step %}
-#### Inspect the local RPCs
+### Inspect the local RPCs
 
 ```bash
 curl -fsS http://127.0.0.1:19950 \
@@ -177,7 +248,7 @@ For a meaningful comparison, use `verify-nodelab.sh`. Two different block height
 {% endstep %}
 
 {% step %}
-#### Stop without deleting state
+### Stop without deleting state
 
 ```bash
 bash stop-nodelab.sh
@@ -187,7 +258,7 @@ Normal stop preserves both named volumes. Do not add `-v` to a Compose down comm
 {% endstep %}
 {% endstepper %}
 
-### V2 contracts in the node lab
+## V2 contracts in the node lab
 
 The tested lab contains the same audited V2 contract suite as the application baseline, deployed with fresh lab-only authorities. Its canonical manifest is:
 
@@ -199,13 +270,13 @@ Never import node-lab addresses into the live Base44 `ChainNetworkConfig`. The l
 
 The deployment, assurance exercise and irreversible V2 cut-over scripts are engineering harnesses. Run them only from a clean, tested `chain/` workspace and only when you deliberately intend to reproduce the development-network evidence. A failed cut-over command must be investigated on-chain before any retry because the one-way transaction may already have committed.
 
-### Operating guidelines
+## Operating guidelines
 
-#### Keep the RPC local
+### Keep the RPC local
 
 The raw Madara RPC should remain bound to `127.0.0.1`. If users need remote reads, place the [read-only RPC gateway](rpc-gateway.md) in front of a reviewed upstream and publish only the gateway through HTTPS.
 
-#### Monitor the host
+### Monitor the host
 
 Watch:
 
@@ -227,7 +298,7 @@ vmstat 1 5
 bash verify-nodelab.sh
 ```
 
-#### Preserve reproducibility
+### Preserve reproducibility
 
 * Pin the full container image by immutable digest. Never benchmark `latest`.
 * Preserve the public network and deployment manifests with any backup.
@@ -235,7 +306,7 @@ bash verify-nodelab.sh
 * Test an upgrade against a copied or fresh volume before touching the only working state.
 * Record the image digest, chain ID, block height and verification result for each qualification.
 
-### Security checklist
+## Security checklist
 
 Never place any of these on a community full observer:
 
@@ -249,7 +320,7 @@ Never place any of these on a community full observer:
 
 A full observer validates public protocol state. It must not depend on private Base44 data to decide whether a state transition is valid.
 
-### Troubleshooting
+## Troubleshooting
 
 | Symptom                              | Check                                                         | Safe response                                                               |
 | ------------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -260,7 +331,7 @@ A full observer validates public protocol state. It must not depend on private B
 | Disk is nearly full                  | Database size and Docker volume location                      | Stop cleanly and expand or migrate storage before corruption risk increases |
 | New image fails against old data     | Migration notes and clean-volume result                       | Preserve the old volume as evidence and retest with a fresh volume          |
 
-### Related pages
+## Related pages
 
 * [Lite node](lite-node.md)
 * [Read-only RPC gateway](rpc-gateway.md)
