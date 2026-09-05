@@ -98,6 +98,7 @@ const en = {
   'page.trades.title': 'Trade Board', 'page.trades.subtitle': 'Open trade listings', 'page.trades.newListing': 'New Listing',
   'page.trades.empty': 'No active trades', 'page.trades.emptySub': 'Create a listing to start trading.',
   'footer.tagline': 'A decentralized Pokémon TCG community',
+  'footer.documentation': 'Documentation', 'docs.readOfficial': 'Read the official documentation',
   'footer.about': 'About', 'footer.terms': 'Terms', 'footer.privacy': 'Privacy Policy', 'footer.help': 'Help', 'footer.status': 'Status', 'footer.explore': 'Explore', 'footer.donate': 'Donate',
   'footer.disclaimer': 'SwapPulse is a free, open-source platform. Pokémon and Pokémon TCG are trademarks of Nintendo, Game Freak, and The Pokémon Company. SwapPulse is not affiliated with or endorsed by them.',
   'footer.builtOn': '© SwapPulse - Built on the AT Protocol · Powered by TCGdex',
