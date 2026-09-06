@@ -85,6 +85,7 @@ Every significant release should explain:
 7. **Accessibility/localisation impact**: for user-facing work.
 8. **Testing/verification**: checks that were actually run.
 9. **Known limitations**: what the release does not yet provide.
+10. **FAQ impact**: which likely user questions were reviewed, answered or added as individual FAQ pages.
 
 ## Creating a release
 
