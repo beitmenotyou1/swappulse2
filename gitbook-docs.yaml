@@ -28,3 +28,16 @@ site:
           default: true
           content:
             directory: ./docs
+    - type: section
+      key: section-3
+      title: API References
+      path: api-references
+      icon: rectangle-api
+      children:
+        - type: space
+          key: space-3
+          title: API References
+          path: api-reference
+          default: true
+          content:
+            directory: ./api-references/api-reference
