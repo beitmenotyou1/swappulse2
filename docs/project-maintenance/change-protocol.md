@@ -364,7 +364,10 @@ Use:
 * [deployment guide](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/deployment) for deployment/ops;
 * [contributor guide](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/contributing) for contribution expectations;
 * [forking and rebranding guide](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/forking-and-rebranding) for independent forks;
-* [node architecture roadmap](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/node-architecture) for decentralisation/node roadmap.
+* [node architecture roadmap](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/node-architecture) for decentralisation/node roadmap;
+* [Frequently Asked Questions](https://swappulse.gitbook.io/swappulse-docs/faq) for concise answers to questions raised by the change.
+
+After adding or changing content, review it for likely user questions. If an answer is not already covered, create one Markdown page per question under `docs/faq/`. Use the full question as the page heading, give the direct answer first, link to the detailed guide and add the page beneath the FAQ category in `docs/SUMMARY.md`. Do not add new questions to the consolidated FAQ archive.
 
 Delete or clearly mark stale architecture claims instead of leaving contradictory docs side by side.
 
