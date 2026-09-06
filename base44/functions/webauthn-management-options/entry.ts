@@ -4,7 +4,7 @@
 // the caller must complete a fresh authenticator assertion against this challenge.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { generateAuthenticationOptions } from 'npm:@simplewebauthn/server@10';
+import { generateAuthenticationOptions } from 'npm:@simplewebauthn/server@13.3.2';
 import { issueWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 
 export default async function (req: Request): Promise<Response> {
