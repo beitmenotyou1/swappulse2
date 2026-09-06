@@ -2,10 +2,29 @@ $schema: https://api.gitbook.com/gitbook-docs.yaml
 site:
   title: SwapPulse Docs
   structure:
-    - type: space
-      key: space-1
-      title: SwapPulse Documentation
-      path: docs
+    - type: section
+      key: section-1
+      title: SwapPulse Docs
+      path: swappulse-docs
       default: true
-      content:
-        directory: ./docs
+      children:
+        - type: space
+          key: space-1
+          title: SwapPulse Documentation
+          path: docs
+          default: true
+          content:
+            directory: ./docs
+    - type: section
+      key: section-2
+      title: Landing Page
+      path: landing-page
+      icon: house-laptop
+      children:
+        - type: space
+          key: space-2
+          title: Landing Page
+          path: landing-page
+          default: true
+          content:
+            directory: ./landing-page
