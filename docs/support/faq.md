@@ -4,9 +4,9 @@ description: >-
   Protocol, Wallet, Web3, nodes, privacy, open source, forking and contributing.
 ---
 
-# Frequently Asked Questions
+# All current FAQ answers
 
-This FAQ answers the questions people are most likely to ask before using, contributing to, operating or forking SwapPulse. For step-by-step instructions, follow the links to the detailed guides throughout this page.
+This consolidated page preserves the existing SwapPulse questions and answers. New questions are added as individual pages in the dedicated [Frequently Asked Questions](../faq/) category, making each answer easier to find, link to and maintain. For step-by-step instructions, follow the links to the detailed guides throughout this page.
 
 {% hint style="info" %}
 SwapPulse is actively developed. Testnet Web3 features, node tooling and some integrations may change as the project matures. The [Changelog](../changelog/) records significant releases and changes.
