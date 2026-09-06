@@ -1,0 +1,30 @@
+{
+  "name": "__ux_checkpoint_noop",
+  "type": "object",
+  "title": "Retired UX Checkpoint Placeholder",
+  "description": "Retired empty placeholder created accidentally during a checkpoint action. Contains no application data. Admin-only until physical schema deletion is available.",
+  "properties": {},
+  "required": [],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
