@@ -6,7 +6,7 @@
 // since both are second-factor brute-force vectors on the same endpoint surface.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
+import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@13.3.2';
 import { consumeWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
 import { resetAuthAttempts } from '../../shared/authThrottle.ts';
@@ -81,9 +81,9 @@ export default async function (req: Request): Promise<Response> {
         expectedChallenge: challenge,
         expectedOrigin: rpConfig.origin,
         expectedRPID: rpConfig.rpId,
-        authenticator: {
-          credentialID: credential.credential_id,
-          credentialPublicKey: base64UrlToUint8Array(credential.public_key),
+        credential: {
+          id: credential.credential_id,
+          publicKey: base64UrlToUint8Array(credential.public_key),
           counter: credential.counter || 0,
           transports: credential.transports || [],
         },
