@@ -44,3 +44,17 @@ site:
           default: true
           content:
             directory: ./api-references/api-reference
+    - type: section
+      key: section-4
+      title: Help Center
+      path: help-center
+      description: ""
+      icon: file-circle-question
+      children:
+        - type: space
+          key: space-4
+          title: Help Center
+          path: help-center
+          default: true
+          content:
+            directory: ./help-center
