@@ -11,9 +11,10 @@ import {
 import { useT } from '@/lib/i18n/I18nProvider';
 
 function isStandalone() {
+  const navigatorWithStandalone = /** @type {Navigator & { standalone?: boolean }} */ (window.navigator);
   return (
     window.matchMedia?.('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true
+    navigatorWithStandalone.standalone === true
   );
 }
 
