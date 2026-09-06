@@ -3,25 +3,11 @@ site:
   title: SwapPulse Docs
   structure:
     - type: section
-      key: section-2
-      title: Landing Page
-      path: landing-page
-      description: ""
-      icon: house-laptop
-      default: true
-      children:
-        - type: space
-          key: space-2
-          title: Landing Page
-          path: landing-page
-          default: true
-          content:
-            directory: ./landing-page
-    - type: section
       key: section-1
       title: SwapPulse Docs
       path: swappulse-docs
       description: ""
+      default: true
       children:
         - type: space
           key: space-1
@@ -30,31 +16,3 @@ site:
           default: true
           content:
             directory: ./docs
-    - type: section
-      key: section-3
-      title: API References
-      path: api-references
-      description: ""
-      icon: rectangle-api
-      children:
-        - type: space
-          key: space-3
-          title: API References
-          path: api-reference
-          default: true
-          content:
-            directory: ./api-references/api-reference
-    - type: section
-      key: section-4
-      title: Help Center
-      path: help-center
-      description: ""
-      icon: file-circle-question
-      children:
-        - type: space
-          key: space-4
-          title: Help Center
-          path: help-center
-          default: true
-          content:
-            directory: ./help-center
