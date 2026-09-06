@@ -6,6 +6,7 @@ site:
       key: section-2
       title: Landing Page
       path: landing-page
+      description: ""
       icon: house-laptop
       default: true
       children:
@@ -20,6 +21,7 @@ site:
       key: section-1
       title: SwapPulse Docs
       path: swappulse-docs
+      description: ""
       children:
         - type: space
           key: space-1
@@ -32,6 +34,7 @@ site:
       key: section-3
       title: API References
       path: api-references
+      description: ""
       icon: rectangle-api
       children:
         - type: space
