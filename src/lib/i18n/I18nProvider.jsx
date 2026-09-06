@@ -5,7 +5,11 @@ import { setCurrentTcgdexLang } from './currentLang';
 import { detectLocaleFromGeo } from './geoLocale';
 import { getCardLanguageOverride } from '@/lib/cardLanguage';
 
-const I18nContext = createContext({ locale: 'en-GB', t: (k) => k, setLocale: () => {} });
+const I18nContext = createContext({
+  locale: 'en-GB',
+  t: (key, _params) => key,
+  setLocale: (_locale) => {},
+});
 
 function getInitialLocale() {
   // A ?lang=LOCALE query param (set by promo post links) takes priority so
