@@ -275,3 +275,51 @@ Target: `main` when this release manifest lands.
 
 ### Rationale
 Prepare a compliant direct TCGplayer read path without pretending new developer access is available, while making the separate affiliate programme the practical outbound-commerce route if SwapPulse is accepted by TCGplayer/Impact.
+
+---
+
+## v0.10.0: Self-hosted node architecture, documentation and security hardening
+
+**Current release-series change.** 2026-09-06
+
+Target: `main` when this release manifest lands.
+
+### Added
+- Self-hosted lite-node, full-observer and node-lab tooling with Docker definitions, environment templates, preflight checks and operator scripts.
+- Stage D primary-gateway and remote-observer tooling.
+- Preserved benchmark, restart-recovery, multi-peer agreement and fault-recovery evidence.
+- Base44 `NodeRegistration` entity.
+- Expanded API, node, operator, infrastructure, deployment, security and project-maintenance documentation.
+
+### Updated
+- GitBook navigation, onboarding, FAQ, licensing and release guidance.
+- npm transitive dependencies through safe, non-major lockfile updates.
+- Project version metadata to `0.10.0`.
+
+### Removed and replaced
+- Removed the unused root `@simplewebauthn/server` npm dependency while retaining independent pinned backend imports.
+- Replaced obsolete licence-options and release-process documents with canonical MPL-2.0 licensing and release guides.
+
+### Security/privacy
+- Clean npm audit results contain zero critical, high or low findings.
+- Two moderate React Router 6 advisories remain pending a separately tested breaking migration to React Router 7.
+- Existing same-origin and deep-link sanitisation controls remain in place.
+- Privileged credentials remain backend-only and private identity evidence remains prohibited from on-chain storage.
+
+### Compatibility/migration
+- No end-user migration, smart-contract redeployment or V2 policy reversal is required.
+- Node tooling is staged and operators should use its templates, preflight checks and checkpoint guidance.
+
+### Testing/verification
+- `npm ci`, lint and production build passed.
+- TypeScript differential found zero new error signatures and 251 resolved signatures compared with v0.9.0.
+- The known TypeScript baseline remains 665 errors.
+- The final validation worktree was clean and reproducible.
+
+### Known limitations
+- The node stack is not yet a production permissionless network.
+- Two moderate React Router advisories and 665 baseline TypeScript errors remain.
+- No independent penetration test or smart-contract audit is claimed.
+
+### Rationale
+Provide a reproducible foundation for broader network participation, make the system easier to understand and operate, and remove avoidable dependency risk without forcing a release-critical breaking upgrade.
