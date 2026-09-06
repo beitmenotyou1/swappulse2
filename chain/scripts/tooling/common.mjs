@@ -37,12 +37,34 @@ export function normalizeHex(value, label = 'hex value') {
   return `0x${BigInt(raw).toString(16)}`;
 }
 
-export function safeRpcUrl(raw) {
+function isTailscaleIpv4(hostname) {
+  const octets = hostname.split('.').map(Number);
+  return octets.length === 4
+    && octets.every(
+      (part) =>
+        Number.isInteger(part)
+        && part >= 0
+        && part <= 255,
+    )
+    && octets[0] === 100
+    && octets[1] >= 64
+    && octets[1] <= 127;
+}
+
+export function safeRpcUrl(
+  raw,
+  { allowTailscaleHttp = false } = {},
+) {
   const url = new URL(raw);
   if (url.username || url.password) throw new Error('RPC URL must not contain embedded credentials');
   const local = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
-  if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) {
-    throw new Error('Persistent RPC URL must use HTTPS (HTTP is allowed only for localhost/devnet)');
+  const approvedTailscale =
+    allowTailscaleHttp && isTailscaleIpv4(url.hostname);
+  if (url.protocol !== 'https:' && !((local || approvedTailscale) && url.protocol === 'http:')) {
+    throw new Error(
+      'Persistent RPC URL must use HTTPS '
+      + '(HTTP is allowed only for localhost/devnet or explicitly approved Tailscale verification)',
+    );
   }
   return url.toString();
 }
@@ -104,8 +126,11 @@ export function publicClassHashes(loaded) {
   };
 }
 
-export async function providerFor(rawUrl) {
-  const rpcUrl = safeRpcUrl(rawUrl);
+export async function providerFor(
+  rawUrl,
+  options = {},
+) {
+  const rpcUrl = safeRpcUrl(rawUrl, options);
   const provider = new RpcProvider({ nodeUrl: rpcUrl });
   await provider.getChainId();
   return { provider, rpcUrl };

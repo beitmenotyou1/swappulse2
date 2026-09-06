@@ -11,7 +11,10 @@ if (manifest.network !== expectedNetwork) throw new Error(`Manifest network must
 if (![1, 2].includes(Number(manifest.schema_version))) throw new Error('Unsupported deployment manifest schema_version');
 
 const verificationRpc = String(process.env.SWAPPULSE_VERIFY_RPC_URL || manifest.rpc_url).trim();
-const { provider, rpcUrl } = await providerFor(verificationRpc);
+const allowTailscaleHttp =
+  expectedNetwork === 'SWAPPULSE_NODELAB_1';
+const { provider, rpcUrl } =
+  await providerFor(verificationRpc, { allowTailscaleHttp });
 const actualChainId = normalizeHex(await provider.getChainId(), 'chain id');
 const expectedChainId = normalizeHex(manifest.chain_id, 'manifest chain id');
 if (actualChainId !== expectedChainId) {
