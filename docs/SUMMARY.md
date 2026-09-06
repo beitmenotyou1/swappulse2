@@ -123,6 +123,7 @@
   * [Third-party Notices](project-maintenance/third-party-notices.md)
   * [Forking and Rebranding SwapPulse](project-maintenance/forking-and-rebranding.md)
 * [Changelog](changelog/README.md)
+  * [SwapPulse v0.10.0: Self-hosted node architecture, documentation and security hardening](changelog/v0-10-0.md)
   * [SwapPulse v0.9.0: Dormant TCGplayer API integration and affiliate-ready links](changelog/v0-9-0.md)
   * [SwapPulse v0.8.0: PokemonPriceTracker graded and recent-market enrichment](changelog/v0-8-0.md)
   * [SwapPulse v0.7.0: MPL-2.0 and multi-source Pokémon enrichment](changelog/v0-7-0.md)
