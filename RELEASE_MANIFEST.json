@@ -74,6 +74,14 @@
       "notes": ".github/releases/v0.9.0.md",
       "prerelease": true,
       "historical": false
+    },
+    {
+      "version": "v0.10.0",
+      "title": "Self-hosted node architecture, documentation and security hardening",
+      "target": "main",
+      "notes": ".github/releases/v0.10.0.md",
+      "prerelease": true,
+      "historical": false
     }
   ]
 }
