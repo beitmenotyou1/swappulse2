@@ -4,49 +4,74 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { identityStatusConfig, isChainAuthoritative, shortHex } from '@/lib/chainIdentityDisplay';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 
-function formatUtc(seconds) {
+const IDENTITY_STATUS_KEYS = {
+  REGISTERED: 'wallet.identity.status.registered',
+  RECOVERED: 'wallet.identity.status.recovered',
+  MERGED: 'wallet.identity.status.merged',
+  DEPLOYED: 'wallet.identity.status.deployed',
+  PENDING: 'wallet.identity.status.pending',
+  FAILED: 'wallet.identity.status.failed',
+  RECOVERY_PENDING: 'wallet.identity.status.recoveryPending',
+};
+
+function formatTimestamp(seconds, locale, t) {
   const value = Number(seconds || 0);
-  if (!Number.isFinite(value) || value <= 0) return 'No expiry';
-  return new Date(value * 1000).toLocaleString([], {
+  if (!Number.isFinite(value) || value <= 0) return t('wallet.identity.noExpiry');
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  }).format(new Date(value * 1000));
 }
 
-function remainingLabel(seconds, nowMs) {
+function formatIsoTimestamp(value, locale) {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) return String(value || '');
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  }).format(date);
+}
+
+function remainingLabel(seconds, nowMs, t) {
   const value = Number(seconds || 0);
   if (!Number.isFinite(value) || value <= 0) return '';
   const ms = value * 1000 - nowMs;
-  if (ms <= 0) return 'Expired';
+  if (ms <= 0) return t('wallet.identity.verification.expired');
   const days = Math.floor(ms / 86400000);
   const hours = Math.floor((ms % 86400000) / 3600000);
   const minutes = Math.floor((ms % 3600000) / 60000);
-  if (days > 0) return `${days}d ${hours}h remaining`;
-  if (hours > 0) return `${hours}h ${minutes}m remaining`;
-  return `${Math.max(1, minutes)}m remaining`;
+  if (days > 0) return t('wallet.identity.remainingDays', { days, hours });
+  if (hours > 0) return t('wallet.identity.remainingHours', { hours, minutes });
+  return t('wallet.identity.remainingMinutes', { minutes: Math.max(1, minutes) });
 }
 
-function verificationPresentation(identity, nowMs) {
+function verificationPresentation(identity, nowMs, t) {
   const stored = String(identity?.verification_status || 'NONE');
   const expiresAt = Number(identity?.verification_expires_at || 0);
   const expiredByClock = expiresAt > 0 && expiresAt * 1000 <= nowMs;
-  if (stored === 'REVOKED') return { label: 'Revoked', active: false };
-  if (stored === 'EXPIRED' || expiredByClock) return { label: 'Expired', active: false };
-  if (stored === 'ACTIVE') return { label: 'Active', active: true };
-  return { label: 'Not verified', active: false };
+  if (stored === 'REVOKED') return { label: t('wallet.identity.verification.revoked'), active: false };
+  if (stored === 'EXPIRED' || expiredByClock) return { label: t('wallet.identity.verification.expired'), active: false };
+  if (stored === 'ACTIVE') return { label: t('wallet.identity.verification.active'), active: true };
+  return { label: t('wallet.identity.verification.notVerified'), active: false };
+}
+
+function translatedIdentityStatus(statusValue, t) {
+  if (IDENTITY_STATUS_KEYS[statusValue]) return t(IDENTITY_STATUS_KEYS[statusValue]);
+  if (!statusValue) return t('wallet.identity.status.none');
+  return t('wallet.identity.status.unknown', { status: statusValue });
 }
 
 export default function WalletDashboard({ status, onReload }) {
   const { toast } = useToast();
-  const t = useT();
+  const { t, locale } = useI18n();
   const [reconciling, setReconciling] = useState(false);
   const [recovery, setRecovery] = useState(null);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const identity = status?.identity || {};
   const network = status?.network || {};
-  const { Icon, bgClass, textClass, label } = identityStatusConfig(identity.status);
+  const { Icon, bgClass, textClass } = identityStatusConfig(identity.status);
+  const identityLabel = translatedIdentityStatus(identity.status, t);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -73,14 +98,21 @@ export default function WalletDashboard({ status, onReload }) {
     return () => { cancelled = true; };
   }, [identity?.id, identity?.account_address, identity?.status]);
 
-  const verification = useMemo(() => verificationPresentation(identity, now), [identity, now]);
+  const verification = useMemo(
+    () => verificationPresentation(identity, now, t),
+    [identity, now, t],
+  );
   const verificationType = Number(identity?.verification_type || 0);
   const verificationLevel = Number(identity?.verification_level || 0);
-  const expiryLabel = remainingLabel(identity?.verification_expires_at, now);
+  const expiryLabel = remainingLabel(identity?.verification_expires_at, now, t);
 
-  const copy = async (value, what) => {
-    try { await navigator.clipboard.writeText(value); toast({ title: `${what} copied` }); }
-    catch { toast({ title: 'Could not copy', variant: 'destructive' }); }
+  const copy = async (value, successKey) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: t(successKey) });
+    } catch {
+      toast({ title: t('wallet.identity.copyFailed'), variant: 'destructive' });
+    }
   };
 
   const reconcile = async () => {
@@ -91,42 +123,61 @@ export default function WalletDashboard({ status, onReload }) {
       const data = res?.data || res;
       const outcome = data?.results?.[0]?.outcome || 'CHECKED';
       await onReload();
+      const authoritative = isChainAuthoritative(outcome);
       toast({
-        title: isChainAuthoritative(outcome) ? 'Identity verified on chain' : 'Chain state refreshed',
-        description: isChainAuthoritative(outcome) ? 'Your identity is chain-authoritative.' : `Chain result: ${outcome}`,
+        title: authoritative ? t('wallet.identity.reconcileVerified') : t('wallet.identity.reconcileRefreshed'),
+        description: authoritative
+          ? t('wallet.identity.chainAuthoritative')
+          : t('wallet.identity.chainResult', { outcome }),
       });
     } catch (error) {
-      toast({ title: 'Chain verification failed', description: error?.response?.data?.error || error?.message, variant: 'destructive' });
+      toast({
+        title: t('wallet.identity.reconcileFailed'),
+        description: error?.response?.data?.error || error?.message,
+        variant: 'destructive',
+      });
     } finally {
       setReconciling(false);
     }
   };
 
   const txs = [
-    { label: 'Account deployment', hash: identity.deployment_tx_hash },
-    { label: 'Identity registration', hash: identity.registration_tx_hash },
-    { label: 'Latest V2 verification', hash: identity.verification_tx_hash },
-    { label: identity.verification_status === 'REVOKED' ? 'Current verification revocation' : 'Previous verification revocation', hash: identity.verification_revoke_tx_hash },
-  ].filter((t) => t.hash);
+    { label: t('wallet.identity.tx.accountDeployment'), hash: identity.deployment_tx_hash },
+    { label: t('wallet.identity.tx.registration'), hash: identity.registration_tx_hash },
+    { label: t('wallet.identity.tx.latestVerification'), hash: identity.verification_tx_hash },
+    {
+      label: t(identity.verification_status === 'REVOKED'
+        ? 'wallet.identity.tx.currentRevocation'
+        : 'wallet.identity.tx.previousRevocation'),
+      hash: identity.verification_revoke_tx_hash,
+    },
+  ].filter((item) => item.hash);
 
   const recoveryDelayHours = Math.round(Number(network?.recovery_delay_seconds || recovery?.recovery_delay_seconds || 0) / 3600);
   const recoveryPending = Boolean(recovery?.pending);
   const recoveryReady = Boolean(recovery?.ready);
+  const recoveryState = recoveryLoading
+    ? t('wallet.identity.recoveryChecking')
+    : recoveryReady
+      ? t('wallet.identity.recoveryReady')
+      : recoveryPending
+        ? t('wallet.identity.recoveryScheduled')
+        : t('wallet.identity.recoveryProtected');
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-start gap-3">
           <div className={`rounded-full p-2.5 ${bgClass} ${textClass}`}>
-            <Icon className="h-5 w-5" />
+            <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">{label}</p>
+            <p className="text-sm font-bold">{identityLabel}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{identity.network || 'SWAPPULSE_TESTNET'}</p>
           </div>
           {network?.identity_verification_mode && (
             <span className="rounded-full border border-border bg-secondary/40 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground">
-              {network.identity_verification_mode} identity
+              {t('wallet.identity.networkIdentity', { mode: network.identity_verification_mode })}
             </span>
           )}
         </div>
@@ -134,19 +185,24 @@ export default function WalletDashboard({ status, onReload }) {
 
       {identity.account_address && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold text-muted-foreground">Smart account address</p>
+          <p className="text-xs font-semibold text-muted-foreground">{t('wallet.identity.smartAccountAddress')}</p>
           <div className="mt-2 flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate font-mono text-sm">{identity.account_address}</code>
+            <code className="min-w-0 flex-1 truncate font-mono text-sm" dir="ltr">{identity.account_address}</code>
             <Link
               to={`/chain/address/${identity.account_address}`}
               className="shrink-0 rounded-lg p-2 text-primary hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label={t('explorer.viewAddress')}
               title={t('explorer.viewAddress')}
             >
-              <Blocks className="h-4 w-4" />
+              <Blocks className="h-4 w-4" aria-hidden="true" />
             </Link>
-            <button onClick={() => copy(identity.account_address, 'Address')} className="shrink-0 rounded-lg p-2 hover:bg-secondary" aria-label="Copy smart account address">
-              <Copy className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={() => copy(identity.account_address, 'wallet.identity.addressCopied')}
+              className="shrink-0 rounded-lg p-2 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={t('wallet.identity.copySmartAccountAddress')}
+            >
+              <Copy className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -154,18 +210,23 @@ export default function WalletDashboard({ status, onReload }) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Identity ID</p>
+          <p className="text-xs text-muted-foreground">{t('wallet.identity.identityId')}</p>
           <div className="mt-1 flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate font-mono text-sm" title={identity.chain_identity_id}>{shortHex(identity.chain_identity_id)}</p>
+            <p className="min-w-0 flex-1 truncate font-mono text-sm" dir="ltr" title={identity.chain_identity_id}>{shortHex(identity.chain_identity_id)}</p>
             {identity.chain_identity_id && (
-              <button onClick={() => copy(identity.chain_identity_id, 'Identity ID')} className="rounded p-1 hover:bg-secondary" aria-label="Copy identity ID">
-                <Copy className="h-3.5 w-3.5" />
+              <button
+                type="button"
+                onClick={() => copy(identity.chain_identity_id, 'wallet.identity.identityIdCopied')}
+                className="rounded p-1 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label={t('wallet.identity.copyIdentityId')}
+              >
+                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             )}
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Completed recoveries</p>
+          <p className="text-xs text-muted-foreground">{t('wallet.identity.completedRecoveries')}</p>
           <p className="mt-1 font-mono text-sm">{identity.recovery_count || 0}</p>
         </div>
       </div>
@@ -174,35 +235,42 @@ export default function WalletDashboard({ status, onReload }) {
         <div className={`rounded-xl border p-4 ${verification.active ? 'border-success/30 bg-success/5' : 'border-border bg-card'}`}>
           <div className="flex items-start gap-3">
             <div className={`mt-0.5 rounded-full p-2 ${verification.active ? 'bg-success/10 text-success' : 'bg-secondary text-muted-foreground'}`}>
-              {verification.active ? <CheckCircle2 className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+              {verification.active ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-bold">V2 identity assurance</p>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${verification.active ? 'bg-success/10 text-success' : 'bg-secondary text-muted-foreground'}`}>
+                <p className="text-sm font-bold">{t('wallet.identity.assuranceTitle')}</p>
+                <span
+                  aria-live="polite"
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${verification.active ? 'bg-success/10 text-success' : 'bg-secondary text-muted-foreground'}`}
+                >
                   {verification.label}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {verificationType > 0 ? `Type ${verificationType}` : 'No assurance type'} · {verificationLevel > 0 ? `Level ${verificationLevel}` : 'No assurance level'}
+                {verificationType > 0 ? t('wallet.identity.assuranceType', { type: verificationType }) : t('wallet.identity.noAssuranceType')}
+                {' · '}
+                {verificationLevel > 0 ? t('wallet.identity.assuranceLevel', { level: verificationLevel }) : t('wallet.identity.noAssuranceLevel')}
               </p>
               {Number(identity?.verification_expires_at || 0) > 0 && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <div className="rounded-lg bg-background/70 px-3 py-2">
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">Expires</p>
-                    <p className="mt-0.5 text-xs font-medium">{formatUtc(identity.verification_expires_at)}</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">{t('wallet.identity.expires')}</p>
+                    <p className="mt-0.5 text-xs font-medium">{formatTimestamp(identity.verification_expires_at, locale, t)}</p>
                   </div>
                   <div className="rounded-lg bg-background/70 px-3 py-2">
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">Current state</p>
-                    <p className="mt-0.5 text-xs font-medium">{expiryLabel || verification.label}</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">{t('wallet.identity.currentState')}</p>
+                    <p className="mt-0.5 text-xs font-medium" aria-live="polite">{expiryLabel || verification.label}</p>
                   </div>
                 </div>
               )}
               <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-                The public chain record contains only opaque commitments, assurance metadata, timestamps and revocation state. Your name, email, date of birth and identity documents are not stored on-chain.
+                {t('wallet.identity.privacyNotice')}
               </p>
               {identity.last_reconciled_at && (
-                <p className="mt-2 text-[10px] text-muted-foreground">Last checked against the public chain: {new Date(identity.last_reconciled_at).toLocaleString()}</p>
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  {t('wallet.identity.lastChecked', { time: formatIsoTimestamp(identity.last_reconciled_at, locale) })}
+                </p>
               )}
             </div>
           </div>
@@ -212,25 +280,35 @@ export default function WalletDashboard({ status, onReload }) {
       {isChainAuthoritative(identity.status) && network?.recovery_configured && (
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-start gap-3">
-            <div className="rounded-full bg-primary/10 p-2 text-primary"><LifeBuoy className="h-4 w-4" /></div>
+            <div className="rounded-full bg-primary/10 p-2 text-primary"><LifeBuoy className="h-4 w-4" aria-hidden="true" /></div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-bold">Account recovery protection</p>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${recoveryPending ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                  {recoveryLoading ? 'Checking' : recoveryReady ? 'Ready to complete' : recoveryPending ? 'Scheduled' : 'Protected'}
+                <p className="text-sm font-bold">{t('wallet.identity.recoveryTitle')}</p>
+                <span
+                  aria-live="polite"
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${recoveryPending ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}
+                >
+                  {recoveryState}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {recoveryDelayHours > 0 ? `${recoveryDelayHours}-hour on-chain delay protects signer changes.` : 'Signer changes use the configured on-chain recovery delay.'}
+                {recoveryDelayHours > 0
+                  ? t('wallet.identity.recoveryDelayHours', { hours: recoveryDelayHours })
+                  : t('wallet.identity.recoveryDelayConfigured')}
               </p>
               {recoveryPending && recovery?.execute_after_iso && (
                 <div className="mt-2 flex items-center gap-2 text-xs text-warning">
-                  <Clock3 className="h-3.5 w-3.5" />
-                  {recoveryReady ? 'The waiting period has finished.' : `Can complete after ${new Date(recovery.execute_after_iso).toLocaleString()}.`}
+                  <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                  {recoveryReady
+                    ? t('wallet.identity.recoveryWaitingFinished')
+                    : t('wallet.identity.recoveryCanCompleteAfter', { time: formatIsoTimestamp(recovery.execute_after_iso, locale) })}
                 </div>
               )}
-              <Link to="/recover" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
-                <LifeBuoy className="h-3.5 w-3.5" /> Manage account recovery
+              <Link
+                to="/recover"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <LifeBuoy className="h-3.5 w-3.5" aria-hidden="true" /> {t('wallet.identity.manageRecovery')}
               </Link>
             </div>
           </div>
@@ -239,7 +317,7 @@ export default function WalletDashboard({ status, onReload }) {
 
       {txs.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold text-muted-foreground">Public transaction history</p>
+          <p className="text-xs font-semibold text-muted-foreground">{t('wallet.identity.transactionHistory')}</p>
           <div className="mt-2 space-y-2">
             {txs.map((tx) => (
               <div key={`${tx.label}:${tx.hash}`} className="flex items-center gap-2">
@@ -249,10 +327,15 @@ export default function WalletDashboard({ status, onReload }) {
                   aria-label={`${t('explorer.viewTransaction')}: ${tx.label}`}
                 >
                   <p className="text-xs font-medium">{tx.label}</p>
-                  <p className="truncate font-mono text-[11px] text-primary" title={tx.hash}>{shortHex(tx.hash)}</p>
+                  <p className="truncate font-mono text-[11px] text-primary" dir="ltr" title={tx.hash}>{shortHex(tx.hash)}</p>
                 </Link>
-                <button onClick={() => copy(tx.hash, 'Tx hash')} className="shrink-0 rounded-lg p-1.5 hover:bg-secondary" aria-label={`Copy ${tx.label} transaction hash`}>
-                  <Copy className="h-3.5 w-3.5" />
+                <button
+                  type="button"
+                  onClick={() => copy(tx.hash, 'wallet.identity.txHashCopied')}
+                  className="shrink-0 rounded-lg p-1.5 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label={t('wallet.identity.copyTransaction', { label: tx.label })}
+                >
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -262,21 +345,22 @@ export default function WalletDashboard({ status, onReload }) {
 
       {identity.id && ['DEPLOYED', 'REGISTERED', 'RECOVERED'].includes(identity.status) && (
         <button
+          type="button"
           onClick={reconcile}
           disabled={reconciling}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold hover:bg-secondary disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
         >
-          <RefreshCw className={`h-4 w-4 ${reconciling ? 'animate-spin' : ''}`} />
-          {reconciling ? 'Checking public chain…' : 'Refresh identity from chain'}
+          <RefreshCw className={`h-4 w-4 ${reconciling ? 'animate-spin' : ''}`} aria-hidden="true" />
+          {reconciling ? t('wallet.identity.checkingPublicChain') : t('wallet.identity.refreshIdentity')}
         </button>
       )}
 
       {identity.account_address && (
         <Link
           to="/status"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> View network status
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {t('wallet.identity.viewNetworkStatus')}
         </Link>
       )}
     </div>
