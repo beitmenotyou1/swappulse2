@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Heart, MessageSquare,
-  ChevronDown, FlaskConical, Search, Activity, Wrench, Code, ShieldAlert,
+  ChevronDown, FlaskConical, Search, Activity, Wrench, Code, ShieldAlert, ExternalLink,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import useSEO from '@/hooks/useSEO';
 import { HELP_GUIDES, HELP_CATEGORIES } from '@/lib/helpGuides';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { SITE_LINKS } from '@/lib/siteLinks';
 
 const FAQ = [
   {
@@ -264,18 +265,34 @@ export default function Help() {
            aria-label={t('help.searchPlaceholder')}/>
         </div>
 
-        {/* Status link */}
-        <Link
-          to="/status"
-          className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary/50"
-        >
-          <Activity className="h-5 w-5 shrink-0 text-success" />
-          <div className="flex-1">
-            <p className="text-sm font-bold">{t('help.systemStatus')}</p>
-            <p className="text-xs text-muted-foreground">{t('help.systemStatusDesc')}</p>
-          </div>
-          <ChevronDown className="h-4 w-4 -rotate-90 text-muted-foreground" />
-        </Link>
+        {/* High-value help destinations */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <a
+            href={SITE_LINKS.documentation}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 p-3 transition-colors hover:border-primary/45 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <BookOpen className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">{t('footer.documentation')}</p>
+              <p className="text-xs text-muted-foreground">{t('docs.readOfficial')}</p>
+            </div>
+            <ExternalLink className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          </a>
+
+          <Link
+            to="/status"
+            className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <Activity className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
+            <div className="flex-1">
+              <p className="text-sm font-bold">{t('help.systemStatus')}</p>
+              <p className="text-xs text-muted-foreground">{t('help.systemStatusDesc')}</p>
+            </div>
+            <ChevronDown className="h-4 w-4 -rotate-90 text-muted-foreground" aria-hidden="true" />
+          </Link>
+        </div>
 
         {/* About */}
         {!query && (
