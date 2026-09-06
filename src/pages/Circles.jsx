@@ -13,7 +13,7 @@ const THEME_TKEYS = {
   investment: 'circles.theme.investment', local_region: 'circles.theme.localRegion', artist: 'circles.theme.artist',
 };
 
-function CircleCard({ c, membership, t }) {
+function CircleCard({ c, membership = null, t }) {
   return (
     <Link to={`/circles/${c.id}`} className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-raised">
       <div className="flex items-center gap-3">
