@@ -1,213 +1,265 @@
 ---
-description: The SwapPulse Cairo contracts, trust boundaries and development toolchain.
+description: >-
+  The current SwapPulse Cairo/Starknet architecture, live V2 contract suite,
+  trust boundaries, toolchain and deployment discipline.
 ---
 
 # Cairo and Starknet Chain Overview
 
-This directory contains the Cairo/Starknet implementation for the private SwapPulse Testnet. Milestone 1 identity infrastructure is deployed; Phase 2 token, staking/operator and additional Web3 components are being hardened and remain undeployed until their build, Foundry tests and deployment checks pass.
+SwapPulse uses Cairo and Starknet for its public trust layer. The current V2 contract suite is live on `SWAPPULSE_TESTNET`; Base44 remains the private application/orchestration layer around it.
 
-## Scope
+{% hint style="warning" %}
+The network is still testnet infrastructure. Community staking currently represents application/operator accountability, not permissionless blockchain consensus.
+{% endhint %}
 
-Milestone 1 intentionally contains only:
+## Architecture split
 
-1. `SwapPulseAccount` : Starknet smart account using the standard Stark-curve signer for the private testnet.
-2. Timelocked recovery hooks : recovery is disabled when the controller is the zero address.
-3. `IdentityRegistry` : permanent opaque identity -> smart-account mapping, with a privacy-preserving verification commitment scaffold.
-4. Admin-gated identity merge : duplicate identities remain in history and resolve to one canonical identity.
-5. Upgrade hooks : account upgrades are self-authorised; registry upgrades are owner-authorised for the testnet.
+### Cairo/Starknet owns
 
-Milestone 1 deliberately excludes token, staking, bridge, marketplace settlement, Proof-of-Usership, custodial wallet, seed phrase and user-paid gas behaviour from the deployed identity architecture. Phase 2 source code for several of those features now exists in this repository, but it is **not part of the live Milestone 1 deployment** until explicitly compiled, tested, deployed and added to the verified public manifest.
+* public smart-account state;
+* opaque identity registration and account binding;
+* V2 verification commitments and assurance metadata;
+* verifier authorisation and revocation state;
+* replay protection;
+* permanent V2-only policy;
+* SWPX token state;
+* community staking state;
+* public card anchors;
+* usership commitments/scores;
+* bridge state;
+* events needed for reconciliation.
+
+### Base44 owns
+
+* authentication and application sessions;
+* private user-to-chain mappings;
+* private verifier state;
+* private eligibility policy;
+* transaction drafting/orchestration;
+* UI state;
+* chain reconciliation and notifications.
+
+### The relay owns
+
+* the protected server-side write boundary;
+* narrow privileged signer use;
+* contract/entrypoint allowlisting;
+* chain and class-hash pin checks;
+* request-shape and policy enforcement.
+
+### The user smart account owns
+
+* user-authorised chain execution;
+* explicit signatures for user-controlled transactions;
+* account-level signer/recovery state.
+
+## Live V2 contract suite
+
+The live suite is:
+
+1. `IdentityRegistry`
+2. `SwapPulseAccount`
+3. `NativeToken` / SWPX
+4. `CardNft`
+5. `ProofOfUsership`
+6. `StakingPool`
+7. `BridgeAdapter`
+
+For addresses, class hashes and contract-by-contract responsibilities, read Cairo Contracts Reference.
 
 ## Privacy boundary
 
-The chain stores only public blockchain identifiers and state:
+Personal identity evidence stays off-chain.
 
-* opaque `identity_id`
-* smart-account address
-* identity status / canonical merge target
-* creation timestamp
-* recovery counter
-* verification commitment root (for example a Poseidon/Merkle commitment to off-chain verified claims)
-* verification schema hash, attester address, validity timestamps, revocation timestamp and version
+Never write any of the following to Cairo storage or events:
 
-`IdentityRecord` formalises the public identity shape without changing the legacy `get_identity()` tuple used by the existing relay/reconciler. `IdentityVerification` is deliberately separate from it. `get_verification()` exposes the direct historical verification record, while `get_effective_verification()` follows identity merges to the canonical identity.
+* names;
+* email addresses;
+* phone numbers;
+* dates of birth;
+* addresses;
+* document scans/images/numbers;
+* raw verifier responses;
+* Base44 user IDs;
+* AT Protocol credentials;
+* private keys, seed phrases or passkey secrets;
+* private collection notes.
 
-The commitment is proof metadata, not the identity evidence itself. A future verifier can prove that a claim set matched an approved schema without publishing the underlying claim values. Commitment construction must use explicit domain separation plus a secret salt/blinding value. A plain hash of low-entropy personal data such as DOB, postcode or nationality is not private because it can be dictionary-attacked. The current testnet uses the registry owner as the bootstrap attester; this authority boundary is expected to move to an explicit attester/governance policy before production.
+The chain may contain opaque references, commitments, public addresses, generic assurance metadata, timestamps, expiry, revocation state and replay identifiers.
 
-The following must never be written on-chain:
+A commitment is not automatically private. Low-entropy personal data must not simply be hashed and published. Approved commitment construction should use explicit domain separation and appropriate blinding/salting.
 
-* email address
-* Base44 user id
-* date of birth / age information
-* AT Protocol credentials or app passwords
-* private keys
-* passkey secret material
-* verification photos, document scans, document numbers or raw verifier responses
-* plaintext or reversibly encoded verified claims (for example legal name, DOB, address or nationality)
-* private collection/binder information
+## Permanent V2 policy
 
-Base44 stores the private user -> chain identity mapping in the owner-readable `ChainIdentity` entity. The blockchain remains authoritative.
+The live registry has:
 
-## Toolchain target
+```
+identity_verification_mode = V2
+verification_v2_required = true
+```
 
-The verified Milestone 1 toolchain is pinned to:
+This flag is permanent. V1 verification cannot be re-enabled.
 
-* Node.js: `22.x` for deployment / RPC tooling (`chain/.nvmrc`; `engine-strict=true` in the tooling package)
-* Starknet.js: `10.0.2`
-* Scarb / Cairo / Starknet package: `2.13.1`
-* OpenZeppelin Contracts for Cairo: `3.0.0`
-* OpenZeppelin interfaces: `2.1.0`
-* Starknet Foundry / `snforge_std`: `0.51.2` (the version family OpenZeppelin 3.0 was tested against)
-* Universal Sierra Compiler: `2.8.0` for Devnet 0.8.2 declaration compatibility
-* Starknet Devnet binary: `0.8.2` for local E2E only
+Individual V2 attestations can still expire, be revoked and later be replaced by a fresh V2 attestation. That does not change the global policy.
 
-Do not casually mix newer `snforge` binaries with the older `snforge_std` package. We reproduced an actual cheatcode protocol incompatibility with Foundry 0.63 + `snforge_std` 0.51.2. Devnet 0.8.2 is internally locked to Universal Sierra Compiler 2.8.0 with Cairo 2.17.0; generating deployment CASM with another USC release can produce a different compiled-class hash and make `DECLARE` fail. Pinning should be revisited deliberately before a public testnet or audit.
+Read Permanent V2 Verification Policy for the exact semantics and operational rules.
 
-## Build
+## Verifier model
 
-The Base44 sandbox repository is mounted at `/app`. From the project root, run:
+The registry owner and authorised verifier are separate authorities.
+
+The authorised verifier can issue/revoke approved V2 assertions but does not gain unrestricted registry administration simply because it can attest verification.
+
+The Base44 verifier webhook authenticates third-party verification results off-chain and keeps raw evidence private. The chain receives only generic assurance metadata and replay-protected identifiers.
+
+Read Verifier Logic and Assurance.
+
+## Chain authority and reconciliation
+
+The blockchain is authoritative for Web3 state. Base44 mirrors are caches and private mappings, not a replacement ledger.
+
+For identity, staking and other value-bearing state:
+
+1. read the verified public RPC;
+2. compare with the canonical deployment pins;
+3. reconcile the private mirror;
+4. fail closed if the layers disagree.
+
+Read Chain State and Reconciliation.
+
+## Current toolchain
+
+The live V2 baseline was built/tested with:
+
+```
+Node.js 22.x
+Scarb / Cairo / Starknet package 2.13.1
+Starknet Foundry 0.51.2
+Universal Sierra Compiler 2.8.0
+OpenZeppelin Contracts for Cairo 3.x family
+```
+
+The repository deliberately pins tooling because Cairo/Starknet build artefacts and compiled-class hashes can change across incompatible compiler/tooling combinations.
+
+Do not casually mix Foundry, `snforge_std`, Scarb, Cairo and USC versions across an existing deployment workflow.
+
+## Build and test
+
+From the repository:
 
 ```bash
 cd chain
 SCARB_BIN=scarb SNFORGE_BIN=snforge bash scripts/test-chain.sh
 ```
 
-`test-chain.sh` runs `scarb build`, the full Foundry suite, and the isolated zero-public-key constructor negative check. On 29 August 2026 the pinned toolchain completed with 26 normal tests passing, 0 failing, 1 runner-limited test ignored by the normal suite, and the ignored constructor case separately verified to revert with `INVALID_PUBLIC_KEY`.
+The final V2 hardening baseline collected 64 tests:
 
-## Deployment tooling
-
-Deployment/RPC tooling is isolated under `chain/scripts/tooling`. Use Node 22. The npm `starknet-devnet` wrapper is intentionally **not** a dependency: its transitive `decompress` package had a critical archive-extraction advisory during this audit. Local E2E instead uses a separately installed `starknet-devnet` binary through `STARKNET_DEVNET_BIN`.
-
-Install and audit the tooling:
-
-```bash
-cd chain
-nvm use
-cd scripts/tooling
-npm ci
-npm audit
+```
+63 passed
+0 failed
+1 runner-limited test ignored and separately verified
 ```
 
-The audited tooling dependency tree contains Starknet.js only and returned zero known npm vulnerabilities on 29 August 2026.
+The zero-public-key constructor rejection was separately verified.
 
-Before persistent deployment, build the Cairo contracts and compile their Sierra artifacts to CASM. The deployment script expects these four files in `chain/target/dev`:
+Coverage includes identity registration, verifier permissions, replay protection, V2 cut-over, expiry, revocation, recovery, token accounting, fuzz testing, staking lifecycle rules and malicious/unauthorised callers.
 
-* `swappulse_network_IdentityRegistry.contract_class.json`
-* `swappulse_network_IdentityRegistry.casm.json`
-* `swappulse_network_SwapPulseAccount.contract_class.json`
-* `swappulse_network_SwapPulseAccount.casm.json`
+## Deployment manifest
 
-Persistent deployment requires these environment values to be injected by the operator or a secret manager, never committed to the repository:
+The canonical live public manifest is:
 
-* `SWAPPULSE_RPC_URL` : private/write-capable RPC used by the deployment process (localhost HTTP is allowed for Devnet)
-* `SWAPPULSE_PUBLIC_RPC_URL` : public read-only HTTPS gateway written into the Base44-facing manifest
-* `SWAPPULSE_DEPLOYER_ADDRESS` : funded deployment account address
-* `SWAPPULSE_DEPLOYER_PRIVATE_KEY` : deployment signer secret, process-only
-
-Optional values:
-
-* `SWAPPULSE_RECOVERY_CONTROLLER`
-* `SWAPPULSE_RECOVERY_DELAY_SECONDS` (default `172800`)
-* `SWAPPULSE_DEPLOYMENT_MANIFEST` (default `chain/deployments/swappulse-testnet.json`)
-* `SWAPPULSE_EXISTING_REGISTRY_ADDRESS` to verify/reuse an existing registry instead of deploying a new one
-
-Run:
-
-```bash
-node deploy-network.mjs
-node verify-network.mjs ../../deployments/swappulse-testnet.json
+```
+chain/deployments/swappulse-testnet.json
 ```
 
-`deploy-network.mjs` writes a **public-only** deployment manifest. It never serialises the deployment private key, and the manifest's `rpc_url` comes from `SWAPPULSE_PUBLIC_RPC_URL` rather than the private deployment RPC when that value is supplied. A Node 22 smoke test on 29 August 2026 successfully declared both classes, deployed `IdentityRegistry`, verified the generated manifest against the node and confirmed that deployment output did not contain the private key.
+It contains public deployment metadata only.
 
-For local E2E with a standalone devnet binary:
+It must not contain:
 
-```bash
-STARKNET_DEVNET_BIN=/path/to/starknet-devnet node devnet-e2e.mjs
-STARKNET_DEVNET_BIN=/path/to/starknet-devnet node smoke-deploy-network.mjs
-```
+* deployment private keys;
+* verifier private keys;
+* registry-owner private keys;
+* relay bearer tokens;
+* private RPC credentials;
+* Cloudflare credentials;
+* user secrets.
 
-## Required tests before deployment
+The manifest is independently verified through the public RPC before Base44 treats the network as configured.
 
-At minimum:
+## Deployment order for a new network
 
-* account constructor rejects a zero public key
-* standard account execution validates Stark signatures
-* public-key rotation remains account-self-only
-* recovery starts disabled and is impossible while controller is disabled
-* recovery controller/delay configuration is account-self-only
-* only recovery controller can propose / execute recovery
-* recovery cannot execute before its delay
-* current account holder can cancel a pending recovery through a self-call
-* only the account itself can upgrade `SwapPulseAccount`
-* only registry owner can register/change/merge/recovery-record/upgrade
-* identity id `0` is rejected
-* account addresses cannot be bound to two active identities
-* identity ids cannot be registered twice
-* merged identities remain queryable and resolve to the canonical target
-* chained merges resolve transitively to the final active identity
-* merged identity cannot be used again as an active source
-* historical source account mapping survives a merge
-* account replacement correctly clears the old reverse mapping
+For a fresh environment, use this sequence:
 
-## Base44 provisioning flow
+1. build and test the Cairo packages;
+2. declare/deploy the complete intended V2 suite;
+3. generate the canonical public manifest;
+4. verify every address/class hash and authority pin through the public RPC;
+5. import the public manifest into `ChainNetworkConfig`;
+6. run Base44 independent Verify & Activate checks;
+7. configure the relay from the verified pins;
+8. verify authenticated relay `/readyz`;
+9. provision a real identity through the normal wallet flow;
+10. issue and reconcile a genuine V2 assurance;
+11. exercise token/staking/value paths;
+12. only then perform any one-way V2 activation on a network where it is not already enabled.
 
-`chain-identity-admin` is intentionally admin-only for Milestone 1.
+On the live SwapPulse testnet, that permanent V2 activation is already complete and must not be repeated as a new write.
 
-`prepare` accepts a **public Stark key only** and creates a `PENDING` private Base44 mirror. It never receives or stores a private key.
+## OpenZeppelin usage
 
-`record_deployment` records the deployed address and transaction hashes and advances the mirror only to `DEPLOYED`.
+Standard security-sensitive primitives should use established OpenZeppelin Cairo components wherever appropriate rather than custom implementations.
 
-`REGISTERED` is reserved for a later reconciliation worker that reads `IdentityRegistry` from the testnet. Base44 must not promote itself to blockchain authority.
+Examples include:
 
-Required network configuration after the contracts are compiled and deployed is stored in the admin-only `ChainNetworkConfig` entity and managed through `chain-identity-admin`:
+* ERC-20 behaviour;
+* access-control/ownership patterns;
+* upgrade patterns;
+* common account/security interfaces.
 
-* `chain_id`
-* `account_class_hash`
-* `identity_registry_class_hash`
-* `identity_registry_address`
-* `identity_registry_owner`
-* `recovery_controller` (optional during early testing; empty disables recovery)
-* `recovery_delay_seconds` (defaults to 172800 / 48 hours)
-* optional public `rpc_url` and `explorer_url`
+Custom logic should focus on SwapPulse-specific state transitions, not reimplement standard token or access-control machinery unnecessarily.
 
-The smart-account constructor accepts only `public_key`, matching OpenZeppelin's standard deploy-account validation ABI. Recovery starts disabled and is configured after deployment through signed account self-calls.
+## Testing principles
 
-These values are public blockchain deployment metadata, not secrets. Private RPC credentials, private keys, seed phrases, and passkey secret material must never be stored in `ChainNetworkConfig`.
+Every contract change should include negative-path tests, not only successful flows.
 
-Saving these values creates or updates a **draft**, not a trusted network. The admin UI can import the public `schema_version: 1` deployment manifest directly; the importer rejects secret-looking fields, wrong network/schema and non-HTTPS public RPC URLs, then still saves the result only as `UNCONFIGURED`. `chain-network-verify` must independently query the HTTPS RPC, verify the chain ID, verify the `IdentityRegistry` class hash and owner at the configured address, and confirm that the configured `SwapPulseAccount` class is declared. Only that RPC verification can set `status = CONFIGURED`. Changing the RPC, chain ID, registry address/owner or either class hash invalidates the previous verification. Identity reconciliation re-checks the registry owner as well, so a later ownership change fails closed.
+Required themes include:
 
-For the first admin-only test identity, `create-test-signer.mjs` can generate a temporary Stark signer into a local mode-`0600` file while printing only its public key. After that public key is used with Base44 **Prepare Test Identity**, `provision-test-identity.mjs` (or the host wrapper in `chain/infra`) deploys the smart account, applies recovery configuration and registers the returned opaque identity ID. The provisioning flow is idempotent: a second run submits no transactions when the chain already matches, and its smoke test verifies that neither registry-admin nor user private keys appear in output.
+* unauthorised writes;
+* duplicate registration;
+* invalid state changes;
+* replay attempts;
+* expired/revoked verification;
+* zero/invalid addresses and keys;
+* ownership/admin changes;
+* verifier permission boundaries;
+* malicious/unexpected callers;
+* lifecycle timing errors;
+* fuzz/property testing where state/accounting logic benefits from it.
 
-## Phase 2 status
+## Upgrade discipline
 
-Milestone 1 identity deployment and relay policy are now the frozen foundation for Phase 2. Do not redeploy or mutate the live `IdentityRegistry` merely to add token/staking features.
+Do not modify the live deployment merely because source code changed.
 
-Phase 2 work currently includes:
+For a contract upgrade or replacement:
 
-* `NativeToken`, refactored onto OpenZeppelin Cairo `ERC20Component` for standard transfer, allowance, balance and metadata behaviour;
-* a capped supply plus explicit owner/allowlisted mint authority;
-* `StakingPool`, with verified-identity-bound operator registration, delegation, unbonding, active-vs-locked stake accounting and slashable exiting self-stake;
-* Foundry tests for token supply/accounting and staking security invariants;
-* Base44 wallet, draft/sign/submit and staking mirror plumbing;
-* the community operator model documented in [operator guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/operator-guide).
+1. identify whether an upgrade is actually necessary;
+2. review storage/interface compatibility;
+3. run the full test suite;
+4. deploy or declare the candidate in a controlled environment;
+5. independently verify the class hash;
+6. exercise migration/upgrade paths;
+7. update public manifests only after verification;
+8. re-run Base44 network verification;
+9. re-run relay readiness and policy tests;
+10. publish migration notes and security implications.
 
-The product calls staking participants **community operators**. Some Cairo and Base44 fields retain historical `validator` names for ABI compatibility. The current SwapPulse Testnet still runs on one Starknet Devnet runtime, so Phase 2 staking currently represents economic accountability for operator/service duties, **not decentralised consensus validation**.
+## Related pages
 
-Production token rewards are not live yet. Before any promise of token earnings, SwapPulse still needs a deterministic reward distributor, published reward/emission parameters, governance/provable-fault slashing, a multi-operator production architecture and an external security review.
-
-Read [operator guide](https://swappulse.gitbook.io/swappulse-docs/network-and-web3/operator-guide) for the open operator model, security requirements, staking semantics and the roadmap to permissionless network maintenance.
-
-## Next milestone
-
-1. compile `NativeToken` and `StakingPool` with the pinned Scarb/Cairo toolchain;
-2. run the complete Starknet Foundry suite, including fuzz and negative-path tests;
-3. fix every compile/test finding before class declaration;
-4. add deterministic reward accounting and replay/duplicate protection;
-5. extend deployment tooling and the public manifest with Phase 2 class hashes/addresses;
-6. verify Phase 2 contracts independently through the public read-only RPC;
-7. connect the existing Base44 wallet UI to only verified Phase 2 addresses;
-8. keep all user signing self-custodial and all privileged signing server-side;
-9. add operator discovery, health/service proofs and governance rules;
-10. migrate from the single Devnet runtime to a genuinely decentralised appchain/rollup operator set before describing staking as consensus security;
-11. replace `STARK_V1` with audited P-256/WebAuthn validation before the identity/value layer carries real economic value.
+* Cairo Contracts Reference
+* Identity Registry
+* Permanent V2 Verification Policy
+* Verifier Logic and Assurance
+* Chain State and Reconciliation
+* Transaction Relay API and Policy
+* Community Staking
+* SwapPulse V2 Live Architecture

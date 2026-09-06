@@ -1,53 +1,230 @@
 ---
-description: Design and privacy model for the SwapPulse on-chain identity registry.
+description: >-
+  Live V2 IdentityRegistry architecture, privacy model, account binding,
+  verifier permissions, replay protection, expiry, revocation and permanent V2
+  rules.
 ---
 
 # Identity Registry
 
-## Purpose
+`IdentityRegistry` is the permanent public identity anchor for SwapPulse. It binds an opaque identity reference to an approved Starknet smart account and stores only the public verification metadata required by the V2 trust model.
 
-`IdentityRegistry` provides a permanent, chain-level identity anchor for SwapPulse accounts while keeping personal identity data off-chain.
+{% hint style="danger" %}
+Do not store plaintext personal information in the registry or its events. Names, emails, DOBs, identity documents and raw verifier evidence stay off-chain.
+{% endhint %}
 
-The registry is intentionally split into two layers:
+## Live registry
 
-1. **Identity anchor**: an opaque `identity_id`, its bound account, status, canonical merge target, creation time and recovery history.
-2. **Verification attestation**: a cryptographic commitment to an off-chain verified claim set plus audit metadata.
+```
+Address
+0x3e884bce5b994cede34f6660db1c28bc37e3cbbffb539de6b5f8dd8f761ecbb
 
-## Privacy boundary
+Class hash
+0x3179723520ee8e08450cf31e9c4c1e9b7c6491959f97bf5ce0fba020a84d1f1
 
-Do not write plaintext personally identifying information to this contract.
+Owner
+0x63365ad0c16e8e565b2555b2aa396f99ef7772fc389bddfb5c4d6c2dc44b3c0
 
-That includes names, email addresses, phone numbers, dates of birth, postal addresses, government identifiers, document images or document numbers.
+Authorised verifier
+0x1fb17c0f4e8f198b799139ac370dc79a35019daa94e6415a54f3807b805042f
+```
 
-The current verification scaffold stores:
+The owner and verifier are distinct authorities.
 
-* `verification_root`: commitment to the verified claim set. Intended for a Merkle/Poseidon root or equivalent Starknet-friendly commitment.
-* `schema_hash`: identifier/commitment for the schema used to build the claim set.
-* `status`: `0 = none`, `1 = verified`, `2 = revoked`.
-* `attested_by`: account that submitted the attestation.
-* `verified_at`: Starknet block timestamp at attestation time.
-* `expires_at`: optional expiry timestamp. `0` means no expiry.
-* `version`: monotonically increasing attestation/revocation version.
+## Identity anchor
 
-The raw claims and supporting evidence remain off-chain. A future proof system can prove selected properties against `verification_root` without revealing the full claim set.
+The identity layer tracks public state such as:
 
-## Current trust model
+* opaque non-zero `identity_id`;
+* bound smart-account address;
+* identity status;
+* canonical identity after merge/migration;
+* creation/recovery metadata;
+* reverse mapping from account to identity.
 
-Verification writes are owner-only for this first scaffold. This is intentional while the verifier architecture is still being defined.
+The Base44 user ID is not part of the public identity record.
 
-Before production verification is enabled, replace or extend this with an audited verifier authorisation model, such as an allowlisted verifier role, multisig-controlled verifier registry or proof-verifier contract.
+## Registration rules
 
-## Canonical identities
+Registration is deliberately constrained.
 
-Merged identities remain historically queryable. `is_verified(identity_id)` resolves the identity through `resolve_canonical()` and checks the final active identity's verification state.
+A valid registration requires:
 
-This means a historical/merged identity follows the verification status of its surviving canonical identity.
+* a non-zero opaque identity ID;
+* an approved deterministic smart-account address;
+* the expected account class;
+* a valid forward identity-to-account binding;
+* a valid reverse account-to-identity binding;
+* no conflicting existing registration;
+* the authorised registry operation path.
 
-## Next contract steps
+Duplicate identity IDs and conflicting account reuse are rejected.
 
-* Define the canonical claim schema and deterministic commitment algorithm.
-* Add verifier authorisation separate from contract ownership.
-* Decide whether multiple simultaneous attestation types are required per identity.
-* Add proof-verification entry points only after the exact proof format is selected.
-* Define revocation/re-attestation policy and verifier rotation procedure.
-* Keep all plaintext identity evidence and recovery documents off-chain.
+The normal product flow creates the private `ChainIdentity` mirror automatically. Administrators should not manually insert user identity rows as a normal provisioning shortcut.
+
+## Canonical identities and merge history
+
+Historical identities remain queryable when identities are merged or migrated.
+
+Canonical resolution follows the surviving identity rather than deleting the old public history. This preserves auditability while giving the application one current identity target.
+
+Effective verification follows the canonical identity where the contract interface specifies canonical resolution.
+
+## V2 verification data
+
+The current V2 verification model stores generic public assurance metadata, including concepts such as:
+
+* `verification_root` or equivalent commitment;
+* `schema_hash` or schema commitment;
+* status/audit state;
+* `attested_by`;
+* `verified_at`;
+* `expires_at`;
+* V2 verification type;
+* V2 verification level;
+* non-zero replay/attestation ID;
+* revocation state;
+* version/audit counters where exposed by the ABI.
+
+The commitment is a public cryptographic commitment to approved off-chain claim material. The underlying claims remain private.
+
+## Privacy-safe commitments
+
+Do not publish a plain hash of low-entropy personal information and call it private.
+
+Values such as DOB, postcode or nationality can often be guessed and dictionary-attacked. Commitment construction should use an approved Starknet-friendly design with explicit domain separation and suitable secret blinding/salting.
+
+The registry should never require a verifier to publish the raw evidence that produced the commitment.
+
+## Verifier permissions
+
+Verification authority is separate from registry ownership.
+
+The authorised verifier may submit/revoke verification through the approved V2 path. It does not inherit arbitrary owner/admin rights.
+
+The relay and public verification tooling independently check that:
+
+* the configured verifier is authorised;
+* the verifier is non-zero;
+* the verifier is distinct from the registry owner;
+* the registry class/address/owner pins match the canonical deployment.
+
+Read Verifier Logic and Assurance for the complete off-chain-to-on-chain trust path.
+
+## Replay protection
+
+Every V2 assertion uses a non-zero opaque attestation/replay identifier.
+
+A consumed identifier remains spent after:
+
+* normal expiry;
+* revocation;
+* replacement by a later assertion.
+
+A fresh assertion must use a fresh identifier. This prevents old signed assertion material from being reused to recreate a previous state transition.
+
+## Expiry
+
+Expiry is evaluated against the current block/application time as appropriate to the read path.
+
+When an assertion expires:
+
+* effective verification becomes false;
+* the historical verification record remains auditable;
+* the replay identifier remains spent;
+* the identity itself remains registered;
+* permanent V2-only mode remains enabled;
+* new value-bearing actions fail closed until a fresh V2 assertion is issued.
+
+## Revocation
+
+Revocation invalidates the current verification without deleting the identity anchor.
+
+A revoked identity can retain historical audit state, account history and existing on-chain positions while new eligibility-dependent writes are blocked.
+
+Revocation does not switch the registry back to V1.
+
+## Permanent V2 requirement
+
+The live registry has:
+
+```
+verification_v2_required = true
+```
+
+This is a one-way global policy.
+
+After activation:
+
+* V1 verification writes are rejected;
+* V2 assurance format is required;
+* expiry/revocation remain per-identity behaviours;
+* repeated cut-over requests are handled as read-first/idempotent confirmations by the protected application/relay path.
+
+Read Permanent V2 Verification Policy.
+
+## Account recovery and identity continuity
+
+`SwapPulseAccount` recovery can rotate control of the smart account after the configured delay while preserving the public identity relationship according to the approved recovery flow.
+
+Recovery state is public protocol state; recovery secrets remain server-side/user-side as appropriate and are never published in the registry.
+
+Current configured recovery delay is 48 hours (`172800` seconds).
+
+## Events and Base44 synchronisation
+
+Registry events support application reconciliation for material transitions such as:
+
+* registration;
+* account/identity updates;
+* merge/canonical changes;
+* verification;
+* revocation;
+* recovery-related identity state.
+
+Events must remain free of PII.
+
+Base44 reconciles event-driven state with direct public RPC reads rather than treating a private mirror as more authoritative than the chain.
+
+Read Chain State and Reconciliation.
+
+## Security invariants
+
+The registry must preserve these invariants:
+
+* identity ID `0` is invalid;
+* conflicting duplicate registration is invalid;
+* an account cannot be silently rebound to a conflicting active identity;
+* unauthorised callers cannot register, attest, revoke, merge or administer state;
+* verifier and owner authority remain distinct;
+* replay identifiers cannot be reused;
+* expired/revoked assertions are ineffective;
+* permanent V2 cannot be downgraded;
+* no plaintext PII enters storage or events.
+
+## Test coverage
+
+Current tests cover:
+
+* zero/invalid identity values;
+* duplicate registration;
+* reverse mapping consistency;
+* canonical identity resolution;
+* unauthorised writes;
+* verifier permission boundaries;
+* verifier rotation/authority checks;
+* replayed V2 IDs;
+* expiry;
+* revocation;
+* permanent V2 cut-over;
+* expiry after permanent cut-over;
+* recovery and migration-related invariants;
+* malicious/unexpected callers.
+
+## Related pages
+
+* Cairo Contracts Reference
+* Permanent V2 Verification Policy
+* Verifier Logic and Assurance
+* Chain State and Reconciliation
+* SwapPulse V2 Live Architecture

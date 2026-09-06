@@ -1,12 +1,12 @@
 ---
 description: >-
-  Host the policy-enforcing SwapPulse transaction relay without exposing
-  privileged keys.
+  Host and operate the policy-enforcing SwapPulse transaction relay, including
+  allowlists, V2 rules, privileged signer boundaries and failure handling.
 ---
 
-# Transaction Relay API
+# Transaction Relay API and Policy
 
-The SwapPulse transaction relay is the protected **write path** into the current testnet. It is a server-side policy boundary, not a general-purpose Starknet RPC proxy. Base44 backend functions call it only after authenticating the user, checking private policy and constructing or validating the permitted chain action.
+The SwapPulse transaction relay is the protected **write boundary** for the current testnet. It is not a public general-purpose Starknet RPC proxy.
 
 Live endpoint:
 
@@ -15,264 +15,272 @@ https://relay.swappulse.org
 ```
 
 {% hint style="danger" %}
-Never call the privileged relay directly from browser code. The bearer token, registry-owner signer and verifier signer must remain on the host and in Base44 server-side secrets.
+Never expose the relay bearer token, registry-owner private key, verifier private key or trusted signing logic to browser code.
 {% endhint %}
 
-## How it operates
+## Trust boundary
 
-1. A user approves an action in the SwapPulse UI when user consent is required.
-2. The Base44 backend authenticates the session, checks eligibility and rebuilds the intended calldata.
-3. For user-controlled actions, Base44 verifies the user's Stark signature against the exact server-side intent.
-4. Base44 adds the relay bearer token on the server and sends the narrow request.
-5. The relay verifies its chain, contract and authority pins before accepting work.
-6. The relay validates the endpoint-specific policy, account binding, transaction version, call count, contract and entrypoint.
-7. Only then does it submit to the private upstream RPC and wait for the transaction result where required.
-8. Base44 reconciles the result from the separate public read-only RPC. A relay response alone is not treated as final chain truth.
+A typical user-controlled write follows this path:
 
-This separation prevents a public browser from gaining registry, verifier, recovery or unrestricted submission authority.
+1. the authenticated user chooses an action;
+2. Base44 validates private eligibility and current network state;
+3. Base44 constructs the canonical action intent server-side;
+4. the user explicitly signs where user approval is required;
+5. Base44 verifies the signature and exact transaction shape;
+6. Base44 adds the relay bearer token server-side;
+7. the relay checks chain/class/authority pins and endpoint policy;
+8. the relay submits only the approved write;
+9. Base44 reconciles the result through the separate public RPC.
+
+A relay response alone is not treated as final chain truth.
 
 ## Relay surfaces
 
-The repository default maps the relay to `127.0.0.1:8081`. The current reference host uses `127.0.0.1:18081`. Both remain loopback-only and are published through a separate HTTPS hostname.
+| Endpoint                    | Authentication                                                     | Purpose                                                                          |
+| --------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `GET /healthz`              | None                                                               | Process liveness only                                                            |
+| `GET /readyz`               | Bearer token                                                       | Proves chain ID, V2 mode, classes, registry owner, verifier and ecosystem wiring |
+| `POST /rpc`                 | Bearer token                                                       | Narrow user-signed V3 deploy/invoke allowlist                                    |
+| `POST /register`            | Bearer token                                                       | Bind an opaque identity to the approved smart account                            |
+| `POST /verification-attest` | Bearer token                                                       | Submit approved V2 assurance through the authorised verifier                     |
+| `POST /verification-revoke` | Bearer token                                                       | Revoke current on-chain verification                                             |
+| `POST /mint-card`           | Bearer token                                                       | Protected card mint path                                                         |
+| `POST /submit-usership`     | Bearer token                                                       | Submit approved epoch-bound usership result                                      |
+| `POST /faucet-drip`         | Bearer token                                                       | Fixed testnet faucet action with identity/cooldown controls                      |
+| `POST /recovery-propose`    | Bearer token                                                       | Start delayed account recovery                                                   |
+| `POST /recovery-execute`    | Bearer token                                                       | Complete recovery after the delay                                                |
+| `POST /recovery-cancel`     | Bearer token                                                       | Cancel pending recovery where policy allows                                      |
+| `POST /require-v2`          | Bearer token + exact irreversible confirmation on first activation | Activate or idempotently confirm permanent V2-only mode                          |
 
-| Endpoint                                                          | Authentication                                                 | Purpose                                                                                       |
-| ----------------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `GET /healthz`                                                    | None                                                           | Process liveness only. It does not prove that chain pins are correct                          |
-| `GET /readyz`                                                     | Bearer token                                                   | Verifies chain ID, classes, registry owner, authorised verifier, V2 flag and ecosystem wiring |
-| `POST /rpc`                                                       | Bearer token                                                   | Accepts only approved V3 deploy-account and invoke transaction shapes                         |
-| `POST /register`                                                  | Bearer token                                                   | Binds an opaque identity to its deterministic approved smart account                          |
-| `POST /verification-attest`                                       | Bearer token                                                   | Writes an approved V2 verification assertion through the separate verifier signer             |
-| `POST /verification-revoke`                                       | Bearer token                                                   | Revokes the current on-chain verification                                                     |
-| `POST /mint-card`                                                 | Bearer token                                                   | Owner-authorised Card NFT mint after Base44 verification policy succeeds                      |
-| `POST /submit-usership`                                           | Bearer token                                                   | Submits an epoch-bound Proof-of-Usership score                                                |
-| `POST /faucet-drip`                                               | Bearer token                                                   | Sends a fixed testnet amount to the canonically bound smart account                           |
-| `POST /recovery-propose`, `/recovery-execute`, `/recovery-cancel` | Bearer token                                                   | Runs the configured delayed recovery lifecycle                                                |
-| `POST /require-v2`                                                | Bearer token plus irreversible confirmation and on-chain proof | Performs or idempotently confirms the permanent V2-only policy switch                         |
+These endpoints are an internal integration contract, not an unrestricted third-party API.
 
-These endpoints are an internal integration contract. They are not a public API for arbitrary clients.
+## User-signed invoke allowlist
 
-## Allowed user-signed contract actions
+For `/rpc`, decoded calls are restricted to pinned contracts and approved entrypoints.
 
-When `/rpc` receives a V3 account invoke, every decoded call must target a pinned contract and approved entrypoint:
-
-| Contract         | Permitted entrypoints                                                                                       |
+| Contract         | Permitted user-controlled entrypoints                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
 | SWPX NativeToken | `approve`                                                                                                   |
 | StakingPool      | `register_validator`, `increase_self_stake`, `delegate`, `request_undelegate`, `withdraw`, `exit_validator` |
 | BridgeAdapter    | `bridge_out_token`, `bridge_out_card`                                                                       |
 | CardNft          | `transfer`, `burn`                                                                                          |
 
-The relay rejects unknown contracts, privileged entrypoints, more than four calls, oversized calldata, non-V3 transactions, unexpected paymaster/proof data and non-zero tips.
+The relay rejects unknown contracts, privileged entrypoints, unsupported transaction versions, oversized calldata, unexpected paymaster/proof data, non-zero tips and excessive call counts.
 
-Some ABI fields retain the historical word `validator`. In the current product these represent community operators and application staking, not decentralised consensus validators.
+## Permanent V2 relay policy
+
+The relay is currently pinned to V2 mode and requires:
+
+```
+identity_verification_mode = v2
+verification_v2_required = true
+ecosystem_ready = true
+```
+
+For verification actions it enforces:
+
+* the V2 entrypoint/data shape;
+* approved verifier authority;
+* assurance type/level policy where applicable;
+* non-zero replay/attestation identifier;
+* replay protection;
+* matching registry and class pins.
+
+Legacy V1 verification writes are not an accepted fallback after permanent cut-over.
+
+## `/require-v2` policy
+
+The permanent cut-over path is deliberately read-first.
+
+### If the flag is false
+
+The request must satisfy the irreversible activation policy, including the exact confirmation and required proof/state checks.
+
+### If the flag is already true
+
+The relay returns an idempotent success without submitting another transaction:
+
+```json
+{
+  "ok": true,
+  "transaction_hash": "",
+  "idempotent": true,
+  "verification_v2_required": true
+}
+```
+
+This behaviour prevents uncertain network responses or later proof expiry from causing a blind duplicate irreversible write.
+
+Read Permanent V2 Verification Policy.
 
 ## Defence-in-depth controls
 
-| Control            | Behaviour                                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Bearer token       | Minimum 32 characters and compared using constant-time logic                                                 |
-| Default rate limit | 60 requests per client IP per minute                                                                         |
-| Request body       | 128 KiB maximum                                                                                              |
-| Upstream response  | 2 MiB maximum                                                                                                |
-| Upstream timeout   | 10 seconds                                                                                                   |
-| Readiness cache    | 30 seconds after a full pin check                                                                            |
-| Account deployment | Approved `SwapPulseAccount` class, one non-zero public key and salt equal to that key                        |
-| Registration       | Deterministic address, class, registry owner, recovery controller/delay and forward/reverse mappings checked |
-| V2 verification    | Separate authorised verifier, typed assurance data and non-zero replay-protected attestation ID              |
-| Faucet             | Fixed host-configured amount, registry binding and defence-in-depth 24-hour recipient cooldown               |
-| Filesystem         | Read-only container, small temporary filesystem, all capabilities dropped and `no-new-privileges`            |
+Current controls include:
 
-The owner and verifier must be different accounts. In V2 mode the relay refuses to start without every required support-contract address and class hash.
+| Control               | Behaviour                                                                        |
+| --------------------- | -------------------------------------------------------------------------------- |
+| Bearer token          | Minimum-length protected secret, constant-time comparison                        |
+| Request body          | Bounded size                                                                     |
+| Upstream response     | Bounded size                                                                     |
+| Upstream timeout      | Finite timeout                                                                   |
+| Rate limiting         | Per-client request limiting                                                      |
+| Readiness cache       | Short-lived cache after full pin verification                                    |
+| Deploy-account policy | Approved class, non-zero public key, deterministic salt/key relationship         |
+| Registration policy   | Deterministic address and registry/account mapping checks                        |
+| Verification policy   | Separate verifier, V2 assurance and replay protection                            |
+| Faucet policy         | Fixed amount, identity binding and recipient cooldown                            |
+| Container hardening   | Read-only filesystem where configured, dropped capabilities, `no-new-privileges` |
 
-## Host the relay
+The exact operational defaults are versioned in the repository and should be reviewed before changing host policy.
 
-{% stepper %}
-{% step %}
-### Prepare the verified chain host
+## Health versus readiness
 
-The private node, public read gateway and V2 deployment manifest must already be healthy. Obtain the current repository and install the pinned JavaScript tooling:
+`/healthz` only proves that the process responds.
+
+`/readyz` proves materially more, including:
+
+* expected chain ID;
+* approved account class;
+* IdentityRegistry address/class/owner;
+* authorised verifier and owner/verifier separation;
+* permanent V2 state;
+* token, staking, card, usership and bridge class pins;
+* required contract wiring;
+* ecosystem readiness.
+
+If `/readyz` fails, stop protected writes until the reported pin/policy failure is resolved.
+
+## Hosting
+
+The local relay must remain loopback-bound and be published only through the intended HTTPS boundary.
+
+Reference host local port:
+
+```
+127.0.0.1:18081
+```
+
+Typical workflow:
 
 ```bash
 git clone https://github.com/beitmenotyou1/swappulse2.git
 cd swappulse2/chain/scripts/tooling
 npm ci
 
-cd ../../infra/tx-relay
-npm ci --ignore-scripts
-```
-
-Node.js 22 or newer is required.
-{% endstep %}
-
-{% step %}
-### Verify the public deployment manifest
-
-```bash
-cd ../../scripts/tooling
 node verify-network.mjs ../../deployments/swappulse-testnet.json
-```
 
-Do not generate relay credentials for an unverified or stale manifest. The result must report `ok: true` and the expected V2 ecosystem pins.
-{% endstep %}
-
-{% step %}
-### Generate the private relay environment
-
-```bash
 cd ../../infra
 bash ./setup-relay-env.sh
 stat -c '%a %n' .env.relay
 ```
 
-Expected mode: `600`.
+Expected secret-file mode:
 
-The script verifies the public manifest, resolves the matching owner and verifier test accounts only through the loopback Devnet API, and writes `.env.relay` without printing private keys or the bearer token. It preserves an existing valid token unless rotation is explicitly requested.
-{% endstep %}
+```
+600
+```
 
-{% step %}
-### Start the provisioning profile
+Start the provisioning profile:
 
 ```bash
 docker compose --env-file .env --env-file .env.relay \
   --profile provisioning up -d --build tx-relay
-
-docker compose --env-file .env --env-file .env.relay \
-  --profile provisioning ps
 ```
 
-The service is separate from the always-available read gateway and starts only through the `provisioning` profile.
-{% endstep %}
-
-{% step %}
-### Verify health and chain readiness locally
-
-Set the actual local port for your host:
+Verify local readiness without printing the secret:
 
 ```bash
-RELAY_PORT=8081
-
-curl -fsS "http://127.0.0.1:${RELAY_PORT}/healthz"
-
+RELAY_PORT=18081
 RELAY_TOKEN="$(sed -n 's/^RELAY_TOKEN=//p' .env.relay | head -n1)"
+
 curl -fsS "http://127.0.0.1:${RELAY_PORT}/readyz" \
   -H "Authorization: Bearer ${RELAY_TOKEN}" \
   | python3 -m json.tool
+
 unset RELAY_TOKEN
 ```
 
-Use `RELAY_PORT=18081` on the reference host. A ready V2 relay reports `ok: true`, `identity_verification_mode: v2`, `verification_v2_required: true` and `ecosystem_ready: true`.
-{% endstep %}
+## Base44 server-side configuration
 
-{% step %}
-### Run the policy regression suite
-
-```bash
-cd tx-relay
-node smoke-policy.mjs
-```
-
-The suite must prove that the intended operations pass while wrong classes, arbitrary invokes, unauthenticated requests, replay attempts and `devnet_*` access are rejected.
-{% endstep %}
-
-{% step %}
-### Publish through a separate HTTPS hostname
-
-Configure the reverse proxy or named tunnel:
-
-```
-https://relay.swappulse.org -> http://127.0.0.1:8081
-```
-
-Use `18081` when configured on the host. Do not reuse the public RPC hostname, expose the raw node, or place the bearer token in the proxy URL.
-{% endstep %}
-
-{% step %}
-### Configure Base44 server-side secrets
-
-Set:
+Base44 uses backend-only secrets:
 
 ```
 SWAPPULSE_TX_RELAY_URL=https://relay.swappulse.org
-SWAPPULSE_TX_RELAY_TOKEN=<the host RELAY_TOKEN>
+SWAPPULSE_TX_RELAY_TOKEN=<protected host token>
 ```
 
-These belong only in Base44 runtime secrets. They must not appear in `ChainNetworkConfig`, frontend environment variables, browser storage, documentation examples or support screenshots.
-{% endstep %}
-{% endstepper %}
+Do not place these in frontend code, browser storage, public entities, screenshots or public configuration manifests.
 
-## Health versus readiness
+## Policy regression suite
 
-`/healthz` answers only: "Is the relay process responding?"
+Run:
 
-`/readyz` proves substantially more:
+```bash
+cd chain/infra/tx-relay
+node smoke-policy.mjs
+```
 
-* upstream chain ID matches;
-* approved account class exists;
-* registry address, class and owner match;
-* configured verifier is authorised and separate from the owner;
-* the V2 registry ABI is available;
-* permanent V2 mode is reported;
-* token, staking, usership, card and bridge classes match;
-* the contracts point to each other correctly;
-* the bridge holds the required minting authority.
+The suite verifies both allowed behaviour and rejected behaviour, including:
 
-Use authenticated readiness for deployments, monitoring and incident recovery. Do not treat a public liveness response as permission to send writes.
+* approved deployment/invoke paths;
+* wrong-class rejection;
+* arbitrary-invoke rejection;
+* Devnet administration rejection;
+* missing-token rejection;
+* registration idempotency;
+* recovery binding;
+* V2 assurance enforcement;
+* replay controls;
+* irreversible cut-over confirmation/proof policy;
+* idempotent V2 retry after proof expiry;
+* readiness reflecting permanent V2.
+
+## Error handling
+
+Common policy responses include:
+
+| HTTP status          | Meaning                                | Response                                                      |
+| -------------------- | -------------------------------------- | ------------------------------------------------------------- |
+| `401`                | Missing/incorrect bearer token         | Fix protected Base44/host secret; never weaken authentication |
+| `403`                | Method/contract/entrypoint not allowed | Use supported flow or treat as hostile/misconfigured request  |
+| `409`                | Conflicting/duplicate lifecycle action | Reconcile chain state before retrying                         |
+| `413`                | Payload too large                      | Reduce payload; do not casually raise limits                  |
+| `429`                | Rate limit exceeded                    | Check retry loop/abuse                                        |
+| `503` from `/readyz` | Pins or ecosystem cannot be proven     | Stop writes and resolve the reported failure                  |
 
 ## Token rotation
 
-Rotate deliberately and as one coordinated operation:
+Rotate the relay token as a coordinated operation:
 
-1. stop or drain Base44 write jobs;
-2. set `SWAPPULSE_ROTATE_RELAY_TOKEN=1` only for the regeneration command;
-3. generate the new `.env.relay`;
-4. update the Base44 server-side secret through its protected settings;
-5. recreate the relay container;
-6. verify local and public `/readyz` with the new token;
-7. run `smoke-policy.mjs` and a controlled end-to-end action;
-8. remove the temporary rotation variable.
+1. stop/drain Base44 write jobs;
+2. regenerate the token through the protected host workflow;
+3. update the Base44 server secret;
+4. recreate/reload the relay;
+5. verify authenticated local and public readiness;
+6. run the policy suite;
+7. perform a controlled end-to-end action;
+8. remove any temporary rotation flag.
 
-Never paste the token into chat, a Git issue, a frontend field or a command that prints shell tracing.
+Never paste the bearer token into chat, Git issues, frontend fields or shell tracing output.
 
-## Backup and recovery
+## Incident response
 
-Do not back up `.env.relay` into source control or a public/general-purpose archive. Back up the chain state and public deployment manifest through the protected host backup process. Relay configuration should be regenerated from the verified manifest and the authorised local chain accounts.
-
-If the relay is suspected of compromise:
+If compromise is suspected:
 
 1. stop the relay or remove its public tunnel route;
-2. leave the read-only RPC available if it remains trustworthy;
+2. keep read-only RPC available only if it remains trustworthy;
 3. inspect submitted transactions and host access logs;
-4. rotate the bearer token and any exposed signing authority under the applicable recovery procedure;
-5. regenerate and verify every pin;
+4. rotate exposed bearer/signing authority under the applicable recovery procedure;
+5. verify every public deployment/authority pin;
 6. rerun the relay policy suite;
-7. restore Base44 writes only after reconciliation confirms expected chain state.
-
-## Common responses
-
-| HTTP status          | Meaning                                           | Operator action                                                |
-| -------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| `401`                | Missing or incorrect bearer token                 | Check the Base44 server secret. Never weaken authentication    |
-| `403`                | RPC method, contract or entrypoint is not allowed | Use the supported backend flow or treat the request as hostile |
-| `409`                | Registration is already being processed           | Wait for reconciliation before retrying                        |
-| `413`                | Request body exceeds the limit                    | Reduce the payload. Do not raise the limit casually            |
-| `429`                | Client exceeded the rate limit                    | Check retry behaviour and possible abuse                       |
-| `503` from `/readyz` | Chain or contract pins cannot be proven           | Stop writes and resolve the reported machine-readable code     |
-
-## Hosting guidelines
-
-* Keep `.env` and `.env.relay` mode `0600` and git-ignored.
-* Keep raw node RPC and local relay ports on `127.0.0.1`.
-* Use different public hostnames for reads and writes.
-* Allow only the Base44 backend to possess the relay token.
-* Reconcile every material result through the independent public RPC.
-* Fail closed when identity verification expires, is revoked or disagrees with Base44's current private assertion.
-* Preserve machine-readable error codes without logging secrets or PII.
-* Run the policy suite after code, configuration, image, manifest, proxy or contract changes.
+7. reconcile chain state;
+8. restore writes only after expected state is independently confirmed.
 
 ## Related pages
 
-* [Read-only RPC gateway](read-only-rpc-gateway.md)
-* [Full node and full observer](../network-and-web3/full-node.md)
-* [Lite node](../network-and-web3/lite-node.md)
-* [Infrastructure Operations](../network-and-web3/infrastructure-operations.md)
-* [SwapPulse V2 Live Architecture](../network-and-web3/v2-live-architecture.md)
+* Permanent V2 Verification Policy
+* Verifier Logic and Assurance
+* Chain State and Reconciliation
+* Cairo Contracts Reference
+* Read-only RPC Gateway
+* Infrastructure Operations
