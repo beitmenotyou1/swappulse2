@@ -3,23 +3,11 @@ site:
   title: SwapPulse Docs
   structure:
     - type: section
-      key: section-1
-      title: SwapPulse Docs
-      path: swappulse-docs
-      default: true
-      children:
-        - type: space
-          key: space-1
-          title: SwapPulse Documentation
-          path: docs
-          default: true
-          content:
-            directory: ./docs
-    - type: section
       key: section-2
       title: Landing Page
       path: landing-page
       icon: house-laptop
+      default: true
       children:
         - type: space
           key: space-2
@@ -28,3 +16,15 @@ site:
           default: true
           content:
             directory: ./landing-page
+    - type: section
+      key: section-1
+      title: SwapPulse Docs
+      path: swappulse-docs
+      children:
+        - type: space
+          key: space-1
+          title: SwapPulse Documentation
+          path: docs
+          default: true
+          content:
+            directory: ./docs
