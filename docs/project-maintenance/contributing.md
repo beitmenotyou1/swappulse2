@@ -152,6 +152,7 @@ At minimum, consider whether the change affects:
 * [security audit](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/security-audit)
 * [release process](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/releasing)
 * [licensing guide](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/licensing) / [third-party notices](https://swappulse.gitbook.io/swappulse-docs/project-maintenance/third-party-notices) when third-party/licensing boundaries change
+* [Frequently Asked Questions](https://swappulse.gitbook.io/swappulse-docs/faq), including whether the change raises a new user question that needs its own page
 
 ## Pull request checklist
 
@@ -163,7 +164,8 @@ Include:
 * tests/checks run;
 * security/privacy impact;
 * migration/rollback notes if state or schemas changed;
-* translation/accessibility notes for user-facing changes.
+* translation/accessibility notes for user-facing changes;
+* FAQ review completed, with each new question added as its own page under `docs/faq/` and listed in `docs/SUMMARY.md`.
 
 ## AI-assisted contributions
 
