@@ -143,7 +143,7 @@ A Stage D operator should:
 * retain the same-host observer until the cross-host verifier has a durable, reboot-tested service definition;
 * continue reporting `operator_independence: false` while one person controls both machines.
 
-Use the Full node and full observer guide for the guarded primary and remote workflow, and the Lite node guide for the cross-host canary and Tailscale peer policy.
+Use the [Full node and full observer](full-node.md) guide for the guarded primary and remote workflow, and the [Lite node](lite-node.md) guide for the cross-host canary and Tailscale peer policy.
 
 Never expose the raw Devnet RPC to the Internet. Devnet includes administrative methods that are intentionally blocked by the public RPC gateway and transaction relay policy.
 
@@ -244,13 +244,13 @@ Until those steps are complete, documentation and UI must describe rewards and d
 
 ### Related documentation
 
-* Full node and full observer, current Madara and node-lab status
-* Lite node, low-resource multi-RPC verification and local reads
-* Read-only RPC gateway, public read hosting and method policy
-* Transaction relay, protected write hosting and policy controls
-* Cairo and Starknet chain overview, contract architecture and privacy boundary
-* Infrastructure operations, current live testnet hosting and recovery procedures
-* SwapPulse Node Architecture Roadmap, tested stages and remaining decentralisation work
+* [Full node and full observer](full-node.md), current Madara and node-lab status
+* [Lite node](lite-node.md), low-resource multi-RPC verification and local reads
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md), public read hosting and method policy
+* [Transaction relay](../apis/transaction-relay-api.md), protected write hosting and policy controls
+* [Cairo and Starknet chain overview](chain-overview.md), contract architecture and privacy boundary
+* [Infrastructure operations](infrastructure-operations.md), current live testnet hosting and recovery procedures
+* [SwapPulse Node Architecture Roadmap](node-architecture.md), tested stages and remaining decentralisation work
 * `chain/deployments/swappulse-testnet.json` - public deployment metadata only
 
 SwapPulse's objective is permissionless participation without surrendering user custody or privacy. Operators should be able to earn for useful, verifiable work, while users keep control of their own accounts and sensitive identity data remains off-chain.

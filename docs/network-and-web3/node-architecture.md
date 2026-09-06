@@ -43,10 +43,10 @@ A second machine cannot become a real consensus validator merely by running the 
 
 Dedicated hosting guides:
 
-* Full node and full observer
-* Lite node
-* Read-only RPC gateway
-* Transaction relay
+* [Full node and full observer](full-node.md)
+* [Lite node](lite-node.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
 
 ### 2. Goal
 

@@ -6,7 +6,7 @@ description: >-
 
 # All current FAQ answers
 
-This consolidated page preserves the existing SwapPulse questions and answers. New questions are added as individual pages in the dedicated Frequently Asked Questions category, making each answer easier to find, link to and maintain. For step-by-step instructions, follow the links to the detailed guides throughout this page.
+This consolidated page preserves the existing SwapPulse questions and answers. New questions are added as individual pages in the dedicated [Frequently Asked Questions](https://swappulse.gitbook.io/swappulse-docs/faq) category, making each answer easier to find, link to and maintain. For step-by-step instructions, follow the links to the detailed guides throughout this page.
 
 {% hint style="info" %}
 SwapPulse is actively developed. Testnet Web3 features, node tooling and some integrations may change as the project matures. The [Changelog](../changelog/) records significant releases and changes.

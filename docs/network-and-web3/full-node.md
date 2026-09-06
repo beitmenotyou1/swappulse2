@@ -193,7 +193,7 @@ Also query at least one block captured before the restart and confirm that its h
 {% step %}
 #### Add a cross-host lite canary
 
-Use the node-lab manifest, the primary sequencer and the remote observer as the two peers. The Lite node guide shows the opt-in transport setting and the verified canary pattern.
+Use the node-lab manifest, the primary sequencer and the remote observer as the two peers. The [Lite node](lite-node.md) guide shows the opt-in transport setting and the verified canary pattern.
 
 Keep the canary on a separate loopback port. Do not replace the existing verifier or remove the same-host observer until the cross-host service has a durable start, stop, restart and monitoring procedure.
 {% endstep %}
@@ -308,7 +308,7 @@ The deployment, assurance exercise and irreversible V2 cut-over scripts are engi
 
 ### Keep the RPC private
 
-Raw Madara RPC should remain on `127.0.0.1` by default. Stage D has two narrow exceptions: the primary feeder gateway and remote observer RPC bind only to the hosts' reviewed Tailscale IPv4 addresses. Neither service should be exposed to the public Internet. If users need public reads, place the read-only RPC gateway in front of a reviewed upstream and publish only the gateway through HTTPS.
+Raw Madara RPC should remain on `127.0.0.1` by default. Stage D has two narrow exceptions: the primary feeder gateway and remote observer RPC bind only to the hosts' reviewed Tailscale IPv4 addresses. Neither service should be exposed to the public Internet. If users need public reads, place the [read-only RPC gateway](../apis/read-only-rpc-gateway.md) in front of a reviewed upstream and publish only the gateway through HTTPS.
 
 ### Monitor the host
 
@@ -367,8 +367,8 @@ A full observer validates public protocol state. It must not depend on private B
 
 ## Related pages
 
-* Lite node
-* Read-only RPC gateway
-* Transaction relay
-* SwapPulse Node Architecture Roadmap
-* Cairo and Starknet Chain Overview
+* [Lite node](lite-node.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
+* [SwapPulse Node Architecture Roadmap](node-architecture.md)
+* [Cairo and Starknet Chain Overview](chain-overview.md)

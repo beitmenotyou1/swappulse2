@@ -8,10 +8,10 @@ This package turns the Milestone 1 contracts into a long-lived **development tes
 
 For component-specific explanations and hosting procedures, use:
 
-* Full node and full observer
-* Lite node
-* Read-only RPC gateway
-* Transaction relay
+* [Full node and full observer](full-node.md)
+* [Lite node](lite-node.md)
+* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
+* [Transaction relay](../apis/transaction-relay-api.md)
 
 The port numbers on this page are repository defaults. The current reference host maps the RPC gateway to `127.0.0.1:18080`, the transaction relay to `127.0.0.1:18081` and the live lite node to `127.0.0.1:18100` to avoid local service conflicts. Public hostnames remain unchanged.
 
@@ -105,7 +105,7 @@ Normal remote shutdown uses `bash stop.sh .env.remote`; it removes the observer 
 This lab proves physical-host state-source independence only. It still has one block producer and one human operator. The same-host observer and the existing lite verifier remain in service as fallbacks, and the live `SWAPPULSE_TESTNET` RPC, relay and lite-node configuration are unchanged.
 {% endhint %}
 
-For the complete procedure, evidence and cross-host lite-node settings, see Full node and full observer and Lite node.
+For the complete procedure, evidence and cross-host lite-node settings, see [Full node and full observer](full-node.md) and [Lite node](lite-node.md).
 
 ## 1. Prepare the host
 
