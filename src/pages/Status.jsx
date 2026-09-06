@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CheckCircle2, XCircle, AlertCircle, RefreshCw, ArrowLeft, Bell, Activity, Clock,
+  CheckCircle2, XCircle, AlertCircle, RefreshCw, ArrowLeft, Bell, Clock,
   Mail, ChevronDown, AlertTriangle, Loader2, Wrench, BookOpen, ExternalLink,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
