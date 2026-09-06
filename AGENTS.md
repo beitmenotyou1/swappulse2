@@ -53,6 +53,4 @@ https://gitbook.com/docs/skill.md
 
 When making changes, preserve GitBook sync metadata such as frontmatter, `SUMMARY.md`, `gitbook-docs.yaml`, `.gitbook/`, and asset links unless the requested edit explicitly requires changing them.
 
-After adding or changing documentation, review the content for likely user questions. Add each new question as a separate page under `docs/faq/`, use the question as the page title, answer it directly and add it beneath the FAQ category in `docs/SUMMARY.md`. Do not append new questions to the consolidated FAQ archive.
-
 <!-- gitbook-agent-instructions:end -->

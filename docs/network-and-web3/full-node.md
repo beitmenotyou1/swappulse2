@@ -79,33 +79,50 @@ Later fault tests stopped the observer and sequencer separately. In both cases, 
 
 Both nodes were on the same physical host, so these results prove separate state, fail-closed read behaviour and restart recovery. They do not prove separate operator control or permissionless consensus.
 
-### Stage D preparation
+### Stage D: physically separate full observer
 
-`chain/node/stage-d` now contains the first host packages for moving the full observer to a second physical machine:
+On 6 September 2026, Stage D passed on two physical Linux hosts connected through a private Tailscale overlay. The primary mini-server remained the only block-producing node-lab sequencer. A second machine synchronised as a keyless Madara full observer, preserved its own database across a stop and restart, and supplied one peer to an isolated cross-host lite verifier.
 
-* an opt-in Compose override that binds the sequencer feeder gateway only to the primary host's Tailscale IPv4 address;
-* a read-only preflight that checks the private bind, reviewed image and node-lab state;
-* a confirmation-gated enable script that recreates only the node-lab sequencer, waits for same-host agreement to recover and rechecks the live RPC, relay and lite node;
-* a checkpoint generator that records a public confirmed block number and hash for remote verification;
-* a public, secret-free remote-observer environment template;
-* a resource-limited remote Madara Compose service with no private signing key;
-* a remote-host preflight and guarded start script;
-* a checkpoint and permanent-V2 verification script;
-* a clean stop script that preserves the remote observer's named volume.
-
-{% hint style="warning" %}
-Stage D has not passed. The complete guarded workflow is now present, but the repository does not yet contain a successful second-host evidence record. Do not expose the feeder gateway, remove the same-host observer or describe the node lab as physically independent until the remote workflow and verification gate pass on the intended machines.
+{% hint style="success" %}
+Stage D proves **physical-host state-source independence** for `SWAPPULSE_NODELAB_1`. It does not prove independent operators, permissionless consensus or validator decentralisation. Both tested machines were administered by the same operator, so `operator_independence` correctly remained `false`.
 {% endhint %}
 
-The planned second-host test must use a private overlay such as Tailscale, reproduce the exact chain ID, checkpoint block hash and permanent V2 contract pins, preserve its own database across restart, and then replace the same-host observer as one of the lite verifier's peers. Even after that, `operator_independence` remains false if one person administers both machines.
+#### Verified topology
 
-### Prepare the Stage D remote observer
+| Component                 | Private or local endpoint      | Role                                                          |
+| ------------------------- | ------------------------------ | ------------------------------------------------------------- |
+| Primary testing sequencer | `127.0.0.1:19950`              | Produces blocks for the isolated node lab                     |
+| Primary feeder gateway    | `<primary-Tailscale-IP>:19952` | Supplies the remote observer over the private overlay         |
+| Same-host full observer   | `127.0.0.1:19951`              | Retained as a tested fallback state source                    |
+| Remote full observer      | `<remote-Tailscale-IP>:19961`  | Maintains a separate persistent database without signing keys |
+| Existing lite verifier    | `127.0.0.1:18101`              | Original same-host verifier, left unchanged                   |
+| Cross-host lite canary    | `127.0.0.1:18102`              | Compared the primary sequencer with the remote observer       |
 
-Run this workflow only when the second physical host is ready, both machines have reviewed Tailscale IPv4 addresses in `100.64.0.0/10`, and the same-host node lab and lite verifier are healthy.
+Neither the feeder gateway nor the remote observer RPC was exposed to the public Internet. Both were bound to reviewed Tailscale IPv4 addresses.
+
+#### Evidence that passed
+
+The guarded workflow passed all seven Stage D gates:
+
+* the remote observer returned the exact `SWAPPULSE_NODELAB_1` chain ID;
+* it reached confirmed state and reproduced primary checkpoint block `80536` with hash `0x5ca9365c6917f23caa48d7f5d6abf9dacc5f7d293752cc29bf6b93468d6169e`;
+* it reproduced the canonical permanent V2 deployment pins and `verification_v2_required=true`;
+* its container command and environment contained no sequencer, deployer, registry-owner, verifier or user private key;
+* its named volume survived container removal and restart;
+* after restart, block `81467` retained hash `0x18e87acf1ed780a06beb7b759a0bbde9c9a307cd203ddfb1313c60f740e08e`, while the observer continued to a later height;
+* the cross-host lite canary reached `multi-peer-agreement`, with two healthy peers, two contract-pin checks and matching block hashes.
+
+The canary later advanced from block `89563` to `89655` while retaining agreement. The original verifier on port `18101`, the same-host observer and the separate live `SWAPPULSE_TESTNET` services remained healthy throughout.
+
+The scoped RPC verification fix is recorded in [`b6aba9ad`](https://github.com/beitmenotyou1/swappulse2/commit/b6aba9ade8829ef00933a61b51c4eb95b76a06f2). The opt-in Tailscale lite-peer policy and its focused tests are recorded in [`2d2254d9`](https://github.com/beitmenotyou1/swappulse2/commit/2d2254d90fe1e336106a5890ca11a352ef741059).
+
+#### Run the guarded workflow
+
+Use the scripts from a reviewed checkout. Replace placeholders with the two hosts' actual Tailscale IPv4 addresses. If the node-lab environment lives outside the checkout, set `NODELAB_DIR` to its real `chain/node/nodelab` directory before running the primary scripts.
 
 {% stepper %}
 {% step %}
-#### Enable the primary host's private gateway
+#### Preflight and enable the primary gateway
 
 From `chain/node/stage-d` on the primary host:
 
@@ -119,13 +136,13 @@ NODELAB_CONFIRM_STAGE_D_GATEWAY=YES \
 bash create-primary-checkpoint.sh
 ```
 
-The guarded enable script refuses a non-Tailscale bind, recreates only the node-lab sequencer if required, waits for same-host agreement to return, and rechecks the live RPC, relay and lite node. It publishes the feeder gateway as `<primary-Tailscale-IP>:19952` to the private overlay only.
+The enable script refuses non-Tailscale binds, checks the existing node lab, recreates only the node-lab sequencer when required, waits for same-host observer agreement to recover and rechecks the separate live services.
 {% endstep %}
 
 {% step %}
-#### Configure the remote host
+#### Prepare the remote observer
 
-Install the repository and Docker prerequisites, then install the verification tooling and create the remote environment file:
+On the second host:
 
 ```bash
 cd swappulse2/chain/scripts/tooling
@@ -135,52 +152,69 @@ cd ../../node/stage-d/remote-observer
 cp .env.example .env.remote
 ```
 
-In `.env.remote`, replace both example `100.64.0.x` values with the primary and remote hosts' actual Tailscale IPv4 addresses. Keep the immutable `MADARA_IMAGE` digest and the `SWAPPULSE_NODELAB_1` identity unchanged unless a new image has completed qualification.
-{% endstep %}
-
-{% step %}
-#### Transfer the public checkpoint
-
-Copy `stage-d-primary-checkpoint.json` from the primary host to the remote host. This file contains public block and hash evidence only.
-
-Do not transfer `.env.local`, sequencer keys, deployment keys, registry-owner keys, verifier keys or user keys.
+Edit only the public settings in `.env.remote`: the primary gateway URL, the remote Tailscale bind and the reviewed immutable Madara image. Do not copy `.env.local` or any authority material from the primary host.
 {% endstep %}
 
 {% step %}
 #### Start and verify the remote observer
 
-From `chain/node/stage-d/remote-observer` on the remote host:
+Copy the public `stage-d-primary-checkpoint.json` to the second host, then run:
 
 ```bash
-bash preflight.sh
-bash start.sh
-bash verify.sh /path/to/chain /path/to/stage-d-primary-checkpoint.json
+bash preflight.sh .env.remote
+bash start.sh .env.remote
+bash verify.sh \
+  /absolute/path/to/chain \
+  /absolute/path/to/stage-d-primary-checkpoint.json \
+  .env.remote
 ```
 
-The verification must prove the exact chain ID, confirmed checkpoint block hash, permanent V2 deployment pins and full-observer mode without a private signing key. Its RPC must remain bound only to the remote host's Tailscale address, normally on port `19961`.
+Success requires the chain ID, checkpoint hash, V2 manifest and key-separation checks to pass. A running container on its own is not sufficient evidence.
 {% endstep %}
 
 {% step %}
-#### Prove restart and lite-peer recovery
+#### Prove database persistence
 
-Stop the remote observer with `bash stop.sh`, confirm its named volume remains, restart it and repeat verification. Only then replace the same-host observer endpoint in the lite verifier and require `multi-peer-agreement` again.
+Stop only the remote observer, confirm that the named volume remains, restart it and repeat the full verification:
 
-Do not remove the same-host observer or report Stage D as passed until the repository contains this evidence.
+```bash
+bash stop.sh .env.remote
+docker volume ls | grep swappulse-nodelab-1-stage-d-remote_remote-observer-data
+bash start.sh .env.remote
+bash verify.sh \
+  /absolute/path/to/chain \
+  /absolute/path/to/stage-d-primary-checkpoint.json \
+  .env.remote
+```
+
+Also query at least one block captured before the restart and confirm that its hash is unchanged.
+{% endstep %}
+
+{% step %}
+#### Add a cross-host lite canary
+
+Use the node-lab manifest, the primary sequencer and the remote observer as the two peers. The Lite node guide shows the opt-in transport setting and the verified canary pattern.
+
+Keep the canary on a separate loopback port. Do not replace the existing verifier or remove the same-host observer until the cross-host service has a durable start, stop, restart and monitoring procedure.
 {% endstep %}
 {% endstepper %}
+
+{% hint style="warning" %}
+The successful test did not turn the remote observer into a validator or make the network decentralised. Preserve the same-host observer as a fallback, keep both Stage D RPC surfaces private, and treat loss of the remote peer as a fail-closed readiness event.
+{% endhint %}
 
 ## Host requirements
 
 Use a dedicated or carefully resource-limited 64-bit Linux host.
 
-| Resource | Current guidance                                                                                                   |
-| -------- | ------------------------------------------------------------------------------------------------------------------ |
-| CPU      | Four cores recommended for the reference lab; the supplied node-lab caps each node at two CPUs                     |
-| Memory   | 16 GB on the reference shared host; each node-lab container is capped at 2 GiB                                     |
-| Storage  | SSD or NVMe with monitored free space and write endurance; do not use a low-end SD card for sustained chain writes |
-| Software | Docker Engine, Docker Compose, Git, Bash and standard command-line tools                                           |
-| Network  | Stable outbound connectivity; inbound node RPC is not required for the same-host lab                               |
-| Time     | Working system time synchronisation                                                                                |
+| Resource | Current guidance                                                                                                                                          |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CPU      | Four cores recommended for the reference lab; the supplied node-lab caps each node at two CPUs                                                            |
+| Memory   | 16 GB on the reference shared host; each node-lab container is capped at 2 GiB                                                                            |
+| Storage  | SSD or NVMe with monitored free space and write endurance; do not use a low-end SD card for sustained chain writes                                        |
+| Software | Docker Engine, Docker Compose, Git, Bash and standard command-line tools                                                                                  |
+| Network  | Stable outbound connectivity; same-host RPCs stay on loopback, while Stage D additionally requires a reviewed private-overlay route between the two hosts |
+| Time     | Working system time synchronisation                                                                                                                       |
 
 Pi 4 and Pi 5 devices remain candidate hardware. Do not describe them as supported full observers until their restart, catch-up, storage, thermal and multi-day soak tests pass.
 
@@ -272,9 +306,9 @@ The deployment, assurance exercise and irreversible V2 cut-over scripts are engi
 
 ## Operating guidelines
 
-### Keep the RPC local
+### Keep the RPC private
 
-The raw Madara RPC should remain bound to `127.0.0.1`. If users need remote reads, place the [read-only RPC gateway](../apis/read-only-rpc-gateway.md) in front of a reviewed upstream and publish only the gateway through HTTPS.
+Raw Madara RPC should remain on `127.0.0.1` by default. Stage D has two narrow exceptions: the primary feeder gateway and remote observer RPC bind only to the hosts' reviewed Tailscale IPv4 addresses. Neither service should be exposed to the public Internet. If users need public reads, place the read-only RPC gateway in front of a reviewed upstream and publish only the gateway through HTTPS.
 
 ### Monitor the host
 
@@ -333,8 +367,8 @@ A full observer validates public protocol state. It must not depend on private B
 
 ## Related pages
 
-* [Lite node](lite-node.md)
-* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
-* [Transaction relay](../apis/transaction-relay-api.md)
-* [SwapPulse Node Architecture Roadmap](node-architecture.md)
-* [Cairo and Starknet Chain Overview](chain-overview.md)
+* Lite node
+* Read-only RPC gateway
+* Transaction relay
+* SwapPulse Node Architecture Roadmap
+* Cairo and Starknet Chain Overview

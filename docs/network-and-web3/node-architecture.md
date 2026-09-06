@@ -11,7 +11,7 @@ This document defines the target architecture for community-operated SwapPulse n
 There are two deliberately separate environments:
 
 1. The live `SWAPPULSE_TESTNET` uses a single Shardlabs Starknet Devnet runtime on the always-on mini-server. Its public read gateway, protected relay and lite node are live.
-2. The isolated `SWAPPULSE_NODELAB_1` uses a Madara testing sequencer and a separately synchronising full observer with different databases and a unique chain ID. The two-node consistency, V2 deployment, application exercise, permanent V2 cut-over, lite-node agreement, observer-loss recovery and sequencer-loss recovery tests passed on 4 September 2026.
+2. The isolated `SWAPPULSE_NODELAB_1` uses one Madara testing sequencer, a same-host fallback observer and a keyless observer on a second physical machine. The same-host consistency, V2 deployment, application exercise, permanent V2 cut-over and reversible node-loss tests passed on 4 September 2026. The second-host checkpoint, restart and cross-host lite-canary gates passed on 6 September 2026.
 
 Live infrastructure:
 
@@ -22,18 +22,20 @@ Live infrastructure:
 
 Node-lab infrastructure:
 
-| Component                | Host endpoint                  | Connection                                       |
-| ------------------------ | ------------------------------ | ------------------------------------------------ |
-| Madara testing sequencer | `127.0.0.1:19950`              | Produces isolated node-lab blocks                |
-| Madara full observer     | `127.0.0.1:19951`              | Synchronises through the internal feeder gateway |
-| Feeder gateway           | Docker bridge port `8080` only | Never published to the host or Internet          |
-| Lite agreement verifier  | `127.0.0.1:18101`              | Compares sequencer and observer state            |
+| Component                   | Endpoint                       | Connection                                                            |
+| --------------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| Madara testing sequencer    | `127.0.0.1:19950`              | Produces isolated node-lab blocks on the primary host                 |
+| Same-host full observer     | `127.0.0.1:19951`              | Retained as a fallback with its own database                          |
+| Private feeder gateway      | `<primary-Tailscale-IP>:19952` | Supplies the second host and is never public                          |
+| Remote Madara full observer | `<remote-Tailscale-IP>:19961`  | Keyless observer with a persistent database on a second physical host |
+| Existing lite verifier      | `127.0.0.1:18101`              | Preserved same-host agreement service                                 |
+| Cross-host lite canary      | `127.0.0.1:18102`              | Compares the primary sequencer with the remote observer               |
 
-The node-lab observer has no sequencer or deployer private key and reproduced the final V2 state from its own database. Both nodes currently run on the same physical mini-server, and only the testing sequencer produces blocks. This is independent state synchronisation, not independent operators or permissionless consensus.
+The original node-lab observer has no sequencer or deployer private key and reproduced the final V2 state from its own same-host database. In both same-host single-node loss tests, the lite verifier failed closed with HTTP `503` instead of treating the remaining peer as sufficient trust. Agreement returned after the stopped service restarted from its preserved volume.
 
-In both single-node loss tests, the lite verifier failed closed with HTTP `503` instead of treating the remaining peer as sufficient trust. It automatically restored `multi-peer-agreement` after the stopped node restarted from its preserved volume.
+Stage D has now repeated the observer and lite checks across two physical hosts. The remote keyless observer reproduced the primary checkpoint, permanent V2 state and a pre-restart block from its preserved database. An isolated cross-host lite canary then reached `multi-peer-agreement` between the primary sequencer and remote observer, with both contract-pin checks passing. The canary remained loopback-only, while the original verifier and same-host observer stayed healthy and unchanged.
 
-Stage D now has a complete guarded workflow for a Tailscale-bound feeder gateway, primary and remote-host preflights, a block/hash checkpoint, a resource-limited remote Madara Compose service, remote verification and a clean stop that preserves state. A successful second-physical-host pass is still pending, so the feeder gateway remains private and the same-host observer stays in place.
+This removes the single-physical-host state-source assumption for the tested path. It does not remove the single block producer or single human operator. The private gateway remains private, the same-host observer remains a fallback, and `operator_independence` remains `false`.
 
 The current community `StakingPool` is an on-chain economic/accountability layer for SwapPulse operator services. **It is not currently decentralised block consensus.**
 
@@ -41,10 +43,10 @@ A second machine cannot become a real consensus validator merely by running the 
 
 Dedicated hosting guides:
 
-* [Full node and full observer](full-node.md)
-* [Lite node](lite-node.md)
-* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
-* [Transaction relay](../apis/transaction-relay-api.md)
+* Full node and full observer
+* Lite node
+* Read-only RPC gateway
+* Transaction relay
 
 ### 2. Goal
 
@@ -177,7 +179,7 @@ Status: complete baseline.
 
 #### Phase 1: reproducible observer package
 
-Status: the same-host observer and both reversible node-loss recovery tests passed. The complete Stage D remote-observer workflow exists, while successful independent physical-host/operator evidence remains pending.
+Status: the same-host observer, both reversible node-loss tests and the Stage D second-physical-host observer, checkpoint, restart and cross-host lite-canary checks passed. Independent operator control, low-cost hardware qualification and a durable cross-host service package remain pending.
 
 Goal: make it easy for another machine to reproduce and independently verify the public chain state/read surface.
 
@@ -192,7 +194,7 @@ Deliverables:
 * Pi/mini-PC benchmark harness;
 * documentation for backup/upgrade/recovery.
 
-The current node-lab observer already runs without relay, owner, verifier, sequencer or deployer keys and reproduces the expected state. The remaining success criterion is to repeat that result on an independently administered physical machine and prove restart, offline catch-up and upgrade behaviour.
+The current remote node-lab observer runs without relay, owner, verifier, sequencer or deployer keys, reproduces the expected state and restarts from a persistent volume on a second physical machine. The remaining Phase 1 work is to package the cross-host lite verifier as a durable service, complete longer offline catch-up and upgrade tests, qualify low-cost hardware, and repeat the procedure under an independently administered operator.
 
 #### Phase 2: lite client
 
@@ -211,7 +213,7 @@ Deliverables:
 
 #### Phase 3: multi-operator development network
 
-Status: the one-sequencer/one-observer Madara topology and same-host loss/recovery tests are proven on one host. Stage D primary-host preparation has started, but multiple independent physical hosts, operators and consensus/finality are not yet implemented.
+Status: one Madara sequencer, a same-host fallback observer and a keyless observer on a second physical host are proven. A cross-host lite canary verifies state agreement, but there is still one block producer, one human operator and no multi-operator consensus or finality.
 
 Goal: replace the single-runtime assumption with an actual multi-node network architecture.
 
@@ -512,14 +514,14 @@ SwapPulse should only claim decentralised/community validation when:
 
 ### 20. Next implementation step
 
-Do **not** jump directly from the current Devnet into public permissionless validation.
+Do **not** jump from the successful Stage D state-source test directly into public permissionless validation.
 
-The next engineering task should be Phase 1:
+The next engineering work should:
 
-1. evaluate the appropriate Starknet appchain/rollup node stack for SwapPulse;
-2. define a deterministic public network manifest/genesis model;
-3. build an independent observer/full-node prototype;
-4. create the benchmark harness;
-5. test Raspberry Pi 4/5 and mini-PC profiles;
-6. publish measured results;
-7. only then design the multi-validator migration.
+1. turn the verified cross-host lite canary into a reviewed, reboot-managed service with explicit start, stop, status and rollback procedures;
+2. run remote-observer and cross-host verifier outage, reboot, longer offline catch-up and multi-day soak tests;
+3. add monitored backup and upgrade rehearsals for the remote observer volume;
+4. repeat the second-host workflow with an independently administered operator and publish the resulting evidence;
+5. benchmark Pi 4, Pi 5 and mini-PC profiles against the acceptance criteria on this page;
+6. evaluate the appropriate Starknet appchain or rollup stack and deterministic public network manifest;
+7. only after those gates pass, design the multi-operator sequencing or validation migration.

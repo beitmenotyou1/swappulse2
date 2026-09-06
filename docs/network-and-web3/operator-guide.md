@@ -15,6 +15,7 @@ The current `SWAPPULSE_TESTNET` is a Starknet Devnet-based development network. 
 That means:
 
 * community members can run the lite node, compatible infrastructure, monitoring, indexing and experimental full-observer services;
+* the node lab has now reproduced full-observer state and lite-peer agreement across two physical hosts on a private overlay, while remaining under one operator;
 * the live testnet `StakingPool` can bond operators to application and service responsibilities;
 * staking on the current testnet must **not** be described as securing decentralised consensus;
 * production token rewards are **not live** until the Phase 2 contracts, reward policy and governance parameters are deployed and published;
@@ -127,7 +128,22 @@ The canonical SwapPulse deployment currently exposes:
 * live lite node: localhost only on the reference host;
 * privileged relay/admin credentials: host-only environment files or a secret manager.
 
-The separate `SWAPPULSE_NODELAB_1` environment has one Madara testing sequencer and one full observer with independent state databases. It is a development proof, not a replacement for the live testnet or a permissionless validator network.
+The separate `SWAPPULSE_NODELAB_1` environment has one Madara testing sequencer, a same-host fallback observer and a keyless full observer on a second physical machine. A cross-host lite canary compared the primary sequencer with the remote observer and reached two-peer agreement with both contract-pin sets verified. The two hosts were administered by the same operator, so this is a development proof of physical-host state-source independence, not independent operator control, a replacement for the live testnet or a permissionless validator network.
+
+#### Stage D operator duties
+
+A Stage D operator should:
+
+* keep the feeder gateway and remote observer RPC bound only to reviewed private-overlay addresses;
+* keep the immutable Madara image digest and canonical node-lab manifest pinned;
+* verify the primary checkpoint and permanent V2 pins after every start or update;
+* preserve the remote observer's named volume and prove an older block hash after restart;
+* monitor the remote observer head, the cross-host lite verifier's `/readyz` and both pin checks;
+* treat a two-peer outage as a fail-closed event rather than lowering the required agreement;
+* retain the same-host observer until the cross-host verifier has a durable, reboot-tested service definition;
+* continue reporting `operator_independence: false` while one person controls both machines.
+
+Use the Full node and full observer guide for the guarded primary and remote workflow, and the Lite node guide for the cross-host canary and Tailscale peer policy.
 
 Never expose the raw Devnet RPC to the Internet. Devnet includes administrative methods that are intentionally blocked by the public RPC gateway and transaction relay policy.
 
@@ -228,13 +244,13 @@ Until those steps are complete, documentation and UI must describe rewards and d
 
 ### Related documentation
 
-* [Full node and full observer](full-node.md), current Madara and node-lab status
-* [Lite node](lite-node.md), low-resource multi-RPC verification and local reads
-* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md), public read hosting and method policy
-* [Transaction relay](../apis/transaction-relay-api.md), protected write hosting and policy controls
-* [Cairo and Starknet chain overview](chain-overview.md), contract architecture and privacy boundary
-* [Infrastructure operations](infrastructure-operations.md), current live testnet hosting and recovery procedures
-* [SwapPulse Node Architecture Roadmap](node-architecture.md), tested stages and remaining decentralisation work
+* Full node and full observer, current Madara and node-lab status
+* Lite node, low-resource multi-RPC verification and local reads
+* Read-only RPC gateway, public read hosting and method policy
+* Transaction relay, protected write hosting and policy controls
+* Cairo and Starknet chain overview, contract architecture and privacy boundary
+* Infrastructure operations, current live testnet hosting and recovery procedures
+* SwapPulse Node Architecture Roadmap, tested stages and remaining decentralisation work
 * `chain/deployments/swappulse-testnet.json` - public deployment metadata only
 
 SwapPulse's objective is permissionless participation without surrendering user custody or privacy. Operators should be able to earn for useful, verifiable work, while users keep control of their own accounts and sensitive identity data remains off-chain.

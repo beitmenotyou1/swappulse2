@@ -1,5 +1,5 @@
 ---
-description: Run the local chain, RPC gateway and transaction relay safely.
+description: Run the live testnet services and isolated physical-host node lab safely.
 ---
 
 # Infrastructure Operations
@@ -8,10 +8,10 @@ This package turns the Milestone 1 contracts into a long-lived **development tes
 
 For component-specific explanations and hosting procedures, use:
 
-* [Full node and full observer](full-node.md)
-* [Lite node](lite-node.md)
-* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
-* [Transaction relay](../apis/transaction-relay-api.md)
+* Full node and full observer
+* Lite node
+* Read-only RPC gateway
+* Transaction relay
 
 The port numbers on this page are repository defaults. The current reference host maps the RPC gateway to `127.0.0.1:18080`, the transaction relay to `127.0.0.1:18081` and the live lite node to `127.0.0.1:18100` to avoid local service conflicts. Public hostnames remain unchanged.
 
@@ -69,6 +69,43 @@ Devnet is pinned to `shardlabs/starknet-devnet-rs:0.8.2` and uses:
 The persistence path was exercised end-to-end on 29 August 2026: the compiled SwapPulse classes were declared, `IdentityRegistry` was deployed, state was dumped, Devnet was stopped/restarted from that dump, and `verify-network.mjs` still verified the same registry class hash and owner after restart.
 
 This persistence mechanism is appropriate for the current contract/UX milestone. It is **not** a substitute for the future sequencer/prover/DA/validator architecture.
+
+## Isolated Stage D physical-host node lab
+
+`SWAPPULSE_NODELAB_1` is separate from the live testnet. On 6 September 2026, its full observer successfully synchronised on a second physical host through a private Tailscale overlay and reproduced the primary checkpoint, permanent V2 deployment pins and later common block hashes.
+
+| Surface                | Intended bind                  | Public Internet |
+| ---------------------- | ------------------------------ | --------------- |
+| Primary sequencer RPC  | `127.0.0.1:19950`              | No              |
+| Primary feeder gateway | `<primary-Tailscale-IP>:19952` | No              |
+| Same-host observer RPC | `127.0.0.1:19951`              | No              |
+| Remote observer RPC    | `<remote-Tailscale-IP>:19961`  | No              |
+| Cross-host lite canary | `127.0.0.1:18102`              | No              |
+
+The remote observer uses its own persistent named volume and receives no sequencer, deployer, registry-owner, verifier, relay or user key. The successful restart check preserved a pre-restart block hash and the observer resumed from the same volume.
+
+Use these repository entry points:
+
+```bash
+# Primary host
+cd chain/node/stage-d
+export NODELAB_STAGE_D_TAILSCALE_IP=<primary-100.x.y.z>
+bash primary-gateway-preflight.sh
+
+# Remote host
+cd chain/node/stage-d/remote-observer
+bash preflight.sh .env.remote
+bash start.sh .env.remote
+bash verify.sh /absolute/path/to/chain /absolute/path/to/checkpoint .env.remote
+```
+
+Normal remote shutdown uses `bash stop.sh .env.remote`; it removes the observer container but preserves the named database volume. After restart, rerun `verify.sh` and independently query a block captured before the stop.
+
+{% hint style="warning" %}
+This lab proves physical-host state-source independence only. It still has one block producer and one human operator. The same-host observer and the existing lite verifier remain in service as fallbacks, and the live `SWAPPULSE_TESTNET` RPC, relay and lite-node configuration are unchanged.
+{% endhint %}
+
+For the complete procedure, evidence and cross-host lite-node settings, see Full node and full observer and Lite node.
 
 ## 1. Prepare the host
 

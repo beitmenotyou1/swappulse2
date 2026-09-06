@@ -57,6 +57,6 @@ Personal identity evidence remains off-chain. The public chain contains opaque i
 
 ## Node-lab status
 
-The same-host node lab has passed two-node state consistency, V2 deployment/cut-over reproduction, lite-node multi-peer agreement and observer/sequencer availability-loss recovery tests.
+The node lab has passed same-host state consistency, V2 deployment and cut-over reproduction, lite-node agreement, reversible peer-loss tests, and a Stage D second-physical-host observer and restart test. A cross-host lite canary also reproduced agreement between the primary sequencer and the remote full observer through a private Tailscale overlay.
 
-Stage D introduces a second physical host through a private overlay, but infrastructure should not be described as independently operated until the remote-host evidence and operator-independence requirements are actually satisfied.
+This proves physical-host state-source independence for the tested path. It does not prove independent operator control, decentralised sequencing or permissionless consensus. The same-host observer remains available as a fallback, and both machines must continue to be described as one operator while that remains true.

@@ -45,7 +45,7 @@ It does not:
 
 On the current live `SWAPPULSE_TESTNET`, one genuine execution source is available, so the expected mode is `single-peer-degraded` and `independently_verified` remains `false`.
 
-The same-host `SWAPPULSE_NODELAB_1` test reached `multi-peer-agreement` using the sequencer and separate full-observer databases. Because both ran on one mini-server, that result proves state-source agreement rather than independent-operator decentralisation.
+The same-host `SWAPPULSE_NODELAB_1` test reached `multi-peer-agreement` using the sequencer and separate full-observer databases. Stage D later repeated the comparison across two physical hosts: the primary sequencer and a keyless remote full observer agreed on the same checkpoint, permanent V2 pins and later common block hashes. Both machines were still administered by the same operator, so this proves physical-host state-source independence rather than independent-operator decentralisation.
 
 ### Verified agreement and fault recovery
 
@@ -61,7 +61,39 @@ The node-lab evidence now covers the complete same-host availability fault pair:
 This behaviour matters because a read proxy can otherwise appear healthy while silently falling back to one source. The current implementation gates `/rpc` on the complete readiness condition, so losing the required peer or contract-pin quorum also stops proxied reads with `NO_VERIFIED_PEER`.
 
 {% hint style="info" %}
-These tests cover availability loss and recovery. They do not test Byzantine consensus, validator failover, leader election, proof verification or independent physical operators.
+These tests cover availability loss and recovery. They do not test Byzantine consensus, validator failover, leader election, proof verification or independent operator control.
+{% endhint %}
+
+### Verified Stage D cross-host canary
+
+On 6 September 2026, an isolated lite canary ran on the primary host with these two `SWAPPULSE_NODELAB_1` peers:
+
+* the local testing sequencer on loopback;
+* the full observer on a second physical host, reached only through Tailscale.
+
+The canary reported `ready: true`, `multi-peer-agreement`, two healthy peers, two verified contract-pin sets and identical hashes at the common height. It advanced from block `89563` to `89655` during the recorded checks. `independently_verified` was `true` because the state databases and synchronisation processes were separate. `operator_independence` remained `false` because the same person administered both hosts.
+
+The test ran on `127.0.0.1:18102` and deliberately left the existing verifier on `127.0.0.1:18101` unchanged. It is a verified canary pattern, not yet the reboot-managed replacement for the existing service.
+
+To reproduce that isolated node-lab canary from a reviewed checkout:
+
+```bash
+CANARY_DATA="$HOME/.local/state/swappulse-lite-stage-d"
+mkdir -p "$CANARY_DATA"
+
+BIND_ADDRESS=127.0.0.1 \
+PORT=18102 \
+SWAPPULSE_NODE_MANIFEST=/absolute/path/to/chain/node/config/swappulse-nodelab-1.json \
+SWAPPULSE_RPC_PEERS=http://127.0.0.1:19950,http://<remote-100.x.y.z>:19961 \
+SWAPPULSE_ALLOW_TAILSCALE_HTTP=1 \
+CHECKPOINT_PATH="$CANARY_DATA/checkpoint.json" \
+node /absolute/path/to/chain/node/lite/server.mjs
+```
+
+Use Node.js 22. Check `http://127.0.0.1:18102/status` and require the expected chain ID, `ready: true`, two healthy peers, `pins_verified: true` and `peer_agreement: true` before relying on it.
+
+{% hint style="warning" %}
+With exactly two configured peers, both must remain healthy and agree. If the remote observer is unavailable, the canary fails closed and returns HTTP `503` from `/readyz` and `/rpc`. Do not weaken the quorum to hide an outage.
 {% endhint %}
 
 ### HTTP interface
@@ -117,6 +149,7 @@ With `SWAPPULSE_RPC_PEERS` left blank, the service uses the canonical peer in th
 
 ```
 SWAPPULSE_RPC_PEERS=https://rpc.swappulse.org/rpc,https://second-independent.example/rpc
+SWAPPULSE_ALLOW_TAILSCALE_HTTP=0
 SWAPPULSE_LITE_PORT=18100
 POLL_INTERVAL_MS=15000
 PIN_CHECK_INTERVAL_MS=300000
@@ -124,7 +157,7 @@ RPC_TIMEOUT_MS=5000
 RPC_RATE_LIMIT_PER_MINUTE=120
 ```
 
-Remote peers must use HTTPS. Plain HTTP is accepted only for `localhost`, `127.0.0.1` or `::1`, and URLs containing embedded credentials are rejected.
+Remote peers use HTTPS by default. Plain HTTP is accepted for `localhost`, `127.0.0.1` or `::1`. A deliberately separate opt-in, `SWAPPULSE_ALLOW_TAILSCALE_HTTP=1`, also permits a remote HTTP peer only when its hostname is a literal IPv4 address inside `100.64.0.0/10`. The policy continues to reject ordinary LAN addresses, public HTTP addresses, hostnames that merely resolve into Tailscale, embedded credentials and non-HTTP protocols. The opt-in validates the URL shape, so the operator must also confirm that the address belongs to the intended tailnet and that the kernel route uses Tailscale.
 {% endstep %}
 
 {% step %}
@@ -234,7 +267,8 @@ The checkpoint is an observation record, not authoritative chain state. Losing i
 
 * Keep the service bound to loopback unless you have a separate authenticated local-network design.
 * Do not place `SWAPPULSE_TX_RELAY_TOKEN` or any private key in `.env`.
-* Do not accept remote HTTP peers or URLs with credentials.
+* Keep remote peers on HTTPS unless you deliberately use the narrow Tailscale HTTP opt-in with a literal `100.64.0.0/10` address.
+* Never use the opt-in for ordinary LAN or public HTTP addresses, and never put credentials in a peer URL.
 * Do not expand the local method allowlist to include writes.
 * Keep the network manifest reviewed and version-controlled.
 * Treat peer disagreement as a fault, not as an inconvenience to bypass.
@@ -242,18 +276,19 @@ The checkpoint is an observation record, not authoritative chain state. Losing i
 
 ### Troubleshooting
 
-| Status or symptom             | Likely cause                                                        | Check                                                             |
-| ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `NO_HEALTHY_PINNED_PEER`      | RPC unavailable, wrong chain ID or pins not checked                 | Peer URL, TLS, timeout and manifest                               |
-| `INSUFFICIENT_PIN_QUORUM`     | Too few peers match every contract class hash                       | Contract addresses, class hashes and network selection            |
-| `INSUFFICIENT_PEER_AGREEMENT` | Common-height hashes differ or peers are unavailable                | Each peer's status and block hash at the reported common height   |
-| HTTP `429`                    | Local client exceeded the configured minute limit                   | Reduce polling or raise the limit carefully                       |
-| HTTP `503` from `/rpc`        | No healthy verified peer or required multi-peer quorum is available | Resolve upstream health, agreement or pin failure before retrying |
-| Checkpoint write warning      | `data/` permissions or storage problem                              | Directory ownership, free space and read-only mount configuration |
+| Status or symptom                                   | Likely cause                                                                              | Check                                                                                                                       |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `NO_HEALTHY_PINNED_PEER`                            | RPC unavailable, wrong chain ID or pins not checked                                       | Peer URL, TLS, timeout and manifest                                                                                         |
+| `INSUFFICIENT_PIN_QUORUM`                           | Too few peers match every contract class hash                                             | Contract addresses, class hashes and network selection                                                                      |
+| `INSUFFICIENT_PEER_AGREEMENT`                       | Common-height hashes differ or peers are unavailable                                      | Each peer's status and block hash at the reported common height                                                             |
+| HTTP `429`                                          | Local client exceeded the configured minute limit                                         | Reduce polling or raise the limit carefully                                                                                 |
+| HTTP `503` from `/rpc`                              | No healthy verified peer or required multi-peer quorum is available                       | Resolve upstream health, agreement or pin failure before retrying                                                           |
+| Checkpoint write warning                            | `data/` permissions or storage problem                                                    | Directory ownership, free space and read-only mount configuration                                                           |
+| `HTTP_RPC_PEER_MUST_BE_LOCAL_OR_APPROVED_TAILSCALE` | Remote HTTP was used without the narrow opt-in, or the address is outside `100.64.0.0/10` | Prefer HTTPS. For a reviewed Tailscale peer, use its literal `100.x.y.z` address and set `SWAPPULSE_ALLOW_TAILSCALE_HTTP=1` |
 
 ### Related pages
 
-* [Full node and full observer](full-node.md)
-* [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
-* [Transaction relay](../apis/transaction-relay-api.md)
-* [SwapPulse Node Architecture Roadmap](node-architecture.md)
+* Full node and full observer
+* Read-only RPC gateway
+* Transaction relay
+* SwapPulse Node Architecture Roadmap

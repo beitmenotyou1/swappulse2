@@ -6,7 +6,7 @@ description: >-
 
 # All current FAQ answers
 
-This consolidated page preserves the existing SwapPulse questions and answers. New questions are added as individual pages in the dedicated [Frequently Asked Questions](../faq/) category, making each answer easier to find, link to and maintain. For step-by-step instructions, follow the links to the detailed guides throughout this page.
+This consolidated page preserves the existing SwapPulse questions and answers. New questions are added as individual pages in the dedicated Frequently Asked Questions category, making each answer easier to find, link to and maintain. For step-by-step instructions, follow the links to the detailed guides throughout this page.
 
 {% hint style="info" %}
 SwapPulse is actively developed. Testnet Web3 features, node tooling and some integrations may change as the project matures. The [Changelog](../changelog/) records significant releases and changes.
@@ -472,15 +472,15 @@ Running a node is for developers, operators and community members who want to pa
 
 ### What is a full observer node?
 
-A full observer maintains and verifies its own chain state according to the selected node architecture. It is designed for independent infrastructure observation rather than simply proxying someone else's RPC.
+A full observer maintains and verifies its own chain state according to the selected node architecture. It is designed for independent infrastructure observation rather than simply proxying someone else's RPC. The Stage D node lab has now reproduced this role on a second physical host without giving that host privileged signing keys.
 
 See Full node and full observer.
 
 ### What is a lite node?
 
-The current lite-node design is a low-resource read/verification layer that can check expected chain/contract pins across one or more RPC peers.
+The current lite-node design is a low-resource read and verification layer that checks expected chain and contract pins across one or more RPC peers. A Stage D canary has now compared a local sequencer with a full observer on a second physical host and failed closed when the required two-peer agreement was unavailable.
 
-It should not be confused with a future cryptographic light client unless it actually verifies the required proofs/state commitments.
+It should not be confused with a future cryptographic light client unless it actually verifies the required proofs or state commitments.
 
 See Lite node.
 
@@ -658,7 +658,7 @@ However, documentation should still be updated whenever a new working feature is
 
 No. The current live testnet remains a single Starknet Devnet execution environment behind hardened public interfaces.
 
-The project has tested observer/lite-node architecture, but physical host independence, multi-operator sequencing/consensus and permissionless validation are separate future milestones.
+The isolated node lab has now passed a second-physical-host observer, persistent restart and cross-host lite-agreement test. That proves physical-host state-source independence for the tested path. Independent operators, multi-operator sequencing or consensus, and permissionless validation remain future milestones.
 
 The documentation deliberately avoids calling the current setup decentralised consensus when it is not.
 
