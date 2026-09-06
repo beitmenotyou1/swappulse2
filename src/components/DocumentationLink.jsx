@@ -3,11 +3,14 @@ import { BookOpen, ExternalLink } from 'lucide-react';
 import { SITE_LINKS } from '@/lib/siteLinks';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-export default function DocumentationLink({ className = '', compact = false }) {
+export default function DocumentationLink({ className = '', compact = false, slug = '' }) {
   const t = useT();
 
   return (
-    <div className={`mt-8 border-t border-border pt-4 ${className}`.trim()}>
+    <div
+      className={`mt-8 border-t border-border pt-4 ${className}`.trim()}
+      data-doc-slug={slug || undefined}
+    >
       <a
         href={SITE_LINKS.documentation}
         target="_blank"
