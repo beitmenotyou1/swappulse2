@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFile, mkdir, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { safePeerUrl } from './peer-url.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MANIFEST = resolve(here, '../config/swappulse-testnet.json');
@@ -30,17 +31,6 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function safePeerUrl(value) {
-  const url = new URL(String(value || '').trim());
-  if (!['https:', 'http:'].includes(url.protocol)) throw new Error('RPC_PEER_PROTOCOL_NOT_ALLOWED');
-  if (url.username || url.password) throw new Error('RPC_PEER_CREDENTIALS_NOT_ALLOWED');
-  if (url.protocol === 'http:') {
-    const host = url.hostname.toLowerCase();
-    if (!['127.0.0.1', 'localhost', '::1'].includes(host)) throw new Error('HTTP_RPC_PEER_MUST_BE_LOCAL');
-  }
-  return url.toString();
-}
-
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const expectedChainId = normalizeHex(manifest.chain_id);
 const operatorIndependence = manifest?.trust?.peer_operator_independence === true;
@@ -56,7 +46,16 @@ const envPeers = String(process.env.SWAPPULSE_RPC_PEERS || '')
   .map((v) => v.trim())
   .filter(Boolean);
 const peerInputs = envPeers.length ? envPeers : (manifest.rpc_peers || []);
-const peers = [...new Set(peerInputs.map(safePeerUrl))];
+const allowTailscaleHttp = String(
+  process.env.SWAPPULSE_ALLOW_TAILSCALE_HTTP || '0',
+).trim() === '1';
+const peers = [
+  ...new Set(
+    peerInputs.map((value) =>
+      safePeerUrl(value, { allowTailscaleHttp }),
+    ),
+  ),
+];
 if (!peers.length) throw new Error('At least one RPC peer is required');
 
 const allowedRpcMethods = new Set([
