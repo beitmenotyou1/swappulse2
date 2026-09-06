@@ -3,7 +3,7 @@
 // step-up capability, preventing a stolen session from silently adding a key.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { verifyRegistrationResponse } from 'npm:@simplewebauthn/server@10';
+import { verifyRegistrationResponse } from 'npm:@simplewebauthn/server@13.3.2';
 import { consumeWebAuthnChallenge, getRpConfig, uint8ArrayToBase64Url } from '../../shared/webauthn.ts';
 import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 
@@ -54,9 +54,10 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Registration verification failed' }, { status: 400 });
     }
 
-    const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
-    const credentialIdB64 = credentialID;
-    const pubKeyB64 = uint8ArrayToBase64Url(credentialPublicKey);
+    const { credential } = verification.registrationInfo;
+    const credentialIdB64 = credential.id;
+    const pubKeyB64 = uint8ArrayToBase64Url(credential.publicKey);
+    const counter = credential.counter;
 
     const dupes = await base44.asServiceRole.entities.WebAuthnCredential
       .filter({ credential_id: credentialIdB64 }, '-created_date', 1)
@@ -76,7 +77,7 @@ export default async function (req: Request): Promise<Response> {
       credential_id: credentialIdB64,
       public_key: pubKeyB64,
       counter,
-      transports: attestation.response?.transports || [],
+      transports: credential.transports || attestation.response?.transports || [],
       label,
       user_id: user.id,
       email: user.email,
