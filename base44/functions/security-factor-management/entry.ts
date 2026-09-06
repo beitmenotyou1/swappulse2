@@ -3,7 +3,7 @@
 // User security fields are blocked by schema RLS.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@10';
+import { verifyAuthenticationResponse } from 'npm:@simplewebauthn/server@13.3.2';
 import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 import { consumeWebAuthnChallenge, getRpConfig, base64UrlToUint8Array } from '../../shared/webauthn.ts';
 import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
@@ -100,9 +100,9 @@ export default async function (req: Request): Promise<Response> {
         expectedChallenge: challenge,
         expectedOrigin: rpConfig.origin,
         expectedRPID: rpConfig.rpId,
-        authenticator: {
-          credentialID: asserting.credential_id,
-          credentialPublicKey: base64UrlToUint8Array(asserting.public_key),
+        credential: {
+          id: asserting.credential_id,
+          publicKey: base64UrlToUint8Array(asserting.public_key),
           counter: asserting.counter || 0,
           transports: asserting.transports || [],
         },
