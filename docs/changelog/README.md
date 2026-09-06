@@ -7,10 +7,18 @@ description: Every recorded SwapPulse release, newest first.
 Review every authoritative SwapPulse release from the current version back to the oldest preserved checkpoint.
 
 {% hint style="info" %}
-The current version is **v0.9.0**, confirmed by both `package.json` and `RELEASE_MANIFEST.json`. There is no recorded **v0.0.0** release, so one has not been fabricated.
+The current version is **v0.10.0**, confirmed by both `package.json` and `RELEASE_MANIFEST.json`. There is no recorded **v0.0.0** release, so one has not been fabricated.
 {% endhint %}
 
 {% updates format="full" %}
+{% update date="2026-09-06" %}
+## v0.10.0: Self-hosted node architecture, documentation and security hardening
+
+Current release-series change.
+
+[Read the full v0.10.0 release notes](v0-10-0.md)
+{% endupdate %}
+
 {% update date="2026-09-03" %}
 ## v0.9.0: Dormant TCGplayer API, Impact affiliate integration and OpenAPI contract
 
