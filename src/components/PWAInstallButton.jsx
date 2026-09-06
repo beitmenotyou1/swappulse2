@@ -23,6 +23,9 @@ function isIOS() {
   return /iphone|ipad|ipod/.test(ua);
 }
 
+/**
+ * @param {{ variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link' }} props
+ */
 export default function PWAInstallButton({ variant = 'link' }) {
   const t = useT();
   const [deferred, setDeferred] = useState(null);
