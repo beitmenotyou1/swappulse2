@@ -1,0 +1,35 @@
+name: swappulse-nodelab-1-stage-d-fallback
+
+services:
+  fallback:
+    build:
+      context: ../../lite
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      BIND_ADDRESS: 127.0.0.1
+      PORT: ${NODELAB_STAGE_D_FALLBACK_PORT:-18101}
+      SWAPPULSE_NODE_MANIFEST: /config/swappulse-nodelab-1.json
+      SWAPPULSE_RPC_PEERS: ${NODELAB_STAGE_D_FALLBACK_PEERS:?set NODELAB_STAGE_D_FALLBACK_PEERS in .env}
+      SWAPPULSE_ALLOW_TAILSCALE_HTTP: "0"
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-5000}
+      PIN_CHECK_INTERVAL_MS: ${PIN_CHECK_INTERVAL_MS:-30000}
+      RPC_TIMEOUT_MS: ${RPC_TIMEOUT_MS:-5000}
+      RPC_RATE_LIMIT_PER_MINUTE: ${RPC_RATE_LIMIT_PER_MINUTE:-120}
+      CHECKPOINT_PATH: /data/checkpoint.json
+    volumes:
+      - ../../config/swappulse-nodelab-1.json:/config/swappulse-nodelab-1.json:ro
+      - ./data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:18101/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

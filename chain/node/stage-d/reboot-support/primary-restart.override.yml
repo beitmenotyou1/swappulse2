@@ -1,0 +1,6 @@
+# Explicit Stage D opt-in. The base node-lab deliberately remains restart: "no".
+services:
+  sequencer:
+    restart: unless-stopped
+  observer:
+    restart: unless-stopped
