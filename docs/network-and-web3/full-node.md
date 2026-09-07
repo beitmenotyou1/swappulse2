@@ -81,7 +81,7 @@ Both nodes were on the same physical host, so these results prove separate state
 
 ### Stage D: physically separate full observer
 
-On 6 September 2026, Stage D passed on two physical Linux hosts connected through a private Tailscale overlay. The primary mini-server remained the only block-producing node-lab sequencer. A second machine synchronised as a keyless Madara full observer, preserved its own database across a stop and restart, and supplied one peer to an isolated cross-host lite verifier.
+Stage D first passed its two-host observer and canary gates on 6 September 2026. On 7 September, the tested topology was promoted to two restricted, reboot-managed lite services and passed a controlled primary-host reboot. The primary mini-server remains the only block-producing node-lab sequencer. A second machine synchronises as a keyless Madara full observer and preserves its own database.
 
 {% hint style="success" %}
 Stage D proves **physical-host state-source independence** for `SWAPPULSE_NODELAB_1`. It does not prove independent operators, permissionless consensus or validator decentralisation. Both tested machines were administered by the same operator, so `operator_independence` correctly remained `false`.
@@ -95,8 +95,8 @@ Stage D proves **physical-host state-source independence** for `SWAPPULSE_NODELA
 | Primary feeder gateway    | `<primary-Tailscale-IP>:19952` | Supplies the remote observer over the private overlay         |
 | Same-host full observer   | `127.0.0.1:19951`              | Retained as a tested fallback state source                    |
 | Remote full observer      | `<remote-Tailscale-IP>:19961`  | Maintains a separate persistent database without signing keys |
-| Existing lite verifier    | `127.0.0.1:18101`              | Original same-host verifier, left unchanged                   |
-| Cross-host lite canary    | `127.0.0.1:18102`              | Compared the primary sequencer with the remote observer       |
+| Same-host lite fallback   | `127.0.0.1:18101`              | Reboot-managed verifier using the sequencer and local observer |
+| Cross-host lite verifier  | `127.0.0.1:18102`              | Reboot-managed verifier using the sequencer and remote observer |
 
 Neither the feeder gateway nor the remote observer RPC was exposed to the public Internet. Both were bound to reviewed Tailscale IPv4 addresses.
 
@@ -112,9 +112,9 @@ The guarded workflow passed all seven Stage D gates:
 * after restart, block `81467` retained hash `0x18e87acf1ed780a06beb7b759a0bbde9c9a307cd203ddfb1313c60f740e08e`, while the observer continued to a later height;
 * the cross-host lite canary reached `multi-peer-agreement`, with two healthy peers, two contract-pin checks and matching block hashes.
 
-The canary later advanced from block `89563` to `89655` while retaining agreement. The original verifier on port `18101`, the same-host observer and the separate live `SWAPPULSE_TESTNET` services remained healthy throughout.
+The initial canary advanced while retaining agreement. It was then packaged as the durable `18102` verifier, while `18101` became a restricted Docker-managed same-host fallback. A controlled reboot recovered the sequencer, both observers, both lite verifiers and the three live testnet services automatically. All seven recorded container identities were retained, and block `133443` with hash `0x60bf26c5e8d8bf1a14ea97f1d13b1d05187f3748331fb6bde5362f16f34cf99` remained available from all three full-node state sources after reboot.
 
-The scoped RPC verification fix is recorded in [`b6aba9ad`](https://github.com/beitmenotyou1/swappulse2/commit/b6aba9ade8829ef00933a61b51c4eb95b76a06f2). The opt-in Tailscale lite-peer policy and its focused tests are recorded in [`2d2254d9`](https://github.com/beitmenotyou1/swappulse2/commit/2d2254d90fe1e336106a5890ca11a352ef741059).
+The scoped RPC verification fix is recorded in [`b6aba9ad`](https://github.com/beitmenotyou1/swappulse2/commit/b6aba9ade8829ef00933a61b51c4eb95b76a06f2), the opt-in Tailscale lite-peer policy in [`2d2254d9`](https://github.com/beitmenotyou1/swappulse2/commit/2d2254d90fe1e336106a5890ca11a352ef741059), the durable verifier package in [`475bb0c6`](https://github.com/beitmenotyou1/swappulse2/commit/475bb0c62216dccec40b7d0d2086e1ae87a7e548), and reboot support in [`eef1b5d7`](https://github.com/beitmenotyou1/swappulse2/commit/eef1b5d710d540521e191fab62fef2987f61aab7).
 
 #### Run the guarded workflow
 
@@ -191,16 +191,16 @@ Also query at least one block captured before the restart and confirm that its h
 {% endstep %}
 
 {% step %}
-#### Add a cross-host lite canary
+#### Start the durable verifiers and prove reboot recovery
 
-Use the node-lab manifest, the primary sequencer and the remote observer as the two peers. The [Lite node](lite-node.md) guide shows the opt-in transport setting and the verified canary pattern.
+Use [Stage D Multi-host Operations](stage-d-operations.md) to configure the reviewed `lite-service` package on `18102` and the same-host `reboot-support` fallback on `18101`. Both services must remain loopback-only, use `restart: unless-stopped`, pass their status scripts and disclose `operator_independence: false`.
 
-Keep the canary on a separate loopback port. Do not replace the existing verifier or remove the same-host observer until the cross-host service has a durable start, stop, restart and monitoring procedure.
+Before accepting the deployment, record a block checkpoint, reboot only the primary host, wait without manually starting services, then prove automatic container recovery and retention of the older block across all three full-node state sources.
 {% endstep %}
 {% endstepper %}
 
 {% hint style="warning" %}
-The successful test did not turn the remote observer into a validator or make the network decentralised. Preserve the same-host observer as a fallback, keep both Stage D RPC surfaces private, and treat loss of the remote peer as a fail-closed readiness event.
+The successful test did not turn the remote observer into a validator or make the network decentralised. Preserve the same-host observer and managed fallback, keep both Stage D RPC surfaces private, and treat loss of the remote peer as a fail-closed event for the cross-host verifier.
 {% endhint %}
 
 ## Host requirements
@@ -368,6 +368,7 @@ A full observer validates public protocol state. It must not depend on private B
 ## Related pages
 
 * [Lite node](lite-node.md)
+* [Stage D Multi-host Operations](stage-d-operations.md)
 * [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
 * [Transaction relay](../apis/transaction-relay-api.md)
 * [SwapPulse Node Architecture Roadmap](node-architecture.md)

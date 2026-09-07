@@ -72,40 +72,48 @@ This persistence mechanism is appropriate for the current contract/UX milestone.
 
 ## Isolated Stage D physical-host node lab
 
-`SWAPPULSE_NODELAB_1` is separate from the live testnet. On 6 September 2026, its full observer successfully synchronised on a second physical host through a private Tailscale overlay and reproduced the primary checkpoint, permanent V2 deployment pins and later common block hashes.
+`SWAPPULSE_NODELAB_1` is separate from the live testnet. The two-host observer path passed on 6 September 2026. On 7 September, its durable verifier and reboot-support packages passed a controlled primary-host reboot with no manual service start.
 
-| Surface                | Intended bind                  | Public Internet |
-| ---------------------- | ------------------------------ | --------------- |
-| Primary sequencer RPC  | `127.0.0.1:19950`              | No              |
-| Primary feeder gateway | `<primary-Tailscale-IP>:19952` | No              |
-| Same-host observer RPC | `127.0.0.1:19951`              | No              |
-| Remote observer RPC    | `<remote-Tailscale-IP>:19961`  | No              |
-| Cross-host lite canary | `127.0.0.1:18102`              | No              |
+| Surface | Intended bind | Function | Public Internet |
+| ------- | ------------- | -------- | --------------- |
+| Primary sequencer RPC | `127.0.0.1:19950` | Node-lab block producer | No |
+| Primary feeder gateway | `<primary-Tailscale-IP>:19952` | Feeds the remote observer | No |
+| Same-host observer RPC | `127.0.0.1:19951` | Independent local database and fallback source | No |
+| Remote observer RPC | `<remote-Tailscale-IP>:19961` | Keyless database on the second host | No |
+| Same-host lite fallback | `127.0.0.1:18101` | Compares `19950` with `19951` | No |
+| Cross-host lite verifier | `127.0.0.1:18102` | Compares `19950` with `19961` | No |
 
-The remote observer uses its own persistent named volume and receives no sequencer, deployer, registry-owner, verifier, relay or user key. The successful restart check preserved a pre-restart block hash and the observer resumed from the same volume.
+The remote observer receives no sequencer, deployer, registry-owner, verifier, relay or user key. Its database uses a persistent named volume. Both lite services fail closed unless their two peers agree on the chain ID, common-height block hash and permanent V2 contract pins.
 
-Use these repository entry points:
+Day-to-day checks on the primary host are:
 
 ```bash
-# Primary host
-cd chain/node/stage-d
-export NODELAB_STAGE_D_TAILSCALE_IP=<primary-100.x.y.z>
-bash primary-gateway-preflight.sh
+cd chain/node/stage-d/reboot-support
+bash status.sh .env
 
-# Remote host
-cd chain/node/stage-d/remote-observer
-bash preflight.sh .env.remote
-bash start.sh .env.remote
-bash verify.sh /absolute/path/to/chain /absolute/path/to/checkpoint .env.remote
+cd ../lite-service
+bash status.sh .env
 ```
 
-Normal remote shutdown uses `bash stop.sh .env.remote`; it removes the observer container but preserves the named database volume. After restart, rerun `verify.sh` and independently query a block captured before the stop.
+On the remote host, verify the observer against a public primary checkpoint and the canonical deployment manifest:
+
+```bash
+cd chain/node/stage-d/remote-observer
+bash verify.sh \
+  /absolute/path/to/chain \
+  /absolute/path/to/stage-d-primary-checkpoint.json \
+  .env.remote
+```
+
+Normal remote shutdown uses `bash stop.sh .env.remote` and preserves the named database volume. The managed lite packages provide `stop.sh` and `rollback.sh`; their rollback scope is limited to their own container and checkpoint data.
+
+The controlled reboot accepted the deployment only after all seven required containers recovered through `restart: unless-stopped`, their recorded identities were retained, both managed verifiers returned to ready state and a pre-reboot block remained available from all three full-node sources.
 
 {% hint style="warning" %}
-This lab proves physical-host state-source independence only. It still has one block producer and one human operator. The same-host observer and the existing lite verifier remain in service as fallbacks, and the live `SWAPPULSE_TESTNET` RPC, relay and lite-node configuration are unchanged.
+This lab proves physical-host state-source independence and tested restart recovery. It still has one block producer and one human operator. Keep `operator_independence: false`, preserve both observer databases, never use `docker compose down -v`, and do not expose the Tailscale surfaces publicly.
 {% endhint %}
 
-For the complete procedure, evidence and cross-host lite-node settings, see [Full node and full observer](full-node.md) and [Lite node](lite-node.md).
+For the complete installation order, security boundaries, failure matrix and rollback rules, see [Stage D Multi-host Operations](stage-d-operations.md).
 
 ## 1. Prepare the host
 

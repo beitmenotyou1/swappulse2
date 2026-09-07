@@ -12,6 +12,8 @@ If the remote observer is unavailable, the verifier reports insufficient peer ag
 
 The remote observer's normal stop script preserves its named database volume. After restarting it, operators must rerun the checkpoint and permanent V2 verification and confirm that lite-node agreement has returned.
 
-The tested Stage D canary used a separate loopback port, so the existing same-host verifier and the live SwapPulse services were not replaced or stopped. The same-host observer should remain available as a fallback until the cross-host verifier has a durable, reboot-tested service definition.
+The durable cross-host verifier on `127.0.0.1:18102` therefore becomes unready. The separate managed fallback on `127.0.0.1:18101` can continue comparing the primary sequencer with the same-host observer, but it represents a different, local trust path. Operators must not report the cross-host trust condition as healthy merely because the fallback remains available.
 
-See [Full node and full observer](../network-and-web3/full-node.md) for restart verification and [Lite node](../network-and-web3/lite-node.md) for readiness and quorum behaviour.
+Both services recovered automatically in the controlled primary-host reboot test. A remote-host outage still requires the remote observer to return, catch up and pass the full checkpoint and V2 verification before `18102` is trusted again.
+
+See [Stage D Multi-host Operations](../network-and-web3/stage-d-operations.md) for daily checks and recovery, [Full node and full observer](../network-and-web3/full-node.md) for restart verification and [Lite node](../network-and-web3/lite-node.md) for quorum behaviour.

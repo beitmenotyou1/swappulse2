@@ -128,7 +128,7 @@ The canonical SwapPulse deployment currently exposes:
 * live lite node: localhost only on the reference host;
 * privileged relay/admin credentials: host-only environment files or a secret manager.
 
-The separate `SWAPPULSE_NODELAB_1` environment has one Madara testing sequencer, a same-host fallback observer and a keyless full observer on a second physical machine. A cross-host lite canary compared the primary sequencer with the remote observer and reached two-peer agreement with both contract-pin sets verified. The two hosts were administered by the same operator, so this is a development proof of physical-host state-source independence, not independent operator control, a replacement for the live testnet or a permissionless validator network.
+The separate `SWAPPULSE_NODELAB_1` environment has one Madara testing sequencer, a same-host observer and a keyless full observer on a second physical machine. Two reboot-managed lite services now verify it: the `18101` fallback compares the two local databases, while the `18102` verifier compares the primary sequencer with the remote observer. A controlled reboot recovered all required containers automatically and retained a pre-reboot block across all three full-node state sources. The two hosts were administered by the same operator, so this is a development proof of physical-host state-source independence and recovery, not independent operator control, a replacement for the live testnet or a permissionless validator network.
 
 #### Stage D operator duties
 
@@ -140,10 +140,12 @@ A Stage D operator should:
 * preserve the remote observer's named volume and prove an older block hash after restart;
 * monitor the remote observer head, the cross-host lite verifier's `/readyz` and both pin checks;
 * treat a two-peer outage as a fail-closed event rather than lowering the required agreement;
-* retain the same-host observer until the cross-host verifier has a durable, reboot-tested service definition;
+* keep the same-host observer and managed `18101` fallback available as the local recovery path;
+* verify `restart: unless-stopped`, loopback-only binds and service readiness after host maintenance;
+* retain rollback records and an independently checked pre-maintenance block until recovery evidence passes;
 * continue reporting `operator_independence: false` while one person controls both machines.
 
-Use the [Full node and full observer](full-node.md) guide for the guarded primary and remote workflow, and the [Lite node](lite-node.md) guide for the cross-host canary and Tailscale peer policy.
+Use [Stage D Multi-host Operations](stage-d-operations.md) for the current two-host workflow, daily checks and rollback boundaries. The [Full node and full observer](full-node.md) and [Lite node](lite-node.md) guides explain the two node roles in more detail.
 
 Never expose the raw Devnet RPC to the Internet. Devnet includes administrative methods that are intentionally blocked by the public RPC gateway and transaction relay policy.
 
@@ -246,6 +248,7 @@ Until those steps are complete, documentation and UI must describe rewards and d
 
 * [Full node and full observer](full-node.md), current Madara and node-lab status
 * [Lite node](lite-node.md), low-resource multi-RPC verification and local reads
+* [Stage D Multi-host Operations](stage-d-operations.md), two-host operation, health checks and reboot recovery
 * [Read-only RPC gateway](../apis/read-only-rpc-gateway.md), public read hosting and method policy
 * [Transaction relay](../apis/transaction-relay-api.md), protected write hosting and policy controls
 * [Cairo and Starknet chain overview](chain-overview.md), contract architecture and privacy boundary

@@ -64,37 +64,47 @@ This behaviour matters because a read proxy can otherwise appear healthy while s
 These tests cover availability loss and recovery. They do not test Byzantine consensus, validator failover, leader election, proof verification or independent operator control.
 {% endhint %}
 
-### Verified Stage D cross-host canary
+### Durable Stage D verifiers
 
-On 6 September 2026, an isolated lite canary ran on the primary host with these two `SWAPPULSE_NODELAB_1` peers:
+The isolated cross-host canary passed on 6 September 2026. On 7 September it was promoted to a reviewed Docker Compose service and accepted through a controlled primary-host reboot.
 
-* the local testing sequencer on loopback;
-* the full observer on a second physical host, reached only through Tailscale.
+| Service | Peers | Purpose |
+| ------- | ----- | ------- |
+| Same-host fallback on `127.0.0.1:18101` | Primary sequencer `19950` and same-host observer `19951` | Preserves local two-database verification when the private overlay or remote host is unavailable |
+| Cross-host verifier on `127.0.0.1:18102` | Primary sequencer `19950` and remote observer `19961` | Detects disagreement across separate physical hosts and state databases |
 
-The canary reported `ready: true`, `multi-peer-agreement`, two healthy peers, two verified contract-pin sets and identical hashes at the common height. It advanced from block `89563` to `89655` during the recorded checks. `independently_verified` was `true` because the state databases and synchronisation processes were separate. `operator_independence` remained `false` because the same person administered both hosts.
+Both services require two healthy peers, two matching contract-pin sets and the same block hash at the common height. Both bind only to loopback, run with a read-only root filesystem, drop Linux capabilities, enable `no-new-privileges` and use `restart: unless-stopped`.
 
-The test ran on `127.0.0.1:18102` and deliberately left the existing verifier on `127.0.0.1:18101` unchanged. It is a verified canary pattern, not yet the reboot-managed replacement for the existing service.
-
-To reproduce that isolated node-lab canary from a reviewed checkout:
+The cross-host service is packaged under `chain/node/stage-d/lite-service`:
 
 ```bash
-CANARY_DATA="$HOME/.local/state/swappulse-lite-stage-d"
-mkdir -p "$CANARY_DATA"
-
-BIND_ADDRESS=127.0.0.1 \
-PORT=18102 \
-SWAPPULSE_NODE_MANIFEST=/absolute/path/to/chain/node/config/swappulse-nodelab-1.json \
-SWAPPULSE_RPC_PEERS=http://127.0.0.1:19950,http://<remote-100.x.y.z>:19961 \
-SWAPPULSE_ALLOW_TAILSCALE_HTTP=1 \
-CHECKPOINT_PATH="$CANARY_DATA/checkpoint.json" \
-node /absolute/path/to/chain/node/lite/server.mjs
+cd chain/node/stage-d/lite-service
+cp .env.example .env
+# Set the remote peer to its literal Tailscale IPv4.
+bash preflight.sh .env
+bash start.sh .env
+bash status.sh .env
 ```
 
-Use Node.js 22. Check `http://127.0.0.1:18102/status` and require the expected chain ID, `ready: true`, two healthy peers, `pins_verified: true` and `peer_agreement: true` before relying on it.
+The same-host fallback is packaged under `chain/node/stage-d/reboot-support`. Its handover must be guarded because port `18101` must be released by the legacy process and recovery material must be retained:
+
+```bash
+cd chain/node/stage-d/reboot-support
+cp .env.example .env
+bash preflight.sh .env
+bash start.sh .env
+bash status.sh .env
+```
+
+Do not perform that handover by killing an unknown process. Confirm the exact PID, executable, source, working directory and checkpoint first, then create a tested rollback launcher.
+
+The controlled reboot proved that Docker restored both managed verifiers without an operator running `start.sh`. Their recorded container identities were retained, both returned to `ready: true`, and an older pre-reboot block remained identical across the sequencer, same-host observer and remote observer.
 
 {% hint style="warning" %}
-With exactly two configured peers, both must remain healthy and agree. If the remote observer is unavailable, the canary fails closed and returns HTTP `503` from `/readyz` and `/rpc`. Do not weaken the quorum to hide an outage.
+With exactly two peers in either service, both must remain healthy and agree. If one peer is unavailable, that verifier returns HTTP `503` from `/readyz` and `/rpc`. Do not weaken the quorum. The other verifier may provide a separate diagnostic path, but it is not a substitute for the failed trust condition.
 {% endhint %}
+
+Use [Stage D Multi-host Operations](stage-d-operations.md) for the full topology, daily checks, reboot acceptance and rollback boundaries.
 
 ### HTTP interface
 
@@ -289,6 +299,7 @@ The checkpoint is an observation record, not authoritative chain state. Losing i
 ### Related pages
 
 * [Full node and full observer](full-node.md)
+* [Stage D Multi-host Operations](stage-d-operations.md)
 * [Read-only RPC gateway](../apis/read-only-rpc-gateway.md)
 * [Transaction relay](../apis/transaction-relay-api.md)
 * [SwapPulse Node Architecture Roadmap](node-architecture.md)

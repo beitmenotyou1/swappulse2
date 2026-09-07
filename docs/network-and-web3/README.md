@@ -27,6 +27,7 @@ Network and staking features remain testnet functionality unless a page explicit
 | Community staking       | Operator/delegation lifecycle and staking rules                          | Community Staking                   |
 | Full observer           | Madara node with its own verified state database                         | Full node and full observer         |
 | Lite node               | Low-resource peer/pin checking and read-only RPC                         | Lite node                           |
+| Stage D operations       | Two-host topology, durable verifiers, reboot recovery and rollback       | Stage D Multi-host Operations       |
 | Transaction relay       | Protected policy-enforcing write boundary                                | Transaction Relay API and Policy    |
 | Read-only RPC           | Public read gateway and supported RPC policy                             | Read-only RPC gateway               |
 | Operator operations     | Current infrastructure duties and community-node path                    | Community Operator Guide            |
@@ -57,6 +58,8 @@ Personal identity evidence remains off-chain. The public chain contains opaque i
 
 ## Node-lab status
 
-The node lab has passed same-host state consistency, V2 deployment and cut-over reproduction, lite-node agreement, reversible peer-loss tests, and a Stage D second-physical-host observer and restart test. A cross-host lite canary also reproduced agreement between the primary sequencer and the remote full observer through a private Tailscale overlay.
+The node lab has passed same-host state consistency, V2 deployment and cut-over reproduction, reversible peer-loss tests, a second-physical-host observer, durable same-host and cross-host lite verification, and a controlled primary-host reboot. On 7 September 2026, all seven required containers recovered automatically without a manual service start, retained their identities and reproduced a pre-reboot block through all three full-node state sources.
 
-This proves physical-host state-source independence for the tested path. It does not prove independent operator control, decentralised sequencing or permissionless consensus. The same-host observer remains available as a fallback, and both machines must continue to be described as one operator while that remains true.
+This proves physical-host state-source independence and reboot recovery for the tested path. It does not prove independent operator control, decentralised sequencing or permissionless consensus. The same-host observer and managed `18101` fallback remain available, while the durable `18102` verifier compares the primary sequencer with the keyless remote observer. Both machines must continue to be described as one operator while that remains true.
+
+Use [Stage D Multi-host Operations](stage-d-operations.md) for the tested topology, start and status commands, failure behaviour and rollback boundaries.
