@@ -22,7 +22,7 @@ import DocumentationLink from '@/components/DocumentationLink';
 import CardImage from '@/components/cards/CardImage';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useI18n } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
 
 const MAX_FILES = 10;
@@ -79,7 +79,7 @@ function variantLabel(value) {
 }
 
 export default function CardScanner() {
-  const t = useT();
+  const { t, locale } = useI18n();
   useSEO({
     title: t('scanner.title'),
     description: t('scanner.seoDescription'),
@@ -87,6 +87,7 @@ export default function CardScanner() {
   });
 
   const inputRef = useRef(null);
+  const cameraRef = useRef(null);
   const filesRef = useRef([]);
   const createdByIndex = useRef({});
   const [files, setFiles] = useState([]);
@@ -218,7 +219,8 @@ export default function CardScanner() {
         file_uris: fileUris,
         file_names: files.map((item) => item.file.name.slice(0, 180)),
         total_bytes: totalBytes,
-        locale: navigator.language || 'en-GB',
+        locale,
+        purpose: 'collection',
       });
       const data = response?.data ?? response;
       if (!data?.ok || !data?.session?.results) {
@@ -476,6 +478,28 @@ export default function CardScanner() {
               }}
               aria-label={t('scanner.chooseImages')}
             />
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              className="hidden"
+              onChange={(event) => {
+                addFiles(event.target.files);
+                event.target.value = '';
+              }}
+              aria-label={t('scanner.takePhoto')}
+            />
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary"
+              >
+                <Camera className="h-4 w-4" />
+                {t('scanner.takePhoto')}
+              </button>
+            </div>
 
             {files.length > 0 && (
               <section className="rounded-2xl border border-border bg-card p-4">
