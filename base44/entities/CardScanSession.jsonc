@@ -2,8 +2,12 @@
   "name": "CardScanSession",
   "type": "object",
   "title": "CardScanSession",
-  "description": "Private owner-scoped audit record for a 1-10 image card-identification batch. Private file URIs remain account data; short-lived signed URLs are generated only inside the authenticated scanner function and are never stored.",
+  "description": "Private service-managed audit record for a 1-10 image card-identification batch. Collectors can read or delete only their own sessions; only authenticated scanner functions control lifecycle state. Private file URIs remain account data and signed URLs are never stored.",
   "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Owning Base44 user ID used for private access and rate limits"
+    },
     "did": {
       "type": "string",
       "description": "AT Protocol DID of the collector"
@@ -243,6 +247,7 @@
     }
   },
   "required": [
+    "user_id",
     "did",
     "status",
     "image_count",
@@ -254,7 +259,7 @@
     "read": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "user_id": "{{user.id}}"
         },
         {
           "user_condition": {
@@ -264,24 +269,19 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "user_id": "{{user.id}}"
         },
         {
           "user_condition": {
