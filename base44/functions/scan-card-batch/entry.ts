@@ -148,52 +148,41 @@ export default async function (req: Request): Promise<Response> {
     const me = await base44.auth.me().catch(() => null);
     if (!me?.id) return jsonError('Sign in to scan cards', 401, 'UNAUTHORISED');
 
-    const body = await req.json().catch(() => ({}));
-    const sessionId = clean(body.session_id, 120);
-    if (!sessionId) {
-      return jsonError('A scan session is required', 400, 'SESSION_REQUIRED');
-    }
-
-    const svc = base44.asServiceRole;
-    const sessions = await svc.entities.CardScanSession
-      .filter({ id: sessionId, created_by_id: me.id }, '-created_date', 1)
-      .catch(() => []);
-    session = sessions?.[0];
-
-    if (!session) {
-      return jsonError('Scan session not found', 404, 'SESSION_NOT_FOUND');
-    }
-    if (session.status !== 'uploaded') {
+    const userDid = clean(me.did, 200);
+    if (!userDid) {
       return jsonError(
-        'This scan session has already been processed',
+        'Initialise your collector identity before scanning',
         409,
-        'SESSION_ALREADY_PROCESSED',
+        'IDENTITY_REQUIRED',
       );
     }
 
-    const fileUris = Array.isArray(session.file_uris)
-      ? session.file_uris.map((value: unknown) => clean(value, 2000)).filter(Boolean)
+    const body = await req.json().catch(() => ({}));
+    const fileUris = Array.isArray(body.file_uris)
+      ? body.file_uris.map((value: unknown) => clean(value, 2000)).filter(Boolean)
       : [];
-    const imageCount = Number(session.image_count || 0);
-    const totalBytes = Number(session.total_bytes || 0);
+    const imageCount = fileUris.length;
+    const totalBytes = Number(body.total_bytes || 0);
+    const rawFileNames = Array.isArray(body.file_names) ? body.file_names : [];
+    const fileNames = fileUris.map((_: string, index: number) =>
+      clean(rawFileNames[index] || ('card-' + (index + 1)), 180)
+    );
+    const locale = clean(body.locale || 'en-GB', 20);
 
     if (
       imageCount < 1 ||
       imageCount > MAX_IMAGES ||
-      fileUris.length !== imageCount ||
       totalBytes < 1 ||
       totalBytes > MAX_BATCH_BYTES
     ) {
       return jsonError('Invalid image batch', 400, 'INVALID_IMAGE_BATCH');
     }
-    if (session.expires_at && new Date(session.expires_at).getTime() <= Date.now()) {
-      return jsonError('This scan session has expired', 409, 'SESSION_EXPIRED');
-    }
 
+    const svc = base44.asServiceRole;
     const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const recent = await svc.entities.CardScanSession
       .filter(
-        { created_by_id: me.id, created_date: { $gte: hourAgo } },
+        { user_id: me.id, created_date: { $gte: hourAgo } },
         '-created_date',
         50,
       )
@@ -202,11 +191,10 @@ export default async function (req: Request): Promise<Response> {
       (sum: number, row: any) => sum + Number(row.image_count || 0),
       0,
     );
-    if (recent.length > SCANS_PER_HOUR || recentImages > IMAGES_PER_HOUR) {
-      await svc.entities.CardScanSession.update(session.id, {
-        status: 'failed',
-        error_code: 'RATE_LIMITED',
-      });
+    if (
+      recent.length >= SCANS_PER_HOUR ||
+      recentImages + imageCount > IMAGES_PER_HOUR
+    ) {
       return jsonError(
         'Scanner limit reached. Please try again in an hour.',
         429,
@@ -214,10 +202,21 @@ export default async function (req: Request): Promise<Response> {
       );
     }
 
-    await svc.entities.CardScanSession.update(session.id, {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    session = await svc.entities.CardScanSession.create({
+      user_id: String(me.id),
+      did: userDid,
       status: 'analysing',
+      image_count: imageCount,
+      file_uris: fileUris,
+      file_names: fileNames,
+      total_bytes: totalBytes,
+      locale,
+      model_version: MODEL_VERSION,
+      expires_at: expiresAt,
       error_code: '',
     });
+    if (!session?.id) throw new Error('SCAN_SESSION_CREATE_FAILED');
 
     // Signed links are created in the caller's authenticated scope. Base44
     // therefore proves the caller can access each private upload before the
