@@ -347,7 +347,7 @@ export default function Privacy() {
             <ul>
               <li>Content already federated to the AT Protocol network may persist on other PDSs and in third-party caches.</li>
               <li>Moderation logs, bot-protection audit records, and dispute records may be retained for a reasonable period for audit and legal purposes.</li>
-              <li>Scanner corrections may be retained in anonymized form for model improvement.</li>
+              <li>Only administrator-approved scanner labels may be retained in de-identified aggregate quality reports. Private card photos are not automatically included in training exports.</li>
               <li>Podcast episodes published to your RSS feed may be cached by external podcast apps even after deletion on SwapPulse.</li>
               <li>Anonymized, aggregated analytics data may be retained indefinitely.</li>
               <li>E2EE direct messages: once your account is deleted, the ciphertext is removed from our servers. Messages already decrypted on a recipient's device remain there under their control.</li>
