@@ -16,7 +16,7 @@ const primary = [
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trades', tKey: 'nav.trades' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
-  { to: '/wallet', icon: WalletIcon, label: 'SwapPulse Wallet', tKey: 'nav.chainWallet', authOnly: true },
+  { to: '/wallet', icon: WalletIcon, label: 'Wallet', tKey: 'nav.chainWallet', authOnly: true },
 ];
 
 const TAB_ROOTS = ['/', '/explore', '/trades', '/collection', '/wallet'];
@@ -32,8 +32,8 @@ function getOwningTab(pathname, fallback) {
 }
 
 const moreItems = [
-  { to: '/scan', icon: ScanLine, label: 'Scan Cards', tKey: 'nav.scan', authOnly: true },
-  { to: '/collector-copilot', icon: Sparkles, label: 'Collector Copilot', tKey: 'nav.collectorCopilot', authOnly: true },
+  { to: '/scan', icon: ScanLine, label: 'Scanner', tKey: 'nav.scan', authOnly: true },
+  { to: '/helper', icon: Sparkles, label: 'Helper', tKey: 'nav.collectorCopilot', authOnly: true },
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
   { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
   { to: '/starter-packs', icon: Box, label: 'Packs', tKey: 'nav.starterPacks' },
