@@ -198,7 +198,7 @@ export default function CardScanner() {
     setStage('uploading');
 
     try {
-      const { did } = await ensureUserDid();
+      await ensureUserDid();
       const fileUris = [];
 
       for (let index = 0; index < files.length; index += 1) {
@@ -214,21 +214,11 @@ export default function CardScanner() {
       }
 
       setProgress(t('scanner.analysing'));
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      const record = await base44.entities.CardScanSession.create({
-        did,
-        status: 'uploaded',
-        image_count: files.length,
+      const response = await base44.functions.invoke('scan-card-batch', {
         file_uris: fileUris,
         file_names: files.map((item) => item.file.name.slice(0, 180)),
         total_bytes: totalBytes,
         locale: navigator.language || 'en-GB',
-        model_version: 'llm-vision-v2',
-        expires_at: expiresAt,
-      });
-
-      const response = await base44.functions.invoke('scan-card-batch', {
-        session_id: record.id,
       });
       const data = response?.data ?? response;
       if (!data?.ok || !data?.session?.results) {
