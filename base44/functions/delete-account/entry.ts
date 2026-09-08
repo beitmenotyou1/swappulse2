@@ -15,8 +15,8 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Entities to clean. `extra` lists participant fields (matched against the
-// user's DID) in addition to the default created_by_id / did match.
+// Entities to clean. `extra` lists participant DID fields and `userIdFields`
+// lists explicit owner-ID fields in addition to created_by_id / did.
 const ENTITY_CLEANUP = [
   { name: 'CollectionEntry' },
   { name: 'Binder' },
@@ -53,8 +53,8 @@ const ENTITY_CLEANUP = [
   { name: 'Nomination' },
   { name: 'CardReview' },
   { name: 'GradingSubmission' },
-  { name: 'CardScanSession' },
-  { name: 'ScannerCorrection' },
+  { name: 'CardScanSession', userIdFields: ['user_id'] },
+  { name: 'ScannerCorrection', userIdFields: ['user_id'] },
   { name: 'Achievement' },
   { name: 'AchievementProofSnapshot' },
   { name: 'ChallengeEntry' },
@@ -106,17 +106,25 @@ export default async function(req: Request): Promise<Response> {
     }
 
     // ── Phase 2: Delete all entities by created_by_id / did / participant ──
-    for (const { name, extra } of ENTITY_CLEANUP) {
+    for (const { name, extra, userIdFields } of ENTITY_CLEANUP) {
       try {
         const entityApi = svc.entities[name];
         if (!entityApi || !entityApi.deleteMany) {
           results[name] = 'skipped (entity not found)';
           continue;
         }
-        const orParts: any[] = [{ created_by_id: userId }, { did: userDid }];
-        if (extra) {
-          for (const field of extra) {
-            orParts.push({ [field]: userDid });
+        const orParts: any[] = [{ created_by_id: userId }];
+        if (userDid) {
+          orParts.push({ did: userDid });
+          if (extra) {
+            for (const field of extra) {
+              orParts.push({ [field]: userDid });
+            }
+          }
+        }
+        if (userIdFields) {
+          for (const field of userIdFields) {
+            orParts.push({ [field]: userId });
           }
         }
         await entityApi.deleteMany({ $or: orParts });
