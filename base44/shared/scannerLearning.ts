@@ -1,6 +1,6 @@
-// Shared scanner learning module — rarity taxonomy, name normalisation,
-// model-version constant, and the correction→weight feedback helper used by
-// submitScannerCorrection and scan-card.
+// Shared scanner vocabulary and deterministic helper functions.
+// Phase 2 uses the model-version constant for private batch analysis. The
+// weighting helper is dormant and must not be connected to quarantined labels.
 
 export const MODEL_VERSION = 'llm-vision-v2';
 
@@ -62,8 +62,8 @@ export function canonicalizeRarity(raw: string): string {
   return found || 'Unknown';
 }
 
-// Recompute a scanner weight from confirm/wrong counts.
-// confirm_correct: +0.05 (capped at 1.5). wrong_*: -0.1 (floored at 0.3).
+// Reserved for a future, separately reviewed, administrator-run pipeline.
+// It may receive approved aggregate counts only. Phase 2 does not call it.
 export function recomputeWeight(confirmCount: number, wrongCount: number): number {
   const raw = 1 + 0.05 * confirmCount - 0.1 * wrongCount;
   return Math.max(0.3, Math.min(1.5, Math.round(raw * 1000) / 1000));
