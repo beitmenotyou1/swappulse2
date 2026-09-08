@@ -87,6 +87,7 @@ export default function CardScanner() {
   });
 
   const inputRef = useRef(null);
+  const filesRef = useRef([]);
   const createdByIndex = useRef({});
   const [files, setFiles] = useState([]);
   const [stage, setStage] = useState('select');
@@ -105,9 +106,13 @@ export default function CardScanner() {
   const hasCreatedEntries = Object.values(createdByIndex.current)
     .some((ids) => Array.isArray(ids) && ids.length > 0);
 
-  useEffect(() => () => {
-    files.forEach((item) => URL.revokeObjectURL(item.preview));
+  useEffect(() => {
+    filesRef.current = files;
   }, [files]);
+
+  useEffect(() => () => {
+    filesRef.current.forEach((item) => URL.revokeObjectURL(item.preview));
+  }, []);
 
   const addFiles = (incoming) => {
     setError('');
