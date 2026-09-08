@@ -11,7 +11,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 // [entityName, filterField] — the field is matched to the authenticated user's ID or DID
 const EXPORT_ENTITIES: [string, string][] = [
   ['CollectionEntry', 'created_by_id'],
-  ['CardScanSession', 'created_by_id'],
+  ['CardScanSession', 'user_id'],
   ['ScannerCorrection', 'user_id'],
   ['TradeListing', 'created_by_id'],
   ['TradeMessage', 'created_by_id'],
