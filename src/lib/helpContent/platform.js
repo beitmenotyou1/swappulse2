@@ -127,7 +127,7 @@ export const challengesPages = {
         { type: 'list', items: [
           '<b>Collection milestones:</b> Reach card count thresholds, complete sets, or own rare cards.',
           '<b>Trading:</b> Complete a number of trades, maintain positive feedback, or earn Trusted Trader status.',
-          '<b>Scanner accuracy:</b> Submit correct scanner corrections that help the model learn.',
+          '<b>Scanner accuracy:</b> Accumulate scanner labels that an administrator has reviewed and approved.',
           '<b>Community:</b> Contribute vouches, feedback, journals, or helpful posts.',
         ]},
       ]},
@@ -135,7 +135,7 @@ export const challengesPages = {
         { type: 'p', text: 'Each achievement is backed by an immutable SHA-256 snapshot of the qualifying data at the time it was earned. This makes achievements verifiable: anyone can check the proof to confirm the achievement was legitimately earned. You can export and share your proofs.' },
       ]},
       { icon: 'Camera', title: 'Scanner corrections', blocks: [
-        { type: 'p', text: 'When you scan a card and correct a wrong match, your correction is recorded. Accumulate correct corrections to earn scanner accuracy achievements. Corrections also improve the model for everyone.' },
+        { type: 'p', text: 'Confirmed scanner labels begin in quarantine with accepted set to false. They cannot count towards scanner achievements or influence model improvement until an administrator checks and approves them. The current scanner does not train itself automatically.' },
       ]},
       { icon: 'TrendingUp', title: 'Viewing your achievements', blocks: [
         { type: 'p', text: 'Go to the Achievements page to see all badges you\'ve earned and those you\'re working toward. Each medallion shows its rarity with a themed glow. Some achievements have progress indicators so you know how close you are.' },
