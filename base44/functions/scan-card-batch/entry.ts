@@ -167,11 +167,16 @@ export default async function (req: Request): Promise<Response> {
     const fileNames = fileUris.map((_: string, index: number) =>
       clean(rawFileNames[index] || ('card-' + (index + 1)), 180)
     );
-    const locale = clean(body.locale || 'en-GB', 20);
+    const locale = clean(body.locale || me.locale || 'en-GB', 20);
+    const purpose = clean(body.purpose || 'collection', 40);
 
+    if (!['collection', 'post_attachment'].includes(purpose)) {
+      return jsonError('Invalid scanner purpose', 400, 'INVALID_SCAN_PURPOSE');
+    }
     if (
       imageCount < 1 ||
       imageCount > MAX_IMAGES ||
+      (purpose === 'post_attachment' && imageCount !== 1) ||
       !Number.isInteger(totalBytes) ||
       totalBytes < 1 ||
       totalBytes > MAX_BATCH_BYTES
@@ -213,6 +218,7 @@ export default async function (req: Request): Promise<Response> {
       file_names: fileNames,
       total_bytes: totalBytes,
       locale,
+      purpose,
       model_version: MODEL_VERSION,
       expires_at: expiresAt,
       error_code: '',
