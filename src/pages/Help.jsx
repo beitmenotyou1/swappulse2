@@ -60,7 +60,7 @@ const FAQ = [
   },
   {
     q: 'How does the card scanner work?',
-    a: 'Take a photo of a card and the AI scanner identifies it from the TCGDex catalogue, showing the top matches with confidence scores. If the top result is wrong, tap the correct card or search manually, your correction is recorded and used to improve future scans. Corrections work offline too: they queue locally and sync when you reconnect.',
+    a: 'Open Scan Cards and choose 1 to 10 private JPEG, PNG, or WebP images. The scanner reads visible clues and compares them with the TCGDex catalogue. Review every suggested card, condition, finish, and quantity, or search manually, before confirming the batch. Nothing is added automatically. Confirmed labels enter a quarantine and cannot influence the scanner until an administrator approves them. The scanner requires an internet connection.',
   },
   {
     q: 'How do I cross-post to Bluesky?',
@@ -107,7 +107,7 @@ const FAQ = [
 const TROUBLESHOOTING = [
   {
     q: 'The scanner can\'t identify my card',
-    a: 'Make sure you\'re in good lighting with the card filling the frame and minimal glare. If the top match is wrong, tap the correct card from the candidates list or search manually. Your correction is recorded and helps the model learn.',
+    a: 'Use one card per image, fill the frame, avoid glare, and keep the set symbol and collector number visible. If the suggestions are wrong, choose Find another card and search the catalogue manually, or skip that image. A confirmed correction is quarantined for administrator review and does not teach the model automatically.',
   },
   {
     q: 'My direct messages show as encrypted / won\'t decrypt',
