@@ -27,6 +27,7 @@ import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
 import AgentInsightReviewSection from '@/components/admin/AgentInsightReviewSection';
 import AgentKnowledgeReviewSection from '@/components/admin/AgentKnowledgeReviewSection';
+import ScannerCorrectionReviewSection from '@/components/admin/ScannerCorrectionReviewSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
 import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -134,6 +135,7 @@ export default function Admin() {
           <>
             <AgentKnowledgeReviewSection />
             <AgentInsightReviewSection />
+            <ScannerCorrectionReviewSection />
             <SiteWideStarterPackSection />
             <StandardSiteSection />
             <TranslationSyncSection />
