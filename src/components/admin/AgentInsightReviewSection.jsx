@@ -118,7 +118,7 @@ export default function AgentInsightReviewSection() {
                   confidence {Math.round((insight.confidence || 0) * 100)}%
                 </span>
                 {insight.safety_status === 'flagged' && (
-                  <span className="flex items-center gap-1 rounded-full bg-warning/15 px-2 py-1 font-semibold text-warning-foreground">
+                  <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 font-semibold text-amber-700 dark:text-amber-300">
                     <AlertTriangle className="h-3 w-3" />
                     Safety review required
                   </span>
