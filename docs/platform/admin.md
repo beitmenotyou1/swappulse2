@@ -20,6 +20,8 @@ The Admin page is the administration dashboard for SwapPulse admins. It provides
 * **Federation diagnostics:** Check AT Protocol federation health and PDS sync.
 * **Invite codes:** Generate and manage invite codes for the alpha.
 * **Email testing:** Send test emails to verify SMTP configuration.
+* **Copilot source review:** Check allowlisted project-source revisions and approve or reject quarantined knowledge updates.
+* **Agent insight review:** Approve or reject inactive feedback-derived suggestions before an assistant can use them.
 
 ## Health and diagnostics
 
@@ -31,7 +33,9 @@ Admins can invite users, manage roles, and handle data subject requests. User re
 
 ## Operations
 
-The admin dashboard surfaces operational tasks like SEO audits, bot protection logs, and backfill operations so the team can keep the platform healthy and secure.
+The admin dashboard surfaces operational tasks like SEO audits, bot protection logs, backfill operations and AI review queues so the team can keep the platform healthy and secure.
+
+Project-source refreshes record an immutable revision and content hash. They do not publish automatically. An administrator must read and approve a queued revision, and safety-flagged material requires an additional acknowledgement. Feedback-derived insights use a separate review queue and also remain inactive until approved.
 
 ## Open this feature
 
