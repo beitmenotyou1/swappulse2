@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, Globe, Users, AtSign, FolderOpen } from 'lucide-react';
+import { Image, Sparkles, ArrowLeftRight, Send, Loader2, X, Globe, Users, AtSign, FolderOpen, ScanLine } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Avatar from '@/components/Avatar';
 import CardSearchModal from '@/components/cards/CardSearchModal';
@@ -15,6 +15,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 import { useMediaComposer } from '@/hooks/useMediaComposer';
 import MediaComposer from '@/components/feed/MediaComposer';
 import VideoComposer from '@/components/feed/VideoComposer';
+import PostCardScannerModal from '@/components/feed/PostCardScannerModal';
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
@@ -51,6 +52,7 @@ export default function ComposeBox({ onPosted, replyTo }) {
   const [attachedCard, setAttachedCard] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [posting, setPosting] = useState(false);
   const [replyPolicy, setReplyPolicy] = useState('everybody');
   const [visibilityScope, setVisibilityScope] = useState('public');
@@ -417,6 +419,12 @@ export default function ComposeBox({ onPosted, replyTo }) {
                 <Image className="h-4 w-4" /> {t('compose.card')}
               </button>
               <button
+                onClick={() => setScannerOpen(true)}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
+              >
+                <ScanLine className="h-4 w-4" /> {t('compose.scanner')}
+              </button>
+              <button
                 onClick={() => setCollectionOpen(true)}
                 className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-primary transition-colors hover:bg-primary/10 sm:px-3 sm:text-sm"
               >
@@ -457,6 +465,11 @@ export default function ComposeBox({ onPosted, replyTo }) {
       <CollectionPickerModal
         open={collectionOpen}
         onClose={() => setCollectionOpen(false)}
+        onAttach={setAttachedCard}
+      />
+      <PostCardScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
         onAttach={setAttachedCard}
       />
     </div>
