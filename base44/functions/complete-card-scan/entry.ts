@@ -47,6 +47,7 @@ async function catalogueCard(svc: any, cardId: string) {
 export default async function (req: Request): Promise<Response> {
   let session: any = null;
   let base44: any = null;
+  let purpose = 'collection';
 
   try {
     if (req.method !== 'POST') {
@@ -69,6 +70,7 @@ export default async function (req: Request): Promise<Response> {
 
     const body = await req.json().catch(() => ({}));
     const sessionId = clean(body.session_id, 120);
+    const requestedPurpose = clean(body.purpose, 40);
     const rawSelections = Array.isArray(body.selections) ? body.selections : [];
     const rawSkipped = Array.isArray(body.skipped_indexes) ? body.skipped_indexes : [];
 
@@ -92,11 +94,28 @@ export default async function (req: Request): Promise<Response> {
         'SESSION_IDENTITY_MISMATCH',
       );
     }
+
+    purpose = clean(session.purpose || 'collection', 40);
+    if (!['collection', 'post_attachment'].includes(purpose)) {
+      return jsonError('Invalid scanner purpose', 409, 'INVALID_SCAN_PURPOSE');
+    }
+    if (requestedPurpose && requestedPurpose !== purpose) {
+      return jsonError(
+        'Scan destination does not match this session',
+        409,
+        'SCAN_PURPOSE_MISMATCH',
+      );
+    }
+    const collectionMode = purpose === 'collection';
+
     if (session.status === 'completed') {
       return Response.json({
         ok: true,
         already_completed: true,
         added_count: Number(session.added_count || 0),
+        attached_count: purpose === 'post_attachment'
+          ? Number(session.confirmed_items?.length || 0)
+          : 0,
       });
     }
     if (session.status !== 'review') {
@@ -139,6 +158,9 @@ export default async function (req: Request): Promise<Response> {
       const entryIds = Array.isArray(raw?.collection_entry_ids)
         ? raw.collection_entry_ids.map((value: unknown) => clean(value, 120)).filter(Boolean)
         : [];
+      const entrySetValid = collectionMode
+        ? entryIds.length === quantity && new Set(entryIds).size === entryIds.length
+        : quantity === 1 && entryIds.length === 0;
 
       if (
         imageIndex === null ||
@@ -148,8 +170,7 @@ export default async function (req: Request): Promise<Response> {
         !CONDITIONS.has(condition) ||
         !VARIANTS.has(variant) ||
         quantity === null ||
-        entryIds.length !== quantity ||
-        new Set(entryIds).size !== entryIds.length
+        !entrySetValid
       ) {
         return jsonError('Invalid confirmed card selection', 400, 'INVALID_SELECTION');
       }
@@ -181,6 +202,16 @@ export default async function (req: Request): Promise<Response> {
         'INVALID_BATCH_SIZE',
       );
     }
+    if (
+      purpose === 'post_attachment' &&
+      (imageCount !== 1 || selections.length !== 1 || skipped.size !== 0)
+    ) {
+      return jsonError(
+        'A post attachment scan must confirm exactly one image',
+        400,
+        'INVALID_POST_ATTACHMENT',
+      );
+    }
     if (new Set(allEntryIds).size !== allEntryIds.length) {
       return jsonError('Collection entry IDs must be unique', 400, 'DUPLICATE_ENTRY_ID');
     }
@@ -198,99 +229,107 @@ export default async function (req: Request): Promise<Response> {
       }
     }
 
-    const entries = await svc.entities.CollectionEntry
-      .filter(
-        {
-          id: { $in: allEntryIds },
-          created_by_id: me.id,
-        },
-        '-created_date',
-        Math.min(100, allEntryIds.length),
-      )
-      .catch(() => []);
-    const entriesById = new Map(
-      (entries || []).map((entry: any) => [String(entry.id), entry]),
-    );
+    if (collectionMode) {
+      const entries = await svc.entities.CollectionEntry
+        .filter(
+          {
+            id: { $in: allEntryIds },
+            created_by_id: me.id,
+          },
+          '-created_date',
+          Math.min(100, allEntryIds.length),
+        )
+        .catch(() => []);
+      const entriesById = new Map(
+        (entries || []).map((entry: any) => [String(entry.id), entry]),
+      );
 
-    for (const selection of selections) {
-      for (const entryId of selection.collection_entry_ids) {
-        const entry: any = entriesById.get(entryId);
-        if (
-          !entry ||
-          clean(entry.card_id, 100) !== selection.selected_card_id ||
-          clean(entry.condition, 30) !== selection.condition ||
-          clean(entry.variant, 30) !== selection.variant
-        ) {
-          throw new Error('COLLECTION_ENTRY_MISMATCH');
+      for (const selection of selections) {
+        for (const entryId of selection.collection_entry_ids) {
+          const entry: any = entriesById.get(entryId);
+          if (
+            !entry ||
+            clean(entry.card_id, 100) !== selection.selected_card_id ||
+            clean(entry.condition, 30) !== selection.condition ||
+            clean(entry.variant, 30) !== selection.variant
+          ) {
+            throw new Error('COLLECTION_ENTRY_MISMATCH');
+          }
         }
       }
     }
 
-    const existingCorrections = await svc.entities.ScannerCorrection
-      .filter(
-        { scan_session_id: session.id, user_id: me.id },
-        '-created_date',
-        20,
-      )
-      .catch(() => []);
-    const existingIndexes = new Set(
-      (existingCorrections || []).map((row: any) => Number(row.image_index)),
-    );
+    if (collectionMode) {
+      const existingCorrections = await svc.entities.ScannerCorrection
+        .filter(
+          { scan_session_id: session.id, user_id: me.id },
+          '-created_date',
+          20,
+        )
+        .catch(() => []);
+      const existingIndexes = new Set(
+        (existingCorrections || []).map((row: any) => Number(row.image_index)),
+      );
 
-    for (const selection of selections) {
-      if (existingIndexes.has(selection.image_index)) continue;
+      for (const selection of selections) {
+        if (existingIndexes.has(selection.image_index)) continue;
 
-      const result = results.find(
-        (row: any) => Number(row.image_index) === selection.image_index,
-      ) || {};
-      const predicted = clean(result?.candidates?.[0]?.card_id, 100);
-      const predictedSet = clean(result?.candidates?.[0]?.set_id, 80);
-      const selectedSet = clean(catalogue.get(selection.selected_card_id)?.set_id, 80);
+        const result = results.find(
+          (row: any) => Number(row.image_index) === selection.image_index,
+        ) || {};
+        const predicted = clean(result?.candidates?.[0]?.card_id, 100);
+        const predictedSet = clean(result?.candidates?.[0]?.set_id, 80);
+        const selectedSet = clean(catalogue.get(selection.selected_card_id)?.set_id, 80);
 
-      let correctionType = 'confirm_correct';
-      if (!predicted) correctionType = 'no_match';
-      else if (predicted !== selection.selected_card_id) {
-        correctionType =
-          predictedSet && selectedSet && predictedSet !== selectedSet
-            ? 'wrong_set'
-            : 'wrong_card';
+        let correctionType = 'confirm_correct';
+        if (!predicted) correctionType = 'no_match';
+        else if (predicted !== selection.selected_card_id) {
+          correctionType =
+            predictedSet && selectedSet && predictedSet !== selectedSet
+              ? 'wrong_set'
+              : 'wrong_card';
+        }
+
+        await svc.entities.ScannerCorrection.create({
+          user_id: String(me.id),
+          did: userDid,
+          scan_session_id: String(session.id),
+          image_index: selection.image_index,
+          predicted_card_id: predicted,
+          selected_card_id: selection.selected_card_id,
+          collection_entry_id: selection.collection_entry_ids[0],
+          correction_type: correctionType,
+          model_version: clean(session.model_version || MODEL_VERSION, 80),
+          confidence: Math.max(0, Math.min(1, Number(result.confidence || 0))),
+          detected_language: clean(result.detected_language, 30),
+          selected_condition: selection.condition,
+          selected_variant: selection.variant,
+          review_status: 'quarantined',
+          accepted: false,
+        });
       }
-
-      await svc.entities.ScannerCorrection.create({
-        user_id: String(me.id),
-        did: userDid,
-        scan_session_id: String(session.id),
-        image_index: selection.image_index,
-        predicted_card_id: predicted,
-        selected_card_id: selection.selected_card_id,
-        collection_entry_id: selection.collection_entry_ids[0],
-        correction_type: correctionType,
-        model_version: clean(session.model_version || MODEL_VERSION, 80),
-        confidence: Math.max(0, Math.min(1, Number(result.confidence || 0))),
-        detected_language: clean(result.detected_language, 30),
-        selected_condition: selection.condition,
-        selected_variant: selection.variant,
-        review_status: 'quarantined',
-        accepted: false,
-      });
     }
 
+    const addedCount = collectionMode ? totalQuantity : 0;
+    const attachedCount = collectionMode ? 0 : selections.length;
     const completedAt = new Date().toISOString();
     await svc.entities.CardScanSession.update(session.id, {
       status: 'completed',
       confirmed_items: selections,
       skipped_indexes: Array.from(skipped).sort((a, b) => a - b),
-      added_count: totalQuantity,
+      added_count: addedCount,
       completed_at: completedAt,
       error_code: '',
     });
 
     return Response.json({
       ok: true,
-      added_count: totalQuantity,
+      purpose,
+      added_count: addedCount,
+      attached_count: attachedCount,
       reviewed_images: imageCount,
       skipped_count: skipped.size,
-      corrections_quarantined: selections.length,
+      corrections_quarantined: collectionMode ? selections.length : 0,
       completed_at: completedAt,
     });
   } catch (error: any) {
@@ -312,8 +351,12 @@ export default async function (req: Request): Promise<Response> {
       code.includes('INVALID');
     return jsonError(
       clientError
-        ? 'The confirmed collection records did not match this scan.'
-        : 'The scan could not be finalised. Existing collection entries were not removed.',
+        ? (purpose === 'post_attachment'
+          ? 'The reviewed card did not match this scan session.'
+          : 'The confirmed collection records did not match this scan.')
+        : (purpose === 'post_attachment'
+          ? 'The card could not be attached. No post, collection, or blockchain record was created.'
+          : 'The scan could not be finalised. Existing collection entries were not removed.'),
       clientError ? 409 : 502,
       code || 'SCAN_CONFIRMATION_FAILED',
     );
