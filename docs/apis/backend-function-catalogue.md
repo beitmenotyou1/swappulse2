@@ -8,7 +8,7 @@ description: >-
 
 SwapPulse backend behaviour is implemented as Base44 backend functions. This document is a practical guide to the main public/product function families rather than a frozen promise that every function name will exist forever.
 
-The authoritative function inventory is the `base44/functions/` directory. The audited repository currently contains 241 function directories, but directory presence does not mean that a function is a supported public API. The OpenAPI contract is the authority for the 18 supported product endpoints.
+The authoritative function inventory is the `base44/functions/` directory. The audited repository currently contains 246 function directories, but directory presence does not mean that a function is a supported public API. The OpenAPI contract is the authority for the 18 supported product endpoints.
 
 ## Invocation pattern
 
@@ -123,7 +123,15 @@ Representative functions include:
 * `card-metadata-localized`;
 * `extract-collection-import`;
 * `capture-portfolio-snapshots`;
+* `scan-card-batch`;
+* `complete-card-scan`;
 * collection-analysis/advisor functions.
+
+`scan-card-batch` is an authenticated, owner-scoped private-image workflow. It validates a 1-to-10-image `CardScanSession`, creates 15-minute signed image links, extracts visible clues and grounds candidate identities through `search-cards`. It rate-limits each account and does not persist signed links.
+
+`complete-card-scan` validates the collector's final catalogue choices and the exact `CollectionEntry` IDs already created by the browser. It then finalises the session and creates quarantined `ScannerCorrection` labels. It does not create the collection records itself, train a model, or perform a wallet or chain action.
+
+Neither scanner function is a public catalogue API. Both require the signed-in Base44 session and enforce record ownership in the backend.
 
 The current canonical on-chain card architecture is Cairo/Starknet-based, not the old Polygon mint/bridge path described by earlier docs.
 
