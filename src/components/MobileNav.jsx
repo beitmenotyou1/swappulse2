@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, ExternalLink } from 'lucide-react';
+import { Home, Compass, Layers, ScanLine, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, ExternalLink } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -32,6 +32,7 @@ function getOwningTab(pathname, fallback) {
 }
 
 const moreItems = [
+  { to: '/scan', icon: ScanLine, label: 'Scan Cards', tKey: 'nav.scan', authOnly: true },
   { to: '/collector-copilot', icon: Sparkles, label: 'Collector Copilot', tKey: 'nav.collectorCopilot', authOnly: true },
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
   { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
