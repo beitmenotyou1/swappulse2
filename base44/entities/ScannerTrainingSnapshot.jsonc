@@ -2,7 +2,7 @@
   "name": "ScannerTrainingSnapshot",
   "type": "object",
   "title": "ScannerTrainingSnapshot",
-  "description": "org.swappulse.scannerTrainingSnapshot \u2014 an immutable, versioned training-dataset export built from accepted ScannerCorrection records for offline model retraining. Each snapshot has a unique version tag, a signed download URL (private file), and a manifest recording row count plus rarity and language coverage. Created by the build-training-snapshot backend function (admin-triggered and scheduled).",
+  "description": "Dormant, administrator-only schema reserved for future versioned training exports. Phase 2 does not create training snapshots. Any future export must include only explicitly approved ScannerCorrection records, remain private, preserve provenance, and pass a separate operator review before use.",
   "properties": {
     "version_tag": {
       "type": "string",
