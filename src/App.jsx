@@ -25,6 +25,7 @@ const Explore = lazy(() => import('@/pages/Explore'));
 const DiscoverUsers = lazy(() => import('@/pages/DiscoverUsers'));
 const CardDetail = lazy(() => import('@/pages/CardDetail'));
 const Collection = lazy(() => import('@/pages/Collection'));
+const CardScanner = lazy(() => import('@/pages/CardScanner'));
 const Sets = lazy(() => import('@/pages/Sets'));
 const TradeBoard = lazy(() => import('@/pages/TradeBoard'));
 const Profile = lazy(() => import('@/pages/Profile'));
@@ -228,6 +229,7 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/compose" element={<Compose />} />
           <Route path="/collection" element={<Collection />} />
+          <Route path="/scan" element={<CardScanner />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/grading" element={<Grading />} />
           <Route path="/binders/new" element={<BinderEdit />} />
