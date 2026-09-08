@@ -17,6 +17,7 @@ const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
+  { to: '/collector-copilot', icon: Sparkles, label: 'Collector Copilot', tKey: 'nav.collectorCopilot', authOnly: true },
   { to: '/wallet', icon: WalletIcon, label: 'SwapPulse Wallet', tKey: 'nav.chainWallet', authOnly: true },
   { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
   { to: '/trades', icon: ArrowLeftRight, label: 'Trade Board', tKey: 'nav.trades' },
