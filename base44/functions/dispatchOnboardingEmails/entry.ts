@@ -16,7 +16,7 @@ function day1Body(name) {
     "   -> https://swappulse.org/collection",
     "",
     "2. Scan a card with AI",
-    "   Point your phone camera at any card and the AI scanner identifies it automatically. Batch mode lets you rip through a stack in minutes. Corrections you submit train the model.",
+    "   Choose up to 10 private card photos, review every suggested TCGDex match, then confirm what to add. Corrections stay quarantined until an administrator approves them.",
     "   -> https://swappulse.org/scan",
     "",
     "3. Check your feed",
