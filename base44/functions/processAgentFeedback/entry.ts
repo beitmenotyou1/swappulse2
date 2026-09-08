@@ -16,10 +16,19 @@ Deno.serve(async (req) => {
 
     const svc = base44.asServiceRole;
 
-    // If a specific agent is requested, process just that one; otherwise process all known agents
+    // If a specific agent is requested, process just that one; otherwise process every conversational agent that accepts AgentFeedback.
     const agentNames = agentName
       ? [agentName]
-      : ['moderation_agent', 'trade_assistant', 'market_watch', 'collection_advisor'];
+      : [
+          'collector_copilot',
+          'moderation_agent',
+          'trade_assistant',
+          'market_watch',
+          'collection_advisor',
+          'sentiment_conversationalist',
+          'achievement_goal_tracker',
+          'networking_concierge',
+        ];
 
     // Process all agents in parallel (independent LLM + entity work per agent).
     const entries = await Promise.all(
