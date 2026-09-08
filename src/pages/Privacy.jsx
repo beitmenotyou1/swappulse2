@@ -204,9 +204,10 @@ export default function Privacy() {
               use the scanner:
             </p>
             <ul>
-              <li><strong>Card photos</strong> are uploaded and processed by an AI model to identify the card. The photo is not permanently stored beyond the scanning session unless you choose to save it to a post or collection entry.</li>
-              <li><strong>Corrections</strong>, when the top match is wrong and you select the correct card or search manually, are recorded as ScannerCorrection records. These record the original match, your correction, and (if available) a hashed device identifier.</li>
-              <li><strong>Model improvement:</strong> Your corrections are used to evaluate and improve the scanner model's accuracy over time. Corrections work offline too: they queue locally and sync when you reconnect.</li>
+              <li><strong>Card photos</strong> are uploaded to private account storage and processed by an AI model to read visible card details. The scanner creates short-lived access links for analysis and never places a card photo in a public post, public record, or blockchain transaction.</li>
+              <li><strong>Scan sessions</strong> are private account data. They record the private file references, extracted clues, catalogue suggestions, and the collector's final choices. The scanner requires an internet connection and accepts 1 to 10 images per batch.</li>
+              <li><strong>Corrections</strong> are created only after you explicitly confirm collection additions. A correction records the suggested and selected catalogue identities, not a device fingerprint.</li>
+              <li><strong>Model improvement:</strong> Every correction begins in quarantine. It cannot affect matching, model weights, training data, or scanner achievements unless an administrator reviews and approves it.</li>
             </ul>
             <p>
               AI assistants (Trade Assistant, Market Watch Assistant, Collection Advisor, and others) process your
