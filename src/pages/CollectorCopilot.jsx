@@ -6,6 +6,7 @@ import {
   Bot,
   Camera,
   Loader2,
+  Languages,
   MessageSquare,
   Plus,
   Send,
@@ -18,10 +19,18 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
 import DocumentationLink from '@/components/DocumentationLink';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useI18n } from '@/lib/i18n/I18nProvider';
+import { LANGUAGES } from '@/hooks/useSettings';
 import useSEO from '@/hooks/useSEO';
 
 const AGENT_NAME = 'collector_copilot';
+
+function visibleUserMessage(content) {
+  return String(content || '').replace(
+    /^\[SwapPulse Helper language: [^\]\n]+\]\n\n/,
+    '',
+  );
+}
 
 function ToolStatus({ toolCall }) {
   const status = toolCall.status;
@@ -58,6 +67,9 @@ function ToolStatus({ toolCall }) {
 
 function MessageBubble({ message, conversationId }) {
   const isUser = message.role === 'user';
+  const displayContent = isUser
+    ? visibleUserMessage(message.content)
+    : message.content;
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -66,12 +78,12 @@ function MessageBubble({ message, conversationId }) {
           isUser ? 'bg-primary text-primary-foreground' : 'bg-secondary'
         }`}
       >
-        {message.content && (
+        {displayContent && (
           isUser
-            ? <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            ? <p className="whitespace-pre-wrap break-words">{displayContent}</p>
             : (
               <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <ReactMarkdown>{displayContent}</ReactMarkdown>
               </div>
             )
         )}
@@ -91,11 +103,13 @@ function MessageBubble({ message, conversationId }) {
 }
 
 export default function CollectorCopilot() {
-  const t = useT();
+  const { t, locale, setLocale } = useI18n();
+  const selectedLanguage = LANGUAGES.find((item) => item.code === locale)
+    || LANGUAGES[0];
   useSEO({
     title: t('copilot.title'),
     description: t('copilot.seoDescription'),
-    canonicalPath: '/collector-copilot',
+    canonicalPath: '/helper',
   });
 
   const [conversations, setConversations] = useState([]);
@@ -155,6 +169,8 @@ export default function CollectorCopilot() {
         metadata: {
           name: t('copilot.conversationName'),
           description: t('copilot.conversationDescription'),
+          locale,
+          response_language: selectedLanguage.name,
         },
       });
       setConversations((current) => [conversation, ...current]);
@@ -189,7 +205,7 @@ export default function CollectorCopilot() {
       }
       await base44.agents.addMessage(conversation, {
         role: 'user',
-        content: text,
+        content: `[SwapPulse Helper language: ${selectedLanguage.name} (${locale})]\n\n${text}`,
       });
     } catch (requestError) {
       setInput(text);
@@ -233,6 +249,31 @@ export default function CollectorCopilot() {
       </PageHeader>
 
       <div className="px-4 pt-4">
+        <div className="mb-3 flex flex-col gap-2 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2">
+            <Languages className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <div>
+              <label htmlFor="helper-language" className="text-sm font-bold">
+                {t('copilot.languageLabel')}
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {t('copilot.languageHint')}
+              </p>
+            </div>
+          </div>
+          <select
+            id="helper-language"
+            value={locale}
+            onChange={(event) => setLocale(event.target.value)}
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          >
+            {LANGUAGES.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <p>
