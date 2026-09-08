@@ -87,6 +87,7 @@ const Leaderboard = lazy(() => import('@/pages/Leaderboard'));
 const TradeAssistant = lazy(() => import('@/pages/TradeAssistant'));
 const MarketWatchAssistant = lazy(() => import('@/pages/MarketWatchAssistant'));
 const CollectionAdvisor = lazy(() => import('@/pages/CollectionAdvisor'));
+const CollectorCopilot = lazy(() => import('@/pages/CollectorCopilot'));
 const SentimentConversationalist = lazy(() => import('@/pages/SentimentConversationalist'));
 const AchievementGoalTracker = lazy(() => import('@/pages/AchievementGoalTracker'));
 const NetworkingConcierge = lazy(() => import('@/pages/NetworkingConcierge'));
@@ -247,6 +248,7 @@ const AuthenticatedApp = () => {
           <Route path="/trade-assistant" element={<TradeAssistant />} />
           <Route path="/market-watch-assistant" element={<MarketWatchAssistant />} />
           <Route path="/collection-advisor" element={<CollectionAdvisor />} />
+          <Route path="/collector-copilot" element={<CollectorCopilot />} />
           <Route path="/sentiment-conversationalist" element={<SentimentConversationalist />} />
           <Route path="/achievement-goal-tracker" element={<AchievementGoalTracker />} />
           <Route path="/networking-concierge" element={<NetworkingConcierge />} />
