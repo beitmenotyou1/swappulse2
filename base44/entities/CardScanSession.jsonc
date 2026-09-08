@@ -1,0 +1,294 @@
+{
+  "name": "CardScanSession",
+  "type": "object",
+  "title": "CardScanSession",
+  "description": "Private owner-scoped audit record for a 1-10 image card-identification batch. Private file URIs remain account data; short-lived signed URLs are generated only inside the authenticated scanner function and are never stored.",
+  "properties": {
+    "did": {
+      "type": "string",
+      "description": "AT Protocol DID of the collector"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "uploaded",
+        "analysing",
+        "review",
+        "adding",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "default": "uploaded"
+    },
+    "image_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "file_uris": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "string"
+      },
+      "description": "Private Base44 file URIs. Never expose these in public records or agent context."
+    },
+    "file_names": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 180
+      }
+    },
+    "total_bytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 52428800
+    },
+    "locale": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "model_version": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "results": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "properties": {
+          "image_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "detected_name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "detected_set_code": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "detected_set_name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "detected_local_id": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "detected_language": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "detected_rarity": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "suggested_condition": {
+            "type": "string",
+            "enum": [
+              "mint",
+              "near_mint",
+              "excellent",
+              "good",
+              "damaged",
+              "unknown"
+            ]
+          },
+          "suggested_variant": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "holo",
+              "reverse_holo",
+              "unknown"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "needs_review": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "candidates": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "properties": {
+                "card_id": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                "image": {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                "set_id": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "set_name": {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                "local_id": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "rarity": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 240
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "image_index",
+          "confidence",
+          "needs_review",
+          "candidates"
+        ]
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 240
+      }
+    },
+    "confirmed_items": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "properties": {
+          "image_index": {
+            "type": "integer"
+          },
+          "selected_card_id": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "collection_entry_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "skipped_indexes": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "added_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 200,
+      "default": 0
+    },
+    "error_code": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "did",
+    "status",
+    "image_count",
+    "file_uris",
+    "model_version",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
