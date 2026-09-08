@@ -94,8 +94,10 @@ export default async function(req: Request): Promise<Response> {
     // ── Phase 1: Find the user's trade IDs (before deleting the listings) ──
     let tradeIds: string[] = [];
     try {
+      const tradeOwnerFilters: any[] = [{ created_by_id: userId }];
+      if (userDid) tradeOwnerFilters.push({ did: userDid });
       const trades = await svc.entities.TradeListing.filter(
-        { $or: [{ created_by_id: userId }, { did: userDid }] },
+        { $or: tradeOwnerFilters },
         '-created_date',
         1000
       );
@@ -135,13 +137,18 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // ModerationLabel: match by labeler_did (no created_by_id)
-    try {
-      await svc.entities.ModerationLabel.deleteMany({ labeler_did: userDid });
-      results['ModerationLabel'] = 'ok';
-    } catch (e) {
-      console.error('delete-account: ModerationLabel cleanup error', e?.message);
-      results['ModerationLabel'] = `error: ${e?.message}`;
+    // ModerationLabel has no created_by_id, so only query it when
+    // the authenticated account has a real DID.
+    if (userDid) {
+      try {
+        await svc.entities.ModerationLabel.deleteMany({ labeler_did: userDid });
+        results['ModerationLabel'] = 'ok';
+      } catch (e) {
+        console.error('delete-account: ModerationLabel cleanup error', e?.message);
+        results['ModerationLabel'] = `error: ${e?.message}`;
+      }
+    } else {
+      results['ModerationLabel'] = 'skipped (no DID)';
     }
 
     // ── Phase 3: Delete trade-linked records by trade_id ──
@@ -177,12 +184,16 @@ export default async function(req: Request): Promise<Response> {
     results['pds_tombstone'] = pdsResult;
 
     // ── Phase 5: Release HandleClaim ──
-    try {
-      await svc.entities.HandleClaim.deleteMany({ did: userDid });
-      results['HandleClaim'] = 'ok';
-    } catch (e) {
-      console.error('delete-account: HandleClaim release error', e?.message);
-      results['HandleClaim'] = `error: ${e?.message}`;
+    if (userDid) {
+      try {
+        await svc.entities.HandleClaim.deleteMany({ did: userDid });
+        results['HandleClaim'] = 'ok';
+      } catch (e) {
+        console.error('delete-account: HandleClaim release error', e?.message);
+        results['HandleClaim'] = `error: ${e?.message}`;
+      }
+    } else {
+      results['HandleClaim'] = 'skipped (no DID)';
     }
 
     // ── Phase 6: Delete the User record ──
