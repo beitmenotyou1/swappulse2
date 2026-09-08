@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Image, FolderOpen, X } from 'lucide-react';
+import { Image, FolderOpen, ScanLine, X } from 'lucide-react';
 import CardSearchModal from '@/components/cards/CardSearchModal';
 import CollectionPickerModal from '@/components/feed/CollectionPickerModal';
 import { rarityClasses, cardSetName } from '@/lib/tcgdex';
 import CardImage from '@/components/cards/CardImage';
+import PostCardScannerModal from '@/components/feed/PostCardScannerModal';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Reusable attach bar shared by the post composer, comment composer, and
 // quote composer. Renders three triggers — text search (Card), AI scanner
@@ -12,8 +14,10 @@ import CardImage from '@/components/cards/CardImage';
 // ({ id, name, image, rarity, set: { name } }) or null; `onChange` receives
 // the new card or null when cleared.
 export default function CardAttachBar({ value, onChange, searchTitle = 'Attach a card', compact = false }) {
+  const t = useT();
   const [searchOpen, setSearchOpen] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const attach = (card) => onChange(card);
   const clear = () => onChange(null);
@@ -45,12 +49,16 @@ export default function CardAttachBar({ value, onChange, searchTitle = 'Attach a
         <button onClick={() => setSearchOpen(true)} className={btn}>
           <Image className="h-4 w-4" /> Card
         </button>
+        <button onClick={() => setScannerOpen(true)} className={btn}>
+          <ScanLine className="h-4 w-4" /> {t('compose.scanner')}
+        </button>
         <button onClick={() => setCollectionOpen(true)} className={btn}>
           <FolderOpen className="h-4 w-4" /> Collection
         </button>
       </div>
       <CardSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={attach} title={searchTitle} />
       <CollectionPickerModal open={collectionOpen} onClose={() => setCollectionOpen(false)} onAttach={attach} />
+      <PostCardScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onAttach={attach} />
     </>
   );
 }
