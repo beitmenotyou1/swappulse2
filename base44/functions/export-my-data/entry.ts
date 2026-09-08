@@ -66,6 +66,10 @@ export default async function (req: Request): Promise<Response> {
 
     for (const [entityName, filterField] of EXPORT_ENTITIES) {
       try {
+        if (filterField === 'did' && !user.did) {
+          archive.entities[entityName] = [];
+          continue;
+        }
         const filterValue = filterField === 'did' ? user.did : user.id;
         const filter: any = { [filterField]: filterValue };
         const records = await svc.entities[entityName].filter(filter, '-created_date', 5000).catch(() => []);
