@@ -242,6 +242,26 @@ export default function CollectorCopilot() {
         </div>
       </div>
 
+      <div className="px-4 pt-3">
+        <Link
+          to="/scan"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-sm transition-colors hover:border-primary hover:bg-primary/5"
+        >
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <Camera className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold">{t('copilot.scannerTitle')}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {t('copilot.scannerBody')}
+            </p>
+          </div>
+          <span className="shrink-0 font-semibold text-primary">
+            {t('copilot.openScanner')}
+          </span>
+        </Link>
+      </div>
+
       {error && (
         <div className="mx-4 mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
