@@ -1,0 +1,148 @@
+{
+  "name": "AgentKnowledgeRevision",
+  "type": "object",
+  "title": "AgentKnowledgeRevision",
+  "description": "Quarantined snapshot fetched from an allowlisted project source. It is administrator-only and cannot influence an agent until explicitly approved and published.",
+  "properties": {
+    "document_key": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 60000
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "github",
+        "gitbook",
+        "site",
+        "chain",
+        "tcgdex",
+        "pokemon_official",
+        "admin_curated"
+      ]
+    },
+    "source_url": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "source_revision": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "content_hash": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "previous_hash": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "authority": {
+      "type": "string",
+      "enum": [
+        "canonical",
+        "official",
+        "project",
+        "supplementary"
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "default": "en",
+      "maxLength": 20
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 80
+      },
+      "default": []
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending_review"
+    },
+    "safety_status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "flagged"
+      ],
+      "default": "passed"
+    },
+    "safety_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 160
+      },
+      "default": []
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_notes": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "published_document_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "document_key",
+    "title",
+    "content",
+    "source_type",
+    "source_url",
+    "source_revision",
+    "content_hash",
+    "authority",
+    "review_status",
+    "safety_status",
+    "fetched_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
