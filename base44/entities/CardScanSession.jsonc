@@ -2,7 +2,7 @@
   "name": "CardScanSession",
   "type": "object",
   "title": "CardScanSession",
-  "description": "Private service-managed audit record for a 1-10 image card-identification batch. Collectors can read or delete only their own sessions; only authenticated scanner functions control lifecycle state. Private file URIs remain account data and signed URLs are never stored.",
+  "description": "Private service-managed audit record for card identification used by collection intake or a reviewed post attachment. Collectors can read or delete only their own sessions; only authenticated scanner functions control lifecycle state. Private file URIs remain account data and signed URLs are never stored.",
   "properties": {
     "user_id": {
       "type": "string",
@@ -55,6 +55,15 @@
     "locale": {
       "type": "string",
       "maxLength": 20
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "collection",
+        "post_attachment"
+      ],
+      "default": "collection",
+      "description": "The reviewed destination for this scan. Post attachment scans identify one card but do not create collection or blockchain records."
     },
     "model_version": {
       "type": "string",
