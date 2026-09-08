@@ -32,6 +32,7 @@ function getOwningTab(pathname, fallback) {
 }
 
 const moreItems = [
+  { to: '/collector-copilot', icon: Sparkles, label: 'Collector Copilot', tKey: 'nav.collectorCopilot', authOnly: true },
   { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
   { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
   { to: '/starter-packs', icon: Box, label: 'Packs', tKey: 'nav.starterPacks' },
