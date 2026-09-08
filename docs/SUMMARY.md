@@ -70,6 +70,7 @@
   * [Donations](platform/donations.md)
   * [Admin](platform/admin.md)
 * [AI Assistants](ai-assistants/README.md)
+  * [Collector Copilot](ai-assistants/collector-copilot.md)
   * [Collection Advisor](ai-assistants/collection-advisor.md)
   * [Trade Assistant](ai-assistants/trade-assistant.md)
   * [Market Watch Assistant](ai-assistants/market-watch-assistant.md)
