@@ -73,11 +73,15 @@ Collector feedback follows a separate quarantine. Feedback-generated suggestions
 
 ## Card images and batch scanning
 
-The first Collector Copilot release does not identify an unknown card from a photograph and does not add scanned cards to a collection.
+Photo identification is available through the dedicated [Card Scanner](../collection-and-catalogue/card-scanner.md), not inside the Copilot chat. The scanner accepts 1 to 10 private images, reads visible clues, proposes grounded TCGDex catalogue matches and presents one batch review screen.
 
-SwapPulse's existing card-photo flow verifies possession of a card that the collector has already selected. It is not the same as identifying an unknown card.
+The collector checks the identity, condition, finish and quantity for every image. A match can be replaced through catalogue search or skipped. Nothing is added silently, and the final confirmation creates private collection records without performing a wallet or blockchain action.
 
-The planned scanner will accept 1 to 10 card images, propose catalogue matches and present one batch review screen. The collector will be able to correct condition, language, edition and quantity before confirming. No proposed match will be added silently.
+Confirmed scanner labels enter an administrator review quarantine. They cannot influence matching, model weights, training exports or scanner achievements until approved.
+
+The Copilot remains read-only. It can explain the workflow and analyse collection records after they are added, but it cannot process a photo in chat, press the scanner confirmation button or add a card.
+
+SwapPulse's separate card-photo flow verifies possession of a card that the collector has already selected. Possession verification is not the same as identifying an unknown card.
 
 ## Safety, age and privacy
 
@@ -105,6 +109,7 @@ For a price-sensitive answer, ask the Copilot to state the source, currency and 
 ## Related guides
 
 * [Collection](../collection-and-catalogue/collection.md)
+* [Card Scanner](../collection-and-catalogue/card-scanner.md)
 * [Trade Assistant](trade-assistant.md)
 * [Card Possession Attestations](../wallet-and-on-chain/card-attestations.md)
 * [Stage D Multi-host Operations](../network-and-web3/stage-d-operations.md)
