@@ -124,7 +124,7 @@ export default function DataPrivacyRightsSection() {
         <p className="flex items-center gap-2 text-sm font-bold"><Download className="h-4 w-4 text-primary" /> Download your data</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Export a complete archive of your SwapPulse data as JSON. This includes your collection, scanner
-          sessions and confirmed labels, trades, posts, binders, journals, messages, and settings.
+          sessions and scanner review labels, trades, posts, binders, journals, messages, and settings.
         </p>
         <Button className="mt-3" size="sm" onClick={handleExport} disabled={exporting}>
           {exporting ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing archive…</> : <><Download className="h-4 w-4" /> Download my data</>}
