@@ -1,0 +1,137 @@
+{
+  "name": "ScannerCorrection",
+  "type": "object",
+  "title": "ScannerCorrection",
+  "description": "Quarantined scanner label created only after a collector confirms a real collection addition. Labels cannot affect matching, model weights, achievements or training exports until an administrator approves them.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Owning Base44 user ID used for private access"
+    },
+    "did": {
+      "type": "string",
+      "description": "Collector DID used by the achievement engine"
+    },
+    "scan_session_id": {
+      "type": "string"
+    },
+    "image_index": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9
+    },
+    "predicted_card_id": {
+      "type": "string"
+    },
+    "selected_card_id": {
+      "type": "string"
+    },
+    "collection_entry_id": {
+      "type": "string"
+    },
+    "correction_type": {
+      "type": "string",
+      "enum": [
+        "confirm_correct",
+        "wrong_card",
+        "wrong_set",
+        "no_match"
+      ]
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "detected_language": {
+      "type": "string"
+    },
+    "selected_condition": {
+      "type": "string",
+      "enum": [
+        "mint",
+        "near_mint",
+        "excellent",
+        "good",
+        "damaged"
+      ]
+    },
+    "selected_variant": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "holo",
+        "reverse_holo"
+      ]
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "quarantined",
+        "approved",
+        "rejected"
+      ],
+      "default": "quarantined"
+    },
+    "accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "True only after administrator approval"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reversal_reason": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "user_id",
+    "did",
+    "scan_session_id",
+    "image_index",
+    "selected_card_id",
+    "collection_entry_id",
+    "correction_type",
+    "model_version",
+    "review_status",
+    "accepted"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
