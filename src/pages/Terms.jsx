@@ -205,9 +205,11 @@ export default function Terms() {
               Tracker, and Networking Concierge).
             </p>
             <p>
-              <strong>Scanner corrections:</strong> When you submit a correction to a scan result, you grant SwapPulse a
-              licence to use that correction, including the card photo and your correction, to evaluate and improve
-              the scanner model's accuracy. Corrections are processed in anonymized form where possible.
+              <strong>Scanner corrections:</strong> A correction is recorded only after you confirm a collection
+              addition. You grant SwapPulse a licence to review the suggested and selected catalogue labels for
+              quality evaluation. Corrections are quarantined and cannot influence matching, training, model weights,
+              or achievements until an administrator approves them. Card photos remain private account data governed
+              by the Privacy Policy and are not automatically included in a training export.
             </p>
             <p>
               <strong>AI assistants:</strong> Outputs from AI assistants (trade suggestions, market analysis,
