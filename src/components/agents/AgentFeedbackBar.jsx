@@ -3,8 +3,8 @@ import { ThumbsUp, ThumbsDown, Loader2, Check, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 // AgentFeedbackBar — thumbs up/down + correction input on each assistant message.
-// Logs to AgentFeedback entity; the daily learning loop workflow processes it
-// into AgentInsight records that the agent reads before responding.
+// Logs to AgentFeedback. The daily workflow may create quarantined insight
+// candidates, but they cannot influence an agent until an admin approves them.
 export default function AgentFeedbackBar({ agentName, conversationId, message }) {
   const [submitted, setSubmitted] = useState(null);
   const [showCorrection, setShowCorrection] = useState(false);
@@ -35,7 +35,7 @@ export default function AgentFeedbackBar({ agentName, conversationId, message })
   if (submitted) {
     return (
       <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-        <Check className="h-3 w-3 text-success" /> Thanks for the feedback
+        <Check className="h-3 w-3 text-success" /> Thanks. Your feedback will be reviewed.
       </div>
     );
   }
