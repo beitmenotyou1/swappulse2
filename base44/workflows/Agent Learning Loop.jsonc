@@ -1,6 +1,6 @@
 {
   "name": "Agent Learning Loop",
-  "description": "Processes agent feedback daily and generates improvement insights so every AI agent gets smarter the more collectors use it",
+  "description": "Processes agent feedback daily into inactive, safety-screened candidates that require administrator approval before any agent may use them",
   "trigger": {
     "condition": null,
     "config": {
@@ -35,7 +35,7 @@
           "then": "end",
           "x-base44": {
             "title": "Process agent feedback",
-            "description": "Analyse feedback and generate improvement insights"
+            "description": "Analyse feedback and quarantine improvement candidates for administrator review"
           }
         }
       }
