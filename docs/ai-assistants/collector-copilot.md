@@ -57,7 +57,7 @@ Market values can move and may differ by condition, language, edition, grading a
 
 ## Project knowledge updates
 
-SwapPulse checks a fixed allowlist of project documentation sources each day at 05:15 Europe/London time.
+SwapPulse checks a fixed allowlist of GitHub files used to publish project and GitBook documentation each day at 05:15 Europe/London time.
 
 A detected change does not update the Copilot immediately. The system:
 
