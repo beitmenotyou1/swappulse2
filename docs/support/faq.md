@@ -108,9 +108,11 @@ The Forking and Rebranding guide explains how to separate the generic platform a
 
 ### How does the card scanner work?
 
-The scanner uses the card image you provide to identify likely catalogue matches. It presents candidates rather than treating an AI result as unquestionable truth.
+Open **Scan Cards** while signed in and choose 1 to 10 private images. The scanner reads visible clues, checks TCGDex and presents up to five catalogue candidates rather than treating an AI result as unquestionable truth.
 
-If the suggested match is wrong, choose the correct card or search manually. Corrections can be recorded to improve the product workflow.
+Review the identity, condition, finish and quantity for every image. If a suggestion is wrong, choose another candidate, search manually or skip the image. Nothing is added until you confirm the batch.
+
+Confirmed labels begin in quarantine. They cannot affect matching, model weights, training exports or achievements until an administrator approves them. The scanner requires an internet connection. See [Card Scanner](../collection-and-catalogue/card-scanner.md).
 
 ### Are card prices guaranteed to be accurate?
 
