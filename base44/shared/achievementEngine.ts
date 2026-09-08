@@ -215,10 +215,16 @@ function evalRecordExistence(cfg: any, input: EngineInput): EvalResult {
 
 function evalAcceptedSubmissions(cfg: any, input: EngineInput): EvalResult {
   const req = cfg.proof_requirements;
-  // Only count accepted corrections (accepted defaults to true for legacy records).
-  const accepted = input.corrections.filter((c) => c.accepted !== false);
-  const rejected = input.corrections.length - accepted.length;
-  const reversalRate = input.corrections.length > 0 ? rejected / input.corrections.length : 0;
+  // Quarantined labels are pending review, not approvals or reversals.
+  // Count only the explicit, internally consistent administrator decisions.
+  const accepted = input.corrections.filter(
+    (c) => c.review_status === 'approved' && c.accepted === true,
+  );
+  const rejected = input.corrections.filter(
+    (c) => c.review_status === 'rejected' && c.accepted === false,
+  );
+  const reviewedCount = accepted.length + rejected.length;
+  const reversalRate = reviewedCount > 0 ? rejected.length / reviewedCount : 0;
   const count = accepted.length;
   const maxReversal = req.max_reversal_rate ?? 1;
   const qualified = count >= (req.minimum_accepted_count || 0) && reversalRate <= maxReversal;
