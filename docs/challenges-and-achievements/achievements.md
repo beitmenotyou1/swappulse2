@@ -14,7 +14,7 @@ Achievements are badges earned for collection milestones, trading, scanner accur
 
 * **Collection milestones:** Reach card count thresholds, complete sets, or own rare cards.
 * **Trading:** Complete a number of trades, maintain positive feedback, or earn Trusted Trader status.
-* **Scanner accuracy:** Submit correct scanner corrections that help the model learn.
+* **Scanner accuracy:** Accumulate scanner labels that an administrator has reviewed and approved.
 * **Community:** Contribute vouches, feedback, journals, or helpful posts.
 
 ## Verifiable proofs
@@ -23,7 +23,9 @@ Each achievement is backed by an immutable SHA-256 snapshot of the qualifying da
 
 ## Scanner corrections
 
-When you scan a card and correct a wrong match, your correction is recorded. Accumulate correct corrections to earn scanner accuracy achievements. Corrections also improve the model for everyone.
+When you confirm a scanned card, its catalogue label is recorded in quarantine with `accepted: false`. It does not count towards a scanner achievement and cannot influence model improvement until an administrator reviews and approves it.
+
+Approval checks the suggested and selected catalogue identities. The current scanner does not train itself automatically, and an approved label is only eligible for a separately reviewed future improvement process.
 
 ## Viewing your achievements
 
