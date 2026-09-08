@@ -2,7 +2,7 @@
   "name": "AgentInsight",
   "type": "object",
   "title": "AgentInsight",
-  "description": "org.swappulse.agentInsight \u2014 LLM-generated insights from agent feedback patterns. Agents read their active insights before responding to continuously improve. Created by the learning loop workflow; readable by all authenticated users so agents can access them.",
+  "description": "org.swappulse.agentInsight \u2014 Quarantined improvement candidates derived from feedback. Candidates are inactive until an administrator reviews and approves them. Non-admin readers can only see approved records.",
   "properties": {
     "agent_name": {
       "type": "string",
@@ -45,17 +45,59 @@
       "format": "date-time",
       "description": "When this insight expires (null = never)"
     },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending_review",
+      "description": "Human-review state. Only approved records may influence an agent."
+    },
+    "safety_status": {
+      "type": "string",
+      "enum": [
+        "unreviewed",
+        "passed",
+        "flagged"
+      ],
+      "default": "unreviewed",
+      "description": "Result of prompt-injection and sensitive-content screening."
+    },
+    "source_kind": {
+      "type": "string",
+      "enum": [
+        "user_feedback",
+        "moderation_feedback",
+        "curated",
+        "migration"
+      ],
+      "default": "user_feedback"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Base44 administrator user id that made the review decision."
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_notes": {
+      "type": "string",
+      "maxLength": 500
+    },
     "active": {
       "type": "boolean",
-      "default": true,
-      "description": "Whether this insight is currently active"
+      "default": false,
+      "description": "Whether this approved insight is currently available to an agent."
     },
     "source_feedback_ids": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "IDs of feedback items that generated or reinforced this insight"
+      "description": "Legacy administrator-only audit field. New learning-loop candidates do not copy feedback record ids into agent-readable content."
     }
   },
   "required": [
@@ -65,7 +107,18 @@
     "generated_at"
   ],
   "rls": {
-    "read": {},
+    "read": {
+      "$or": [
+        {
+          "data.review_status": "approved"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
     "create": {
       "user_condition": {
         "role": "admin"
