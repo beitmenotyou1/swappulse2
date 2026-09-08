@@ -111,11 +111,11 @@ export default function AgentKnowledgeReviewSection() {
             <BookOpenCheck className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="font-bold">Collector Copilot source review</h2>
+            <h2 className="font-bold">Helper source review</h2>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Refresh checks only fixed SwapPulse GitHub files used to
               publish the project's GitBook guidance. Changes remain private
-              and unavailable to the Copilot until an administrator approves them.
+              and unavailable to Helper until an administrator approves them.
             </p>
           </div>
         </div>
