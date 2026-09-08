@@ -127,7 +127,7 @@ Representative functions include:
 * `complete-card-scan`;
 * collection-analysis/advisor functions.
 
-`scan-card-batch` is an authenticated, owner-scoped private-image workflow. It validates a 1-to-10-image `CardScanSession`, creates 15-minute signed image links, extracts visible clues and grounds candidate identities through `search-cards`. It rate-limits each account and does not persist signed links.
+`scan-card-batch` is an authenticated, owner-scoped private-image workflow. It accepts 1 to 10 private upload references, verifies access by creating 15-minute signed links in the caller's scope, enforces account rate limits, and creates the service-managed `CardScanSession` itself. It extracts visible clues and grounds candidate identities through `search-cards`; signed links are never persisted.
 
 `complete-card-scan` validates the collector's final catalogue choices and the exact `CollectionEntry` IDs already created by the browser. It then finalises the session and creates quarantined `ScannerCorrection` labels. It does not create the collection records itself, train a model, or perform a wallet or chain action.
 
