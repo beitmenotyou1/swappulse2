@@ -88,7 +88,9 @@ The current Phase 2 scanner does not train itself automatically. The model-weigh
 
 ## Privacy and retention
 
-Card photos and scan sessions are private account data protected by owner-scoped access rules. The analysis function creates 15-minute signed links and does not persist those links. Private file references remain associated with the scan session and follow SwapPulse account-data retention and deletion controls.
+Card photos and scan sessions are private account data. The authenticated analysis function creates the owner-bound session and controls its lifecycle state; a collector can read or delete only their own session. The function creates 15-minute signed links and does not persist those links.
+
+Scan-session metadata and correction labels are included in the collector's account-data export and account-deletion cleanup. Private file references remain associated with the scan session and follow SwapPulse's private-file retention controls.
 
 The scanner does not place card photos, private collection notes or scan prompts on the blockchain. Collection entries remain private application records unless you separately use another sharing or verification feature.
 
