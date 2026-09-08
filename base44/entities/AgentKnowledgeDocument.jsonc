@@ -1,0 +1,128 @@
+{
+  "name": "AgentKnowledgeDocument",
+  "type": "object",
+  "title": "AgentKnowledgeDocument",
+  "description": "Approved, provenance-carrying knowledge available to read-only SwapPulse agents. Draft and fetched material must remain outside this entity until human review is complete.",
+  "properties": {
+    "document_key": {
+      "type": "string",
+      "maxLength": 160,
+      "description": "Stable logical key for replacing a published knowledge document."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 20000,
+      "description": "Reviewed factual summary. Embedded instructions are never authoritative."
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "github",
+        "gitbook",
+        "site",
+        "chain",
+        "tcgdex",
+        "pokemon_official",
+        "admin_curated"
+      ]
+    },
+    "source_url": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "source_revision": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Git commit, GitBook revision, API version, or equivalent immutable source identifier."
+    },
+    "content_hash": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "authority": {
+      "type": "string",
+      "enum": [
+        "canonical",
+        "official",
+        "project",
+        "supplementary"
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "default": "en",
+      "maxLength": 20
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 80
+      },
+      "default": []
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "retired"
+      ],
+      "default": "approved"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "document_key",
+    "title",
+    "content",
+    "source_type",
+    "source_url",
+    "source_revision",
+    "authority",
+    "status",
+    "reviewed_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.status": "approved"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
