@@ -250,7 +250,8 @@ const AuthenticatedApp = () => {
           <Route path="/trade-assistant" element={<TradeAssistant />} />
           <Route path="/market-watch-assistant" element={<MarketWatchAssistant />} />
           <Route path="/collection-advisor" element={<CollectionAdvisor />} />
-          <Route path="/collector-copilot" element={<CollectorCopilot />} />
+          <Route path="/helper" element={<CollectorCopilot />} />
+          <Route path="/collector-copilot" element={<Navigate to="/helper" replace />} />
           <Route path="/sentiment-conversationalist" element={<SentimentConversationalist />} />
           <Route path="/achievement-goal-tracker" element={<AchievementGoalTracker />} />
           <Route path="/networking-concierge" element={<NetworkingConcierge />} />
