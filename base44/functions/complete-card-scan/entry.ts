@@ -58,6 +58,14 @@ export default async function (req: Request): Promise<Response> {
     if (!me?.id) {
       return jsonError('Sign in to add scanned cards', 401, 'UNAUTHORISED');
     }
+    const userDid = clean(me.did, 200);
+    if (!userDid) {
+      return jsonError(
+        'Initialise your collector identity before confirming',
+        409,
+        'IDENTITY_REQUIRED',
+      );
+    }
 
     const body = await req.json().catch(() => ({}));
     const sessionId = clean(body.session_id, 120);
@@ -70,12 +78,19 @@ export default async function (req: Request): Promise<Response> {
 
     const svc = base44.asServiceRole;
     const sessions = await svc.entities.CardScanSession
-      .filter({ id: sessionId, created_by_id: me.id }, '-created_date', 1)
+      .filter({ id: sessionId, user_id: me.id }, '-created_date', 1)
       .catch(() => []);
     session = sessions?.[0];
 
     if (!session) {
       return jsonError('Scan session not found', 404, 'SESSION_NOT_FOUND');
+    }
+    if (clean(session.did, 200) !== userDid) {
+      return jsonError(
+        'Scan session identity does not match this account',
+        403,
+        'SESSION_IDENTITY_MISMATCH',
+      );
     }
     if (session.status === 'completed') {
       return Response.json({
@@ -243,7 +258,7 @@ export default async function (req: Request): Promise<Response> {
 
       await svc.entities.ScannerCorrection.create({
         user_id: String(me.id),
-        did: clean(me.did || session.did, 200),
+        did: userDid,
         scan_session_id: String(session.id),
         image_index: selection.image_index,
         predicted_card_id: predicted,
