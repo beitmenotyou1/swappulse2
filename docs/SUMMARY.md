@@ -6,6 +6,7 @@
   * [SwapPulse User Guide](start-here/user-guide.md)
 * [Collection & Catalogue](collection-and-catalogue/README.md)
   * [Collection](collection-and-catalogue/collection.md)
+  * [Card Scanner](collection-and-catalogue/card-scanner.md)
   * [Explore](collection-and-catalogue/explore.md)
   * [Card Detail Pages](collection-and-catalogue/card-detail.md)
   * [Sets & Checklists](collection-and-catalogue/sets.md)
