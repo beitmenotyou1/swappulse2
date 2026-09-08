@@ -2,7 +2,7 @@
 // Split from the original translations.js for maintainability.
 
 const zh = {
-  'nav.home': '首页', 'nav.explore': '探索', 'nav.collection': '收藏', 'nav.scan': '扫描',
+  'nav.home': '首页', 'nav.explore': '探索', 'nav.collection': '收藏', 'nav.scan': '扫描器',
   'nav.binders': '卡册', 'nav.trades': '交易', 'nav.circles': '圈子', 'nav.meetups': '聚会',
   'nav.wallet': '钱包',
   'nav.live': '直播', 'nav.notifications': '通知', 'nav.messages': '消息', 'nav.more': '更多',
@@ -391,7 +391,7 @@ const zh = {
   'explorer.next': '下一页',
   'explorer.wallet': '钱包',
   'explorer.explorer': '浏览器',
-  'explorer.viewInWallet': '在 SwapPulse 钱包中查看',
+  'explorer.viewInWallet': '在钱包中查看',
   'explorer.viewOnExplorer': '在浏览器中查看',
   'explorer.copyToClipboard': '复制到剪贴板',
   'explorer.whatHappened': '发生了什么',
@@ -412,11 +412,11 @@ const zh = {
   'explainer.block.summary': '区块 #{number} 包含 {txCount} 笔交易，使用了 {gasUsed} gas。由 {miner} 生成。',
   'explainer.block.empty': '区块 #{number} 为空 — 不包含任何交易。',
   'explainer.home.summary': 'PulseChain 当前位于区块 #{chainHead}。索引器已处理 {blocks} 个区块和 {txs} 笔交易。',
-  'nav.collectorCopilot': '收藏助手',
-  'copilot.title': '收藏助手',
+  'nav.collectorCopilot': '助手',
+  'copilot.title': '助手',
   'copilot.seoDescription': '用于宝可梦集换式卡牌收藏、交换、卡牌知识和 SwapPulse 帮助的只读 AI 助手。',
   'copilot.subtitle': '安全询问收藏、交换、卡牌、项目和区块链问题',
-  'copilot.conversationName': '收藏助手对话',
+  'copilot.conversationName': '助手对话',
   'copilot.conversationDescription': '为你的收藏和 SwapPulse 提供只读帮助',
   'copilot.startError': '无法开始对话。',
   'copilot.sendError': '无法发送消息。',
@@ -435,6 +435,19 @@ const zh = {
   'copilot.placeholder': '询问卡牌、收藏、交换、SwapPulse 或区块链...',
   'copilot.send': '发送消息',
   'copilot.disclaimer': '仅供参考。价格会变化，精确规则可能需要官方核实，所有操作始终由你控制。',
+  'compose.scanner': '扫描器',
+  'scanner.takePhoto': '拍照',
+  'scanner.uploadPhoto': '上传照片',
+  'scanner.postTitle': '将卡牌扫描到此帖子',
+  'scanner.postBody': '上传或拍摄一张卡牌。在附加前请确认目录匹配结果。',
+  'scanner.postReady': '照片会保持私密。附加已确认的卡牌不会创建收藏条目或区块链记录，只有在你选择发布后帖子才会公开。',
+  'scanner.close': '关闭扫描器',
+  'scanner.chooseAnotherPhoto': '选择其他照片',
+  'scanner.attachingToPost': '正在附加已确认的卡牌...',
+  'scanner.useInPost': '用于帖子',
+  'scanner.postError': '无法附加已确认的卡牌。未创建帖子、收藏条目或区块链记录。',
+  'copilot.languageLabel': '助手语言',
+  'copilot.languageHint': '默认使用你的账户语言，你可以随时更改。',
 };
 
 export default zh;
