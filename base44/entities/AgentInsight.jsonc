@@ -110,7 +110,17 @@
     "read": {
       "$or": [
         {
-          "data.review_status": "approved"
+          "$and": [
+            {
+              "data.review_status": "approved"
+            },
+            {
+              "data.safety_status": "passed"
+            },
+            {
+              "data.active": true
+            }
+          ]
         },
         {
           "user_condition": {
