@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Layers, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon } from 'lucide-react';
+import { Home, Compass, Layers, ScanLine, ArrowLeftRight, Package, BarChart3, Award, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, ChevronDown, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogIn, LogOut, Sparkles, Rss, Box, Tag, Search, Network, Wallet as WalletIcon } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Avatar from '@/components/Avatar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -17,6 +17,7 @@ const primary = [
   { to: '/', icon: Home, label: 'Home', tKey: 'nav.home' },
   { to: '/explore', icon: Compass, label: 'Explore', tKey: 'nav.explore' },
   { to: '/collection', icon: Layers, label: 'Collection', tKey: 'nav.collection', authOnly: true },
+  { to: '/scan', icon: ScanLine, label: 'Scan Cards', tKey: 'nav.scan', authOnly: true },
   { to: '/collector-copilot', icon: Sparkles, label: 'Collector Copilot', tKey: 'nav.collectorCopilot', authOnly: true },
   { to: '/wallet', icon: WalletIcon, label: 'SwapPulse Wallet', tKey: 'nav.chainWallet', authOnly: true },
   { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
