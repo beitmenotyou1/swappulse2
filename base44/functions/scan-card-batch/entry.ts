@@ -172,6 +172,7 @@ export default async function (req: Request): Promise<Response> {
     if (
       imageCount < 1 ||
       imageCount > MAX_IMAGES ||
+      !Number.isInteger(totalBytes) ||
       totalBytes < 1 ||
       totalBytes > MAX_BATCH_BYTES
     ) {
