@@ -25,6 +25,7 @@ import BotProtectionLogSection from '@/components/admin/BotProtectionLogSection'
 import StandardSiteSection from '@/components/admin/StandardSiteSection';
 import TranslationSyncSection from '@/components/admin/TranslationSyncSection';
 import SiteWideStarterPackSection from '@/components/admin/SiteWideStarterPackSection';
+import AgentInsightReviewSection from '@/components/admin/AgentInsightReviewSection';
 import { Loader2, ShieldAlert, LayoutDashboard, Network, Globe2, Server, ShieldCheck } from 'lucide-react';
 import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -130,6 +131,7 @@ export default function Admin() {
         )}
         {tab === 'platform' && (
           <>
+            <AgentInsightReviewSection />
             <SiteWideStarterPackSection />
             <StandardSiteSection />
             <TranslationSyncSection />
