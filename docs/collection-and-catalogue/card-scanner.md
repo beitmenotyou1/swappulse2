@@ -144,4 +144,4 @@ The Copilot can explain how the scanner works and analyse collection records it 
 * [Card Detail Pages](card-detail.md)
 * [Collector Copilot](../ai-assistants/collector-copilot.md)
 * [Card Possession Attestations](../wallet-and-on-chain/card-attestations.md)
-* [Privacy, Safety & Data](../privacy-and-security/README.md)
+* [Privacy Policy](https://swappulse.org/privacy)
