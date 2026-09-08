@@ -8,9 +8,11 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// [entityName, filterField] — filterField is 'created_by_id' or 'did'
+// [entityName, filterField] — the field is matched to the authenticated user's ID or DID
 const EXPORT_ENTITIES: [string, string][] = [
   ['CollectionEntry', 'created_by_id'],
+  ['CardScanSession', 'created_by_id'],
+  ['ScannerCorrection', 'user_id'],
   ['TradeListing', 'created_by_id'],
   ['TradeMessage', 'created_by_id'],
   ['Post', 'created_by_id'],
@@ -64,9 +66,8 @@ export default async function (req: Request): Promise<Response> {
 
     for (const [entityName, filterField] of EXPORT_ENTITIES) {
       try {
-        const filter: any = filterField === 'did'
-          ? { did: user.did }
-          : { created_by_id: user.id };
+        const filterValue = filterField === 'did' ? user.did : user.id;
+        const filter: any = { [filterField]: filterValue };
         const records = await svc.entities[entityName].filter(filter, '-created_date', 5000).catch(() => []);
         // Strip signature/internal fields that aren't user data
         archive.entities[entityName] = (records || []).map((r: any) => {
