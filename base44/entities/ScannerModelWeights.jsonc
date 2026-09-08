@@ -2,7 +2,7 @@
   "name": "ScannerModelWeights",
   "type": "object",
   "title": "ScannerModelWeights",
-  "description": "org.swappulse.scannerModelWeights \u2014 a per-card confidence adjustment derived from accepted ScannerCorrection records, applied by scan-card when ranking candidates so the scanner improves between offline retrains. confirm_correct raises the weight (capped at 1.5); wrong_card/wrong_set/wrong_variant lowers it (floored at 0.3). One record per card_id. Written by submitScannerCorrection via the service role.",
+  "description": "Dormant, administrator-only schema reserved for a future evaluated weighting pipeline. The Phase 2 batch scanner does not read or write these weights. Only corrections that have passed quarantine and explicit administrator approval may be considered by a separately reviewed future process.",
   "properties": {
     "card_id": {
       "type": "string",
