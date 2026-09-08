@@ -53,6 +53,7 @@ const ENTITY_CLEANUP = [
   { name: 'Nomination' },
   { name: 'CardReview' },
   { name: 'GradingSubmission' },
+  { name: 'CardScanSession' },
   { name: 'ScannerCorrection' },
   { name: 'Achievement' },
   { name: 'AchievementProofSnapshot' },
