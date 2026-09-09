@@ -65,7 +65,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   { slug: 'achievements', title: 'Achievements', category: 'Challenges & Achievements', description: 'Earn badges for collection milestones, trading, accuracy, and community contributions.' },
 
   // AI Assistants
-  { slug: 'collector-copilot', title: 'Collector Copilot', category: 'AI Assistants', description: 'One read-only AI front door for collection, card, trade, project, and chain questions.' },
+  { slug: 'collector-copilot', title: 'Helper', category: 'AI Assistants', description: 'One multilingual, read-only front door for collection, card, trade, project, and chain questions.' },
   { slug: 'trade-assistant', title: 'Trade Assistant', category: 'AI Assistants', description: 'AI-powered trade suggestions and fairness analysis for your collection.' },
   { slug: 'market-watch-assistant', title: 'Market Watch Assistant', category: 'AI Assistants', description: 'AI analysis of price trends and market opportunities for tracked cards.' },
   { slug: 'collection-advisor', title: 'Collection Advisor', category: 'AI Assistants', description: 'AI advice on gaps, duplicates, and high-value trade opportunities in your collection.' },
