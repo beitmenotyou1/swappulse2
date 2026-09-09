@@ -62,11 +62,11 @@ A sensible first route is:
 4. create or follow Binders and community content;
 5. follow collectors or join Circles;
 6. try the Trade Board if you want to swap cards;
-7. only open the SwapPulse Wallet if you want to use the on-chain/testnet features.
+7. only open the Wallet if you want to use the on-chain/testnet features.
 
 See Getting Started with SwapPulse and the SwapPulse User Guide.
 
-### Do I need the SwapPulse Wallet to use the site?
+### Do I need the Wallet to use the site?
 
 No. The Wallet is for optional on-chain features such as the self-custodial smart account, V2 identity assurance, testnet SWPX, staking, on-chain cards and bridging.
 
@@ -82,7 +82,7 @@ Some advanced tasks, especially development, node hosting and infrastructure adm
 
 The interface currently supports English, French, German, Spanish, Italian, Portuguese, Japanese, Chinese and Korean.
 
-Use the language selector in the navigation. The Wallet and Chain Explorer also use the selected SwapPulse language for their translated labels and date/time presentation.
+Use the language selector in the navigation. The Wallet, Helper and Chain Explorer also use the selected SwapPulse language. Helper defaults to the language saved in your account settings, and you can change its reply language from the menu on the Helper page.
 
 ## Pokémon TCG data and TCGdex
 
@@ -106,13 +106,15 @@ Yes, technically. The project can be forked and adapted, but you must replace or
 
 The Forking and Rebranding guide explains how to separate the generic platform architecture from Pokémon-specific services.
 
-### How does the card scanner work?
+### How does Scanner work?
 
-Open **Scan Cards** while signed in and choose 1 to 10 private images. The scanner reads visible clues, checks TCGDex and presents up to five catalogue candidates rather than treating an AI result as unquestionable truth.
+Open **Scanner** while signed in to upload or photograph 1 to 10 cards for collection intake. Scanner reads visible clues, checks TCGDex and presents up to five catalogue candidates rather than treating an AI result as unquestionable truth.
 
-Review the identity, condition, finish and quantity for every image. If a suggestion is wrong, choose another candidate, search manually or skip the image. Nothing is added until you confirm the batch.
+Review the identity, condition, finish and quantity for every image. If a suggestion is wrong, choose another candidate, search manually or skip the image. Collection entries are created only after you confirm the reviewed batch.
 
-Confirmed labels begin in quarantine. They cannot affect matching, model weights, training exports or achievements until an administrator approves them. The scanner requires an internet connection. See [Card Scanner](../collection-and-catalogue/card-scanner.md).
+Post, quote and comment composers also offer a one-card Scanner. Review the match before attaching it to your draft. You can still use manual card search or the Collection picker, and Scanner never publishes the draft for you.
+
+Confirmed labels begin in quarantine. They cannot affect matching, model weights, training exports or achievements until an administrator approves them. Scanner requires an internet connection. See [Scanner](../collection-and-catalogue/card-scanner.md).
 
 ### Are card prices guaranteed to be accurate?
 
@@ -242,9 +244,9 @@ Some locally held credentials or cryptographic material may be removed. This mat
 
 Before clearing browser data on a device you rely on, make sure you understand the recovery options for the specific feature.
 
-## SwapPulse Wallet
+## Wallet
 
-### What is the SwapPulse Wallet?
+### What is the Wallet?
 
 It is the site's self-custodial Starknet smart-account interface for the SwapPulse chain/testnet layer.
 
@@ -258,7 +260,7 @@ The intended model is self-custodial for user-controlled actions. The user expli
 
 Privileged registry/verifier authority is different and remains server-side behind the protected Base44/relay boundary. Those privileged keys must never be placed in browser code.
 
-### Is the SwapPulse Wallet the same as MetaMask or a general Starknet wallet?
+### Is the Wallet the same as MetaMask or a general Starknet wallet?
 
 No. It is a product-specific smart-account interface designed around SwapPulse identities and supported contract actions.
 
