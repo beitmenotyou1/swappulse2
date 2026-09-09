@@ -7,8 +7,14 @@ description: Every recorded SwapPulse release, newest first.
 Review every authoritative SwapPulse release from the current version back to the oldest preserved checkpoint.
 
 {% hint style="info" %}
-The current version is **v0.10.0**, confirmed by both `package.json` and `RELEASE_MANIFEST.json`. There is no recorded **v0.0.0** release, so one has not been fabricated.
+The current version is **v0.10.0**, confirmed by both `package.json` and `RELEASE_MANIFEST.json`. The v0.11.0 page is explicitly a development preview until the release files are updated together. There is no recorded **v0.0.0** release, so one has not been fabricated.
 {% endhint %}
+
+## v0.11.0 development preview
+
+The planned experience introduces the multilingual, read-only Helper, reviewed Scanner attachments, clearer names, a grouped mobile menu and one compact footer treatment.
+
+[Read the v0.11.0 development preview](v0-11-0.md)
 
 {% updates format="full" %}
 {% update date="2026-09-06" %}
