@@ -75,7 +75,7 @@ Important areas:
 
 ### Navigation/product surfaces
 
-The primary product areas include Home, Explore, Collection, SwapPulse Wallet, Binders, Trade Board, Circles, Meetups, Live Now, Notifications and Messages.
+The primary product areas include Home, Explore, Collection, Wallet, Binders, Trade Board, Circles, Meetups, Live Now, Notifications and Messages.
 
 The Chain Explorer is intentionally routed outside the normal social-site layout so it behaves like a dedicated blockchain tool while remaining part of the same application.
 
