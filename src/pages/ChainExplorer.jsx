@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Blocks, Check, Copy, Github, RefreshCw, Search, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowLeft, Blocks, Check, Copy, RefreshCw, Search, Wallet as WalletIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import Footer from '@/components/Footer';
 import useSEO from '@/hooks/useSEO';
 import { useApplyAccessibility } from '@/hooks/useSettings';
 
@@ -538,22 +539,7 @@ export default function ChainExplorer() {
       </div>
       </main>
 
-      <footer className="border-t border-border bg-card/60">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t('explorer.backToSwapPulse')}
-          </Link>
-          <a
-            href="https://github.com/beitmenotyou1/swappulse2"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t('footer.githubNewTab')}
-            className="inline-flex items-center gap-2 font-semibold hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Github className="h-4 w-4" aria-hidden="true" /> {t('footer.github')}
-          </a>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
