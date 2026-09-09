@@ -29,7 +29,7 @@ const SOURCE_DOCUMENTS = [
   },
   {
     documentKey: 'swappulse-ai-assistant-boundary',
-    title: 'SwapPulse Collector Copilot boundary',
+    title: 'SwapPulse Helper boundary',
     path: 'docs/ai-assistants/collector-copilot.md',
     sourceUrl: 'https://swappulse.gitbook.io/swappulse-docs/ai-assistants/collector-copilot',
     tags: ['ai', 'copilot', 'safety'],
