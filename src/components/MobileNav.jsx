@@ -31,39 +31,66 @@ function getOwningTab(pathname, fallback) {
   return fallback;
 }
 
-const moreItems = [
-  { to: '/scan', icon: ScanLine, label: 'Scanner', tKey: 'nav.scan', authOnly: true },
-  { to: '/helper', icon: Sparkles, label: 'Helper', tKey: 'nav.collectorCopilot', authOnly: true },
-  { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
-  { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
-  { to: '/starter-packs', icon: Box, label: 'Packs', tKey: 'nav.starterPacks' },
-  { to: '/circles-directory', icon: Network, label: 'Directory', tKey: 'nav.circleDirectory' },
-  { to: '/labelers', icon: Tag, label: 'Labelers', tKey: 'nav.labelers' },
-  { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
-  { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
-  { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },
-  { to: '/trust', icon: ShieldCheck, label: 'Trust', tKey: 'nav.trust' },
-  { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', tKey: 'nav.whoToFollow', authOnly: true },
-  { to: '/achievements', icon: Trophy, label: 'Achievements', tKey: 'nav.achievements', authOnly: true },
-  { to: '/challenges', icon: Target, label: 'Challenges', tKey: 'nav.challenges' },
-  { to: '/pack-parties', icon: Sparkles, label: 'Parties', tKey: 'nav.packParties' },
-  { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of Week', tKey: 'nav.pullOfTheWeek' },
-  { to: '/packs', icon: Package, label: 'Packs', tKey: 'nav.packOpenings' },
-  { to: '/market', icon: BarChart3, label: 'Market', tKey: 'nav.market' },
-  { to: '/predictions', icon: Vote, label: 'Polls', tKey: 'nav.predictions' },
-  { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
-  { to: '/spaces', icon: Radio, label: 'Live', tKey: 'nav.live' },
-  { to: '/notifications', icon: Bell, label: 'Alerts', tKey: 'nav.notifications', authOnly: true },
-  { to: '/messages', icon: MessageSquare, label: 'Messages', tKey: 'nav.messages', authOnly: true },
-  { to: '/terms', icon: FileText, label: 'Terms', tKey: 'nav.terms' },
-  { to: '/privacy', icon: Lock, label: 'Privacy', tKey: 'nav.privacy' },
-  { to: '/status', icon: Activity, label: 'Status', tKey: 'nav.status' },
-  { to: '/donate', icon: Heart, label: 'Donate', tKey: 'nav.donate' },
-  { to: '/admin', icon: Shield, label: 'Admin', tKey: 'nav.admin', adminOnly: true },
-  { to: '/moderation', icon: ShieldAlert, label: 'Moderation', tKey: 'nav.moderation', adminOnly: true },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings', tKey: 'nav.settings', authOnly: true },
-  { to: '/profile', icon: UserIcon, label: 'Profile', tKey: 'nav.profile', authOnly: true },
+const moreGroups = [
+  {
+    key: 'tools',
+    tKey: 'nav.moreTools',
+    items: [
+      { to: '/scan', icon: ScanLine, label: 'Scanner', tKey: 'nav.scan', authOnly: true },
+      { to: '/helper', icon: Sparkles, label: 'Helper', tKey: 'nav.collectorCopilot', authOnly: true },
+      { to: '/search', icon: Search, label: 'Search', tKey: 'nav.search' },
+      { to: '/feeds', icon: Rss, label: 'Feeds', tKey: 'nav.feeds' },
+      { to: '/binders', icon: BookOpen, label: 'Binders', tKey: 'nav.binders' },
+      { to: '/market', icon: BarChart3, label: 'Market', tKey: 'nav.market' },
+      { to: '/grading', icon: Award, label: 'Grading', tKey: 'nav.grading', authOnly: true },
+    ],
+  },
+  {
+    key: 'community',
+    tKey: 'nav.moreCommunity',
+    items: [
+      { to: '/circles-directory', icon: Network, label: 'Directory', tKey: 'nav.circleDirectory' },
+      { to: '/labelers', icon: Tag, label: 'Labelers', tKey: 'nav.labelers' },
+      { to: '/circles', icon: Users, label: 'Circles', tKey: 'nav.circles' },
+      { to: '/meetups', icon: CalendarDays, label: 'Meetups', tKey: 'nav.meetups' },
+      { to: '/who-to-follow', icon: UserPlus, label: 'Who to Follow', tKey: 'nav.whoToFollow', authOnly: true },
+    ],
+  },
+  {
+    key: 'activities',
+    tKey: 'nav.moreActivities',
+    items: [
+      { to: '/starter-packs', icon: Box, label: 'Starter Packs', tKey: 'nav.starterPacks' },
+      { to: '/challenges', icon: Target, label: 'Challenges', tKey: 'nav.challenges' },
+      { to: '/achievements', icon: Trophy, label: 'Achievements', tKey: 'nav.achievements', authOnly: true },
+      { to: '/pack-parties', icon: Sparkles, label: 'Parties', tKey: 'nav.packParties' },
+      { to: '/pull-of-the-week', icon: Trophy, label: 'Pull of Week', tKey: 'nav.pullOfTheWeek' },
+      { to: '/packs', icon: Package, label: 'Pack Openings', tKey: 'nav.packOpenings' },
+      { to: '/predictions', icon: Vote, label: 'Polls', tKey: 'nav.predictions' },
+      { to: '/spaces', icon: Radio, label: 'Live', tKey: 'nav.live' },
+    ],
+  },
+  {
+    key: 'account',
+    tKey: 'nav.moreAccount',
+    items: [
+      { to: '/notifications', icon: Bell, label: 'Alerts', tKey: 'nav.notifications', authOnly: true },
+      { to: '/messages', icon: MessageSquare, label: 'Messages', tKey: 'nav.messages', authOnly: true },
+      { to: '/profile', icon: UserIcon, label: 'Profile', tKey: 'nav.profile', authOnly: true },
+      { to: '/settings', icon: SettingsIcon, label: 'Settings', tKey: 'nav.settings', authOnly: true },
+    ],
+  },
+  {
+    key: 'admin',
+    tKey: 'nav.moreAdmin',
+    items: [
+      { to: '/admin', icon: Shield, label: 'Admin', tKey: 'nav.admin', adminOnly: true },
+      { to: '/moderation', icon: ShieldAlert, label: 'Moderation', tKey: 'nav.moderation', adminOnly: true },
+    ],
+  },
 ];
+
+const moreItems = moreGroups.flatMap((group) => group.items);
 
 export default function MobileNav() {
   const { pathname } = useLocation();
@@ -97,6 +124,63 @@ export default function MobileNav() {
   }, [pathname]);
 
   const activeInMore = moreItems.some((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)));
+
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMoreOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [moreOpen]);
+
+  const renderMoreItem = (item) => {
+    const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
+    const itemClass = `relative flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl p-2.5 text-center text-[11px] font-medium transition-colors hover:bg-secondary ${active ? 'text-primary' : 'text-foreground'}`;
+
+    if (item.to === '/notifications') {
+      return (
+        <NotificationPopover
+          key={item.to}
+          side="top"
+          align="center"
+          onNavigate={() => setMoreOpen(false)}
+          trigger={
+            <PopoverTrigger asChild>
+              <button type="button" className={itemClass}>
+                <item.icon className="h-5 w-5" />
+                {t(item.tKey)}
+                {unread > 0 && (
+                  <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
+                )}
+              </button>
+            </PopoverTrigger>
+          }
+        />
+      );
+    }
+
+    return (
+      <Link key={item.to} to={item.to} onClick={() => setMoreOpen(false)} className={itemClass}>
+        <item.icon className="h-5 w-5" />
+        {t(item.tKey)}
+        {item.to === '/spaces' && liveCount > 0 && (
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{liveCount}</span>
+        )}
+        {item.to === '/messages' && unreadDMs > 0 && (
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">{unreadDMs}</span>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -152,7 +236,11 @@ export default function MobileNav() {
           );
         })}
         <button
+          type="button"
           onClick={() => setMoreOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={moreOpen}
+          aria-controls="mobile-more-menu"
           className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
             activeInMore ? 'text-primary' : 'text-muted-foreground'
           }`}
@@ -164,110 +252,107 @@ export default function MobileNav() {
       </nav>
 
       {moreOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setMoreOpen(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="absolute bottom-0 left-0 right-0 max-h-[85dvh] overflow-y-auto overscroll-contain animate-slide-up rounded-t-2xl border-t border-border bg-card p-3 pb-[max(1rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 flex items-center justify-between px-1">
-              <p className="text-sm font-bold">{t('nav.more')}</p>
-              <button onClick={() => setMoreOpen(false)} aria-label={t('common.close')} className="rounded-full p-1 hover:bg-secondary">
+        <div className="fixed inset-0 z-50 flex items-end md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setMoreOpen(false)}
+            aria-label={t('common.close')}
+          />
+          <section
+            id="mobile-more-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-more-title"
+            className="relative flex h-[min(90dvh,48rem)] w-full flex-col overflow-hidden rounded-t-2xl border-t border-border bg-card shadow-2xl animate-slide-up"
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+              <p id="mobile-more-title" className="text-sm font-bold">{t('nav.more')}</p>
+              <button type="button" onClick={() => setMoreOpen(false)} aria-label={t('common.close')} className="rounded-full p-1 hover:bg-secondary">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="mb-3">
-              <LanguageSwitcher />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {moreItems.filter((i) => (!i.authOnly || isAuthenticated) && (!i.adminOnly || user?.role === 'admin')).map((item) => {
-                const active = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
-                if (item.to === '/notifications') {
-                  return (
-                    <NotificationPopover
-                      key={item.to}
-                      side="top"
-                      align="center"
-                      onNavigate={() => setMoreOpen(false)}
-                      trigger={
-                        <PopoverTrigger asChild>
-                          <button
-                            className={`relative flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium transition-colors hover:bg-secondary ${
-                              active ? 'text-primary' : 'text-foreground'
-                            }`}
-                          >
-                            <item.icon className="h-5 w-5" />
-                            {t(item.tKey)}
-                            {unread > 0 && (
-                              <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{unread}</span>
-                            )}
-                          </button>
-                        </PopoverTrigger>
-                      }
-                    />
+
+            <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 [-webkit-overflow-scrolling:touch]">
+              <div className="mb-4">
+                <LanguageSwitcher />
+              </div>
+
+              <div className="space-y-5">
+                {moreGroups.map((group) => {
+                  const visibleItems = group.items.filter(
+                    (item) => (!item.authOnly || isAuthenticated) && (!item.adminOnly || user?.role === 'admin'),
                   );
-                }
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMoreOpen(false)}
-                    className={`relative flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium transition-colors hover:bg-secondary ${
-                      active ? 'text-primary' : 'text-foreground'
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {t(item.tKey)}
-                    {item.to === '/spaces' && liveCount > 0 && (
-                      <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{liveCount}</span>
-                    )}
-                    {item.to === '/messages' && unreadDMs > 0 && (
-                      <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">{unreadDMs}</span>
-                    )}
-                  </Link>
-                );
-              })}
+                  if (visibleItems.length === 0) return null;
+
+                  return (
+                    <section key={group.key} aria-labelledby={`mobile-more-${group.key}`}>
+                      <h3 id={`mobile-more-${group.key}`} className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                        {t(group.tKey)}
+                      </h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {visibleItems.map(renderMoreItem)}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+
               {isAuthenticated && (
                 <button
+                  type="button"
                   onClick={() => { setMoreOpen(false); logout(); }}
-                  className="flex flex-col items-center gap-1 rounded-xl p-2.5 text-[11px] font-medium text-foreground transition-colors hover:bg-secondary"
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-border p-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
                 >
                   <LogOut className="h-5 w-5" />
                   {t('nav.logout')}
                 </button>
               )}
+
+              <div className="mt-5 border-t border-border pt-3">
+                <nav className="flex flex-wrap gap-x-4 gap-y-2 px-1" aria-label={t('nav.more')}>
+                  <a
+                    href={SITE_LINKS.documentation}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> {t('footer.documentation')} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                  <Link to="/status" onClick={() => setMoreOpen(false)} className="text-xs font-semibold text-success hover:underline">
+                    {t('footer.status')}
+                  </Link>
+                  <Link to="/terms" onClick={() => setMoreOpen(false)} className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                    {t('nav.terms')}
+                  </Link>
+                  <Link to="/privacy" onClick={() => setMoreOpen(false)} className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                    {t('nav.privacy')}
+                  </Link>
+                  <Link to="/chain/" onClick={() => setMoreOpen(false)} className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                    {t('footer.chainExplorer')}
+                  </Link>
+                  <Link to="/donate" onClick={() => setMoreOpen(false)} className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                    {t('nav.donate')}
+                  </Link>
+                  <a
+                    href={SITE_LINKS.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                    aria-label={t('footer.githubNewTab')}
+                  >
+                    {t('footer.github')}
+                  </a>
+                </nav>
+                <p className="mt-3 px-1 text-[11px] font-medium text-muted-foreground">
+                  {t('footer.builtOn')}
+                </p>
+                <p className="mt-1.5 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
+                  {t('footer.disclaimer')}
+                </p>
+              </div>
             </div>
-            <div className="mt-4 border-t border-border pt-3">
-              <nav className="flex flex-wrap gap-x-4 gap-y-2 px-1" aria-label={t('nav.more')}>
-                <a
-                  href={SITE_LINKS.documentation}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                >
-                  <BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> {t('footer.documentation')} <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                </a>
-                <Link to="/status" onClick={() => setMoreOpen(false)} className="text-xs font-semibold text-primary hover:underline">
-                  {t('footer.status')}
-                </Link>
-                <Link to="/chain/" onClick={() => setMoreOpen(false)} className="text-xs font-semibold text-primary hover:underline">
-                  {t('footer.chainExplorer')}
-                </Link>
-                <a
-                  href={SITE_LINKS.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-semibold text-primary hover:underline"
-                  aria-label={t('footer.githubNewTab')}
-                >
-                  {t('footer.github')}
-                </a>
-              </nav>
-              <p className="mt-3 px-1 text-[11px] font-medium text-muted-foreground">
-                {t('footer.builtOn')}
-              </p>
-              <p className="mt-1.5 px-1 text-[10px] leading-relaxed text-muted-foreground/70">
-                {t('footer.disclaimer')}
-              </p>
-            </div>
-          </div>
+          </section>
         </div>
       )}
     </>
