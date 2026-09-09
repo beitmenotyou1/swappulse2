@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Video, Loader2, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import { assertVideoUpload } from '@/lib/uploadGuard';
 
 const MAX_SIZE_MB = 50;
 
@@ -15,8 +16,10 @@ export default function VideoComposer({ value, onChange }) {
 
   const handleFile = async (file) => {
     if (!file) return;
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      toast({ title: `Video too large (max ${MAX_SIZE_MB}MB)`, variant: 'destructive' });
+    try {
+      assertVideoUpload(file, MAX_SIZE_MB);
+    } catch (error) {
+      toast({ title: error.message, variant: 'destructive' });
       return;
     }
     setUploading(true);
