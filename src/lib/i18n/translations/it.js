@@ -6,6 +6,7 @@ const it = {
   'nav.binders': 'Album', 'nav.trades': 'Scambi', 'nav.circles': 'Cerchi', 'nav.meetups': 'Incontri',
   'nav.wallet': 'Portafoglio',
   'nav.live': 'In Diretta', 'nav.notifications': 'Notifiche', 'nav.messages': 'Messaggi', 'nav.more': 'Altro',
+  'nav.moreTools': 'Strumenti', 'nav.moreCommunity': 'Comunità', 'nav.moreActivities': 'Attività', 'nav.moreAccount': 'Account', 'nav.moreAdmin': 'Amministrazione',
   'nav.trust': 'Fiducia', 'nav.whoToFollow': 'Chi seguire', 'nav.achievements': 'Obiettivi',
   'nav.challenges': 'Sfide', 'nav.packParties': 'Feste Pacchi', 'nav.pullOfTheWeek': 'Pull della Settimana',
   'nav.packOpenings': 'Aperture', 'nav.market': 'Mercato', 'nav.predictions': 'Previsioni',
