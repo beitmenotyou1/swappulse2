@@ -56,11 +56,11 @@ const FAQ = [
   },
   {
     q: 'How do AI assistants work?',
-    a: 'SwapPulse has several AI assistants, Trade, Market Watch, Collection Advisor, Sentiment, Achievement Goal Tracker, and Networking Concierge. Each analyses your data (collection, trades, market) to generate suggestions. Their outputs are advisory, not professional advice, always use your own judgement for trading decisions.',
+    a: 'Helper is the read-only front door for questions about your collection, cards, trades, SwapPulse, and the chain. It defaults to your account language, and you can choose another supported language from its menu. Focused assistants remain available for deeper trade, market, collection, goals, sentiment, and community workflows. All outputs are advisory, so always review important rules, prices, and trade decisions yourself.',
   },
   {
     q: 'How does the card scanner work?',
-    a: 'Open Scan Cards and choose 1 to 10 private JPEG, PNG, or WebP images. The scanner reads visible clues and compares them with the TCGDex catalogue. Review every suggested card, condition, finish, and quantity, or search manually, before confirming the batch. Nothing is added automatically. Confirmed labels enter a quarantine and cannot influence the scanner until an administrator approves them. The scanner requires an internet connection.',
+    a: 'Open Scanner while signed in to upload or photograph 1 to 10 private cards for collection intake. Review every catalogue match, condition, finish, and quantity before confirming. In a post, quote, or comment composer, Scanner can identify one photographed or uploaded card and attach the reviewed catalogue entry without manual data entry. It never publishes the post, adds a collection entry, or performs a wallet or blockchain action without the separate user action for that workflow. Manual card search and the Collection picker remain available.',
   },
   {
     q: 'How do I cross-post to Bluesky?',
