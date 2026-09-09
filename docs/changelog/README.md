@@ -10,7 +10,7 @@ Review every authoritative SwapPulse release from the current version back to th
 The current version is **v0.10.0**, confirmed by both `package.json` and `RELEASE_MANIFEST.json`. The v0.11.0 page is explicitly a development preview until the release files are updated together. There is no recorded **v0.0.0** release, so one has not been fabricated.
 {% endhint %}
 
-Subscribe with the [SwapPulse changelog RSS 2.0 feed](https://swappulse.org/changelog.xml).
+[Subscribe to the SwapPulse changelog](https://swappulse.org/changelog-feed.html) with the standards-compliant RSS 2.0 feed.
 
 {% updates format="full" %}
 {% update date="2026-09-09" %}
