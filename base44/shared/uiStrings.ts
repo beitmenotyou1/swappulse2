@@ -361,7 +361,7 @@ export const UI_STRINGS_EN: Record<string, string> = {
   'page.invite.invalidTitle': "This invite link isn't valid",
   'page.invite.invalidDesc': 'The code may have already been used or expired. You can still explore SwapPulse without an account.',
   'page.invite.explore': 'Explore SwapPulse',
-  'page.invite.feature.scanner.title': 'AI Card Scanner', 'page.invite.feature.scanner.desc': 'Scan cards to instantly identify and add them to your collection.',
+  'page.invite.feature.scanner.title': 'Scanner', 'page.invite.feature.scanner.desc': 'Upload or photograph cards, review each match, then choose what to add or attach.',
   'page.invite.feature.trust.title': 'Trade with Trust', 'page.invite.feature.trust.desc': 'Trade safely with verified collectors backed by a vouch-based trust graph.',
   'page.invite.feature.binders.title': 'Digital Binders', 'page.invite.feature.binders.desc': 'Showcase your best pulls in beautiful, customizable digital binders.',
   'page.invite.feature.circles.title': 'Community Circles', 'page.invite.feature.circles.desc': 'Join circles, meetups, and challenges with collectors who share your interests.',
