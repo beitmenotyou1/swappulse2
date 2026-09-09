@@ -226,7 +226,7 @@ export default function Status() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl space-y-6 p-4">
+      <main id="main-content" className="mx-auto max-w-3xl space-y-6 p-4">
         {/* Overall status */}
         <div className={`rounded-2xl border p-6 text-center ${
           overallUp ? 'border-success/30 bg-success/5'
@@ -422,7 +422,7 @@ export default function Status() {
             </div>
           </div>
         </section>
-      </div>
+      </main>
       <Footer />
     </div>
   );
