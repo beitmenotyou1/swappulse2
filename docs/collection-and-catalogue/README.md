@@ -11,7 +11,7 @@ Browse cards and sets, manage your collection, identify cards from private photo
 ## Start here
 
 * [Collection](collection.md) explains owned-copy records, filters, imports and collection controls.
-* [Card Scanner](card-scanner.md) identifies 1 to 10 private card photos and adds only the matches you confirm.
+* [Scanner](card-scanner.md) identifies 1 to 10 private card photos for collection intake and can attach one reviewed card to a post, quote or comment draft.
 * [Explore](explore.md), [Card Detail Pages](card-detail.md) and [Sets & Checklists](sets.md) help you browse the TCGDex catalogue.
 * [Market Watch](market-watch.md) and [Grading](grading.md) explain market context and condition-related tools.
 
