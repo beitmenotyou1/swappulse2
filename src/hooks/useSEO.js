@@ -42,7 +42,7 @@ function withLang(urlStr, lang) {
 // Usage:
 //   useSEO({ title, description, canonicalPath, jsonLd, ogImage })
 export default function useSEO({
-  title,
+  title = '',
   description = '',
   canonicalPath = '',
   jsonLd = null,
