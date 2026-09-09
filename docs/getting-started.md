@@ -82,9 +82,9 @@ You do not need to manage these manually for ordinary browsing. The site and bac
 
 For architecture details, see `docs/PROJECT_ARCHITECTURE.md`.
 
-## SwapPulse Wallet
+## Wallet
 
-The **SwapPulse Wallet** is the optional self-custodial/Web3 area.
+The **Wallet** is the optional self-custodial/Web3 area.
 
 The overview can show:
 
