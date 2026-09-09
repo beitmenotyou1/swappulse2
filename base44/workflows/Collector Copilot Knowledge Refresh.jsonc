@@ -1,6 +1,6 @@
 {
-  "name": "Collector Copilot Knowledge Refresh",
-  "description": "Checks a fixed allowlist of SwapPulse GitHub files used to publish project and GitBook documentation each day. Changed content is quarantined for administrator review and is never published to the Collector Copilot automatically.",
+  "name": "Helper Knowledge Refresh",
+  "description": "Checks a fixed allowlist of SwapPulse GitHub files used to publish project and GitBook documentation each day. Changed content is quarantined for administrator review and is never published to Helper automatically.",
   "trigger": {
     "condition": null,
     "config": {
