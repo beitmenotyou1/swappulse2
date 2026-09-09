@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Subscribe to the SwapPulse changelog using its standards-compliant RSS 2.0 feed." />
+    <meta name="theme-color" content="#0f1117" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" />
+    <link rel="alternate" type="application/rss+xml" title="SwapPulse Changelog" href="https://swappulse.org/changelog.xml" />
+    <title>SwapPulse Changelog RSS</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; color: #f8fafc; background: #0f1117; }
+      main { width: min(42rem, 100%); padding: clamp(1.5rem, 5vw, 3rem); border: 1px solid #2c3140; border-radius: 1.5rem; background: #171a23; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%); }
+      h1 { margin: 0 0 1rem; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.05; }
+      p { color: #b7c0d2; line-height: 1.65; }
+      code { display: block; overflow-wrap: anywhere; padding: 0.8rem; border-radius: 0.75rem; color: #d9ccff; background: #0f1117; }
+      nav { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+      a { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; padding: 0.7rem 1rem; border: 1px solid #7064e9; border-radius: 999px; color: #f8fafc; text-decoration: none; font-weight: 700; }
+      a:first-child { background: #7064e9; }
+      a:focus-visible { outline: 3px solid #a89fff; outline-offset: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>SwapPulse changelog feed</h1>
+      <p>Use the RSS 2.0 feed in your feed reader or automated posting tool. RSS is a machine-readable XML format, so opening the feed itself in a browser may show XML text.</p>
+      <p>Copy this address into your feed reader:</p>
+      <code>https://swappulse.org/changelog.xml</code>
+      <nav aria-label="Changelog feed links">
+        <a href="/changelog.xml" type="application/rss+xml">Open RSS 2.0 feed</a>
+        <a href="https://swappulse.gitbook.io/swappulse-docs/changelog">Read the changelog</a>
+      </nav>
+    </main>
+  </body>
+</html>
