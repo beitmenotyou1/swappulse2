@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SwapPulse Changelog</title>
+    <description>Release notes and development previews for the SwapPulse Pokémon TCG collector network.</description>
+    <link>https://swappulse.gitbook.io/swappulse-docs/changelog</link>
+    <atom:link href="https://swappulse.org/changelog.xml" rel="self" type="application/rss+xml" />
+    <language>en-gb</language>
+    <pubDate>Wed, 09 Sep 2026 00:00:00 GMT</pubDate>
+    <lastBuildDate>Wed, 09 Sep 2026 00:00:00 GMT</lastBuildDate>
+    <generator>SwapPulse</generator>
+    <docs>https://www.rssboard.org/rss-specification</docs>
+    <ttl>1440</ttl>
+    <item>
+      <title>v0.11.0 development preview: Helper, Scanner and clearer navigation</title>
+      <description>A development preview of the multilingual read-only Helper, reviewed Scanner workflows, clearer product names and simplified navigation.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-11-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-11-0</guid>
+      <pubDate>Wed, 09 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.10.0: Self-hosted node architecture, documentation and security hardening</title>
+      <description>Current release-series change covering self-hosted node architecture, documentation and security hardening.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-10-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-10-0</guid>
+      <pubDate>Sun, 06 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.9.0: Dormant TCGplayer API, Impact affiliate integration and OpenAPI contract</title>
+      <description>Release notes for the dormant TCGplayer API, Impact affiliate integration and OpenAPI contract.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-9-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-9-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.8.0: PokemonPriceTracker graded and recent-market enrichment</title>
+      <description>Release notes for PokemonPriceTracker graded-card and recent-market enrichment.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-8-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-8-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.7.0: MPL-2.0 and multi-source Pokémon enrichment</title>
+      <description>Release notes for MPL-2.0 licensing and multi-source Pokémon enrichment.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-7-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-7-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.6.0: Automated GitHub release discipline</title>
+      <description>Release notes for automated GitHub release discipline.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-6-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-6-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.5.0: Complete project handbook and deployment documentation</title>
+      <description>Release notes for the complete project handbook and deployment documentation.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-5-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-5-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.4.0: Wallet overview UX refresh</title>
+      <description>Release notes for the Wallet overview experience refresh.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-4-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-4-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.3.0: Navigation and standalone Chain Explorer</title>
+      <description>Release notes for navigation and the standalone Chain Explorer.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-3-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-3-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.2.0: Identity and staking product layer</title>
+      <description>Release notes for the identity and staking product layer.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-2-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-2-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>v0.1.0: Frozen V2 live baseline</title>
+      <description>Release notes for the frozen V2 live baseline.</description>
+      <link>https://swappulse.gitbook.io/swappulse-docs/changelog/v0-1-0</link>
+      <guid isPermaLink="true">https://swappulse.gitbook.io/swappulse-docs/changelog/v0-1-0</guid>
+      <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
