@@ -54,7 +54,7 @@ Typical workflow:
 4. use collection data in binders, trade matching and portfolio/market features;
 5. optionally use card verification/on-chain features where available.
 
-### SwapPulse Wallet
+### Wallet
 
 The Wallet is the self-custodial/Web3 area. The top overview is designed to feel familiar to mainstream wallet users while the deeper SwapPulse-specific identity and collector tools live underneath.
 
