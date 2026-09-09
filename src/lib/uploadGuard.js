@@ -14,6 +14,16 @@ export function assertImageUpload(file, maxMB = 10) {
   return file;
 }
 
+export function assertVideoUpload(file, maxMB = 50) {
+  ensureFile(file);
+  const type = String(file.type || '').toLowerCase();
+  if (!['video/mp4', 'video/webm', 'video/quicktime'].includes(type)) {
+    throw new Error('Choose an MP4, WebM or QuickTime video file.');
+  }
+  if (file.size > maxMB * MB) throw new Error(`Video is too large. Maximum size is ${maxMB} MB.`);
+  return file;
+}
+
 export function assertStoryMediaUpload(file) {
   ensureFile(file);
   const type = String(file.type || '').toLowerCase();
