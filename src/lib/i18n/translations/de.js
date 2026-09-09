@@ -6,6 +6,7 @@ const de = {
   'nav.binders': 'Mappen', 'nav.trades': 'Tauschbörse', 'nav.circles': 'Kreise', 'nav.meetups': 'Treffen',
   'nav.wallet': 'Geldbörse',
   'nav.live': 'Live', 'nav.notifications': 'Benachrichtigungen', 'nav.messages': 'Nachrichten', 'nav.more': 'Mehr',
+  'nav.moreTools': 'Werkzeuge', 'nav.moreCommunity': 'Community', 'nav.moreActivities': 'Aktivitäten', 'nav.moreAccount': 'Konto', 'nav.moreAdmin': 'Verwaltung',
   'nav.trust': 'Vertrauen', 'nav.whoToFollow': 'Wem folgen', 'nav.achievements': 'Erfolge',
   'nav.challenges': 'Herausforderungen', 'nav.packParties': 'Booster-Partys', 'nav.pullOfTheWeek': 'Pull der Woche',
   'nav.packOpenings': 'Öffnungen', 'nav.market': 'Markt', 'nav.predictions': 'Vorhersagen',
