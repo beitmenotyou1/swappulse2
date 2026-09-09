@@ -20,7 +20,7 @@ Development preview, not a recorded release.
 
 The planned experience introduces the multilingual, read-only Helper, reviewed Scanner attachments, clearer names, simplified navigation and one compact footer treatment.
 
-[Read the v0.11.0 development preview](/swappulse-docs/changelog/v0-11-0.md)
+[Read the v0.11.0 development preview](v0-11-0.md)
 {% endupdate %}
 
 {% update date="2026-09-06" %}
