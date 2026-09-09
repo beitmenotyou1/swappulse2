@@ -9,10 +9,10 @@ import { Layers } from 'lucide-react';
 // Accepts either a full card object (card.image) or a raw image path/URL
 // via the `src` prop. Falls back to a branded placeholder on load error.
 export default function CardImage({
-  card,
-  src,
+  card = null,
+  src = null,
   quality = 'high',
-  alt,
+  alt = '',
   className = '',
   fallbackClassName = '',
   imgClassName = '',
