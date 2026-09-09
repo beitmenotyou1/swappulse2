@@ -14,11 +14,25 @@ const SOURCE_DOCUMENTS = [
     tags: ['project', 'architecture', 'security'],
   },
   {
+    documentKey: 'swappulse-official-links-and-support',
+    title: 'SwapPulse official links and support',
+    path: 'docs/start-here/official-links-and-support.md',
+    sourceUrl: 'https://swappulse.gitbook.io/swappulse-docs/start-here/official-links-and-support',
+    tags: ['official', 'support', 'security'],
+  },
+  {
     documentKey: 'swappulse-collection-workflow',
     title: 'SwapPulse collection workflow',
     path: 'docs/collection-and-catalogue/collection.md',
     sourceUrl: 'https://swappulse.gitbook.io/swappulse-docs/collection-and-catalogue/collection',
     tags: ['collection', 'catalogue'],
+  },
+  {
+    documentKey: 'swappulse-scanner-workflow',
+    title: 'SwapPulse Scanner workflow',
+    path: 'docs/collection-and-catalogue/card-scanner.md',
+    sourceUrl: 'https://swappulse.gitbook.io/swappulse-docs/collection-and-catalogue/card-scanner',
+    tags: ['scanner', 'collection', 'catalogue', 'privacy'],
   },
   {
     documentKey: 'swappulse-card-attestations',
@@ -32,7 +46,7 @@ const SOURCE_DOCUMENTS = [
     title: 'SwapPulse Helper boundary',
     path: 'docs/ai-assistants/collector-copilot.md',
     sourceUrl: 'https://swappulse.gitbook.io/swappulse-docs/ai-assistants/collector-copilot',
-    tags: ['ai', 'copilot', 'safety'],
+    tags: ['ai', 'helper', 'safety'],
   },
   {
     documentKey: 'swappulse-data-authorities',
@@ -109,7 +123,7 @@ async function fetchGitHubHead(): Promise<string> {
     {
       headers: {
         Accept: 'application/vnd.github+json',
-        'User-Agent': 'SwapPulse-Collector-Copilot-Knowledge-Refresh',
+        'User-Agent': 'SwapPulse-Helper-Knowledge-Refresh',
         'X-GitHub-Api-Version': '2022-11-28',
       },
     },
@@ -146,7 +160,7 @@ async function fetchAllowlistedFile(
   const response = await fetch(rawUrl, {
     headers: {
       Accept: 'text/plain',
-      'User-Agent': 'SwapPulse-Collector-Copilot-Knowledge-Refresh',
+      'User-Agent': 'SwapPulse-Helper-Knowledge-Refresh',
     },
   });
 
