@@ -10,13 +10,19 @@ Review every authoritative SwapPulse release from the current version back to th
 The current version is **v0.10.0**, confirmed by both `package.json` and `RELEASE_MANIFEST.json`. The v0.11.0 page is explicitly a development preview until the release files are updated together. There is no recorded **v0.0.0** release, so one has not been fabricated.
 {% endhint %}
 
-## v0.11.0 development preview
-
-The planned experience introduces the multilingual, read-only Helper, reviewed Scanner attachments, clearer names, a grouped mobile menu and one compact footer treatment.
-
-[Read the v0.11.0 development preview](v0-11-0.md)
+Subscribe with the [SwapPulse changelog RSS 2.0 feed](https://swappulse.org/changelog.xml).
 
 {% updates format="full" %}
+{% update date="2026-09-09" %}
+## v0.11.0 development preview: Helper, Scanner and clearer navigation
+
+Development preview, not a recorded release.
+
+The planned experience introduces the multilingual, read-only Helper, reviewed Scanner attachments, clearer names, simplified navigation and one compact footer treatment.
+
+[Read the v0.11.0 development preview](/swappulse-docs/changelog/v0-11-0.md)
+{% endupdate %}
+
 {% update date="2026-09-06" %}
 ## v0.10.0: Self-hosted node architecture, documentation and security hardening
 
