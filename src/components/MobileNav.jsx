@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, Layers, ScanLine, ArrowLeftRight, BookOpen, ShieldCheck, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, Heart, UserPlus, Trophy, Target, LogOut, Sparkles, FileText, Lock, Activity, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, ExternalLink } from 'lucide-react';
+import { Home, Compass, Layers, ScanLine, ArrowLeftRight, BookOpen, Shield, ShieldAlert, Vote, Users, CalendarDays, Award, Package, BarChart3, MoreHorizontal, X, User as UserIcon, Plus, Radio, Bell, MessageSquare, Settings as SettingsIcon, UserPlus, Trophy, Target, LogOut, Sparkles, Search, Rss, Box, Tag, Network, Wallet as WalletIcon, ExternalLink } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useLivePresence } from '@/lib/livePresence';
 import { useUnreadCount } from '@/hooks/useNotifications';
@@ -119,7 +119,7 @@ export default function MobileNav() {
     if (pendingRestore.current && pathname === pendingRestore.current.pathname) {
       const { scrollY } = pendingRestore.current;
       pendingRestore.current = null;
-    requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
+      requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
     }
   }, [pathname]);
 
