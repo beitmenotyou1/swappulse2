@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import AgentFeedbackBar from '@/components/agents/AgentFeedbackBar';
@@ -104,7 +105,13 @@ function MessageBubble({ message, conversationId }) {
 
 export default function CollectorCopilot() {
   const { t, locale, setLocale } = useI18n();
-  const selectedLanguage = LANGUAGES.find((item) => item.code === locale)
+  const { user } = useAuth();
+  const accountLocale = LANGUAGES.some((item) => item.code === user?.locale)
+    ? user.locale
+    : '';
+  const [responseLocale, setResponseLocale] = useState(accountLocale || locale);
+  const accountDefaultApplied = useRef(Boolean(accountLocale));
+  const selectedLanguage = LANGUAGES.find((item) => item.code === responseLocale)
     || LANGUAGES[0];
   useSEO({
     title: t('copilot.title'),
@@ -121,6 +128,17 @@ export default function CollectorCopilot() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef(null);
+
+  useEffect(() => {
+    if (accountDefaultApplied.current) return;
+    if (accountLocale) {
+      setResponseLocale(accountLocale);
+      accountDefaultApplied.current = true;
+    } else if (user) {
+      setResponseLocale(locale);
+      accountDefaultApplied.current = true;
+    }
+  }, [accountLocale, locale, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,7 +187,7 @@ export default function CollectorCopilot() {
         metadata: {
           name: t('copilot.conversationName'),
           description: t('copilot.conversationDescription'),
-          locale,
+          locale: responseLocale,
           response_language: selectedLanguage.name,
         },
       });
@@ -197,6 +215,8 @@ export default function CollectorCopilot() {
           metadata: {
             name: t('copilot.conversationName'),
             description: t('copilot.conversationDescription'),
+            locale: responseLocale,
+            response_language: selectedLanguage.name,
           },
         });
         setConversations((current) => [conversation, ...current]);
@@ -205,7 +225,7 @@ export default function CollectorCopilot() {
       }
       await base44.agents.addMessage(conversation, {
         role: 'user',
-        content: `[SwapPulse Helper language: ${selectedLanguage.name} (${locale})]\n\n${text}`,
+        content: `[SwapPulse Helper language: ${selectedLanguage.name} (${responseLocale})]\n\n${text}`,
       });
     } catch (requestError) {
       setInput(text);
@@ -263,8 +283,12 @@ export default function CollectorCopilot() {
           </div>
           <select
             id="helper-language"
-            value={locale}
-            onChange={(event) => setLocale(event.target.value)}
+            value={responseLocale}
+            onChange={(event) => {
+              const nextLocale = event.target.value;
+              setResponseLocale(nextLocale);
+              setLocale(nextLocale);
+            }}
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
           >
             {LANGUAGES.map((language) => (
