@@ -10,7 +10,7 @@ If a service appears unavailable, check the [System Status](https://swappulse.or
 
 Use one card per image, fill the frame, avoid glare and keep the set symbol and collector number visible. If the suggestions are wrong, select **Find another card** and search the catalogue manually, or skip that image.
 
-The scanner requires an internet connection. If confirmation was interrupted after collection entries were created, keep the page open and use **Retry final check** so the existing entry IDs are reused. Confirmed corrections remain quarantined and do not teach the model automatically. See [Card Scanner](../collection-and-catalogue/card-scanner.md).
+The scanner requires an internet connection. If confirmation was interrupted after collection entries were created, keep the page open and use **Retry final check** so the existing entry IDs are reused. Confirmed corrections remain quarantined and do not teach the model automatically. See [Scanner](../collection-and-catalogue/card-scanner.md).
 
 ## My direct messages show as encrypted / won't decrypt
 
