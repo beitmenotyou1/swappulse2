@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 
 const HIDE_BACK_PATHS = ['/', '/explore', '/trades', '/collection'];
 
-export default function PageHeader({ title, subtitle, icon, children }) {
+export default function PageHeader({ title, subtitle = '', icon = null, children = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const canGoBack = !HIDE_BACK_PATHS.includes(location.pathname);
