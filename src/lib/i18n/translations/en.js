@@ -6,6 +6,7 @@ const en = {
   'nav.binders': 'Binders', 'nav.trades': 'Trade Board', 'nav.circles': 'Circles', 'nav.meetups': 'Meetups',
   'nav.wallet': 'Wallet',
   'nav.live': 'Live Now', 'nav.notifications': 'Notifications', 'nav.messages': 'Messages', 'nav.more': 'More',
+  'nav.moreTools': 'Tools', 'nav.moreCommunity': 'Community', 'nav.moreActivities': 'Activities', 'nav.moreAccount': 'Account', 'nav.moreAdmin': 'Administration',
   'nav.trust': 'Trust', 'nav.whoToFollow': 'Who to Follow', 'nav.achievements': 'Achievements',
   'nav.challenges': 'Challenges', 'nav.packParties': 'Pack Parties', 'nav.pullOfTheWeek': 'Pull of the Week',
   'nav.packOpenings': 'Pack Openings', 'nav.market': 'Market Watch', 'nav.predictions': 'Predictions',
