@@ -69,7 +69,7 @@ export const HASHTAG_SETS = [
 
 // English feature names are kept as-is in all languages (proper nouns).
 export const FEATURE_POOL = [
-  { name: 'Card Scanner', path: '/scan', description: 'Scan a card with your camera and identify it instantly.' },
+  { name: 'Scanner', path: '/scan', description: 'Upload or photograph cards, review each match, then choose what to add or attach.' },
   { name: 'Collection Tracker', path: '/collection', description: 'Track every card you own with set completion progress.' },
   { name: 'Trade Board', path: '/trades', description: 'List cards you have and want, and find matches with collectors.' },
   { name: 'Binders', path: '/binders', description: 'Build and share visual binders of your favourite cards.' },
