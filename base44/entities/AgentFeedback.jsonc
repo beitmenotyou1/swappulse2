@@ -6,7 +6,17 @@
   "properties": {
     "agent_name": {
       "type": "string",
-      "description": "Name of the agent that received the feedback"
+      "enum": [
+        "collector_copilot",
+        "moderation_agent",
+        "trade_assistant",
+        "market_watch",
+        "collection_advisor",
+        "sentiment_conversationalist",
+        "achievement_goal_tracker",
+        "networking_concierge"
+      ],
+      "description": "Name of the recognised SwapPulse agent that received the feedback"
     },
     "conversation_id": {
       "type": "string",
@@ -40,10 +50,12 @@
     },
     "original_content": {
       "type": "string",
+      "maxLength": 4000,
       "description": "The assistant message content that was rated"
     },
     "corrected_content": {
       "type": "string",
+      "maxLength": 4000,
       "description": "For corrections \u2014 the user's suggested better response"
     },
     "context_summary": {
@@ -86,16 +98,9 @@
       "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "user_condition": {
