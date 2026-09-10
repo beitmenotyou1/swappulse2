@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole;
     const config = await getGuildConfig(svc, true);
     const links = await svc.entities.DiscordAccountLink
-      .filter({ guild_id: config.guild_id }, 'last_role_sync_at', 200)
+      .filter({ guild_id: config.guild_id }, 'last_role_sync_at', 500)
       .catch(() => []);
     const results = [];
     for (const link of links) {
