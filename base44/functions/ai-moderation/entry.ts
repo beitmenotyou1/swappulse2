@@ -1,4 +1,4 @@
-// ai-moderation — LLM-powered content moderation analysis.
+// ai-moderation — LLM-powered content-safety analysis.
 // SECURITY INVARIANT: this endpoint is advisory only. It returns a structured
 // classification for staff review but does not hide content, create labels,
 // notify users, add strikes, restrict accounts or otherwise mutate user state.
