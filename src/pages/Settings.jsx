@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target, Lock, Network, Scale, Key, UserPlus } from 'lucide-react';
+import { Shield, Globe, Eye, Bell, Accessibility as AccessIcon, Wrench, Loader2, Target, Lock, Network, Scale, Key, UserPlus, MessageCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { useSettings } from '@/hooks/useSettings';
 import AccountSection from '@/components/settings/AccountSection';
@@ -14,6 +14,7 @@ import AtProtoSection from '@/components/settings/AtProtoSection';
 import AppPasswordsSection from '@/components/settings/AppPasswordsSection';
 import DataPrivacyRightsSection from '@/components/settings/DataPrivacyRightsSection';
 import InviteLinkSection from '@/components/settings/InviteLinkSection';
+import DiscordSection from '@/components/settings/DiscordSection';
 import DocumentationLink from '@/components/DocumentationLink';
 import { useT } from '@/lib/i18n/I18nProvider';
 import useSEO from '@/hooks/useSEO';
@@ -31,6 +32,7 @@ const TABS = [
   { key: 'atprotocol', tKey: 'settings.tab.atprotocol', Icon: Network, Comp: AtProtoSection },
   { key: 'apppasswords', tKey: 'settings.tab.apppasswords', Icon: Key, Comp: AppPasswordsSection },
   { key: 'invite', tKey: 'Invite friends', Icon: UserPlus, Comp: InviteLinkSection },
+  { key: 'discord', tKey: 'Discord', Icon: MessageCircle, Comp: DiscordSection },
 ];
 
 export default function Settings() {
@@ -41,7 +43,10 @@ export default function Settings() {
     canonicalPath: '/settings',
   });
   const { settings, update, loading } = useSettings();
-  const [tab, setTab] = useState('account');
+  const [tab, setTab] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    return TABS.some((item) => item.key === requested) ? requested : 'account';
+  });
   const Active = TABS.find((t) => t.key === tab)?.Comp || AccountSection;
 
   return (
@@ -51,7 +56,13 @@ export default function Settings() {
         {TABS.map(({ key, tKey, Icon }) => (
           <button
             key={key}
-            onClick={() => setTab(key)}
+            onClick={() => {
+              setTab(key);
+              const url = new URL(window.location.href);
+              if (key === 'account') url.searchParams.delete('tab');
+              else url.searchParams.set('tab', key);
+              window.history.replaceState({}, '', url);
+            }}
             className={`relative flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-colors ${tab === key ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
           >
             <Icon className="h-4 w-4" /> {t(tKey)}
