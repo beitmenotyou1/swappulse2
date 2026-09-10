@@ -18,9 +18,9 @@
       }
     ]
   },
-  "description": "Every Sunday at 9am: fetches weekly SentimentVote data, calls syncPricing to refresh card valuations, compiles a market_watch agent summary, and emails the report to all active community members",
+  "description": "SECURITY HOLD: scheduled LLM-generated market email broadcasts are disabled until the scheduler has a platform-verifiable internal identity and recipients explicitly opt in to this report.",
   "trigger": {
-    "condition": null,
+    "condition": "${ false }",
     "config": {
       "trigger_type": "scheduled",
       "events": [],
