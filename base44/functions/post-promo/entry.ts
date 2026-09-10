@@ -19,7 +19,7 @@
 // Invoked by the "Promo Poster" workflow every 4 hours.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
+import { getPdsSession, getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 import { uploadPromoImage } from '../../shared/promoImageUpload.ts';
 import { buildPromoExternalEmbed, assertPromoPresentation } from '../../shared/promoPresentation.ts';
 import { fetchTcgdex, normalizeSetId } from '../../shared/tcgdexClient.ts';
@@ -44,7 +44,7 @@ const TCGDEX_IMAGE_BASE = 'https://assets.tcgdex.net';
 // Branded SwapPulse promo banner used as the embed thumbnail for feature and
 // community posts (which have no card image of their own), so Bluesky renders
 // a rich image card instead of a bare text link card.
-const PROMO_BANNER_URL = 'https://base44.app/api/apps/6a63d9d64a4d65d370c70892/files/mp/public/6a63d9d64a4d65d370c70892/2f59cf64f_swappulse-poster-promo.jpg';
+const PROMO_BANNER_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/2f59cf64f_swappulse-poster-promo.jpg';
 
 // Curated list of popular set codes — recognizable cards collectors know.
 const POPULAR_SETS = ['sv3', 'sv3pt5', 'sv4', 'base1', 'sv5', 'sv2', 'swsh1', 'swsh4'];
@@ -182,6 +182,46 @@ interface PromoResult {
   tags: string[];
 }
 
+async function resolvePromoSession(identity: {
+  did: string;
+  pdsUrl: string;
+  appPassword: string;
+}) {
+  try {
+    return await getPdsSessionForUser(
+      identity.pdsUrl,
+      identity.did,
+      identity.appPassword,
+    );
+  } catch {
+    // The shared service credential is a safe fallback only when it resolves
+    // to the exact same official DID. A mismatched service account must never
+    // receive an official SwapPulse promotion.
+    const shared = await getPdsSession();
+    if (shared.session.did !== identity.did) {
+      throw new Error('Official promotion credential is invalid and the service identity does not match');
+    }
+    return shared;
+  }
+}
+
+async function recordPromoDelivery(svc: any, data: any) {
+  await svc.entities.AtprotoDeliveryEvent.create({
+    source: 'promotion',
+    user_id: PROMO_USER_ID,
+    did: String(data?.did || ''),
+    outcome: data?.outcome,
+    error_code: String(data?.error_code || ''),
+    message: String(data?.message || '').slice(0, 300),
+    at_uri: String(data?.at_uri || ''),
+    facet_count: Number(data?.facet_count || 0),
+    tag_count: Number(data?.tag_count || 0),
+    attempted_at: new Date().toISOString(),
+  }).catch((error: any) => {
+    console.error('post-promo: delivery audit write failed', error?.message || error);
+  });
+}
+
 /** Type 1: Card-focused post — features a specific card with its page link. */
 function generateCardMessage(card: FeaturedCard, locale: string): PromoResult {
   const pools = getPoolsForLocale(locale);
@@ -309,19 +349,37 @@ Deno.serve(async (req) => {
       console.error('post-promo: no PDS identity found for promo account', PROMO_USER_ID);
       return Response.json({ error: 'Promo account PDS credential not found' }, { status: 500 });
     }
-    const pdsUrl = identity.pdsUrl;
+    let pdsUrl = identity.pdsUrl;
     if (!pdsUrl) {
       console.error('post-promo: PDS_URL not configured');
+      await recordPromoDelivery(svc, {
+        did: identity.did,
+        outcome: 'failed',
+        error_code: 'AT_PDS_URL_MISSING',
+        message: 'The official promotion PDS URL is missing.',
+      });
       return Response.json({ error: 'PDS_URL not configured' }, { status: 500 });
     }
 
-    // Authenticate to the PDS as the promo account
+    // Authenticate as the official promo DID. A shared service credential is
+    // accepted only when its session resolves to that exact same DID.
     let session;
     try {
-      ({ session } = await getPdsSessionForUser(pdsUrl, identity.did, identity.appPassword));
+      const resolved = await resolvePromoSession(identity);
+      pdsUrl = resolved.pdsUrl;
+      session = resolved.session;
     } catch (e) {
       console.error('post-promo: PDS session failed', e?.message || e);
-      return Response.json({ error: 'PDS authentication failed' }, { status: 502 });
+      await recordPromoDelivery(svc, {
+        did: identity.did,
+        outcome: 'failed',
+        error_code: 'AT_AUTHENTICATION_FAILED',
+        message: 'The official AT Protocol credential must be reconnected.',
+      });
+      return Response.json({
+        error: 'PDS authentication failed',
+        code: 'AT_AUTHENTICATION_FAILED',
+      }, { status: 502 });
     }
 
     // Credential object for uploadPromoImage's PDS session-refresh path
