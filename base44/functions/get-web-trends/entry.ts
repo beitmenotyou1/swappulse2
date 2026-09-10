@@ -66,8 +66,23 @@ export default async function (req: Request): Promise<Response> {
       trends = shape(res);
     } catch (err) {
       console.error('[get-web-trends] llm failed', err);
-      // Serve the stale cache rather than burning another call on retry.
-      return Response.json({ trends: cached?.payload || EMPTY, cached: true, stale: true });
+      // Serve stale data and advance the attempt timestamp so a temporary model
+      // or internet-context failure cannot be turned into a public retry storm
+      // that repeatedly burns LLM credits. The next refresh is allowed after
+      // the normal six-hour cache window.
+      const fallbackPayload = cached?.payload || EMPTY;
+      const backoffRecord = {
+        cache_key: CACHE_KEY,
+        payload: fallbackPayload,
+        refreshed_at: new Date().toISOString(),
+      };
+      try {
+        if (cached) await svc.entities.WebTrendCache.update(cached.id, backoffRecord);
+        else await svc.entities.WebTrendCache.create(backoffRecord);
+      } catch (cacheErr) {
+        console.error('[get-web-trends] failure backoff cache write failed', cacheErr);
+      }
+      return Response.json({ trends: fallbackPayload, cached: true, stale: true });
     }
 
     const record = { cache_key: CACHE_KEY, payload: trends, refreshed_at: new Date().toISOString() };
