@@ -75,7 +75,7 @@ async function stableCrossPostRkey(seed) {
   return `spx${hex.slice(0, 40)}`;
 }
 
-async function postToPlatform(platform, credential, extra, message, context = {}) {
+async function postToPlatform(platform, credential, extra, message, context: any = {}) {
   if (platform === 'bluesky') {
     if (context.sourcePost) {
       if (context.sourcePost.federation_status === 'published' && context.sourcePost.at_uri) {
