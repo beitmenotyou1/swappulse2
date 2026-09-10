@@ -30,7 +30,9 @@ export async function validateUserPdsUrl(rawUrl: string): Promise<string> {
   }
   if (url.protocol !== 'https:') throw new Error('PDS URL must use HTTPS.');
   if (url.username || url.password) throw new Error('PDS URL must not contain credentials.');
-  await assertSafeHost(url.hostname);
+  await assertSafeHost(url.hostname, {
+    allowKnownAtprotoPdsWhenDnsUnavailable: true,
+  });
   return url.origin;
 }
 
