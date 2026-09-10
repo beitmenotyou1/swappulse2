@@ -2,24 +2,24 @@
   "definition": {
     "document": {
       "dsl": "1.0.0",
-      "name": "help_article_promo",
+      "name": "daily_feature_promo",
       "version": "1.0",
       "namespace": "base44"
     },
     "do": [
       {
-        "post_help_promo": {
+        "post_feature_promo": {
           "call": "invoke_backend_function",
           "with": {
-            "function_name": "post-help-promo",
+            "function_name": "post-promo",
             "args": {
-              "op": "post"
+              "promoType": "feature"
             }
           },
           "then": "end",
           "x-base44": {
-            "title": "Publish help article promo",
-            "description": "Posts the next help article guide to the AT Protocol from the SwapPulse bot account"
+            "title": "Publish daily feature promo",
+            "description": "Publishes a reviewed SwapPulse feature promotion through the hardened AT Protocol delivery path"
           }
         }
       }
@@ -31,7 +31,7 @@
       "trigger_type": "scheduled",
       "events": [],
       "schedule_mode": "recurring",
-      "cron_expression": "0 */8 * * *",
+      "cron_expression": "15 10 * * *",
       "one_time_date": null,
       "timezone": "Europe/London",
       "interval_value": null,
@@ -42,6 +42,6 @@
       "ends_after_count": null
     }
   },
-  "name": "Help Article Promo",
-  "description": "Cycles through all SwapPulse help articles and posts one to the AT Protocol from the bot account every 8 hours. Each post links to the full guide on swappulse.org, tracked in PromoPost so it appears on Bluesky but not the local feed."
+  "name": "Daily Feature Promo",
+  "description": "Publishes one multilingual SwapPulse feature promotion daily through the same account-bound, audited AT Protocol path as the primary promotion workflow."
 }
