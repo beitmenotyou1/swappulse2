@@ -4,6 +4,8 @@
 // generic entity→record serializer (outbound-reconcile) and the collection→
 // entity map used by both firehose-ingest and outbound-reconcile.
 
+import { attachRichTextFacets } from './hashtagFacets.ts';
+
 export const COLLECTIONS: Record<string, string> = {
   // Standard AT Protocol records — bidirectional sync of posts, reposts,
   // likes, and follows with the wider Bluesky network.
@@ -669,6 +671,45 @@ const BUILDER_CONFIG: Record<string, { required: FieldPair[]; optional: FieldPai
 // collection. Falls back to the generic entityToRecord for app.bsky.* and any
 // collection without an explicit builder config.
 export function buildRecord(entity: any, collection: string): any {
+  if (collection === 'app.bsky.feed.post') {
+    const record: any = {
+      $type: collection,
+      text: String(entity?.content || entity?.card_name || 'New SwapPulse post')
+        .trim()
+        .slice(0, 300),
+      createdAt: entity?.original_created_at || entity?.created_date || new Date().toISOString(),
+      langs: [String(entity?.language || 'en-GB').slice(0, 35)],
+    };
+    const tags = Array.from(new Set(
+      [...(entity?.canonical_tags || []), ...(entity?.hashtags || [])]
+        .map((tag: any) => String(tag || '').replace(/^#/, '').trim())
+        .filter(Boolean),
+    )).slice(0, 8);
+    if (tags.length > 0) record.tags = tags;
+    if (
+      entity?.root_uri && entity?.root_cid
+      && entity?.parent_uri && entity?.parent_cid
+    ) {
+      record.reply = {
+        root: { uri: entity.root_uri, cid: entity.root_cid },
+        parent: { uri: entity.parent_uri, cid: entity.parent_cid },
+      };
+    }
+    const external = entity?.embed_external;
+    if (external?.uri && String(external.uri).startsWith('https://')) {
+      record.embed = {
+        $type: 'app.bsky.embed.external',
+        external: {
+          uri: external.uri,
+          title: String(external.title || external.uri).slice(0, 300),
+          description: String(external.description || '').slice(0, 1000),
+        },
+      };
+    }
+    attachRichTextFacets(record);
+    return record;
+  }
+
   const config = BUILDER_CONFIG[collection];
   if (!config) return entityToRecord(entity, collection);
   const rec: any = { $type: collection };
