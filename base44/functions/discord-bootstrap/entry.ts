@@ -15,6 +15,38 @@ const OAUTH_CALLBACK_URL = 'https://swappulse.org/functions/discord-link-callbac
 const TERMS_URL = 'https://swappulse.org/terms';
 const PRIVACY_URL = 'https://swappulse.org/privacy';
 const APP_DESCRIPTION = 'Official SwapPulse support, account verification and community role synchronisation for Pokémon TCG collectors.';
+const COMMAND_DESCRIPTIONS: Record<string, Record<string, string>> = {
+  verify: {
+    'es-ES': 'Verifica con SwapPulse o completa el control de Coleccionista',
+    fr: 'Vérifiez avec SwapPulse ou terminez le contrôle Collectionneur',
+    de: 'Mit SwapPulse verifizieren oder den Sammler-Check abschließen',
+    it: 'Verifica con SwapPulse o completa il controllo Collezionista',
+    'pt-BR': 'Verifique com o SwapPulse ou conclua a verificação de Colecionador',
+    ja: 'SwapPulse 連携または Collector 認証を行います',
+    'zh-CN': '通过 SwapPulse 或 CAPTCHA 完成收藏者验证',
+    ko: 'SwapPulse 연결 또는 Collector 인증을 완료합니다',
+  },
+  roles: {
+    'es-ES': 'Muestra tus roles de Discord gestionados por SwapPulse',
+    fr: 'Affichez vos rôles Discord gérés par SwapPulse',
+    de: 'Deine von SwapPulse verwalteten Discord-Rollen anzeigen',
+    it: 'Mostra i tuoi ruoli Discord gestiti da SwapPulse',
+    'pt-BR': 'Mostre seus cargos do Discord gerenciados pelo SwapPulse',
+    ja: 'SwapPulse が管理する現在の Discord ロールを表示します',
+    'zh-CN': '显示当前由 SwapPulse 管理的 Discord 角色',
+    ko: 'SwapPulse가 관리하는 현재 Discord 역할을 표시합니다',
+  },
+  support: {
+    'es-ES': 'Encuentra los foros oficiales de soporte de SwapPulse',
+    fr: 'Trouvez les forums d’assistance officiels de SwapPulse',
+    de: 'Die offiziellen SwapPulse-Supportforen anzeigen',
+    it: 'Trova i forum di assistenza ufficiali di SwapPulse',
+    'pt-BR': 'Encontre os fóruns oficiais de suporte do SwapPulse',
+    ja: 'SwapPulse 公式サポートフォーラムを表示します',
+    'zh-CN': '查找 SwapPulse 官方支持论坛',
+    ko: 'SwapPulse 공식 지원 포럼을 찾습니다',
+  },
+};
 const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/32ce16a82_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.png';
 
 async function logoDataUri(): Promise<string | null> {
@@ -343,6 +375,7 @@ Deno.serve(async (req) => {
           {
             name: 'verify',
             description: 'Verify with SwapPulse or complete the Collector bot check',
+            description_localizations: COMMAND_DESCRIPTIONS.verify,
             type: 1,
             integration_types: [0],
             contexts: [0],
@@ -350,6 +383,7 @@ Deno.serve(async (req) => {
           {
             name: 'roles',
             description: 'Show your current SwapPulse-managed Discord roles',
+            description_localizations: COMMAND_DESCRIPTIONS.roles,
             type: 1,
             integration_types: [0],
             contexts: [0],
@@ -357,6 +391,7 @@ Deno.serve(async (req) => {
           {
             name: 'support',
             description: 'Find the official SwapPulse support forums',
+            description_localizations: COMMAND_DESCRIPTIONS.support,
             type: 1,
             integration_types: [0],
             contexts: [0],
