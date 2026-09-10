@@ -51,14 +51,22 @@
             "type": "string"
           }
         },
+        "physical_card_visible": {
+          "type": "boolean",
+          "description": "True when the submitted media visibly depicts a physical card rather than only a digital reproduction"
+        },
         "is_screen_photo": {
           "type": "boolean"
+        },
+        "manipulation_suspected": {
+          "type": "boolean",
+          "description": "True when the submitted image itself appears manipulated or otherwise unsuitable for a possession check"
         },
         "notes": {
           "type": "string"
         }
       },
-      "description": "Structured result from the AI vision comparison of the scan vs the TCGDex reference image"
+      "description": "Structured result from the AI visual possession check against the TCGDex reference image. This is not an authenticity or professional grading determination."
     },
     "grading_company": {
       "type": "string",
