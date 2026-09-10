@@ -1,5 +1,5 @@
 {
-  "description": "When a user updates their collection, the collection_advisor compares the item against current TCGDex data. If a high-value trade opportunity is found, waits 10 minutes then sends a push notification with the trade advice.",
+  "description": "SECURITY HOLD: autonomous collection-opportunity analysis and AI-generated push advice are disabled until Base44 workflow calls have a platform-verifiable internal authentication path and the collector explicitly opts into this automation.",
   "definition": {
     "document": {
       "dsl": "1.0.0",
@@ -79,7 +79,7 @@
     ]
   },
   "trigger": {
-    "condition": null,
+    "condition": "${ false }",
     "config": {
       "trigger_type": "entity",
       "events": [
