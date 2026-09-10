@@ -194,8 +194,8 @@ export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const caller = await base44.auth.me().catch(() => null);
-    if (!caller || caller.role !== 'admin') {
-      return Response.json({ error: 'Admin only' }, { status: 403 });
+    if (!caller) {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const svc = base44.asServiceRole;
@@ -203,7 +203,10 @@ export default async function(req: Request): Promise<Response> {
       ? await req.json().catch(() => ({}))
       : {};
     const url = new URL(req.url);
-    const singleUserId = String(body?.userId || url.searchParams.get('userId') || '');
+    const requestedUserId = String(body?.userId || url.searchParams.get('userId') || '');
+    const singleUserId = caller.role === 'admin'
+      ? requestedUserId
+      : caller.id;
 
     const users = singleUserId
       ? await svc.entities.User.filter({ id: singleUserId }, '-created_date', 1)
