@@ -24,6 +24,13 @@ Deno.serve(async (req) => {
       }
       throw error;
     }
+    // Verification URLs are short-lived. Keep their hashes only long enough
+    // to diagnose a recent failure, then remove them as part of normal upkeep.
+    const challengeCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await svc.entities.DiscordVerificationChallenge
+      .deleteMany({ expires_at: { $lt: challengeCutoff } })
+      .catch(() => null);
+
     const links = await svc.entities.DiscordAccountLink
       .filter({ guild_id: config.guild_id }, 'last_role_sync_at', 500)
       .catch(() => []);
@@ -39,6 +46,7 @@ Deno.serve(async (req) => {
     await svc.entities.DiscordGuildConfig.update(config.id, { last_sync_at: new Date().toISOString() });
     return Response.json({
       ok: true,
+      expired_challenges_removed_before: challengeCutoff,
       considered: links.length,
       synced: results.filter((item) => item.ok).length,
       failed: results.filter((item) => !item.ok).length,
