@@ -25,6 +25,9 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole;
     const config = await getGuildConfig(svc, true);
     const body = await req.json().catch(() => ({}));
+    if (body?.op === 'config') {
+      return Response.json({ ok: true, site_key: discordTurnstileSiteKey() });
+    }
     const challengeToken = String(body?.challenge || '');
     const captchaToken = String(body?.captcha_token || '');
     if (!challengeToken || !captchaToken) {
