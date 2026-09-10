@@ -144,9 +144,9 @@ export default function CollectorCopilot() {
     let cancelled = false;
     (async () => {
       try {
-        const list = await base44.agents.listConversations({
-          agent_name: AGENT_NAME,
-        });
+        const list = await base44.agents.listConversations(
+          /** @type {any} */ ({ agent_name: AGENT_NAME }),
+        );
         if (!cancelled) setConversations(list || []);
       } catch {
         if (!cancelled) setConversations([]);
