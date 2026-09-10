@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 // Twitter are simulated until OAuth/connector wiring is added.
 
 export const PLATFORMS = [
-  { key: 'bluesky', label: 'Bluesky', color: '#0085ff', letter: 'B', credLabel: 'App password', extraLabel: null },
+  { key: 'bluesky', label: 'Bluesky', color: '#0085ff', letter: 'B', credLabel: null, extraLabel: null, linkedAccount: true },
   { key: 'mastodon', label: 'Mastodon', color: '#6364ff', letter: 'M', credLabel: 'OAuth token', extraLabel: 'Instance URL' },
   { key: 'nostr', label: 'Nostr', color: '#8b5cf6', letter: 'N', credLabel: 'nsec (secret key)', extraLabel: null },
   { key: 'twitter', label: 'Twitter / X', color: '#1d9bf0', letter: 'X', credLabel: 'OAuth 2.0 token', extraLabel: null },
