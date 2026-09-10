@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "retry_pending_atproto_posts",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "retry_pending_posts": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "retry-pending-posts",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Retry pending AT Protocol posts",
+            "description": "Idempotently retries public posts that were saved locally but not accepted by their owner's PDS"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/10 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Retry Pending AT Protocol Posts",
+  "description": "Retries failed public post delivery with stable record keys, bounded batches and exponential backoff."
+}
