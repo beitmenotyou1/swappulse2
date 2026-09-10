@@ -45,8 +45,8 @@ export default async function(req) {
     // Idempotency: skip if this label was already processed. Prevents a public
     // caller from replaying a real label_id to increment strikes repeatedly.
     const priorLogs = await base44.asServiceRole.entities.ModerationLog.filter(
-      { target_post_id: post.id, action: 'auto-escalate', auto_generated: true },
-      '-created_date', 20
+      { target_post_id: post.id, auto_generated: true },
+      '-created_date', 50
     ).catch(() => []);
     const alreadyProcessed = (priorLogs || []).some(
       (l) => Array.isArray(l.labels_affected) && l.labels_affected.includes(label_id)
