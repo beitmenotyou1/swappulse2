@@ -8,7 +8,7 @@ The package is safe by default. Adding the code does not connect a Discord serve
 
 ### SwapPulse account link
 
-A signed-in collector opens **Settings > Discord** and chooses **Connect Discord account**. Discord OAuth confirms the Discord user, adds the user to the configured server if needed, and creates a link containing IDs and the verification result only.
+A signed-in collector opens **Settings > Discord** and chooses **Connect Discord account**. The page tells the collector that Discord will ask to identify their account and add it to the official SwapPulse server if they are not already a member. Discord OAuth records that explicit consent, confirms the Discord user, adds the user to the configured server if needed, and creates a link containing IDs and the verification result only.
 
 The OAuth access token is used for that request and is not stored. The linked member receives **Collector** and **Verified SwapPulse Account**, followed by any roles justified by current SwapPulse data.
 
@@ -49,15 +49,23 @@ Configure these in Base44's backend environment settings. Never put them in a cl
 - `TURNSTILE_SITE_KEY`
 - `TURNSTILE_SECRET_KEY`
 
-In the Discord Developer Portal:
+## Discord Developer Portal checklist
 
-1. Name the application **SwapPulse Bot** and use the official SwapPulse logo.
-2. Add the deployed `discord-link-callback` function URL as the OAuth redirect.
-3. Add the deployed `discord-interactions` function URL as the Interactions Endpoint URL.
-4. Install the bot in the intended server with `bot` and `applications.commands` scopes.
-5. Grant only View Channels, Send Messages, Read Message History, Manage Roles, Manage Channels, Manage Messages, Manage Threads and Manage Events. Do not grant Administrator.
-6. Keep the bot's own role above every role that it manages.
+The screenshots supplied for the current application show the app named **SwapPulse**, a generic icon, a blank interaction endpoint, no OAuth redirect, blank legal URLs, user installation enabled, and guild installation with only `applications.commands` and permission value `0`. That state cannot run the bot safely.
+
+Configure the portal as follows before running the confirmed bootstrap:
+
+1. General Information: rename the application **SwapPulse Bot**, upload the official SwapPulse logo, and add `https://swappulse.org/terms` and `https://swappulse.org/privacy`.
+2. Installation: keep **Guild Install** enabled and disable **User Install**. This bot is bound to one configured server.
+3. Default Guild Install: select `bot` and `applications.commands`. Request only Create Instant Invite, Manage Channels and Manage Roles, permission integer `268435473`.
+4. OAuth2: add exactly `https://swappulse.org/functions/discord-link-callback` as a redirect URI. Keep Public Client off.
+5. Bot: keep Require OAuth2 Code Grant off. Keep Presence, Server Members and Message Content privileged intents off. Keep Public Bot off during the private single-server rollout.
+6. Install or re-authorise the bot in the intended server, then place its integration role above every SwapPulse-managed role.
 7. Configure Cloudflare Turnstile for `swappulse.org`.
+
+The confirmed bootstrap checks those prerequisites before creating roles or channels. It then sets `https://swappulse.org/functions/discord-interactions` as the interaction endpoint and applies the description, tags, guild-install defaults and logo through Discord's authenticated application API.
+
+Activities, the Discord Social SDK, Rich Presence, game profiles, monetisation, webhook events and privileged Gateway intents are not used. SwapPulse is using a standard server-installed bot, signed HTTP interactions, web OAuth2 and targeted REST calls. Native Linked Roles are also not used because SwapPulse recalculates and directly manages server roles from its own reputation and staff records.
 
 ## Safe activation
 
@@ -68,7 +76,8 @@ In the Discord Developer Portal:
 5. Enter `CREATE_SWAPPULSE_DISCORD_STRUCTURE` only when the guild ID and bot application are correct.
 6. Run **Sync roles now**.
 7. Test `/verify`, `/roles` and `/support` with a non-admin test member.
-8. Check that unverified members can see only the verification area and that Collector can see the support forums.
+8. Confirm that bot responses follow the member's Discord language, and that `/roles` prefers a linked collector's SwapPulse account language.
+9. Check that unverified members can see only the verification area and that Collector can see the support forums.
 
 Bootstrap creates one public verification channel and four Collector-only forums. It does not rewrite permissions on existing Discord channels. Review existing channels manually before hiding them, since changing an established server's permissions automatically could lock out members or staff.
 
@@ -78,5 +87,8 @@ Bootstrap creates one public verification channel and four Collector-only forums
 - Bot and OAuth secrets stay in backend environment variables.
 - Every role grant, removal and failure is written to the administrator-only `DiscordRoleSyncAudit` entity.
 - Account links never contain access or refresh tokens.
-- Setup is idempotent by role and channel name.
+- Setup is idempotent by role and channel name, topic, forum tags and permission overwrites.
+- Discord HTTP 429 responses honour `Retry-After`/`retry_after`; longer limits stop safely for the next scheduled reconciliation.
+- Interaction requests require Discord's Ed25519 signature, a fresh timestamp, the configured application ID and the configured guild ID.
+- Slash commands are guild-install and guild-context only. `/roles` reports the last reconciled role state without doing slow network work inside Discord's three-second response window.
 - A role hierarchy error is surfaced for an administrator to fix. It is not bypassed.
