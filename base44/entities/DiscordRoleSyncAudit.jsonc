@@ -1,0 +1,98 @@
+{
+  "name": "DiscordRoleSyncAudit",
+  "type": "object",
+  "title": "Discord role sync audit",
+  "description": "Administrator-only audit trail for SwapPulse Bot role decisions. Contains no OAuth tokens, bot secrets or CAPTCHA responses.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "discord_user_id": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "oauth",
+        "captcha",
+        "interaction",
+        "scheduled",
+        "admin"
+      ]
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "synced",
+        "failed",
+        "revoked",
+        "preview"
+      ]
+    },
+    "desired_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "added_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "removed_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "synced_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "discord_user_id",
+    "guild_id",
+    "source",
+    "outcome",
+    "synced_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
