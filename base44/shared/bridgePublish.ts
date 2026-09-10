@@ -103,11 +103,12 @@ export async function publishRecord(
 
   try {
     const record = buildRecord(entity, coll);
-    const res = await base44.functions.invoke('atproto-bridge', {
+    const response = await base44.functions.invoke('atproto-bridge', {
       action: 'create',
       collection: coll,
       record,
     });
+    const res = response?.data ?? response;
     if (res?.uri) {
       const content_hash = await computeContentHash(record).catch(() => '');
       await svc.entities[entityName].update(recordId, {
@@ -151,12 +152,13 @@ export async function updateBridgedRecord(
 
   try {
     const record = buildRecord(entity, coll);
-    const res = await base44.functions.invoke('atproto-bridge', {
+    const response = await base44.functions.invoke('atproto-bridge', {
       action: 'update',
       uri: entity.at_uri,
       collection: coll,
       record,
     });
+    const res = response?.data ?? response;
     if (res?.uri) {
       const content_hash = await computeContentHash(record).catch(() => '');
       await svc.entities[entityName].update(recordId, {
