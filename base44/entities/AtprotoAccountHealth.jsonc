@@ -1,0 +1,92 @@
+{
+  "name": "AtprotoAccountHealth",
+  "type": "object",
+  "title": "AT Protocol Account Health",
+  "description": "Administrator-only, secret-free health snapshot for each SwapPulse account linked to an AT Protocol identity.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string"
+    },
+    "handle": {
+      "type": "string"
+    },
+    "pds_url": {
+      "type": "string",
+      "description": "Validated public PDS origin. Contains no credentials."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "healthy",
+        "credentials_missing",
+        "authentication_failed",
+        "identity_mismatch",
+        "pds_unreachable",
+        "profile_unavailable",
+        "handle_mismatch"
+      ]
+    },
+    "credential_valid": {
+      "type": "boolean",
+      "default": false
+    },
+    "profile_resolves": {
+      "type": "boolean",
+      "default": false
+    },
+    "handle_resolves": {
+      "type": "boolean",
+      "default": false
+    },
+    "repo_reachable": {
+      "type": "boolean",
+      "default": false
+    },
+    "latest_post_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "latest_post_uri": {
+      "type": "string"
+    },
+    "error_code": {
+      "type": "string",
+      "description": "Safe machine-readable failure code."
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "did",
+    "status",
+    "checked_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
