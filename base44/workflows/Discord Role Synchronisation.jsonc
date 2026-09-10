@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "discord_role_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_discord_roles": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "discord-sync-all",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Synchronise Discord roles",
+            "description": "Reconciles verified Discord members with current SwapPulse reputation, achievements, enforcement state and staff roles"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/30 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Discord Role Synchronisation",
+  "description": "Every 30 minutes, applies and revokes SwapPulse Bot roles using current site data. The workflow remains inert until an administrator bootstraps and enables a guild."
+}
