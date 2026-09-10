@@ -1,6 +1,6 @@
 {
   "name": "Toxic Label Handling",
-  "description": "When a 'toxic' ModerationLabel is applied to a post, triggers a trade assistant review, adds a strike to the author's trust profile, and restricts their account if they exceed 3 strikes",
+  "description": "SECURITY HOLD: AI-assisted toxic-label follow-up is disabled. Account strikes and restrictions require an explicit human moderation decision and are never applied by an LLM-triggered workflow.",
   "trigger": {
     "config": {
       "trigger_type": "entity",
@@ -9,7 +9,7 @@
         "create"
       ]
     },
-    "condition": "${ .trigger.data.label_type == \"toxic\" }"
+    "condition": "${ false }"
   },
   "definition": {
     "document": {
