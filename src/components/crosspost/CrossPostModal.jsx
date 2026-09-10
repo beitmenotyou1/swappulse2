@@ -25,7 +25,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
     if (editing) {
       setPlatform(editing.platform || 'discord_webhook');
       setHandle(editing.handle || '');
-      setCredential(editing.credential || '');
+      setCredential(editing.platform === 'bluesky' ? '' : (editing.credential || ''));
       setExtra(editing.extra_credential || '');
       setContentTypes(editing.contentTypes || ['pack_opening']);
       setTemplate(editing.template || '');
@@ -46,7 +46,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
 
   const save = async () => {
     if (!contentTypes.length) return setError('Select at least one content type');
-    if (!credential.trim()) return setError(`Enter your ${meta.credLabel}`);
+    if (!meta.linkedAccount && !credential.trim()) return setError(`Enter your ${meta.credLabel}`);
     setSaving(true); setError('');
     try {
       const { did, signingKey } = await ensureUserDid();
@@ -58,7 +58,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
         template: template.trim() || undefined,
         includeCard,
         includeLink,
-        credential: credential.trim(),
+        credential: meta.linkedAccount ? '' : credential.trim(),
         extra_credential: extra.trim() || undefined,
         enabled,
         updated_at: now,
@@ -88,14 +88,23 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
             <div className="mt-1">
               <SettingSelect
                 value={platform}
-                onChange={setPlatform}
+                onChange={(value) => {
+                  setPlatform(value);
+                  if (value === 'bluesky') setCredential('');
+                }}
                 label="Platform"
                 options={PLATFORMS.map((p) => ({ value: p.key, label: p.label }))}
               />
             </div>
           </div>
           <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Handle / display name (e.g. @collector)" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label="Handle / display name (e.g. @collector)"/>
-          <input value={credential} onChange={(e) => setCredential(e.target.value)} placeholder={meta.credLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={meta.credLabel}/>
+          {meta.linkedAccount ? (
+            <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+              BlueSky uses the AT Protocol account linked in Settings. No second app password is stored here.
+            </div>
+          ) : (
+            <input value={credential} onChange={(e) => setCredential(e.target.value)} placeholder={meta.credLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" aria-label={meta.credLabel} />
+          )}
           {meta.extraLabel && (
             <input value={extra} onChange={(e) => setExtra(e.target.value)} placeholder={meta.extraLabel} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={meta.extraLabel}/>
           )}
