@@ -76,6 +76,10 @@ function trimPostText(value: any): string {
 }
 
 function stableRkey(post: any, did: string): string {
+  const reserved = String(post?.federation_rkey || '')
+    .replace(/[^A-Za-z0-9._~:-]/g, '')
+    .slice(0, 512);
+  if (reserved) return reserved;
   const uri = String(post?.at_uri || '');
   const match = uri.match(/^at:\/\/([^/]+)\/app\.bsky\.feed\.post\/([^/]+)$/);
   if (match && match[1] === did) return match[2];
