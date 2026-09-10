@@ -9,12 +9,16 @@ function unwrap(response) {
   return response?.data || response;
 }
 
+function turnstileApi() {
+  return (/** @type {any} */ (window)).turnstile;
+}
+
 function loadTurnstile() {
-  if (window.turnstile) return Promise.resolve(window.turnstile);
+  if (turnstileApi()) return Promise.resolve(turnstileApi());
   return new Promise((resolve, reject) => {
     const existing = document.querySelector('script[data-swappulse-turnstile]');
     if (existing) {
-      existing.addEventListener('load', () => resolve(window.turnstile), { once: true });
+      existing.addEventListener('load', () => resolve(turnstileApi()), { once: true });
       existing.addEventListener('error', reject, { once: true });
       return;
     }
@@ -23,7 +27,7 @@ function loadTurnstile() {
     script.async = true;
     script.defer = true;
     script.dataset.swappulseTurnstile = 'true';
-    script.onload = () => resolve(window.turnstile);
+    script.onload = () => resolve(turnstileApi());
     script.onerror = reject;
     document.head.appendChild(script);
   });
@@ -78,7 +82,7 @@ export default function DiscordVerify() {
       });
     return () => {
       active = false;
-      if (widgetId !== undefined && window.turnstile) window.turnstile.remove(widgetId);
+      if (widgetId !== undefined && turnstileApi()) turnstileApi().remove(widgetId);
     };
   }, [siteKey, state]);
 
