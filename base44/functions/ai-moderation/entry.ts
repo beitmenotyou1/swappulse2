@@ -1,8 +1,7 @@
-// ai-moderation — LLM-powered content moderation analysis with tiered autonomy.
-// Called by workflows on Post/TradeListing/TradeMessage create events, and by
-// moderators via the conversational agent. Returns a structured classification
-// and applies tiered actions: auto-hide (high confidence severe), warn (medium
-// confidence), or surface_for_review (borderline/low confidence).
+// ai-moderation — LLM-powered content moderation analysis.
+// SECURITY INVARIANT: this endpoint is advisory only. It returns a structured
+// classification for staff review but does not hide content, create labels,
+// notify users, add strikes, restrict accounts or otherwise mutate user state.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import {
   MODERATION_AGENT_NAME,
@@ -30,10 +29,10 @@ function timingSafeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
-// Security: ai-moderation applies tiered enforcement (hide/strike/restrict) via
-// the service role, so it must not be callable by unauthenticated public
-// callers. Allowed callers are an authenticated admin or a caller presenting
-// the registered BACKEND_FUNCTION_SECRET in x-backend-function-secret.
+// Security: the function reads moderation-visible records through the service
+// role and spends LLM credits, so it must not be callable by unauthenticated
+// public callers. Allowed callers are an authenticated admin or a caller
+// presenting the registered BACKEND_FUNCTION_SECRET in x-backend-function-secret.
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -199,26 +198,27 @@ Analyse the content above and return your classification as JSON.`;
       warning_message: llmResponse.warning_message || '',
     };
 
-    // 7. Apply tiered actions
-    let actionTaken = 'allow';
-    const labelType = LABEL_TYPE_MAP[classification.label] || classification.label;
-    const isSevere = SEVERE_LABELS.includes(classification.label);
-    const confidence = classification.confidence;
+    // 7. Advisory-only boundary. Model output is never treated as authority to
+    //    mutate content or account standing. Human staff must apply any action
+    //    through the normal moderation controls after reviewing the source record.
+    const allowedLabels = new Set([
+      'none', 'scam', 'harassment', 'toxic', 'nsfw', 'spam',
+      'off-topic', 'misgraded', 'impersonation',
+    ]);
+    if (!allowedLabels.has(classification.label)) classification.label = 'none';
 
-    if (classification.label === 'none' || classification.recommended_action === 'allow') {
-      actionTaken = 'allow';
-    } else if (isSevere && confidence >= SEVERE_CONFIDENCE_THRESHOLD && classification.recommended_action === 'hide') {
-      actionTaken = 'hide';
-      await applyHideAction(base44, content_type, record, classification, labelType, authorId, authorHandle, subjectUri, subjectCid);
-    } else if (confidence >= MEDIUM_CONFIDENCE_THRESHOLD && (classification.recommended_action === 'warn' || classification.recommended_action === 'hide')) {
-      actionTaken = 'warn';
-      await applyWarnAction(base44, content_type, record, classification, labelType, authorId, authorHandle, subjectUri, subjectCid);
-    } else {
-      actionTaken = 'surface_for_review';
-      await applySurfaceAction(base44, content_type, record, classification, labelType, authorId, authorHandle, subjectUri, subjectCid);
-    }
+    const advisoryAction = classification.label === 'none'
+      ? 'allow'
+      : classification.recommended_action;
 
-    return Response.json({ classification, action_taken: actionTaken, content_type, content_id });
+    return Response.json({
+      classification,
+      recommended_action: advisoryAction,
+      action_taken: 'none_advisory_only',
+      enforcement_applied: false,
+      content_type,
+      content_id,
+    });
   } catch (error) {
     console.error('[ai-moderation] error', error);
     return Response.json({ error: error.message }, { status: 500 });
