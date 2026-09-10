@@ -1,6 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -59,7 +68,8 @@ export default async function(req) {
       prompt: summaryPrompt,
     });
 
-    const summaryText = typeof summary === 'string' ? summary : JSON.stringify(summary);
+    const summaryText = (typeof summary === 'string' ? summary : JSON.stringify(summary)).slice(0, 5000);
+    const summaryHtml = escapeHtml(summaryText);
 
     // 4. Build email content (inline CSS, Midnight Vault palette)
     const subject = 'SwapPulse Weekly Market Sentiment Report';
@@ -85,7 +95,7 @@ export default async function(req) {
       '</div>' +
       '<div style="background:#1a1d2e;border-radius:12px;padding:20px;">' +
       '<h2 style="color:#6d4aff;font-size:18px;margin-bottom:12px;">Market Watch Summary</h2>' +
-      '<div style="line-height:1.6;white-space:pre-wrap;">' + summaryText + '</div>' +
+      '<div style="line-height:1.6;white-space:pre-wrap;">' + summaryHtml + '</div>' +
       '</div>' +
       '<p style="color:#64748b;font-size:12px;margin-top:24px;text-align:center;">The SwapPulse Team</p>' +
       '</div>';
