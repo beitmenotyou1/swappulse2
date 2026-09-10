@@ -39,11 +39,16 @@ function message(content: string) {
 }
 
 Deno.serve(async (req) => {
+  const raw = await req.text();
   try {
-    const raw = await req.text();
     if (!await verifySignature(req, raw)) {
       return Response.json({ error: 'Invalid Discord signature' }, { status: 401 });
     }
+  } catch {
+    return Response.json({ error: 'Invalid Discord signature' }, { status: 401 });
+  }
+
+  try {
     const interaction = JSON.parse(raw);
     if (interaction.type === 1) return Response.json({ type: 1 });
     if (interaction.type !== 2) return message('That interaction is not supported.');
