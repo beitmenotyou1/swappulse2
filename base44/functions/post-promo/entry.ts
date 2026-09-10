@@ -402,6 +402,12 @@ Deno.serve(async (req) => {
       }
       if (!imageBlob) {
         console.error('post-promo: first_join_all banner unavailable after retry; aborting campaign before publish');
+        await recordPromoDelivery(svc, {
+          did: identity.did,
+          outcome: 'failed',
+          error_code: 'PROMO_MEDIA_REQUIRED',
+          message: 'Promotion artwork could not be uploaded.',
+        });
         return Response.json({
           error: 'Promo artwork unavailable; no campaign posts were published',
           code: 'PROMO_MEDIA_REQUIRED',
@@ -429,7 +435,7 @@ Deno.serve(async (req) => {
         });
         if (result?.error && result.status === 401) {
           try {
-            ({ session } = await getPdsSessionForUser(pdsUrl, identity.did, identity.appPassword));
+            ({ session, pdsUrl } = await resolvePromoSession(identity));
             result = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
               repo: session.did,
               collection: 'app.bsky.feed.post',
@@ -441,6 +447,14 @@ Deno.serve(async (req) => {
         }
         if (result?.error) {
           console.error('post-promo: first_join_all createRecord failed', loc.locale, result.status);
+          await recordPromoDelivery(svc, {
+            did: identity.did,
+            outcome: 'failed',
+            error_code: result.status === 401 ? 'AT_AUTHENTICATION_FAILED' : 'AT_PUBLICATION_FAILED',
+            message: `Campaign publication failed for ${loc.locale}.`,
+            facet_count: facets.length,
+            tag_count: tags.length,
+          });
           results.push({ locale: loc.locale, error: `createRecord failed (${result.status})` });
           continue;
         }
@@ -450,6 +464,13 @@ Deno.serve(async (req) => {
           did: session.did,
           posted_at: new Date().toISOString(),
         }).catch((e: any) => console.error('post-promo: first_join_all PromoPost track failed', loc.locale, e?.message || e));
+        await recordPromoDelivery(svc, {
+          did: identity.did,
+          outcome: 'published',
+          at_uri: result.uri,
+          facet_count: facets.length,
+          tag_count: tags.length,
+        });
         results.push({ locale: loc.locale, uri: result.uri, ok: true });
         console.log('post-promo: first_join_all published', loc.locale, result.uri);
       }
@@ -521,6 +542,12 @@ Deno.serve(async (req) => {
     // to silently degrade a scheduled promotion into plain text.
     if (!imageBlob) {
       console.error('post-promo: artwork unavailable after all fallbacks; aborting before publish');
+      await recordPromoDelivery(svc, {
+        did: identity.did,
+        outcome: 'failed',
+        error_code: 'PROMO_MEDIA_REQUIRED',
+        message: 'Promotion artwork could not be uploaded.',
+      });
       return Response.json({
         error: 'Promo artwork unavailable; post was not published',
         code: 'PROMO_MEDIA_REQUIRED',
@@ -551,7 +578,7 @@ Deno.serve(async (req) => {
     // Retry once on auth failure (session may have expired)
     if (result?.error && result.status === 401) {
       try {
-        ({ session } = await getPdsSessionForUser(pdsUrl, identity.did, identity.appPassword));
+        ({ session, pdsUrl } = await resolvePromoSession(identity));
         result = await pdsRequest(pdsUrl, session.accessJwt, 'com.atproto.repo.createRecord', {
           repo: session.did,
           collection: 'app.bsky.feed.post',
@@ -564,7 +591,18 @@ Deno.serve(async (req) => {
 
     if (result?.error) {
       console.error('post-promo: createRecord failed', result.status, result.body);
-      return Response.json({ error: `createRecord failed (${result.status})` }, { status: 502 });
+      const errorCode = result.status === 401 ? 'AT_AUTHENTICATION_FAILED' : 'AT_PUBLICATION_FAILED';
+      await recordPromoDelivery(svc, {
+        did: identity.did,
+        outcome: 'failed',
+        error_code: errorCode,
+        message: result.status === 401
+          ? 'The official AT Protocol credential must be reconnected.'
+          : 'The official promotion could not be published.',
+        facet_count: facets.length,
+        tag_count: tags.length,
+      });
+      return Response.json({ error: `createRecord failed (${result.status})`, code: errorCode }, { status: 502 });
     }
 
     // Track the promo post so firehose-ingest skips it
@@ -574,6 +612,14 @@ Deno.serve(async (req) => {
       did: session.did,
       posted_at: new Date().toISOString(),
     }).catch((e: any) => console.error('post-promo: failed to track PromoPost', e?.message || e));
+
+    await recordPromoDelivery(svc, {
+      did: identity.did,
+      outcome: 'published',
+      at_uri: result.uri,
+      facet_count: facets.length,
+      tag_count: tags.length,
+    });
 
     console.log('post-promo: published promo post', result.uri, `(type: ${promoType}, lang: ${promoLocale.locale})`, card ? `(card: ${card.name})` : '(no card)', '(with external rich-card embed)');
     return Response.json({ ok: true, uri: result.uri, cid: result.cid, content, promoType, locale: promoLocale.locale, card: card ? { id: card.id, name: card.name } : null, hasEmbed: true, embedType: 'app.bsky.embed.external' });
