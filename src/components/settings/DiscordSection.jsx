@@ -58,6 +58,19 @@ export default function DiscordSection() {
     }
   };
 
+  const disconnect = async () => {
+    setWorking(true);
+    try {
+      await base44.functions.invoke('discord-unlink', {});
+      toast({ title: 'Discord disconnected', description: 'SwapPulse-managed roles have been removed or queued for removal.' });
+      await load();
+    } catch (error) {
+      toast({ title: 'Discord could not be disconnected', description: error?.message || 'Please try again later.', variant: 'destructive' });
+    } finally {
+      setWorking(false);
+    }
+  };
+
   const refresh = async () => {
     setWorking(true);
     try {
@@ -116,10 +129,15 @@ export default function DiscordSection() {
                 ))}
               </div>
             </div>
-            <Button onClick={refresh} disabled={working} variant="outline">
-              {working ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              Refresh roles
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={refresh} disabled={working} variant="outline">
+                {working ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Refresh roles
+              </Button>
+              <Button onClick={disconnect} disabled={working} variant="ghost" className="text-destructive hover:text-destructive">
+                Disconnect Discord
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="mt-5">
