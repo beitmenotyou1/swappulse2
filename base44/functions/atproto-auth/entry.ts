@@ -59,7 +59,9 @@ async function validatePdsUrl(rawUrl: string): Promise<string> {
   // Resolve the hostname via DNS and reject if any resolved IP is
   // private/loopback/link-local/metadata (blocks wildcard-DNS SSRF like
   // 169.254.169.254.nip.io that passes the string checks above).
-  await assertSafeHost(host);
+  await assertSafeHost(host, {
+    allowKnownAtprotoPdsWhenDnsUnavailable: true,
+  });
 
   return parsed.origin;
 }
