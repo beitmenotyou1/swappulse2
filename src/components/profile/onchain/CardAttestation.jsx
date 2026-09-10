@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 import { Image } from '@/components/ui/image';
+import { assertImageUpload } from '@/lib/uploadGuard';
 
 export default function CardAttestation({ attestations, onReload, identity }) {
   const { user } = useAuth();
@@ -39,14 +40,22 @@ export default function CardAttestation({ attestations, onReload, identity }) {
     if (files.length === 0) return;
     if (photos.length + files.length > 4) { toast({ title: 'Maximum 4 photos', variant: 'destructive' }); return; }
     setUploading(true);
+    const uploaded = [];
     try {
-      const uploaded = [];
       for (const file of files) {
-        const res = await base44.integrations.Core.UploadFile({ file });
-        uploaded.push(res.file_url);
+        assertImageUpload(file);
+        const res = await base44.integrations.Core.UploadPrivateFile({ file });
+        if (!res?.file_uri) throw new Error('Private upload failed');
+        uploaded.push({
+          file_uri: res.file_uri,
+          preview_url: URL.createObjectURL(file),
+        });
       }
       setPhotos((prev) => [...prev, ...uploaded]);
     } catch (error) {
+      uploaded.forEach((photo) => {
+        if (photo?.preview_url) URL.revokeObjectURL(photo.preview_url);
+      });
       toast({ title: 'Upload failed', description: error?.message, variant: 'destructive' });
     } finally {
       setUploading(false);
@@ -54,7 +63,17 @@ export default function CardAttestation({ attestations, onReload, identity }) {
     }
   };
 
-  const removePhoto = (url) => setPhotos((prev) => prev.filter((p) => p !== url));
+  const removePhoto = (photo) => {
+    if (photo?.preview_url) URL.revokeObjectURL(photo.preview_url);
+    setPhotos((prev) => prev.filter((p) => p.file_uri !== photo?.file_uri));
+  };
+
+  const clearPhotos = () => {
+    photos.forEach((photo) => {
+      if (photo?.preview_url) URL.revokeObjectURL(photo.preview_url);
+    });
+    setPhotos([]);
+  };
 
   const submit = async () => {
     if (!selected || photos.length === 0) return;
@@ -62,24 +81,21 @@ export default function CardAttestation({ attestations, onReload, identity }) {
     try {
       const res = await base44.functions.invoke('create-card-attestation', {
         collection_entry_id: selected.id,
-        card_id: selected.card_id,
-        card_name: selected.card_name,
-        scan_image_urls: photos,
+        scan_file_uris: photos.map((photo) => photo.file_uri),
       });
       const data = res?.data || res;
       const level = Number(data?.verification_level || 0);
       if (data?.attested) {
         toast({ title: 'Card attested', description: `Level ${level} — AI verified your photos match this card.` });
       } else if (level === 1) {
-        // A level-1 result IS a stored, verified attestation (it appears in the
-        // list as SCANNED and counts toward trade badges) — reporting it as an
-        // outright failure contradicted what the user then saw on screen.
-        toast({ title: 'Partially verified', description: 'Level 1 — your photos partly matched. Clearer, well-lit photos can reach level 2.' });
+        // A level-1 result records a partial visual match, but deliberately
+        // does not earn the possession-verified trade badge.
+        toast({ title: 'Partially verified', description: 'Level 1 — your photos partly matched. Clearer, well-lit photos can reach level 2 and the possession-verified badge.' });
       } else {
         toast({ title: 'Verification failed', description: 'The AI could not verify your card photos. Try clearer photos.', variant: 'destructive' });
       }
       setSelected(null);
-      setPhotos([]);
+      clearPhotos();
       await onReload();
     } catch (error) {
       toast({ title: 'Attestation failed', description: error?.response?.data?.error || error?.message, variant: 'destructive' });
@@ -162,15 +178,15 @@ export default function CardAttestation({ attestations, onReload, identity }) {
               <p className="text-sm font-bold">{selected.card_name}</p>
               <p className="text-xs text-muted-foreground">Upload photos of your physical card</p>
             </div>
-            <button onClick={() => { setSelected(null); setPhotos([]); }} className="shrink-0 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+            <button onClick={() => { setSelected(null); clearPhotos(); }} className="shrink-0 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
           </div>
 
           {photos.length > 0 && (
             <div className="grid grid-cols-4 gap-2">
-              {photos.map((url) => (
-                <div key={url} className="relative">
-                  <Image src={url} alt="Scan" className="aspect-square w-full rounded-lg object-cover" />
-                  <button onClick={() => removePhoto(url)} className="absolute -right-1 -top-1 rounded-full bg-destructive p-1 text-destructive-foreground">
+              {photos.map((photo) => (
+                <div key={photo.file_uri} className="relative">
+                  <Image src={photo.preview_url} alt="Private card scan preview" className="aspect-square w-full rounded-lg object-cover" />
+                  <button onClick={() => removePhoto(photo)} className="absolute -right-1 -top-1 rounded-full bg-destructive p-1 text-destructive-foreground">
                     <XCircle className="h-3 w-3" />
                   </button>
                 </div>
@@ -191,7 +207,7 @@ export default function CardAttestation({ attestations, onReload, identity }) {
             {submitting ? 'Verifying…' : 'Attest Card Ownership'}
           </button>
           <p className="text-center text-[10px] text-muted-foreground">
-            AI vision compares your photos with the reference card and records the result on your account.
+            Your photos stay private. Short-lived signed copies are used only for the visual possession check, and the result is recorded on your account.
           </p>
         </div>
       )}
