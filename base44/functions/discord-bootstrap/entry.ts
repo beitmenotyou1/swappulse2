@@ -14,7 +14,7 @@ async function logoDataUri(): Promise<string | null> {
     const response = await fetch(LOGO_URL, { redirect: 'follow' });
     if (!response.ok) return null;
     const bytes = new Uint8Array(await response.arrayBuffer());
-    if (!bytes.length || bytes.length > 256_000) return null;
+    if (!bytes.length || bytes.length > 1_000_000) return null;
     let binary = '';
     for (const byte of bytes) binary += String.fromCharCode(byte);
     return `data:image/png;base64,${btoa(binary)}`;
@@ -24,18 +24,27 @@ async function logoDataUri(): Promise<string | null> {
 }
 
 async function ensureRole(existing: any[], definition: any) {
-  const found = existing.find((role) => role.name === definition.name && !role.managed);
-  if (found) return found;
+  const expectedHoist = ['Moderator', 'Administrator'].includes(definition.name);
+  const found = existing.find((role) => role.name === definition.name);
+  if (found) {
+    const exact = !found.managed
+      && Number(found.color || 0) === Number(definition.colour)
+      && String(found.permissions || '0') === String(definition.permissions)
+      && Boolean(found.mentionable) === false
+      && Boolean(found.hoist) === expectedHoist;
+    if (!exact) throw new Error(`DISCORD_ROLE_CONFLICT:${definition.name}`);
+    return found;
+  }
   return discordRequest(
     `/guilds/${encodeURIComponent(discordGuildId())}/roles`,
     {
       method: 'POST',
       body: JSON.stringify({
         name: definition.name,
-        colour: definition.colour,
+        color: definition.colour,
         permissions: definition.permissions,
         mentionable: false,
-        hoist: ['Moderator', 'Administrator'].includes(definition.name),
+        hoist: expectedHoist,
       }),
     },
   );
@@ -44,19 +53,46 @@ async function ensureRole(existing: any[], definition: any) {
 function privateOverwrites(guildId: string, roleIds: Record<string, string>) {
   return [
     { id: guildId, type: 0, deny: '1024', allow: '0' },
-    { id: roleIds.Collector, type: 0, deny: '0', allow: String(1024n | 2048n | 65536n | 274877906944n) },
-    { id: roleIds.Moderator, type: 0, deny: '0', allow: String(1024n | 2048n | 8192n | 65536n | 17179869184n | 274877906944n) },
-    { id: roleIds.Administrator, type: 0, deny: '0', allow: String(1024n | 2048n | 8192n | 65536n | 17179869184n | 274877906944n) },
+    { id: roleIds.Collector, type: 0, deny: '0', allow: String(1024n | 2048n | 65536n | 34359738368n | 274877906944n) },
+    { id: roleIds.Moderator, type: 0, deny: '0', allow: String(1024n | 2048n | 8192n | 65536n | 8589934592n | 17179869184n | 34359738368n | 274877906944n) },
+    { id: roleIds.Administrator, type: 0, deny: '0', allow: String(1024n | 2048n | 8192n | 65536n | 8589934592n | 17179869184n | 34359738368n | 274877906944n) },
   ].filter((item) => item.id);
 }
 
+function normaliseOverwrites(overwrites: any[] = []) {
+  return overwrites
+    .map((item) => ({
+      id: String(item.id || ''),
+      type: Number(item.type),
+      allow: String(item.allow || '0'),
+      deny: String(item.deny || '0'),
+    }))
+    .sort((left, right) => `${left.type}:${left.id}`.localeCompare(`${right.type}:${right.id}`));
+}
+
 async function ensureChannel(existing: any[], values: any) {
-  const found = existing.find((channel) => channel.name === values.name && channel.type === values.type);
-  if (found) return found;
-  return discordRequest(
-    `/guilds/${encodeURIComponent(discordGuildId())}/channels`,
-    { method: 'POST', body: JSON.stringify(values) },
-  );
+  const named = existing.filter((channel) => channel.name === values.name);
+  if (named.length === 0) {
+    return discordRequest(
+      `/guilds/${encodeURIComponent(discordGuildId())}/channels`,
+      { method: 'POST', body: JSON.stringify(values) },
+    );
+  }
+  const found = named.find((channel) => channel.type === values.type);
+  const exact = found
+    && String(found.parent_id || '') === String(values.parent_id || '')
+    && String(found.topic || '') === String(values.topic || '')
+    && (
+      !Array.isArray(values.permission_overwrites)
+      || JSON.stringify(normaliseOverwrites(found.permission_overwrites))
+        === JSON.stringify(normaliseOverwrites(values.permission_overwrites))
+    )
+    && (
+      values.default_auto_archive_duration === undefined
+      || Number(found.default_auto_archive_duration) === Number(values.default_auto_archive_duration)
+    );
+  if (!exact) throw new Error(`DISCORD_CHANNEL_CONFLICT:${values.name}`);
+  return found;
 }
 
 Deno.serve(async (req) => {
@@ -87,7 +123,10 @@ Deno.serve(async (req) => {
 
     const svc = base44.asServiceRole;
     const guildId = discordGuildId();
-    const guild = await discordRequest(`/guilds/${encodeURIComponent(guildId)}`);
+    const [guild, botUser] = await Promise.all([
+      discordRequest(`/guilds/${encodeURIComponent(guildId)}`),
+      discordRequest('/users/@me'),
+    ]);
     const existingRoles = await discordRequest(`/guilds/${encodeURIComponent(guildId)}/roles`);
     const roleIds: Record<string, string> = {};
     for (const definition of ROLE_DEFINITIONS) {
@@ -159,7 +198,7 @@ Deno.serve(async (req) => {
     const values = {
       guild_id: guildId,
       enabled: true,
-      bot_user_id: String(guild?.application_id || ''),
+      bot_user_id: String(botUser?.id || ''),
       role_ids: roleIds,
       channel_ids: channelIds,
       last_bootstrap_at: new Date().toISOString(),
