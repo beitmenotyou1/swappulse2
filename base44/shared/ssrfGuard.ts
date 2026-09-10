@@ -10,6 +10,21 @@
 const DNS_QUERY_ENDPOINT = 'https://cloudflare-dns.com/dns-query';
 const DNS_QUERY_TIMEOUT_MS = 5_000;
 
+// Base44 currently blocks both native DNS and public DNS-over-HTTPS in some
+// function runtimes. Only these operator-controlled or Bluesky-hosted PDS
+// names may bypass a DNS-unavailable result. A resolved private address still
+// fails before this fallback is considered.
+const DNS_UNAVAILABLE_PDS_HOSTS = new Set(['pds.swappulse.org']);
+const DNS_UNAVAILABLE_PDS_SUFFIXES = ['.host.bsky.network'];
+
+function isKnownAtprotoPdsHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.$/, '');
+  return DNS_UNAVAILABLE_PDS_HOSTS.has(host)
+    || DNS_UNAVAILABLE_PDS_SUFFIXES.some((suffix) =>
+      host.length > suffix.length && host.endsWith(suffix)
+    );
+}
+
 function parseIpv4(value: string): number[] | null {
   const match = value.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (!match) return null;
@@ -146,8 +161,11 @@ async function resolveAddresses(hostname: string): Promise<string[]> {
 
 // Resolves hostname to IP addresses and throws if any resolved IP is private.
 // IP literals are checked directly without DNS. Resolution always fails closed.
-export async function assertSafeHost(hostname: string): Promise<void> {
-  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+export async function assertSafeHost(
+  hostname: string,
+  options: { allowKnownAtprotoPdsWhenDnsUnavailable?: boolean } = {},
+): Promise<void> {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
   if (!h || h === 'localhost' || h.endsWith('.localhost')) {
     throw new Error('Internal hosts are not allowed.');
   }
@@ -158,7 +176,13 @@ export async function assertSafeHost(hostname: string): Promise<void> {
   }
 
   const addresses = await resolveAddresses(h);
-  if (addresses.length === 0) throw new Error('Could not resolve host.');
+  if (addresses.length === 0) {
+    if (
+      options.allowKnownAtprotoPdsWhenDnsUnavailable
+      && isKnownAtprotoPdsHostname(h)
+    ) return;
+    throw new Error('Could not resolve host.');
+  }
 
   for (const address of addresses) {
     if (isPrivateIp(address)) {
