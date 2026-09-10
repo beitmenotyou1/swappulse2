@@ -114,11 +114,38 @@ export default function DiscordBotSection() {
         )}
       </div>
 
+      {preview?.portal && !config?.enabled && (
+        <div className="mt-5 rounded-lg border border-border bg-muted/30 p-4">
+          <p className="font-semibold">Discord Developer Portal prerequisites</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            The bootstrap checks these values before it creates any role or channel.
+          </p>
+          <dl className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
+            <div><dt className="text-muted-foreground">Application</dt><dd className="break-all font-mono">{preview.portal.application_id}</dd></div>
+            <div><dt className="text-muted-foreground">Install permissions</dt><dd className="font-mono">{preview.portal.install_permissions}</dd></div>
+            <div className="sm:col-span-2"><dt className="text-muted-foreground">Interaction endpoint</dt><dd className="break-all font-mono">{preview.portal.interactions_endpoint_url}</dd></div>
+            <div className="sm:col-span-2"><dt className="text-muted-foreground">OAuth redirect</dt><dd className="break-all font-mono">{preview.portal.oauth_redirect_uri}</dd></div>
+            <div><dt className="text-muted-foreground">Installation</dt><dd>Guild on, User off</dd></div>
+            <div><dt className="text-muted-foreground">Gateway intents</dt><dd>All off</dd></div>
+          </dl>
+          {preview.portal.install_url && (
+            <a
+              className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline"
+              href={preview.portal.install_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Install or re-authorise SwapPulse Bot
+            </a>
+          )}
+        </div>
+      )}
+
       {preview && !config?.enabled && (
         <div className="mt-5 rounded-lg border border-warning/30 bg-warning/5 p-4">
           <p className="font-semibold">External Discord changes require confirmation</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            This creates the listed roles and five support channels. Existing channels are not changed. Enter the exact confirmation below only after checking the preview.
+            This configures the application metadata, then creates the listed roles and five support channels. Existing channels are not changed. Enter the exact confirmation below only after completing the portal prerequisites and checking the preview.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {(preview.roles || []).map((role) => <span key={role} className="rounded-full bg-secondary px-2 py-1 text-xs">{role}</span>)}
