@@ -1,9 +1,8 @@
-// Shared hashtag facet builder for AT Protocol posts. Bluesky renders
-// #hashtags as clickable, searchable tag links only when the post record
-// carries rich-text facets (app.bsky.richtext.facet#tag) annotating each
-// hashtag's UTF-8 byte range in the text — the `tags` field alone only
-// handles search indexing. Used by atproto-bridge (for all user-authored
-// posts: compose, reply, quote) and post-promo (for promo posts).
+// Shared rich-text facet builder for AT Protocol posts.
+//
+// Bluesky clients require UTF-8 byte ranges for clickable links and hashtags.
+// The record-level tags array is also populated for discovery, but facets are
+// what make the visible text interactive.
 
 export interface Facet {
   index: { byteStart: number; byteEnd: number };
@@ -13,111 +12,116 @@ export interface Facet {
   >;
 }
 
-/**
- * Scan `text` for #hashtag patterns and return a facets array where each
- * entry annotates the match's UTF-8 byte range with a `tag` feature (the
- * tag value is the hashtag without `#`, lowercased). Byte offsets are
- * computed by accumulating the byte length of each UTF-8 chunk between
- * matches, since Bluesky facets index bytes, not characters. Returns an
- * empty array when the text contains no hashtags.
- */
-export function buildHashtagFacets(text: string): Facet[] {
-  const facets: Facet[] = [];
-  if (!text || typeof text !== 'string') return facets;
-  const encoder = new TextEncoder();
-  let byteOffset = 0;
-  let lastIdx = 0;
-  const re = /#([A-Za-z0-9_]+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    byteOffset += encoder.encode(text.slice(lastIdx, m.index)).length;
-    const tagBytes = encoder.encode(m[0]).length;
-    facets.push({
-      index: { byteStart: byteOffset, byteEnd: byteOffset + tagBytes },
-      features: [{ $type: 'app.bsky.richtext.facet#tag', tag: m[1].toLowerCase() }],
-    });
-    byteOffset += tagBytes;
-    lastIdx = m.index + m[0].length;
-  }
-  return facets;
+const encoder = new TextEncoder();
+const URL_PATTERN = /https?:\/\/[^\s<>"']+/giu;
+const HASHTAG_PATTERN = /(^|[\s([{"'.,;:!?])#([\p{L}\p{N}_]{1,64})/gu;
+
+function byteRange(text: string, start: number, end: number) {
+  return {
+    byteStart: encoder.encode(text.slice(0, start)).length,
+    byteEnd: encoder.encode(text.slice(0, end)).length,
+  };
 }
 
-/**
- * Scan `text` for https:// URLs and return a facets array where each entry
- * annotates the match's UTF-8 byte range with a `link` feature (the full URL
- * as the `uri`). Trailing punctuation (.,;:!?)]'") is stripped so a URL at
- * the end of a sentence doesn't capture the period. Byte offsets are computed
- * the same way as buildHashtagFacets. Returns an empty array when the text
- * contains no URLs. Without these link facets Bluesky renders URLs as plain
- * non-clickable text.
- */
+function trimUrl(raw: string): string {
+  let url = raw.replace(/[.,;:!?'"]+$/u, '');
+  while (
+    (url.endsWith(')') && (url.match(/\(/g)?.length || 0) < (url.match(/\)/g)?.length || 0))
+    || (url.endsWith(']') && (url.match(/\[/g)?.length || 0) < (url.match(/\]/g)?.length || 0))
+  ) {
+    url = url.slice(0, -1);
+  }
+  return url;
+}
+
+function urlCharacterRanges(text: string) {
+  const ranges: Array<{ start: number; end: number }> = [];
+  URL_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = URL_PATTERN.exec(text)) !== null) {
+    const url = trimUrl(match[0]);
+    if (url) ranges.push({ start: match.index, end: match.index + url.length });
+  }
+  return ranges;
+}
+
+function overlaps(
+  a: { byteStart: number; byteEnd: number },
+  b: { byteStart: number; byteEnd: number },
+): boolean {
+  return a.byteStart < b.byteEnd && b.byteStart < a.byteEnd;
+}
+
 export function buildLinkFacets(text: string): Facet[] {
+  if (!text || typeof text !== 'string') return [];
   const facets: Facet[] = [];
-  if (!text || typeof text !== 'string') return facets;
-  const encoder = new TextEncoder();
-  let byteOffset = 0;
-  let lastIdx = 0;
-  const re = /https?:\/\/[^\s]+/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const url = m[0].replace(/[.,;:!?)\]'"]+$/, '');
+  URL_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = URL_PATTERN.exec(text)) !== null) {
+    const url = trimUrl(match[0]);
     if (!url) continue;
-    const urlStart = m.index;
-    const urlEnd = urlStart + url.length;
-    byteOffset += encoder.encode(text.slice(lastIdx, urlStart)).length;
-    const urlBytes = encoder.encode(url).length;
     facets.push({
-      index: { byteStart: byteOffset, byteEnd: byteOffset + urlBytes },
+      index: byteRange(text, match.index, match.index + url.length),
       features: [{ $type: 'app.bsky.richtext.facet#link', uri: url }],
     });
-    byteOffset += urlBytes;
-    lastIdx = urlEnd;
   }
   return facets;
 }
 
-/**
- * Build the full set of rich-text facets for a post: both hashtag (#tag) and
- * link (https://…) facets, sorted by byte offset. Bluesky only renders
- * hashtags as clickable tags and URLs as clickable links when the post record
- * carries these facets annotating each match's UTF-8 byte range.
- */
+export function buildHashtagFacets(text: string): Facet[] {
+  if (!text || typeof text !== 'string') return [];
+  const facets: Facet[] = [];
+  const urlRanges = urlCharacterRanges(text);
+  HASHTAG_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = HASHTAG_PATTERN.exec(text)) !== null) {
+    const start = match.index + match[1].length;
+    const end = start + 1 + match[2].length;
+    if (urlRanges.some((range) => start < range.end && range.start < end)) continue;
+    facets.push({
+      index: byteRange(text, start, end),
+      features: [{
+        $type: 'app.bsky.richtext.facet#tag',
+        tag: match[2].toLocaleLowerCase('und'),
+      }],
+    });
+  }
+  return facets;
+}
+
 export function buildRichTextFacets(text: string): Facet[] {
   return [...buildHashtagFacets(text), ...buildLinkFacets(text)]
     .sort((a, b) => a.index.byteStart - b.index.byteStart);
 }
 
-/**
- * Attach hashtag facets to an app.bsky.feed.post record in place. When the
- * record already carries facets for some byte ranges (e.g. caller-provided
- * mention/link facets), the computed tag facets are appended — existing
- * facets are preserved untouched. No-op when the text has no hashtags.
- */
 export function attachHashtagFacets(record: any): void {
-  if (!record || typeof record !== 'object') return;
-  const text = record.text;
-  if (!text || typeof text !== 'string') return;
-  const tagFacets = buildHashtagFacets(text);
-  if (tagFacets.length === 0) return;
-  record.facets = Array.isArray(record.facets)
-    ? [...record.facets, ...tagFacets]
-    : tagFacets;
+  if (!record || typeof record !== 'object' || typeof record.text !== 'string') return;
+  const existing: Facet[] = Array.isArray(record.facets) ? record.facets : [];
+  const additions = buildHashtagFacets(record.text)
+    .filter((facet) => !existing.some((current) => overlaps(facet.index, current.index)));
+  if (additions.length > 0) record.facets = [...existing, ...additions]
+    .sort((a, b) => a.index.byteStart - b.index.byteStart);
 }
 
-/**
- * Attach both hashtag and link facets to an app.bsky.feed.post record in
- * place, so #hashtags render as clickable tags and https:// URLs render as
- * clickable links on Bluesky. Existing caller-provided facets (e.g. mention
- * facets) are preserved untouched; computed facets are appended. No-op when
- * the text has no hashtags or URLs.
- */
 export function attachRichTextFacets(record: any): void {
-  if (!record || typeof record !== 'object') return;
-  const text = record.text;
-  if (!text || typeof text !== 'string') return;
-  const richFacets = buildRichTextFacets(text);
-  if (richFacets.length === 0) return;
-  record.facets = Array.isArray(record.facets)
-    ? [...record.facets, ...richFacets]
-    : richFacets;
+  if (!record || typeof record !== 'object' || typeof record.text !== 'string') return;
+  const existing: Facet[] = Array.isArray(record.facets) ? record.facets : [];
+  const additions = buildRichTextFacets(record.text)
+    .filter((facet) => !existing.some((current) => overlaps(facet.index, current.index)));
+  const facets = [...existing, ...additions]
+    .sort((a, b) => a.index.byteStart - b.index.byteStart);
+  if (facets.length > 0) record.facets = facets;
+
+  const discoveredTags = facets.flatMap((facet) =>
+    facet.features
+      .filter((feature: any) => feature?.$type === 'app.bsky.richtext.facet#tag')
+      .map((feature: any) => String(feature.tag || '').trim())
+      .filter(Boolean)
+  );
+  if (discoveredTags.length > 0) {
+    record.tags = Array.from(new Set([
+      ...(Array.isArray(record.tags) ? record.tags : []),
+      ...discoveredTags,
+    ])).slice(0, 8);
+  }
 }
