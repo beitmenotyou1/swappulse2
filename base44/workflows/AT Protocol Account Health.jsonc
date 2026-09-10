@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "atproto_account_health",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check_accounts": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "federation-diagnostics",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Check linked AT Protocol accounts",
+            "description": "Validates credentials, repositories, handles and public profiles without exposing secrets"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "17 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/London",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "AT Protocol Account Health",
+  "description": "Hourly secret-free account-health audit for every linked SwapPulse AT Protocol identity."
+}
