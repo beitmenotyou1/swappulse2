@@ -19,9 +19,17 @@ export async function syncPossessionVerified(
     .catch(() => []);
   const verifiedCardIds = new Set<string>();
   for (const s of allSessions) {
-    if (s.card_id) verifiedCardIds.add(s.card_id);
+    // A level-0 self-attestation is only a collector claim, and level 1 is a
+    // partial visual match. Neither is strong enough to display the platform's
+    // possession-verified badge. Require a level-2+ reviewed photo match.
+    if (s.card_id && Number(s.verification_level || 0) >= 2) verifiedCardIds.add(s.card_id);
   }
-  if (extraVerifiedCardId) verifiedCardIds.add(extraVerifiedCardId);
+  if (extraVerifiedCardId) {
+    const extraVerified = allSessions.some(
+      (s: any) => s.card_id === extraVerifiedCardId && Number(s.verification_level || 0) >= 2,
+    );
+    if (extraVerified) verifiedCardIds.add(extraVerifiedCardId);
+  }
 
   let updatedCount = 0;
   for (const listing of myListings) {
