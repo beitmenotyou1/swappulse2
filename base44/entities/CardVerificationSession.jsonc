@@ -26,7 +26,15 @@
       "items": {
         "type": "string"
       },
-      "description": "URLs of photos of the physical card uploaded by the collector"
+      "description": "Legacy public photo URLs retained for historical verification sessions only. New verification flows store private file URIs in scan_file_uris."
+    },
+    "scan_file_uris": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "string"
+      },
+      "description": "Private Base44 file URIs for the collector's card photos. Signed delivery URLs are created transiently for AI analysis and are never persisted."
     },
     "ai_match_result": {
       "type": "object",
@@ -115,19 +123,14 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
       "$or": [
