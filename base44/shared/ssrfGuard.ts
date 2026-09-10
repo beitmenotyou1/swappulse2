@@ -21,7 +21,26 @@ function parseIpv4(value: string): number[] | null {
 
 function isIpLiteral(value: string): boolean {
   if (parseIpv4(value)) return true;
-  return value.includes(':') && /^[0-9a-f:.]+$/i.test(value);
+  if (!value.includes(':') || !/^[0-9a-f:.]+$/i.test(value)) return false;
+  if ((value.match(/::/g) || []).length > 1) return false;
+
+  const parts = value.split('::');
+  const left = parts[0] ? parts[0].split(':') : [];
+  const right = parts.length === 2 && parts[1] ? parts[1].split(':') : [];
+  const segments = [...left, ...right];
+  let segmentCount = 0;
+
+  for (const segment of segments) {
+    if (segment.includes('.')) {
+      if (!parseIpv4(segment)) return false;
+      segmentCount += 2;
+    } else {
+      if (!/^[0-9a-f]{1,4}$/i.test(segment)) return false;
+      segmentCount += 1;
+    }
+  }
+
+  return parts.length === 2 ? segmentCount < 8 : segmentCount === 8;
 }
 
 // Returns true if the given IP literal (IPv4 or IPv6) is private, loopback,
