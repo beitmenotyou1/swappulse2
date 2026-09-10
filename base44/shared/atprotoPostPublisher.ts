@@ -258,11 +258,14 @@ async function readExistingRecord(
     headers: { Authorization: `Bearer ${accessJwt}` },
     redirect: 'error',
   });
-  if (response.status === 400 || response.status === 404) return null;
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 404 || (response.status === 400 && body?.error === 'RecordNotFound')) {
+    return null;
+  }
   if (!response.ok) {
     throw new AtprotoPublishError('AT_PDS_UNREACHABLE', 'The Personal Data Server could not confirm the post record.');
   }
-  return response.json();
+  return body;
 }
 
 async function recordDeliveryEvent(svc: any, data: any) {
