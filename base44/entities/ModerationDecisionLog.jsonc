@@ -133,6 +133,23 @@
       "type": "string",
       "format": "date-time"
     },
+    "fairness_rater_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Authenticated affected-user IDs that have already submitted a fairness rating. Used only for replay/duplicate protection."
+    },
+    "fairness_rating_sum": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Running sum of authorised fairness ratings used to calculate a stable aggregate without re-averaging an average."
+    },
+    "fairness_rating_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of authorised fairness ratings included in the aggregate."
+    },
     "feedback_processed": {
       "type": "boolean",
       "default": false,
