@@ -40,10 +40,12 @@ const COLLECTION_ENTITY_MAP: Record<string, string> = {
 
 async function resolveCallerBridgeSession(req: Request, caller: any) {
   const resolved = await resolveBridgeSession(req);
-  if (caller?.role !== 'admin') {
-    if (!caller?.did || resolved.session?.did !== caller.did) {
-      throw new Error('A valid personal AT Protocol identity is required for federation');
+  if (caller?.did?.startsWith('did:plc:')) {
+    if (resolved.session?.did !== caller.did) {
+      throw new Error('PDS session identity mismatch');
     }
+  } else if (caller?.role !== 'admin') {
+    throw new Error('A valid personal AT Protocol identity is required for federation');
   }
   return resolved;
 }
@@ -223,8 +225,9 @@ Deno.serve(async (req) => {
       const hostname = parsedUrl.hostname.toLowerCase();
       const ALLOWED_IMAGE_HOSTS = new Set([
         'assets.tcgdex.net',        // TCGDex card artwork
-        'media.base44static.com',    // Base44 uploaded / generated images
-        'static.wixstatic.com',      // Base44 static media mirror
+        'media.base44.com',          // Current Base44 uploaded media CDN
+        'media.base44static.com',    // Legacy Base44 uploaded media CDN
+        'static.wixstatic.com',      // Legacy Base44 static media mirror
       ]);
       if (!ALLOWED_IMAGE_HOSTS.has(hostname)) {
         return Response.json({ error: 'imageUrl hostname is not allowed' }, { status: 400 });
