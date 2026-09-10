@@ -67,6 +67,7 @@ const VoiceSpaces = lazy(() => import('@/pages/VoiceSpaces'));
 const SpaceRoom = lazy(() => import('@/pages/SpaceRoom'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const Settings = lazy(() => import('@/pages/Settings'));
+const DiscordVerify = lazy(() => import('@/pages/DiscordVerify'));
 const Wallet = lazy(() => import('@/pages/Wallet'));
 const Recover = lazy(() => import('@/pages/Recover'));
 const Status = lazy(() => import('@/pages/Status'));
@@ -165,6 +166,7 @@ const AuthenticatedApp = () => {
       <Route path="/invite/:code" element={<Invite />} />
       <Route path="/order-complete" element={<OrderComplete />} />
       <Route path="/status" element={<Status />} />
+      <Route path="/discord-verify" element={<DiscordVerify />} />
       <Route path="/help" element={<ExternalRedirect to={SITE_LINKS.documentation} label="Open documentation" />} />
       <Route path="/help/*" element={<ExternalRedirect to={SITE_LINKS.documentation} label="Open documentation" />} />
       <Route path="/chain" element={<Navigate to="/chain/" replace />} />
