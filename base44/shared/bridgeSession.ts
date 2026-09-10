@@ -17,23 +17,28 @@ export async function resolveBridgeSession(req: Request): Promise<{ pdsUrl: stri
   const pdsUrl = Deno.env.get('PDS_URL');
   if (!pdsUrl) throw new Error('PDS_URL not configured');
 
+  let user: any = null;
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
+    user = await base44.auth.me();
     if (user?.did?.startsWith('did:plc:')) {
       const identity = await getUserIdentity(base44.asServiceRole, user);
-      if (identity) {
-        try {
-          return await getPdsSessionForUser(identity.pdsUrl, identity.did, identity.appPassword);
-        } catch (e) {
-          console.error('bridgeSession: per-user session failed, falling back to shared', e?.message || e);
-        }
+      if (!identity) {
+        throw new Error('Personal AT Protocol credentials are missing. Reconnect the account in Settings.');
       }
+      return await getPdsSessionForUser(
+        identity.pdsUrl,
+        identity.did,
+        identity.appPassword,
+      );
     }
-  } catch {
-    // No auth context (e.g. unauthenticated call) — use shared session
+  } catch (error) {
+    // A linked identity must fail closed. Falling back to the shared account
+    // could publish an administrator's post under the wrong DID.
+    if (user?.did?.startsWith('did:plc:')) throw error;
   }
 
+  // The shared bridge account is reserved for callers that have no personal
+  // DID, such as explicitly configured service-owned records.
   return getPdsSession();
 }
