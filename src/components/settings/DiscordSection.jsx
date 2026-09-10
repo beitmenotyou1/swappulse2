@@ -141,6 +141,9 @@ export default function DiscordSection() {
           </div>
         ) : (
           <div className="mt-5">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Continuing opens Discord's consent screen. SwapPulse requests only your basic Discord identity and permission to add you to the official SwapPulse server if you are not already a member.
+            </p>
             <Button onClick={connect} disabled={working}>
               {working ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
               Connect Discord account
