@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 
 const CONFIRMATION = 'CREATE_SWAPPULSE_DISCORD_STRUCTURE';
+const BotInput = /** @type {any} */ (Input);
 
 function unwrap(response) {
   return response?.data || response;
@@ -122,7 +123,7 @@ export default function DiscordBotSection() {
           <div className="mt-3 flex flex-wrap gap-2">
             {(preview.roles || []).map((role) => <span key={role} className="rounded-full bg-secondary px-2 py-1 text-xs">{role}</span>)}
           </div>
-          <Input
+          <BotInput
             className="mt-4 font-mono"
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
