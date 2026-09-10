@@ -3,6 +3,7 @@ import {
   discordApplicationId,
   discordGuildId,
   discordPublicKey,
+  discordRedirectUri,
   discordRequest,
   DISCORD_INSTALL_PERMISSIONS,
   ROLE_DEFINITIONS,
@@ -93,6 +94,28 @@ function normaliseTags(tags: any[] = []) {
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+function assertBackendConfiguration(): void {
+  const required = [
+    'DISCORD_BOT_TOKEN',
+    'DISCORD_APPLICATION_ID',
+    'DISCORD_CLIENT_SECRET',
+    'DISCORD_PUBLIC_KEY',
+    'DISCORD_GUILD_ID',
+    'DISCORD_REDIRECT_URI',
+    'DISCORD_LINK_STATE_SECRET',
+    'TURNSTILE_SITE_KEY',
+    'TURNSTILE_SECRET_KEY',
+  ];
+  const missing = required.filter((name) => !String(Deno.env.get(name) || '').trim());
+  if (missing.length) throw new Error(`DISCORD_CONFIG_MISSING:${missing.join(',')}`);
+  if (String(Deno.env.get('DISCORD_LINK_STATE_SECRET') || '').length < 32) {
+    throw new Error('DISCORD_LINK_STATE_SECRET_TOO_SHORT');
+  }
+  if (discordRedirectUri() !== OAUTH_CALLBACK_URL) {
+    throw new Error('DISCORD_REDIRECT_URI_MISMATCH');
+  }
+}
+
 function installationUrl(applicationId: string): string {
   const url = new URL('https://discord.com/oauth2/authorize');
   url.searchParams.set('client_id', applicationId);
@@ -169,6 +192,17 @@ Deno.serve(async (req) => {
           public_bot_during_private_testing: 'Disable',
           privileged_gateway_intents: 'Keep all disabled',
           activities_social_sdk_rich_presence: 'Not used',
+          backend_environment: [
+            'DISCORD_BOT_TOKEN',
+            'DISCORD_APPLICATION_ID',
+            'DISCORD_CLIENT_SECRET',
+            'DISCORD_PUBLIC_KEY',
+            'DISCORD_GUILD_ID',
+            'DISCORD_REDIRECT_URI',
+            'DISCORD_LINK_STATE_SECRET',
+            'TURNSTILE_SITE_KEY',
+            'TURNSTILE_SECRET_KEY',
+          ],
         },
         notes: [
           'New community forums are hidden from @everyone and visible to Collector or staff roles.',
@@ -182,6 +216,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Exact confirmation is required.' }, { status: 400 });
     }
 
+    assertBackendConfiguration();
     const svc = base44.asServiceRole;
     const guildId = discordGuildId();
     const applicationId = discordApplicationId();
