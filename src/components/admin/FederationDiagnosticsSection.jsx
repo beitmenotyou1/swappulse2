@@ -4,11 +4,13 @@ import { Loader2, Activity, RefreshCw, Globe, CheckCircle2, AlertTriangle, XCirc
 import { useToast } from '@/components/ui/use-toast';
 
 const STATUS_META = {
-  ok: { label: 'OK', chip: 'bg-success/15 text-success', Icon: CheckCircle2 },
+  healthy: { label: 'Healthy', chip: 'bg-success/15 text-success', Icon: CheckCircle2 },
   handle_mismatch: { label: 'Handle mismatch', chip: 'bg-warning/15 text-warning', Icon: AlertTriangle },
-  not_in_plc: { label: 'Not in public PLC', chip: 'bg-destructive/15 text-destructive', Icon: XCircle },
-  no_pds_account: { label: 'No PDS account', chip: 'bg-destructive/15 text-destructive', Icon: XCircle },
-  no_credential: { label: 'No credential', chip: 'bg-secondary text-muted-foreground', Icon: MinusCircle },
+  profile_unavailable: { label: 'Profile unavailable', chip: 'bg-warning/15 text-warning', Icon: AlertTriangle },
+  pds_unreachable: { label: 'PDS or repository unavailable', chip: 'bg-destructive/15 text-destructive', Icon: XCircle },
+  authentication_failed: { label: 'App password rejected', chip: 'bg-destructive/15 text-destructive', Icon: XCircle },
+  identity_mismatch: { label: 'Identity mismatch', chip: 'bg-destructive/15 text-destructive', Icon: XCircle },
+  credentials_missing: { label: 'Credentials missing', chip: 'bg-secondary text-muted-foreground', Icon: MinusCircle },
 };
 
 export default function FederationDiagnosticsSection() {
@@ -57,8 +59,8 @@ export default function FederationDiagnosticsSection() {
         Federation Diagnostics
       </h2>
       <p className="mb-3 text-sm text-muted-foreground">
-        Checks every provisioned account against the PDS, the public plc.directory, and
-        handle resolution, so you can see exactly what blocks discoverability on bsky.app.
+        Checks every linked account's stored app password, PDS repository, public
+        profile and handle resolution without displaying any credential or access token.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -103,7 +105,7 @@ export default function FederationDiagnosticsSection() {
               </thead>
               <tbody>
                 {report.report.map((r) => {
-                  const meta = STATUS_META[r.status] || STATUS_META.no_credential;
+                  const meta = STATUS_META[r.status] || STATUS_META.credentials_missing;
                   return (
                     <tr key={r.userId} className="border-t border-border">
                       <td className="px-3 py-2">{r.username || r.email}</td>
