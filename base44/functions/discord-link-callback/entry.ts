@@ -73,6 +73,19 @@ Deno.serve(async (req) => {
       return finish('failed', 'already_linked');
     }
 
+    const previousUserLinks = await svc.entities.DiscordAccountLink
+      .filter({ user_id: user.id, guild_id: discordGuildId(), status: 'verified' }, '-created_date', 50)
+      .catch(() => []);
+    for (const previous of previousUserLinks) {
+      if (String(previous.discord_user_id) === String(profile.id)) continue;
+      await svc.entities.DiscordAccountLink.update(previous.id, {
+        status: 'revoked',
+        desired_roles: [],
+        last_sync_error: '',
+      });
+      await syncDiscordLink(svc, { ...previous, status: 'revoked' }, 'oauth').catch(() => null);
+    }
+
     await discordRequest(
       `/guilds/${encodeURIComponent(discordGuildId())}/members/${encodeURIComponent(profile.id)}`,
       {
