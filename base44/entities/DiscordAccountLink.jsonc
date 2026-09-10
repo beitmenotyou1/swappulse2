@@ -1,0 +1,94 @@
+{
+  "name": "DiscordAccountLink",
+  "type": "object",
+  "title": "Discord account link",
+  "description": "A verified Discord membership associated with a SwapPulse account or a Discord-bound CAPTCHA. OAuth tokens are never stored.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "discord_user_id": {
+      "type": "string"
+    },
+    "discord_username": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "verification_method": {
+      "type": "string",
+      "enum": [
+        "swappulse_account",
+        "captcha"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "revoked"
+      ],
+      "default": "verified"
+    },
+    "desired_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applied_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_role_sync_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sync_error": {
+      "type": "string",
+      "maxLength": 300
+    }
+  },
+  "required": [
+    "discord_user_id",
+    "guild_id",
+    "verification_method",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
