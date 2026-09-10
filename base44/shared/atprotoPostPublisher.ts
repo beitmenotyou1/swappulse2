@@ -50,7 +50,13 @@ function safeFailure(error: any): { code: string; message: string } {
       message: 'The PDS session does not match this SwapPulse account.',
     };
   }
-  if (/abort|timed out|network|fetch failed|unreachable/i.test(raw)) {
+  if (/internal hosts|private\/internal|PDS URL must|PDS URL.*invalid/i.test(raw)) {
+    return {
+      code: 'AT_PDS_URL_REJECTED',
+      message: 'The stored PDS address is not an allowed public HTTPS endpoint. Reconnect the account in Settings.',
+    };
+  }
+  if (/abort|timed out|network|fetch failed|unreachable|could not resolve host/i.test(raw)) {
     return {
       code: 'AT_PDS_UNREACHABLE',
       message: 'The Personal Data Server could not be reached. SwapPulse will retry automatically.',
