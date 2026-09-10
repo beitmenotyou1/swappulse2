@@ -335,12 +335,12 @@ export async function publishLocalPost(
     if (embed) record.embed = embed;
     attachRichTextFacets(record);
 
-    let existing = await readExistingRecord(
+    const existing = await readExistingRecord(
       resolved.pdsUrl,
       resolved.session.accessJwt,
       identity.did,
       rkey,
-    ).catch(() => null);
+    );
     let result: any;
     if (existing?.uri) {
       if (existing?.value?.text !== record.text) {
