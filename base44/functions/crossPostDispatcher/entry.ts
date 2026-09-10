@@ -6,11 +6,13 @@
 // logs each delivery as an externalActivity record (activityType: "post",
 // platform set to the destination).
 //
-// Discord webhook + Telegram bot post for real (user-supplied webhook URL /
-// bot token). Bluesky, Mastodon, Nostr, and Twitter require OAuth/connector
-// wiring not yet available, so those are simulated (delivery logged but not
-// actually sent) - wire real credentials/connectors to enable them.
+// BlueSky uses the caller's linked AT Protocol identity. Discord webhooks
+// and Telegram bots post with their configured credentials. Mastodon, Nostr
+// and Twitter remain unavailable until their provider-specific OAuth flows exist.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { attachRichTextFacets } from '../../shared/hashtagFacets.ts';
+import { clearPdsSession, getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
+import { getUserIdentity } from '../../shared/userIdentity.ts';
 
 const TEMPLATES = {
   pack_opening: "🃏 Just pulled a {cardName} ({rarity}) from {setCode}! See it on SwapPulse: {url}",
@@ -56,7 +58,97 @@ function isValidTelegramBotToken(token) {
   return /^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(token || '');
 }
 
-async function postToPlatform(platform, credential, extra, message) {
+function trimAtprotoText(value) {
+  const text = String(value || '').trim();
+  if (!text) return 'New SwapPulse update';
+  try {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    return Array.from(segmenter.segment(text), (entry) => entry.segment).slice(0, 300).join('');
+  } catch {
+    return Array.from(text).slice(0, 300).join('');
+  }
+}
+
+async function stableCrossPostRkey(seed) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(seed || '')));
+  const hex = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `spx${hex.slice(0, 40)}`;
+}
+
+async function postToPlatform(platform, credential, extra, message, context = {}) {
+  if (platform === 'bluesky') {
+    if (context.sourcePost) {
+      if (context.sourcePost.federation_status === 'published' && context.sourcePost.at_uri) {
+        return { ok: true, simulated: false, already: true, uri: context.sourcePost.at_uri };
+      }
+      return {
+        ok: false,
+        simulated: false,
+        pending: true,
+        error: 'The original post is queued for AT Protocol delivery.',
+      };
+    }
+    if (!context.identity || context.blueskyError) {
+      return {
+        ok: false,
+        simulated: false,
+        error: context.blueskyError || 'No linked AT Protocol account is available.',
+      };
+    }
+
+    try {
+      let resolved = await getPdsSessionForUser(
+        context.identity.pdsUrl,
+        context.identity.did,
+        context.identity.appPassword,
+      );
+      if (resolved.session.did !== context.identity.did) {
+        return { ok: false, simulated: false, error: 'AT Protocol identity mismatch.' };
+      }
+      const record = {
+        $type: 'app.bsky.feed.post',
+        text: trimAtprotoText(message),
+        createdAt: new Date().toISOString(),
+        langs: [String(context.locale || 'en-GB').slice(0, 35)],
+      };
+      attachRichTextFacets(record);
+      const rkey = context.test
+        ? `spxt${Date.now().toString(36)}${crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`
+        : await stableCrossPostRkey(context.stableSeed);
+      const publish = () => pdsRequest(
+        resolved.pdsUrl,
+        resolved.session.accessJwt,
+        'com.atproto.repo.putRecord',
+        {
+          repo: context.identity.did,
+          collection: 'app.bsky.feed.post',
+          rkey,
+          record,
+        },
+      );
+      let result = await publish();
+      if (result?.error && result.status === 401) {
+        clearPdsSession();
+        resolved = await getPdsSessionForUser(
+          context.identity.pdsUrl,
+          context.identity.did,
+          context.identity.appPassword,
+        );
+        result = await publish();
+      }
+      if (result?.error) {
+        return { ok: false, simulated: false, error: `BlueSky rejected the post (${result.status}).` };
+      }
+      return { ok: true, simulated: false, uri: result.uri, cid: result.cid };
+    } catch (error) {
+      return {
+        ok: false,
+        simulated: false,
+        error: String(error?.message || 'BlueSky publication failed').split(':')[0],
+      };
+    }
+  }
+
   if (!credential) return { ok: false, simulated: false, error: 'No credential configured' };
   if (platform === 'discord_webhook') {
     if (!isAllowedDiscordWebhook(credential)) {
@@ -85,8 +177,7 @@ async function postToPlatform(platform, credential, extra, message) {
       return { ok: !!j.ok, simulated: false, error: j.description || undefined };
     } catch (e) { return { ok: false, simulated: false, error: e.message }; }
   }
-  // bluesky, mastodon, nostr, twitter - OAuth/connector wiring not yet available → simulated
-  return { ok: true, simulated: true };
+  return { ok: false, simulated: false, error: 'This platform is not connected yet.' };
 }
 
 Deno.serve(async (req) => {
@@ -121,25 +212,42 @@ Deno.serve(async (req) => {
       configs = all.filter((c) => c.enabled && Array.isArray(c.contentTypes) && c.contentTypes.includes(contentType));
     }
 
+    const sourcePost = !test && contentId
+      ? await svc.entities.Post.get(contentId).catch(() => null)
+      : null;
+    let identity = null;
+    let blueskyError = '';
+    if (configs.some((config) => config.platform === 'bluesky') && !sourcePost) {
+      try {
+        identity = await getUserIdentity(svc, me);
+        if (!identity) blueskyError = 'Reconnect your AT Protocol account in Settings.';
+      } catch {
+        blueskyError = 'Reconnect your AT Protocol account in Settings.';
+      }
+    }
+
     // Resolve content metadata for message variables.
     let vars = { url: url || origin };
     if (!test && contentId && contentType) {
       try {
         if (contentType === 'pack_opening') {
-          const p = await svc.entities.Post.get(contentId);
+          const p = sourcePost || await svc.entities.Post.get(contentId);
           vars = { cardName: p.card_name || '', rarity: p.card_rarity || '', setCode: p.set_name || '', url: url || origin };
         } else if (contentType === 'journal') {
           const j = await svc.entities.Journal.get(contentId);
           vars = { title: j.title || '', subtitle: j.subtitle || '', url: url || origin };
         } else if (contentType === 'binder') {
-          const b = await svc.entities.Binder.get(contentId);
-          vars = { title: b.title || '', url: url || origin };
+          const b = sourcePost || await svc.entities.Binder.get(contentId);
+          vars = { title: b.title || b.content || b.card_name || 'Collection showcase', url: url || origin };
         } else if (contentType === 'podcast_episode') {
           const e = await svc.entities.PodcastEpisode.get(contentId);
           vars = { title: e.title || '', duration: `${Math.max(1, Math.round((e.duration_seconds || 0) / 60))} min`, url: url || origin };
         } else if (contentType === 'trade_listing') {
-          const t = await svc.entities.TradeListing.get(contentId);
-          vars = { offerCards: (t.offer_card_names || []).join(', '), url: url || origin };
+          const t = sourcePost || await svc.entities.TradeListing.get(contentId);
+          const offerCards = Array.isArray(t.offer_card_names)
+            ? t.offer_card_names.join(', ')
+            : (t.card_name || t.content || 'New trade');
+          vars = { offerCards, url: url || origin };
         } else if (contentType === 'voice_space_live') {
           const s = await svc.entities.VoiceSpace.get(contentId);
           vars = { title: s.title || '', url: url || origin };
@@ -157,22 +265,38 @@ Deno.serve(async (req) => {
       const message = test
         ? 'Testing SwapPulse cross-posting integration. 🧪'
         : fmt(cfg.template || TEMPLATES[contentType] || TEMPLATES.journal, vars);
-      const res = await postToPlatform(cfg.platform, cfg.credential, cfg.extra_credential, message);
+      const res = await postToPlatform(
+        cfg.platform,
+        cfg.credential,
+        cfg.extra_credential,
+        message,
+        {
+          sourcePost,
+          identity,
+          blueskyError,
+          locale: me.locale,
+          test: !!test,
+          stableSeed: `${cfg.id}:${contentType || 'test'}:${contentId || ''}`,
+        },
+      );
       return { cfg, message, res };
     }));
 
-    const activityRecords = postResults.map(({ cfg, message }) => ({
-      platform: mapPlatform(cfg.platform),
-      activity_type: 'post',
-      title: message.slice(0, 200),
-      source_url: url || origin,
-      is_live: false,
-      started_at: now,
-      author_name: authorName || cfg.handle || '',
-      author_handle: authorHandle || '',
-      did: cfg.did || did || '',
-      record_type: 'org.swappulse.externalActivity',
-    }));
+    const activityRecords = postResults
+      .filter(({ res }) => res.ok && !res.simulated)
+      .map(({ cfg, message, res }) => ({
+        platform: mapPlatform(cfg.platform),
+        activity_type: 'post',
+        title: message.slice(0, 200),
+        source_url: url || origin,
+        source_id: res.uri || '',
+        is_live: false,
+        started_at: now,
+        author_name: authorName || cfg.handle || '',
+        author_handle: authorHandle || '',
+        did: cfg.did || did || '',
+        record_type: 'org.swappulse.externalActivity',
+      }));
     if (activityRecords.length > 0) {
       try {
         await svc.entities.ExternalActivity.bulkCreate(activityRecords);
@@ -180,7 +304,13 @@ Deno.serve(async (req) => {
     }
 
     const results = postResults.map(({ cfg, res }) => ({
-      platform: cfg.platform, ok: res.ok, simulated: res.simulated, error: res.error,
+      platform: cfg.platform,
+      ok: res.ok,
+      simulated: res.simulated,
+      already: !!res.already,
+      pending: !!res.pending,
+      uri: res.uri || '',
+      error: res.error,
     }));
     return Response.json({ dispatched: results.length, results });
   } catch (error) {
