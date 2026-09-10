@@ -287,15 +287,15 @@
     },
     "did": {
       "type": "string",
-      "description": "AT Protocol DID of the author (simulated)"
+      "description": "AT Protocol DID of the author"
     },
     "at_uri": {
       "type": "string",
-      "description": "at:// URI of this record (simulated)"
+      "description": "Real at:// URI after successful PDS publication. Empty while local-only or pending."
     },
     "cid": {
       "type": "string",
-      "description": "Content identifier hash (simulated)"
+      "description": "Real AT Protocol content identifier after successful PDS publication. Empty while local-only or pending."
     },
     "record_type": {
       "type": "string",
@@ -309,6 +309,48 @@
       "type": "boolean",
       "default": false,
       "description": "True once the post has been mirrored to the AT Protocol PDS as a real app.bsky.feed.post. Interactions (likes/reposts) only bridge when this is true, so they reference a real record instead of creating orphaned PDS entries."
+    },
+    "language": {
+      "type": "string",
+      "description": "BCP 47 language tag selected from the user's account locale when the post was composed.",
+      "default": "en-GB"
+    },
+    "federation_status": {
+      "type": "string",
+      "enum": [
+        "local_only",
+        "pending",
+        "published",
+        "failed"
+      ],
+      "default": "local_only",
+      "description": "Explicit PDS delivery state. Public posts start pending, become published only after the PDS returns a real URI, and become failed with a retryable error when delivery fails."
+    },
+    "federation_rkey": {
+      "type": "string",
+      "description": "Stable record key used for idempotent PDS publication and retries."
+    },
+    "federation_attempts": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
+    "federation_last_attempt_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "federation_published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "federation_error_code": {
+      "type": "string",
+      "description": "Safe machine-readable delivery failure code. Never contains credentials."
+    },
+    "federation_error_message": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Safe user-visible delivery failure summary. Never contains credentials or PDS response bodies."
     }
   },
   "required": [
