@@ -7,6 +7,7 @@ import { PLATFORMS, CONTENT_TYPES, TEMPLATES } from '@/lib/crosspost';
 import SettingSelect from '@/components/settings/SettingSelect';
 
 // §7 - add/edit cross-post platform configuration modal.
+const CrossPostSwitch = /** @type {any} */ (Switch);
 export default function CrossPostModal({ open, editing, onClose, onSaved }) {
   const [platform, setPlatform] = useState('discord_webhook');
   const [handle, setHandle] = useState('');
@@ -93,6 +94,7 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
                   if (value === 'bluesky') setCredential('');
                 }}
                 label="Platform"
+                className=""
                 options={PLATFORMS.map((p) => ({ value: p.key, label: p.label }))}
               />
             </div>
@@ -119,15 +121,15 @@ export default function CrossPostModal({ open, editing, onClose, onSaved }) {
           <textarea value={template} onChange={(e) => setTemplate(e.target.value)} maxLength={500} rows={2} placeholder={`Custom template (default: ${TEMPLATES[contentTypes[0]] || TEMPLATES.pack_opening})`} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"  aria-label={`Custom template (default: ${TEMPLATES[contentTypes[0]] || TEMPLATES.pack_opening})`}/>
           <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
             <span className="text-sm">Include card image reference</span>
-            <Switch checked={includeCard} onCheckedChange={setIncludeCard} />
+            <CrossPostSwitch checked={includeCard} onCheckedChange={setIncludeCard} />
           </div>
           <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
             <span className="text-sm">Include link back to SwapPulse</span>
-            <Switch checked={includeLink} onCheckedChange={setIncludeLink} />
+            <CrossPostSwitch checked={includeLink} onCheckedChange={setIncludeLink} />
           </div>
           <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
             <span className="text-sm">Enabled</span>
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <CrossPostSwitch checked={enabled} onCheckedChange={setEnabled} />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
