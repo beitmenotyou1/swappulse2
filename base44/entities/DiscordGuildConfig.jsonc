@@ -1,0 +1,95 @@
+{
+  "name": "DiscordGuildConfig",
+  "type": "object",
+  "title": "Discord guild configuration",
+  "description": "Administrator-only, secret-free configuration for SwapPulse Bot. Bot tokens, OAuth secrets and CAPTCHA secrets stay in backend environment variables.",
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "bot_user_id": {
+      "type": "string"
+    },
+    "role_ids": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "channel_ids": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "verified_trader_min_completed": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 3
+    },
+    "verified_trader_min_reviews": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 3
+    },
+    "verified_trader_min_average": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 4.5
+    },
+    "trusted_trader_min_completed": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 10
+    },
+    "trusted_trader_min_average": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 4.75
+    },
+    "last_bootstrap_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sync_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schema_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "guild_id",
+    "enabled"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
