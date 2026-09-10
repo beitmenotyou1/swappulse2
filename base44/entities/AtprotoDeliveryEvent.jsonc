@@ -1,0 +1,84 @@
+{
+  "name": "AtprotoDeliveryEvent",
+  "type": "object",
+  "title": "AT Protocol Delivery Event",
+  "description": "Administrator-only audit trail for manual, retry and promotional AT Protocol publication attempts. Never stores passwords, tokens or raw PDS error bodies.",
+  "properties": {
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "retry",
+        "promotion",
+        "account_health"
+      ]
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "post_id": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "published",
+        "failed",
+        "already_published",
+        "healthy"
+      ]
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "at_uri": {
+      "type": "string"
+    },
+    "facet_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tag_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "attempted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "source",
+    "outcome",
+    "attempted_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
