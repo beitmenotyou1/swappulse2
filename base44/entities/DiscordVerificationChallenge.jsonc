@@ -1,0 +1,67 @@
+{
+  "name": "DiscordVerificationChallenge",
+  "type": "object",
+  "title": "Discord verification challenge",
+  "description": "Short-lived, one-use verification state. Only hashes are retained, never CAPTCHA answers or OAuth tokens.",
+  "properties": {
+    "challenge_hash": {
+      "type": "string"
+    },
+    "state_hash": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "discord_user_id": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "account_link",
+        "captcha"
+      ]
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_ip_hash": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "expires_at",
+    "purpose"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
