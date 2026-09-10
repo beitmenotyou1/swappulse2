@@ -1,8 +1,9 @@
 import { base44 } from '@/api/base44Client';
 
 // §7 Automated Cross-Posting - platform metadata + dispatch helpers.
-// Discord webhook + Telegram bot post for real; Bluesky/Mastodon/Nostr/
-// Twitter are simulated until OAuth/connector wiring is added.
+// BlueSky uses the linked AT Protocol account. Discord webhooks and Telegram
+// bots use their configured credentials. Other providers stay unavailable until
+// their provider-specific OAuth flow is implemented.
 
 export const PLATFORMS = [
   { key: 'bluesky', label: 'Bluesky', color: '#0085ff', letter: 'B', credLabel: null, extraLabel: null, linkedAccount: true },
