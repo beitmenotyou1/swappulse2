@@ -7,7 +7,6 @@ import CollectionPickerModal from '@/components/feed/CollectionPickerModal';
 import { cardImageUrl } from '@/lib/tcgdex';
 import { useAuth } from '@/lib/AuthContext';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
-import { getCurrentTcgdexLang } from '@/lib/i18n/currentLang';
 import { dispatchCrossPost } from '@/lib/crosspost';
 import { ensureBotAllowed, isBotBlockError } from '@/lib/botGuardClient';
 import { extractHashtags, canonicalise } from '@/lib/hashtags';
@@ -16,6 +15,7 @@ import { useMediaComposer } from '@/hooks/useMediaComposer';
 import MediaComposer from '@/components/feed/MediaComposer';
 import VideoComposer from '@/components/feed/VideoComposer';
 import PostCardScannerModal from '@/components/feed/PostCardScannerModal';
+import { useToast } from '@/components/ui/use-toast';
 // Extract @handles from post text for the mentioned-only scope.
 function extractMentions(text) {
   const matches = text.match(/@([\w.]+)/g) || [];
@@ -46,6 +46,7 @@ const CATEGORY_DEFS = [
 export default function ComposeBox({ onPosted, replyTo }) {
   const t = useT();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [content, setContent] = useState('');
   const [postType, setPostType] = useState('text');
   const [postCategory, setPostCategory] = useState('general');
@@ -130,127 +131,72 @@ export default function ComposeBox({ onPosted, replyTo }) {
         root_uri: rootUri,
         root_cid: rootCid,
       }, NSID.POST, did, signingKey);
-      const created = await base44.entities.Post.create(stamped);
-      // Hashtag abuse labeler - evaluates the new post and attaches moderation labels.
+
+      const shouldFederate = visibilityScope === 'public' && did.startsWith('did:plc:');
+      const reservedRkey = shouldFederate
+        ? String(stamped.at_uri || '').split('/').pop() || ''
+        : '';
+      const created = await base44.entities.Post.create({
+        ...stamped,
+        language: user?.locale || 'en-GB',
+        at_uri: '',
+        cid: '',
+        bridged: false,
+        federation_status: shouldFederate ? 'pending' : 'local_only',
+        federation_rkey: reservedRkey,
+        federation_attempts: 0,
+      });
+
+      // Hashtag abuse labeler evaluates the new local post independently from
+      // federation. A PDS outage must not lose the user's SwapPulse post.
       if (created?.id) {
         base44.functions.invoke('moderatePost', { post_id: created.id }).catch(() => {});
-        const shouldFederate = visibilityScope === 'public';
-        // AT Protocol repositories are public. Followers/mentioned posts remain
-        // local-only and their media is not uploaded to the PDS.
-        // AT Protocol PDS bridge — mirror public posts only.
-        const replyRef = parentUri && parentCid && rootUri && rootCid
-          ? { root: { uri: rootUri, cid: rootCid }, parent: { uri: parentUri, cid: parentCid } }
-          : undefined;
-        // Card embed — upload the card image to the PDS as a blob so the post
-        // renders as a rich link card on Bluesky (app.bsky.embed.external).
-        // Best-effort: fall back to a thumb-less embed or no embed on failure.
-        let cardEmbed = null;
-        if (attachedCard && shouldFederate) {
+
+        if (shouldFederate) {
           try {
-            const imgUrl = cardImageUrl(attachedCard.image);
-            const ext = (imgUrl.split('.').pop() || '').toLowerCase();
-            const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-            const blobRes = await base44.functions.invoke('atproto-bridge', {
-              action: 'uploadBlob', imageUrl: imgUrl, mimeType: mime,
+            const response = await base44.functions.invoke('atproto-publish-post', {
+              post_id: created.id,
             });
-            const thumb = blobRes?.blob || blobRes?.data?.blob;
-            if (thumb) {
-              cardEmbed = {
-                $type: 'app.bsky.embed.external',
-                external: {
-                  uri: `${window.location.origin}/card/${attachedCard.id}`,
-                  title: stamped.card_name || attachedCard.name || 'Pokémon card',
-                  description: [stamped.set_name, stamped.card_rarity].filter(Boolean).join(' · ') || 'SwapPulse card',
-                  thumb,
-                },
-              };
+            const published = response?.data ?? response;
+            if (!published?.uri) {
+              throw new Error('BlueSky did not return a post URI.');
             }
-          } catch (e) {
-            console.warn('card embed blob upload failed', e?.message || e);
-          }
-        }
-        // Build the PDS embed from uploaded images, video link, or external link.
-        // Images: upload each to the PDS as a blob and build app.bsky.embed.images.
-        // Video/external: build app.bsky.embed.external (external videos can't be
-        // PDS blobs). Falls back gracefully on any blob upload failure.
-        let mediaEmbed = cardEmbed;
-        if (shouldFederate && !mediaEmbed && (mediaFields.embed_images || mediaFields.embed_video || mediaFields.embed_external)) {
-          try {
-            if (mediaFields.embed_images?.length > 0) {
-              const imageBlobs = await Promise.all(
-                mediaFields.embed_images.map(async (img) => {
-                  const ext = (img.url.split('.').pop() || '').toLowerCase();
-                  const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-                  const blobRes = await base44.functions.invoke('atproto-bridge', {
-                    action: 'uploadBlob', imageUrl: img.url, mimeType: mime,
-                  });
-                  return { blob: blobRes?.blob || blobRes?.data?.blob, alt: img.alt };
-                })
-              );
-              const valid = imageBlobs.filter((b) => b.blob);
-              if (valid.length > 0) {
-                mediaEmbed = {
-                  $type: 'app.bsky.embed.images',
-                  images: valid.map((b) => ({ image: b.blob, alt: b.alt || '' })),
-                };
-              }
-            } else if (mediaFields.embed_external) {
-              const ext = mediaFields.embed_external;
-              let thumbBlob = null;
-              if (ext.thumb) {
-                try {
-                  const ext2 = (ext.thumb.split('.').pop() || '').toLowerCase();
-                  const mime = ext2 === 'png' ? 'image/png' : ext2 === 'webp' ? 'image/webp' : 'image/jpeg';
-                  const blobRes = await base44.functions.invoke('atproto-bridge', {
-                    action: 'uploadBlob', imageUrl: ext.thumb, mimeType: mime,
-                  });
-                  thumbBlob = blobRes?.blob || blobRes?.data?.blob;
-                } catch {}
-              }
-              mediaEmbed = {
-                $type: 'app.bsky.embed.external',
-                external: {
-                  uri: ext.uri,
-                  title: ext.title || ext.uri,
-                  description: ext.description || '',
-                  ...(thumbBlob ? { thumb: thumbBlob } : {}),
-                },
-              };
-            }
-          } catch (e) {
-            console.warn('media embed blob upload failed', e?.message || e);
-          }
-        }
-        if (shouldFederate) base44.functions.invoke('atproto-bridge', {
-          collection: 'app.bsky.feed.post',
-          record: {
-            text: (content.trim() || stamped.card_name || 'New SwapPulse post').slice(0, 3000),
-            createdAt: new Date().toISOString(),
-            langs: [getCurrentTcgdexLang()],
-            ...(replyRef ? { reply: replyRef } : {}),
-            ...(mediaEmbed ? { embed: mediaEmbed } : {}),
-          },
-        }).then((res) => {
-          if (res?.uri) {
-            base44.entities.Post.update(created.id, { at_uri: res.uri, cid: res.cid, bridged: true }).catch(() => {});
-            // postgate controls interactions, not read visibility. Since only
-            // public posts are federated here, it is used solely for reply policy.
-            const needsGate = replyPolicy !== 'everybody';
-            if (needsGate) {
+
+            // Postgates control reply policy, not visibility. This is
+            // best-effort because the post itself has already been published.
+            if (replyPolicy !== 'everybody') {
               const allowRules = replyPolicy === 'nobody'
                 ? [{ $type: 'app.bsky.feed.postgate#disableRule' }]
                 : replyPolicy === 'mentioned'
-                ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
-                : replyPolicy === 'followers'
-                ? [{ $type: 'app.bsky.feed.postgate#followersRule' }]
-                : [];
-              base44.functions.invoke('atproto-bridge', {
+                  ? [{ $type: 'app.bsky.feed.postgate#mentionRule' }]
+                  : replyPolicy === 'followers'
+                    ? [{ $type: 'app.bsky.feed.postgate#followersRule' }]
+                    : [];
+              await base44.functions.invoke('atproto-bridge', {
                 collection: 'app.bsky.feed.postgate',
-                record: { post: res.uri, createdAt: new Date().toISOString(), allowRules },
-              }).catch(() => {});
+                record: {
+                  post: published.uri,
+                  createdAt: new Date().toISOString(),
+                  allowRules,
+                },
+              }).catch((error) => {
+                console.warn('BlueSky reply policy could not be applied', error?.message || error);
+              });
             }
+
+            toast({
+              title: t('compose.federationPublishedTitle'),
+              description: t('compose.federationPublishedDescription'),
+            });
+          } catch (error) {
+            console.error('BlueSky publication failed', error?.message || error);
+            toast({
+              title: t('compose.federationSavedLocallyTitle'),
+              description: t('compose.federationSavedLocallyDescription'),
+              variant: 'destructive',
+            });
           }
-        }).catch(() => {});
+        }
       }
       // Bell notification dispatch - Web Push to bell-enabled followers.
       const cat = stamped.post_type === 'pack_opening' ? 'pack_opening'
