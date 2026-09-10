@@ -1,4 +1,12 @@
 const DISCORD_API = 'https://discord.com/api/v10';
+const DISCORD_API_ATTEMPTS = 3;
+const MAX_RATE_LIMIT_WAIT_MS = 30_000;
+
+// CREATE_INSTANT_INVITE is required by Discord's Add Guild Member endpoint.
+// MANAGE_CHANNELS is used only by the confirmed bootstrap. MANAGE_ROLES is
+// required for ongoing role reconciliation. No Administrator permission or
+// privileged Gateway intent is required.
+export const DISCORD_INSTALL_PERMISSIONS = String(1n | 16n | 268435456n);
 
 export const ROLE_DEFINITIONS = [
   { key: 'collector', name: 'Collector', colour: 0x8b5cf6, permissions: '0' },
@@ -52,22 +60,72 @@ export function configuredForDiscord(): boolean {
   ].every((name) => String(Deno.env.get(name) || '').trim().length > 0);
 }
 
+function pause(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function rateLimitDelayMs(response: Response, body: any): number {
+  const headerSeconds = Number(response.headers.get('retry-after') || NaN);
+  const bodySeconds = Number(body?.retry_after ?? NaN);
+  const seconds = Number.isFinite(headerSeconds) ? headerSeconds : bodySeconds;
+  return Number.isFinite(seconds) && seconds >= 0 ? Math.ceil(seconds * 1000) : 0;
+}
+
 export async function discordRequest(path: string, init: RequestInit = {}) {
-  const response = await fetch(`${DISCORD_API}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bot ${discordBotToken()}`,
-      'Content-Type': 'application/json',
-      ...(init.headers || {}),
-    },
-  });
-  if (response.status === 204) return null;
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const code = response.status === 403 ? 'DISCORD_ROLE_HIERARCHY' : 'DISCORD_API_FAILED';
-    throw new Error(`${code}:${response.status}:${String(body?.message || 'Discord request failed').slice(0, 160)}`);
+  let lastNetworkError: unknown = null;
+  for (let attempt = 0; attempt < DISCORD_API_ATTEMPTS; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(`${DISCORD_API}${path}`, {
+        ...init,
+        headers: {
+          Authorization: `Bot ${discordBotToken()}`,
+          'Content-Type': 'application/json',
+          ...(init.headers || {}),
+        },
+      });
+    } catch (error) {
+      lastNetworkError = error;
+      if (attempt + 1 < DISCORD_API_ATTEMPTS) {
+        await pause(250 * (attempt + 1));
+        continue;
+      }
+      throw new Error('DISCORD_API_UNREACHABLE');
+    }
+
+    if (response.status === 204) return null;
+    const body = await response.json().catch(() => ({}));
+    if (response.ok) return body;
+
+    if (response.status === 429) {
+      const waitMs = rateLimitDelayMs(response, body);
+      if (
+        attempt + 1 < DISCORD_API_ATTEMPTS
+        && waitMs > 0
+        && waitMs <= MAX_RATE_LIMIT_WAIT_MS
+      ) {
+        await pause(waitMs + 50);
+        continue;
+      }
+      throw new Error(`DISCORD_RATE_LIMITED:${waitMs}`);
+    }
+
+    if (
+      [502, 503, 504].includes(response.status)
+      && attempt + 1 < DISCORD_API_ATTEMPTS
+    ) {
+      await pause(250 * (attempt + 1));
+      continue;
+    }
+
+    const code = response.status === 403
+      ? 'DISCORD_ROLE_HIERARCHY'
+      : 'DISCORD_API_FAILED';
+    throw new Error(
+      `${code}:${response.status}:${String(body?.message || 'Discord request failed').slice(0, 160)}`,
+    );
   }
-  return body;
+  throw new Error(lastNetworkError ? 'DISCORD_API_UNREACHABLE' : 'DISCORD_API_FAILED');
 }
 
 export async function getGuildConfig(svc: any, requireEnabled = true) {
