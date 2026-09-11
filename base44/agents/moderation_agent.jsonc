@@ -60,8 +60,8 @@
   "telegram_greeting": null,
   "line_greeting": null,
   "memory_config": {
-    "enabled": true,
-    "scope": "both",
+    "enabled": false,
+    "scope": "conversation",
     "include_other_conversation_context": false,
     "instructions": null
   },
