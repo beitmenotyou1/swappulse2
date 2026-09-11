@@ -234,10 +234,12 @@ permissions, or take actions for a user.`;
   );
 
   const now = new Date().toISOString();
-  await svc.entities.AgentFeedback.updateMany(
-    { agent_name: agentName, processed: false },
-    { $set: { processed: true, processed_at: now } },
-  );
+  for (const item of feedback) {
+    await svc.entities.AgentFeedback.update(item.id, {
+      processed: true,
+      processed_at: now,
+    }).catch(() => undefined);
+  }
 
   return {
     processed: feedback.length,
