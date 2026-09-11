@@ -75,6 +75,7 @@ No Collection functionality was changed during this audit.
 | --- | --- | --- | --- |
 | 🔴 P0 | Binder access control | `getBinder` uses service role and selects CollectionEntry rows with `binder.did` whenever it is present. `Binder.did` and binder slot IDs are owner-controlled data, so a malicious binder owner can supply another collector's DID and matching/guessed CollectionEntry IDs, then expose resolved private card details through a binder they control. | Derive collection ownership only from immutable `binder.created_by_id`; never use mutable DID as an authorisation selector. Validate every slot ID belongs to the binder owner on save and on read. Add cross-user negative tests. |
 | 🔴 P0 | Challenge/collection ownership | `submitChallengeEntry` service-role fetches caller-supplied CollectionEntry IDs using only `{ id: { $in: ids } }` before validation. The function does not require `created_by_id: user.id`, so foreign private collection rows can be supplied to a challenge validation path. This remains the P0 previously identified in the backend audit. | Fetch contribution records with authenticated owner ID, reject any missing/foreign ID and calculate contribution state only from owner-bound rows. Add malicious foreign-card tests. |
+| 🔴 P0 | Binder cross-post ownership | Binder creation integrates with the cross-post dispatcher, but `crossPostDispatcher` service-role loads caller-supplied Binder IDs without proving the Binder belongs to the caller or is public. A signed-in user who knows another Binder ID can cause its title/metadata to be formatted and sent through the attacker's own configured external destination. This remains the P0 previously identified in the backend audit. | Authorise every cross-post source record against the caller before service-role read. For Binder require owner match or an explicitly public, deliberately shareable read model; add foreign/private Binder cross-post tests. |
 | 🔴 P0 | Insurance valuation integrity | The Insurance tab explicitly generates a PDF “for insurance claims and valuations”, but it receives the Collection page's maximum 500 entries and calls the resulting amount “Total declared value”. It also trusts `market_value`/purchase values that are not automatically reconciled from live CardPricing. The report can therefore be materially incomplete or stale while looking claim-ready. | Do not generate a claim-oriented report from partial/unverified data. Build the report server-side from the complete collection, include valuation source/currency/as-of timestamps and clear disclaimers, flag missing prices, and require the user to confirm the report is complete before export. |
 | 🔴 P0 | Raw CollectionEntry federation | **Completed:** current `federationPolicy.ts` places `org.swappulse.collectionEntry` in `NEVER_FEDERATE`, `bridgeCollectionEntry()` is privacy-contained, and inbound PDS sync excludes raw CollectionEntry records. This closes the current publication path for sensitive collection notes, prices and acquisition dates. | **Completed:** keep the central deny policy and regression tests. Continue the legacy PDS cleanup/verification work in COL-015 until historical copies are proven absent. |
 | 🟠 P1 | Collection completeness | `Collection.jsx` loads only the latest 500 CollectionEntry rows. The displayed card count, total value, rarity filters, select-all, set completion, duplicate analysis, simple binder, analytics, Import/Export and Insurance tabs all operate on that truncated array. This finding was already P1 in the frontend audit and remains unresolved. | Replace fixed-window collection reads with cursor pagination plus server-side aggregates. Every “total”, export and report must either be complete or explicitly labelled partial. |
@@ -177,8 +178,9 @@ The audit confirmed several controls that should remain:
 
 1. Fix `getBinder` ownership binding and slot validation.
 2. Fix `submitChallengeEntry` foreign CollectionEntry access.
-3. Redesign Insurance report generation around complete, source-attributed valuation data and private storage.
-4. Run the legacy collection privacy audit/remediation until raw PDS copies are proven absent.
+3. Fix Binder cross-post source ownership/visibility authorisation.
+4. Redesign Insurance report generation around complete, source-attributed valuation data and private storage.
+5. Run the legacy collection privacy audit/remediation until raw PDS copies are proven absent.
 
 ### Phase 1 - collection truth and durability
 
@@ -211,6 +213,7 @@ At minimum, the release suite should prove:
 - a binder owned by user A cannot resolve any CollectionEntry owned by user B even if A supplies B's DID and exact entry ID
 - followers/private binder checks never rely on caller-controlled ownership fields
 - challenge submission rejects any foreign CollectionEntry ID
+- cross-posting a Binder rejects every foreign/private Binder ID not authorised for the caller
 - Insurance report item count equals the owner's authoritative complete collection or clearly reports excluded/unvalued items
 - Insurance valuations include source, currency and as-of time
 - collections over 500/1,000/5,000 records retain correct count/value/export/snapshot behaviour
