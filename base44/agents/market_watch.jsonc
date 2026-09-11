@@ -21,5 +21,6 @@
       ]
     }
   ],
+  "allow_anonymous_access": false,
   "name": "market_watch"
 }
