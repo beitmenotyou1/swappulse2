@@ -53,7 +53,6 @@ export default async function (req: Request): Promise<Response> {
     const revisionId = cleanField(body.revision_id, 128);
     const decision = cleanField(body.decision, 16);
     const reviewNotes = cleanField(body.review_notes, 500);
-    const acknowledgeFlagged = body.acknowledge_flagged === true;
 
     if (!ID_PATTERN.test(revisionId)) {
       return Response.json(
@@ -111,11 +110,11 @@ export default async function (req: Request): Promise<Response> {
       );
     }
 
-    if (decision === 'approve' && generatedFlag && !acknowledgeFlagged) {
+    if (decision === 'approve' && generatedFlag) {
       return Response.json(
         {
           error:
-            'This source is safety-flagged. Read it and explicitly acknowledge the flag before approval.',
+            'Safety-flagged knowledge cannot be published to an agent. Reject this revision and publish a clean, reviewed summary instead.',
           safety_status: 'flagged',
         },
         { status: 409 },
