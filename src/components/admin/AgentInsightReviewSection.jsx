@@ -38,12 +38,9 @@ export default function AgentInsightReviewSection() {
   }, []);
 
   const review = async (insight, decision) => {
-    let acknowledgeFlagged = false;
     if (decision === 'approve' && insight.safety_status === 'flagged') {
-      acknowledgeFlagged = window.confirm(
-        'This candidate contains a possible prompt-injection or sensitive-data pattern. Approve only after reading it carefully.',
-      );
-      if (!acknowledgeFlagged) return;
+      setError('Safety-flagged insight candidates cannot be approved. Reject this candidate and create a clean curated replacement if the underlying lesson is valid.');
+      return;
     }
 
     setWorkingId(insight.id);
@@ -52,7 +49,6 @@ export default function AgentInsightReviewSection() {
       await base44.functions.invoke('review-agent-insight', {
         insight_id: insight.id,
         decision,
-        acknowledge_flagged: acknowledgeFlagged,
         review_notes: decision === 'approve'
           ? 'Approved in the SwapPulse admin review queue.'
           : 'Rejected in the SwapPulse admin review queue.',
@@ -120,7 +116,7 @@ export default function AgentInsightReviewSection() {
                 {insight.safety_status === 'flagged' && (
                   <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 font-semibold text-amber-700 dark:text-amber-300">
                     <AlertTriangle className="h-3 w-3" />
-                    Safety review required
+                    Approval blocked
                   </span>
                 )}
               </div>
@@ -133,7 +129,7 @@ export default function AgentInsightReviewSection() {
                 <Button
                   size="sm"
                   onClick={() => review(insight, 'approve')}
-                  disabled={workingId === insight.id}
+                  disabled={workingId === insight.id || insight.safety_status === 'flagged'}
                 >
                   {workingId === insight.id
                     ? <Loader2 className="h-4 w-4 animate-spin" />
