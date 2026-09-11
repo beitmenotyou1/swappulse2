@@ -75,14 +75,6 @@ export default function ReportDialog({ open, onOpenChange, contentType, contentI
           details: details.trim(),
           evidence_urls: evidenceUrls,
         });
-        base44.entities.AgentFeedback.create({
-          agent_name: 'moderation_agent',
-          feedback_type: 'correction',
-          original_content: `User reported ${contentType} ${contentId} by @${authorHandle || 'unknown'}: "${preview}"`,
-          corrected_content: `Report reason: ${reason}. Details: ${details.trim() || 'N/A'}`,
-          context_summary: `Community report, ${reason}`,
-          processed: false,
-        }).catch(() => {});
       }
 
       toast({ title: t('toast.reportSubmitted'), description: t('toast.reportSubmittedDesc') });
