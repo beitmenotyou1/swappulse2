@@ -32,7 +32,6 @@ Deno.serve(async (req) => {
     const insightId = cleanText(body.insight_id, 128);
     const decision = cleanText(body.decision, 16);
     const reviewNotes = cleanText(body.review_notes, 500);
-    const acknowledgeFlagged = body.acknowledge_flagged === true;
 
     if (!ID_PATTERN.test(insightId)) {
       return Response.json({ error: 'Invalid insight_id' }, { status: 400 });
@@ -52,10 +51,10 @@ Deno.serve(async (req) => {
       insight.safety_status === 'flagged' ||
       SUSPICIOUS_PATTERNS.some((pattern) => pattern.test(content));
 
-    if (decision === 'approve' && generatedFlag && !acknowledgeFlagged) {
+    if (decision === 'approve' && generatedFlag) {
       return Response.json(
         {
-          error: 'Insight is safety-flagged. Review it and explicitly acknowledge the flag before approval.',
+          error: 'Safety-flagged insights cannot be approved. Reject this candidate and create a clean curated replacement if the underlying lesson is valid.',
           safety_status: 'flagged',
         },
         { status: 409 },
