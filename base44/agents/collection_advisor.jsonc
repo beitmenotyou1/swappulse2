@@ -33,5 +33,6 @@
       ]
     }
   ],
+  "allow_anonymous_access": false,
   "name": "collection_advisor"
 }
