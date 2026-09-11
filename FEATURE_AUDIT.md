@@ -6,7 +6,7 @@
 
 | Priority | Area | Finding | Required action |
 | --- | --- | --- | --- |
-| 🔴 P0 | Card verification | A user can update their own `CardVerificationSession`, including `status` and `verification_level`. `mint-card` then trusts those values. A Level 0/self-attested card could potentially be changed to Level 3 before minting. | Make verification result fields backend-only. Mint only from immutable server-issued attestations. |
+| 🔴 P0 | Card verification | A user could update their own `CardVerificationSession`, including `status` and `verification_level`, while `mint-card` trusted those values. A Level 0/self-attested card could therefore have been escalated before minting. | **Completed:** verification-session create/update is backend/admin controlled, card identity is derived server-side and possession-verified status requires a server-issued Level 2+ result. |
 | 🔴 P0 | Community labels | A CommunityLabeler owner can update their own `approval_status`, meaning they can potentially self-approve and issue trusted authenticity/safety/grading labels. | Make approval, approver, approval date, accuracy and issue counters admin/backend-only. |
 | 🔴 P0 | Trust/Vouches | `Vouch` creation accepts client-supplied DIDs and local vouches are counted by `getTrustProfile`. Fake DIDs can therefore inflate trust. | Create vouches through a backend function that derives the caller's DID and enforces uniqueness. |
 | 🔴 P0 | Trade reputation | Reputation records similarly accept arbitrary `rater_did`, target DID, trade URI and rating. Portable reputation therefore cannot currently be treated as trustworthy. | Bind feedback to authenticated participants in a completed trade. Derive both parties server-side. |
@@ -40,6 +40,6 @@
 | 🟠 P1 | API docs | `openapi.yaml` still identifies the API/release as **v0.9.0**, while the application is v0.10.0. It also describes an outdated function URL shape. | Regenerate/update OpenAPI from the release implementation. |
 | 🟠 P1 | Authentication UX | Login codes actually expire after 5 minutes, while the email says 15 minutes. | Use one server-owned TTL and render it consistently. |
 | 🟠 P1 | Handle SSRF | `verifyHandleClaim` performs a direct HTTPS fetch to a user-controlled hostname without the stronger shared DNS/IP SSRF guard. | Route it through the existing safe-host validation. |
-| 🟠 P1 | Card scan input | Card verification accepts arbitrary HTTPS image URLs through the API, although the UI normally uploads Base44 files. | Require verified uploads/approved media hosts, MIME and size limits. |
+| 🟠 P1 | Card scan input | Card verification accepted arbitrary HTTPS image URLs through the API, although the UI normally uploaded Base44 files. | **Completed:** verification now uses private Base44 uploads, authenticated signed-URL access, image upload validation and no longer accepts arbitrary caller-supplied scan URLs. |
 
 Future feature audits must use the format defined in [AUDIT_STANDARD.md](AUDIT_STANDARD.md).
