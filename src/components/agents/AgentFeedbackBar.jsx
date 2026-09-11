@@ -14,14 +14,13 @@ export default function AgentFeedbackBar({ agentName, conversationId, message })
   const submit = async (type, correctedContent = '') => {
     setSaving(true);
     try {
-      await base44.entities.AgentFeedback.create({
+      await base44.functions.invoke('submit-agent-feedback', {
         agent_name: agentName,
         conversation_id: conversationId || '',
         message_id: message.id || '',
         feedback_type: type,
         original_content: (message.content || '').slice(0, 2000),
         corrected_content: correctedContent || '',
-        processed: false,
       });
       setSubmitted(type === 'thumbs_up' ? 'up' : 'down');
       setShowCorrection(false);
