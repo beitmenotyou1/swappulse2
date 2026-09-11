@@ -1,0 +1,22 @@
+# SwapPulse Blockchain / Web3 Audit
+
+**Audit date:** 11 September 2026  
+**Scope:** Cairo/Starknet identity and verification integration, card attestations/NFTs, staking, bridge lifecycle, chain reconciliation, public RPC/explorer deployment and recovery paths.  
+**Status:** Findings register. Some remediations are complete; unresolved P0/P1 items remain release-blocking for the affected feature.
+
+| Priority | Area | Finding | Required action |
+| --- | --- | --- | --- |
+| 🔴 P0 | Card verification | A user could update their own `CardVerificationSession`, including `status` and `verification_level`, while `mint-card` trusted those values. | **Completed:** verification-session create/update is backend/admin controlled, card identity is derived server-side and possession-verified status requires a server-issued Level 2+ result. |
+| 🔴 P0 | Bridge reconciliation | A submitted bridge transfer enters `PENDING_RELAY`, but `chain-action-submit` does not record the BridgeAdapter outbound nonce. Reconciliation skips transfers without a nonce. | Capture the outbound nonce from the authoritative chain event/receipt and make reconciliation authoritative before enabling production bridge-out. |
+| 🔴 P0 | Bridge destination validation | Destination addresses are effectively validated by length rather than destination-chain rules. A malformed destination could be committed after locking tokens or burning a card NFT. | Implement chain-specific Ethereum/L2/Solana address validation before any signing, locking or burning step. |
+| 🔴 P0 | Card bridge recovery | Card NFTs are burned on bridge-out, while the refund path does not itself remint the card. The failed-bridge recovery/remint lifecycle is not comprehensively proven. | Implement and test an authenticated, replay-safe failed-bridge remint/refund lifecycle before enabling card bridging. |
+| 🔴 P0 | Staking recovery | Expired or revoked verification can disable `request_undelegate`, `withdraw` and `exit_validator`, preventing recovery of already-owned assets. | Verification may gate new value-bearing actions, but must never block withdrawal, undelegation, validator exit or recovery of existing assets. |
+| 🔴 P0 | Production chain explorer | The live `chain-explorer` returned HTTP 503 with `Invalid URL: 'undefined'` while raw RPC remained healthy, indicating deployed Base44 code/configuration drift from the canonical repository. | Reconcile deployed function/configuration against the canonical implementation, redeploy and verify explorer responses end to end. |
+| 🔴 P0 | Chain identity reconciliation | A live `ChainIdentity` remained `ACTIVE` after its V2 verification expired on 3 September 2026, with stale reconciliation state. | Run/schedule authenticated `chain-identity-reconcile`, fail closed on stale verification and alert on reconciliation age/errors. |
+| 🟠 P1 | Public/write RPC separation | Public RPC must never expose privileged deployment, devnet administration or signing capabilities. | Keep the public RPC read-only and keep write/deploy/recovery operations behind the authenticated transaction relay/private RPC boundary. |
+| 🟠 P1 | Smart-contract assurance | Application and Devnet/node-lab testing do not constitute an independent Cairo/Starknet smart-contract audit. | Obtain independent Cairo/Starknet review before real economic value, production recovery governance, native passkey cryptography or sovereign/L3 deployment. |
+| 🟠 P1 | Recovery testing | Bridge, staking, verification expiry/revocation and account-recovery paths have higher impact than ordinary happy-path transactions. | Maintain explicit negative/recovery tests for expiry, revocation, replay, invalid addresses, unauthorised callers, ownership/admin changes and malicious/unexpected callers. |
+| 🟡 P2 | Deployment consistency | Repository manifests, Base44 `ChainNetworkConfig`, public RPC state and relay configuration can drift independently. | Treat the canonical deployment manifest as the source of truth and verify it against public RPC before Base44 Verify & Activate or relay cut-over. |
+| 🟡 P2 | Audit evidence | Chain tests and node-lab results are spread across scripts, manifests and result documents. | Preserve machine-readable deployment/test evidence and link each future Web3 audit row to the relevant manifest/test result where practical. |
+
+Future blockchain/Web3 audits must use [AUDIT_STANDARD.md](AUDIT_STANDARD.md).
