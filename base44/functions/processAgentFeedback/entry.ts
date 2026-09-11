@@ -12,23 +12,28 @@ Deno.serve(async (req) => {
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
-    const agentName = body.agent_name;
+    const requestedAgent = String(body.agent_name || '').trim();
+    const allowedAgents = [
+      'collector_copilot',
+      'moderation_agent',
+      'trade_assistant',
+      'market_watch',
+      'collection_advisor',
+      'sentiment_conversationalist',
+      'achievement_goal_tracker',
+      'networking_concierge',
+    ];
+    const allowedSet = new Set(allowedAgents);
+    if (requestedAgent && !allowedSet.has(requestedAgent)) {
+      return Response.json({ error: 'Unknown agent_name' }, { status: 400 });
+    }
 
     const svc = base44.asServiceRole;
 
-    // If a specific agent is requested, process just that one; otherwise process every conversational agent that accepts AgentFeedback.
-    const agentNames = agentName
-      ? [agentName]
-      : [
-          'collector_copilot',
-          'moderation_agent',
-          'trade_assistant',
-          'market_watch',
-          'collection_advisor',
-          'sentiment_conversationalist',
-          'achievement_goal_tracker',
-          'networking_concierge',
-        ];
+    // If a specific recognised agent is requested, process just that one;
+    // otherwise process the fixed allowlist. Never let request data create a
+    // new learning namespace.
+    const agentNames = requestedAgent ? [requestedAgent] : allowedAgents;
 
     // Process all agents in parallel (independent LLM + entity work per agent).
     const entries = await Promise.all(
