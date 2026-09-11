@@ -1,92 +1,157 @@
 # SwapPulse SEO Audit
 
 **Audit date:** 11 September 2026  
-**Scope:** Technical SEO, crawlability, indexability, canonicalisation, robots/sitemap delivery, page metadata, Open Graph/Twitter cards, structured data, multilingual SEO, internal discovery, public/private route policy, Core Web Vitals-related implementation, and the built-in SEO monitoring workflow.  
-**Status:** **NOT SEO-RELEASE READY**. Six unresolved P0 findings remain. Production-domain HTTP checks could not be completed from the Base44 sandbox because public DNS resolution was unavailable there, so live deployment behaviour still requires external verification.
+**Scope:** Live production SEO, crawlability, indexability, sitemap and robots delivery, HTTP status behaviour, canonicalisation, route metadata, Open Graph and Twitter cards, structured data, multilingual SEO, public/private route policy, content discovery, performance-related SEO implementation, and automated SEO monitoring.  
+**Status:** **NOT SEO-RELEASE READY.** Five unresolved P0 findings remain. Live production HTTP checks were completed against `https://swappulse.org` during this audit.
+
+## Findings
 
 | Priority | Area | Finding | Required action |
 | --- | --- | --- | --- |
-| 🔴 P0 | robots.txt delivery | `/robots.txt` is implemented as a React SPA route. The backend function returns `text/plain`, but the browser route renders that payload inside `<pre>`, so crawlers are not guaranteed to receive a root-level plain-text robots response with the correct HTTP content type. No `public/robots.txt` exists. | Serve `/robots.txt` directly at the host/edge/static layer as `text/plain; charset=utf-8`. Verify the raw response with curl and Search Console after deployment. |
-| 🔴 P0 | sitemap.xml delivery | `/sitemap.xml` is implemented as a React SPA route that renders XML inside `<pre>`. The backend function itself returns `application/xml`, but the public route does not directly expose that response. No `public/sitemap.xml` exists. | Serve the generated sitemap directly at `/sitemap.xml` with `application/xml; charset=utf-8`, without wrapping it in the React application shell. Verify parser acceptance in Google Search Console and Bing Webmaster Tools. |
-| 🔴 P0 | Index-control policy | `useSEO()` has no `noindex`/robots capability. It is used on private, staff, account and transactional pages including Settings, Messages, Wallet, Recover, Admin, Moderation, account activation/reset and payment completion routes. The robots generator currently says `Allow: /`. | Add an explicit route-level indexability policy and emit `meta name="robots" content="noindex,follow"` or an `X-Robots-Tag` for private/account/transactional routes. Keep authentication as the privacy boundary, not robots.txt. |
-| 🔴 P0 | Soft 404s | The catch-all route renders `PageNotFound` inside the SPA, with no evidence of a real HTTP 404 from the host and no `noindex` on the fallback. Unknown URLs can therefore look like HTTP 200 app-shell pages to crawlers. | Configure host/edge routing so genuinely unknown public URLs return HTTP 404. Add `noindex,follow` to the fallback page and test representative invalid URLs with raw HTTP requests and Search Console URL Inspection. |
-| 🔴 P0 | Set canonicals | `/set/:setId` renders `Explore`, but `Explore` never reads `setId` and always declares canonical `/explore`. Every individual set URL therefore collapses to the generic Explore canonical and cannot build independent search equity. | Build a real set-detail page/route that reads `setId`, renders stable set content and self-canonicalises to `/set/<id>`. Only add set URLs to the sitemap once this is fixed. |
-| 🔴 P0 | Multilingual canonical/hreflang | `useSEO()` publishes nine hreflang alternates as `?lang=<locale>`, but every language variant canonicalises back to the language-less URL. This creates conflicting canonical/hreflang signals. The language-less URL can also render different languages based on localStorage, account locale, browser language or geo detection. | Give every indexable locale a deterministic self-canonical URL and reciprocal hreflang cluster. Prefer stable locale paths such as `/fr/...`, or make `?lang=` variants self-canonical consistently. Keep x-default deterministic. |
-| 🟠 P1 | Client-only metadata | Titles, descriptions, canonicals, hreflang, Open Graph, Twitter cards and JSON-LD are injected in a React `useEffect` after mount. Crawlers and social unfurlers that do not execute the SPA receive only the generic `index.html` metadata. | Pre-render or server/edge-render SEO metadata for all high-value public routes. At minimum cover home, cards, sets, profiles, posts, journals, binders, meetups and starter packs. |
-| 🟠 P1 | Generic first-response metadata | The initial HTML contains one generic SwapPulse title/description/OG image for every URL. Until JavaScript runs, `/card/*`, `/post/*`, `/profile/*` and similar routes are indistinguishable. | Emit route-specific first-response metadata and verify with raw HTML fetches and social preview debuggers rather than only inspecting the hydrated browser DOM. |
-| 🟠 P1 | Card sitemap coverage | Card detail pages are absent from the sitemap even though Pokémon card names, set names, collector numbers, rarity and pricing are among SwapPulse's strongest organic-search opportunities. | Generate canonical card URLs from the TCGDex-backed catalogue and include indexable cards in segmented/card sitemaps with truthful `lastmod` values. |
-| 🟠 P1 | Set sitemap coverage | Individual set URLs are absent from the sitemap. | After set-detail routing is fixed, include supported set pages in the sitemap with stable canonical URLs and truthful metadata. |
-| 🟠 P1 | Dynamic sitemap coverage | Public journals, starter-pack details, hashtags, trade details, incident details and other potentially valuable public content types are omitted, while lower-value utility routes are included. | Define an explicit content-type indexability matrix and generate sitemap entries from that policy rather than an ad hoc route list. |
-| 🟠 P1 | Sitemap eligibility | The sitemap includes `/profile`, which is a protected owner profile route that redirects guests to login. It also includes meetup detail URLs even though `getMeetup` requires authentication, and it lists challenges/spaces without consistently filtering for genuinely public/indexable state. | Emit only guest-readable, canonical, indexable URLs. Validate every sitemap URL as a signed-out crawler before inclusion. |
-| 🟠 P1 | Sitemap scaling | Each dynamic entity query is capped at 500 records and there is no pagination or sitemap index. Older URLs will silently disappear as content grows. | Implement a sitemap index with paginated child sitemaps using deterministic cursors or stable ranges. Never silently truncate indexed inventory. |
-| 🟠 P1 | Sitemap lastmod accuracy | Static routes use the current timestamp every time the sitemap is generated, implying that every static page changed on every generation. | Use real content/deployment modification dates or omit `lastmod` when there is no trustworthy timestamp. |
-| 🟠 P1 | Profile sitemap completeness | Profile URLs are derived only from DIDs found in the capped public-post query. Public members who have not posted recently can be omitted. | Build profile sitemap inventory from the authoritative public-profile source and paginate it independently of post authorship. |
-| 🟠 P1 | Meetup crawlability | `/meetups/:meetupId` is public in the router and emitted to the sitemap, but `getMeetup` returns 401 to signed-out visitors. Search engines cannot reliably access the advertised content. | Split public meetup metadata from authenticated RSVP/member data. Make the public event page guest-readable and keep attendee-sensitive fields protected. |
-| 🟠 P1 | Challenge crawlability | Challenge detail is public, but its leaderboard/progress API requires authentication. Signed-out visitors can receive an indefinite loading state for a major part of the page. | Provide a stable guest-readable challenge summary/progress response and keep private participation data behind authentication. |
-| 🟠 P1 | Internal search indexation | `/search` is indexable by default although search-result pages are query-dependent, thin and duplicative. | Mark internal search results `noindex,follow`. If the base `/search` page has standalone discovery value, keep only that landing state indexable. |
-| 🟠 P1 | Chain explorer crawl budget | Block, transaction and address routes self-canonicalise and are internally linked, creating a potentially enormous low-search-value crawl space. | Decide an explicit policy. If chain details are not target search content, apply `noindex,follow` to `/chain/block/*`, `/chain/tx/*`, `/chain/address/*` and resolver-detail URLs while keeping `/chain/` indexable. |
-| 🟠 P1 | Handle/profile canonicalisation | `/u/:handle` resolves in JavaScript and client-navigates to `/profile/:did` rather than issuing a server 301/308. This can waste crawl resources and split signals between human-readable handle URLs and DID URLs. | Choose one canonical public profile URL form and implement server/edge redirects from alternates. Align internal links, sitemap entries and canonicals to the same form. |
-| 🟠 P1 | Incident canonical | Every `/incidents/:incidentId` page declares canonical `/incidents`, but no `/incidents` route exists. | Self-canonicalise incident details or canonicalise deliberately to `/status` if incidents should not index individually. Never point canonical to a non-existent route. |
-| 🟠 P1 | About discoverability | `/about` exists but is absent from the sitemap and persistent site navigation, making an important brand/trust page effectively orphaned. | Link About from persistent navigation/footer and include it in the sitemap. Add appropriate AboutPage/Organization structured data. |
-| 🟠 P1 | Legal sitemap coverage | Terms and Privacy are important trust/compliance pages linked in the UI but omitted from the sitemap. | Add `/terms` and `/privacy` to the sitemap with truthful modification dates. |
-| 🟠 P1 | Homepage title intent | The hydrated homepage title is `Home Feed, SwapPulse`, which is weaker for brand/category search intent than the static site's descriptive title and does not match the guest landing experience. | Use a descriptive homepage title such as `SwapPulse - Pokémon TCG Collector Community` and align the description with collection, trading and community intent. |
-| 🟠 P1 | Card structured data | CardDetail emits a minimal `Product` object containing only name and description despite the page having image, set/collector number, pricing and review data. | Expand Product markup accurately with image, SKU/card number, brand/category and only valid visible Offer/AggregateRating/Review fields. Validate with Google's Rich Results Test. |
-| 🟠 P1 | Post structured data | PostDetail emits `DiscussionForumPosting` with only headline and author. It omits the actual text/media, publication date, canonical URL and other fields required for useful eligibility. | Add valid `text` or media, `datePublished`, canonical URL, author profile URL and visible interaction/comment data where supported. Validate representative post types. |
-| 🟠 P1 | Profile structured data | UserProfile emits a minimal `ProfilePage` object without a `mainEntity` Person and richer public identity fields. | Add a `mainEntity` Person with name, handle/identifier, image, description and canonical profile URL when those fields are public. |
-| 🟠 P1 | Journal structured data | JournalDetail has long-form article content but emits no Article/BlogPosting structured data. | Add Article or BlogPosting JSON-LD with headline, author, datePublished/dateModified, image, description and canonical URL for public journals. |
-| 🟠 P1 | Meetup structured data | Public meetup pages emit no Event schema despite containing event title, date, location, capacity and status. | Once guest-readable event data is available, add valid Event structured data with start date, location, status and attendance mode. |
-| 🟠 P1 | Breadcrumb structured data | Hierarchical pages such as card, set, binder, journal, circle and challenge details do not emit BreadcrumbList schema. | Add visible breadcrumbs where useful and matching BreadcrumbList JSON-LD. |
-| 🟠 P1 | Open Graph semantic type | `useSEO()` hardcodes `og:type=website` for every route, including posts, journals and profiles. | Allow route-specific OG types where appropriate, while using `website` only for general site pages. |
-| 🟠 P1 | Dynamic OG image alt | `index.html` provides one static `og:image:alt`, but `useSEO()` changes `og:image` without updating its alt text. Dynamic card/profile images can therefore inherit unrelated generic alt metadata. | Add `ogImageAlt` support and update/remove `og:image:alt` whenever the OG image changes. |
-| 🟠 P1 | Localised metadata | Many SEO titles/descriptions are hard-coded English while the app declares nine hreflang alternates. | Localise SEO metadata for every genuinely indexable locale. Do not advertise hreflang variants whose principal metadata/content is not actually localised. |
-| 🟠 P1 | Legal hreflang validity | Terms and Privacy are largely hard-coded English documents but still receive all nine hreflang alternates from `useSEO()`. | Either maintain full locale-specific legal documents or expose only the authoritative English version without false hreflang alternates. |
-| 🟠 P1 | Thin hashtag pages | Hashtag pages are indexable by default, can contain zero/few posts and only scan a recent 200-post client-side window. | Index only tags with durable, substantial public content. Provide server-side tag pagination and `noindex` empty/thin tag pages. |
-| 🟠 P1 | Core Web Vitals: hero card | The shared CardImage always uses `loading="lazy"`; CardDetail uses it for the above-the-fold hero card, making the likely LCP image lazy-loaded. | Add eager/high-priority loading support for primary above-the-fold card art while keeping list/gallery images lazy. Measure LCP before and after. |
-| 🟠 P1 | Automated SEO audit accuracy | The latest stored automated SEO audit, dated 7 September 2026, reports 99/100, but its implementation never tests the actual public robots/sitemap HTTP responses, rendered canonicals/hreflang, noindex policy, HTTP status codes, card/set coverage or structured-data validity. `broken_canonicals` and `missing_jsonld` are created but never populated by real checks. | Replace the heuristic score with real signed-out HTTP/rendered-page checks, sitemap validation, status/canonical/hreflang/noindex assertions and structured-data validation. Do not present a near-perfect score until these blockers are measurable. |
-| 🟠 P1 | Automated audit visibility filters | `seo-audit` counts posts, binders, circles, meetups, challenges and spaces without applying the same public/indexable filters used by the sitemap, inflating pages-audited and sitemap-health confidence. | Make the SEO audit consume the same canonical indexability manifest as routing/sitemap generation and crawl sampled URLs as a signed-out visitor. |
-| 🟠 P1 | Social unfurl reliability | Because dynamic OG/Twitter tags are client-injected, Bluesky, Mastodon, Discord and other unfurlers can receive the generic site card instead of card/post/profile-specific previews. | Pre-render route-specific social metadata at the server/edge. Test representative URLs with actual target-platform unfurl/debug tools. |
-| 🟡 P2 | Static HTML language | `index.html` starts with `<html lang="en">`; the precise locale is set only after React runs. | Use `en-GB` for the static default and emit the locale server-side/pre-rendered for explicit locale URLs. |
-| 🟡 P2 | Sitemap priority/changefreq | The sitemap emits `priority` and `changefreq`, but Google ignores both. | Remove them unless another consumer needs them, and focus maintenance on accurate URLs and `lastmod`. |
-| 🟡 P2 | Image sitemap opportunity | High-value card, binder, journal, challenge and profile imagery is not exposed through image-sitemap extensions. | Consider image sitemap data after canonical/indexing foundations are fixed. |
-| 🟡 P2 | Website/Organization schema depth | The homepage WebSite schema contains only name and URL. | Add accurate Organization linkage and other supported identity fields. Add SearchAction only if a stable crawl-safe search URL contract is implemented. |
-| 🟡 P2 | Starter-pack structured data | Starter-pack detail pages have unique curated community content but no structured data and are omitted from the sitemap. | After public visibility policy is formalised, add appropriate CollectionPage/ItemList markup and sitemap coverage. |
-| 🟡 P2 | Binder structured data | Public binder pages expose curated card collections but do not have CollectionPage/ItemList structured data. | Add schema for public binders only, representing visible cards and creator details accurately. |
-| 🟡 P2 | Search URL contract | The Search page does not currently expose a stable query-in-URL contract suitable for crawlable/shareable semantics or a trustworthy WebSite SearchAction. | If shareable search is desired, standardise `?q=` while keeping result pages noindex; otherwise leave search purely internal. |
-| 🟡 P2 | Documentation topical links | `DocumentationLink` accepts a slug but always links to the GitBook root. This loses contextual topical relevance and user navigation value. | Map each slug to the actual corresponding GitBook page and use descriptive anchor text. |
-| 🟡 P2 | Remote font performance | The HTML CSP permits Google Fonts and the frontend audit identified third-party font loading. External font handshakes can add render-blocking/LCP cost. | Self-host required font files or aggressively minimise/preload only critical subsets, with system-font fallbacks. |
-| 🟡 P2 | Live CWV evidence | No trustworthy current production Lighthouse/CrUX/Search Console Core Web Vitals evidence could be collected from the Base44 sandbox because the public domain was not resolvable there. | Run mobile/desktop Lighthouse, PageSpeed Insights and Search Console CWV against production after deployment. Treat LCP, INP and CLS regressions as release gates. |
-| 🟡 P2 | Search visibility evidence | External `site:swappulse.org` checks did not return reliable evidence during this audit, but that is not proof that the site is unindexed. | Verify real submitted/discovered/indexed counts, canonical selection and crawl errors in Google Search Console and Bing Webmaster Tools rather than inferring from public search queries. |
-| 🟡 P2 | AT-URI route canonical normalisation | `/post/at/:atUri` embeds an AT URI in the path and reconstructs the canonical from the path parameter. Alternate encodings can create duplicate/malformed canonical variants. | Define one encoded canonical representation or redirect resolved remote posts to the local canonical `/post/<id>` URL. |
-| 🟢 P3 | SEO title separator | `useSEO()` formats titles as `Page, SwapPulse`. This is valid but less conventional/scannable than a consistent `Page | SwapPulse` or `Page - SwapPulse` pattern. | Pick one title pattern based on Search Console CTR data and apply it consistently. |
-| 🟢 P3 | Open Graph locale completeness | OG metadata includes locale/alternates but not other optional route-specific properties that could improve selected content types. | Add route-specific OG properties only where semantically correct after the main prerender/canonical work is complete. |
-| 🟢 P3 | Audit route-source drift | The automated SEO audit maintains a separate hard-coded `staticPages` list that already differs from the router and sitemap generator. | Generate audit targets from one canonical indexability manifest so future route changes cannot silently bypass SEO checks. |
+| 🔴 P0 | SEO-001 - Live sitemap source and route inventory | Production `/sitemap.xml` is now a valid XML response, but it is not the richer custom sitemap generated by `base44/functions/seo-sitemap/entry.ts`. The live response advertises Base44 page-key routes such as `/Admin`, `/Settings`, `/Moderation`, `/Messages`, `/HTMLPlayground`, `/SearchRenderer`, `/SitemapXml` and `/RobotsTxt`, while omitting high-value dynamic public pages. The response header `x-base44-sitemap: true` indicates the platform-generated sitemap is taking precedence. | Make one canonical sitemap source authoritative at `/sitemap.xml`. It must contain only public, canonical, guest-readable, indexable URLs and must include approved dynamic content. Remove admin, account, moderation, utility and renderer routes. Verify the raw production response after deployment. |
+| 🔴 P0 | SEO-002 - Soft 404s | A deliberately invalid production URL returned HTTP 200 with the SPA shell. The client has a friendly `PageNotFound` component, but the HTTP layer does not return a real 404 for unknown routes. This can create soft-404 reports, crawl waste and index pollution. | Configure the host/edge layer so genuinely unknown URLs return HTTP 404, or 410 when content has intentionally been removed. Keep the friendly PageNotFound UI, but also emit `noindex,follow` on error pages. |
+| 🔴 P0 | SEO-003 - Index-control policy | `useSEO()` still has no route-level robots/noindex option. Private, account, transactional, staff and internal routes therefore depend mainly on authentication and robots.txt. Several of those routes are also exposed by the live sitemap. | Add an explicit central indexability policy. Emit `noindex,follow` or an `X-Robots-Tag` for private/account/admin/transactional pages. Authentication remains the privacy boundary. Sitemap generation and robots rules must consume the same policy. |
+| 🔴 P0 | SEO-004 - Set canonicals | `/set/:setId` routes to `Explore`, but `Explore` declares canonical `/explore` and does not use `setId` to create an independent SEO document. Individual set URLs therefore collapse to the generic Explore canonical. | Build a real set-detail route that reads `setId`, renders durable set content and self-canonicalises to `/set/<id>`. Only add set detail URLs to the sitemap once they are true indexable documents. |
+| 🔴 P0 | SEO-005 - Multilingual canonical and hreflang model | `useSEO()` emits nine hreflang alternates as `?lang=<locale>`, but its canonical URL omits the language parameter. This creates conflicting signals because each advertised language alternate does not self-canonicalise. The static first response is also always English. | Give each indexable locale a deterministic self-canonical URL and reciprocal hreflang cluster. Prefer stable locale paths such as `/fr/...`, or consistently self-canonicalise supported `?lang=` variants. Keep x-default deterministic and ensure translated pages contain genuinely localised content and metadata. |
+| 🔴 P0 | SEO-006 - robots.txt raw delivery | Historical finding from the previous audit: robots.txt was previously suspected to be SPA-wrapped. Production verification on 11 September 2026 shows `/robots.txt` now returns HTTP 200 with `Content-Type: text/plain; charset=utf-8`. | **Completed:** retain the current raw text delivery and add a regression check for status code, MIME type and sitemap declaration. |
+| 🔴 P0 | SEO-007 - sitemap.xml raw delivery | Historical finding from the previous audit: sitemap.xml was previously suspected to be SPA-wrapped. Production verification on 11 September 2026 shows `/sitemap.xml` now returns HTTP 200 with `Content-Type: application/xml; charset=utf-8`. The remaining sitemap problem is content/source quality, covered by SEO-001. | **Completed:** retain raw XML delivery. Replace or control the platform-generated contents as required by SEO-001. |
+| 🟠 P1 | SEO-008 - Client-only route metadata | Page titles, descriptions, canonicals, hreflang links, Open Graph, Twitter tags and most JSON-LD are injected by `useSEO()` inside `useEffect`. The initial HTML for deep routes therefore contains generic site metadata until JavaScript executes. | Pre-render, server-render or edge-render SEO-critical head metadata for high-value public routes. Confirm route-specific tags are present in a raw HTTP fetch before JavaScript runs. |
+| 🟠 P1 | SEO-009 - Generic social previews | Because social metadata is client-injected, crawlers and unfurlers that do not execute the SPA can receive the generic SwapPulse card instead of card, post, profile, journal or event-specific previews. | Deliver route-specific OG and Twitter tags in the first response. Test real URLs with Discord, Bluesky, Mastodon and other target-platform preview tools. |
+| 🟠 P1 | SEO-010 - robots/sitemap conflict | Production robots.txt blocks areas including `/admin`, `/settings`, `/messages`, `/notifications`, `/moderation`, `/my-collection`, `/trade-history` and `/wishlist`, while the production sitemap advertises corresponding route keys such as `/Admin`, `/Settings`, `/Messages`, `/Notifications`, `/Moderation`, `/MyCollection`, `/TradeHistory` and `/Wishlist`. | Generate both robots and sitemap rules from one shared route/indexability manifest. A URL must never be simultaneously advertised for indexing and intentionally blocked from crawling. |
+| 🟠 P1 | SEO-011 - Canonical route naming and casing | The live sitemap uses Base44 page-key casing and legacy names such as `/AboutUs`, `/PrivacyPolicy`, `/HelpCentre` and `/CookiePolicy`, while the app's intended public URLs use cleaner paths such as `/about`, `/privacy`, `/help` and `/cookies`. | Choose one lowercase canonical route for every public document. 301/308 redirect aliases where possible, update internal links, and list only canonical forms in the sitemap. |
+| 🟠 P1 | SEO-012 - Dynamic sitemap coverage | The live sitemap omits the public dynamic inventory that the custom sitemap attempts to expose, including posts, binders, circles, meetups, challenges, spaces and profiles. It also omits high-value card and set detail opportunities. | Add only approved public dynamic content to paginated child sitemaps, based on the authoritative indexability policy. Include cards and sets once those routes are stable, crawlable and canonical. |
+| 🟠 P1 | SEO-013 - Sitemap scale and truncation | The custom sitemap caps each dynamic entity query at 500 records and does not paginate or use a sitemap index. Older URLs can disappear as content grows. | Use a sitemap index with deterministic paginated child sitemaps. Keep each sitemap within protocol limits and ensure older indexable URLs never silently fall out of coverage. |
+| 🟠 P1 | SEO-014 - Sitemap lastmod accuracy | The custom sitemap assigns the current timestamp to all static routes each time it is generated. That tells crawlers unchanged pages were modified on every generation. | Use real deployment/content modification dates, or omit `lastmod` where no trustworthy value exists. Do not manufacture freshness. |
+| 🟠 P1 | SEO-015 - Internal search indexation | `/search` is indexable by default and has no noindex policy. Search-result states are query-dependent, thin and potentially duplicative. | Mark search result states `noindex,follow`. Keep only a useful standalone `/search` landing page indexable if it has durable content. |
+| 🟠 P1 | SEO-016 - Incident canonical | Every `/incidents/:incidentId` page currently declares canonical `/incidents`, but that is not the actual incident detail URL and does not match the status route architecture. | Either self-canonicalise public incident detail pages or deliberately canonicalise them to `/status` if individual incidents should not index. Never canonicalise to a non-existent or semantically mismatched URL. |
+| 🟠 P1 | SEO-017 - Handle/profile canonicalisation | Human-readable handle URLs and DID-based profile URLs are normalised in the client rather than with a server/edge redirect, which can split crawl signals and waste crawl budget. | Select one canonical public profile URL form, redirect alternates with 301/308 at the edge, and align internal links, sitemap entries and canonical tags. |
+| 🟠 P1 | SEO-018 - Card search opportunity | Card detail pages are among SwapPulse's strongest search-intent assets, but production sitemap coverage does not expose the catalogue and metadata still depends on client rendering. | Build a scalable card sitemap strategy using stable canonical card IDs, accurate names/set/collector numbers, server-visible metadata and rich internal links from sets/search/discovery pages. |
+| 🟠 P1 | SEO-019 - Structured data depth | Structured data exists, which is a strong foundation, but major entity pages are still incomplete. Card Product schema is minimal, profiles lack a rich `mainEntity` Person, journals need Article/BlogPosting, meetups need Event, and hierarchical detail pages lack BreadcrumbList. | Expand schema only with fields visibly present on the page. Validate representative templates with Schema.org validation and Google's Rich Results Test where eligible. |
+| 🟠 P1 | SEO-020 - Open Graph type and image alt | `useSEO()` hardcodes `og:type=website` for every route and does not update `og:image:alt` when a page-specific image is used. | Allow per-route OG type and OG image alt text. Use semantic types where supported and ensure every dynamic image has matching accessible descriptive metadata. |
+| 🟠 P1 | SEO-021 - Localised metadata completeness | The app advertises nine language variants but many SEO titles and descriptions remain English. Legal documents may also remain English while still receiving all hreflang alternates. | Localise indexable titles, descriptions and principal content for each advertised language. Do not publish hreflang variants for pages that are not genuinely localised. |
+| 🟠 P1 | SEO-022 - Automated audit score is unreliable | The built-in weekly SEO audit computes a heuristic score from entity counts, short posts and missing images. It does not request the real production sitemap/robots responses, test HTTP status codes, inspect live canonicals/hreflang, verify noindex rules, or validate structured data. This can report a near-perfect score while release-blocking SEO defects remain. | Rebuild the automated audit around signed-out production HTTP checks, rendered-page sampling, sitemap validation, indexability assertions and schema checks. Make its score use the same weighted model as this audit. |
+| 🟠 P1 | SEO-023 - Audit and sitemap policy drift | `seo-audit`, `seo-sitemap`, the router, robots rules and actual platform-generated sitemap all maintain different route lists. They have already drifted apart. | Create one canonical SEO route manifest describing path, canonical form, public visibility, indexability, sitemap eligibility, change source and rendering strategy. Generate all SEO surfaces from it. |
+| 🟡 P2 | SEO-024 - Core Web Vitals evidence | The codebase contains sensible performance patterns such as route splitting, but this audit did not obtain authoritative field Core Web Vitals data from Search Console/CrUX. Code inspection alone cannot prove LCP, INP or CLS compliance. | Run mobile and desktop PageSpeed/Lighthouse plus Search Console Core Web Vitals. Treat regressions on high-traffic templates as release criteria. |
+| 🟡 P2 | SEO-025 - LCP image loading | The previous frontend audit identified lazy loading on shared card imagery, including contexts where card art may be the primary above-the-fold visual. | Ensure the dominant above-the-fold image on card detail pages loads eagerly with appropriate priority, dimensions and responsive sources. Keep gallery/list images lazy. |
+| 🟡 P2 | SEO-026 - About and trust-page discovery | Brand, About, privacy, terms, accessibility and help content should be consistently discoverable through persistent navigation and the canonical sitemap. The live sitemap currently uses route-key aliases rather than the intended clean public paths. | Keep trust/legal/help pages linked from persistent footer/navigation and include only their canonical clean URLs in the corrected sitemap. |
+| 🟡 P2 | SEO-027 - Thin taxonomy pages | Hashtag, filter, chain-explorer and similar generated states can create large low-value crawl spaces if allowed to self-canonicalise by default. | Define minimum content thresholds and noindex rules for thin or near-infinite taxonomies. Keep only durable, useful landing pages indexable. |
+| 🟡 P2 | SEO-028 - Search Console and Bing evidence | Public `site:` searches were inconclusive and should not be used as a substitute for first-party indexing data. | Connect and routinely review Google Search Console and Bing Webmaster Tools for submitted/discovered/indexed counts, soft 404s, duplicate canonicals, robots exclusions and sitemap errors. |
+| 🟡 P2 | SEO-029 - Static document language | The static HTML fallback begins as English while locale is set after React loads. | Use `en-GB` for the static default and emit the correct language in server/pre-rendered HTML for explicit locale URLs. |
+| 🟡 P2 | SEO-030 - Remote font/performance dependency | Third-party font loading can add connection overhead and affect render timing on slower devices. | Self-host critical fonts or minimise/preload only necessary subsets with robust system-font fallbacks. Validate impact with measured CWV rather than assumptions. |
+| 🟢 P3 | SEO-031 - Title pattern | `useSEO()` formats page titles as `Page, SwapPulse`. This is valid but less conventional than a consistent separator pattern. | Test and standardise a concise title pattern such as `Page | SwapPulse`, based on Search Console CTR and query data. |
+| 🟢 P3 | SEO-032 - Obsolete sitemap hints | The custom sitemap emits `priority` and `changefreq`, which Google ignores. | Remove them unless another consumer needs them. Focus maintenance on canonical URLs and accurate `lastmod`. |
+| 🟢 P3 | SEO-033 - Image sitemap opportunity | SwapPulse has strong visual assets including card art, binder content and profile imagery, but no image-sitemap extensions are used. | Consider image sitemap extensions only after canonical, rendering and sitemap-inventory issues are resolved. |
+| 🟢 P3 | SEO-034 - Documentation topical links | Documentation links should point to exact topical GitBook pages rather than only the documentation root, because precise contextual links improve usability and semantic discovery. | Map each documentation slug to its canonical GitBook page and keep anchor text descriptive. |
 
-## Verified strengths
+## Executive summary
 
-- `useSEO()` is already widely adopted, giving the project one central place to improve metadata behaviour.
-- The app has page-specific titles/descriptions on most routed pages, canonical support, Open Graph/Twitter support, JSON-LD support and hreflang infrastructure.
-- Static `index.html` metadata provides a reasonable generic fallback for the brand rather than an empty document head.
-- Public Post and Binder sitemap queries already filter explicit public visibility, which is the right privacy pattern to extend to all dynamic content types.
-- `getBinder` and `get-journal` enforce guest visibility rules server-side instead of exposing private records just for SEO.
-- Route-level code splitting is broadly implemented, which helps keep initial JavaScript growth under control.
-- Card images generally have useful alt text, and the shared CardImage component uses `object-contain` so card art is not cropped.
-- The homepage already emits WebSite JSON-LD, CardDetail emits Product, PostDetail emits DiscussionForumPosting and UserProfile emits ProfilePage, so structured-data support exists and needs strengthening rather than starting from scratch.
+SwapPulse has a stronger SEO foundation than the live search-engine surface suggests. The app already contains a central `useSEO()` hook, page-specific metadata, Open Graph and Twitter support, JSON-LD, hreflang generation, a custom sitemap function and a scheduled SEO audit. The main issue is not a lack of SEO code. It is that the production edge, router and SEO systems are not using one shared source of truth.
 
-## Evidence and limitations
+Production testing changed two conclusions from the previous audit. `/robots.txt` and `/sitemap.xml` are now served with correct raw MIME types, so those delivery findings are closed. However, the live sitemap is a Base44-generated page-route inventory rather than the richer app sitemap, and that introduces a more important problem: private and utility routes are advertised while dynamic public content is missing.
 
-- The latest `SeoAudit` record queried during this audit is dated **7 September 2026** and reports **99/100**, **515 pages audited**, **520 sitemap entries** and **7 issues found**. That score is not considered reliable because the current `seo-audit` implementation does not test the P0/P1 conditions identified above.
-- A direct production-domain curl test from the Base44 sandbox could not resolve the public domain, so this report does **not** claim that production `robots.txt`, `sitemap.xml`, HTTP 404 handling, response headers or Core Web Vitals have been freshly validated.
-- A public web search did not provide reliable current `site:swappulse.org` coverage evidence. That is recorded as inconclusive rather than treated as proof of non-indexation.
+The second confirmed release blocker is HTTP status handling. A made-up URL returned HTTP 200 with the SPA shell. Search engines can interpret that as a soft 404 or even crawl/index low-value duplicate shells. The client-side 404 component is useful for people but does not replace a correct HTTP status.
 
-## Recommended remediation order
+The third architectural issue is rendering. Most route-specific metadata is applied in a React effect after JavaScript starts. Modern Googlebot can render JavaScript, but relying on hydration increases crawl complexity and gives poorer results to social crawlers, preview bots and any crawler that reads only the initial HTML.
 
-1. Make `/robots.txt` and `/sitemap.xml` real raw HTTP resources.
-2. Add a central indexability/noindex policy and real HTTP 404 handling.
-3. Fix `/set/:setId` and the multilingual canonical/hreflang model.
-4. Move critical metadata/OG/schema to server/edge/pre-rendered HTML.
-5. Rebuild sitemap inventory around a single canonical indexability manifest, adding cards and sets while removing non-public/protected URLs.
-6. Fix public guest crawlability for meetups/challenges and canonical inconsistencies such as incidents and handle redirects.
-7. Strengthen Product, Post, Profile, Journal, Event and breadcrumb structured data.
-8. Optimise high-value content discovery/internal linking and LCP, especially card detail pages.
-9. Replace the current heuristic SEO audit score with real production HTTP/rendered-page validation.
-10. Submit/validate the corrected sitemap in Google Search Console and Bing Webmaster Tools, then monitor indexing, canonical selection, CTR and Core Web Vitals.
+## Audit score
+
+**Overall score: 62/100 - Needs Improvement**
+
+| Category | Weight | Score | Assessment |
+| --- | ---: | ---: | --- |
+| Crawlability and indexation | 20 | 8 | Soft 404s, sitemap inventory conflicts and private/utility exposure are significant. |
+| Metadata and canonicals | 15 | 10 | Good central tooling, but client-only delivery and several canonical defects remain. |
+| Structured data | 10 | 7 | Useful foundation exists; entity coverage and depth need improvement. |
+| Content and on-page SEO | 15 | 9 | Strong potential in cards, sets and community content, but key inventory is not exposed cleanly. |
+| Internal linking and discovery | 10 | 6 | Discovery exists in-app, but crawler discovery and canonical route consistency are uneven. |
+| Performance and mobile SEO | 15 | 9 | Code patterns are promising, but field CWV evidence is still required. |
+| International and social SEO | 10 | 8 | Nine-language and social infrastructure exists, but canonical/rendering conflicts reduce reliability. |
+| Monitoring and maintenance | 5 | 5 | Weekly SEO monitoring exists, but its scoring model needs to become production-aware. |
+| **Total** | **100** | **62** | **Needs Improvement** |
+
+## Production evidence verified on 11 September 2026
+
+- `https://swappulse.org/` returned HTTP 200.
+- `https://swappulse.org/robots.txt` returned HTTP 200 and `Content-Type: text/plain; charset=utf-8`.
+- `https://swappulse.org/sitemap.xml` returned HTTP 200 and `Content-Type: application/xml; charset=utf-8`.
+- Production sitemap response included `x-base44-sitemap: true`.
+- The live sitemap contained 36 static page-key URLs, including internal/private/utility routes such as `/Admin`, `/Settings`, `/Moderation`, `/Messages`, `/Notifications`, `/HTMLPlayground`, `/SitemapXml` and `/RobotsTxt`.
+- The live sitemap used route-key aliases such as `/AboutUs`, `/PrivacyPolicy`, `/HelpCentre` and `/CookiePolicy` rather than the intended clean route forms.
+- The live sitemap did not contain the dynamic public inventory produced by the app's custom `seo-sitemap` function.
+- A deliberately invalid URL returned HTTP 200 with the app shell instead of an HTTP 404.
+- Raw first-response HTML for deep routes used the generic metadata from `index.html`; route-specific tags are applied after React loads.
+- `useSEO()` creates title, description, canonical, OG, Twitter, hreflang and optional JSON-LD client-side.
+- The built-in `seo-audit` function uses heuristic entity counts rather than real production crawling and HTTP verification.
+- Public `site:swappulse.org` web-search checks were inconclusive. This is not treated as proof of non-indexation.
+
+## What is working well
+
+- HTTPS is live on the primary domain.
+- `robots.txt` and `sitemap.xml` are now delivered as raw crawler-readable resources with appropriate content types.
+- `useSEO()` centralises most route metadata, which makes future server/pre-render migration much easier.
+- The app already supports canonical URLs, Open Graph, Twitter cards, hreflang, JSON-LD and a default share image.
+- The homepage has a generic first-response title, description, social metadata and WebSite structured data rather than an empty head.
+- The codebase already contains a custom dynamic sitemap generator with public-visibility filtering for some entity types.
+- Route-level code splitting is broadly used.
+- The project has a scheduled weekly SEO audit and a persisted audit entity, providing a good foundation for production monitoring.
+- Strong SEO content opportunities already exist in the product: Pokémon cards, sets, collectors, posts, binders, journals, meetups and community content.
+
+## Prioritised remediation plan
+
+### Phase 1 - Release blockers
+
+1. Replace/control the production sitemap so `/sitemap.xml` uses one canonical indexability manifest and contains only clean, public, indexable URLs.
+2. Add correct HTTP 404/410 behaviour for unknown and removed routes.
+3. Add route-level noindex support and a central public/indexable/private policy shared by router, sitemap, robots and automated audit.
+4. Build a true set-detail route and fix set canonicals.
+5. Resolve multilingual canonical/hreflang semantics before treating all nine language variants as independently indexable.
+
+### Phase 2 - First-response SEO
+
+1. Pre-render or server/edge-render title, description, canonical, OG/Twitter tags, hreflang and structured data for high-value public pages.
+2. Make social preview metadata available without JavaScript.
+3. Normalise route casing/aliases with permanent redirects.
+4. Fix incident and profile canonical handling.
+
+### Phase 3 - Search inventory and rich results
+
+1. Add scalable card and set sitemap coverage.
+2. Add approved public posts, profiles, binders, journals, meetups and other durable content through paginated child sitemaps.
+3. Expand valid Product, Person/ProfilePage, Article/BlogPosting, Event and BreadcrumbList structured data.
+4. Strengthen internal linking between sets, cards, collectors and community content.
+
+### Phase 4 - Measurement and maintenance
+
+1. Replace the heuristic weekly score with production HTTP/rendered-page validation.
+2. Submit the corrected sitemap in Google Search Console and Bing Webmaster Tools.
+3. Monitor soft 404s, duplicate canonical selections, excluded URLs, crawl errors and indexing trends.
+4. Establish mobile and desktop Core Web Vitals baselines and regression thresholds.
+5. Review titles/descriptions and CTR using real search-query data after indexing stabilises.
+
+## Retest checklist
+
+- [ ] `/robots.txt` returns HTTP 200, raw text and the intended sitemap URL.
+- [ ] `/sitemap.xml` returns HTTP 200, raw XML and only canonical, guest-readable, indexable URLs.
+- [ ] No admin, settings, moderation, account, message, notification or utility routes appear in any sitemap.
+- [ ] All sitemap URLs return 200 to a signed-out crawler and are not blocked by robots.txt.
+- [ ] Unknown URLs return HTTP 404, and removed URLs return 404 or 410 as appropriate.
+- [ ] Error pages contain `noindex,follow`.
+- [ ] `/about`, a representative card, set, post and profile return unique route metadata in raw HTML before JavaScript runs.
+- [ ] Canonical links are self-consistent and use one lowercase URL form.
+- [ ] Legacy aliases permanently redirect to canonical URLs.
+- [ ] Search results and other thin/generated states are noindex.
+- [ ] Locale alternates are reciprocal, translated and self-canonical.
+- [ ] Social preview bots receive route-specific OG/Twitter metadata without client execution.
+- [ ] Structured data validates on representative card, profile, journal, meetup and breadcrumb pages.
+- [ ] Card/set/dynamic sitemap inventories paginate without 500-record truncation.
+- [ ] `lastmod` reflects real modification time or is omitted.
+- [ ] Google Search Console accepts the sitemap with no material errors.
+- [ ] Bing Webmaster Tools accepts the sitemap with no material errors.
+- [ ] Mobile and desktop CWV are measured for home, card detail, set detail, profile, feed and search templates.
+- [ ] Weekly automated SEO audit checks the real production domain and cannot report a near-perfect score while any P0 condition fails.
+
+## Final assessment
+
+SwapPulse does not need a complete SEO rebuild. It needs its existing SEO components wired to production through one authoritative indexability model. The largest wins are architectural: correct sitemap ownership, correct HTTP statuses, first-response metadata and consistent canonical URLs. Once those are fixed, the existing card catalogue and community content give SwapPulse a strong base for organic discovery.
+
+The immediate target should be to clear SEO-001 through SEO-005, then retest production before expanding sitemap coverage. Until those P0 items are resolved, the site should be treated as **not SEO-release ready**, even though much of the supporting SEO code is already in place.
