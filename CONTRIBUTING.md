@@ -121,6 +121,21 @@ If a new feature needs sensitive information, keep it off-chain and document:
 - how long it is retained;
 - what public commitment/proof, if any, is written on-chain.
 
+## Audit format
+
+Every security, privacy, Web3, AI/agent, infrastructure or feature audit must follow `AUDIT_STANDARD.md`.
+
+Use exactly these four columns, in this order:
+
+| Priority | Area | Finding | Required action |
+| --- | --- | --- | --- |
+| 🔴 P0 | Critical area | Concrete release-blocking finding. | Exact remediation or verification required. |
+| 🟠 P1 | High-priority area | Significant security, privacy, integrity, reliability or user-impact finding. | Exact remediation or verification required. |
+| 🟡 P2 | Medium-priority area | Defence-in-depth, resilience, usability or maintainability finding. | Exact remediation or verification required. |
+| 🟢 P3 | Low-priority area | Minor polish, documentation or maintenance finding. | Exact remediation or verification required. |
+
+Keep the original priority after remediation for audit history. When fixed, begin the action cell with **Completed:** and state what changed. Do not declare an audit complete when required build, lint, type, chain, deployment or operational checks could not be run.
+
 ## Release expectations
 
 Every pull request must make an explicit release-impact decision using `.github/PULL_REQUEST_TEMPLATE.md`.
