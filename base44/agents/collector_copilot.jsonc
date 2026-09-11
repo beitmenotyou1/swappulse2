@@ -63,5 +63,6 @@
       ]
     }
   ],
+  "allow_anonymous_access": false,
   "name": "collector_copilot"
 }
