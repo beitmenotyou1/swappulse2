@@ -1,8 +1,8 @@
 {
   "name": "Agent Learning Loop",
-  "description": "Processes agent feedback daily into inactive, safety-screened candidates that require administrator approval before any agent may use them",
+  "description": "SECURITY HOLD: automatic feedback-to-insight processing is disabled until scheduled backend calls have a platform-verifiable privileged identity. Administrators can run the authenticated processor manually; generated insights still require human approval.",
   "trigger": {
-    "condition": null,
+    "condition": "${ false }",
     "config": {
       "trigger_type": "scheduled",
       "events": [],
