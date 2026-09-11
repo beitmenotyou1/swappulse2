@@ -33,6 +33,17 @@ npx skills add base44/skills
 - Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
 - Run the relevant checks from `package.json` before finishing code changes.
 
+## Audit Report Format
+
+For every security, privacy, Web3, AI/agent, infrastructure or feature audit, follow `AUDIT_STANDARD.md`.
+
+- Lead with a four-column table: **Priority**, **Area**, **Finding**, **Required action**.
+- Use `🔴 P0`, `🟠 P1`, `🟡 P2`, and `🟢 P3` in severity order.
+- Keep one concrete problem per row.
+- Put completed remediation in the **Required action** cell beginning with `Completed:` rather than removing the historical finding.
+- Do not silently downgrade a finding after it is fixed.
+- Do not call an audit complete when required build, lint, type, chain, deployment or operational verification could not be run.
+
 <!-- gitbook-agent-instructions:start -->
 
 ## GitBook Documentation Editing
