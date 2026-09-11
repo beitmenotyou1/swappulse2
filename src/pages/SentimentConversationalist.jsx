@@ -29,9 +29,6 @@ function FunctionDisplay({ toolCall }) {
       ? (proj.active_label || 'Working…')
       : (proj.label || 'Done');
 
-  let args = toolCall.arguments_string;
-  try { args = JSON.parse(args); } catch { /* keep raw */ }
-
   return (
     <div className="mt-2 text-xs">
       <button
@@ -48,19 +45,8 @@ function FunctionDisplay({ toolCall }) {
         {toolCall.name} · {label}
       </button>
       {expanded && !hideDetails && (
-        <div className="mt-1.5 space-y-1 rounded-md bg-secondary/60 p-2">
-          {args && (
-            <div>
-              <p className="font-bold text-muted-foreground">Parameters:</p>
-              <pre className="overflow-x-auto whitespace-pre-wrap text-[11px]">{JSON.stringify(args, null, 2)}</pre>
-            </div>
-          )}
-          {parsedResults != null && (
-            <div>
-              <p className="font-bold text-muted-foreground">Result:</p>
-              <pre className="overflow-x-auto whitespace-pre-wrap text-[11px]">{JSON.stringify(parsedResults, null, 2)}</pre>
-            </div>
-          )}
+        <div className="mt-1.5 rounded-md bg-secondary/60 p-2 text-[11px] text-muted-foreground">
+          Tool inputs and raw record results are hidden to avoid exposing private or internal data. The assistant response contains the user-facing outcome.
         </div>
       )}
     </div>
@@ -195,7 +181,7 @@ export default function SentimentConversationalist() {
               <div>
                 <h2 className="text-lg font-bold">Sentiment Conversationalist</h2>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Spot trending cards from community sentiment votes, draft engaging conversation starters, and post them to the feed to spark discussion.
+                  Spot trending cards from community sentiment votes and draft conversation starters for you to review and publish yourself.
                 </p>
               </div>
               <Button onClick={createNew}>
@@ -238,7 +224,7 @@ export default function SentimentConversationalist() {
                   </button>
                 </div>
                 <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">
-                  The agent reads sentiment polls & votes, identifies trending cards, and can draft and post conversation starters to the feed.
+                  The agent reads sentiment polls and votes, identifies trends, and drafts conversation starters. It cannot publish or edit posts.
                 </p>
               </div>
             </>
