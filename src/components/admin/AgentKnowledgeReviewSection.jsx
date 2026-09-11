@@ -70,12 +70,9 @@ export default function AgentKnowledgeReviewSection() {
   };
 
   const review = async (revision, decision) => {
-    let acknowledgeFlagged = false;
     if (decision === 'approve' && revision.safety_status === 'flagged') {
-      acknowledgeFlagged = window.confirm(
-        'This source contains a safety flag. Approve only after reading the source and confirming that its text is factual project documentation, not an instruction to the agent.',
-      );
-      if (!acknowledgeFlagged) return;
+      setError('Safety-flagged knowledge cannot be published to Helper. Reject this revision and publish a clean reviewed summary instead.');
+      return;
     }
 
     setWorkingId(revision.id);
@@ -84,7 +81,6 @@ export default function AgentKnowledgeReviewSection() {
       await base44.functions.invoke('review-agent-knowledge', {
         revision_id: revision.id,
         decision,
-        acknowledge_flagged: acknowledgeFlagged,
         review_notes: decision === 'approve'
           ? 'Reviewed and approved in the SwapPulse admin knowledge queue.'
           : 'Rejected in the SwapPulse admin knowledge queue.',
@@ -195,7 +191,7 @@ export default function AgentKnowledgeReviewSection() {
                   {revision.safety_status === 'flagged' && (
                     <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 font-semibold text-amber-700 dark:text-amber-300">
                       <AlertTriangle className="h-3 w-3" />
-                      Safety review required
+                      Approval blocked
                     </span>
                   )}
                 </div>
@@ -219,7 +215,7 @@ export default function AgentKnowledgeReviewSection() {
                   <Button
                     size="sm"
                     onClick={() => review(revision, 'approve')}
-                    disabled={workingId === revision.id}
+                    disabled={workingId === revision.id || revision.safety_status === 'flagged'}
                   >
                     {workingId === revision.id
                       ? <Loader2 className="h-4 w-4 animate-spin" />
