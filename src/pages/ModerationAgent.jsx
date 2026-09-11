@@ -29,9 +29,6 @@ function FunctionDisplay({ toolCall }) {
       ? (proj.active_label || 'Working…')
       : (proj.label || 'Done');
 
-  let args = toolCall.arguments_string;
-  try { args = JSON.parse(args); } catch { /* keep raw */ }
-
   return (
     <div className="mt-2 text-xs">
       <button
@@ -48,19 +45,8 @@ function FunctionDisplay({ toolCall }) {
         {toolCall.name} · {label}
       </button>
       {expanded && !hideDetails && (
-        <div className="mt-1.5 space-y-1 rounded-md bg-secondary/60 p-2">
-          {args && (
-            <div>
-              <p className="font-bold text-muted-foreground">Parameters:</p>
-              <pre className="overflow-x-auto whitespace-pre-wrap text-[11px]">{JSON.stringify(args, null, 2)}</pre>
-            </div>
-          )}
-          {parsedResults != null && (
-            <div>
-              <p className="font-bold text-muted-foreground">Result:</p>
-              <pre className="overflow-x-auto whitespace-pre-wrap text-[11px]">{JSON.stringify(parsedResults, null, 2)}</pre>
-            </div>
-          )}
+        <div className="mt-1.5 rounded-md bg-secondary/60 p-2 text-[11px] text-muted-foreground">
+          Raw tool inputs and record results are hidden. Use the moderation dashboard to inspect source records and apply any decision explicitly.
         </div>
       )}
     </div>
@@ -335,7 +321,7 @@ export default function ModerationAgent() {
               <div>
                 <h2 className="text-lg font-bold">AI Moderation Agent</h2>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Review flagged content, get AI-powered analysis, draft warning messages, and execute moderation decisions.
+                  Review flagged content, get AI-powered analysis, and draft warning messages. Enforcement stays in the human moderation dashboard.
                 </p>
               </div>
               <Button onClick={createNew}>
@@ -378,7 +364,7 @@ export default function ModerationAgent() {
                   </button>
                 </div>
                 <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">
-                  The agent can read posts, listings, messages, and profiles, and apply moderation labels.
+                  The agent is read-only. It can analyse permitted records and recommend actions, but it cannot label content, change account standing, or execute moderation decisions.
                 </p>
               </div>
             </>
