@@ -72,9 +72,9 @@ export default function DataPrivacyRightsSection() {
     try {
       const payload = {
         cookie_categories: consent?.cookie_categories || { essential: true, analytics: false, marketing: false, functional: true },
-        analytics_consent: patch.analytics_consent ?? consent?.analytics_consent ?? true,
-        marketing_consent: patch.marketing_consent ?? consent?.marketing_consent ?? true,
-        notification_consent: patch.notification_consent ?? consent?.notification_consent ?? true,
+        analytics_consent: patch.analytics_consent ?? consent?.analytics_consent ?? false,
+        marketing_consent: patch.marketing_consent ?? consent?.marketing_consent ?? false,
+        notification_consent: patch.notification_consent ?? consent?.notification_consent ?? false,
         do_not_sell: patch.do_not_sell ?? consent?.do_not_sell ?? false,
       };
       const res = await base44.functions.invoke('update-consent-preferences', payload);
