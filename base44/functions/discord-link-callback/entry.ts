@@ -79,15 +79,13 @@ Deno.serve(async (req) => {
     if (!user) return finish('failed', 'account_unavailable');
 
     const collisions = await svc.entities.DiscordAccountLink
-      .filter({ discord_user_id: profile.id, guild_id: discordGuildId() }, '-created_date', 50)
-      .catch(() => []);
+      .filter({ discord_user_id: profile.id, guild_id: discordGuildId() }, '-created_date', 50);
     if (collisions.some((link: any) => link.user_id && link.user_id !== user.id && link.status !== 'revoked')) {
       return finish('failed', 'already_linked');
     }
 
     const previousUserLinks = await svc.entities.DiscordAccountLink
-      .filter({ user_id: user.id, guild_id: discordGuildId() }, '-created_date', 50)
-      .catch(() => []);
+      .filter({ user_id: user.id, guild_id: discordGuildId() }, '-created_date', 50);
     for (const previous of previousUserLinks) {
       if (String(previous.discord_user_id) === String(profile.id)) continue;
       await svc.entities.DiscordAccountLink.update(previous.id, {
