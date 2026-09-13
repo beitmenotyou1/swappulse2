@@ -2,15 +2,11 @@
   "name": "LoginCode",
   "type": "object",
   "title": "LoginCode",
-  "description": "Temporary 6-digit login code for passwordless email-code authentication. Created by the send-login-code backend function; verified by verify-login-code. Access is restricted to admins (service role bypasses RLS).",
+  "description": "One-time email code stored as a keyed digest. Only backend service-role functions may access it.",
   "properties": {
     "email": {
       "type": "string",
       "description": "Email address the login code was sent to"
-    },
-    "code": {
-      "type": "string",
-      "description": "6-digit login code"
     },
     "expires_at": {
       "type": "string",
@@ -30,33 +26,21 @@
     "description": {
       "type": "string",
       "maxLength": 1000
+    },
+    "code_hash": {
+      "type": "string",
+      "description": "Keyed HMAC-SHA256 digest of the six-digit one-time code; the plaintext is never stored"
     }
   },
   "required": [
     "email",
-    "code",
+    "code_hash",
     "expires_at"
   ],
   "rls": {
-    "read": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
   }
 }
