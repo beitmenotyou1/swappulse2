@@ -56,8 +56,6 @@ export default function CookieConsentBanner() {
           cookie_categories: categories,
           analytics_consent: categories.analytics,
           marketing_consent: categories.marketing,
-          notification_consent: true,
-          do_not_sell: false,
         }).catch(() => {});
       }
     } finally {
