@@ -22,9 +22,17 @@ export default async function(req: Request): Promise<Response> {
     //    original_created_at (falling back to created_date) so imported
     //    Bluesky posts appear in their original chronological order.
     const posts = await svc.entities.Post
-      .filter({ visibility_scope: 'public' }, '-created_date', limit)
+      .filter({ visibility_scope: 'public' }, '-created_date', Math.min(limit * 5, 500))
       .catch(() => []);
-    const items = sortPostsDescending(posts || []).map((p: any) => ({ ...p, external: false }));
+    // Public discovery must not promote escalated posts or labels recommending
+    // hiding, even if a legacy row still says public.
+    const eligible = (posts || []).filter((post: any) =>
+      post.moderation_status !== 'escalated'
+      && !(post.moderation_labels || []).some((label: any) =>
+        label?.recommended_action === 'hide' || label?.severity === 'escalate'
+      )
+    );
+    const items = sortPostsDescending(eligible).slice(0, limit).map((p: any) => ({ ...p, external: false }));
 
     // 2. Enrich with current avatars from the User table
     await enrichAuthorAvatars(svc, items);
