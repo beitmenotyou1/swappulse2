@@ -9,9 +9,38 @@ import {
 } from '../../shared/discordBot.ts';
 import { discordCopy } from '../../shared/discordLocale.ts';
 
-function hexBytes(value: string): Uint8Array {
-  if (!/^[0-9a-f]{64}$/i.test(value)) throw new Error('DISCORD_PUBLIC_KEY_INVALID');
+export function hexBytes(value: string, expectedBytes: number): Uint8Array {
+  if (!new RegExp(`^[0-9a-f]{${expectedBytes * 2}}$`, 'i').test(value)) {
+    throw new Error('DISCORD_HEX_INVALID');
+  }
   return Uint8Array.from(value.match(/.{2}/g) || [], (pair) => Number.parseInt(pair, 16));
+}
+
+async function boundedBody(req: Request): Promise<string> {
+  const maxBytes = 64 * 1024;
+  const length = Number(req.headers.get('content-length'));
+  if (Number.isFinite(length) && length > maxBytes) throw new Error('DISCORD_BODY_TOO_LARGE');
+  const reader = req.body?.getReader();
+  if (!reader) return '';
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new Error('DISCORD_BODY_TOO_LARGE');
+    }
+    chunks.push(value);
+  }
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder('utf-8', { fatal: true }).decode(combined);
 }
 
 async function verifySignature(req: Request, raw: string): Promise<boolean> {
@@ -22,7 +51,7 @@ async function verifySignature(req: Request, raw: string): Promise<boolean> {
   if (!Number.isFinite(timeMs) || Math.abs(Date.now() - timeMs) > 5 * 60 * 1000) return false;
   const key = await crypto.subtle.importKey(
     'raw',
-    hexBytes(discordPublicKey()),
+    hexBytes(discordPublicKey(), 32),
     { name: 'Ed25519' },
     false,
     ['verify'],
@@ -30,7 +59,7 @@ async function verifySignature(req: Request, raw: string): Promise<boolean> {
   return crypto.subtle.verify(
     'Ed25519',
     key,
-    hexBytes(signature),
+    hexBytes(signature, 64),
     new TextEncoder().encode(timestamp + raw),
   );
 }
@@ -58,7 +87,12 @@ function linkButtons(accountUrl: string, accountLabel: string, captchaUrl: strin
 }
 
 Deno.serve(async (req) => {
-  const raw = await req.text();
+  let raw: string;
+  try {
+    raw = await boundedBody(req);
+  } catch {
+    return Response.json({ error: 'Discord interaction body too large or invalid' }, { status: 413 });
+  }
   let copy = discordCopy('en-GB');
   try {
     if (!await verifySignature(req, raw)) {
