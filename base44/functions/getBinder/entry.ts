@@ -15,11 +15,10 @@ Deno.serve(async (req) => {
     const binder = await svc.entities.Binder.get(binderId);
     if (!binder) return Response.json({ error: 'Binder not found' }, { status: 404 });
 
-    const owner = binder.created_by_id
-      ? await svc.entities.User.get(binder.created_by_id).catch(() => null) : null;
+    const owner = binder.created_by_id ? await svc.entities.User.get(binder.created_by_id).catch(() => null) : null;
     const ownerDid = String(owner?.did || '');
     const isOwner = !!user && binder.created_by_id === user.id;
-    if (!['public', 'private', 'followers'].includes(binder.visibility)) {
+    if (!owner || !['public', 'private', 'followers'].includes(binder.visibility)) {
       return Response.json({ error: 'Not available' }, { status: 403 });
     }
     if (binder.visibility === 'private' && !isOwner) {
@@ -38,10 +37,8 @@ Deno.serve(async (req) => {
     }
 
     // Resolve the owner's collection entries so slots can render card art.
-    // A mutable binder DID cannot select another collector's private cards.
-    const entries = owner && binder.created_by_id
-      ? await svc.entities.CollectionEntry.filter({ created_by_id: binder.created_by_id }, '-updated_date', 500)
-      : [];
+    const ownerFilter = { created_by_id: binder.created_by_id };
+    const entries = await svc.entities.CollectionEntry.filter(ownerFilter, '-updated_date', 500);
     const map = new Map(entries.map((e) => [e.id, e]));
 
     const pages = (binder.pages || []).map((pg) => ({
@@ -79,9 +76,9 @@ Deno.serve(async (req) => {
       },
       author: {
         did: ownerDid,
-        name: owner?.display_name || owner?.full_name || binder.author_name,
-        handle: owner?.handle || binder.author_handle,
-        avatar: owner?.avatar || binder.author_avatar,
+        name: owner.display_name || owner.full_name || binder.author_name,
+        handle: owner.handle || binder.author_handle,
+        avatar: owner.avatar || binder.author_avatar,
       },
       pages,
       isOwner,
