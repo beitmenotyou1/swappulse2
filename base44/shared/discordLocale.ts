@@ -9,6 +9,7 @@ type DiscordCopy = {
   accountButton: string;
   captchaButton: string;
   notVerified: string;
+  verifyCooldown: string;
   rolesCurrent: (roles: string) => string;
   rolesPending: string;
   support: string;
@@ -30,6 +31,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'Link SwapPulse account',
     captchaButton: 'CAPTCHA only',
     notVerified: 'You are not verified yet. Use /verify to begin.',
+    verifyCooldown: 'Please wait a minute before creating another verification link.',
     rolesCurrent: (roles) => `At the last sync, your SwapPulse-managed roles were: ${roles}.`,
     rolesPending: 'Your verification is recorded. Automatic role reconciliation runs every 30 minutes.',
     support: 'Support',
@@ -49,6 +51,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'Vincular cuenta SwapPulse',
     captchaButton: 'Solo CAPTCHA',
     notVerified: 'Aún no estás verificado. Usa /verify para empezar.',
+    verifyCooldown: 'Espera un minuto antes de crear otro enlace de verificación.',
     rolesCurrent: (roles) => `En la última sincronización, tus roles de SwapPulse eran: ${roles}.`,
     rolesPending: 'Tu verificación está registrada. La sincronización automática de roles se ejecuta cada 30 minutos.',
     support: 'Soporte',
@@ -68,6 +71,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'Associer le compte SwapPulse',
     captchaButton: 'CAPTCHA uniquement',
     notVerified: 'Vous n’êtes pas encore vérifié. Utilisez /verify pour commencer.',
+    verifyCooldown: 'Attendez une minute avant de créer un autre lien de vérification.',
     rolesCurrent: (roles) => `Lors de la dernière synchronisation, vos rôles SwapPulse étaient : ${roles}.`,
     rolesPending: 'Votre vérification est enregistrée. La synchronisation automatique des rôles s’exécute toutes les 30 minutes.',
     support: 'Assistance',
@@ -87,6 +91,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'SwapPulse-Konto verknüpfen',
     captchaButton: 'Nur CAPTCHA',
     notVerified: 'Du bist noch nicht verifiziert. Nutze /verify, um zu beginnen.',
+    verifyCooldown: 'Warte bitte eine Minute, bevor du einen neuen Verifizierungslink erstellst.',
     rolesCurrent: (roles) => `Bei der letzten Synchronisierung waren deine SwapPulse-Rollen: ${roles}.`,
     rolesPending: 'Deine Verifizierung ist gespeichert. Der automatische Rollenabgleich läuft alle 30 Minuten.',
     support: 'Support',
@@ -106,6 +111,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'Collega account SwapPulse',
     captchaButton: 'Solo CAPTCHA',
     notVerified: 'Non sei ancora verificato. Usa /verify per iniziare.',
+    verifyCooldown: 'Attendi un minuto prima di creare un altro link di verifica.',
     rolesCurrent: (roles) => `All’ultima sincronizzazione, i tuoi ruoli SwapPulse erano: ${roles}.`,
     rolesPending: 'La verifica è stata registrata. La sincronizzazione automatica dei ruoli viene eseguita ogni 30 minuti.',
     support: 'Assistenza',
@@ -125,6 +131,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'Vincular conta SwapPulse',
     captchaButton: 'Somente CAPTCHA',
     notVerified: 'Você ainda não foi verificado. Use /verify para começar.',
+    verifyCooldown: 'Aguarde um minuto antes de criar outro link de verificação.',
     rolesCurrent: (roles) => `Na última sincronização, seus cargos SwapPulse eram: ${roles}.`,
     rolesPending: 'Sua verificação foi registrada. A sincronização automática de cargos ocorre a cada 30 minutos.',
     support: 'Suporte',
@@ -144,6 +151,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'SwapPulse アカウントを連携',
     captchaButton: 'CAPTCHA のみ',
     notVerified: 'まだ認証されていません。/verify から始めてください。',
+    verifyCooldown: '新しい認証リンクを作成する前に1分お待ちください。',
     rolesCurrent: (roles) => `前回の同期時点での SwapPulse 管理ロール: ${roles}。`,
     rolesPending: '認証は記録されています。ロールは30分ごとに自動同期されます。',
     support: 'サポート',
@@ -163,6 +171,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: '关联 SwapPulse 账户',
     captchaButton: '仅 CAPTCHA',
     notVerified: '你尚未验证。请使用 /verify 开始。',
+    verifyCooldown: '请等待一分钟后再创建新的验证链接。',
     rolesCurrent: (roles) => `上次同步时由 SwapPulse 管理的角色：${roles}。`,
     rolesPending: '你的验证已记录。角色每30分钟自动同步一次。',
     support: '支持',
@@ -182,6 +191,7 @@ const COPY: Record<DiscordLocale, DiscordCopy> = {
     accountButton: 'SwapPulse 계정 연결',
     captchaButton: 'CAPTCHA만 사용',
     notVerified: '아직 인증되지 않았습니다. /verify로 시작하세요.',
+    verifyCooldown: '새 인증 링크를 만들기 전에 1분 정도 기다려 주세요.',
     rolesCurrent: (roles) => `마지막 동기화 당시 SwapPulse가 관리한 역할: ${roles}.`,
     rolesPending: '인증이 기록되었습니다. 역할은 30분마다 자동으로 동기화됩니다.',
     support: '지원',
