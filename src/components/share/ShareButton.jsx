@@ -12,7 +12,7 @@ export default function ShareButton() {
       <button
         onClick={() => setOpen(true)}
         aria-label={t('share.buttonLabel')}
-        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:right-6"
+        className="fixed bottom-[calc(9.5rem+env(safe-area-inset-bottom,0px))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:right-6"
       >
         <Share2 className="h-5 w-5" />
         <span className="sr-only">{t('share.buttonLabel')}</span>
