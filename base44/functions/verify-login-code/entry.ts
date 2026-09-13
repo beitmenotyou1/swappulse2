@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getActiveSuspension } from '../../shared/enforcement.ts';
 import { timingSafeEqual } from '../../shared/cryptoCompare.ts';
+import { emailCodeHash } from '../../shared/emailCodeHash.ts';
 import { signActionToken } from '../../shared/appPasswordCrypto.ts';
 import {
   generateTotp,
@@ -19,19 +20,20 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const email = (body.email || '').trim().toLowerCase();
     const code = (body.code || '').trim();
-    if (!email || !code) return Response.json({ error: 'Email and code are required' }, { status: 400 });
+    if (!email || !/^\d{6}$/.test(code)) return Response.json({ error: 'Email and a 6-digit code are required' }, { status: 400 });
 
     // Find the active (unused, unexpired) code for this email
     const codes = await svc.entities.LoginCode.filter({ email, used: false }, '-created_date', 5);
     const now = new Date();
-    const active = (codes || []).find((c) => new Date(c.expires_at) > now);
+    const active = (codes || []).find((c) => /^[0-9a-f]{64}$/.test(String(c.code_hash || '')) && new Date(c.expires_at) > now);
 
     if (!active) {
       return Response.json({ error: 'Invalid or expired code' }, { status: 400 });
     }
 
     // Wrong code: increment failed attempts, lock (delete) after 5 failures
-    if (!(await timingSafeEqual(active.code, code))) {
+    const candidateHash = await emailCodeHash('login', email, code);
+    if (!(await timingSafeEqual(String(active.code_hash), candidateHash))) {
       const attempts = (active.failed_attempts || 0) + 1;
       if (attempts >= 5) {
         await svc.entities.LoginCode.delete(active.id).catch(() => {});
