@@ -17,6 +17,20 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole;
     await getGuildConfig(svc, true);
 
+    const prior = await svc.entities.DiscordVerificationChallenge
+      .filter({ user_id: user.id, guild_id: discordGuildId(), purpose: 'account_link' }, '-created_date', 20);
+    const now = Date.now();
+    const recent = prior.find((item: any) => !item.used_at
+      && Date.parse(item.expires_at) > now
+      && Date.parse(item.created_date) > now - 60_000);
+    if (recent) {
+      return Response.json({ error: 'Please wait before starting Discord linking again.', code: 'DISCORD_LINK_COOLDOWN' }, {
+        status: 429, headers: { 'Retry-After': '60' },
+      });
+    }
+    for (const item of prior.filter((row: any) => !row.used_at && Date.parse(row.expires_at) > now)) {
+      await svc.entities.DiscordVerificationChallenge.update(item.id, { used_at: new Date(now).toISOString() });
+    }
     const nonce = randomToken(24);
     const exp = Date.now() + 10 * 60 * 1000;
     const state = await createSignedState({
