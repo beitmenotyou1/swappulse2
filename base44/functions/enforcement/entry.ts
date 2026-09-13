@@ -12,6 +12,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { revokeUserDiscordLinks, syncUserDiscordLinks } from '../../shared/discordBot.ts';
 
 const ENTITY_CLEANUP = [
   { name: 'CollectionEntry' }, { name: 'Binder' }, { name: 'Post' },
@@ -78,6 +79,14 @@ export default async function (req: Request): Promise<Response> {
           suspended_at: new Date().toISOString(),
         });
 
+        // Persist enforcement first, then require immediate external removal.
+        try {
+          await syncUserDiscordLinks(svc, targetUserId, 'admin');
+        } catch (error) {
+          const code = String(error?.message || 'DISCORD_REVOCATION_FAILED').split(':')[0];
+          console.error('enforcement: suspension Discord revocation pending', code);
+          return Response.json({ error: 'Suspension applied, but Discord role removal could not be confirmed.', code }, { status: 503 });
+        }
         if (target.email) {
           try {
             await sendBrandedEmail({
@@ -121,6 +130,13 @@ export default async function (req: Request): Promise<Response> {
           shadow_banned_by_name: caller.full_name || caller.email,
           shadow_banned_at: new Date().toISOString(),
         });
+        try {
+          await syncUserDiscordLinks(svc, targetUserId, 'admin');
+        } catch (error) {
+          const code = String(error?.message || 'DISCORD_REVOCATION_FAILED').split(':')[0];
+          console.error('enforcement: shadow-ban Discord revocation pending', code);
+          return Response.json({ error: 'Restriction applied, but Discord role removal could not be confirmed.', code }, { status: 503 });
+        }
         await logAction(svc, caller, 'shadow_ban', targetUserId, target.username || target.email, reason);
         return Response.json({ ok: true });
       }
@@ -152,6 +168,14 @@ export default async function (req: Request): Promise<Response> {
         const targetEmail = (target.email || '').toLowerCase();
         const targetHandle = (target.username || '').toLowerCase();
         const results: Record<string, string> = {};
+        try {
+          const removed = await revokeUserDiscordLinks(svc, targetUserId, 'admin');
+          results['DiscordAccountLink'] = `removed ${removed} link(s)`;
+        } catch (error) {
+          const code = String(error?.message || 'DISCORD_REVOCATION_FAILED').split(':')[0];
+          console.error('enforcement: Discord revocation blocked force delete', code);
+          return Response.json({ error: 'Force deletion paused until Discord access is confirmed removed.', code }, { status: 503 });
+        }
 
         // Phase 1: Find trade IDs
         let tradeIds: string[] = [];
