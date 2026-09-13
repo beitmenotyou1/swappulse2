@@ -13,6 +13,14 @@ import {
 
 const SETTINGS_URL = 'https://swappulse.org/settings?tab=discord';
 
+async function oauthFetch(url: string, init: RequestInit) {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(7_000) });
+  } catch {
+    throw new Error('DISCORD_OAUTH_TIMEOUT');
+  }
+}
+
 function finish(status: string, detail = '') {
   const url = new URL(SETTINGS_URL);
   url.searchParams.set('discord', status);
@@ -42,7 +50,7 @@ Deno.serve(async (req) => {
       return finish('failed', 'expired_state');
     }
 
-    const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', {
+    const tokenResponse = await oauthFetch('https://discord.com/api/v10/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -55,8 +63,12 @@ Deno.serve(async (req) => {
     });
     const token = await tokenResponse.json().catch(() => ({}));
     if (!tokenResponse.ok || !token?.access_token) return finish('failed', 'oauth_rejected');
+    const scopes = new Set(String(token.scope || '').split(/\s+/));
+    if (!scopes.has('identify') || !scopes.has('guilds.join')) {
+      return finish('failed', 'oauth_scope_missing');
+    }
 
-    const profileResponse = await fetch('https://discord.com/api/v10/users/@me', {
+    const profileResponse = await oauthFetch('https://discord.com/api/v10/users/@me', {
       headers: { Authorization: `Bearer ${token.access_token}` },
     });
     const profile = await profileResponse.json().catch(() => ({}));
@@ -67,26 +79,27 @@ Deno.serve(async (req) => {
     if (!user) return finish('failed', 'account_unavailable');
 
     const collisions = await svc.entities.DiscordAccountLink
-      .filter({ discord_user_id: profile.id, guild_id: discordGuildId(), status: 'verified' }, '-created_date', 5)
+      .filter({ discord_user_id: profile.id, guild_id: discordGuildId() }, '-created_date', 50)
       .catch(() => []);
-    if (collisions.some((link: any) => link.user_id && link.user_id !== user.id)) {
+    if (collisions.some((link: any) => link.user_id && link.user_id !== user.id && link.status !== 'revoked')) {
       return finish('failed', 'already_linked');
     }
 
     const previousUserLinks = await svc.entities.DiscordAccountLink
-      .filter({ user_id: user.id, guild_id: discordGuildId(), status: 'verified' }, '-created_date', 50)
+      .filter({ user_id: user.id, guild_id: discordGuildId() }, '-created_date', 50)
       .catch(() => []);
     for (const previous of previousUserLinks) {
       if (String(previous.discord_user_id) === String(profile.id)) continue;
       await svc.entities.DiscordAccountLink.update(previous.id, {
-        status: 'revoked',
-        desired_roles: [],
-        last_sync_error: '',
+        status: 'revocation_pending', desired_roles: [],
       });
-      await syncDiscordLink(svc, { ...previous, status: 'revoked' }, 'oauth').catch(() => null);
+      // Do not link/grant the new account until the old account's roles
+      // have been removed and read back successfully.
+      await syncDiscordLink(svc, { ...previous, status: 'revocation_pending' }, 'oauth');
+      await svc.entities.DiscordAccountLink.delete(previous.id);
     }
 
-    await discordRequest(
+    const joinedMember = await discordRequest(
       `/guilds/${encodeURIComponent(discordGuildId())}/members/${encodeURIComponent(profile.id)}`,
       {
         method: 'PUT',
@@ -105,8 +118,13 @@ Deno.serve(async (req) => {
       last_sync_error: '',
     });
     await svc.entities.DiscordVerificationChallenge.update(challenge.id, { used_at: now });
-    await syncDiscordLink(svc, link, 'oauth');
-    return finish('linked');
+    try {
+      await syncDiscordLink(svc, link, 'oauth');
+    } catch (error) {
+      console.error('discord-link-callback: role sync pending', String(error?.message || error).split(':')[0]);
+      return finish('pending', 'role_sync');
+    }
+    return finish('linked', joinedMember?.pending ? 'screening' : '');
   } catch (error) {
     console.error('discord-link-callback:', String(error?.message || error).split(':')[0]);
     return finish('failed', String(error?.message || 'callback_failed').split(':')[0]);
