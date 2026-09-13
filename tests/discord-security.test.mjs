@@ -119,6 +119,57 @@ test('an unavailable audit ledger blocks external role changes', async () => {
   assert.ok(!f.actions.some((entry) => entry[0] === 'PUT'));
 });
 
+async function loadBackendFunction(relativePath) {
+  let source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
+  source = source.replace("import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';",
+    'const createClientFromRequest = () => globalThis.mockBase44;');
+  source = source.replace("from '../../shared/discordBot.ts'",
+    `from ${JSON.stringify(new URL('../base44/shared/discordBot.ts', import.meta.url).href)}`);
+  source = source.replace("import { sendBrandedEmail } from '../../shared/smtpSender.ts';",
+    'const sendBrandedEmail = async () => {};');
+  const tempDir = await mkdtemp(join(tmpdir(), 'swappulse-backend-'));
+  try {
+    const entry = join(tempDir, 'entry.ts');
+    await writeFile(entry, source);
+    return (await import(pathToFileURL(entry).href)).default;
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+test('self-deletion stops before User deletion when Discord refuses revocation', async () => {
+  const f = fixture({ originalRoles: ['Administrator'], denyRemoval: true });
+  let userDeleted = false;
+  f.svc.entities.User.delete = async () => { userDeleted = true; };
+  globalThis.mockBase44 = {
+    auth: { me: async () => ({ id: 'user', did: 'did:plc:alice' }) },
+    asServiceRole: f.svc,
+  };
+  const handler = await loadBackendFunction('../base44/functions/delete-account/entry.ts');
+  const result = await handler(new Request('https://swappulse.org/functions/delete-account', { method: 'POST' }));
+  assert.equal(result.status, 503);
+  assert.equal(f.link.status, 'revocation_pending');
+  assert.equal(userDeleted, false);
+});
+
+test('force-delete stops before User deletion when Discord refuses revocation', async () => {
+  const f = fixture({ originalRoles: ['Administrator'], denyRemoval: true });
+  let userDeleted = false;
+  f.svc.entities.User.get = async () => ({ id: 'user', did: 'did:plc:alice', email: 'alice@example.test' });
+  f.svc.entities.User.delete = async () => { userDeleted = true; };
+  globalThis.mockBase44 = {
+    auth: { me: async () => ({ id: 'admin', role: 'admin' }) },
+    asServiceRole: f.svc,
+  };
+  const handler = await loadBackendFunction('../base44/functions/enforcement/entry.ts');
+  const result = await handler(new Request('https://swappulse.org/functions/enforcement', {
+    method: 'POST', body: JSON.stringify({ op: 'force_delete', user_id: 'user' }),
+  }));
+  assert.equal(result.status, 503);
+  assert.equal(f.link.status, 'revocation_pending');
+  assert.equal(userDeleted, false);
+});
+
 test('valid Discord Ed25519 PING succeeds, tampering and oversize fail', async () => {
   const keys = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify']);
   const publicBytes = await crypto.subtle.exportKey('raw', keys.publicKey);
@@ -157,3 +208,4 @@ test('valid Discord Ed25519 PING succeeds, tampering and oversize fail', async (
   assert.equal((await globalThis.discordHandler(makeReq(raw + ' '))).status, 401);
   assert.equal((await globalThis.discordHandler(makeReq('x'.repeat(65_537)))).status, 413);
 });
+
