@@ -15,21 +15,41 @@ export default async function (req: Request): Promise<Response> {
     const { challengeId, contributionUris, notes, category, overrideProfileVisibility } = body;
     if (!challengeId) return Response.json({ error: 'challengeId required' }, { status: 400 });
     const uris: string[] = Array.isArray(contributionUris) ? contributionUris : [];
-    if (!uris.length) return Response.json({ error: 'Select at least one qualifying card' }, { status: 400 });
+    if (!uris.length || uris.length > 100 || uris.some((id) => typeof id !== 'string' || !id || id.length > 128)
+        || new Set(uris).size !== uris.length) {
+      return Response.json({ error: 'Select 1 to 100 distinct qualifying cards' }, { status: 400 });
+    }
 
     const challenge = await svc.entities.Challenge.get(challengeId).catch(() => null);
     if (!challenge) return Response.json({ error: 'Challenge not found' }, { status: 404 });
 
     const authorDid = (user as any).did || user.id;
-    // Batch-fetch all referenced CollectionEntry records in one call (replaces per-URI get N+1).
-    const ids = uris.slice(0, 100);
-    const records: any[] = ids.length > 0
-      ? await svc.entities.CollectionEntry.filter({ id: { $in: ids } }).catch(() => [])
-      : [];
-
+    // A collection-card validator cannot truthfully award grading, trade,
+    // event or other metrics. Keep unsupported metrics closed until their
+    // own authoritative evaluators exist.
+    if (challenge.goal?.metric !== 'cards_logged') {
+      return Response.json({ error: 'This challenge metric is not yet available for verified submissions' }, { status: 409 });
+    }
+    if (challenge.scope === 'circle' || challenge.mode === 'guild') {
+      if (!user.did || !challenge.circle_ref) {
+        return Response.json({ error: 'Circle membership required' }, { status: 403 });
+      }
+      const circles = await svc.entities.Circle.filter({ at_uri: challenge.circle_ref }, '-created_date', 2);
+      if (circles.length !== 1 || !(circles[0].member_dids || []).includes(user.did)) {
+        return Response.json({ error: 'Circle membership required' }, { status: 403 });
+      }
+    }
+    // Bind every contributed card to this exact account before scoring.
+    const records: any[] = await svc.entities.CollectionEntry.filter(
+      { id: { $in: uris }, created_by_id: user.id }, '-created_date', 100
+    );
+    if (records.length !== uris.length) {
+      return Response.json({ error: 'One or more cards are not in your collection' }, { status: 403 });
+    }
     const result = await validateEntry({ challenge, contributionRecords: records, authorDid });
 
-    const entry = await base44.entities.ChallengeEntry.create({
+    const entry = await svc.entities.ChallengeEntry.create({
+      created_by_id: user.id,
       challenge_id: challengeId,
       challenge_ref: challenge.at_uri || '',
       participant_did: authorDid,
