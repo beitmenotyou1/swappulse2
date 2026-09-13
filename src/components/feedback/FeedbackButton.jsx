@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, X, Loader2, Send, Camera, Star, Lightbulb, Bug, MessageCircle } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { MessageSquare, X, Loader2, Send, Star, Lightbulb, Bug, MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -14,8 +13,6 @@ const CATEGORIES = [
 export default function FeedbackButton() {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const [capturing, setCapturing] = useState(false);
-  const [screenshotUrl, setScreenshotUrl] = useState('');
   const [category, setCategory] = useState('suggestion');
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
@@ -24,36 +21,13 @@ export default function FeedbackButton() {
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const capture = async () => {
-    setCapturing(true);
-    try {
-      const canvas = await html2canvas(document.body, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: Math.min(window.devicePixelRatio || 1, 2),
-        logging: false,
-      });
-      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png', 0.8));
-      if (!blob) throw new Error('capture failed');
-      const file = new File([blob], 'feedback.png', { type: 'image/png' });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setScreenshotUrl(file_url || '');
-    } catch {
-      setScreenshotUrl('');
-    } finally {
-      setCapturing(false);
-    }
-  };
-
   const start = async () => {
     setCategory('suggestion');
     setTitle('');
     setComment('');
     setRating(0);
     setHoverRating(0);
-    setScreenshotUrl('');
     setOpen(true);
-    await capture();
   };
 
   const submit = async () => {
@@ -69,7 +43,6 @@ export default function FeedbackButton() {
         comment,
         rating: rating || null,
         page: window.location.pathname,
-        screenshotUrl,
         userAgent: navigator.userAgent,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
       });
@@ -201,23 +174,7 @@ export default function FeedbackButton() {
                 <p className="mt-1 text-right text-xs text-muted-foreground">{comment.length}/5000</p>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">{t('feedback.snapshot')}</label>
-                <div className="overflow-hidden rounded-xl border border-border bg-secondary/50">
-                  {capturing ? (
-                    <div className="flex h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> {t('feedback.capturing')}
-                    </div>
-                  ) : screenshotUrl ? (
-                    <img src={screenshotUrl} alt={t('feedback.snapshot')} className="max-h-48 w-full object-top object-contain" />
-                  ) : (
-                    <div className="flex h-40 flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
-                      <Camera className="h-6 w-6" />
-                      {t('feedback.snapshotUnavailable')}
-                    </div>
-                  )}
-                </div>
-              </div>
+
             </div>
 
             <div className="flex justify-end gap-2 border-t border-border p-4">
@@ -226,7 +183,7 @@ export default function FeedbackButton() {
               </button>
               <button
                 onClick={submit}
-                disabled={submitting || capturing}
+                disabled={submitting}
                 className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
