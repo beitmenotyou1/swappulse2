@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { base44 } from '@/api/base44Client';
 import { translations, LOCALE_TO_TCGDEX, SUPPORTED_LOCALES } from './translations';
 import { setCurrentTcgdexLang } from './currentLang';
-import { detectLocaleFromGeo } from './geoLocale';
 import { getCardLanguageOverride } from '@/lib/cardLanguage';
 
 const I18nContext = createContext({
@@ -101,14 +100,8 @@ export function I18nProvider({ children }) {
 
   // On mount, resolve the locale if the user hasn't made an explicit choice.
   // Priority: ?lang= URL param > localStorage (previous explicit or auto choice) >
-  // saved account locale (if authenticated) > IP-based geo detection > browser
-  // language (already set by getInitialLocale as the synchronous fallback).
-  //
-  // Geo detection runs only when no explicit choice exists (no URL param, no
-  // localStorage, no account locale). Once it sets a locale it saves to
-  // localStorage so the detected locale becomes the sticky preference on
-  // subsequent visits — until the user manually picks a different language via
-  // the language switcher, which overwrites localStorage and their account.
+  // saved account locale (if authenticated) > browser language. The page
+  // never sends a visitor's IP to a third-party geolocation service.
   useEffect(() => {
     (async () => {
       try {
@@ -132,17 +125,7 @@ export function I18nProvider({ children }) {
             return;
           }
         }
-        // No explicit choice — auto-detect from IP location
-        const detected = await detectLocaleFromGeo();
-        if (detected && SUPPORTED_LOCALES.includes(detected)) {
-          if (detected !== locale) {
-            setLocaleState(detected);
-            setCurrentTcgdexLang(getCardLanguageOverride() || LOCALE_TO_TCGDEX[detected] || 'en');
-          }
-          // Save even when the detected locale matches the current one, so
-          // detection doesn't re-run on every visit for users in en-GB regions.
-          try { localStorage.setItem('swappulse-locale', detected); } catch {}
-        }
+        // The synchronous browser-language default already covers new visitors.
       } catch {}
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
