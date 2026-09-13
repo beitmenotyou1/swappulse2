@@ -122,10 +122,25 @@ Deno.serve(async (req) => {
     const command = String(interaction.data?.name || '');
 
     if (command === 'verify') {
+      const now = Date.now();
+      const interactionHash = await sha256Hex(String(interaction.id || ''));
+      const previous = await svc.entities.DiscordVerificationChallenge.filter(
+        { discord_user_id: String(discordUser.id), guild_id: discordGuildId(), purpose: 'captcha' },
+        '-created_date', 20,
+      );
+      if (previous.some((row: any) => row.interaction_id_hash === interactionHash
+        || (!row.used_at && Date.parse(row.expires_at) > now
+          && Date.parse(row.created_date) > now - 60_000))) {
+        return message(copy.verifyCooldown);
+      }
+      for (const row of previous.filter((item: any) => !item.used_at && Date.parse(item.expires_at) > now)) {
+        await svc.entities.DiscordVerificationChallenge.update(row.id, { used_at: new Date(now).toISOString() });
+      }
       const token = randomToken(32);
-      const expires = Date.now() + 15 * 60 * 1000;
+      const expires = now + 15 * 60 * 1000;
       await svc.entities.DiscordVerificationChallenge.create({
         challenge_hash: await sha256Hex(token),
+        interaction_id_hash: interactionHash,
         discord_user_id: String(discordUser.id),
         guild_id: discordGuildId(),
         purpose: 'captcha',
