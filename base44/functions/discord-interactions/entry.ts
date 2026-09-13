@@ -174,7 +174,9 @@ Deno.serve(async (req) => {
       const roles = Array.isArray(link.applied_roles)
         ? link.applied_roles.filter(Boolean).join(', ')
         : '';
-      return message(roles ? copy.rolesCurrent(roles) : copy.rolesPending);
+      const lastSync = link.last_role_sync_at
+        ? `\n${new Date(link.last_role_sync_at).toISOString()}` : '';
+      return message(roles ? `${copy.rolesCurrent(roles)}${lastSync}` : copy.rolesPending);
     }
 
     if (command === 'support') {
