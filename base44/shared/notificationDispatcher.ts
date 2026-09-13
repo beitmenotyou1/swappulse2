@@ -199,26 +199,30 @@ export async function dispatchNotification(
 
   const payload = buildPushPayload(input, deepLink, logId);
 
-  // Collect all subscriptions: PushToken records + legacy User.push_subscription
+  // Push endpoints are sensitive. A DID alone is not proof that a token
+  // belongs to its recipient: old client-writable rows may contain forged DIDs.
+  // Require one canonical local account and an owner-matched token before
+  // sending any notification payload. Do not fall back after an ambiguous DID.
   const subscriptions: { json: string; tokenId?: string }[] = [];
+  let recipient: any = null;
   try {
-    const tokens = await svc.entities.PushToken.filter(
-      { did: input.recipientDid, is_active: true },
-      '-created_date',
-      20
-    );
-    for (const t of tokens) {
-      if (t.subscription) subscriptions.push({ json: t.subscription, tokenId: t.id });
-    }
+    const users = await svc.entities.User.filter({ did: input.recipientDid }, '-created_date', 2);
+    if (users.length === 1) recipient = users[0];
   } catch {}
-
-  // Legacy fallback
-  if (subscriptions.length === 0) {
+  if (recipient) {
     try {
-      const users = await svc.entities.User.filter({ did: input.recipientDid }, '-created_date', 1);
-      const legacy = users[0]?.push_subscription;
-      if (legacy) subscriptions.push({ json: legacy });
+      const tokens = await svc.entities.PushToken.filter(
+        { did: input.recipientDid, created_by_id: recipient.id, is_active: true },
+        '-created_date', 20
+      );
+      for (const token of tokens) {
+        if (token.subscription) subscriptions.push({ json: token.subscription, tokenId: token.id });
+      }
     } catch {}
+    // Legacy field was backend-managed and belongs to this resolved user.
+    if (subscriptions.length === 0 && recipient.push_subscription) {
+      subscriptions.push({ json: recipient.push_subscription });
+    }
   }
 
   if (subscriptions.length === 0) {
