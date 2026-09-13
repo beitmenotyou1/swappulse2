@@ -3,6 +3,7 @@
 // authorize deletion of a legacy SwapPulse app password.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { timingSafeEqual, signActionToken } from '../../shared/appPasswordCrypto.ts';
+import { emailCodeHash } from '../../shared/emailCodeHash.ts';
 
 const VALID_ACTIONS = new Set(['delete']);
 
@@ -19,7 +20,7 @@ export default async function (req: Request): Promise<Response> {
     const targetId = String(body.target_id || '').trim() || undefined;
 
     if (!VALID_ACTIONS.has(action)) return Response.json({ error: 'Invalid action.' }, { status: 400 });
-    if (!code) return Response.json({ error: 'Code is required.' }, { status: 400 });
+    if (!/^\d{6}$/.test(code) || !targetId) return Response.json({ error: 'A 6-digit code and app password are required.' }, { status: 400 });
 
     const email = user.email.toLowerCase();
     const svc = base44.asServiceRole;
@@ -27,18 +28,19 @@ export default async function (req: Request): Promise<Response> {
     // Find the active (unused, unexpired) code for this email + action.
     const codes = await svc.entities.AppPasswordCode.filter({ email, action, used: false }, '-created_date', 5);
     const now = new Date();
-    const active = (codes || []).find((c) => new Date(c.expires_at) > now);
+    const active = (codes || []).find((c) => /^[0-9a-f]{64}$/.test(String(c.code_hash || '')) && new Date(c.expires_at) > now);
 
     if (!active) {
       return Response.json({ error: 'Invalid or expired code.' }, { status: 400 });
     }
 
     // The code must be scoped to the same deletion target.
-    if (action === 'delete' && targetId && active.target_id && active.target_id !== targetId) {
+    if (active.target_id !== targetId) {
       return Response.json({ error: 'This code was not issued for that app password.' }, { status: 400 });
     }
 
-    if (!timingSafeEqual(active.code, code)) {
+    const candidateHash = await emailCodeHash(`app-password:${action}:${targetId}`, email, code);
+    if (!timingSafeEqual(String(active.code_hash), candidateHash)) {
       const attempts = (active.failed_attempts || 0) + 1;
       if (attempts >= 5) {
         await svc.entities.AppPasswordCode.delete(active.id).catch(() => {});
@@ -53,6 +55,7 @@ export default async function (req: Request): Promise<Response> {
       await svc.entities.AppPasswordCode.update(active.id, { used: true });
     } catch (e) {
       console.error('verify-app-password-code: failed to mark code used:', e?.message || e);
+      return Response.json({ error: 'Could not consume verification code.' }, { status: 500 });
     }
 
     // Issue a short-lived action token.
