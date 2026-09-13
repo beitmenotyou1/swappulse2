@@ -7,7 +7,7 @@ export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user?.did) return Response.json({ error: 'A linked identity is required' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'register';
@@ -15,16 +15,13 @@ export default async function(req: Request): Promise<Response> {
     if (action === 'unregister') {
       // Deactivate the token matching this endpoint (or all user tokens)
       const svc = base44.asServiceRole;
-      if (body.endpoint) {
-        try {
-          // Batch-deactivate all matching tokens in one call (replaces filter + per-token update loop).
-          await svc.entities.PushToken.updateMany(
-            { did: user.did, endpoint: body.endpoint },
-            { $set: { is_active: false } },
-          );
-        } catch (e) {
-          console.error('unregister-push-token error', e?.message || e);
-        }
+      try {
+        await svc.entities.PushToken.updateMany(
+          { did: user.did, created_by_id: user.id, ...(body.endpoint ? { endpoint: String(body.endpoint) } : {}) },
+          { $set: { is_active: false } },
+        );
+      } catch (e) {
+        console.error('unregister-push-token error', e?.message || e);
       }
       // Also clear legacy through the service role. User.push_subscription is
       // backend-managed because it contains a sensitive push endpoint + keys.
@@ -39,17 +36,23 @@ export default async function(req: Request): Promise<Response> {
     const subStr = typeof subscription === 'string' ? subscription : JSON.stringify(subscription);
     let endpoint = '';
     try {
+      if (subStr.length > 8192) throw new Error('too large');
       const parsed = JSON.parse(subStr);
-      endpoint = parsed.endpoint || '';
-    } catch {}
-
+      const url = new URL(parsed.endpoint);
+      if (url.protocol !== 'https:' || url.username || url.password || url.hash
+          || !parsed.keys?.p256dh || !parsed.keys?.auth) throw new Error('invalid subscription');
+      endpoint = url.toString();
+    } catch {
+      return Response.json({ error: 'Invalid push subscription' }, { status: 400 });
+    }
+    const platform = ['web', 'ios', 'android'].includes(body.platform) ? body.platform : 'web';
     const svc = base44.asServiceRole;
 
     // Check if a token with this endpoint already exists
     let existing: any = null;
     if (endpoint) {
       try {
-        const tokens = await svc.entities.PushToken.filter({ did: user.did, endpoint }, '-created_date', 1);
+        const tokens = await svc.entities.PushToken.filter({ did: user.did, created_by_id: user.id, endpoint }, '-created_date', 1);
         existing = tokens[0];
       } catch {}
     }
@@ -60,15 +63,16 @@ export default async function(req: Request): Promise<Response> {
         subscription: subStr,
         is_active: true,
         last_used_at: new Date().toISOString(),
-        platform: body.platform || 'web',
+        platform,
       });
     } else {
       // Create new token
       await svc.entities.PushToken.create({
+        created_by_id: user.id,
         did: user.did,
         subscription: subStr,
         endpoint,
-        platform: body.platform || 'web',
+        platform,
         is_active: true,
         last_used_at: new Date().toISOString(),
       });
