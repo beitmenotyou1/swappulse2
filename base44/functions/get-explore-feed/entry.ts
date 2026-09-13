@@ -28,6 +28,7 @@ export default async function(req: Request): Promise<Response> {
     // hiding, even if a legacy row still says public.
     const eligible = (posts || []).filter((post: any) =>
       post.moderation_status !== 'escalated'
+      && (post.moderation_labels == null || Array.isArray(post.moderation_labels))
       && !(post.moderation_labels || []).some((label: any) =>
         label?.recommended_action === 'hide' || label?.severity === 'escalate'
       )
