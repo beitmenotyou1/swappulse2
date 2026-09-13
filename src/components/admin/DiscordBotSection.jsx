@@ -16,6 +16,8 @@ export default function DiscordBotSection() {
   const [config, setConfig] = useState(null);
   const [preview, setPreview] = useState(null);
   const [confirmation, setConfirmation] = useState('');
+  const [stepupCode, setStepupCode] = useState('');
+  const [managementToken, setManagementToken] = useState('');
   const [working, setWorking] = useState('');
   const { toast } = useToast();
 
@@ -40,16 +42,45 @@ export default function DiscordBotSection() {
     }
   };
 
+  const sendSecurityCode = async () => {
+    setWorking('send-code');
+    try {
+      await base44.functions.invoke('security-stepup-send', {});
+      toast({ title: 'Security code sent', description: 'Enter the code sent to your SwapPulse account email.' });
+    } catch (error) {
+      toast({ title: 'Could not send code', description: error?.response?.data?.error || 'Please retry.', variant: 'destructive' });
+    } finally {
+      setWorking('');
+    }
+  };
+
+  const verifySecurityCode = async () => {
+    setWorking('verify-code');
+    try {
+      const result = unwrap(await base44.functions.invoke('security-stepup-verify', { code: stepupCode }));
+      if (!result?.management_token) throw new Error('Verification was not accepted.');
+      setManagementToken(result.management_token);
+      setStepupCode('');
+      toast({ title: 'Security check complete', description: 'You can apply the reviewed test-guild setup for the next ten minutes.' });
+    } catch (error) {
+      toast({ title: 'Security check failed', description: error?.response?.data?.error || 'Request a new code and retry.', variant: 'destructive' });
+    } finally {
+      setWorking('');
+    }
+  };
+
   const apply = async () => {
     setWorking('apply');
     try {
       const result = unwrap(await base44.functions.invoke('discord-bootstrap', {
         apply: true,
         confirmation,
+        management_token: managementToken,
       }));
       if (!result?.ok) throw new Error(result?.error || 'Discord setup failed.');
       toast({ title: 'SwapPulse Bot configured', description: 'Roles, private forums and commands are now registered.' });
       setConfirmation('');
+      setManagementToken('');
       await load();
     } catch (error) {
       toast({ title: 'Discord setup failed', description: error?.message || 'No safe change was confirmed.', variant: 'destructive' });
@@ -78,7 +109,7 @@ export default function DiscordBotSection() {
         <div className="min-w-0 flex-1">
           <h2 className="font-bold">SwapPulse Bot</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage Discord verification, support forums and roles derived from SwapPulse reputation and staff status.
+            Manage Discord verification, support forums and the currently enabled Collector and account roles.
           </p>
         </div>
         {config?.enabled ? (
@@ -145,11 +176,28 @@ export default function DiscordBotSection() {
         <div className="mt-5 rounded-lg border border-warning/30 bg-warning/5 p-4">
           <p className="font-semibold">External Discord changes require confirmation</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            This configures the application metadata, then creates the listed roles and five support channels. Existing channels are not changed. Enter the exact confirmation below only after completing the portal prerequisites and checking the preview.
+            Bootstrap is restricted to a disposable test guild while security validation is in progress. It changes Discord application metadata, creates roles and support channels, and requires a fresh security code plus the exact confirmation. Existing channels are not changed.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {(preview.roles || []).map((role) => <span key={role} className="rounded-full bg-secondary px-2 py-1 text-xs">{role}</span>)}
           </div>
+          {!preview.test_guild_configured && (
+            <p className="mt-3 text-sm text-destructive" role="alert">Configure DISCORD_TEST_GUILD_ID to match the dedicated test guild before applying.</p>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={sendSecurityCode} disabled={!!working || !preview.test_guild_configured}>Send security code</Button>
+            <BotInput
+              className="max-w-40 font-mono"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              aria-label="Six-digit security code"
+              value={stepupCode}
+              onChange={(event) => setStepupCode(event.target.value)}
+              maxLength={6}
+            />
+            <Button variant="outline" onClick={verifySecurityCode} disabled={!!working || !/^\d{6}$/.test(stepupCode)}>Verify code</Button>
+          </div>
+          {managementToken && <p className="mt-2 text-xs text-success" role="status">Fresh security verification completed.</p>}
           <BotInput
             className="mt-4 font-mono"
             value={confirmation}
@@ -159,7 +207,7 @@ export default function DiscordBotSection() {
           <Button
             className="mt-3"
             onClick={apply}
-            disabled={working === 'apply' || confirmation !== CONFIRMATION}
+            disabled={!!working || !preview.test_guild_configured || !managementToken || confirmation !== CONFIRMATION}
           >
             {working === 'apply' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create the reviewed Discord structure
