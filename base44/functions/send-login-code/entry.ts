@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
 import { checkBlocklist } from '../../shared/enforcement.ts';
 import { checkBotRisk } from '../../shared/botGuard.ts';
+import { emailCodeHash } from '../../shared/emailCodeHash.ts';
 
 export default async function(req) {
   try {
@@ -83,7 +84,7 @@ export default async function(req) {
     // Create new code
     await svc.entities.LoginCode.create({
       email,
-      code,
+      code_hash: await emailCodeHash('login', email, code),
       expires_at: expiresAt,
       used: false,
     });
@@ -94,7 +95,7 @@ export default async function(req) {
       'Your SwapPulse Login Code\n\n' +
       'Here is your one-time login code:\n\n' +
       code + '\n\n' +
-      'This code expires in 15 minutes. If you did not request this code, you can safely ignore this email.\n\n' +
+      'This code expires in 5 minutes. If you did not request this code, you can safely ignore this email.\n\n' +
       'The SwapPulse Team';
 
     const htmlVersion =
@@ -102,7 +103,7 @@ export default async function(req) {
       '<h1 style="color:#6d4aff;font-size:24px;margin-bottom:16px;">Your SwapPulse Login Code</h1>' +
       '<p style="line-height:1.6;">Here is your one-time login code:</p>' +
       '<div style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:24px;background:#1a1d2e;border-radius:12px;margin:16px 0;color:#fbbf24;">' + code + '</div>' +
-      '<p style="line-height:1.6;">This code expires in 15 minutes. If you did not request this code, you can safely ignore this email.</p>' +
+      '<p style="line-height:1.6;">This code expires in 5 minutes. If you did not request this code, you can safely ignore this email.</p>' +
       '<p style="color:#64748b;font-size:12px;margin-top:24px;text-align:center;">The SwapPulse Team</p>' +
       '</div>';
 
