@@ -187,7 +187,7 @@ export default function MobileNav() {
       {isAuthenticated && (
         <Link
           to="/compose"
-          className="fixed bottom-20 right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 transition-transform active:scale-95 md:hidden"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 transition-transform active:scale-95 md:hidden"
           aria-label={t('page.compose.newPost')}
         >
           <Plus className="h-7 w-7" />
