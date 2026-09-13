@@ -14,6 +14,7 @@
 // nothing to delete and still returns success.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { revokeUserDiscordLinks } from '../../shared/discordBot.ts';
 
 // Entities to clean. `extra` lists participant DID fields and `userIdFields`
 // lists explicit owner-ID fields in addition to created_by_id / did.
@@ -90,6 +91,18 @@ export default async function(req: Request): Promise<Response> {
     const userDid = user.did || '';
     const svc = base44.asServiceRole;
     const results: Record<string, string> = {};
+
+    // Revoke external Discord authority before deleting any application data.
+    // A failed or unconfirmed removal blocks account deletion and keeps a
+    // revocation_pending link for the next reconciliation attempt.
+    try {
+      const removed = await revokeUserDiscordLinks(svc, userId, 'interaction');
+      results['DiscordAccountLink'] = `removed ${removed} link(s)`;
+    } catch (error) {
+      const code = String(error?.message || 'DISCORD_REVOCATION_FAILED').split(':')[0];
+      console.error('delete-account: Discord revocation blocked deletion', code);
+      return Response.json({ error: 'Discord access could not be confirmed removed. Account deletion has been paused.', code }, { status: 503 });
+    }
 
     // ── Phase 1: Find the user's trade IDs (before deleting the listings) ──
     let tradeIds: string[] = [];
