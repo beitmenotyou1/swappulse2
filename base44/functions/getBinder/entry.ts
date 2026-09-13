@@ -15,16 +15,22 @@ Deno.serve(async (req) => {
     const binder = await svc.entities.Binder.get(binderId);
     if (!binder) return Response.json({ error: 'Binder not found' }, { status: 404 });
 
-    const isOwner = !!user && (binder.created_by_id === user.id || (!!binder.did && binder.did === user.did));
+    const owner = binder.created_by_id
+      ? await svc.entities.User.get(binder.created_by_id).catch(() => null) : null;
+    const ownerDid = String(owner?.did || '');
+    const isOwner = !!user && binder.created_by_id === user.id;
+    if (!['public', 'private', 'followers'].includes(binder.visibility)) {
+      return Response.json({ error: 'Not available' }, { status: 403 });
+    }
     if (binder.visibility === 'private' && !isOwner) {
       return Response.json({ error: 'Not available' }, { status: 403 });
     }
     if (binder.visibility === 'followers' && !isOwner) {
-      if (!user?.did || !binder.did) {
+      if (!user?.did || !ownerDid) {
         return Response.json({ error: 'Not available' }, { status: 403 });
       }
       const follows = await svc.entities.Follow
-        .filter({ did: user.did, subject_did: binder.did }, '-created_date', 1)
+        .filter({ did: user.did, subject_did: ownerDid, created_by_id: user.id }, '-created_date', 1)
         .catch(() => []);
       if (!follows?.length) {
         return Response.json({ error: 'Followers only' }, { status: 403 });
@@ -32,8 +38,10 @@ Deno.serve(async (req) => {
     }
 
     // Resolve the owner's collection entries so slots can render card art.
-    const ownerFilter = binder.did ? { did: binder.did } : { created_by_id: binder.created_by_id };
-    const entries = await svc.entities.CollectionEntry.filter(ownerFilter, '-updated_date', 500);
+    // A mutable binder DID cannot select another collector's private cards.
+    const entries = owner && binder.created_by_id
+      ? await svc.entities.CollectionEntry.filter({ created_by_id: binder.created_by_id }, '-updated_date', 500)
+      : [];
     const map = new Map(entries.map((e) => [e.id, e]));
 
     const pages = (binder.pages || []).map((pg) => ({
@@ -70,10 +78,10 @@ Deno.serve(async (req) => {
         view_count: binder.view_count || 0,
       },
       author: {
-        did: binder.did,
-        name: binder.author_name,
-        handle: binder.author_handle,
-        avatar: binder.author_avatar,
+        did: ownerDid,
+        name: owner?.display_name || owner?.full_name || binder.author_name,
+        handle: owner?.handle || binder.author_handle,
+        avatar: owner?.avatar || binder.author_avatar,
       },
       pages,
       isOwner,
