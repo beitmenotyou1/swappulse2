@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Search, Loader2, Flame, CheckSquare, Square, Heart, X } from 'lucide-react';
-import { searchCardsMulti, getSets, localeToTcgdexLang, rarityKey } from '@/lib/tcgdex';
+import { searchCardsMulti, getSets, localeToTcgdexLang, normalizeSetId, rarityKey } from '@/lib/tcgdex';
 import { useSettings } from '@/hooks/useSettings';
 import PageHeader from '@/components/PageHeader';
 import { Image } from '@/components/ui/image';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ExploreCardTile from '@/components/cards/ExploreCardTile';
@@ -26,17 +26,20 @@ import PullToRefresh from '@/components/PullToRefresh';
 
 export default function Explore() {
   const tr = useT();
+  const { setId: routeSetId } = useParams();
+  const navigate = useNavigate();
+  const canonicalSetId = routeSetId ? normalizeSetId(routeSetId) : '';
   const LOGO_URL = 'https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/32ce16a82_a_transparent_version_of_the_socialpulse_logo_a_digital_pulse_line_forming_an_s1.png';
   useSEO({
-    title: 'Explore Cards',
+    title: canonicalSetId ? `Pokémon TCG Set ${canonicalSetId}` : 'Explore Cards',
     description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
-    canonicalPath: '/explore',
+    canonicalPath: canonicalSetId ? `/set/${encodeURIComponent(canonicalSetId)}` : '/explore',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
       name: 'Explore Pokémon TCG Cards',
       description: 'Search the Pokémon TCG catalogue, discover recent sets, and browse community posts on SwapPulse.',
-      url: 'https://swappulse.org/explore',
+      url: canonicalSetId ? `https://swappulse.org/set/${encodeURIComponent(canonicalSetId)}` : 'https://swappulse.org/explore',
     },
   });
   const { settings } = useSettings();
@@ -55,7 +58,19 @@ export default function Explore() {
   const [latestPosts, setLatestPosts] = useState([]);
   const [feedPosts, setFeedPosts] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
-  const [filters, setFilters] = useState({ set: '', rarity: '', type: '', minPrice: '', maxPrice: '' });
+  const [filters, setFilters] = useState({ set: canonicalSetId, rarity: '', type: '', minPrice: '', maxPrice: '' });
+  useEffect(() => {
+    setFilters((current) => current.set === canonicalSetId ? current : { ...current, set: canonicalSetId });
+    if (canonicalSetId) setSearchMode('cards');
+  }, [canonicalSetId]);
+
+  const applyFilters = (next) => {
+    const selectedSet = next.set ? normalizeSetId(next.set) : '';
+    setFilters({ ...next, set: selectedSet });
+    if (selectedSet !== canonicalSetId) {
+      navigate(selectedSet ? `/set/${encodeURIComponent(selectedSet)}` : '/explore');
+    }
+  };
   const [langFilter, setLangFilter] = useState('all');
   const [category, setCategory] = useState('all');
   const { filterPosts } = usePostVisibility();
@@ -252,8 +267,8 @@ export default function Explore() {
                   className="w-full rounded-full border border-border bg-secondary py-3 pl-11 pr-4 text-sm outline-none focus:border-primary"
                  aria-label={tr('explore.searchPlaceholder')}/>
               </div>
-              <SetQuickFilter value={filters.set} onChange={(s) => setFilters((f) => ({ ...f, set: s }))} />
-              <FilterPanel onApply={setFilters} activeFilters={filters} />
+              <SetQuickFilter value={filters.set} onChange={(s) => applyFilters({ ...filters, set: s })} />
+              <FilterPanel onApply={applyFilters} activeFilters={filters} />
               <LanguageFilter value={langFilter} onChange={setLangFilter} />
             </div>
             <RarityFilterChips value={filters.rarity} onChange={(r) => setFilters((f) => ({ ...f, rarity: r }))} />
