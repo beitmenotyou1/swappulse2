@@ -104,6 +104,9 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ access_token: token.access_token }),
       },
     );
+    const membership = joinedMember || await discordRequest(
+      `/guilds/${encodeURIComponent(discordGuildId())}/members/${encodeURIComponent(profile.id)}`,
+    );
     const now = new Date().toISOString();
     const link = await upsertDiscordLink(svc, {
       user_id: user.id,
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
       console.error('discord-link-callback: role sync pending', String(error?.message || error).split(':')[0]);
       return finish('pending', 'role_sync');
     }
-    return finish('linked', joinedMember?.pending ? 'screening' : '');
+    return finish('linked', membership?.pending ? 'screening' : '');
   } catch (error) {
     console.error('discord-link-callback:', String(error?.message || error).split(':')[0]);
     return finish('failed', String(error?.message || 'callback_failed').split(':')[0]);
