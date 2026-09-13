@@ -70,10 +70,14 @@ async function loadPublicNetworkConfig(req: Request) {
   if (!config || config.status !== 'CONFIGURED') throw new Error('NETWORK_CONFIGURATION_UNSAFE');
   const configuredRpc = String(config.rpc_url || '').trim();
   const verifiedRpc = String(config.verified_rpc_url || '').trim();
-  const expectedChainId = normalizeHex(config.chain_id);
-  if (!verifiedRpc || !configuredRpc || expectedChainId !== normalizeHex(config.verified_chain_id)) {
+  let expectedChainId: string;
+  try {
+    expectedChainId = normalizeHex(config.chain_id);
+    if (expectedChainId !== normalizeHex(config.verified_chain_id)) throw new Error('CHAIN_ID_MISMATCH');
+  } catch {
     throw new Error('NETWORK_CONFIGURATION_UNSAFE');
   }
+  if (!verifiedRpc || !configuredRpc) throw new Error('NETWORK_CONFIGURATION_UNSAFE');
   try {
     for (const value of [configuredRpc, verifiedRpc]) {
       const url = new URL(value);
@@ -191,10 +195,9 @@ export default async function(req: Request): Promise<Response> {
     if (liveChainId !== network.chain_id) return jsonError('NETWORK_CONFIGURATION_UNSAFE', 503);
 
     if (action === 'summary') {
-      const [blockNumber, specVersion, chainId] = await Promise.all([
+      const [blockNumber, specVersion] = await Promise.all([
         rpcCall('starknet_blockNumber', []),
         rpcCall('starknet_specVersion', []),
-        rpcCall('starknet_chainId', []),
       ]);
       const latest = Number(blockNumber);
       const ids = Array.from({ length: Math.min(LATEST_BLOCK_LIMIT, latest + 1) }, (_, i) => ({ block_number: latest - i }));
@@ -211,7 +214,7 @@ export default async function(req: Request): Promise<Response> {
         ok: true,
         kind: 'summary',
         network: network.network,
-        chain_id: chainId || network.chain_id,
+        chain_id: liveChainId,
         rpc_spec_version: String(specVersion || ''),
         latest_block_number: latest,
         latest_blocks: availableBlocks.map(compactBlock),
