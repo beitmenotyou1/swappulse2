@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { verifyActionToken } from '../../shared/appPasswordCrypto.ts';
 import {
   discordApplicationId,
   discordGuildId,
@@ -207,6 +208,8 @@ Deno.serve(async (req) => {
         ok: true,
         mode: 'preview',
         confirmation_required: APPLY_CONFIRMATION,
+        test_guild_only: true,
+        test_guild_configured: Boolean(String(Deno.env.get('DISCORD_TEST_GUILD_ID') || '').trim()),
         bot_name: 'SwapPulse Bot',
         roles: ROLE_DEFINITIONS.map((role) => role.name),
         channels: ['verify-with-swappulse', 'announcements', 'support', 'developer-forum', 'feature-requests'],
@@ -246,6 +249,14 @@ Deno.serve(async (req) => {
     }
     if (body?.confirmation !== APPLY_CONFIRMATION) {
       return Response.json({ error: 'Exact confirmation is required.' }, { status: 400 });
+    }
+    const testGuildId = String(Deno.env.get('DISCORD_TEST_GUILD_ID') || '').trim();
+    if (!testGuildId || testGuildId !== discordGuildId()) {
+      return Response.json({ error: 'Bootstrap is restricted to the configured disposable test guild.' }, { status: 503 });
+    }
+    const stepup = await verifyActionToken(String(body.management_token || ''), 'security_manage', caller.id);
+    if (!stepup.valid) {
+      return Response.json({ error: 'Fresh security verification is required for Discord bootstrap.' }, { status: 403 });
     }
 
     assertBackendConfiguration();
@@ -301,6 +312,16 @@ Deno.serve(async (req) => {
       discordRequest(`/guilds/${encodeURIComponent(guildId)}/roles`),
     ]);
     const permissions = effectivePermissions(guildId, botMember, existingRoles);
+    const botTop = Math.max(0, ...existingRoles
+      .filter((role: any) => (botMember?.roles || []).map(String).includes(String(role.id)))
+      .map((role: any) => Number(role.position) || 0));
+    if (!botTop) throw new Error('DISCORD_BOT_ROLE_HIERARCHY_INVALID');
+    for (const definition of ROLE_DEFINITIONS) {
+      const existing = existingRoles.find((role: any) => role.name === definition.name);
+      if (existing && Number(existing.position) >= botTop) {
+        throw new Error(`DISCORD_BOT_ROLE_HIERARCHY_INVALID:${definition.name}`);
+      }
+    }
     const requiredPermissions = BigInt(DISCORD_INSTALL_PERMISSIONS);
     if ((permissions & requiredPermissions) !== requiredPermissions) {
       throw new Error('DISCORD_INSTALL_PERMISSIONS_MISSING');
