@@ -13,6 +13,7 @@ export default function DiscordSection() {
   const [link, setLink] = useState(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const { toast } = useToast();
 
   const load = async () => {
@@ -20,9 +21,11 @@ export default function DiscordSection() {
     try {
       const user = await base44.auth.me();
       const links = await base44.entities.DiscordAccountLink
-        .filter({ user_id: user.id }, '-created_date', 1)
-        .catch(() => []);
+        .filter({ user_id: user.id }, '-created_date', 1);
       setLink(links?.[0] || null);
+      setLoadError('');
+    } catch {
+      setLoadError('Discord connection status could not be loaded. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -30,13 +33,29 @@ export default function DiscordSection() {
 
   useEffect(() => {
     load();
-    const status = new URLSearchParams(window.location.search).get('discord');
+    const url = new URL(window.location.href);
+    const status = url.searchParams.get('discord');
+    const reason = url.searchParams.get('reason');
+    if (status) {
+      url.searchParams.delete('discord');
+      url.searchParams.delete('reason');
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    }
     if (status === 'linked') {
-      toast({ title: 'Discord connected', description: 'SwapPulse Bot has synchronised your current roles.' });
+      toast({
+        title: 'Discord connected',
+        description: reason === 'screening'
+          ? 'Complete the server membership screening in Discord before accessing its channels.'
+          : 'SwapPulse Bot has synchronised your current roles.',
+      });
+    } else if (status === 'pending') {
+      toast({ title: 'Discord linked, roles pending', description: 'The link succeeded but role synchronisation needs a retry.' });
     } else if (status === 'failed') {
       toast({
         title: 'Discord connection was not completed',
-        description: 'Please try again, or ask in the public Discord verification channel.',
+        description: reason === 'oauth_scope_missing'
+          ? 'Discord did not grant the required identity and server-join permissions.'
+          : 'Please try again, or ask in the public Discord verification channel.',
         variant: 'destructive',
       });
     }
@@ -62,10 +81,11 @@ export default function DiscordSection() {
     setWorking(true);
     try {
       await base44.functions.invoke('discord-unlink', {});
-      toast({ title: 'Discord disconnected', description: 'SwapPulse-managed roles have been removed or queued for removal.' });
+      toast({ title: 'Discord disconnected', description: 'SwapPulse-managed roles were confirmed removed.' });
       await load();
     } catch (error) {
-      toast({ title: 'Discord could not be disconnected', description: error?.message || 'Please try again later.', variant: 'destructive' });
+      toast({ title: 'Discord removal pending', description: error?.response?.data?.error || 'Discord access could not be confirmed removed. Please retry or contact support.', variant: 'destructive' });
+      await load();
     } finally {
       setWorking(false);
     }
@@ -101,14 +121,24 @@ export default function DiscordSection() {
           <div className="min-w-0 flex-1">
             <h2 className="font-bold">SwapPulse Bot</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Link your Discord membership to receive community access and keep your SwapPulse trust and staff roles in sync.
+              Link your Discord membership to receive Collector access and your verified SwapPulse account role.
             </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="mt-5 flex justify-center py-4">
+          <div className="mt-5 flex justify-center py-4" role="status" aria-label="Loading Discord connection">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        ) : loadError ? (
+          <div className="mt-5" role="alert">
+            <p className="text-sm text-destructive">{loadError}</p>
+            <Button className="mt-3" variant="outline" onClick={load}>Retry</Button>
+          </div>
+        ) : link?.status === 'revocation_pending' ? (
+          <div className="mt-5 space-y-3" role="alert">
+            <p className="text-sm text-destructive">Discord removal is pending. External roles may still be active.</p>
+            <Button onClick={disconnect} disabled={working} variant="outline">Retry role removal</Button>
           </div>
         ) : link?.status === 'verified' ? (
           <div className="mt-5 space-y-4">
@@ -124,10 +154,15 @@ export default function DiscordSection() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Managed roles</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {(link.applied_roles || ['Collector']).map((role) => (
+                {(link.applied_roles || []).map((role) => (
                   <span key={role} className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">{role}</span>
                 ))}
+                {!link.applied_roles?.length && <span className="text-sm text-muted-foreground">No roles confirmed yet.</span>}
               </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Last confirmed sync: {link.last_role_sync_at ? new Date(link.last_role_sync_at).toLocaleString() : 'Not yet'}
+              </p>
+              {link.last_sync_error && <p className="mt-1 text-xs text-destructive" role="alert">Latest sync error: {link.last_sync_error.split(':')[0]}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={refresh} disabled={working} variant="outline">
@@ -158,7 +193,7 @@ export default function DiscordSection() {
           <div>
             <h3 className="font-semibold">How access works</h3>
             <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-              <li>Account linking grants Collector access and can add reputation, achievement, moderator or administrator roles.</li>
+              <li>Account linking can grant Collector and Verified SwapPulse Account. Other trust and staff roles are paused while their proof and revocation paths are hardened.</li>
               <li>Use /verify in Discord if you prefer the CAPTCHA route. It grants Collector access only.</li>
               <li>Roles are checked regularly and removed when the matching SwapPulse status no longer applies.</li>
               <li>SwapPulse never stores your Discord OAuth token, bot token or CAPTCHA response.</li>
