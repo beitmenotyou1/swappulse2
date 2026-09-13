@@ -257,8 +257,8 @@ export async function evaluateAccountRoles(svc: any, user: any, link: any, _conf
   const desired: RoleName[] = ['Collector', 'Verified SwapPulse Account'];
   // DIS-004/005/006: client-mutable trades, reputation, achievements and
   // meetups are not evidence for external Discord trust badges.
-  if (user.role === 'moderator') desired.push('Moderator');
-  if (user.role === 'admin') desired.push('Administrator');
+  // Staff roles remain disabled until Base44 staff-role demotions trigger
+  // synchronous external revocation rather than a delayed repair sweep.
   return { desired, metrics };
 }
 
@@ -284,6 +284,14 @@ export async function revokeUserDiscordLinks(svc: any, userId: string, source: S
     await syncDiscordLink(svc, { ...link, status: 'revocation_pending' }, source);
     await svc.entities.DiscordAccountLink.delete(link.id);
   }
+  return links.length;
+}
+
+export async function syncUserDiscordLinks(svc: any, userId: string, source: SyncSource) {
+  const links = await svc.entities.DiscordAccountLink
+    .filter({ user_id: userId }, '-created_date', 1000);
+  if (links.length >= 1000) throw new Error('DISCORD_LINK_BACKLOG');
+  for (const link of links) await syncDiscordLink(svc, link, source);
   return links.length;
 }
 
