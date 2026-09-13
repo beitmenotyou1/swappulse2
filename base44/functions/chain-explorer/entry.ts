@@ -65,26 +65,34 @@ async function loadPublicNetworkConfig(req: Request) {
     .catch(() => []);
   const config = rows?.[0] || null;
 
-  // Before Verify & Activate there may be no verified_rpc_url yet. The public
-  // explorer is still safe to use because its transport is pinned to the one
-  // canonical public read-only endpoint and never accepts a URL from callers.
-  const configuredRpc = String(config?.verified_rpc_url || config?.rpc_url || '').trim();
-  if (configuredRpc) {
-    try {
-      const url = new URL(configuredRpc);
+  // A pinned transport is necessary but insufficient: the configured and
+  // independently verified coordinates must agree before any public query.
+  if (!config || config.status !== 'CONFIGURED') throw new Error('NETWORK_CONFIGURATION_UNSAFE');
+  const configuredRpc = String(config.rpc_url || '').trim();
+  const verifiedRpc = String(config.verified_rpc_url || '').trim();
+  const expectedChainId = normalizeHex(config.chain_id);
+  if (!verifiedRpc || !configuredRpc || expectedChainId !== normalizeHex(config.verified_chain_id)) {
+    throw new Error('NETWORK_CONFIGURATION_UNSAFE');
+  }
+  try {
+    for (const value of [configuredRpc, verifiedRpc]) {
+      const url = new URL(value);
       const canonical = new URL(CANONICAL_RPC);
-      if (url.protocol !== canonical.protocol || url.hostname !== canonical.hostname || url.pathname !== canonical.pathname) {
+      if (url.href !== canonical.href || url.username || url.password || url.search || url.hash) {
         throw new Error('RPC_MISMATCH');
       }
-    } catch {
-      throw new Error('RPC_MISMATCH');
     }
+  } catch {
+    throw new Error('NETWORK_CONFIGURATION_UNSAFE');
   }
-
+  const verifiedAt = Date.parse(String(config.last_verified_at || ''));
+  if (!Number.isFinite(verifiedAt) || Date.now() - verifiedAt > 24 * 60 * 60 * 1000 || verifiedAt > Date.now()) {
+    throw new Error('NETWORK_CONFIGURATION_UNSAFE');
+  }
   return {
     network: NETWORK,
-    chain_id: String(config?.verified_chain_id || config?.chain_id || ''),
-    explorer_url: String(config?.explorer_url || 'https://swappulse.org/chain/'),
+    chain_id: expectedChainId,
+    explorer_url: String(config.explorer_url || 'https://swappulse.org/chain/'),
   };
 }
 
@@ -177,6 +185,10 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || 'summary').trim().toLowerCase();
     const network = await loadPublicNetworkConfig(req);
+    // Re-check the live network for every action, including resolve and
+    // address lookups, before returning any transaction or indexed activity.
+    const liveChainId = normalizeHex(await rpcCall('starknet_chainId', []));
+    if (liveChainId !== network.chain_id) return jsonError('NETWORK_CONFIGURATION_UNSAFE', 503);
 
     if (action === 'summary') {
       const [blockNumber, specVersion, chainId] = await Promise.all([
@@ -301,7 +313,7 @@ export default async function(req: Request): Promise<Response> {
     return jsonError('INVALID_ACTION', 400);
   } catch (error: any) {
     console.error('chain-explorer failed:', error?.message || error);
-    if (String(error?.message || '') === 'RPC_MISMATCH') return jsonError('NETWORK_CONFIGURATION_UNSAFE', 503);
+    if (String(error?.message || '') === 'NETWORK_CONFIGURATION_UNSAFE') return jsonError('NETWORK_CONFIGURATION_UNSAFE', 503);
     return jsonError('EXPLORER_UNAVAILABLE', 503);
   }
 }
