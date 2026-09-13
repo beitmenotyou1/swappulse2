@@ -198,8 +198,7 @@ export async function readSignedState(state: string): Promise<any> {
 
 export async function upsertDiscordLink(svc: any, values: any) {
   const matches = await svc.entities.DiscordAccountLink
-    .filter({ discord_user_id: values.discord_user_id, guild_id: values.guild_id }, '-created_date', 5)
-    .catch(() => []);
+    .filter({ discord_user_id: values.discord_user_id, guild_id: values.guild_id }, '-created_date', 5);
   const existing = matches?.[0];
   if (matches.length > 1 || (existing?.user_id
     && String(existing.user_id) !== String(values.user_id || '')
