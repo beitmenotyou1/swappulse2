@@ -72,60 +72,54 @@ function rateLimitDelayMs(response: Response, body: any): number {
 }
 
 export async function discordRequest(path: string, init: RequestInit = {}) {
-  let lastNetworkError: unknown = null;
+  const deadline = Date.now() + 20_000;
   for (let attempt = 0; attempt < DISCORD_API_ATTEMPTS; attempt += 1) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new Error('DISCORD_API_TIMEOUT');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.min(7_000, remaining));
     let response: Response;
+    let body: any;
     try {
       response = await fetch(`${DISCORD_API}${path}`, {
         ...init,
+        signal: controller.signal,
         headers: {
+          ...Object.fromEntries(new Headers(init.headers)),
           Authorization: `Bot ${discordBotToken()}`,
           'Content-Type': 'application/json',
-          ...(init.headers || {}),
         },
       });
+      if (response.status === 204) return null;
+      body = await response.json().catch(() => ({}));
     } catch (error) {
-      lastNetworkError = error;
-      if (attempt + 1 < DISCORD_API_ATTEMPTS) {
+      if (attempt + 1 < DISCORD_API_ATTEMPTS && Date.now() < deadline) {
         await pause(250 * (attempt + 1));
         continue;
       }
-      throw new Error('DISCORD_API_UNREACHABLE');
+      throw new Error(controller.signal.aborted ? 'DISCORD_API_TIMEOUT' : 'DISCORD_API_UNREACHABLE');
+    } finally {
+      clearTimeout(timeout);
     }
-
-    if (response.status === 204) return null;
-    const body = await response.json().catch(() => ({}));
     if (response.ok) return body;
-
     if (response.status === 429) {
       const waitMs = rateLimitDelayMs(response, body);
-      if (
-        attempt + 1 < DISCORD_API_ATTEMPTS
-        && waitMs > 0
-        && waitMs <= MAX_RATE_LIMIT_WAIT_MS
-      ) {
+      if (attempt + 1 < DISCORD_API_ATTEMPTS && waitMs > 0
+        && waitMs <= MAX_RATE_LIMIT_WAIT_MS && waitMs + 50 < deadline - Date.now()) {
         await pause(waitMs + 50);
         continue;
       }
       throw new Error(`DISCORD_RATE_LIMITED:${waitMs}`);
     }
-
-    if (
-      [502, 503, 504].includes(response.status)
-      && attempt + 1 < DISCORD_API_ATTEMPTS
-    ) {
+    if ([502, 503, 504].includes(response.status)
+      && attempt + 1 < DISCORD_API_ATTEMPTS && Date.now() < deadline) {
       await pause(250 * (attempt + 1));
       continue;
     }
-
-    const code = response.status === 403
-      ? 'DISCORD_ROLE_HIERARCHY'
-      : 'DISCORD_API_FAILED';
-    throw new Error(
-      `${code}:${response.status}:${String(body?.message || 'Discord request failed').slice(0, 160)}`,
-    );
+    const code = response.status === 403 ? 'DISCORD_PERMISSION_DENIED' : 'DISCORD_API_FAILED';
+    throw new Error(`${code}:${response.status}:${String(body?.message || 'Discord request failed').slice(0, 160)}`);
   }
-  throw new Error(lastNetworkError ? 'DISCORD_API_UNREACHABLE' : 'DISCORD_API_FAILED');
+  throw new Error('DISCORD_API_TIMEOUT');
 }
 
 export async function getGuildConfig(svc: any, requireEnabled = true) {
@@ -209,175 +203,176 @@ export async function upsertDiscordLink(svc: any, values: any) {
   return svc.entities.DiscordAccountLink.create(values);
 }
 
-function uniqueById(rows: any[]): any[] {
-  return Array.from(new Map(rows.filter(Boolean).map((row) => [row.id, row])).values());
+// A role ID is a security-sensitive deployment pin, not a role chosen by the browser
+// or a mutable configuration record. Check the guild role and bot hierarchy live.
+export async function assertDiscordRolePins(config: any) {
+  if (String(config.guild_id) !== discordGuildId() || !config.bot_user_id) {
+    throw new Error('DISCORD_GUILD_MISMATCH');
+  }
+  const roles = await discordRequest(`/guilds/${encodeURIComponent(config.guild_id)}/roles`);
+  const botMember = await discordRequest(
+    `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(config.bot_user_id)}`,
+  );
+  if (!Array.isArray(roles) || !Array.isArray(botMember?.roles)) {
+    throw new Error('DISCORD_ROLE_PINS_INVALID');
+  }
+  const botTop = Math.max(0, ...roles
+    .filter((role: any) => botMember.roles.map(String).includes(String(role.id)))
+    .map((role: any) => Number(role.position) || 0));
+  const pinned = new Set<string>();
+  for (const definition of ROLE_DEFINITIONS) {
+    const id = String(config.role_ids?.[definition.name] || '');
+    const role = roles.find((candidate: any) => String(candidate.id) === id);
+    if (!id || pinned.has(id) || !role || role.name !== definition.name
+      || role.managed || String(role.permissions || '0') !== definition.permissions
+      || Number(role.color || 0) !== definition.colour
+      || Boolean(role.hoist) !== ['Moderator', 'Administrator'].includes(definition.name)
+      || Boolean(role.mentionable) || Number(role.position) >= botTop) {
+      throw new Error(`DISCORD_ROLE_PINS_INVALID:${definition.name}`);
+    }
+    pinned.add(id);
+  }
 }
 
-async function evaluateAccountRoles(svc: any, user: any, link: any, config: any) {
+export async function evaluateAccountRoles(svc: any, user: any, link: any, _config: any) {
   const metrics: Record<string, unknown> = {
     verification_method: link.verification_method,
     account_role: user?.role || null,
   };
   if (link.status !== 'verified') return { desired: [] as RoleName[], metrics };
-  if (link.verification_method === 'captcha' || !user) {
+  if (link.verification_method === 'captcha' && !link.user_id) {
     return { desired: ['Collector'] as RoleName[], metrics };
   }
-
+  // Missing or orphaned accounts must never fall back to CAPTCHA eligibility.
+  if (!user || link.verification_method !== 'swappulse_account') {
+    metrics.orphaned_account = true;
+    return { desired: [] as RoleName[], metrics };
+  }
   const statuses = await svc.entities.AccountStatus
-    .filter({ user_id: user.id }, '-created_date', 1)
-    .catch(() => []);
+    .filter({ user_id: user.id }, '-created_date', 1);
   const accountStatus = statuses?.[0]?.status || 'active';
   metrics.account_status = accountStatus;
   if (accountStatus !== 'active') return { desired: [] as RoleName[], metrics };
 
-  const did = String(user.did || '').trim();
-  const [ratings, byOwner, byDid, achievements, meetups] = await Promise.all([
-    did ? svc.entities.Reputation.filter({ did }, '-created_date', 500).catch(() => []) : [],
-    svc.entities.TradeListing.filter({ created_by_id: user.id }, '-created_date', 500).catch(() => []),
-    did ? svc.entities.TradeListing.filter({ did }, '-created_date', 500).catch(() => []) : [],
-    did ? svc.entities.Achievement.filter({ did, status: 'granted' }, '-created_date', 100).catch(() => []) : [],
-    did ? svc.entities.Meetup.filter({ creator_did: did }, '-created_date', 100).catch(() => []) : [],
-  ]);
-  const trades = uniqueById([...byOwner, ...byDid]);
-  const completed = trades.filter((trade: any) => trade.status === 'completed');
-  const average = ratings.length
-    ? ratings.reduce((sum: number, rating: any) => sum + Number(rating.rating || 0), 0) / ratings.length
-    : 0;
-  const tradeIds = trades.map((trade: any) => trade.id).filter(Boolean);
-  const disputes = tradeIds.length
-    ? await svc.entities.TradeDispute
-      .filter({ trade_id: { $in: tradeIds }, status: { $in: ['pending', 'reviewed'] } }, '-created_date', 100)
-      .catch(() => [])
-    : [];
-  const achievementTypes = new Set(achievements.map((item: any) => item.achievement_type));
   const desired: RoleName[] = ['Collector', 'Verified SwapPulse Account'];
-
-  const verifiedTrader = completed.length >= Number(config.verified_trader_min_completed || 3)
-    && ratings.length >= Number(config.verified_trader_min_reviews || 3)
-    && average >= Number(config.verified_trader_min_average || 4.5)
-    && disputes.length === 0;
-  if (verifiedTrader) desired.push('Verified Trader');
-
-  const trustedTrader = disputes.length === 0 && (
-    achievementTypes.has('trusted_trader')
-    || (
-      completed.length >= Number(config.trusted_trader_min_completed || 10)
-      && average >= Number(config.trusted_trader_min_average || 4.75)
-    )
-  );
-  if (trustedTrader) desired.push('Trusted Trader');
-
-  const contributorTypes = ['scanner_sage', 'binder_curator', 'community_voice', 'card_reviewer'];
-  if (contributorTypes.some((type) => achievementTypes.has(type)) || achievements.length >= 3) {
-    desired.push('Contributor');
-  }
-  if (
-    meetups.some((meetup: any) => meetup.status === 'completed')
-    || achievementTypes.has('community_voice')
-  ) {
-    desired.push('Event Organiser');
-  }
+  // DIS-004/005/006: client-mutable trades, reputation, achievements and
+  // meetups are not evidence for external Discord trust badges.
   if (user.role === 'moderator') desired.push('Moderator');
   if (user.role === 'admin') desired.push('Administrator');
-
-  Object.assign(metrics, {
-    completed_trades: completed.length,
-    reputation_reviews: ratings.length,
-    reputation_average: Number(average.toFixed(2)),
-    active_disputes: disputes.length,
-    granted_achievements: achievements.length,
-    completed_meetups: meetups.filter((meetup: any) => meetup.status === 'completed').length,
-  });
   return { desired, metrics };
 }
 
 async function audit(svc: any, values: any) {
+  // An external privilege change without a durable record is unsafe.
   await svc.entities.DiscordRoleSyncAudit.create({
     ...values,
     message: String(values?.message || '').slice(0, 300),
     synced_at: new Date().toISOString(),
-  }).catch((error: any) => {
-    console.error('discordBot: audit write failed', error?.message || error);
   });
 }
 
-export async function syncDiscordLink(
-  svc: any,
-  link: any,
-  source: SyncSource,
-) {
-  const config = await getGuildConfig(svc, true);
+export async function revokeUserDiscordLinks(svc: any, userId: string, source: SyncSource) {
+  const links = await svc.entities.DiscordAccountLink
+    .filter({ user_id: userId }, '-created_date', 1000);
+  if (links.length >= 1000) throw new Error('DISCORD_LINK_BACKLOG');
+  for (const link of links) {
+    // Persist the pending state before contacting Discord. If anything fails,
+    // the account remains intact and the scheduled sweep can retry removal.
+    await svc.entities.DiscordAccountLink.update(link.id, {
+      status: 'revocation_pending', desired_roles: [],
+    });
+    await syncDiscordLink(svc, { ...link, status: 'revocation_pending' }, source);
+    await svc.entities.DiscordAccountLink.delete(link.id);
+  }
+  return links.length;
+}
+
+export async function syncDiscordLink(svc: any, link: any, source: SyncSource) {
+  const config = await getGuildConfig(svc, link.status === 'verified');
   if (String(link.guild_id) !== String(config.guild_id)) throw new Error('DISCORD_GUILD_MISMATCH');
   let user: any = null;
-  if (link.user_id) {
-    const users = await svc.entities.User.filter({ id: link.user_id }, '-created_date', 1).catch(() => []);
+  if (link.user_id && link.status === 'verified') {
+    const users = await svc.entities.User.filter({ id: link.user_id }, '-created_date', 1);
     user = users?.[0] || null;
   }
 
   try {
     const { desired, metrics } = await evaluateAccountRoles(svc, user, link, config);
+    await assertDiscordRolePins(config);
     const roleIds = config.role_ids || {};
-    const managedIds = Object.values(roleIds).map(String).filter(Boolean);
-    const desiredIds = desired.map((name) => String(roleIds[name] || '')).filter(Boolean);
-    const missingDefinitions = desired.filter((name) => !roleIds[name]);
-    if (missingDefinitions.length > 0) {
-      throw new Error(`DISCORD_ROLE_CONFIG_MISSING:${missingDefinitions.join(',')}`);
-    }
-
-    const member = await discordRequest(
-      `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(link.discord_user_id)}`,
-    );
+    const managedIds = ROLE_DEFINITIONS.map((role) => String(roleIds[role.name]));
+    const desiredIds = desired.map((name) => String(roleIds[name]));
+    const memberPath = `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(link.discord_user_id)}`;
+    const member = await discordRequest(memberPath);
     const currentIds = Array.isArray(member?.roles) ? member.roles.map(String) : [];
-    const addIds = desiredIds.filter((id) => !currentIds.includes(id));
     const removeIds = managedIds.filter((id) => currentIds.includes(id) && !desiredIds.includes(id));
+    const addIds = desiredIds.filter((id) => !currentIds.includes(id));
 
-    for (const roleId of addIds) {
-      await discordRequest(
-        `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(link.discord_user_id)}/roles/${encodeURIComponent(roleId)}`,
-        { method: 'PUT' },
-      );
+    if (removeIds.length || addIds.length) {
+      await audit(svc, {
+        user_id: link.user_id || '', discord_user_id: link.discord_user_id,
+        guild_id: config.guild_id, source, outcome: 'preview', desired_roles: desired,
+        added_roles: addIds, removed_roles: removeIds, metrics,
+        message: 'Role mutation planned; see following outcome for confirmation',
+      });
     }
-    for (const roleId of removeIds) {
-      await discordRequest(
-        `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(link.discord_user_id)}/roles/${encodeURIComponent(roleId)}`,
-        { method: 'DELETE' },
-      );
+    // Remove privileges first so an error never leaves newly granted roles on
+    // one account while obsolete roles remain on another.
+    for (const [method, ids] of [['DELETE', removeIds], ['PUT', addIds]] as const) {
+      for (const roleId of ids) {
+        await discordRequest(`${memberPath}/roles/${encodeURIComponent(roleId)}`, {
+          method,
+          headers: { 'X-Audit-Log-Reason': `SwapPulse ${source} role sync ${link.id}` },
+        });
+      }
     }
-
-    const appliedAt = new Date().toISOString();
+    const after = await discordRequest(memberPath);
+    const liveIds = Array.isArray(after?.roles) ? after.roles.map(String) : [];
+    const applied = ROLE_DEFINITIONS.filter((role) => liveIds.includes(String(roleIds[role.name])))
+      .map((role) => role.name);
+    if (applied.length !== desired.length || desired.some((name) => !applied.includes(name))) {
+      throw new Error('DISCORD_ROLE_READBACK_MISMATCH');
+    }
+    const orphan = link.status === 'verified' && link.verification_method === 'swappulse_account' && !user;
+    const revoked = link.status !== 'verified' || orphan;
     await svc.entities.DiscordAccountLink.update(link.id, {
+      status: revoked ? 'revoked' : 'verified',
       desired_roles: desired,
-      applied_roles: desired,
-      last_role_sync_at: appliedAt,
-      last_sync_error: '',
+      applied_roles: applied,
+      last_role_sync_at: new Date().toISOString(),
+      last_sync_error: orphan ? 'DISCORD_ORPHANED_ACCOUNT' : '',
     });
     await audit(svc, {
-      user_id: link.user_id || '',
-      discord_user_id: link.discord_user_id,
-      guild_id: config.guild_id,
-      source,
-      outcome: link.status === 'verified' ? 'synced' : 'revoked',
-      desired_roles: desired,
-      added_roles: addIds,
-      removed_roles: removeIds,
-      metrics,
+      user_id: link.user_id || '', discord_user_id: link.discord_user_id,
+      guild_id: config.guild_id, source,
+      outcome: revoked ? 'revoked' : 'synced', desired_roles: desired,
+      added_roles: addIds, removed_roles: removeIds, metrics,
+      message: orphan ? 'Orphaned SwapPulse account revoked' : '',
     });
     return { ok: true, desired_roles: desired, added: addIds.length, removed: removeIds.length, metrics };
   } catch (error) {
     const message = String(error?.message || 'Discord role sync failed').slice(0, 300);
+    // A partially applied operation must retain its pending state and report
+    // the live roles when read-back is still possible.
+    const roleIds = config.role_ids || {};
+    const path = `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(link.discord_user_id)}`;
+    const live = await discordRequest(path).catch(() => null);
+    const applied = Array.isArray(live?.roles)
+      ? ROLE_DEFINITIONS.filter((role) => live.roles.map(String).includes(String(roleIds[role.name])))
+        .map((role) => role.name)
+      : null;
     await svc.entities.DiscordAccountLink.update(link.id, {
+      ...(applied ? { applied_roles: applied } : {}),
       last_role_sync_at: new Date().toISOString(),
       last_sync_error: message,
     }).catch(() => {});
     await audit(svc, {
-      user_id: link.user_id || '',
-      discord_user_id: link.discord_user_id,
-      guild_id: link.guild_id,
-      source,
-      outcome: 'failed',
-      error_code: message.split(':')[0],
-      message,
+      user_id: link.user_id || '', discord_user_id: link.discord_user_id,
+      guild_id: link.guild_id, source, outcome: 'failed',
+      error_code: message.split(':')[0], message,
+      ...(applied ? { metrics: { live_managed_roles: applied } } : {}),
     });
     throw error;
   }
 }
+
