@@ -7,7 +7,7 @@
 //
 // All functions take a service-role client (svc = base44.asServiceRole) and
 // operate on a consent map built from the ConsentRecord entity. Missing record
-// = defaults (all consent true, do_not_sell false) — the opt-out model.
+// = optional marketing/notification consent off; explicit opt-out is preserved.
 
 export interface ConsentRecord {
   user_id: string;
@@ -28,7 +28,9 @@ export async function getConsentMap(svc: any): Promise<Map<string, ConsentRecord
   try {
     const records = await svc.entities.ConsentRecord.list('-created_date', 500);
     for (const r of (records || []) as any[]) {
-      if (r.user_id) map.set(r.user_id, r as ConsentRecord);
+      // Ignore legacy rows whose creator does not own the declared subject.
+      // Results are newest first; keep the newest owned row for each user.
+      if (r.user_id && r.created_by_id === r.user_id && !map.has(r.user_id)) map.set(r.user_id, r as ConsentRecord);
     }
   } catch (e: any) {
     console.error('consentCheck: failed to load consent records', e?.message || e);
@@ -43,13 +45,13 @@ export function isDoNotSell(consent: ConsentRecord | undefined): boolean {
 }
 
 // Returns true if the user has marketing consent (onboarding emails, digest).
-// Default true (opt-out model) unless explicitly set to false.
+// Require an explicit opt-in; missing or unreadable consent is not a grant.
 export function hasMarketingConsent(consent: ConsentRecord | undefined): boolean {
-  return consent?.marketing_consent !== false;
+  return consent?.marketing_consent === true;
 }
 
 // Returns true if the user has notification consent (push notifications).
-// Default true (opt-out model) unless explicitly set to false.
+// Require an explicit opt-in; missing or unreadable consent is not a grant.
 export function hasNotificationConsent(consent: ConsentRecord | undefined): boolean {
-  return consent?.notification_consent !== false;
+  return consent?.notification_consent === true;
 }
