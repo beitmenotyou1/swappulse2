@@ -2,7 +2,7 @@
   "name": "ConsentRecord",
   "type": "object",
   "title": "ConsentRecord",
-  "description": "org.swappulse.consentRecord \u2014 a per-user record of consent preferences under GDPR, CCPA, and the UK Data Protection Act. Tracks cookie category consent, the CCPA do-not-sell-or-share opt-out (which stops outbound federation), and marketing/analytics/notification consent flags. One record per user; missing record = defaults (all consent true, do_not_sell false). Enforced by the consentCheck shared helper before any outbound federation or marketing communication. The update-consent-preferences backend function upserts this record.",
+  "description": "org.swappulse.consentRecord \u2014 a per-user record of consent preferences under GDPR, CCPA, and the UK Data Protection Act. Tracks cookie category consent, the CCPA do-not-sell-or-share opt-out (which stops outbound federation), and marketing/analytics/notification consent flags. One record per user; missing record = optional consents off, do_not_sell false. Enforced by the consentCheck shared helper before any outbound federation or marketing communication. The update-consent-preferences backend function upserts this record.",
   "properties": {
     "user_id": {
       "type": "string",
@@ -41,18 +41,18 @@
     },
     "marketing_consent": {
       "type": "boolean",
-      "default": true,
-      "description": "Consent for marketing emails (onboarding sequence, digest). Default true (opt-out model)."
+      "default": false,
+      "description": "Consent for marketing emails (onboarding sequence, digest). Optional, defaults to false."
     },
     "analytics_consent": {
       "type": "boolean",
-      "default": true,
-      "description": "Consent for analytics processing. Default true (opt-out model)."
+      "default": false,
+      "description": "Consent for analytics processing. Optional, defaults to false."
     },
     "notification_consent": {
       "type": "boolean",
-      "default": true,
-      "description": "Consent for push notifications. Default true (opt-out model)."
+      "default": false,
+      "description": "Consent for push notifications. Optional, defaults to false."
     },
     "consent_given_at": {
       "type": "string",
@@ -90,31 +90,19 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
