@@ -16,6 +16,10 @@
     "discord_user_id": {
       "type": "string"
     },
+    "interaction_id_hash": {
+      "type": "string",
+      "description": "SHA-256 of the short-lived Discord interaction ID for replay deduplication."
+    },
     "guild_id": {
       "type": "string"
     },
