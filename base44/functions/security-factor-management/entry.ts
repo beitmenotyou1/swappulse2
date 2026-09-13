@@ -44,7 +44,7 @@ export default async function (req: Request): Promise<Response> {
         }
       }
       const expected = await generateTotp(fresh.two_factor_secret);
-      if (!timingSafeEqual(code, expected)) {
+      if (!(await timingSafeEqual(code, expected))) {
         await recordTotpFailedAttempt(svc, emailKey);
         return Response.json({ error: 'Invalid authenticator code.' }, { status: 400 });
       }
