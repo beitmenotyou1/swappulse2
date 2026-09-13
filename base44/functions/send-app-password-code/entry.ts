@@ -3,6 +3,7 @@
 // Requires an authenticated user; the code is sent to their email on file.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendBrandedEmail } from '../../shared/smtpSender.ts';
+import { emailCodeHash } from '../../shared/emailCodeHash.ts';
 
 const VALID_ACTIONS = new Set(['delete']);
 
@@ -17,6 +18,7 @@ export default async function (req: Request): Promise<Response> {
     const action = String(body.action || '').trim();
     const targetId = String(body.target_id || '').trim() || undefined;
 
+    if (!targetId) return Response.json({ error: 'An app password is required.' }, { status: 400 });
     if (!VALID_ACTIONS.has(action)) {
       return Response.json({ error: 'Invalid action.' }, { status: 400 });
     }
@@ -76,7 +78,7 @@ export default async function (req: Request): Promise<Response> {
 
     await svc.entities.AppPasswordCode.create({
       email,
-      code,
+      code_hash: await emailCodeHash(`app-password:${action}:${targetId}`, email, code),
       expires_at: expiresAt,
       used: false,
       action,
