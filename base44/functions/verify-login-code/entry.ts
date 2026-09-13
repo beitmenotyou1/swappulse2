@@ -97,7 +97,7 @@ export default async function(req) {
       }
 
       const expectedTotp = await generateTotp(user.two_factor_secret);
-      if (!timingSafeEqual(totpCode, expectedTotp)) {
+      if (!(await timingSafeEqual(totpCode, expectedTotp))) {
         await recordTotpFailedAttempt(svc, email);
         return Response.json({ error: 'Invalid 2FA code' }, { status: 400 });
       }
