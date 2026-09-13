@@ -91,7 +91,12 @@ export async function discordRequest(path: string, init: RequestInit = {}) {
         },
       });
       if (response.status === 204) return null;
-      body = await response.json().catch(() => ({}));
+      try {
+        body = await response.json();
+      } catch (error) {
+        if (controller.signal.aborted) throw error;
+        body = {};
+      }
     } catch (error) {
       if (attempt + 1 < DISCORD_API_ATTEMPTS && Date.now() < deadline) {
         await pause(250 * (attempt + 1));
@@ -196,6 +201,11 @@ export async function upsertDiscordLink(svc: any, values: any) {
     .filter({ discord_user_id: values.discord_user_id, guild_id: values.guild_id }, '-created_date', 5)
     .catch(() => []);
   const existing = matches?.[0];
+  if (matches.length > 1 || (existing?.user_id
+    && String(existing.user_id) !== String(values.user_id || '')
+    && existing.status !== 'revoked')) {
+    throw new Error('DISCORD_LINK_COLLISION');
+  }
   if (existing) {
     await svc.entities.DiscordAccountLink.update(existing.id, values);
     return { ...existing, ...values };
@@ -311,7 +321,16 @@ export async function syncDiscordLink(svc: any, link: any, source: SyncSource) {
     const managedIds = ROLE_DEFINITIONS.map((role) => String(roleIds[role.name]));
     const desiredIds = desired.map((name) => String(roleIds[name]));
     const memberPath = `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(link.discord_user_id)}`;
-    const member = await discordRequest(memberPath);
+    let member: any;
+    try {
+      member = await discordRequest(memberPath);
+    } catch (error) {
+      if (!String(error?.message || '').startsWith('DISCORD_API_FAILED:404:')) throw error;
+      // Discord confirms the person is not in the guild. No guild role can
+      // remain, so revocation can complete even if they left the server.
+      member = null;
+    }
+    if (!member && desired.length) throw new Error('DISCORD_MEMBER_NOT_FOUND');
     const currentIds = Array.isArray(member?.roles) ? member.roles.map(String) : [];
     const removeIds = managedIds.filter((id) => currentIds.includes(id) && !desiredIds.includes(id));
     const addIds = desiredIds.filter((id) => !currentIds.includes(id));
@@ -334,7 +353,7 @@ export async function syncDiscordLink(svc: any, link: any, source: SyncSource) {
         });
       }
     }
-    const after = await discordRequest(memberPath);
+    const after = member ? await discordRequest(memberPath) : null;
     const liveIds = Array.isArray(after?.roles) ? after.roles.map(String) : [];
     const applied = ROLE_DEFINITIONS.filter((role) => liveIds.includes(String(roleIds[role.name])))
       .map((role) => role.name);
@@ -342,7 +361,7 @@ export async function syncDiscordLink(svc: any, link: any, source: SyncSource) {
       throw new Error('DISCORD_ROLE_READBACK_MISMATCH');
     }
     const orphan = link.status === 'verified' && link.verification_method === 'swappulse_account' && !user;
-    const revoked = link.status !== 'verified' || orphan;
+    const revoked = link.status !== 'verified' || orphan || !member;
     await svc.entities.DiscordAccountLink.update(link.id, {
       status: revoked ? 'revoked' : 'verified',
       desired_roles: desired,
