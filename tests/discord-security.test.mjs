@@ -178,9 +178,9 @@ test('valid Discord Ed25519 PING succeeds, tampering and oversize fail', async (
   // SDK import. The signed PING path does not invoke that SDK.
   let source = await readFile(new URL('../base44/functions/discord-interactions/entry.ts', import.meta.url), 'utf8');
   source = source.replace("import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';",
-    "const createClientFromRequest = () => { throw new Error('Unexpected authenticated call'); };");
+    "const createClientFromRequest = () => globalThis.mockBase44;");
   source = source.replace("import { createClientFromRequest } from '../../../stubs/base44.mjs';",
-    "const createClientFromRequest = () => { throw new Error('Unexpected authenticated call'); };");
+    "const createClientFromRequest = () => globalThis.mockBase44;");
   source = source.replace("'../../shared/discordBot.ts'",
     JSON.stringify(new URL('../base44/shared/discordBot.ts', import.meta.url).href));
   source = source.replace("'../../shared/discordLocale.ts'",
@@ -207,5 +207,27 @@ test('valid Discord Ed25519 PING succeeds, tampering and oversize fail', async (
   assert.deepEqual(await good.json(), { type: 1 });
   assert.equal((await globalThis.discordHandler(makeReq(raw + ' '))).status, 401);
   assert.equal((await globalThis.discordHandler(makeReq('x'.repeat(65_537)))).status, 413);
+
+  const challenges = [];
+  globalThis.mockBase44 = { asServiceRole: { entities: {
+    DiscordGuildConfig: { filter: async () => [{ guild_id: 'guild', enabled: true }] },
+    DiscordVerificationChallenge: {
+      filter: async () => challenges,
+      create: async (row) => challenges.push({ ...row, id: 'challenge', created_date: new Date().toISOString() }),
+      update: async (id, row) => Object.assign(challenges.find((item) => item.id === id), row),
+    },
+  } } };
+  const command = JSON.stringify({
+    type: 2, id: 'interaction-1', application_id: 'app', guild_id: 'guild',
+    member: { user: { id: 'member' } }, data: { name: 'verify' }, locale: 'en-GB',
+  });
+  const commandSignature = Buffer.from(await crypto.subtle.sign('Ed25519', keys.privateKey,
+    new TextEncoder().encode(stamp + command))).toString('hex');
+  const first = await globalThis.discordHandler(makeReq(command, commandSignature));
+  assert.equal((await first.json()).data.flags, 64);
+  assert.equal(challenges.length, 1);
+  const replay = await globalThis.discordHandler(makeReq(command, commandSignature));
+  assert.match((await replay.json()).data.content, /wait a minute/i);
+  assert.equal(challenges.length, 1);
 });
 
