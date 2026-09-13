@@ -68,7 +68,7 @@ export default function FeedbackButton() {
       <button
         onClick={start}
         aria-label={t('feedback.sendAria')}
-        className="fixed bottom-36 right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 md:hidden"
+        className="fixed bottom-[calc(14rem+env(safe-area-inset-bottom,0px))] right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 md:hidden"
       >
         <MessageSquare className="h-5 w-5" />
       </button>
