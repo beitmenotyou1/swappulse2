@@ -70,6 +70,7 @@ export default function DiscordVerify() {
         if (!active || !turnstile || !widgetHost.current) return;
         widgetId = turnstile.render(widgetHost.current, {
           sitekey: siteKey,
+          action: 'discord_verify',
           theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
           callback: (token) => setCaptchaToken(token),
           'expired-callback': () => setCaptchaToken(''),
@@ -115,6 +116,9 @@ export default function DiscordVerify() {
           </p>
         </div>
 
+        <p className="sr-only" role="status" aria-live="polite">
+          {state === 'loading' ? 'Loading Discord verification.' : state === 'submitting' ? 'Checking your response.' : state === 'success' ? 'Verification complete.' : state === 'error' ? 'Verification failed.' : state === 'invalid' ? 'Verification link invalid.' : 'Verification ready.'}
+        </p>
         {state === 'loading' || state === 'submitting' ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : state === 'invalid' ? (
