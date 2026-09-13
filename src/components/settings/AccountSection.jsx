@@ -1,17 +1,14 @@
 import React from 'react';
-import { Shield, Clock, Fingerprint, Copy, Check } from 'lucide-react';
+import { Fingerprint, Copy, Check } from 'lucide-react';
 import DomainHandleCard from '@/components/profile/DomainHandleCard';
 import ChainIdentityCard from '@/components/settings/ChainIdentityCard';
 import AgeEligibilityCard from '@/components/settings/AgeEligibilityCard';
-import SettingRow from '@/components/settings/SettingRow';
-import SettingSelect from '@/components/settings/SettingSelect';
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
 import { useAuth } from '@/lib/AuthContext';
 
-export default function AccountSection({ settings, update }) {
+export default function AccountSection() {
   const { user } = useAuth();
   const [copied, setCopied] = React.useState(false);
-  const sec = settings.security || {};
 
   const copyAccountId = () => {
     if (!user?.id) return;
@@ -39,34 +36,6 @@ export default function AccountSection({ settings, update }) {
           >
             {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
           </button>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-3">
-        <p className="flex items-center gap-2 text-sm font-bold"><Shield className="h-4 w-4 text-primary" /> Authentication</p>
-        <SettingRow
-          label="Two-factor authentication"
-          description="Require a second factor at login (TOTP / U2F enrolment coming soon)."
-          checked={!!sec.mfaEnabled}
-          onChange={(v) => update({ security: { mfaEnabled: v } })}
-        />
-        <div className="flex items-center justify-between gap-3 py-3">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-semibold"><Clock className="h-4 w-4 text-muted-foreground" /> Session timeout</p>
-            <p className="text-xs text-muted-foreground">Auto-logout after inactivity.</p>
-          </div>
-          <SettingSelect
-            label="Session timeout"
-            value={String(sec.sessionTimeout || 86400)}
-            options={[
-              { value: '3600', label: '1 hour' },
-              { value: '21600', label: '6 hours' },
-              { value: '86400', label: '24 hours' },
-              { value: '604800', label: '7 days' },
-            ]}
-            onChange={(v) => update({ security: { sessionTimeout: Number(v) } })}
-            className="w-auto min-w-[140px]"
-          />
         </div>
       </div>
 
