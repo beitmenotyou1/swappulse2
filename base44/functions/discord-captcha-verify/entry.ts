@@ -8,12 +8,6 @@ import {
   upsertDiscordLink,
 } from '../../shared/discordBot.ts';
 
-function clientIp(req: Request): string {
-  return (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '')
-    .split(',')[0]
-    .trim();
-}
-
 Deno.serve(async (req) => {
   try {
     if (req.method === 'GET') {
@@ -51,15 +45,17 @@ Deno.serve(async (req) => {
     const secret = String(Deno.env.get('TURNSTILE_SECRET_KEY') || '');
     if (!secret) throw new Error('TURNSTILE_SECRET_MISSING');
     const verifyBody = new URLSearchParams({ secret, response: captchaToken });
-    const ip = clientIp(req);
-    if (ip) verifyBody.set('remoteip', ip);
     const verifyResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       body: verifyBody,
+      signal: AbortSignal.timeout(7_000),
     });
     const verified = await verifyResponse.json().catch(() => ({}));
     if (!verifyResponse.ok || !verified?.success) {
       return Response.json({ error: 'The bot check was not accepted. Please try again.' }, { status: 400 });
+    }
+    if (verified?.action !== 'discord_verify') {
+      return Response.json({ error: 'The bot check was not issued for Discord verification.' }, { status: 400 });
     }
     const hostname = String(verified?.hostname || '').toLowerCase();
     if (hostname && hostname !== 'swappulse.org' && !hostname.endsWith('.swappulse.org')) {
@@ -70,14 +66,16 @@ Deno.serve(async (req) => {
       `/guilds/${encodeURIComponent(config.guild_id)}/members/${encodeURIComponent(challenge.discord_user_id)}`,
     );
     const existingRows = await svc.entities.DiscordAccountLink
-      .filter({ discord_user_id: challenge.discord_user_id, guild_id: config.guild_id, status: 'verified' }, '-created_date', 1)
-      .catch(() => []);
+      .filter({ discord_user_id: challenge.discord_user_id, guild_id: config.guild_id }, '-created_date', 5);
+    if (existingRows.length > 1 || existingRows.some((row: any) => row.status === 'revocation_pending')) {
+      return Response.json({ error: 'A previous Discord link is awaiting confirmed removal.' }, { status: 409 });
+    }
     const existing = existingRows?.[0];
     const now = new Date().toISOString();
     const link = existing?.verification_method === 'swappulse_account'
       ? existing
       : await upsertDiscordLink(svc, {
-        user_id: existing?.user_id || '',
+        user_id: '',
         discord_user_id: challenge.discord_user_id,
         discord_username: existing?.discord_username || '',
         guild_id: config.guild_id,
