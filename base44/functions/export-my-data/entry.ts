@@ -42,6 +42,7 @@ const EXPORT_ENTITIES: [string, string][] = [
   ['TradingFeedback', 'created_by_id'],
   ['Notification', 'did'],
   ['SettingsConfig', 'did'],
+  ['DiscordAccountLink', 'user_id'],
 ];
 
 export default async function (req: Request): Promise<Response> {
@@ -75,6 +76,22 @@ export default async function (req: Request): Promise<Response> {
         const records = await svc.entities[entityName].filter(filter, '-created_date', 5000).catch(() => []);
         // Strip signature/internal fields that aren't user data
         archive.entities[entityName] = (records || []).map((r: any) => {
+          if (entityName === 'DiscordAccountLink') {
+            // Export the user's link and reconciliation state without any
+            // operational/private fields introduced in future schema versions.
+            return {
+              discord_user_id: r.discord_user_id,
+              discord_username: r.discord_username,
+              guild_id: r.guild_id,
+              verification_method: r.verification_method,
+              status: r.status,
+              desired_roles: r.desired_roles,
+              applied_roles: r.applied_roles,
+              verified_at: r.verified_at,
+              last_role_sync_at: r.last_role_sync_at,
+              last_sync_error: r.last_sync_error,
+            };
+          }
           const { sig, ...rest } = r;
           return rest;
         });
