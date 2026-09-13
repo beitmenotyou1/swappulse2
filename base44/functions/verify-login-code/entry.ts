@@ -31,7 +31,7 @@ export default async function(req) {
     }
 
     // Wrong code: increment failed attempts, lock (delete) after 5 failures
-    if (!timingSafeEqual(active.code, code)) {
+    if (!(await timingSafeEqual(active.code, code))) {
       const attempts = (active.failed_attempts || 0) + 1;
       if (attempts >= 5) {
         await svc.entities.LoginCode.delete(active.id).catch(() => {});
