@@ -293,7 +293,7 @@ export default async function(req: Request): Promise<Response> {
       // migration state so the dashboard shows the failures, but do NOT
       // mark as migrated (the user needs to retry the failed steps).
       await updateSteps({ announcement: makeStep('failed', 'Skipped — critical step(s) failed', new Date().toISOString()) });
-      await base44.auth.updateMe({
+      await base44.asServiceRole.entities.User.update(user.id, {
         original_bluesky_bio: originalBio,
         original_bluesky_profile: originalProfileJson,
         original_bluesky_handle: originalHandle,
@@ -348,7 +348,7 @@ export default async function(req: Request): Promise<Response> {
       await updateSteps({ announcement: makeStep('failed', `Post failed (${postResult.status})`, new Date().toISOString()) });
       // Still mark as migrated since the critical content sync succeeded —
       // the announcement is the last step and can be retried via re-migrate.
-      await base44.auth.updateMe({
+      await base44.asServiceRole.entities.User.update(user.id, {
         migrated_from_bluesky: true,
         original_bluesky_bio: originalBio,
         original_bluesky_profile: originalProfileJson,
