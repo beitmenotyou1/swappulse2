@@ -57,9 +57,20 @@ export default async function(req: Request): Promise<Response> {
     const labelerRows = await svc.entities.CommunityLabeler.filter({ id: labeler_id }, '-created_date', 1).catch(() => []);
     const labeler = labelerRows?.[0];
     if (!labeler) return Response.json({ error: 'Labeler not found' }, { status: 404 });
-    const ownsLabeler = (labeler.created_by_id && labeler.created_by_id === caller.id) || (labeler.did && caller.did && labeler.did === caller.did) || caller.role === 'admin';
+    const ownsLabeler = (labeler.created_by_id === caller.id && labeler.did && labeler.did === caller.did) || caller.role === 'admin';
     if (!ownsLabeler) return Response.json({ error: 'You do not own this labeler' }, { status: 403 });
     if (labeler.approval_status !== 'approved') return Response.json({ error: 'Labeler is not approved' }, { status: 403 });
+    // A mutable or historical approval flag is insufficient authority. Require
+    // the latest append-only admin decision and its exact approved scope.
+    const reviews = await svc.entities.CommunityLabelerReview.filter({ labeler_id }, '-created_date', 1);
+    const review = reviews?.[0];
+    if (!review || review.decision !== 'approved' ||
+      review.author_id !== labeler.created_by_id || review.did !== labeler.did ||
+      review.category !== (labeler.category || 'other') ||
+      review.reviewed_by !== labeler.reviewed_by || review.reviewed_at !== labeler.reviewed_at ||
+      JSON.stringify(review.label_values) !== JSON.stringify(labeler.label_values)) {
+      return Response.json({ error: 'Labeler requires a current admin review' }, { status: 403 });
+    }
 
     // Validate the label_value is in the labeler's label_values.
     const allowed = Array.isArray(labeler.label_values) ? labeler.label_values : [];
