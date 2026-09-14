@@ -18,20 +18,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 // or created locally). Returns true only if membership is confirmed.
 export async function canViewCircleContent(svc: any, circleAtUri: string, viewerDid: string): Promise<boolean> {
   if (!viewerDid) return false;
-  if (!circleAtUri) return true; // no circle scoping = public
+  if (!circleAtUri) return false; // a scoped resource requires a real Circle reference
 
   try {
-    const circles = await svc.entities.Circle.filter({ at_uri: circleAtUri }, '-created_date', 1).catch(() => []);
-    if (!circles || circles.length === 0) {
-      // Circle not found locally — fail closed
-      console.warn('federatedVisibility: circle not found for at_uri', circleAtUri);
+    // An at:// reference must resolve to exactly one Circle. A newer forged
+    // duplicate must never shadow the genuine Circle's membership list.
+    const circles = await svc.entities.Circle.filter({ at_uri: circleAtUri }, '-created_date', 2).catch(() => []);
+    if (circles?.length !== 1) {
+      console.warn('federatedVisibility: missing or ambiguous Circle reference', circleAtUri);
       return false;
     }
     const circle = circles[0];
-    const isCurator = circle.did === viewerDid;
-    const isMember = (circle.member_dids || []).includes(viewerDid);
-    const isPublic = circle.visibility === 'public';
-    return isCurator || isMember || isPublic;
+    return circle.did === viewerDid || (circle.member_dids || []).includes(viewerDid);
   } catch (e) {
     console.error('federatedVisibility: canViewCircleContent error', e?.message || e);
     return false; // fail closed
