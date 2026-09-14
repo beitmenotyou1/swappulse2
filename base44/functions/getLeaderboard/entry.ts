@@ -24,17 +24,43 @@ export default async function (req: Request): Promise<Response> {
     const challenge = await svc.entities.Challenge.get(challengeId).catch(() => null);
     if (!challenge) return Response.json({ error: 'Challenge not found' }, { status: 404 });
 
-    const entries = await svc.entities.ChallengeEntry.filter({ challenge_id: challengeId }, '-submitted_at', 1000);
+    // Recheck Circle membership for every result request.
+    let currentMembers: Set<string> | null = null;
+    if (challenge.scope === 'circle' || challenge.mode === 'guild') {
+      if (!user.did || !challenge.circle_ref) return Response.json({ error: 'Circle membership required' }, { status: 403 });
+      const circles = await svc.entities.Circle.filter({ at_uri: challenge.circle_ref }, '-created_date', 2);
+      if (circles.length !== 1 || !((circles[0].member_dids || []).includes(user.did) || circles[0].did === user.did)) {
+        return Response.json({ error: 'Circle membership required' }, { status: 403 });
+      }
+      currentMembers = new Set([...(circles[0].member_dids || []), circles[0].did].filter(Boolean));
+    }
+    const rows = await svc.entities.ChallengeEntry.filter({ challenge_id: challengeId }, '-submitted_at', 1000);
+    const entries = rows.filter((e: any) =>
+      e.status === 'approved' && !(e.moderator_labels || []).includes('spam_suspected') &&
+      (!currentMembers || currentMembers.has(e.participant_did || e.did))
+    );
 
-    // Only fetch settings for users who actually submitted entries (avoids scanning all 2000 SettingsConfig rows).
+    // Only fetch settings for users who actually submitted approved entries.
     const participantDids = [...new Set(entries.map((e: any) => e.participant_did || e.did).filter(Boolean))];
     const settingsRows = participantDids.length > 0
       ? await svc.entities.SettingsConfig.filter({ did: { $in: participantDids } }, '-updated_date', participantDids.length)
       : [];
 
-    // did -> { optIn, categories }
+    // Client-created settings naming someone else's DID must not set that
+    // collector's leaderboard consent. The newest owner-bound row wins.
+    const owners = participantDids.length > 0
+      ? await svc.entities.User.filter({ did: { $in: participantDids } }, '-created_date', participantDids.length * 2)
+      : [];
+    const ownerByDid = new Map();
+    const ambiguous = new Set();
+    for (const owner of owners) {
+      if (!owner.did) continue;
+      if (ownerByDid.has(owner.did)) ambiguous.add(owner.did);
+      else ownerByDid.set(owner.did, owner.id);
+    }
     const prefsByDid = new Map();
     for (const s of settingsRows) {
+      if (ambiguous.has(s.did) || ownerByDid.get(s.did) !== s.created_by_id || prefsByDid.has(s.did)) continue;
       const ch = (s.config || {}).challenges || {};
       prefsByDid.set(s.did, {
         optIn: ch.leaderboardOptIn === true,
@@ -66,8 +92,6 @@ export default async function (req: Request): Promise<Response> {
 
     const eligible: any[] = [];
     for (const e of entries) {
-      if (e.status === 'rejected') continue;
-      if ((e.moderator_labels || []).includes('spam_suspected')) continue;
       const did = e.participant_did || e.did;
       const ov = e.override_profile_visibility || {};
       let allow: boolean;
@@ -124,7 +148,7 @@ export default async function (req: Request): Promise<Response> {
       category: filteredCategory,
       feed: ranked,
       meta: {
-        totalParticipants: new Set(entries.map((e: any) => e.participant_did || e.did)).size,
+        totalParticipants: byDid.size,
         optInParticipants: byDid.size,
         challengeComplete: target > 0 && ranked.some((r: any) => r.score >= target),
       },
