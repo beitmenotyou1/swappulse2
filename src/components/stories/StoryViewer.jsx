@@ -252,11 +252,11 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
 
         {/* Author header */}
         <div className="absolute left-3 right-3 top-7 z-30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Avatar name={user?.author_name} src={user?.author_avatar} size={32} />
-            <span className="text-sm font-semibold text-white">{user?.author_name || 'Collector'}</span>
+            <span className="truncate text-sm font-semibold text-white">{user?.author_name || 'Collector'}</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button aria-label="Previous story segment" className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/70 text-white" onClick={back}>
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -327,7 +327,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
           {!isOwn && (
             <div className="mb-3 flex justify-center gap-2">
               {Object.entries(STORY_REACTIONS).map(([type, r]) => (
-                <button key={type} onClick={() => sendReaction(type)} title={r.label} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/40 text-base backdrop-blur transition hover:bg-primary/80">
+                <button key={type} onClick={() => sendReaction(type)} title={r.label} aria-label={`React: ${r.label}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/40 text-base backdrop-blur transition hover:bg-primary/80">
                   <span>{r.emoji}</span>
                 </button>
               ))}
