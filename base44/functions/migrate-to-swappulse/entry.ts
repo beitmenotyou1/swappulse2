@@ -299,7 +299,8 @@ export default async function(req: Request): Promise<Response> {
         original_bluesky_handle: originalHandle,
         // NOT setting migrated_from_bluesky=true — the user must retry
         ...(handleUpdated
-          ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
+          ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '',
+              ...(newHandle !== user.custom_handle ? { custom_handle: '', handle_verified: false } : {}) }
           : { handle_update_pending: true, pending_handle: targetHandle }),
       });
 
@@ -356,7 +357,8 @@ export default async function(req: Request): Promise<Response> {
         migrated_at: new Date().toISOString(),
         migration_reverted: false,
         ...(handleUpdated
-          ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
+          ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '',
+              ...(newHandle !== user.custom_handle ? { custom_handle: '', handle_verified: false } : {}) }
           : { handle_update_pending: true, pending_handle: targetHandle }),
       });
       return Response.json({
@@ -391,7 +393,7 @@ export default async function(req: Request): Promise<Response> {
     await updateSteps({ announcement: makeStep('success', '', new Date().toISOString()) });
 
     // 8. Store migration state on the user.
-    await base44.auth.updateMe({
+    await base44.asServiceRole.entities.User.update(user.id, {
       migrated_from_bluesky: true,
       original_bluesky_bio: originalBio,
       original_bluesky_profile: originalProfileJson,
@@ -400,7 +402,8 @@ export default async function(req: Request): Promise<Response> {
       migrated_at: new Date().toISOString(),
       migration_reverted: false,
       ...(handleUpdated
-        ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '' }
+        ? { bsky_handle: newHandle, handle_update_pending: false, pending_handle: '',
+              ...(newHandle !== user.custom_handle ? { custom_handle: '', handle_verified: false } : {}) }
         : { handle_update_pending: true, pending_handle: targetHandle }),
     });
 
