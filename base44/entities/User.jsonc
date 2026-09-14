@@ -160,9 +160,49 @@
         }
       }
     },
+    "custom_handle": {
+      "type": "string",
+      "description": "Verified custom-domain handle. Backend-managed after DNS and PDS validation.",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "handle_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Backend-managed custom-domain verification badge.",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "bsky_handle": {
       "type": "string",
-      "description": "Linked Bluesky handle (set when the user links their account via Settings)."
+      "description": "Linked Bluesky handle, managed by the backend after identity verification.",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "pds_url": {
       "type": "string",
