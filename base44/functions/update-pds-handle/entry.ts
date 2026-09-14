@@ -9,11 +9,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getPdsSessionForUser, pdsRequest } from '../../shared/pdsSession.ts';
 
+// This legacy endpoint previously changed the PDS handle without updating
+// the local verified claim. Use verifyHandleClaim, which binds DNS proof, PDS
+// acceptance and trusted state to the authenticated account.
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    return Response.json({ error: 'Use verifyHandleClaim to verify and update a custom handle.' }, { status: 410 });
 
     const body = await req.json().catch(() => ({}));
     const handle = String(body.handle || body.domain || '').trim().toLowerCase();
