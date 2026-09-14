@@ -1,0 +1,61 @@
+{
+  "name": "CommunityLabelerReview",
+  "type": "object",
+  "title": "CommunityLabelerReview",
+  "description": "Append-only admin review decision for a community labeler. Only the review-community-labeler backend may write this record.",
+  "properties": {
+    "labeler_id": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "rejected",
+        "revoked"
+      ]
+    },
+    "author_id": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "label_values": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "labeler_id",
+    "decision",
+    "author_id",
+    "did",
+    "category",
+    "label_values",
+    "reviewed_by",
+    "reviewed_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}
