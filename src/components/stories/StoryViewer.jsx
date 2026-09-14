@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Eye, Volume2, VolumeX, Loader2, Send } from 'lucide-react';
+import { X, Eye, Volume2, VolumeX, Loader2, Send, Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
 import { startOrFindConversation, sendDirectMessage } from '@/lib/dmBridge';
@@ -47,7 +47,11 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
   const [storyIdx, setStoryIdx] = useState(0);
   const [segIdx, setSegIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [manualPaused, setManualPaused] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
+  const [holding, setHolding] = useState(false);
+  const paused = manualPaused || holding;
   const [muted, setMuted] = useState(true);
   const [showSeenBy, setShowSeenBy] = useState(false);
   const [viewers, setViewers] = useState([]);
@@ -55,6 +59,8 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
   const [replyText, setReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
   const dragStartY = useRef(null);
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
   const videoRef = useRef(null);
   const viewedRef = useRef(new Set());
   const { toast } = useToast();
@@ -65,6 +71,32 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
   const segs = story ? segmentsOf(story) : [];
   const seg = segs[segIdx];
   const isOwn = story?.did === myDid;
+
+  useEffect(() => {
+    const previous = document.activeElement;
+    closeRef.current?.focus();
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const onReducedMotion = (event) => { if (event.matches) setManualPaused(true); };
+    media?.addEventListener?.('change', onReducedMotion);
+    if (document.documentElement.classList.contains('reduce-motion')) setManualPaused(true);
+    return () => {
+      media?.removeEventListener?.('change', onReducedMotion);
+      previous?.focus?.();
+    };
+  }, []);
+
+  const onDialogKeyDown = (event) => {
+    if (event.key === 'Escape') { event.preventDefault(); onClose(); return; }
+    if (event.key !== 'Tab') return;
+    const controls = Array.from(dialogRef.current?.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) || []).filter((element) => element.getClientRects().length);
+    if (!controls.length) { event.preventDefault(); dialogRef.current?.focus(); return; }
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  };
 
   useEffect(() => {
     (async () => { try { const { did } = await ensureUserDid(); setViewerDid(did || myDid || ''); } catch { /* ignore */ } })();
@@ -195,7 +227,13 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
   return (
     <div
       data-no-lightbox
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Story from ${user?.author_name || 'collector'}`}
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+      onKeyDown={onDialogKeyDown}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
     >
@@ -218,9 +256,20 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
             <Avatar name={user?.author_name} src={user?.author_avatar} size={32} />
             <span className="text-sm font-semibold text-white">{user?.author_name || 'Collector'}</span>
           </div>
-          <button aria-label="Close story" className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); onClose(); }}>
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button aria-label="Previous story segment" className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/70 text-white" onClick={back}>
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button aria-label={manualPaused ? 'Resume story' : 'Pause story'} aria-pressed={manualPaused} className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/70 text-white" onClick={() => setManualPaused((value) => !value)}>
+              {manualPaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+            </button>
+            <button aria-label="Next story segment" className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/70 text-white" onClick={advance}>
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <button ref={closeRef} aria-label="Close story" className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/70 text-white" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Segment render */}
@@ -246,7 +295,7 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
 
         {/* Mute toggle for video */}
         {isVideo && (
-          <button className="absolute bottom-36 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/50 p-2 text-white" onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}>
+          <button aria-label={muted ? 'Unmute story video' : 'Mute story video'} className="absolute bottom-36 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/70 p-2 text-white" onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}>
             {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </button>
         )}
@@ -256,19 +305,19 @@ export default function StoryViewer({ grouped, startDid, myDid, onClose, onViewe
           <button
             className="h-full flex-1"
             onClick={back}
-            onPointerDown={() => setPaused(true)}
-            onPointerUp={() => setPaused(false)}
-            onPointerCancel={() => setPaused(false)}
-            onPointerLeave={() => setPaused(false)}
+            onPointerDown={() => setHolding(true)}
+            onPointerUp={() => setHolding(false)}
+            onPointerCancel={() => setHolding(false)}
+            onPointerLeave={() => setHolding(false)}
             aria-label="Previous"
           />
           <button
             className="h-full flex-[2]"
             onClick={advance}
-            onPointerDown={() => setPaused(true)}
-            onPointerUp={() => setPaused(false)}
-            onPointerCancel={() => setPaused(false)}
-            onPointerLeave={() => setPaused(false)}
+            onPointerDown={() => setHolding(true)}
+            onPointerUp={() => setHolding(false)}
+            onPointerCancel={() => setHolding(false)}
+            onPointerLeave={() => setHolding(false)}
             aria-label="Next"
           />
         </div>
