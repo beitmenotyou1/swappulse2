@@ -15,7 +15,7 @@ export default async function (req) {
     const pack = await base44.asServiceRole.entities.StarterPack.get(packId).catch(() => null);
     if (!pack) return Response.json({ error: 'pack not found' }, { status: 404 });
 
-    const myDid = user.data?.did || '';
+    const myDid = user.did || '';
     if (!myDid) return Response.json({ error: 'Identity not provisioned yet.' }, { status: 409 });
 
     const memberDids = (pack.member_dids || []).filter((d) => d && d !== myDid);
@@ -26,24 +26,24 @@ export default async function (req) {
     for (const subjectDid of memberDids) {
       const existing = await base44.entities.Follow.filter({ subject_did: subjectDid, did: myDid }, '-created_date', 1).catch(() => []);
       if (existing.length) continue;
-      await base44.entities.Follow.create({
+      const created = await base44.entities.Follow.create({
         subject_did: subjectDid,
         did: myDid,
-      }).catch(() => {});
-      followed++;
+      }).catch(() => null);
+      if (created) followed++;
     }
 
-    // Join each recommended circle by adding myDid to member_dids (skip if already a member).
-    for (const circleId of (pack.circle_ids || [])) {
+    // The same authenticated join command enforces Circle visibility and
+    // membership rules for single joins and Starter Pack bulk joins.
+    for (const circleId of new Set((pack.circle_ids || []).filter((id) => typeof id === 'string' && id))) {
       const circle = await base44.asServiceRole.entities.Circle.get(circleId).catch(() => null);
-      if (!circle) continue;
-      const members = circle.member_dids || [];
-      if (members.includes(myDid)) continue;
-      await base44.asServiceRole.entities.Circle.update(circleId, {
-        member_dids: [...members, myDid],
-        member_count: (circle.member_count || members.length) + 1,
-      }).catch(() => {});
-      joined++;
+      if (!circle || (circle.member_dids || []).includes(myDid)) continue;
+      const response = await base44.functions.invoke('circle-membership', {
+        circle_id: circleId,
+        action: 'join',
+      }).catch(() => null);
+      const data = response?.data ?? response;
+      if (data?.ok && data.joined === true) joined++;
     }
 
     return Response.json({ ok: true, followed, joined });
