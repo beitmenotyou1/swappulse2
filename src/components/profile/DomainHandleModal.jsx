@@ -1,30 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { X, BadgeCheck, Loader2, Copy, Check, Globe } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, stampRecord } from '@/lib/atproto';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
 
-const HANDLE_CLAIM_NSID = 'org.swappulse.handleClaim';
-
 // Handle migration modal. The user enters a domain they own, publishes the
-// shown TXT record to their DNS, then taps Verify — SwapPulse looks up
-// _atproto.<domain> and, on match, persists a verified HandleClaim and
-// updates the user's handle.
+// shown TXT record to their DNS, then taps Verify. The backend verifies the
+// signed-in account's DID and updates the handle after the PDS accepts it.
 export default function DomainHandleModal({ onClose }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [domain, setDomain] = useState(user?.custom_handle || '');
-  const [did, setDid] = useState('');
-  const [signingKey, setSigningKey] = useState('');
+  const did = user?.did || '';
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    ensureUserDid()
-      .then((r) => { setDid(r.did); setSigningKey(r.signingKey); })
-      .catch(() => {});
-  }, []);
 
   const cleanDomain = domain
     .trim()
@@ -46,7 +35,7 @@ export default function DomainHandleModal({ onClose }) {
     if (!cleanDomain || !did || busy) return;
     setBusy(true);
     try {
-      const res = await base44.functions.invoke('verifyHandleClaim', { domain: cleanDomain, did });
+      const res = await base44.functions.invoke('verifyHandleClaim', { domain: cleanDomain });
       const data = res?.data || res;
       if (!data?.verified) {
         toast({
@@ -56,25 +45,6 @@ export default function DomainHandleModal({ onClose }) {
         });
         return;
       }
-      const now = new Date().toISOString();
-      const payload = {
-        domain: cleanDomain,
-        did,
-        verification_method: res.method || 'txt_record',
-        status: 'verified',
-        verified_at: now,
-        claimed_at: now,
-        legacy_handle: `${user?.custom_handle || user?.username || user?.bsky_handle || 'collector'}.swappulse.org`,
-      };
-      const stamped = await stampRecord(payload, HANDLE_CLAIM_NSID, did, signingKey);
-      await base44.entities.HandleClaim.create(stamped);
-      // Push the handle to the PDS so it propagates to the wider AT Protocol.
-      const upd = await base44.functions.invoke('update-pds-handle', { handle: cleanDomain });
-      const updData = upd?.data || upd;
-      if (!updData?.ok) {
-        throw new Error(updData?.error || 'PDS handle update failed');
-      }
-      await base44.auth.updateMe({ custom_handle: cleanDomain, handle_verified: true, bsky_handle: cleanDomain });
       toast({ title: 'Handle updated', description: `You are now @${cleanDomain} on Bluesky` });
       onClose?.();
     } catch (e) {
@@ -126,7 +96,7 @@ export default function DomainHandleModal({ onClose }) {
                 <div className="flex items-center justify-between gap-2 rounded-lg bg-secondary px-2.5 py-2">
                   <span className="text-muted-foreground">Name</span>
                   <code className="font-mono text-foreground">{txtName}</code>
-                  <button onClick={() => copy(txtName)} className="text-muted-foreground hover:text-foreground">
+                  <button aria-label="Copy TXT record name" onClick={() => copy(txtName)} className="text-muted-foreground hover:text-foreground">
                     {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
@@ -137,14 +107,11 @@ export default function DomainHandleModal({ onClose }) {
                 <div className="flex items-center justify-between gap-2 rounded-lg bg-secondary px-2.5 py-2">
                   <span className="text-muted-foreground">Value</span>
                   <code className="font-mono text-foreground">{txtValue}</code>
-                  <button onClick={() => copy(txtValue)} className="text-muted-foreground hover:text-foreground">
+                  <button aria-label="Copy TXT record value" onClick={() => copy(txtValue)} className="text-muted-foreground hover:text-foreground">
                     {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Verification also accepts a file at <code>https://{cleanDomain || 'yourdomain'}/.well-known/atproto-did</code> containing your DID.
-              </p>
             </div>
           )}
 
