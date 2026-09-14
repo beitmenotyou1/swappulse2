@@ -142,7 +142,7 @@ export default async function(req: Request): Promise<Response> {
     // 4. Clear migration state and set the reverted flag so profile editing
     //    is disabled on SwapPulse. The profile reverts to the original
     //    Bluesky profile and changes made during migration are undone.
-    await base44.auth.updateMe({
+    await base44.asServiceRole.entities.User.update(user.id, {
       migrated_from_bluesky: false,
       original_bluesky_bio: '',
       original_bluesky_profile: '',
@@ -161,7 +161,7 @@ export default async function(req: Request): Promise<Response> {
       lists_backfill_phase: 'lists',
       lists_backfill_complete: false,
       notifications_imported_at: '',
-      ...(handleReverted ? { bsky_handle: originalHandle } : {}),
+      ...(handleReverted ? { bsky_handle: originalHandle, custom_handle: '', handle_verified: false } : {}),
     });
 
     console.log(`[unmove-from-bluesky] user ${user.id} un-moved${handleReverted ? ` → @${originalHandle}` : ''}`);
