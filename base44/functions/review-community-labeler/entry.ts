@@ -17,10 +17,15 @@ export default async function (req: Request): Promise<Response> {
     const rows = await svc.entities.CommunityLabeler.filter({ id: labelerId }, '-created_date', 1);
     const labeler = rows?.[0];
     if (!labeler) return Response.json({ error: 'Labeler not found' }, { status: 404 });
-    const ownerRows = await svc.entities.User.filter({ id: labeler.created_by_id }, '-created_date', 1);
-    const owner = ownerRows?.[0];
-    if (!owner?.did || owner.did !== labeler.did) {
-      return Response.json({ error: 'Labeler DID does not belong to its author' }, { status: 409 });
+    // Invalid or orphaned legacy labelers must remain revocable.
+    if (decision === 'approved') {
+      const ownerRows = labeler.created_by_id
+        ? await svc.entities.User.filter({ id: labeler.created_by_id }, '-created_date', 1)
+        : [];
+      const owner = ownerRows?.[0];
+      if (!owner?.did || owner.did !== labeler.did) {
+        return Response.json({ error: 'Labeler DID does not belong to its author' }, { status: 409 });
+      }
     }
     const values = labeler.label_values;
     if (decision === 'approved' && (!Array.isArray(values) || !values.length || values.length > 20 ||
@@ -29,8 +34,8 @@ export default async function (req: Request): Promise<Response> {
     }
     const reviewedAt = new Date().toISOString();
     await svc.entities.CommunityLabelerReview.create({
-      labeler_id: labeler.id, decision, author_id: labeler.created_by_id,
-      did: labeler.did, category: labeler.category || 'other',
+      labeler_id: labeler.id, decision, author_id: String(labeler.created_by_id || ''),
+      did: String(labeler.did || ''), category: labeler.category || 'other',
       label_values: Array.isArray(values) ? values : [],
       reviewed_by: reviewer.id, reviewed_at: reviewedAt,
       created_by_id: reviewer.id,
