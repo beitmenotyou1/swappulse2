@@ -384,7 +384,12 @@ Deno.serve(async (req) => {
       // app password). Replaces the retired PdsCredential entity.
       const { setUserIdentity } = await import('../../shared/userIdentity.ts');
       await setUserIdentity(base44.asServiceRole, me.id, session.did, pdsUrl, appPassword);
-      await base44.auth.updateMe({ did: session.did, bsky_handle: session.handle });
+      await svc.entities.User.update(me.id, {
+        did: session.did, bsky_handle: session.handle,
+        custom_handle: '', handle_verified: false,
+      });
+      const previousClaims = await svc.entities.HandleClaim.filter({ created_by_id: me.id, status: 'verified' });
+      for (const claim of previousClaims) await svc.entities.HandleClaim.update(claim.id, { status: 'revoked' });
 
       return Response.json({
         linked: true,
