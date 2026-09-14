@@ -11,6 +11,10 @@ export default async function (req) {
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
     const body = await req.json().catch(() => ({}));
     const packId = body.starterPackId || null;
+    if (packId) {
+      const selected = await base44.asServiceRole.entities.StarterPack.filter({ id: packId }, '-created_date', 1);
+      if (!selected.length) return Response.json({ error: 'Starter Pack not found' }, { status: 404 });
+    }
 
     // Clear all existing site-wide flags.
     const current = await base44.asServiceRole.entities.StarterPack.filter({ is_site_wide: true }, '-created_date', 50);
