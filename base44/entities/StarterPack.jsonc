@@ -73,7 +73,19 @@
     "is_site_wide": {
       "type": "boolean",
       "default": false,
-      "description": "True when this pack is the admin-curated site-wide newcomer welcome pack. Only one pack may have this flag set at a time; setting it on a new pack clears it on all others (enforced by set-site-wide-starter-pack backend function)."
+      "description": "Admin-selected newcomer welcome pack. Only the backend may set this flag.",
+      "rls": {
+        "create": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "subscriber_count": {
       "type": "integer",
