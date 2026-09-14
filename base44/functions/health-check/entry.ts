@@ -15,7 +15,7 @@ export default async function (req) {
     const base44Status = checkBase44();
     // The public health endpoint must never turn a caller-supplied header or
     // request origin into a privileged outbound HTTP target.
-    const podcastRss = await checkPodcastRss('https://swappulse.org').catch(() => ({ status: 'down' }));
+    const podcastRss = await checkPodcastRss().catch(() => ({ status: 'down' }));
 
     const services = { base44: base44Status, database, tcgdex, pokewallet, 'atproto-relay': relay, smtp, vapid, 'podcast-rss': podcastRss, stripe: checkStripe(), nowpayments: checkNowPayments() };
     const allUp = Object.values(services).every((s) => s.status === 'up');
