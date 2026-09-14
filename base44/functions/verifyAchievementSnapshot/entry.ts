@@ -57,6 +57,10 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const svc = base44.asServiceRole;
+    // Deny cross-account DID requests before probing private snapshot storage.
+    if (caller.role !== 'admin' && did && (!caller.did || did !== caller.did)) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     let snapshot: any = null;
     if (snapshotId) {
@@ -67,6 +71,10 @@ export default async function (req: Request): Promise<Response> {
     }
     if (!snapshot) {
       return Response.json({ valid: false, reason: 'Snapshot not found' }, { status: 404 });
+    }
+    // A snapshot ID alone is not proof of permission to inspect its records.
+    if (caller.role !== 'admin' && (!caller.did || snapshot.did !== caller.did || snapshot.snapshot_data?.userDid !== caller.did)) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const data = snapshot.snapshot_data || {};
