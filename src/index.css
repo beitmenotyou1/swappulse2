@@ -21,15 +21,15 @@
     --muted-foreground: 215 16% 47%;    /* Text Secondary #64748b */
     --accent: 45 96% 53%;               /* Accent Gold    #fbbf24 */
     --accent-foreground: 217 33% 17%;
-    --success: 160 84% 39%;             /* Success Green  #10b981 */
+    --success: 160 84% 27%;             /* Semantic green: 5.03:1 on white */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;              /* Warning Amber  #f59e0b */
-    --warning-foreground: 217 33% 17%;
-    --destructive: 0 84% 60%;            /* Error Red      #ef4444 */
+    --warning: 38 92% 27%;              /* Semantic amber: 6.35:1 on white */
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 75% 37%;           /* Semantic red: 7.66:1 on white */
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;              /* Slate 200      #e2e8f0 */
-    --border-strong: 215 25% 78%;       /* Slate 300      #cbd5e1 */
-    --input: 215 25% 78%;
+    --border: 214 20% 48%;              /* Required control boundary: 4.58:1 on white */
+    --border-strong: 214 20% 48%;
+    --input: 214 20% 48%;
     --ring: 252 100% 64%;               /* Primary Purple */
     --primary-hover: 258 90% 66%;       /* Secondary Indigo #8b5cf6 (hover) */
     --primary-muted: 252 60% 52%;       /* Deep purple for emphasis */
@@ -68,14 +68,14 @@
     --accent: 45 96% 56%;
     --accent-foreground: 226 47% 9%;
     --success: 160 84% 45%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 226 47% 9%;
     --warning: 38 92% 56%;
     --warning-foreground: 226 47% 9%;
     --destructive: 0 84% 64%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 226 25% 20%;
-    --border-strong: 226 25% 28%;
-    --input: 226 25% 24%;
+    --destructive-foreground: 226 47% 9%;
+    --border: 226 25% 48%;
+    --border-strong: 226 25% 48%;
+    --input: 226 25% 48%;
     --ring: 252 100% 68%;
   }
 }
