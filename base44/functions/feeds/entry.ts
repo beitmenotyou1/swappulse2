@@ -119,22 +119,9 @@ Deno.serve(async (req) => {
         return Response.json({ feed: [], cursor: undefined });
       }
       case 'leaderboard': {
-        const challengeId = body.challengeId;
-        if (!challengeId) return Response.json({ error: 'challengeId required' }, { status: 400 });
-        const entries = await svc.entities.ChallengeEntry.filter({ challenge_id: challengeId }, '-created_date', 200);
-        const sortBy = body.sortBy || 'progress';
-        const ranked = entries
-          .map((e) => ({
-            rank: 0,
-            participantDid: e.participant_did,
-            participantName: e.participant_name,
-            entryType: e.entry_type,
-            score: sortBy === 'value' ? (e.collection_total_value || 0) : (e.set_completion_percent || 0),
-          }))
-          .sort((a, b) => b.score - a.score);
-        ranked.forEach((r, i) => (r.rank = i + 1));
-        const slice = ranked.slice(cursor, cursor + limit);
-        return Response.json({ entries: slice, cursor: slice.length === limit ? String(cursor + limit) : undefined });
+        // Retired: the legacy feed ignored scope, opt-in and verified state.
+        // getLeaderboard is the only authorised leaderboard API.
+        return Response.json({ error: 'Use getLeaderboard for challenge results.' }, { status: 410 });
       }
       case 'trade-listings': {
         // Open trade listings, newest first. Expired listings are hidden.
