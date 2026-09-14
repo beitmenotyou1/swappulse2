@@ -59,12 +59,11 @@ export function checkNowPayments() {
   return { status: 'up' };
 }
 
-export async function checkPodcastRss(origin: string) {
+export async function checkPodcastRss() {
   try {
-    if (!origin) throw new Error('App origin not configured');
-    const url = `${origin.replace(/\/$/, '')}/api/functions/podcast-rss-feed?did=did:plc:healthcheck000000000000`;
+    const url = 'https://swappulse.org/api/functions/podcast-rss-feed?did=did:plc:healthcheck000000000000';
     const start = Date.now();
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(10000) });
     // 200 = feed generated, 404 = no episodes for the probe DID (expected).
     // Both mean the function endpoint is alive; only 5xx/network errors are "down".
     if (res.status === 200 || res.status === 404) return { status: 'up', latencyMs: Date.now() - start };
