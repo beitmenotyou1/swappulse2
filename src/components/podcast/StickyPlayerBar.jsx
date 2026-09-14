@@ -19,11 +19,8 @@ export default function StickyPlayerBar() {
   const [showSpeed, setShowSpeed] = useState(false);
   if (!episode) return null;
 
-  const pct = duration ? (position / duration) * 100 : 0;
-  const onScrub = (e) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    seek(((e.clientX - r.left) / r.width) * (duration || 0));
-  };
+  const safeDuration = Number.isFinite(duration) ? Math.max(0, Math.floor(duration)) : 0;
+  const safePosition = Math.min(safeDuration, Math.max(0, Math.floor(position || 0)));
   const startPress = () => {
     const t = setTimeout(() => {
       cycleSpeed();
@@ -45,12 +42,18 @@ export default function StickyPlayerBar() {
       </div>
       <p className="hidden w-28 shrink-0 truncate text-sm font-medium sm:block">{episode.title}</p>
       <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{fmt(position)}</span>
-      <div className="relative flex-1">
-        <div className="relative h-1 w-full cursor-pointer rounded-full bg-border" onClick={onScrub}>
-          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-          <div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary shadow" style={{ left: `calc(${pct}% - 6px)` }} />
-        </div>
-      </div>
+      <input
+        type="range"
+        className="min-h-11 min-w-0 flex-1 cursor-pointer accent-primary"
+        min={0}
+        max={safeDuration}
+        step={1}
+        value={safePosition}
+        disabled={!safeDuration}
+        onChange={(e) => seek(Number(e.target.value))}
+        aria-label={`Seek in ${episode.title || 'podcast episode'}`}
+        aria-valuetext={`${fmt(safePosition)} of ${fmt(safeDuration)}`}
+      />
       <span className="w-9 shrink-0 text-xs tabular-nums text-muted-foreground">{fmt(duration)}</span>
       {episode.chapter_marks?.length > 0 && <ChapterDropdown chapters={episode.chapter_marks} onSeek={seek} />}
       <button onClick={() => skip(-15)} className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:text-foreground" title="Back 15s" aria-label="Back 15 seconds">
