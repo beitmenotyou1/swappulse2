@@ -1,0 +1,39 @@
+{
+  "name": "CircleAuthority",
+  "type": "object",
+  "description": "Backend-owned local Circle authority. Never imported from or published to AT Protocol. Circle metadata is not an access-control source.",
+  "properties": {
+    "circle_id": {
+      "type": "string"
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "owner_did": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "members_visible",
+        "private"
+      ]
+    },
+    "canonical_ref": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "circle_id",
+    "owner_user_id",
+    "owner_did",
+    "visibility"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}
