@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { ensureUserDid, stampRecord, NSID } from '@/lib/atproto';
-import { bridgeCircle } from '@/lib/federatedBridge';
+import { ensureUserDid } from '@/lib/atproto';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -38,30 +37,13 @@ export default function CreateCircleModal({ open, onClose, onCreated }) {
     setSubmitting(true);
     setError('');
     try {
-      const { did, signingKey } = await ensureUserDid();
-      const me = await base44.auth.me();
-      const profile = { did, name: me?.full_name || '', handle: me?.custom_handle || me?.username || me?.bsky_handle || '', avatar: '' };
-      const stamped = await stampRecord(
-        {
-          name: name.trim(),
-          description: description.trim(),
-          theme,
-          visibility,
-          region: theme === 'local_region' ? region.trim() : '',
-          member_dids: [did],
-          member_profiles: [profile],
-          member_count: 1,
-          author_name: me?.full_name || '',
-          author_handle: me?.custom_handle || me?.username || me?.bsky_handle || '',
-        },
-        NSID.CIRCLE,
-        did,
-        signingKey,
-      );
-      const created = await base44.entities.Circle.create(stamped);
-      bridgeCircle(stamped).then((res) => {
-        if (res.bridged) base44.entities.Circle.update(created.id, res).catch(() => {});
-      }).catch(() => {});
+      await ensureUserDid();
+      const response = await base44.functions.invoke('create-circle', {
+        name: name.trim(), description: description.trim(), theme, visibility,
+        region: theme === 'local_region' ? region.trim() : '',
+      });
+      if (!response.data?.ok || !response.data.circle) throw new Error(response.data?.error || t('circle.create.failed'));
+      const created = response.data.circle;
       onCreated?.(created);
       setName('');
       setDescription('');
