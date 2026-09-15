@@ -20,17 +20,18 @@ export default async function(req: Request): Promise<Response> {
 
     // Include private CollectionEntry only when the caller is the owner.
     let callerDid = '';
+    let callerId = '';
     try {
       const me = await base44.auth.me();
-      if (me?.did) callerDid = me.did;
+      if (me?.did) { callerDid = me.did; callerId = me.id; }
     } catch { /* guest, no private data */ }
 
     const [posts, trades, vouches, achievements, entries, journals, binders, rsvps, stories, collection] = await Promise.all([
       svc.entities.Post.filter({ did }, '-created_date', 50).catch(() => []),
-      svc.entities.TradeListing.filter({ did }, '-created_date', 50).catch(() => []),
+      svc.entities.TradeListing.filter(callerDid === did && callerId ? { did, created_by_id: callerId } : { did, visibility: 'public' }, '-created_date', 50).catch(() => []),
       svc.entities.Vouch.filter({ did }, '-created_date', 50).catch(() => []),
       svc.entities.Achievement.filter({ did, status: 'granted' }, '-unlocked_at', 50).catch(() => []),
-      svc.entities.ChallengeEntry.filter({ did }, '-created_date', 50).catch(() => []),
+      callerDid === did && callerId ? svc.entities.ChallengeEntry.filter({ created_by_id: callerId }, '-created_date', 50).catch(() => []) : Promise.resolve([]),
       svc.entities.Journal.filter({ did }, '-created_date', 50).catch(() => []),
       svc.entities.Binder.filter({ did }, '-created_date', 50).catch(() => []),
       svc.entities.MeetupRsvp.filter({ did }, '-created_date', 50).catch(() => []),
