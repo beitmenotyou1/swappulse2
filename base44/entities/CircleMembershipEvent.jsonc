@@ -1,0 +1,35 @@
+{
+  "name": "CircleMembershipEvent",
+  "type": "object",
+  "description": "Append-only, participant-authenticated local Circle membership events. Built-in created_date orders events; ambiguous simultaneous transitions deny access. Never federated.",
+  "properties": {
+    "circle_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "did": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "active",
+        "left"
+      ]
+    }
+  },
+  "required": [
+    "circle_id",
+    "user_id",
+    "did",
+    "state"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}
