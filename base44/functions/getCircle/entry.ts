@@ -1,56 +1,38 @@
-// §2.7 getCircle - resolves a circle for the viewer: membership status,
-// whether the viewer may see the member list, and (for members only) the
-// circle-scoped trade listings. Private circles are hidden from non-members.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getCircleAccess, getCircleMembers, projectCircle } from '../../shared/circleAccess.ts';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
     const svc = base44.asServiceRole;
-
     const body = await req.json().catch(() => ({}));
-    const circleId = body.circleId;
-    if (!circleId) return Response.json({ error: 'circleId required' }, { status: 400 });
-
+    const circleId = typeof body.circleId === 'string' ? body.circleId.trim() : '';
+    if (!circleId || circleId.length > 128) return Response.json({ error: 'circleId required' }, { status: 400 });
+    const access = await getCircleAccess(svc, circleId, user);
     const circle = await svc.entities.Circle.get(circleId).catch(() => null);
-    if (!circle) return Response.json({ error: 'Circle not found' }, { status: 404 });
-
-    const viewerDid = user?.did || '';
-    const isCurator = !!user && (circle.did === viewerDid || circle.created_by_id === user.id);
-    const isMember = !!viewerDid && (circle.member_dids || []).includes(viewerDid);
-    const canSeeMembers = isCurator || isMember || circle.visibility === 'public';
-
-    // Parallelize the two independent fetches (exit check + scoped trades).
-    const [exits, scopedTrades] = await Promise.all([
-      viewerDid
-        ? svc.entities.CircleExit.filter({ circle_id: circleId, did: viewerDid }).catch(() => [])
-        : Promise.resolve([]),
-      (isMember || isCurator)
-        ? svc.entities.TradeListing.filter(
-            { status: 'open', visibility: 'circle_scoped', circle_ref: circle.at_uri },
-            '-created_date',
-            50,
-          ).catch(() => [])
-        : Promise.resolve([]),
-    ]);
-    const hasExited = exits.length > 0;
-
-    const denied = circle.visibility !== 'public' && !isMember && !isCurator;
-    const safeCircle = denied
-      ? { id: circle.id, name: circle.name, visibility: circle.visibility, theme: circle.theme, member_count: circle.member_count }
-      : circle;
-
+    const authority = access.authority;
+    // Return the same response for missing and inaccessible private Circles.
+    if (!circle || (authority ? authority.visibility !== 'public' && !access.isMember : circle.visibility !== 'public')) {
+      return Response.json({ error: 'Circle not found' }, { status: 404 });
+    }
+    const members = authority ? await getCircleMembers(svc, authority) : [];
+    const canSeeMembers = !!authority && (access.isMember || authority.visibility === 'public');
+    const refs = authority ? [authority.circle_id, authority.canonical_ref].filter(Boolean) : [];
+    const rows = access.isMember ? await svc.entities.TradeListing.filter({
+      status: 'open', visibility: 'circle_scoped', circle_ref: { $in: refs },
+    }, '-created_date', 50) : [];
+    const scopedTrades = rows.filter((row: any) =>
+      members.some((member: any) => member.id === row.created_by_id && member.did === row.did) &&
+      (!row.expires_at || new Date(row.expires_at).getTime() > Date.now())
+    );
     return Response.json({
-      circle: safeCircle,
-      isCurator,
-      isMember,
-      hasExited,
-      canSeeMembers,
-      denied,
-      scopedTrades,
+      circle: projectCircle(circle, authority, members, canSeeMembers),
+      isCurator: access.isCurator, isMember: access.isMember, hasExited: access.hasExited,
+      canSeeMembers, denied: false, membershipAvailable: !!authority, scopedTrades,
     });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch (error: any) {
+    console.error('getCircle:', error?.message);
+    return Response.json({ error: 'Could not load Circle' }, { status: 503 });
   }
 });
