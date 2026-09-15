@@ -3,6 +3,7 @@
 // entry with status approved/rejected, the validated contribution_count, and
 // the SHA-256 verification_hash. Returns the created entry + validation result.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getCircleAccess } from '../../shared/circleAccess.ts';
 import { validateEntry } from '../../shared/challengeValidation.ts';
 
 export default async function (req: Request): Promise<Response> {
@@ -31,11 +32,8 @@ export default async function (req: Request): Promise<Response> {
       return Response.json({ error: 'This challenge metric is not yet available for verified submissions' }, { status: 409 });
     }
     if (challenge.scope === 'circle' || challenge.mode === 'guild') {
-      if (!user.did || !challenge.circle_ref) {
-        return Response.json({ error: 'Circle membership required' }, { status: 403 });
-      }
-      const circles = await svc.entities.Circle.filter({ at_uri: challenge.circle_ref }, '-created_date', 2);
-      if (circles.length !== 1 || !(circles[0].member_dids || []).includes(user.did)) {
+      const access = await getCircleAccess(svc, challenge.circle_ref, user);
+      if (!access.isMember) {
         return Response.json({ error: 'Circle membership required' }, { status: 403 });
       }
     }

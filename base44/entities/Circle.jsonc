@@ -2,7 +2,7 @@
   "name": "Circle",
   "type": "object",
   "title": "Circle",
-  "description": "org.swappulse.circle \u2014 a collector circle (themed community group), mirrored to AT Protocol as a real org.swappulse.circle record so circles are portable community objects across PDSs and SwapPulse instances. Circle membership is encoded in member_dids so the AppView membership-check layer can resolve who may see circle-scoped content.",
+  "description": "Circle metadata and optional public federation projection. Local access is granted only by CircleAuthority and participant-authenticated CircleMembershipEvent records, never member_dids.",
   "properties": {
     "name": {
       "type": "string",
@@ -128,32 +128,8 @@
         }
       ]
     },
-    "create": {
-      "created_by_id": "{{user.id}}"
-    },
-    "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": false,
+    "update": false,
+    "delete": false
   }
 }

@@ -263,7 +263,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
     (async () => {
       try {
         const res = await base44.functions.invoke('getMyCircles', {});
-        setCircles((res.data?.circles || []).filter((c) => c.at_uri));
+        setCircles((res.data?.circles || []).filter((c) => c.id));
       } catch {
         setCircles([]);
       }
@@ -532,7 +532,7 @@ function CreateTradeModal({ open, onClose, onCreated, initialOffers = [] }) {
                   label={tr('trade.visibleToCircle')}
                   options={[
                     { value: '', label: tr('trade.selectCircle') },
-                    ...circles.map((c) => ({ value: c.at_uri, label: c.name || 'Circle' })),
+                    ...circles.map((c) => ({ value: c.id, label: c.name || 'Circle' })),
                   ]}
                 />
               )}

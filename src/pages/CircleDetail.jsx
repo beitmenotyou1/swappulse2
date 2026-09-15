@@ -73,7 +73,7 @@ export default function CircleDetail() {
   }
 
   const c = data.circle;
-  const canJoin = !data.isMember && !data.isCurator && !data.denied && c.visibility !== 'private';
+  const canJoin = !!user && data.membershipAvailable !== false && !data.isMember && !data.isCurator && !data.denied && c.visibility !== 'private';
   const memberCount = c.member_count || 1;
 
   return (

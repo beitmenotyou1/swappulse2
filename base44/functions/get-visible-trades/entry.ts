@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { canViewCircleContent } from '../../shared/federatedVisibility.ts';
+import { canViewCircleScopedListing } from '../../shared/federatedVisibility.ts';
 
 async function canViewListing(svc: any, listing: any, viewer: any, wishlistIds: Set<string>): Promise<boolean> {
   if (!listing) return false;
@@ -10,7 +10,7 @@ async function canViewListing(svc: any, listing: any, viewer: any, wishlistIds: 
   if (listing.visibility === 'public' || !listing.visibility) return true;
   if (!viewer?.did) return false;
   if (listing.visibility === 'circle_scoped') {
-    return !!listing.circle_ref && canViewCircleContent(svc, listing.circle_ref, viewer.did);
+    return !!listing.circle_ref && canViewCircleScopedListing(svc, listing, viewer.did);
   }
   if (listing.visibility === 'wishlist_only') {
     return (listing.offer_card_ids || []).some((id: string) => wishlistIds.has(id));

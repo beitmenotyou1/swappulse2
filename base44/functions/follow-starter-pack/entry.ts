@@ -36,8 +36,6 @@ export default async function (req) {
     // The same authenticated join command enforces Circle visibility and
     // membership rules for single joins and Starter Pack bulk joins.
     for (const circleId of new Set((pack.circle_ids || []).filter((id) => typeof id === 'string' && id))) {
-      const circle = await base44.asServiceRole.entities.Circle.get(circleId).catch(() => null);
-      if (!circle || (circle.member_dids || []).includes(myDid)) continue;
       const response = await base44.functions.invoke('circle-membership', {
         circle_id: circleId,
         action: 'join',
