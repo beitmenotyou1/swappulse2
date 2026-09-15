@@ -3,6 +3,7 @@
 // prefs, excludes opted-out users (default opt-OUT), scores by goal.metric, ranks.
 // Collective challenges return aggregate progress only (no per-user ranking).
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getCircleAccess, getCircleMembers } from '../../shared/circleAccess.ts';
 
 const CATEGORY_ENUM = [
   'helpful-trader', 'accuracy-champion', 'community-builder', 'set-completer',
@@ -24,20 +25,18 @@ export default async function (req: Request): Promise<Response> {
     const challenge = await svc.entities.Challenge.get(challengeId).catch(() => null);
     if (!challenge) return Response.json({ error: 'Challenge not found' }, { status: 404 });
 
-    // Recheck Circle membership for every result request.
-    let currentMembers: Set<string> | null = null;
+    // Metadata/member arrays supplied by a curator or remote PDS confer no access.
+    let currentMembers: Map<string, string> | null = null;
     if (challenge.scope === 'circle' || challenge.mode === 'guild') {
-      if (!user.did || !challenge.circle_ref) return Response.json({ error: 'Circle membership required' }, { status: 403 });
-      const circles = await svc.entities.Circle.filter({ at_uri: challenge.circle_ref }, '-created_date', 2);
-      if (circles.length !== 1 || !((circles[0].member_dids || []).includes(user.did) || circles[0].did === user.did)) {
-        return Response.json({ error: 'Circle membership required' }, { status: 403 });
-      }
-      currentMembers = new Set([...(circles[0].member_dids || []), circles[0].did].filter(Boolean));
+      const access = await getCircleAccess(svc, challenge.circle_ref, user);
+      if (!access.isMember) return Response.json({ error: 'Circle membership required' }, { status: 403 });
+      const members = await getCircleMembers(svc, access.authority);
+      currentMembers = new Map(members.map((member: any) => [member.did, member.id]));
     }
     const rows = await svc.entities.ChallengeEntry.filter({ challenge_id: challengeId }, '-submitted_at', 1000);
     const entries = rows.filter((e: any) =>
       e.status === 'approved' && !(e.moderator_labels || []).includes('spam_suspected') &&
-      (!currentMembers || currentMembers.has(e.participant_did || e.did))
+      (!currentMembers || currentMembers.get(e.participant_did || e.did) === e.created_by_id)
     );
 
     // Only fetch settings for users who actually submitted approved entries.
