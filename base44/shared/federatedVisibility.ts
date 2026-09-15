@@ -11,28 +11,18 @@
 //   const canSee = await canViewCircleContent(svc, circleAtUri, viewerDid);
 //   if (!canSee) return Response.json({ error: 'Not authorized' }, { status: 403 });
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { getCircleAccess } from './circleAccess.ts';
 
-// Check whether a viewer DID is a member (or curator) of a circle identified by
-// its at:// URI. Resolves the circle from the local DB (ingested via firehose
-// or created locally). Returns true only if membership is confirmed.
-export async function canViewCircleContent(svc: any, circleAtUri: string, viewerDid: string): Promise<boolean> {
-  if (!viewerDid) return false;
-  if (!circleAtUri) return false; // a scoped resource requires a real Circle reference
-
+// Accept immutable local IDs, or an explicitly pinned public AT reference.
+// A DID-only caller must resolve to exactly one local account.
+export async function canViewCircleContent(svc: any, reference: string, viewerDid: string): Promise<boolean> {
+  if (!viewerDid || !reference) return false;
   try {
-    // An at:// reference must resolve to exactly one Circle. A newer forged
-    // duplicate must never shadow the genuine Circle's membership list.
-    const circles = await svc.entities.Circle.filter({ at_uri: circleAtUri }, '-created_date', 2).catch(() => []);
-    if (circles?.length !== 1) {
-      console.warn('federatedVisibility: missing or ambiguous Circle reference', circleAtUri);
-      return false;
-    }
-    const circle = circles[0];
-    return circle.did === viewerDid || (circle.member_dids || []).includes(viewerDid);
-  } catch (e) {
-    console.error('federatedVisibility: canViewCircleContent error', e?.message || e);
-    return false; // fail closed
+    const users = await svc.entities.User.filter({ did: viewerDid }, '-created_date', 2);
+    if (users.length !== 1) return false;
+    return (await getCircleAccess(svc, reference, users[0])).isMember;
+  } catch {
+    return false;
   }
 }
 
@@ -64,5 +54,13 @@ export async function canViewCircleScopedListing(svc: any, listing: any, viewerD
   if (!listing) return false;
   if (listing.visibility !== 'circle_scoped') return true; // public or wishlist_only, not circle-scoped
   if (!listing.circle_ref) return false; // scoped but no circle ref, fail closed
-  return canViewCircleContent(svc, listing.circle_ref, viewerDid);
+  if (!(await canViewCircleContent(svc, listing.circle_ref, viewerDid))) return false;
+  // A client-injected listing must not appear in a Circle its author has not joined.
+  try {
+    const authors = await svc.entities.User.filter({ id: listing.created_by_id }, '-created_date', 2);
+    if (authors.length !== 1 || authors[0].did !== listing.did) return false;
+    return (await getCircleAccess(svc, listing.circle_ref, authors[0])).isMember;
+  } catch {
+    return false;
+  }
 }
