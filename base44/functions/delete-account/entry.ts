@@ -38,6 +38,8 @@ const ENTITY_CLEANUP = [
   { name: 'Reputation' },
   { name: 'Circle' },
   { name: 'CircleExit' },
+  { name: 'CircleAuthority', userIdFields: ['owner_user_id'] },
+  { name: 'CircleMembershipEvent', userIdFields: ['user_id'] },
   { name: 'Meetup' },
   { name: 'MeetupRsvp' },
   { name: 'VoiceSpace' },

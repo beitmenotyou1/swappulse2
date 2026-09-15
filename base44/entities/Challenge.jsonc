@@ -58,7 +58,7 @@
     },
     "circle_ref": {
       "type": "string",
-      "description": "at:// URI of the scoping Circle (required when scope is circle)"
+      "description": "Immutable local Circle ID for application scope, or an explicitly pinned public AT URI. Required when scope is circle."
     },
     "goal": {
       "type": "object",

@@ -1,7 +1,5 @@
-// federatedVisibility — membership-check AppView layer for scoped federated
-// records. Enforces circle membership and wishlist ownership on read paths
-// so that circle_scoped and wishlist_only records published to the PDS are
-// only visible to authorized viewers.
+// Local AppView visibility checks. These cannot make a public PDS record
+// confidential: circle-scoped and wishlist-only content must stay off the PDS.
 //
 // FAIL-CLOSED: any error in membership resolution returns false (deny). This
 // is the safe default — a misconfiguration or transient error hides content

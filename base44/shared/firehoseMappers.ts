@@ -217,10 +217,11 @@ function mapWishlistFields(val: any, atUri: string, did: string) {
 }
 function mapCircleFields(val: any, atUri: string, did: string) {
   return {
-    name: val.name || '', description: val.description || '', member_dids: val.memberDids || [],
+    // Curator-authored remote lists are not participant-consented membership.
+    name: val.name || '', description: val.description || '', member_dids: [],
     member_count: val.memberCount || 1, visibility: val.visibility || 'public', theme: val.theme || 'general',
     region: val.region || '', author_name: val.curatorName || '', author_handle: val.curatorHandle || '',
-    did: val.curatorDid || did, at_uri: atUri, cid: '', record_type: 'org.swappulse.circle', bridged: true,
+    did, at_uri: atUri, cid: '', record_type: 'org.swappulse.circle', bridged: true,
   };
 }
 function mapMeetupFields(val: any, atUri: string, did: string) {

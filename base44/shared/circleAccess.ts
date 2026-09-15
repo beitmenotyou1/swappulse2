@@ -22,6 +22,9 @@ export async function resolveCircleAuthority(svc: any, reference: string) {
   const authority = rows[0];
   if (!authority.circle_id || !authority.owner_user_id || !authority.owner_did ||
       !['private', 'members_visible', 'public'].includes(authority.visibility)) return null;
+  // Deleting the Circle must also make every stale scope reference unusable.
+  const circle = await svc.entities.Circle.get(authority.circle_id).catch(() => null);
+  if (!circle) return null;
   return authority;
 }
 

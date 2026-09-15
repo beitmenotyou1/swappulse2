@@ -24,6 +24,8 @@ const ENTITY_CLEANUP = [
   { name: 'TradeChain' }, { name: 'TradingFeedback' },
   { name: 'Vouch', extra: ['voucher_did', 'subject_did'] },
   { name: 'Reputation' }, { name: 'Circle' }, { name: 'CircleExit' },
+  { name: 'CircleAuthority', userIdFields: ['owner_user_id'] },
+  { name: 'CircleMembershipEvent', userIdFields: ['user_id'] },
   { name: 'Meetup' }, { name: 'MeetupRsvp' }, { name: 'VoiceSpace' },
   { name: 'SpaceParticipant' }, { name: 'Journal' }, { name: 'Story' },
   { name: 'StoryView' }, { name: 'PodcastEpisode' }, { name: 'PodcastPlay' },
@@ -186,12 +188,13 @@ export default async function (req: Request): Promise<Response> {
         } catch (e) { console.error('enforcement: trade lookup failed', e?.message); }
 
         // Phase 2: Delete all entities by created_by_id / did
-        for (const { name, extra } of ENTITY_CLEANUP) {
+        for (const { name, extra, userIdFields } of ENTITY_CLEANUP) {
           try {
             const entityApi = svc.entities[name];
             if (!entityApi?.deleteMany) { results[name] = 'skipped'; continue; }
             const orParts: any[] = [{ created_by_id: targetUserId }, { did: targetDid }];
             if (extra) for (const field of extra) orParts.push({ [field]: targetDid });
+            if (userIdFields) for (const field of userIdFields) orParts.push({ [field]: targetUserId });
             await entityApi.deleteMany({ $or: orParts });
             results[name] = 'ok';
           } catch (e) { results[name] = `error: ${e?.message}`; }
