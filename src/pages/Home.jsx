@@ -32,8 +32,7 @@ const ALL_TABS = [
 
 export default function Home() {
   useSEO({
-    title: 'Home Feed',
-    description: 'Discover fresh pack pulls, trades, and showcases from the SwapPulse Pokémon TCG collector community.',
+    description: 'Track your Pokémon TCG cards, build digital binders and find trades with other collectors. Free, open source and ad-free. Now in beta.',
     canonicalPath: '/',
     jsonLd: { '@context': 'https://schema.org', '@type': 'WebSite', name: 'SwapPulse', url: 'https://swappulse.org' },
   });
@@ -201,6 +200,17 @@ export default function Home() {
         </div>
       </div>
 
+      {!user && (
+        <section className="px-4 pt-6 pb-4 text-center">
+          <h1 className="text-2xl font-bold text-foreground">{tr('home.hero.title')}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{tr('home.hero.sub')}</p>
+          <div className="mt-4 flex justify-center gap-3">
+            <Link to="/register" className="inline-flex items-center gap-1 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">{tr('feed.createAccount')}</Link>
+            <Link to="/explore" className="inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-secondary">{tr('feed.exploreCards')}</Link>
+          </div>
+        </section>
+      )}
+
       {user && <CategoryFilterChips value={category} onChange={setCategory} />}
 
       {user && <SecurityPromptBanner />}
@@ -242,17 +252,8 @@ export default function Home() {
               <p className="mt-1 text-sm text-muted-foreground">{tr('feed.quietSub')}</p>
               <Link to="/explore" className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{tr('feed.discoverCollectors')}</Link>
             </>
-          ) : user ? (
-            <p className="text-sm text-muted-foreground">{tr('feed.noPosts')}</p>
           ) : (
-            <>
-              <p className="text-lg font-bold">{tr('feed.welcome')}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{tr('feed.welcomeSub')}</p>
-              <div className="mt-4 flex justify-center gap-3">
-                <Link to="/register" className="inline-flex items-center gap-1 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">{tr('feed.createAccount')}</Link>
-                <Link to="/explore" className="inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-secondary">{tr('feed.exploreCards')}</Link>
-              </div>
-            </>
+            <p className="text-sm text-muted-foreground">{tr('feed.noPosts')}</p>
           )}
         </div>
       ) : (

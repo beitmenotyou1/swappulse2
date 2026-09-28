@@ -279,7 +279,7 @@ export default function Privacy() {
             </p>
             <p><strong>Essential</strong>, login, session, and security. Always on; required for the site to function.</p>
             <p><strong>Functional</strong>, preferences (theme, language, accessibility), offline cache, E2EE private keys (IndexedDB), and PWA features.</p>
-            <p><strong>Analytics</strong>, aggregate usage insights. No individual tracking or third-party profiling.</p>
+            <p><strong>Analytics</strong>: usage statistics collected by our hosting platform, Base44, such as which pages you visit and how long a visit lasts. They are linked to a random identifier stored in your browser and, if you are signed in, your account ID. SwapPulse does not use analytics for advertising.</p>
             <p><strong>Marketing</strong>, onboarding emails and the weekly digest. Off by default.</p>
             <p>
               We do not use third-party tracking cookies. Your session token is stored locally on your device and is
@@ -349,7 +349,7 @@ export default function Privacy() {
               <li>Moderation logs, bot-protection audit records, and dispute records may be retained for a reasonable period for audit and legal purposes.</li>
               <li>Only administrator-approved scanner labels may be retained in de-identified aggregate quality reports. Card photos are not automatically included in training exports.</li>
               <li>Podcast episodes published to your RSS feed may be cached by external podcast apps even after deletion on SwapPulse.</li>
-              <li>Anonymized, aggregated analytics data may be retained indefinitely.</li>
+              <li>Analytics data may be retained indefinitely.</li>
               <li>E2EE direct messages: once your account is deleted, the ciphertext is removed from our servers. Messages already decrypted on a recipient's device remain there under their control.</li>
             </ul>
 
