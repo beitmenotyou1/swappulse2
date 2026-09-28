@@ -6,33 +6,38 @@
 
 @layer base {
   :root {
-    /* SwapPulse design system - §5.1 (Proton-inspired light theme) */
-    --background: 0 0% 100%;            /* Surface Light   #ffffff */
-    --foreground: 217 33% 17%;          /* Text Primary    #1e293b */
-    --card: 0 0% 100%;                  /* Surface Light   #ffffff */
-    --card-foreground: 217 33% 17%;
-    --popover: 0 0% 100%;               /* Surface Light   #ffffff */
-    --popover-foreground: 217 33% 17%;
-    --primary: 252 100% 64%;            /* Primary Purple  #6d4aff */
+    /* SwapPulse brand palette: Deep Navy, Electric Blue, Cyan, Sky, Stone */
+    --brand-deep-navy: #0B1F44;
+    --brand-electric-blue: #3B82F6;
+    --brand-cyan: #06D6C7;
+    --brand-sky: #7DD3FC;
+    --brand-stone: #EAE7DF;
+    --background: 44 21% 98%;
+    --foreground: 219 72% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 219 72% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 219 72% 15%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;           /* Slate 100 - chips / hover containers */
-    --secondary-foreground: 217 33% 17%;
-    --muted: 210 40% 98%;               /* Surface Gray   #f8fafc */
-    --muted-foreground: 215 16% 47%;    /* Text Secondary #64748b */
-    --accent: 45 96% 53%;               /* Accent Gold    #fbbf24 */
-    --accent-foreground: 217 33% 17%;
+    --secondary: 199 95% 94%;
+    --secondary-foreground: 219 72% 15%;
+    --muted: 44 21% 90%;
+    --muted-foreground: 219 22% 38%;
+    --accent: 176 95% 43%;
+    --accent-foreground: 219 72% 15%;
     --success: 160 84% 27%;             /* Semantic green: 5.03:1 on white */
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 27%;              /* Semantic amber: 6.35:1 on white */
     --warning-foreground: 0 0% 100%;
     --destructive: 0 75% 37%;           /* Semantic red: 7.66:1 on white */
     --destructive-foreground: 0 0% 100%;
-    --border: 214 20% 48%;              /* Required control boundary: 4.58:1 on white */
-    --border-strong: 214 20% 48%;
-    --input: 214 20% 48%;
-    --ring: 252 100% 64%;               /* Primary Purple */
-    --primary-hover: 258 90% 66%;       /* Secondary Indigo #8b5cf6 (hover) */
-    --primary-muted: 252 60% 52%;       /* Deep purple for emphasis */
+    --border: 199 45% 72%;
+    --border-strong: 219 40% 42%;
+    --input: 199 45% 72%;
+    --ring: 217 91% 60%;
+    --primary-hover: 217 91% 54%;
+    --primary-muted: 219 72% 30%;
     --radius: 0.75rem;                  /* Cards 12px */
     --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -52,31 +57,31 @@
   }
 
   .dark {
-    /* Midnight Vault - restored previous dark theme */
-    --background: 226 47% 9%;
-    --foreground: 210 40% 96%;
-    --card: 226 42% 12%;
-    --card-foreground: 210 40% 96%;
-    --popover: 226 42% 14%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 252 100% 68%;
+    /* SwapPulse dark theme */
+    --background: 219 72% 10%;
+    --foreground: 44 21% 90%;
+    --card: 219 60% 14%;
+    --card-foreground: 44 21% 90%;
+    --popover: 219 60% 16%;
+    --popover-foreground: 44 21% 90%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 226 30% 18%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 226 30% 14%;
-    --muted-foreground: 215 25% 65%;
-    --accent: 45 96% 56%;
-    --accent-foreground: 226 47% 9%;
+    --secondary: 219 45% 20%;
+    --secondary-foreground: 44 21% 90%;
+    --muted: 219 40% 17%;
+    --muted-foreground: 199 40% 72%;
+    --accent: 176 95% 43%;
+    --accent-foreground: 219 72% 10%;
     --success: 160 84% 45%;
-    --success-foreground: 226 47% 9%;
+    --success-foreground: 219 72% 10%;
     --warning: 38 92% 56%;
-    --warning-foreground: 226 47% 9%;
+    --warning-foreground: 219 72% 10%;
     --destructive: 0 84% 64%;
-    --destructive-foreground: 226 47% 9%;
-    --border: 226 25% 48%;
-    --border-strong: 226 25% 48%;
-    --input: 226 25% 48%;
-    --ring: 252 100% 68%;
+    --destructive-foreground: 219 72% 10%;
+    --border: 219 30% 34%;
+    --border-strong: 199 45% 56%;
+    --input: 219 30% 34%;
+    --ring: 217 91% 60%;
   }
 }
 
@@ -154,7 +159,7 @@
     50% { transform: scale(1.05); }
   }
   .text-gradient-pulse {
-    background: linear-gradient(120deg, hsl(252 100% 64%), hsl(258 90% 66%));
+    background: linear-gradient(120deg, #0B1F44, #3B82F6 58%, #06D6C7);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
