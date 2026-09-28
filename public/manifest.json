@@ -3,12 +3,12 @@
   "short_name": "SwapPulse",
   "description": "A decentralised social network for Pokémon TCG collectors.",
   "display": "standalone",
-  "background_color": "#0F1117",
-  "theme_color": "#0F1117",
+  "background_color": "#0B1F44",
+  "theme_color": "#0B1F44",
   "start_url": "/",
   "icons": [
-    { "src": "https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/fc2637b08_screen.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "https://media.base44.com/images/public/6a63d9d64a4d65d370c70892/fc2637b08_screen.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "shortcuts": [
     { "name": "Trade Board", "url": "/trades" },
