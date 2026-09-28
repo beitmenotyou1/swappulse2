@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">SwapPulse logo</title>
+  <desc id="desc">Interlocking exchange arrows representing movement, liquidity and continuous swapping.</desc>
+  <defs>
+    <linearGradient id="g1" x1="34" y1="52" x2="210" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1F44"/>
+      <stop offset=".58" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="222" y1="197" x2="45" y2="132" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1F44"/>
+      <stop offset=".5" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#06D6C7"/>
+    </linearGradient>
+  </defs>
+  <path d="M27 84c0-28 23-51 51-51h63V12l78 59-78 59v-23H82c-13 0-24 11-24 24v7l-31-24V84z" fill="url(#g1)"/>
+  <path d="M229 172c0 28-23 51-51 51h-63v21l-78-59 78-59v23h59c13 0 24-11 24-24v-7l31 24v30z" fill="url(#g2)"/>
+  <path d="M61 133c3-23 21-42 45-47h42l-31 23H84c-13 0-23 11-23 24z" fill="#06D6C7" opacity=".92"/>
+  <path d="M195 123c-3 23-21 42-45 47h-42l31-23h33c13 0 23-11 23-24z" fill="#0B1F44" opacity=".86"/>
+</svg>
