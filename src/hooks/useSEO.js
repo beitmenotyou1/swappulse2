@@ -107,7 +107,11 @@ export default function useSEO({
       if (loc === currentLocale) continue;
       appendMeta({ property: 'og:locale:alternate', content: LOCALE_TO_OG[loc] || loc.replace('-', '_') });
     }
-    if (ogImage) setMeta({ property: 'og:image', content: ogImage });
+    if (ogImage) {
+      setMeta({ property: 'og:image', content: ogImage });
+      setMeta({ property: 'og:image:alt', content: fullTitle });
+      setMeta({ name: 'twitter:image:alt', content: fullTitle });
+    }
 
     // Twitter card
     setMeta({ name: 'twitter:card', content: ogImage ? 'summary_large_image' : 'summary' });

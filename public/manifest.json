@@ -7,8 +7,8 @@
   "theme_color": "#0B1F44",
   "start_url": "/",
   "icons": [
-    { "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
-    { "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
   ],
   "shortcuts": [
     { "name": "Trade Board", "url": "/trades" },
