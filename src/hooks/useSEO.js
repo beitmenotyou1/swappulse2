@@ -62,7 +62,7 @@ export default function useSEO({
     const canonical = canonicalPath ? `${origin}${canonicalPath}` : window.location.href;
 
     // Title
-    const fullTitle = title ? `${title}, SwapPulse` : 'SwapPulse, Free & Open-Source Pokémon TCG Collector Network';
+    const fullTitle = title ? `${title}, SwapPulse` : 'SwapPulse | Your Pokémon TCG collection, all in one place';
     document.title = fullTitle;
 
     // setMeta — for unique keys: removes any existing meta (static or managed)
